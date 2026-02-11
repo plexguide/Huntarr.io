@@ -385,17 +385,6 @@ export class RequestarrModal {
         }
     }
 
-    async checkRequestedSeasons(tmdbId, instanceName) {
-        try {
-            const response = await fetch(`./api/requestarr/check-seasons?tmdb_id=${tmdbId}&instance=${instanceName}`);
-            const data = await response.json();
-            return data.requested_seasons || [];
-        } catch (error) {
-            console.error('[RequestarrModal] Error checking seasons:', error);
-            return [];
-        }
-    }
-
     async loadSeriesStatus(instanceName) {
         if (!instanceName || !this.core.currentModalData) return;
 

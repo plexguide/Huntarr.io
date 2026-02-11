@@ -506,8 +506,8 @@ export class RequestarrSettings {
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
             }
             try {
-                await self.saveDiscoverFilters();
-                await self.saveBlacklistedGenres();
+                await self.saveDiscoverFilters(true);
+                await self.saveBlacklistedGenres(true);
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
                     window.huntarrUI.showNotification('All settings saved', 'success');
                 }
@@ -633,7 +633,7 @@ export class RequestarrSettings {
         });
     }
     
-    async saveBlacklistedGenres() {
+    async saveBlacklistedGenres(silent = false) {
         const btn = document.getElementById('save-blacklisted-genres-btn');
         if (btn) {
             btn.disabled = true;
@@ -650,7 +650,9 @@ export class RequestarrSettings {
             });
             const data = await response.json();
             if (data.success) {
-                this.core.showNotification('Blacklisted genres saved.', 'success');
+                if (!silent) {
+                    this.core.showNotification('Blacklisted genres saved.', 'success');
+                }
             } else {
                 this.core.showNotification('Failed to save blacklisted genres', 'error');
             }
@@ -1546,7 +1548,7 @@ export class RequestarrSettings {
         this.loadProviders(this.selectedRegion);
     }
     
-    async saveDiscoverFilters() {
+    async saveDiscoverFilters(silent = false) {
         const saveBtn = document.getElementById('save-discover-filters');
         
         if (saveBtn) {
@@ -1568,7 +1570,9 @@ export class RequestarrSettings {
             const data = await response.json();
             
             if (data.success) {
-                this.core.showNotification('Filters saved! Reloading discover content...', 'success');
+                if (!silent) {
+                    this.core.showNotification('Filters saved! Reloading discover content...', 'success');
+                }
                 
                 // Reload all discover content with new filters
                 setTimeout(() => {

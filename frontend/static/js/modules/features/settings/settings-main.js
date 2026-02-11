@@ -450,10 +450,6 @@ window.HuntarrSettings = {
         const nav = document.getElementById('requestarrNav');
         if (nav) nav.style.display = enabled ? '' : 'none';
         if (window.HomeRequestarr) {
-            window.HomeRequestarr.enableRequestarr = enabled;
-            if (typeof window.HomeRequestarr.applyRequestarrEnabledVisibility === 'function') {
-                window.HomeRequestarr.applyRequestarrEnabledVisibility();
-            }
             if (!enabled && typeof window.HomeRequestarr.applyTrendingVisibility === 'function') {
                 window.HomeRequestarr.showTrending = false;
                 window.HomeRequestarr.applyTrendingVisibility();

@@ -283,12 +283,20 @@
         }));
     }
 
+    /**
+     * Encode a compound instance value: "appType:instanceName"
+     */
+    function encodeInstanceValue(appType, name) {
+        return appType + ':' + name;
+    }
+
     // Export to window
     window.MediaUtils = {
         hideMedia: hideMedia,
         getStatusBadge: getStatusBadge,
         getActionButton: getActionButton,
         animateCardRemoval: animateCardRemoval,
+        encodeInstanceValue: encodeInstanceValue,
         decodeInstanceValue: decodeInstanceValue,
         resolveMovieInstance: resolveMovieInstance,
         setupDetailRefreshListeners: setupDetailRefreshListeners,

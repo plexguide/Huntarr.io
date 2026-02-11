@@ -1251,9 +1251,7 @@ export class RequestarrContent {
         if (mediaType === 'movie') {
             const compoundValue = self.selectedMovieInstance || (cardElement.suggestedInstance || '');
             if (compoundValue) {
-                const decoded = (window.MediaUtils || {}).decodeInstanceValue
-                    ? window.MediaUtils.decodeInstanceValue(compoundValue)
-                    : decodeInstanceValue(compoundValue);
+                const decoded = decodeInstanceValue(compoundValue);
                 appType = decoded.appType;
                 instanceName = decoded.name;
             } else if (self.core && self.core.instances) {

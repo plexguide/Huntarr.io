@@ -12,7 +12,6 @@ const HomeRequestarr = {
     defaultMovieInstance: null,
     defaultTVInstance: null,
     showTrending: true,
-    enableRequestarr: true,
 
     /** SmartHunt instance (created after core is ready) */
     _smartHunt: null,
@@ -45,16 +44,9 @@ const HomeRequestarr = {
             this.elements.discoverView.style.setProperty('display', 'none', 'important');
         }
 
-        // Load settings first to determine if Requestarr/trending should be shown
+        // Load settings first to determine if Smart Hunt should be shown
         this.loadSettings()
             .then(() => {
-                this.applyRequestarrEnabledVisibility();
-
-                if (!this.enableRequestarr) {
-                    this.setupSearch();
-                    return;
-                }
-
                 this.applyTrendingVisibility();
 
                 if (!this.showTrending) {
@@ -82,10 +74,9 @@ const HomeRequestarr = {
      */
     refresh() {
         this.loadSettings().then(() => {
-            this.applyRequestarrEnabledVisibility();
             this.applyTrendingVisibility();
 
-            if (this.enableRequestarr && this.showTrending) {
+            if (this.showTrending) {
                 if (this._smartHunt) {
                     // Smart Hunt already exists — reload instances + data
                     this.loadDefaultInstances().then(() => {
@@ -132,7 +123,6 @@ const HomeRequestarr = {
             const response = await fetch('./api/settings');
             const data = await response.json();
             if (data && data.general) {
-                this.enableRequestarr = true; // Always enabled (required for Movie Hunt)
                 this.showTrending = data.general.show_trending !== false;
                 console.log('[HomeRequestarr] Show Smart Hunt on Home:', this.showTrending);
             }
@@ -140,14 +130,6 @@ const HomeRequestarr = {
             console.error('[HomeRequestarr] Error loading settings:', error);
             this.enableRequestarr = true;
             this.showTrending = true;
-        }
-    },
-
-    /** Hide/show the whole Requestarr home card (search + trending) based on enable_requestarr */
-    applyRequestarrEnabledVisibility() {
-        const card = document.querySelector('.requestarr-home-card');
-        if (card) {
-            card.style.display = this.enableRequestarr ? '' : 'none';
         }
     },
 

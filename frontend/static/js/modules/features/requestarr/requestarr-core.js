@@ -54,7 +54,6 @@ export class RequestarrDiscover {
     init() {
         this.loadInstances();
         this.setupCarouselArrows();
-        this.search.setupSearchHandlers();
         this.search.setupGlobalSearch();
         this.content.loadDiscoverContent();
     }

@@ -1199,44 +1199,6 @@ class RequestarrAPI:
             logger.error(f"Error resolving Movie Hunt instance '{instance_name}': {e}")
             return None
     
-    def get_default_instances(self) -> Dict[str, str]:
-        """Get default Sonarr and Radarr instances from database"""
-        try:
-            sonarr_default = self.db.get_setting('requestarr', 'default_sonarr_instance')
-            radarr_default = self.db.get_setting('requestarr', 'default_radarr_instance')
-            
-            # If no defaults set, use first available instance
-            if not sonarr_default:
-                enabled = self.get_enabled_instances()
-                if enabled['sonarr']:
-                    sonarr_default = enabled['sonarr'][0]['name']
-                    self.db.set_setting('requestarr', 'default_sonarr_instance', sonarr_default)
-            
-            if not radarr_default:
-                enabled = self.get_enabled_instances()
-                if enabled['radarr']:
-                    radarr_default = enabled['radarr'][0]['name']
-                    self.db.set_setting('requestarr', 'default_radarr_instance', radarr_default)
-            
-            return {
-                'sonarr_instance': sonarr_default or '',
-                'radarr_instance': radarr_default or ''
-            }
-        except Exception as e:
-            logger.error(f"Error getting default instances: {e}")
-            return {'sonarr_instance': '', 'radarr_instance': ''}
-    
-    def set_default_instances(self, sonarr_instance: str = None, radarr_instance: str = None):
-        """Set default Sonarr and Radarr instances in database"""
-        try:
-            if sonarr_instance is not None:
-                self.db.set_setting('requestarr', 'default_sonarr_instance', sonarr_instance)
-            if radarr_instance is not None:
-                self.db.set_setting('requestarr', 'default_radarr_instance', radarr_instance)
-        except Exception as e:
-            logger.error(f"Error setting default instances: {e}")
-            raise
-    
     def get_cooldown_hours(self) -> int:
         """Get cooldown period in hours from database (default: 24 hours / 1 day)"""
         try:
@@ -1754,7 +1716,7 @@ class RequestarrAPI:
                     item_type = 'movie' if media_type == 'movie' else 'tv'
                 
                 # Skip if media type doesn't match app type
-                if app_type == "radarr" and item_type != "movie":
+                if app_type in ("radarr", "movie_hunt") and item_type != "movie":
                     continue
                 if app_type == "sonarr" and item_type != "tv":
                     continue
@@ -2424,8 +2386,8 @@ class RequestarrAPI:
                 logger.debug(f"Instance {instance.get('name')} not configured with URL/API key")
                 return {'exists': False}
             
-            if app_type == 'radarr':
-                # Search for movie by TMDB ID
+            if app_type in ('radarr', 'movie_hunt'):
+                # Search for movie by TMDB ID (movie_hunt uses Radarr API)
                 response = requests.get(
                     f"{url}/api/v3/movie",
                     headers={'X-Api-Key': api_key},

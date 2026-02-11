@@ -5,15 +5,12 @@
 (function() {
     'use strict';
 
-    // Inline encode/decode helpers (mirrors requestarr-core.js exports)
+    // Delegate to shared MediaUtils (loaded before this file)
     function _encodeInstanceValue(appType, name) {
-        return appType + ':' + name;
+        return window.MediaUtils.encodeInstanceValue(appType, name);
     }
     function _decodeInstanceValue(value) {
-        if (!value) return { appType: 'radarr', name: '' };
-        var idx = value.indexOf(':');
-        if (idx === -1) return { appType: 'radarr', name: value };
-        return { appType: value.substring(0, idx), name: value.substring(idx + 1) };
+        return window.MediaUtils.decodeInstanceValue(value);
     }
 
     window.RequestarrDetail = {
@@ -101,6 +98,12 @@
             const detailView = document.getElementById('requestarr-detail-view');
             if (detailView) {
                 detailView.classList.remove('active');
+            }
+
+            // Remove ESC listener to prevent stacking
+            if (this._escHandler) {
+                document.removeEventListener('keydown', this._escHandler);
+                this._escHandler = null;
             }
 
             if (!fromHistory && /^#requestarr-movie\//.test(window.location.hash || '')) {
@@ -428,6 +431,7 @@
                 var codecEl = document.getElementById('requestarr-ib-codec');
                 var scoreEl = document.getElementById('requestarr-ib-score');
                 var availEl = document.getElementById('requestarr-ib-availability');
+                var availMap = { 'announced': 'Announced', 'inCinemas': 'In Cinemas', 'released': 'Released' };
 
                 if (data.has_file) {
                     row2.style.display = '';
@@ -468,7 +472,6 @@
 
                     if (availEl) {
                         var avail = data.minimum_availability || 'released';
-                        var availMap = { 'announced': 'Announced', 'inCinemas': 'In Cinemas', 'released': 'Released' };
                         availEl.textContent = availMap[avail] || avail;
                     }
                 } else if (data.found) {
@@ -479,7 +482,6 @@
                     if (scoreEl) scoreEl.textContent = '-';
                     if (availEl) {
                         var avail = data.minimum_availability || 'released';
-                        var availMap = { 'announced': 'Announced', 'inCinemas': 'In Cinemas', 'released': 'Released' };
                         availEl.textContent = availMap[avail] || avail;
                     }
                 } else {
@@ -949,14 +951,16 @@
                 });
             });
 
-            // ESC key
-            const escHandler = (e) => {
+            // ESC key — store handler so closeDetail() can remove it (prevents stacking)
+            if (this._escHandler) {
+                document.removeEventListener('keydown', this._escHandler);
+            }
+            this._escHandler = (e) => {
                 if (e.key === 'Escape') {
                     this.closeDetail();
-                    document.removeEventListener('keydown', escHandler);
                 }
             };
-            document.addEventListener('keydown', escHandler);
+            document.addEventListener('keydown', this._escHandler);
         },
 
         setupErrorBackButton() {
