@@ -242,61 +242,17 @@
         },
 
         hideMediaFromHome(item, cardElement) {
-            const self = this;
             const select = document.getElementById('movie-hunt-instance-select');
             const instanceName = select ? (select.options[select.selectedIndex] ? select.options[select.selectedIndex].textContent : '') : '';
-            if (!instanceName) {
-                if (window.huntarrUI && window.huntarrUI.showNotification) {
-                    window.huntarrUI.showNotification('No instance selected.', 'error');
-                }
-                return;
-            }
-            const title = item.title || 'this movie';
-            const tmdbId = item.tmdb_id || item.id;
-            const msg = 'Hide "' + title + '" permanently?\n\nThis will remove it from all discovery pages. You can unhide it later from the Hidden Media page.';
-
-            const doHide = function() {
-                fetch('./api/requestarr/hidden-media', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        tmdb_id: tmdbId,
-                        media_type: 'movie',
-                        title: title,
-                        poster_path: item.poster_path || null,
-                        app_type: 'movie_hunt',
-                        instance_name: instanceName
-                    })
-                })
-                .then(function(r) {
-                    if (!r.ok) throw new Error('Failed to hide');
-                    return r.json();
-                })
-                .then(function() {
-                    // Animate card removal
-                    if (cardElement) {
-                        cardElement.style.transition = 'opacity 0.3s, transform 0.3s';
-                        cardElement.style.opacity = '0';
-                        cardElement.style.transform = 'scale(0.8)';
-                        setTimeout(function() { cardElement.remove(); }, 300);
-                    }
-                    if (window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification('"' + title + '" hidden.', 'success');
-                    }
-                })
-                .catch(function(err) {
-                    console.error('[MovieHunt] Error hiding media:', err);
-                    if (window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification('Failed to hide media.', 'error');
-                    }
-                });
-            };
-
-            if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
-                window.HuntarrConfirm.show({ title: 'Hide Media', message: msg, confirmLabel: 'Hide', onConfirm: doHide });
-            } else {
-                doHide();
-            }
+            window.MediaUtils.hideMedia({
+                tmdbId: item.tmdb_id || item.id,
+                mediaType: 'movie',
+                title: item.title || 'this movie',
+                posterPath: item.poster_path || null,
+                appType: 'movie_hunt',
+                instanceName: instanceName,
+                cardElement: cardElement
+            });
         },
 
         openDeleteModalFromHome(item, cardElement) {
@@ -310,7 +266,6 @@
             const inLibrary = item.in_library || false;
             const partial = item.partial || false;
             const status = inLibrary ? 'available' : (partial ? 'requested' : 'requested');
-            const self = this;
 
             window.MovieCardDeleteModal.open(item, {
                 instanceName: instanceName,
@@ -319,12 +274,7 @@
                 hasFile: inLibrary,
                 appType: 'movie_hunt',
                 onDeleted: function() {
-                    if (cardElement) {
-                        cardElement.style.transition = 'opacity 0.3s, transform 0.3s';
-                        cardElement.style.opacity = '0';
-                        cardElement.style.transform = 'scale(0.8)';
-                        setTimeout(function() { cardElement.remove(); }, 300);
-                    }
+                    window.MediaUtils.animateCardRemoval(cardElement);
                 }
             });
         },
@@ -351,16 +301,7 @@
             const instanceSelect = document.getElementById('movie-hunt-instance-select');
             const hasInstance = instanceSelect && instanceSelect.value && instanceSelect.value !== '';
 
-            let statusBadge = '';
-            if (hasInstance) {
-                if (inLibrary) {
-                    statusBadge = '<div class="media-card-status-badge complete"><i class="fas fa-check"></i></div>';
-                } else if (partial) {
-                    statusBadge = '<div class="media-card-status-badge partial"><i class="fas fa-bookmark"></i></div>';
-                } else {
-                    statusBadge = '<div class="media-card-status-badge available"><i class="fas fa-download"></i></div>';
-                }
-            }
+            const statusBadge = window.MediaUtils.getStatusBadge(inLibrary, partial, hasInstance);
 
             const metaClass = hasInstance ? 'media-card-meta' : 'media-card-meta no-hide';
             const showRequestBtn = hasInstance && !inLibrary;
@@ -368,15 +309,7 @@
                 ? '<button class="media-card-request-btn"><i class="fas fa-plus-circle"></i> Add</button>'
                 : '';
 
-            // Trash button for items in library or requested; hide button for items not in library
-            let actionBtn = '';
-            if (hasInstance) {
-                if (inLibrary || partial) {
-                    actionBtn = '<button class="media-card-delete-btn" title="Remove / Delete"><i class="fas fa-trash-alt"></i></button>';
-                } else {
-                    actionBtn = '<button class="media-card-hide-btn" title="Hide this media permanently"><i class="fas fa-eye-slash"></i></button>';
-                }
-            }
+            const actionBtn = window.MediaUtils.getActionButton(inLibrary, partial, hasInstance);
 
             if (inLibrary) card.classList.add('in-library');
 

@@ -1140,20 +1140,8 @@ export class RequestarrContent {
             : (this.core.instances.sonarr || []).length > 0;
         const metaClassName = hasInstance ? 'media-card-meta' : 'media-card-meta no-hide';
         
-        // Determine status badge
-        let statusBadgeHTML = '';
-        if (hasInstance) {
-            if (inLibrary) {
-                // Green checkmark for complete
-                statusBadgeHTML = '<div class="media-card-status-badge complete"><i class="fas fa-check"></i></div>';
-            } else if (partial) {
-                // Orange exclamation for partial
-                statusBadgeHTML = '<div class="media-card-status-badge partial"><i class="fas fa-exclamation"></i></div>';
-            } else {
-                // Blue download icon for available
-                statusBadgeHTML = '<div class="media-card-status-badge available"><i class="fas fa-download"></i></div>';
-            }
-        }
+        // Determine status badge (shared utility)
+        const statusBadgeHTML = window.MediaUtils ? window.MediaUtils.getStatusBadge(inLibrary, partial, hasInstance) : '';
         
         if (inLibrary) {
             card.classList.add('in-library');
@@ -1186,11 +1174,7 @@ export class RequestarrContent {
                         <i class="fas fa-star"></i>
                         ${rating}
                     </span>
-                    ${hasInstance ? (
-                        (inLibrary || partial)
-                            ? `<button class="media-card-delete-btn" title="Remove / Delete"><i class="fas fa-trash-alt"></i></button>`
-                            : `<button class="media-card-hide-btn" title="Hide this media permanently"><i class="fas fa-eye-slash"></i></button>`
-                    ) : ''}
+                    ${window.MediaUtils ? window.MediaUtils.getActionButton(inLibrary, partial, hasInstance) : ''}
                 </div>
             </div>
         `;
@@ -1296,7 +1280,6 @@ export class RequestarrContent {
             if (match) instanceId = match.id || '';
         }
 
-        const self = this;
         window.MovieCardDeleteModal.open(item, {
             instanceName: instanceName,
             instanceId: instanceId,
@@ -1304,104 +1287,54 @@ export class RequestarrContent {
             hasFile: inLibrary,
             appType: appType,
             onDeleted: function() {
-                // Animate card removal
-                if (cardElement) {
-                    cardElement.style.transition = 'opacity 0.3s, transform 0.3s';
-                    cardElement.style.opacity = '0';
-                    cardElement.style.transform = 'scale(0.8)';
-                    setTimeout(function() { cardElement.remove(); }, 300);
-                }
+                window.MediaUtils.animateCardRemoval(cardElement);
             }
         });
     }
 
-    async hideMedia(tmdbId, mediaType, title, cardElement) {
+    hideMedia(tmdbId, mediaType, title, cardElement) {
         const self = this;
-        const msg = `Hide "${title}" permanently?\n\nThis will remove it from all discovery pages. You can unhide it later from the Hidden Media page.`;
-        const doHide = async function() {
-        try {
-            // Get item data from card
-            const item = cardElement.itemData || {};
-            const posterPath = item.poster_path || null;
-            
-            // Determine app_type and instance from media_type (decode compound values for movies)
-            let appType, instanceName;
-            if (mediaType === 'movie') {
-                // Use view's selected instance, or card's suggested instance, or default, or first available
-                let compoundValue = self.selectedMovieInstance;
-                if (!compoundValue && cardElement.suggestedInstance) compoundValue = cardElement.suggestedInstance;
-                if (!compoundValue) compoundValue = self.selectedMovieInstance;
-                if (compoundValue) {
-                    const decoded = decodeInstanceValue(compoundValue);
-                    appType = decoded.appType;
-                    instanceName = decoded.name;
-                } else if (self.core && self.core.instances) {
-                    // Fallback: first available movie_hunt or radarr instance
-                    const mhInst = self.core.instances.movie_hunt || [];
-                    const rInst = self.core.instances.radarr || [];
-                    if (mhInst.length > 0) { appType = 'movie_hunt'; instanceName = mhInst[0].name; }
-                    else if (rInst.length > 0) { appType = 'radarr'; instanceName = rInst[0].name; }
-                    else { appType = 'radarr'; instanceName = null; }
-                } else {
-                    appType = 'radarr'; instanceName = null;
-                }
+        const item = cardElement.itemData || {};
+        const posterPath = item.poster_path || null;
+
+        // Resolve app_type and instance name
+        let appType, instanceName;
+        if (mediaType === 'movie') {
+            const compoundValue = self.selectedMovieInstance || (cardElement.suggestedInstance || '');
+            if (compoundValue) {
+                const decoded = (window.MediaUtils || {}).decodeInstanceValue
+                    ? window.MediaUtils.decodeInstanceValue(compoundValue)
+                    : decodeInstanceValue(compoundValue);
+                appType = decoded.appType;
+                instanceName = decoded.name;
+            } else if (self.core && self.core.instances) {
+                const mhInst = self.core.instances.movie_hunt || [];
+                const rInst = self.core.instances.radarr || [];
+                if (mhInst.length > 0) { appType = 'movie_hunt'; instanceName = mhInst[0].name; }
+                else if (rInst.length > 0) { appType = 'radarr'; instanceName = rInst[0].name; }
+                else { appType = 'radarr'; instanceName = null; }
             } else {
-                appType = 'sonarr';
-                instanceName = self.selectedTVInstance;
-                if (!instanceName && cardElement.suggestedInstance) instanceName = cardElement.suggestedInstance;
-                if (!instanceName) instanceName = self.selectedTVInstance;
-                if (!instanceName && self.core && self.core.instances) {
-                    const instances = self.core.instances.sonarr || [];
-                    instanceName = instances.length > 0 ? instances[0].name : null;
-                }
+                appType = 'radarr'; instanceName = null;
             }
-            
-            if (!instanceName) {
-                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('No instance selected. Please select an instance first.', 'error');
-                else alert('No instance selected. Please select an instance first.');
-                return;
-            }
-
-            const response = await fetch('./api/requestarr/hidden-media', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    tmdb_id: tmdbId,
-                    media_type: mediaType,
-                    title: title,
-                    poster_path: posterPath,
-                    app_type: appType,
-                    instance_name: instanceName
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to hide media');
-            }
-
-            // Add to hidden media set for immediate filtering
-            const key = `${tmdbId}:${mediaType}:${appType}:${instanceName}`;
-            self.hiddenMediaSet.add(key);
-
-            // Remove the card from view with animation
-            cardElement.style.opacity = '0';
-            cardElement.style.transform = 'scale(0.8)';
-            setTimeout(() => {
-                cardElement.remove();
-            }, 300);
-
-            console.log(`[RequestarrContent] Hidden media: ${title} (${mediaType}) for ${appType}/${instanceName}`);
-        } catch (error) {
-            console.error('[RequestarrContent] Error hiding media:', error);
-            if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Failed to hide media. Please try again.', 'error');
-            else alert('Failed to hide media. Please try again.');
-        }
-        };
-        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
-            window.HuntarrConfirm.show({ title: 'Hide Media', message: msg, confirmLabel: 'Hide', onConfirm: function() { doHide(); } });
         } else {
-            if (!confirm(msg)) return;
-            doHide();
+            appType = 'sonarr';
+            instanceName = self.selectedTVInstance;
+            if (!instanceName && cardElement.suggestedInstance) instanceName = cardElement.suggestedInstance;
+            if (!instanceName && self.core && self.core.instances) {
+                const instances = self.core.instances.sonarr || [];
+                instanceName = instances.length > 0 ? instances[0].name : null;
+            }
         }
+
+        window.MediaUtils.hideMedia({
+            tmdbId: tmdbId,
+            mediaType: mediaType,
+            title: title,
+            posterPath: posterPath,
+            appType: appType || 'radarr',
+            instanceName: instanceName || '',
+            cardElement: cardElement,
+            hiddenMediaSet: self.hiddenMediaSet
+        });
     }
 }

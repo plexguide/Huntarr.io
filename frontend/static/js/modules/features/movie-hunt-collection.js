@@ -64,67 +64,16 @@
         hideMedia: function(tmdbId, title, posterPath, cardElement) {
             var self = this;
             var instanceName = self.getCurrentInstanceName();
-            if (!instanceName) {
-                if (window.huntarrUI && window.huntarrUI.showNotification) {
-                    window.huntarrUI.showNotification('No instance selected.', 'error');
-                }
-                return;
-            }
-
-            var msg = 'Hide "' + title + '" from your collection view?\n\nYou can unhide it later from the Hidden Media page.';
-            var doHide = function() {
-                fetch('./api/requestarr/hidden-media', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        tmdb_id: tmdbId,
-                        media_type: 'movie',
-                        title: title,
-                        poster_path: posterPath || null,
-                        app_type: 'movie_hunt',
-                        instance_name: instanceName
-                    })
-                })
-                .then(function(r) {
-                    if (!r.ok) throw new Error('Failed to hide media');
-                    return r.json();
-                })
-                .then(function() {
-                    var key = tmdbId + ':movie:movie_hunt:' + instanceName;
-                    self.hiddenMediaSet.add(key);
-
-                    // Animate card removal
-                    if (cardElement) {
-                        cardElement.style.transition = 'opacity 0.3s, transform 0.3s';
-                        cardElement.style.opacity = '0';
-                        cardElement.style.transform = 'scale(0.8)';
-                        setTimeout(function() {
-                            cardElement.remove();
-                        }, 300);
-                    }
-
-                    if (window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification('"' + title + '" hidden from collection.', 'success');
-                    }
-                })
-                .catch(function(err) {
-                    console.error('[MovieHuntCollection] Error hiding media:', err);
-                    if (window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification('Failed to hide media.', 'error');
-                    }
-                });
-            };
-
-            if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
-                window.HuntarrConfirm.show({
-                    title: 'Hide Media',
-                    message: msg,
-                    confirmLabel: 'Hide',
-                    onConfirm: doHide
-                });
-            } else {
-                doHide();
-            }
+            window.MediaUtils.hideMedia({
+                tmdbId: tmdbId,
+                mediaType: 'movie',
+                title: title,
+                posterPath: posterPath || null,
+                appType: 'movie_hunt',
+                instanceName: instanceName,
+                cardElement: cardElement,
+                hiddenMediaSet: self.hiddenMediaSet
+            });
         },
 
         // ─── Search ───────────────────────────────────────────────────
@@ -549,14 +498,10 @@
                 hasFile: status === 'available',
                 appType: 'movie_hunt',
                 onDeleted: function() {
-                    if (cardElement) {
-                        cardElement.style.transition = 'opacity 0.3s, transform 0.3s';
-                        cardElement.style.opacity = '0';
-                        cardElement.style.transform = 'scale(0.8)';
-                        setTimeout(function() { cardElement.remove(); }, 300);
-                    }
-                    // Reload collection after short delay
-                    setTimeout(function() { self.loadCollection(); }, 500);
+                    window.MediaUtils.animateCardRemoval(cardElement, function() {
+                        // Reload collection after card is removed
+                        setTimeout(function() { self.loadCollection(); }, 200);
+                    });
                 }
             });
         },
