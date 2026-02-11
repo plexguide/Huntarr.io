@@ -1,4 +1,5 @@
 <section id="settingsRootFoldersSection" class="content-section" style="display: none;">
+    {% with section_id='settings-root-folders' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <div id="rootFoldersManagementContainer" class="app-content-panel">
         <div class="movie-hunt-settings-instance-bar" style="margin-bottom: 16px;">
             <select id="settings-root-folders-instance-select" class="control-select" aria-label="Instance">
@@ -75,8 +76,6 @@
         min-height: 100vh;
         overflow-y: auto;
         overflow-x: hidden;
-        padding: 0;
-        margin: 0;
     }
     #settingsRootFoldersSection.active {
         display: block !important;

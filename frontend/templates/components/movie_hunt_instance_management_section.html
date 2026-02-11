@@ -1,4 +1,5 @@
 <section id="instanceManagementSection" class="content-section" style="display: none;">
+    {% with section_id='movie-hunt-instance-management' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <div id="instanceManagementContainer" class="app-content-panel">
         <p class="instance-management-description">Configure how each instance runs: missing/upgrade search counts, state management, and cycle settings. Each instance has its own queue, history, blocklist, and media. Select an instance from the dropdown elsewhere to switch. IDs are never reused.</p>
         <div class="settings-group instance-management-settings-group">

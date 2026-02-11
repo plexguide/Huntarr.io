@@ -1,5 +1,6 @@
 <!-- Movie Hunt Settings default: instance list; each Edit opens hunt settings editor (Search, Stateful, Additional) -->
 <section id="movie-hunt-settings-default-section" class="content-section" style="display: none;">
+    {% with section_id='movie-hunt-settings' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <div class="app-content-panel" style="padding: 24px;">
         <h2 class="content-section-title" style="margin-bottom: 8px;">Movie Hunt Settings</h2>
         <p class="editor-help-text" style="margin-bottom: 24px;">Configure how each instance runs: missing/upgrade search counts, state management, and cycle settings.</p>

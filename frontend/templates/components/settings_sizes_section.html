@@ -1,4 +1,5 @@
 <section id="settingsSizesSection" class="content-section" style="display: none;">
+    {% with section_id='settings-sizes' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <div id="sizesManagementContainer" class="app-content-panel">
         <div class="settings-group sizes-settings-group">
             <div class="sizes-header">
@@ -30,8 +31,6 @@
         min-height: 100vh;
         overflow-y: auto;
         overflow-x: hidden;
-        padding: 0;
-        margin: 0;
     }
     #settingsSizesSection.active {
         display: block !important;

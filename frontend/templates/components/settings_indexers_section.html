@@ -1,4 +1,5 @@
 <section id="settingsIndexersSection" class="content-section" style="display: none;">
+    {% with section_id='settings-indexers' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <div id="indexerManagementContainer" class="app-content-panel">
         <div class="movie-hunt-settings-instance-bar" style="margin-bottom: 16px;">
             <select id="settings-indexers-instance-select" class="control-select" aria-label="Instance">
@@ -56,8 +57,6 @@
         min-height: 100vh;
         overflow-y: auto;
         overflow-x: hidden;
-        padding: 0;
-        margin: 0;
     }
     #settingsIndexersSection.active {
         display: block !important;

@@ -1280,13 +1280,13 @@
 .sponsor-icon a:hover img { transform: scale(1.05); }
 
 /* ── Home sponsor banners ────────────────────────────────────────── */
-/* ── Sponsor / Partner banner row ────────────────────────────────── */
+/* ── Sponsor / Partner banner row — match app-banners-row alignment ─ */
 .home-banners-row {
     display: flex;
     justify-content: flex-end;
     align-items: center;
     gap: 6px;
-    margin: -6px 0 -6px 0;
+    margin: 0 0 8px 0;
     flex-wrap: wrap;
 }
 

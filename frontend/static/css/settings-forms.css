@@ -938,6 +938,27 @@ input#stateful_management_hours {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
+   Settings sub-pages — Match home page width (no centering, no extra
+   horizontal padding; content-section 40px provides consistent alignment)
+   ═══════════════════════════════════════════════════════════════════ */
+#movie-hunt-settings-default-section .app-content-panel,
+#movieManagementSection .app-content-panel,
+#settingsProfilesSection .app-content-panel,
+#settingsSizesSection .app-content-panel,
+#settingsCustomFormatsSection .app-content-panel,
+#settingsIndexersSection .app-content-panel,
+#settingsClientsSection .app-content-panel,
+#settingsImportListsSection .app-content-panel,
+#settingsImportMediaSection .app-content-panel,
+#settingsRootFoldersSection .app-content-panel,
+#settingsLogsSection .app-content-panel {
+    max-width: none !important;
+    margin: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    Settings Section — Banner & Panel (extracted from settings_section.html)
    ═══════════════════════════════════════════════════════════════════ */
 

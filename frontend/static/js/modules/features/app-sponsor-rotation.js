@@ -20,6 +20,8 @@
     const SPONSOR_SECTIONS = ['home', ...APP_TYPES];
     // Smart Hunt has its own banner row in toolbar
     const SMARTHUNT_APP_TYPE = 'requestarr-smarthunt';
+    // Additional pages that show sponsor/partner banners (same rotation)
+    const EXTRA_BANNER_SECTIONS = ['apps', 'settings', 'system', 'movie-hunt', 'movie-hunt-settings', 'movie-hunt-instance-management', 'movie-hunt-instance-editor', 'swaparr', 'activity', 'nzb-hunt', 'nzb-hunt-activity', 'nzb-hunt-settings', 'notifications', 'backup-restore', 'scheduling', 'user', 'instance-editor', 'profile-editor', 'movie-management', 'settings-profiles', 'settings-sizes', 'settings-custom-formats', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-import-media', 'settings-root-folders', 'settings-logs'];
 
     let rotationInterval = null;
     let sponsors = [];
@@ -90,6 +92,9 @@
             updateSponsorBanner(sponsor, section);
         });
         updateSponsorBanner(sponsor, SMARTHUNT_APP_TYPE);
+        EXTRA_BANNER_SECTIONS.forEach(section => {
+            updateSponsorBanner(sponsor, section);
+        });
     }
 
     // --- Partner Projects (Cleanuparr, SeekandWatch) - home + all app pages ---
@@ -144,6 +149,16 @@
             shBanner.href = project.url;
             shBanner.setAttribute('data-partner-url', project.url);
         }
+        // Extra banner sections
+        EXTRA_BANNER_SECTIONS.forEach(section => {
+            const nameEl = document.getElementById(`${section}-partner-projects-name`);
+            const bannerEl = document.getElementById(`${section}-partner-projects-banner`);
+            if (nameEl) nameEl.textContent = project.name;
+            if (bannerEl && project.url) {
+                bannerEl.href = project.url;
+                bannerEl.setAttribute('data-partner-url', project.url);
+            }
+        });
     }
 
     function loadPartnerProjects() {

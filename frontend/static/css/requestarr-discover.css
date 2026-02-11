@@ -16,9 +16,7 @@
 }
 
 /* Requestarr banner row spacing */
-#requestarr-section .app-banners-row {
-    margin: 0 0 8px 0;
-}
+/* app-banners-row margin now global in style.css */
 
 /* Smart Hunt: sponsor banners above toolbar */
 .reqset-banners-row {

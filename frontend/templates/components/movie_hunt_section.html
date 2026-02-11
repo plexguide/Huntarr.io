@@ -3,7 +3,7 @@
     <link rel="stylesheet" href="./static/css/movie-hunt.css?v=1.3.0">
     <link rel="stylesheet" href="./static/css/movie-hunt-detail.css?v=1.5.0">
     <link rel="stylesheet" href="./static/css/movie-hunt-calendar.css">
-
+    {% with section_id='movie-hunt' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <div class="requestarr-content movie-hunt-content">
         <!-- Beta notice -->
         <div class="movie-hunt-beta-notice" role="status">

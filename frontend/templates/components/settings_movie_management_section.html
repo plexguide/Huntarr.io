@@ -1,4 +1,5 @@
 <section id="movieManagementSection" class="content-section">
+    {% with section_id='movie-management' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <div id="movieManagementContainer" class="app-content-panel">
         <div class="movie-hunt-settings-instance-bar" style="margin-bottom: 16px;">
             <select id="movie-management-instance-select" class="control-select" aria-label="Instance">
@@ -57,18 +58,13 @@
         min-height: 100vh;
         overflow-y: auto;
         overflow-x: hidden;
-        padding: 0;
-        margin: 0;
     }
     #movieManagementSection.active {
         display: block !important;
     }
     #movieManagementContainer {
         width: 100%;
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 30px 20px;
-        padding-bottom: 150px;
+        padding: 30px 0 150px 0;
     }
     #movie-management-content .editor-grid {
         display: grid;
@@ -172,7 +168,7 @@
         font-family: inherit;
     }
     @media (max-width: 768px) {
-        #movieManagementContainer { padding: 20px 15px; padding-bottom: 100px; }
+        #movieManagementContainer { padding: 20px 0 100px 0; }
         #movie-management-content .editor-grid {
             grid-template-columns: 1fr;
         }

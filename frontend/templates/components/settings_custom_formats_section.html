@@ -1,4 +1,5 @@
 <section id="settingsCustomFormatsSection" class="content-section" style="display: none;">
+    {% with section_id='settings-custom-formats' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <div id="customFormatsManagementContainer" class="app-content-panel">
         <div class="movie-hunt-settings-instance-bar" style="margin-bottom: 16px;">
             <select id="settings-custom-formats-instance-select" class="control-select" aria-label="Instance">
@@ -104,7 +105,7 @@
 </section>
 
 <style>
-    #settingsCustomFormatsSection { width: 100%; min-height: 100vh; overflow-y: auto; overflow-x: hidden; padding: 0; margin: 0; }
+    #settingsCustomFormatsSection { width: 100%; min-height: 100vh; overflow-y: auto; overflow-x: hidden; }
     #settingsCustomFormatsSection.active { display: block !important; }
     #customFormatsManagementContainer { width: 100%; padding: 20px; margin: 0; background: transparent; box-shadow: none; border: none; }
     .custom-formats-settings-group {
