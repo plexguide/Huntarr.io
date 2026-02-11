@@ -409,7 +409,62 @@
             statusEl.innerHTML = '<span class="mh-badge ' + cls + '"><i class="fas ' + icon + '"></i> ' + label + '</span>';
 
             if (profileEl) profileEl.textContent = data.quality_profile || '-';
-            if (sizeEl) sizeEl.textContent = this.formatFileSize(data.file_size || 0);
+
+            // Size + optional file quality badge
+            if (sizeEl) {
+                if (data.file_quality) {
+                    sizeEl.innerHTML = this.formatFileSize(data.file_size || 0) +
+                        ' <span class="mh-badge mh-badge-quality">' + this.escapeHtml(data.file_quality) + '</span>';
+                } else {
+                    sizeEl.textContent = this.formatFileSize(data.file_size || 0);
+                }
+            }
+
+            // ── Row 2: Resolution, Codec, Score, Availability ──
+            var row2 = document.getElementById('requestarr-info-bar-row2');
+            if (row2) {
+                var resEl = document.getElementById('requestarr-ib-resolution');
+                var codecEl = document.getElementById('requestarr-ib-codec');
+                var scoreEl = document.getElementById('requestarr-ib-score');
+                var availEl = document.getElementById('requestarr-ib-availability');
+
+                if (data.has_file) {
+                    row2.style.display = '';
+                    if (resEl) resEl.textContent = data.file_resolution || '-';
+                    if (codecEl) codecEl.textContent = data.file_codec || '-';
+
+                    // Score with hover tooltip for breakdown
+                    if (scoreEl) {
+                        var scoreVal = data.file_score;
+                        if (scoreVal != null) {
+                            var scoreClass = scoreVal >= 0 ? 'mh-score-pos' : 'mh-score-neg';
+                            var breakdown = data.file_score_breakdown || 'No custom format matches';
+                            scoreEl.innerHTML = '<span class="mh-score-badge ' + scoreClass + '" title="' + this.escapeHtml(breakdown) + '">' + scoreVal + '</span>';
+                        } else {
+                            scoreEl.textContent = '-';
+                        }
+                    }
+
+                    if (availEl) {
+                        var avail = data.minimum_availability || 'released';
+                        var availMap = { 'announced': 'Announced', 'inCinemas': 'In Cinemas', 'released': 'Released' };
+                        availEl.textContent = availMap[avail] || avail;
+                    }
+                } else if (data.found) {
+                    // Show row with just availability for non-downloaded but tracked movies
+                    row2.style.display = '';
+                    if (resEl) resEl.textContent = '-';
+                    if (codecEl) codecEl.textContent = '-';
+                    if (scoreEl) scoreEl.textContent = '-';
+                    if (availEl) {
+                        var avail = data.minimum_availability || 'released';
+                        var availMap = { 'announced': 'Announced', 'inCinemas': 'In Cinemas', 'released': 'Released' };
+                        availEl.textContent = availMap[avail] || avail;
+                    }
+                } else {
+                    row2.style.display = 'none';
+                }
+            }
 
             // ── Update toolbar and action buttons ──
             this._updateToolbarForStatus(true, isDownloaded, isMovieHunt);
@@ -421,6 +476,9 @@
             if (statusEl) statusEl.innerHTML = '<span class="mh-badge mh-badge-none">Not in Collection</span>';
             if (profileEl) profileEl.textContent = '-';
             if (sizeEl) sizeEl.textContent = '-';
+            // Hide Row 2
+            var row2 = document.getElementById('requestarr-info-bar-row2');
+            if (row2) row2.style.display = 'none';
         },
 
         /**
@@ -671,6 +729,24 @@
                                     <div class="mh-ib">
                                         <div class="mh-ib-label">SIZE</div>
                                         <div class="mh-ib-val" id="requestarr-ib-size">-</div>
+                                    </div>
+                                </div>
+                                <div class="mh-info-bar mh-info-bar-row2" id="requestarr-info-bar-row2" style="display:none">
+                                    <div class="mh-ib">
+                                        <div class="mh-ib-label">Resolution</div>
+                                        <div class="mh-ib-val" id="requestarr-ib-resolution">-</div>
+                                    </div>
+                                    <div class="mh-ib">
+                                        <div class="mh-ib-label">Codec / Audio</div>
+                                        <div class="mh-ib-val" id="requestarr-ib-codec">-</div>
+                                    </div>
+                                    <div class="mh-ib">
+                                        <div class="mh-ib-label">Custom Format Score</div>
+                                        <div class="mh-ib-val" id="requestarr-ib-score">-</div>
+                                    </div>
+                                    <div class="mh-ib">
+                                        <div class="mh-ib-label">Min. Availability</div>
+                                        <div class="mh-ib-val" id="requestarr-ib-availability">-</div>
                                     </div>
                                 </div>
                                 <p class="mh-hero-overview">${this.escapeHtml(overview)}</p>
