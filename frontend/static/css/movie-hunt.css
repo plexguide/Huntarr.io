@@ -552,23 +552,23 @@
 
 #movie-hunt-collection-view .global-search-bar i {
     position: absolute;
-    left: 20px;
+    left: 18px;
     top: 50%;
     transform: translateY(-50%);
     color: #475569;
-    font-size: 18px;
+    font-size: 14px;
     z-index: 1;
     pointer-events: none;
 }
 
 #movie-hunt-collection-view .global-search-bar input {
     width: 100%;
-    padding: 16px 20px 16px 55px;
+    padding: 12px 16px 12px 44px;
     background: rgba(30, 41, 59, 0.8);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 10px;
     color: #e2e8f0;
-    font-size: 16px;
+    font-size: 14px;
     transition: border-color 0.2s, box-shadow 0.2s;
     box-sizing: border-box;
 }
@@ -586,21 +586,21 @@
 
 #movie-hunt-collection-view .hidden-media-search i {
     position: absolute;
-    left: 20px;
+    left: 18px;
     top: 50%;
     transform: translateY(-50%);
     color: #888;
-    font-size: 18px;
+    font-size: 14px;
 }
 
 #movie-hunt-collection-view .hidden-media-search-input {
     width: 100%;
-    padding: 16px 20px 16px 55px;
+    padding: 12px 16px 12px 44px;
     background: rgba(255, 255, 255, 0.08);
     border: 2px solid rgba(255, 255, 255, 0.15);
     border-radius: 12px;
     color: #fff;
-    font-size: 16px;
+    font-size: 14px;
     transition: all 0.2s;
     box-sizing: border-box;
 }
@@ -658,22 +658,22 @@
 }
 #movie-hunt-section .global-search-bar i {
     position: absolute;
-    left: 20px;
+    left: 18px;
     top: 50%;
     transform: translateY(-50%);
     color: #888;
-    font-size: 18px;
+    font-size: 14px;
     z-index: 1;
     pointer-events: none;
 }
 #movie-hunt-section .global-search-bar input {
     width: 100%;
-    padding: 16px 20px 16px 55px;
+    padding: 12px 16px 12px 44px;
     background: rgba(255, 255, 255, 0.08);
     border: 2px solid rgba(255, 255, 255, 0.15);
     border-radius: 14px;
     color: #fff;
-    font-size: 16px;
+    font-size: 14px;
     box-sizing: border-box;
 }
 #movie-hunt-section .global-search-bar input:focus {

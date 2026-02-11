@@ -1123,8 +1123,8 @@
     border-radius: 12px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.03);
     transition: all 0.3s ease;
-    padding: 14px 20px 14px 52px;
-    font-size: 15px;
+    padding: 11px 16px 11px 42px;
+    font-size: 13px;
     width: 100%;
     box-sizing: border-box;
 }
@@ -1137,11 +1137,11 @@
 
 .global-search-bar i {
     position: absolute;
-    left: 18px;
+    left: 16px;
     top: 50%;
     transform: translateY(-50%);
     color: #94a3b8;
-    font-size: 16px;
+    font-size: 14px;
     z-index: 1;
     transition: color 0.3s ease;
     pointer-events: none;
