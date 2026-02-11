@@ -263,7 +263,36 @@ def debug_template_rendering():
     
 debug_template_rendering()
 
-app.secret_key = os.environ.get('SECRET_KEY', 'dev_key_for_sessions')
+def _get_or_create_secret_key():
+    """Get Flask secret key from env, config file, or generate a new one.
+    Persists to config so it survives container restarts but never uses a hardcoded fallback."""
+    # 1. Check environment variable (highest priority)
+    env_key = os.environ.get('SECRET_KEY')
+    if env_key and env_key != 'dev_key_for_sessions':
+        return env_key
+    # 2. Check persisted key in config directory
+    from primary.utils.config_paths import CONFIG_DIR
+    key_file = os.path.join(CONFIG_DIR, '.flask_secret_key')
+    try:
+        if os.path.exists(key_file):
+            with open(key_file, 'r') as f:
+                stored_key = f.read().strip()
+            if stored_key and len(stored_key) >= 32:
+                return stored_key
+    except Exception:
+        pass
+    # 3. Generate a new cryptographically secure key and persist it
+    import secrets as _secrets
+    new_key = _secrets.token_hex(32)  # 64-char hex = 256 bits
+    try:
+        with open(key_file, 'w') as f:
+            f.write(new_key)
+        os.chmod(key_file, 0o600)  # Owner read/write only
+    except Exception:
+        pass  # If we can't persist, use ephemeral key (sessions invalidated on restart)
+    return new_key
+
+app.secret_key = _get_or_create_secret_key()
 
 # Register blueprints
 app.register_blueprint(common_bp)
@@ -289,10 +318,32 @@ app.register_blueprint(backup_bp)
 # Register the authentication check to run before requests
 app.before_request(authenticate_request)
 
-# Prevent aggressive browser caching of JS/CSS so deploys are picked up immediately
+# Security headers + cache control on all responses
 @app.after_request
-def _set_static_cache_headers(response):
-    """For JS and CSS static files, use short cache with revalidation so new deploys are picked up."""
+def _set_response_headers(response):
+    """Set security headers and cache control on all responses."""
+    # Security headers — protect against common web attacks
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['Permissions-Policy'] = 'camera=(), microphone=(), geolocation=()'
+    # Content-Security-Policy: allow self + inline scripts/styles (needed for existing code)
+    # + TMDB images + CDN for Font Awesome and SortableJS
+    # + GitHub API for version checking, star counts, and sponsors
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
+        "font-src 'self' https://cdnjs.cloudflare.com; "
+        "img-src 'self' data: https://image.tmdb.org https://artworks.thetvdb.com https://*.plex.direct https://github.com https://avatars.githubusercontent.com; "
+        "connect-src 'self' https://api.github.com; "
+        "frame-ancestors 'self';"
+    )
+    # HSTS — only when request came through HTTPS (reverse proxy sets X-Forwarded-Proto)
+    if request.headers.get('X-Forwarded-Proto') == 'https':
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    
+    # Prevent aggressive browser caching of JS/CSS so deploys are picked up immediately
     path = request.path or ''
     if path.startswith('/static/') and (path.endswith('.js') or path.endswith('.css')):
         response.headers['Cache-Control'] = 'no-cache, must-revalidate'

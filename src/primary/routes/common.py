@@ -217,12 +217,57 @@ def api_get_sleep_json():
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response, 200
 
+# --- Login Rate Limiting --- #
+import threading as _login_threading
+import time as _login_time
+
+_login_attempts = {}  # {ip: [timestamp, timestamp, ...]}
+_login_attempts_lock = _login_threading.Lock()
+_LOGIN_MAX_ATTEMPTS = 5       # max failed attempts before lockout
+_LOGIN_LOCKOUT_SECONDS = 300  # 5-minute lockout window
+_LOGIN_WINDOW_SECONDS = 300   # track attempts within this window
+
+def _check_login_rate_limit(ip):
+    """Check if an IP is rate-limited. Returns (allowed, retry_after_seconds)."""
+    now = _login_time.time()
+    with _login_attempts_lock:
+        if ip in _login_attempts:
+            # Prune old attempts outside the window
+            _login_attempts[ip] = [t for t in _login_attempts[ip] if now - t < _LOGIN_WINDOW_SECONDS]
+            if len(_login_attempts[ip]) >= _LOGIN_MAX_ATTEMPTS:
+                oldest = _login_attempts[ip][0]
+                retry_after = int(_LOGIN_LOCKOUT_SECONDS - (now - oldest))
+                return False, max(retry_after, 1)
+    return True, 0
+
+def _record_failed_login(ip):
+    """Record a failed login attempt from this IP."""
+    now = _login_time.time()
+    with _login_attempts_lock:
+        if ip not in _login_attempts:
+            _login_attempts[ip] = []
+        _login_attempts[ip].append(now)
+
+def _clear_login_attempts(ip):
+    """Clear failed attempts after a successful login."""
+    with _login_attempts_lock:
+        _login_attempts.pop(ip, None)
+
 # --- Authentication Routes --- #
 
 @common_bp.route('/login', methods=['GET', 'POST'])
 def login_route():
     if request.method == 'POST':
         try: # Wrap the POST logic in a try block for better error handling
+            # Rate limit check
+            client_ip = request.headers.get('X-Forwarded-For', request.remote_addr or '127.0.0.1').split(',')[0].strip()
+            allowed, retry_after = _check_login_rate_limit(client_ip)
+            if not allowed:
+                logger.warning(f"Login rate-limited for IP {client_ip}. Retry after {retry_after}s.")
+                response = jsonify({"success": False, "error": f"Too many login attempts. Try again in {retry_after} seconds."})
+                response.headers['Retry-After'] = str(retry_after)
+                return response, 429
+
             data = request.json
             username = data.get('username')
             password = data.get('password')
@@ -239,10 +284,12 @@ def login_route():
 
             if auth_success:
                 # User is authenticated (password correct, and 2FA if needed was correct)
+                _clear_login_attempts(client_ip)
                 session_token = create_session(username)
                 session[SESSION_COOKIE_NAME] = session_token # Store token in Flask session immediately
                 response = jsonify({"success": True, "redirect": "./"}) # Add redirect URL
-                response.set_cookie(SESSION_COOKIE_NAME, session_token, httponly=True, samesite='Lax', path='/') # Add path
+                is_https = request.headers.get('X-Forwarded-Proto') == 'https' or request.is_secure
+                response.set_cookie(SESSION_COOKIE_NAME, session_token, httponly=True, samesite='Lax', path='/', secure=is_https)
                 logger.debug(f"User '{username}' logged in successfully.")
                 return response
             elif needs_2fa:
@@ -263,6 +310,7 @@ def login_route():
             else:
                 # Authentication failed for other reasons (e.g., wrong password, user not found)
                 # Specific reason logged in verify_user
+                _record_failed_login(client_ip)
                 logger.warning(f"Login failed for '{username}': Invalid credentials or other error.")
                 return jsonify({"success": False, "error": "Invalid username or password"}), 401 # Use 401
 
@@ -441,7 +489,8 @@ def setup():
                 session[SESSION_COOKIE_NAME] = session_token # Store token in session
                 response = jsonify({"success": True})
                 # Set cookie in the response
-                response.set_cookie(SESSION_COOKIE_NAME, session_token, httponly=True, samesite='Lax', path='/') # Add path
+                is_https = request.headers.get('X-Forwarded-Proto') == 'https' or request.is_secure
+                response.set_cookie(SESSION_COOKIE_NAME, session_token, httponly=True, samesite='Lax', path='/', secure=is_https)
                 return response
             else:
                 # create_user itself failed, but didn't raise an exception

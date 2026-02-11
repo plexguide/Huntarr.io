@@ -19,7 +19,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install unrar from RARLAB (full RAR5 support, unrar-free doesn't handle RAR5)
+# SHA256 verified to prevent supply-chain attacks from compromised downloads
 RUN wget -q https://www.rarlab.com/rar/rarlinux-x64-720.tar.gz -O /tmp/rar.tar.gz && \
+    echo "d3e7fba3272385b1d0255ee332a1e8c1a6779bb5a5ff9d4d8ac2be846e49ca46  /tmp/rar.tar.gz" | sha256sum -c - && \
     tar xzf /tmp/rar.tar.gz -C /tmp && \
     cp /tmp/rar/unrar /usr/local/bin/ && \
     chmod 755 /usr/local/bin/unrar && \
