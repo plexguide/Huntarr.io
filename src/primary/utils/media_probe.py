@@ -229,19 +229,19 @@ def probe_media_file(
             audio_codec = _AUDIO_CODEC_MAP.get(raw_codec, raw_codec.upper() if raw_codec else "")
 
             # Check profile for DTS variants (DTS-HD MA, DTS-X, etc.)
-            profile = (s.get("profile") or "").strip()
-            if raw_codec == "dts" and profile:
-                profile_lower = profile.lower()
-                if "ma" in profile_lower or "hd ma" in profile_lower:
+            audio_profile = (s.get("profile") or "").strip()
+            if raw_codec == "dts" and audio_profile:
+                ap_lower = audio_profile.lower()
+                if "ma" in ap_lower or "hd ma" in ap_lower:
                     audio_codec = "DTS-HD MA"
-                elif "x" in profile_lower:
+                elif "x" in ap_lower:
                     audio_codec = "DTS:X"
-                elif "hd" in profile_lower:
+                elif "hd" in ap_lower:
                     audio_codec = "DTS-HD"
 
             # Check for Atmos (in EAC3 or TrueHD profiles)
-            if raw_codec in ("eac3", "truehd") and profile:
-                if "atmos" in profile.lower():
+            if raw_codec in ("eac3", "truehd") and audio_profile:
+                if "atmos" in audio_profile.lower():
                     audio_codec = audio_codec + " Atmos"
 
             audio_channels = int(s.get("channels") or 0)

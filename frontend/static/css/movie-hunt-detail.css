@@ -279,6 +279,34 @@
 }
 .mh-badge-loading { color: rgba(148, 163, 184, 0.4); }
 
+/* Probe status badges */
+.mh-probe-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+}
+.mh-probe-badge i { font-size: 10px; }
+.mh-probe-pending {
+    background: rgba(148, 163, 184, 0.10);
+    color: rgba(148, 163, 184, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+}
+.mh-probe-scanning {
+    background: rgba(59, 130, 246, 0.12);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+}
+.mh-probe-failed {
+    background: rgba(239, 68, 68, 0.12);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
 /* Info bar row 2 — sits directly below row 1 */
 .mh-info-bar-row2 {
     margin-top: -1px;  /* merge borders with row 1 */

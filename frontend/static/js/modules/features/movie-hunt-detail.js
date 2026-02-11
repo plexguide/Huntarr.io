@@ -846,12 +846,17 @@
             if (!this.currentMovie || !this.selectedInstanceId) return;
             const tmdbId = this.currentMovie.tmdb_id || this.currentMovie.id;
 
-            // Use movie-status API for both info bar and action button so they always match
-            const data = await this.fetchMovieHuntStatus(tmdbId, this.selectedInstanceId);
+            // Phase 1: Quick load without probe (instant response)
+            const data = await this.fetchMovieHuntStatus(tmdbId, this.selectedInstanceId, true);
             const isDownloaded = data && data.found && (data.status || '').toLowerCase() === 'downloaded';
             
             // A movie is "found" if the API says so, OR if it's already downloaded/in-library
             const isFound = !!(data && (data.found || (data.status && data.status !== '')));
+
+            // Phase 2: If movie has a file and probe is pending, trigger the actual scan
+            if (data && data.has_file && data.probe_status === 'pending') {
+                this._triggerProbe(tmdbId, this.selectedInstanceId);
+            }
 
             // Update toolbar management buttons visibility
             const editBtn = document.getElementById('mh-tb-edit');
@@ -905,9 +910,11 @@
             }
         },
 
-        async fetchMovieHuntStatus(tmdbId, instanceId) {
+        async fetchMovieHuntStatus(tmdbId, instanceId, skipProbe) {
             try {
-                const resp = await fetch('./api/movie-hunt/movie-status?tmdb_id=' + tmdbId + '&instance_id=' + instanceId);
+                var url = './api/movie-hunt/movie-status?tmdb_id=' + tmdbId + '&instance_id=' + instanceId;
+                if (skipProbe) url += '&skip_probe=true';
+                const resp = await fetch(url);
                 const data = await resp.json();
                 this.currentMovieStatus = data;
 
@@ -965,28 +972,33 @@
                     var scoreEl = document.getElementById('mh-ib-score');
                     var availEl = document.getElementById('mh-ib-availability');
 
-                    if (resEl) resEl.textContent = data.file_resolution || '-';
-
-                    // Build codec/audio string from granular or combined data
-                    if (codecEl) {
-                        var codecStr = '';
-                        if (data.file_video_codec || data.file_audio_codec) {
-                            var parts = [];
-                            if (data.file_video_codec) parts.push(data.file_video_codec);
-                            if (data.file_audio_codec) {
-                                var audioStr = data.file_audio_codec;
-                                if (data.file_audio_channels && data.file_audio_channels !== 'Mono' && data.file_audio_channels !== 'Stereo' && data.file_audio_channels !== '0ch') {
-                                    audioStr += ' ' + data.file_audio_channels;
-                                } else if (data.file_audio_channels) {
-                                    audioStr += ' (' + data.file_audio_channels + ')';
-                                }
-                                parts.push(audioStr);
-                            }
-                            codecStr = parts.join(' / ');
-                        } else {
-                            codecStr = data.file_codec || '-';
+                    // Show probe-status-aware content for resolution and codec
+                    var probeStatus = data.probe_status || '';
+                    if (probeStatus === 'pending') {
+                        // Phase 1: haven't probed yet, show "Pending"
+                        if (resEl) resEl.innerHTML = '<span class="mh-probe-badge mh-probe-pending"><i class="fas fa-clock"></i> Pending</span>';
+                        if (codecEl) codecEl.innerHTML = '<span class="mh-probe-badge mh-probe-pending"><i class="fas fa-clock"></i> Pending</span>';
+                    } else if (probeStatus === 'failed') {
+                        if (resEl) resEl.innerHTML = data.file_resolution
+                            ? data.file_resolution
+                            : '<span class="mh-probe-badge mh-probe-failed"><i class="fas fa-exclamation-triangle"></i> Failed</span>';
+                        if (codecEl) codecEl.innerHTML = (data.file_codec && data.file_codec !== '-')
+                            ? this.escapeHtml(data.file_codec)
+                            : '<span class="mh-probe-badge mh-probe-failed"><i class="fas fa-exclamation-triangle"></i> Failed</span>';
+                    } else if (probeStatus === 'disabled') {
+                        // Analyze off — show filename-based data or "Disabled"
+                        if (resEl) resEl.textContent = data.file_resolution || '-';
+                        if (codecEl) {
+                            var codecStr = this._buildCodecString(data);
+                            codecEl.textContent = codecStr || '-';
                         }
-                        codecEl.textContent = codecStr || '-';
+                    } else {
+                        // cached or scanned — show real data
+                        if (resEl) resEl.textContent = data.file_resolution || '-';
+                        if (codecEl) {
+                            var codecStr = this._buildCodecString(data);
+                            codecEl.textContent = codecStr || '-';
+                        }
                     }
 
                     // Score with hover tooltip
@@ -1033,6 +1045,39 @@
                 console.error('[MovieHuntDetail] Status fetch error:', err);
                 return null;
             }
+        },
+
+        /* ── Probe helpers ─────────────────────────────────────── */
+
+        _buildCodecString(data) {
+            if (data.file_video_codec || data.file_audio_codec) {
+                var parts = [];
+                if (data.file_video_codec) parts.push(data.file_video_codec);
+                if (data.file_audio_codec) {
+                    var audioStr = data.file_audio_codec;
+                    if (data.file_audio_channels && data.file_audio_channels !== 'Mono' && data.file_audio_channels !== 'Stereo' && data.file_audio_channels !== '0ch') {
+                        audioStr += ' ' + data.file_audio_channels;
+                    } else if (data.file_audio_channels) {
+                        audioStr += ' (' + data.file_audio_channels + ')';
+                    }
+                    parts.push(audioStr);
+                }
+                return parts.join(' / ');
+            }
+            return data.file_codec || '-';
+        },
+
+        async _triggerProbe(tmdbId, instanceId) {
+            // Show "Scanning" while waiting for the full probe
+            var resEl = document.getElementById('mh-ib-resolution');
+            var codecEl = document.getElementById('mh-ib-codec');
+            if (resEl) resEl.innerHTML = '<span class="mh-probe-badge mh-probe-scanning"><i class="fas fa-spinner fa-spin"></i> Scanning</span>';
+            if (codecEl) codecEl.innerHTML = '<span class="mh-probe-badge mh-probe-scanning"><i class="fas fa-spinner fa-spin"></i> Scanning</span>';
+
+            // Phase 2: full probe request (may take a few seconds)
+            var data = await this.fetchMovieHuntStatus(tmdbId, instanceId, false);
+
+            // fetchMovieHuntStatus already updates the DOM with results or "Failed"
         },
 
         /* ── Utilities ─────────────────────────────────────────── */

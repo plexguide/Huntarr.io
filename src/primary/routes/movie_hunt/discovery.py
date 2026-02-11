@@ -871,6 +871,7 @@ def api_movie_hunt_movie_status():
 
     tmdb_id = request.args.get('tmdb_id', type=int)
     instance_id = _get_movie_hunt_instance_id_from_request()
+    skip_probe = request.args.get('skip_probe', 'false').lower() == 'true'
 
     if not tmdb_id:
         return jsonify({'success': False, 'error': 'tmdb_id required'}), 400
@@ -981,6 +982,7 @@ def api_movie_hunt_movie_status():
         file_duration = 0
         file_score = None
         file_score_breakdown = ''
+        probe_status = 'not_needed'  # not_needed | disabled | pending | cached | scanned | failed
 
         if has_file and file_path:
             # 1) Filename-based extraction (always, as baseline + for scoring)
@@ -1023,7 +1025,12 @@ def api_movie_hunt_movie_status():
             except Exception:
                 pass
 
-            if analyze_enabled:
+            if not analyze_enabled:
+                probe_status = 'disabled'
+            elif skip_probe:
+                # Quick-load mode: caller will make a second request for the actual probe
+                probe_status = 'pending'
+            else:
                 current_mtime = 0
                 try:
                     current_mtime = int(os.path.getmtime(file_path))
@@ -1040,6 +1047,7 @@ def api_movie_hunt_movie_status():
                 ):
                     # Cache hit — use probed data
                     probe_data = cached_info
+                    probe_status = 'cached'
                 else:
                     # Cache miss — probe the file
                     try:
@@ -1049,17 +1057,28 @@ def api_movie_hunt_movie_status():
                         movie_hunt_logger.debug("ffprobe failed for %s: %s", file_path, probe_err)
                         probe_data = None
 
+                    if probe_data:
+                        probe_status = 'scanned'
+                    else:
+                        probe_status = 'failed'
+
                     # Cache the result on the collection item
                     if probe_data and movie.get('tmdb_id') is not None:
                         try:
                             all_items = _get_collection_config(instance_id)
+                            saved = False
                             for item in all_items:
                                 if item.get('tmdb_id') == tmdb_id:
                                     item['media_info'] = probe_data
+                                    saved = True
                                     break
-                            _save_collection_config(all_items, instance_id)
-                        except Exception:
-                            pass  # non-critical — next request will re-probe
+                            if saved:
+                                _save_collection_config(all_items, instance_id)
+                                movie_hunt_logger.debug("Cached media_info for tmdb_id=%s (instance=%s)", tmdb_id, instance_id)
+                            else:
+                                movie_hunt_logger.debug("Could not cache: tmdb_id=%s not found in collection reload", tmdb_id)
+                        except Exception as cache_err:
+                            movie_hunt_logger.debug("Cache save error for tmdb_id=%s: %s", tmdb_id, cache_err)
 
                 # Override filename-based values with probed data (if available)
                 if probe_data and isinstance(probe_data, dict):
@@ -1108,6 +1127,7 @@ def api_movie_hunt_movie_status():
             'file_score_breakdown': file_score_breakdown,
             'minimum_availability': min_availability,
             'requested_at': movie.get('requested_at', ''),
+            'probe_status': probe_status,
         })
 
     except Exception as e:
