@@ -127,6 +127,7 @@ def get_movie_hunt_instance_settings_defaults() -> Dict[str, Any]:
         "tag_enable_upgrade": base.get("tag_enable_upgrade", True),
         "tag_enable_upgraded": base.get("tag_enable_upgraded", True),
         "custom_tags": dict(base.get("custom_tags") or {}),
+        "analyze_video_files": True,
     }
     return out
 

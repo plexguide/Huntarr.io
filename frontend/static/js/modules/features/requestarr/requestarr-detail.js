@@ -431,7 +431,27 @@
                 if (data.has_file) {
                     row2.style.display = '';
                     if (resEl) resEl.textContent = data.file_resolution || '-';
-                    if (codecEl) codecEl.textContent = data.file_codec || '-';
+                    // Build codec/audio string from granular or combined data
+                    if (codecEl) {
+                        var codecStr = '';
+                        if (data.file_video_codec || data.file_audio_codec) {
+                            var parts = [];
+                            if (data.file_video_codec) parts.push(data.file_video_codec);
+                            if (data.file_audio_codec) {
+                                var audioStr = data.file_audio_codec;
+                                if (data.file_audio_channels && data.file_audio_channels !== 'Mono' && data.file_audio_channels !== 'Stereo' && data.file_audio_channels !== '0ch') {
+                                    audioStr += ' ' + data.file_audio_channels;
+                                } else if (data.file_audio_channels) {
+                                    audioStr += ' (' + data.file_audio_channels + ')';
+                                }
+                                parts.push(audioStr);
+                            }
+                            codecStr = parts.join(' / ');
+                        } else {
+                            codecStr = data.file_codec || '-';
+                        }
+                        codecEl.textContent = codecStr || '-';
+                    }
 
                     // Score with hover tooltip for breakdown
                     if (scoreEl) {

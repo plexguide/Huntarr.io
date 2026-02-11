@@ -970,13 +970,20 @@ def api_movie_hunt_movie_status():
             if not quality_profile_name and profiles:
                 quality_profile_name = (profiles[0].get('name') or 'Standard').strip()
 
-        # Extract file quality, codec, resolution from filename
+        # ── Extract file quality, codec, resolution ──
+        # Strategy: Try ffprobe first (cached), fall back to filename parsing
         file_quality = ''
         file_codec = ''
         file_resolution = ''
+        file_video_codec = ''
+        file_audio_codec = ''
+        file_audio_channels = ''
+        file_duration = 0
         file_score = None
         file_score_breakdown = ''
+
         if has_file and file_path:
+            # 1) Filename-based extraction (always, as baseline + for scoring)
             from ._helpers import _extract_quality_from_filename, _extract_formats_from_filename
             fname = os.path.basename(file_path)
             file_quality = _extract_quality_from_filename(fname)
@@ -985,7 +992,6 @@ def api_movie_hunt_movie_status():
             file_codec = _extract_formats_from_filename(fname)
             if file_codec == '-':
                 file_codec = ''
-            # Extract resolution separately
             fl = fname.lower()
             if '2160' in fl or '4k' in fl:
                 file_resolution = '2160p'
@@ -995,6 +1001,7 @@ def api_movie_hunt_movie_status():
                 file_resolution = '720p'
             elif '480' in fl:
                 file_resolution = '480p'
+
             # Score the current file against the quality profile's custom formats
             try:
                 from .profiles import _score_release, _get_profile_by_name_or_default
@@ -1003,6 +1010,66 @@ def api_movie_hunt_movie_status():
             except Exception:
                 file_score = None
                 file_score_breakdown = ''
+
+            # 2) ffprobe-based extraction (if analyze_video_files is enabled)
+            analyze_enabled = True  # default
+            try:
+                db = get_database()
+                hunt_settings = db.get_app_config_for_instance('movie_hunt_hunt_settings', instance_id) or {}
+                analyze_enabled = hunt_settings.get('analyze_video_files', True)
+            except Exception:
+                pass
+
+            if analyze_enabled:
+                # Check for cached media_info on the collection item
+                cached_info = movie.get('media_info')
+                if cached_info and isinstance(cached_info, dict) and cached_info.get('file_size') == file_size:
+                    # Cache hit — use probed data
+                    probe_data = cached_info
+                else:
+                    # Cache miss — probe the file
+                    try:
+                        from src.primary.utils.media_probe import probe_media_file
+                        probe_data = probe_media_file(file_path)
+                    except Exception as probe_err:
+                        movie_hunt_logger.debug("ffprobe failed for %s: %s", file_path, probe_err)
+                        probe_data = None
+
+                    # Cache the result on the collection item
+                    if probe_data and movie.get('tmdb_id') is not None:
+                        try:
+                            all_items = _get_collection_config(instance_id)
+                            for item in all_items:
+                                if item.get('tmdb_id') == tmdb_id:
+                                    item['media_info'] = probe_data
+                                    break
+                            _save_collection_config(all_items, instance_id)
+                        except Exception:
+                            pass  # non-critical — next request will re-probe
+
+                # Override filename-based values with probed data (if available)
+                if probe_data and isinstance(probe_data, dict):
+                    if probe_data.get('video_resolution'):
+                        file_resolution = probe_data['video_resolution']
+                    if probe_data.get('video_codec'):
+                        file_video_codec = probe_data['video_codec']
+                    if probe_data.get('audio_codec'):
+                        file_audio_codec = probe_data['audio_codec']
+                    if probe_data.get('audio_layout'):
+                        file_audio_channels = probe_data['audio_layout']
+                    if probe_data.get('duration_seconds'):
+                        file_duration = probe_data['duration_seconds']
+                    # Build combined codec string from probed data
+                    parts = []
+                    if file_video_codec:
+                        parts.append(file_video_codec)
+                    if file_audio_codec:
+                        audio_str = file_audio_codec
+                        if file_audio_channels and file_audio_channels not in ('Mono', 'Stereo', '0ch'):
+                            audio_str += ' ' + file_audio_channels
+                        parts.append(audio_str)
+                    if parts:
+                        file_codec = ' / '.join(parts)
 
         # Minimum availability
         min_availability = (movie.get('minimum_availability') or 'released').strip()
@@ -1018,7 +1085,11 @@ def api_movie_hunt_movie_status():
             'file_size': file_size,
             'file_quality': file_quality,
             'file_codec': file_codec,
+            'file_video_codec': file_video_codec,
+            'file_audio_codec': file_audio_codec,
+            'file_audio_channels': file_audio_channels,
             'file_resolution': file_resolution,
+            'file_duration': file_duration,
             'file_score': file_score,
             'file_score_breakdown': file_score_breakdown,
             'minimum_availability': min_availability,

@@ -3,7 +3,8 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # Install system dependencies including net-tools for health checks, tzdata for timezone support,
-# par2 for Usenet file verification/repair, p7zip for 7z/zip extraction, and gosu for PUID/PGID support
+# par2 for Usenet file verification/repair, p7zip for 7z/zip extraction, gosu for PUID/PGID support,
+# and ffmpeg (includes ffprobe) for media file analysis (resolution, codec, audio extraction)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     net-tools \
     curl \
@@ -13,6 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     par2 \
     p7zip-full \
     gosu \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # Install unrar from RARLAB (full RAR5 support, unrar-free doesn't handle RAR5)
