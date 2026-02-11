@@ -1606,6 +1606,10 @@ export class RequestarrSettings {
             const hideLibEl = document.getElementById('smarthunt-hide-library');
             if (hideLibEl) hideLibEl.checked = s.hide_library_items !== false;
 
+            // Populate cache TTL dropdown
+            const cacheTtlEl = document.getElementById('smarthunt-cache-ttl');
+            if (cacheTtlEl) cacheTtlEl.value = String(s.cache_ttl_minutes ?? 60);
+
             // Populate number fields
             const minRating = document.getElementById('smarthunt-min-rating');
             if (minRating) minRating.value = s.min_tmdb_rating ?? 6.0;
@@ -1712,6 +1716,7 @@ export class RequestarrSettings {
 
             const settings = {
                 enabled: true,  // Smart Hunt is always enabled
+                cache_ttl_minutes: parseInt(document.getElementById('smarthunt-cache-ttl')?.value) || 60,
                 hide_library_items: document.getElementById('smarthunt-hide-library')?.checked ?? true,
                 min_tmdb_rating: parseFloat(document.getElementById('smarthunt-min-rating')?.value) || 6.0,
                 min_vote_count: parseInt(document.getElementById('smarthunt-min-votes')?.value) || 0,

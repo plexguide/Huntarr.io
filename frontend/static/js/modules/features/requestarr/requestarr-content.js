@@ -33,33 +33,17 @@ export class RequestarrContent {
             this.refreshInstanceSelectors();
         });
 
-        // Shared discovery cache with home page (24h) - same keys so both pages benefit
-        this.DISCOVERY_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
-        this.DISCOVERY_CACHE_KEYS = { trending: 'huntarr-home-discovery-trending', movies: 'huntarr-home-discovery-movies', tv: 'huntarr-home-discovery-tv' };
+        // Legacy localStorage discovery cache keys — no longer used.
+        // Caching is now server-side only. These keys are kept for cleanup.
+        this._LEGACY_CACHE_KEYS = ['huntarr-home-discovery-trending', 'huntarr-home-discovery-movies', 'huntarr-home-discovery-tv'];
+        this._cleanupLegacyCache();
     }
 
-    getDiscoveryCache(section) {
-        const key = this.DISCOVERY_CACHE_KEYS[section];
-        if (!key) return null;
+    /** Remove any leftover localStorage entries from the old client-side cache. */
+    _cleanupLegacyCache() {
         try {
-            const raw = localStorage.getItem(key);
-            if (!raw) return null;
-            const { results, timestamp } = JSON.parse(raw);
-            if (Date.now() - (timestamp || 0) > this.DISCOVERY_CACHE_TTL_MS) return null;
-            return Array.isArray(results) ? results : null;
-        } catch (e) {
-            return null;
-        }
-    }
-
-    setDiscoveryCache(section, results) {
-        const key = this.DISCOVERY_CACHE_KEYS[section];
-        if (!key || !Array.isArray(results)) return;
-        try {
-            localStorage.setItem(key, JSON.stringify({ results, timestamp: Date.now() }));
-        } catch (e) {
-            console.warn('[RequestarrContent] Discovery cache write failed:', e);
-        }
+            this._LEGACY_CACHE_KEYS.forEach(k => localStorage.removeItem(k));
+        } catch (e) { /* ignore */ }
     }
 
     // ========================================
@@ -160,13 +144,11 @@ export class RequestarrContent {
     }
 
     /**
-     * Remove a single section from the discovery localStorage cache.
+     * @deprecated No-op — localStorage discovery cache has been removed.
+     * Kept so callers don't break. Server-side cache handles freshness.
      */
     _clearDiscoveryCache(section) {
-        const key = this.DISCOVERY_CACHE_KEYS[section];
-        if (key) {
-            try { localStorage.removeItem(key); } catch (e) { /* ignore */ }
-        }
+        // No-op: client-side cache removed; server manages caching.
     }
 
     /**
@@ -337,13 +319,12 @@ export class RequestarrContent {
             const response = await fetch(url);
             const data = await response.json();
             const results = (data.results && data.results.length > 0) ? data.results : [];
-            this.setDiscoveryCache('movies', results);
             this.renderPopularMoviesResults(carousel, results);
         } catch (error) {
             console.error('[RequestarrContent] Error reloading discover movies:', error);
         }
         // Refresh trending with updated instance params (status badges depend on selected instance)
-        await this.fetchAndCacheTrending();
+        await this.loadTrending();
     }
 
     /**
@@ -360,13 +341,12 @@ export class RequestarrContent {
             const response = await fetch(url);
             const data = await response.json();
             const results = (data.results && data.results.length > 0) ? data.results : [];
-            this.setDiscoveryCache('tv', results);
             this.renderPopularTVResults(carousel, results);
         } catch (error) {
             console.error('[RequestarrContent] Error reloading discover TV:', error);
         }
         // Refresh trending with updated instance params (status badges depend on selected instance)
-        await this.fetchAndCacheTrending();
+        await this.loadTrending();
     }
 
     async loadMovieInstances() {
@@ -760,36 +740,15 @@ export class RequestarrContent {
     async loadTrending() {
         const carousel = document.getElementById('trending-carousel');
         if (!carousel) return;
-        const cached = this.getDiscoveryCache('trending');
-        if (cached !== null) {
-            this.renderTrendingResults(carousel, cached);
-            this.fetchAndCacheTrending();
-            return;
-        }
         try {
             const url = this._buildTrendingUrl();
             const response = await fetch(url);
             const data = await response.json();
             const results = (data.results && data.results.length > 0) ? data.results : [];
-            this.setDiscoveryCache('trending', results);
             this.renderTrendingResults(carousel, results);
         } catch (error) {
             console.error('[RequestarrDiscover] Error loading trending:', error);
             carousel.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load trending content</p>';
-        }
-    }
-
-    async fetchAndCacheTrending() {
-        try {
-            const url = this._buildTrendingUrl();
-            const response = await fetch(url);
-            const data = await response.json();
-            const results = (data.results && data.results.length > 0) ? data.results : [];
-            this.setDiscoveryCache('trending', results);
-            const carousel = document.getElementById('trending-carousel');
-            if (carousel) this.renderTrendingResults(carousel, results);
-        } catch (e) {
-            console.warn('[RequestarrContent] Background refresh trending failed:', e);
         }
     }
 
@@ -811,12 +770,6 @@ export class RequestarrContent {
     async loadPopularMovies() {
         const carousel = document.getElementById('popular-movies-carousel');
         if (!carousel) return;
-        const cached = this.getDiscoveryCache('movies');
-        if (cached !== null) {
-            this.renderPopularMoviesResults(carousel, cached);
-            this.fetchAndCachePopularMovies();
-            return;
-        }
         try {
             const decoded = decodeInstanceValue(this.selectedMovieInstance);
             let url = './api/requestarr/discover/movies?page=1';
@@ -824,27 +777,10 @@ export class RequestarrContent {
             const response = await fetch(url);
             const data = await response.json();
             const results = (data.results && data.results.length > 0) ? data.results : [];
-            this.setDiscoveryCache('movies', results);
             this.renderPopularMoviesResults(carousel, results);
         } catch (error) {
             console.error('[RequestarrDiscover] Error loading popular movies:', error);
             carousel.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load movies</p>';
-        }
-    }
-
-    async fetchAndCachePopularMovies() {
-        try {
-            const decoded = decodeInstanceValue(this.selectedMovieInstance);
-            let url = './api/requestarr/discover/movies?page=1';
-            if (decoded.name) url += `&app_type=${decoded.appType}&instance_name=${encodeURIComponent(decoded.name)}`;
-            const response = await fetch(url);
-            const data = await response.json();
-            const results = (data.results && data.results.length > 0) ? data.results : [];
-            this.setDiscoveryCache('movies', results);
-            const carousel = document.getElementById('popular-movies-carousel');
-            if (carousel) this.renderPopularMoviesResults(carousel, results);
-        } catch (e) {
-            console.warn('[RequestarrContent] Background refresh popular movies failed:', e);
         }
     }
 
@@ -866,12 +802,6 @@ export class RequestarrContent {
     async loadPopularTV() {
         const carousel = document.getElementById('popular-tv-carousel');
         if (!carousel) return;
-        const cached = this.getDiscoveryCache('tv');
-        if (cached !== null) {
-            this.renderPopularTVResults(carousel, cached);
-            this.fetchAndCachePopularTV();
-            return;
-        }
         try {
             const instanceName = this.selectedTVInstance;
             let url = './api/requestarr/discover/tv?page=1';
@@ -879,27 +809,10 @@ export class RequestarrContent {
             const response = await fetch(url);
             const data = await response.json();
             const results = (data.results && data.results.length > 0) ? data.results : [];
-            this.setDiscoveryCache('tv', results);
             this.renderPopularTVResults(carousel, results);
         } catch (error) {
             console.error('[RequestarrDiscover] Error loading popular TV:', error);
             carousel.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load TV shows</p>';
-        }
-    }
-
-    async fetchAndCachePopularTV() {
-        try {
-            const instanceName = this.selectedTVInstance;
-            let url = './api/requestarr/discover/tv?page=1';
-            if (instanceName) url += `&app_type=sonarr&instance_name=${encodeURIComponent(instanceName)}`;
-            const response = await fetch(url);
-            const data = await response.json();
-            const results = (data.results && data.results.length > 0) ? data.results : [];
-            this.setDiscoveryCache('tv', results);
-            const carousel = document.getElementById('popular-tv-carousel');
-            if (carousel) this.renderPopularTVResults(carousel, results);
-        } catch (e) {
-            console.warn('[RequestarrContent] Background refresh popular TV failed:', e);
         }
     }
 

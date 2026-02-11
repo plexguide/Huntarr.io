@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 SMARTHUNT_DEFAULTS = {
     "enabled": True,
     "hide_library_items": True,
+    "cache_ttl_minutes": 60,
     "min_tmdb_rating": 6.0,
     "min_vote_count": 50,
     "year_start": 2000,
@@ -42,6 +43,9 @@ SMARTHUNT_DEFAULTS = {
     },
 }
 
+# Cache TTL mapping (minutes -> seconds); 0 = disabled
+CACHE_TTL_OPTIONS = {0: 0, 30: 1800, 60: 3600, 360: 21600, 720: 43200, 1440: 86400}
+
 BATCH_SIZE = 20
 MAX_PAGES = 5  # 100 items total
 
@@ -49,7 +53,6 @@ MAX_PAGES = 5  # 100 items total
 # In-memory result cache  (settings hash -> {results, timestamp})
 # ---------------------------------------------------------------------------
 _result_cache: Dict[str, dict] = {}
-_CACHE_TTL_SECONDS = 3600  # 1 hour
 
 
 def _cache_key(settings: dict, movie_instance: str, tv_instance: str, movie_app_type: str) -> str:
@@ -103,16 +106,24 @@ class SmartHuntEngine:
         if page > MAX_PAGES:
             page = MAX_PAGES
 
+        # Determine cache TTL from settings (0 = disabled)
+        ttl_minutes = int(settings.get("cache_ttl_minutes", SMARTHUNT_DEFAULTS["cache_ttl_minutes"]))
+        ttl_seconds = CACHE_TTL_OPTIONS.get(ttl_minutes, ttl_minutes * 60)
+
         ck = _cache_key(settings, movie_instance, tv_instance, movie_app_type)
         cached = _result_cache.get(ck)
-        if cached and time.time() - cached["ts"] < _CACHE_TTL_SECONDS:
+        if ttl_seconds > 0 and cached and time.time() - cached["ts"] < ttl_seconds:
             items = cached["results"]
         else:
             items = self._generate_all(
                 settings, movie_instance, tv_instance, movie_app_type,
                 discover_filters or {}, blacklisted_genres or {},
             )
-            _result_cache[ck] = {"results": items, "ts": time.time()}
+            if ttl_seconds > 0:
+                _result_cache[ck] = {"results": items, "ts": time.time()}
+            else:
+                # Cache disabled — clear any stale entry
+                _result_cache.pop(ck, None)
 
         start = (page - 1) * BATCH_SIZE
         end = start + BATCH_SIZE

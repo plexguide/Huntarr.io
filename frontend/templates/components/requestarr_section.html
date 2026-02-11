@@ -592,6 +592,18 @@
                             <small>Hide items already in library, requested, or hidden</small>
                         </div>
                         <div class="settings-field">
+                            <label for="smarthunt-cache-ttl">Result Cache Duration</label>
+                            <select id="smarthunt-cache-ttl" class="settings-input">
+                                <option value="0">Disabled (always fresh)</option>
+                                <option value="30">30 Minutes</option>
+                                <option value="60" selected>1 Hour (default)</option>
+                                <option value="360">6 Hours</option>
+                                <option value="720">12 Hours</option>
+                                <option value="1440">24 Hours</option>
+                            </select>
+                            <small>How long Smart Hunt caches results before fetching new ones. Applies to both the server-side API cache and the browser cache. Also affects Discover page carousels (Trending, Popular Movies, Popular TV). Shorter = fresher results but more API calls.</small>
+                        </div>
+                        <div class="settings-field">
                             <label for="smarthunt-min-rating">Minimum TMDB Rating</label>
                             <input type="number" id="smarthunt-min-rating" min="0" max="10" step="0.1" value="6.0" class="settings-input">
                             <small>TMDB ratings range from 0 to 10 (decimals allowed). Only items rated at or above this score are included.</small>

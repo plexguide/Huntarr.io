@@ -736,11 +736,11 @@
                                 <div class="mh-info-bar" id="requestarr-detail-info-bar">
                                     <div class="mh-ib mh-ib-path">
                                         <div class="mh-ib-label">PATH</div>
-                                        <div class="mh-ib-val" id="requestarr-ib-path"><i class="fas fa-spinner fa-spin"></i></div>
+                                        <div class="mh-ib-val" id="requestarr-ib-path">${this.movieInstances.length > 0 ? '<i class="fas fa-spinner fa-spin"></i>' : '-'}</div>
                                     </div>
                                     <div class="mh-ib">
                                         <div class="mh-ib-label">STATUS</div>
-                                        <div class="mh-ib-val" id="requestarr-ib-status"><i class="fas fa-spinner fa-spin"></i></div>
+                                        <div class="mh-ib-val" id="requestarr-ib-status">${this.movieInstances.length > 0 ? '<i class="fas fa-spinner fa-spin"></i>' : '<span class="mh-badge mh-badge-none">No Instance</span>'}</div>
                                     </div>
                                     <div class="mh-ib">
                                         <div class="mh-ib-label">QUALITY PROFILE</div>

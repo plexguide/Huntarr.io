@@ -76,6 +76,36 @@ const HomeRequestarr = {
             });
     },
 
+    /**
+     * Full refresh — called every time the user navigates to the Home page.
+     * Re-fetches settings from the server and re-applies all visibility and data.
+     */
+    refresh() {
+        this.loadSettings().then(() => {
+            this.applyRequestarrEnabledVisibility();
+            this.applyTrendingVisibility();
+
+            if (this.enableRequestarr && this.showTrending) {
+                if (this._smartHunt) {
+                    // Smart Hunt already exists — reload instances + data
+                    this.loadDefaultInstances().then(() => {
+                        this._smartHunt.reload();
+                    });
+                } else {
+                    // Smart Hunt was not yet created (e.g. was disabled on first load)
+                    this.waitForCore().then((core) => {
+                        this.core = core;
+                        this.loadDefaultInstances().then(() => {
+                            this._initSmartHunt();
+                        });
+                    }).catch(() => {
+                        console.warn('[HomeRequestarr] Could not init SmartHunt on refresh');
+                    });
+                }
+            }
+        });
+    },
+
     /** Create and load the SmartHunt carousel */
     _initSmartHunt() {
         const section = document.getElementById('home-smarthunt-section');

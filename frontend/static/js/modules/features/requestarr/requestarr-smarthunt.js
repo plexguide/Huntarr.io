@@ -1,46 +1,26 @@
 /**
  * Smart Hunt — shared carousel component used on Home and Discover pages.
  *
+ * Caching is handled entirely server-side (in-memory with configurable TTL).
+ * No localStorage caching — every load hits the server API, which returns
+ * cached or fresh results based on the user's cache_ttl_minutes setting.
+ *
  * Usage:
  *   import { SmartHunt } from './requestarr-smarthunt.js';
  *   const sh = new SmartHunt({ carouselId: 'home-smarthunt-carousel', core: coreRef });
  *   sh.load();
  */
 
-// ---------------------------------------------------------------------------
-// Cache helpers  (localStorage, 1-hour TTL — invalidated on settings save)
-// ---------------------------------------------------------------------------
-
-const SH_CACHE_PREFIX = 'huntarr-smarthunt-page-';
-const SH_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
-
-function getCachedPage(page) {
-    try {
-        const raw = localStorage.getItem(`${SH_CACHE_PREFIX}${page}`);
-        if (!raw) return null;
-        const { results, timestamp } = JSON.parse(raw);
-        if (Date.now() - (timestamp || 0) > SH_CACHE_TTL_MS) return null;
-        return Array.isArray(results) ? results : null;
-    } catch (e) {
-        return null;
-    }
-}
-
-function setCachedPage(page, results) {
-    try {
-        localStorage.setItem(
-            `${SH_CACHE_PREFIX}${page}`,
-            JSON.stringify({ results, timestamp: Date.now() }),
-        );
-    } catch (e) {
-        // quota exceeded — ignore
-    }
-}
-
+/**
+ * @deprecated No-op — localStorage cache has been removed. Server-side only.
+ * Kept so existing callers (settings save) don't throw.
+ */
 export function invalidateSmartHuntCache() {
+    // Clean up any legacy localStorage entries from before this change
     try {
+        const prefix = 'huntarr-smarthunt-page-';
         for (let i = 1; i <= 5; i++) {
-            localStorage.removeItem(`${SH_CACHE_PREFIX}${i}`);
+            localStorage.removeItem(`${prefix}${i}`);
         }
     } catch (e) { /* ignore */ }
 }
@@ -87,7 +67,6 @@ export class SmartHunt {
 
     /** Reload from scratch (e.g. after instance change). */
     reload() {
-        invalidateSmartHuntCache();
         this.load();
     }
 
@@ -110,21 +89,8 @@ export class SmartHunt {
 
         const page = this.currentPage + 1;
 
-        // Try cache first
-        const cached = getCachedPage(page);
-        if (cached !== null) {
-            this._render(cached, append);
-            this.currentPage = page;
-            this.hasMore = page < 5 && cached.length > 0;
-            this.isLoading = false;
-            // Background refresh
-            this._fetchAndCache(page, append);
-            return;
-        }
-
         try {
             const results = await this._fetchPage(page);
-            setCachedPage(page, results);
             this._render(results, append);
             this.currentPage = page;
             this.hasMore = page < 5 && results.length > 0;
@@ -138,15 +104,6 @@ export class SmartHunt {
             }
         } finally {
             this.isLoading = false;
-        }
-    }
-
-    async _fetchAndCache(page) {
-        try {
-            const results = await this._fetchPage(page);
-            setCachedPage(page, results);
-        } catch (e) {
-            // background — ignore
         }
     }
 

@@ -607,6 +607,10 @@ let huntarrUI = {
                 window.HuntarrStats.initViewToggle();
                 window.HuntarrStats.startPolling();
             }
+            // Refresh home page content (re-check all settings, visibility, Smart Hunt)
+            if (window.HomeRequestarr) {
+                window.HomeRequestarr.refresh();
+            }
         } else if (section === 'logs-movie-hunt' && this.elements.logsSection) {
             // Movie Hunt logs - show logsSection under Movie Hunt sidebar (hide tab bar)
             var activitySection = document.getElementById('activitySection');

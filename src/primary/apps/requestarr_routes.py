@@ -846,6 +846,7 @@ def get_smarthunt():
             'results': results,
             'page': page,
             'has_more': has_more,
+            'cache_ttl_minutes': settings.get('cache_ttl_minutes', 60),
         })
     except Exception as e:
         logger.error(f"Error getting Smart Hunt results: {e}")
