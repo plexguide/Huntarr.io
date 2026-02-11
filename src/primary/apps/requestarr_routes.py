@@ -123,7 +123,10 @@ def request_media():
             start_search = start_search.strip().lower() not in ('false', '0', 'no', '')
         elif start_search is None:
             start_search = True
-        minimum_availability = (data.get('minimum_availability') or '').strip() or 'released'
+        # minimum_availability only applies to movies (Radarr / Movie Hunt), not Sonarr TV
+        minimum_availability = 'released'
+        if media_type != 'tv':
+            minimum_availability = (data.get('minimum_availability') or '').strip() or 'released'
         
         # For Movie Hunt, quality_profile is a name string, not an integer ID
         if app_type == 'movie_hunt':

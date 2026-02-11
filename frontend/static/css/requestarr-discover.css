@@ -3804,6 +3804,9 @@ body.requestarr-modal-open {
     margin: 0 !important;
     padding: 0 !important;
 }
+.mh-hidden {
+    display: none !important;
+}
 .mh-req-field label {
     grid-column: 1 !important;
     grid-row: 1 !important;

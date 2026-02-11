@@ -289,6 +289,15 @@ app.register_blueprint(backup_bp)
 # Register the authentication check to run before requests
 app.before_request(authenticate_request)
 
+# Prevent aggressive browser caching of JS/CSS so deploys are picked up immediately
+@app.after_request
+def _set_static_cache_headers(response):
+    """For JS and CSS static files, use short cache with revalidation so new deploys are picked up."""
+    path = request.path or ''
+    if path.startswith('/static/') and (path.endswith('.js') or path.endswith('.css')):
+        response.headers['Cache-Control'] = 'no-cache, must-revalidate'
+    return response
+
 # WSGI Middleware to handle BASE_URL stripping
 class BaseURLMiddleware:
     """WSGI middleware to strip base URL prefix before Flask routing"""

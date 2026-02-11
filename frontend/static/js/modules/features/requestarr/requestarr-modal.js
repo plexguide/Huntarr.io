@@ -49,6 +49,13 @@ export class RequestarrModal {
         if (rootSelect) rootSelect.innerHTML = '<option value="">Loading...</option>';
         if (qualitySelect) qualitySelect.innerHTML = '<option value="">Loading...</option>';
 
+        // Always hide Movie-Hunt-only fields first; renderModal will show them if needed
+        // Uses class toggle because .mh-req-field has display:grid!important which overrides inline styles
+        const wrapMinInit = document.getElementById('requestarr-modal-min-availability-wrap');
+        const wrapStartInit = document.getElementById('requestarr-modal-start-search-wrap');
+        if (wrapMinInit) wrapMinInit.classList.add('mh-hidden');
+        if (wrapStartInit) wrapStartInit.classList.add('mh-hidden');
+
         // Attach close handlers (use .onclick to avoid stacking)
         const self = this;
         const backdrop = document.getElementById('requestarr-modal-backdrop');
@@ -492,8 +499,9 @@ export class RequestarrModal {
         const minSelect = document.getElementById('modal-minimum-availability');
         const startCb = document.getElementById('modal-start-search');
         const isMovieHunt = !isTVShow && instanceValue && decodeInstanceValue(instanceValue).appType === 'movie_hunt';
-        if (wrapMin) wrapMin.style.display = isMovieHunt ? 'block' : 'none';
-        if (wrapStart) wrapStart.style.display = isMovieHunt ? 'flex' : 'none';
+        // Use class toggle — .mh-req-field has display:grid!important which overrides inline styles
+        if (wrapMin) wrapMin.classList.toggle('mh-hidden', !isMovieHunt);
+        if (wrapStart) wrapStart.classList.toggle('mh-hidden', !isMovieHunt);
         
         // Use loaded preferences or defaults
         if (minSelect) minSelect.value = this.preferences?.minimum_availability || 'released';
