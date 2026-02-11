@@ -3,7 +3,7 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # Install system dependencies including net-tools for health checks, tzdata for timezone support,
-# par2 for Usenet file verification/repair, and p7zip for 7z/zip extraction
+# par2 for Usenet file verification/repair, p7zip for 7z/zip extraction, and gosu for PUID/PGID support
 RUN apt-get update && apt-get install -y --no-install-recommends \
     net-tools \
     curl \
@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tzdata \
     par2 \
     p7zip-full \
+    gosu \
     && rm -rf /var/lib/apt/lists/*
 
 # Install unrar from RARLAB (full RAR5 support, unrar-free doesn't handle RAR5)
@@ -31,10 +32,17 @@ COPY . /app/
 # Create necessary directories (config for app data; /media and /downloads for Docker mounts)
 RUN mkdir -p /config /media /downloads && chmod -R 755 /config /media /downloads
 
+# Make entrypoint executable
+RUN chmod +x /app/entrypoint.sh
+
 # Set environment variables
 ENV PYTHONPATH=/app
 ENV TZ=UTC
-# ENV APP_TYPE=sonarr # APP_TYPE is likely managed via config now, remove if not needed
+
+# PUID/PGID: Set to non-zero to run as non-root user (default: 0 = root for backward compatibility)
+# Unraid: PUID=99 PGID=100 | Linux: PUID=1000 PGID=1000
+ENV PUID=0
+ENV PGID=0
 
 # Expose port
 EXPOSE 9705
@@ -44,5 +52,5 @@ EXPOSE 9705
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD ["python3", "-c", "import requests; import sys; r = requests.get('http://localhost:9705/api/health', timeout=5); sys.exit(0 if r.status_code == 200 else 1)"]
 
-# Run the main application using the new entry point
-CMD ["python3", "main.py"]
+# Use entrypoint for PUID/PGID support, falling back to root if not set
+ENTRYPOINT ["/app/entrypoint.sh"]

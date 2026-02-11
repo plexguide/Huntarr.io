@@ -11,6 +11,8 @@ services:
     environment:
       - TZ=${TZ:-UTC}
       - BASE_URL=${BASE_URL:-}
+      - PUID=${PUID:-0}
+      - PGID=${PGID:-0}
     restart: unless-stopped
     # Graceful shutdown configuration
     stop_signal: SIGTERM
