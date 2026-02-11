@@ -122,6 +122,12 @@
                 <div class="nav-icon-wrapper"><i class="fas fa-folder-open"></i></div>
                 <span>Movie Collection</span>
             </a>
+            <div class="nav-sub-group" id="movie-hunt-collection-sub">
+                <a href="./#settings-import-media" class="nav-item nav-item-sub" id="movieHuntImportMediaNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-file-import"></i></div>
+                    <span>Import Media</span>
+                </a>
+            </div>
             <a href="./#activity-queue" class="nav-item" id="movieHuntActivityNav">
                 <div class="nav-icon-wrapper"><i class="fas fa-clock"></i></div>
                 <span>Activity</span>
@@ -182,10 +188,6 @@
                     <div class="nav-icon-wrapper"><i class="fas fa-stream"></i></div>
                     <span>Import Lists</span>
                 </a>
-                <a href="./#settings-import-media" class="nav-item nav-item-sub" id="movieHuntSettingsImportMediaNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-file-import"></i></div>
-                    <span>Import Media</span>
-                </a>
                 <a href="./#settings-root-folders" class="nav-item nav-item-sub" id="movieHuntSettingsRootFoldersNav">
                     <div class="nav-icon-wrapper"><i class="fas fa-folder-open"></i></div>
                     <span>Root Folders</span>
@@ -196,17 +198,47 @@
             (function() {
                 function updateMovieHuntSettingsVisibility() {
                     var subGroup = document.getElementById('movie-hunt-settings-sub');
+                    var collectionSub = document.getElementById('movie-hunt-collection-sub');
+                    var importMediaItem = document.getElementById('movieHuntImportMediaNav');
                     if (!subGroup) return;
                     
                     fetch('./api/movie-hunt/instances')
                         .then(function(r) { return r.json(); })
                         .then(function(data) {
                             var instances = data.instances || [];
-                            // Use 'block' so mobile drawer also picks it up (checks for 'block')
-                            subGroup.style.display = instances.length > 0 ? 'block' : 'none';
+                            var hasInstances = instances.length > 0;
+                            
+                            // Allow setActiveNavItem to control visibility via 'expanded' class
+                            // but force-hide if no instances exist
+                            subGroup.style.display = hasInstances ? '' : 'none';
+                            
+                            if (hasInstances) {
+                                // Check for root folders to show/hide Import Media
+                                fetch('./api/movie-hunt/root-folders')
+                                    .then(function(r) { return r.json(); })
+                                    .then(function(rfData) {
+                                        var rootFolders = rfData.root_folders || [];
+                                        var hasRootFolders = rootFolders.length > 0;
+                                        
+                                        if (collectionSub) {
+                                            collectionSub.style.display = hasRootFolders ? '' : 'none';
+                                        }
+                                        if (importMediaItem) {
+                                            importMediaItem.style.display = hasRootFolders ? 'flex' : 'none';
+                                        }
+                                        // Refresh active state/expansion now that we know visibility
+                                        if (typeof setActiveNavItem === 'function') setActiveNavItem();
+                                    })
+                                    .catch(function() {
+                                        if (collectionSub) collectionSub.style.display = 'none';
+                                    });
+                            } else {
+                                if (collectionSub) collectionSub.style.display = 'none';
+                            }
                         })
                         .catch(function() {
                             subGroup.style.display = 'none';
+                            if (collectionSub) collectionSub.style.display = 'none';
                         });
                 }
                 
@@ -217,7 +249,7 @@
                     updateMovieHuntSettingsVisibility();
                 }
                 
-                // Expose globally so it can be called after instance creation/deletion
+                // Expose globally so it can be called after instance creation/deletion or root folder changes
                 window.updateMovieHuntSettingsVisibility = updateMovieHuntSettingsVisibility;
             })();
             </script>
@@ -519,21 +551,25 @@
         else if (currentHash === '#settings-logs') { selector = '#mainSettingsLogsNav'; expandSub('settings-sub'); }
         else if (currentHash === '#user') { selector = '#mainSettingsUserNav'; expandSub('settings-sub'); }
         // Movie Hunt settings
-        else if (currentHash === '#settings-instance-management') selector = '#movieHuntSettingsNav';
-        else if (currentHash === '#settings-movie-management') selector = '#movieHuntSettingsMovieManagementNav';
-        else if (currentHash === '#settings-profiles') selector = '#movieHuntSettingsProfilesNav';
-        else if (currentHash === '#settings-custom-formats') selector = '#movieHuntSettingsCustomFormatsNav';
-        else if (currentHash === '#settings-indexers') selector = '#movieHuntSettingsIndexersNav';
-        else if (currentHash === '#settings-clients') selector = '#movieHuntSettingsClientsNav';
-        else if (currentHash === '#settings-import-media') selector = '#movieHuntSettingsImportMediaNav';
-        else if (currentHash === '#settings-root-folders') selector = '#movieHuntSettingsRootFoldersNav';
+        else if (currentHash === '#settings-instance-management' || currentHash === '#movie-hunt-settings') { selector = '#movieHuntSettingsNav'; expandSub('movie-hunt-settings-sub'); }
+        else if (currentHash === '#settings-movie-management') { selector = '#movieHuntSettingsMovieManagementNav'; expandSub('movie-hunt-settings-sub'); }
+        else if (currentHash === '#settings-profiles') { selector = '#movieHuntSettingsProfilesNav'; expandSub('movie-hunt-settings-sub'); }
+        else if (currentHash === '#settings-sizes') { selector = '#movieHuntSettingsSizesNav'; expandSub('movie-hunt-settings-sub'); }
+        else if (currentHash === '#settings-custom-formats') { selector = '#movieHuntSettingsCustomFormatsNav'; expandSub('movie-hunt-settings-sub'); }
+        else if (currentHash === '#settings-indexers') { selector = '#movieHuntSettingsIndexersNav'; expandSub('movie-hunt-settings-sub'); }
+        else if (currentHash === '#settings-clients') { selector = '#movieHuntSettingsClientsNav'; expandSub('movie-hunt-settings-sub'); }
+        else if (currentHash === '#settings-import-lists') { selector = '#movieHuntSettingsImportListsNav'; expandSub('movie-hunt-settings-sub'); }
+        else if (currentHash === '#settings-import-media') { selector = '#movieHuntImportMediaNav'; expandSub('movie-hunt-collection-sub'); }
+        else if (currentHash === '#settings-root-folders') { selector = '#movieHuntSettingsRootFoldersNav'; expandSub('movie-hunt-settings-sub'); }
         // Movie Hunt sections
-        else if (currentHash === '#movie-hunt-home' || currentHash === '#movie-hunt-collection') selector = '#movieHuntCollectionNav';
-        else if (currentHash === '#activity-queue') selector = '#movieHuntActivityQueueNav';
-        else if (currentHash === '#activity-history') selector = '#movieHuntActivityHistoryNav';
-        else if (currentHash === '#activity-blocklist') selector = '#movieHuntActivityBlocklistNav';
-        else if (currentHash === '#activity-logs' || currentHash === '#logs-movie-hunt') selector = '#movieHuntActivityLogsNav';
-        else if (currentHash === '#movie-hunt-settings') selector = '#movieHuntSettingsNav';
+        else if (currentHash === '#movie-hunt-home' || currentHash === '#movie-hunt-collection') { selector = '#movieHuntCollectionNav'; expandSub('movie-hunt-collection-sub'); }
+        else if (currentHash === '#movie-hunt-calendar') { selector = '#movieHuntCalendarNav'; }
+        else if (currentHash === '#activity-queue') { selector = '#movieHuntActivityQueueNav'; expandSub('movie-hunt-activity-sub'); }
+        else if (currentHash === '#activity-history') { selector = '#movieHuntActivityHistoryNav'; expandSub('movie-hunt-activity-sub'); }
+        else if (currentHash === '#activity-blocklist') { selector = '#movieHuntActivityBlocklistNav'; expandSub('movie-hunt-activity-sub'); }
+        else if (currentHash === '#activity-logs' || currentHash === '#logs-movie-hunt') { selector = '#movieHuntActivityLogsNav'; expandSub('movie-hunt-activity-sub'); }
+        // NZB Hunt
+        else if (currentHash.startsWith('#nzb-hunt-settings')) { selector = '#nzbHuntSettingsNav'; expandSub('nzb-hunt-settings-sub'); }
         // Requestarr
         else if (currentHash === '#requestarr-discover') selector = '#requestarrDiscoverNav';
         else if (currentHash === '#requestarr-tv') selector = '#requestarrTVNav';
@@ -551,6 +587,16 @@
         // Collapse system sub when not on system
         var systemHashes = ['#system', '#hunt-manager', '#logs', '#about'];
         if (systemHashes.indexOf(currentHash) === -1) collapseSub('system-sub');
+
+        // Collapse Movie Hunt subs
+        var mhSettingsHashes = ['#movie-hunt-settings', '#settings-instance-management', '#settings-movie-management', '#settings-profiles', '#settings-sizes', '#settings-custom-formats', '#settings-indexers', '#settings-clients', '#settings-import-lists', '#settings-root-folders'];
+        if (mhSettingsHashes.indexOf(currentHash) === -1) collapseSub('movie-hunt-settings-sub');
+
+        var mhActivityHashes = ['#activity-queue', '#activity-history', '#activity-blocklist', '#activity-logs', '#logs-movie-hunt'];
+        if (mhActivityHashes.indexOf(currentHash) === -1) collapseSub('movie-hunt-activity-sub');
+
+        var mhCollectionHashes = ['#movie-hunt-home', '#movie-hunt-collection', '#settings-import-media'];
+        if (mhCollectionHashes.indexOf(currentHash) === -1) collapseSub('movie-hunt-collection-sub');
     }
 
     function expandSub(id) {
@@ -564,4 +610,10 @@
     }
 
     window.addEventListener('hashchange', setActiveNavItem);
+    // Run on initial load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setActiveNavItem);
+    } else {
+        setActiveNavItem();
+    }
 </script>

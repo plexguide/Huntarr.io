@@ -126,6 +126,7 @@
                             window.huntarrUI.showNotification('Default root folder updated.', 'success');
                         }
                         window.RootFolders.refreshList();
+                        if (window.updateMovieHuntSettingsVisibility) window.updateMovieHuntSettingsVisibility();
                     } else {
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
                             window.huntarrUI.showNotification(data.message || 'Failed to set default.', 'error');
@@ -221,6 +222,7 @@
                             window.huntarrUI.showNotification('Root folder added.', 'success');
                         }
                         window.RootFolders.refreshList();
+                        if (window.updateMovieHuntSettingsVisibility) window.updateMovieHuntSettingsVisibility();
                     } else {
                         var msg = (result.data && result.data.message) ? result.data.message : 'Add failed';
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
@@ -250,6 +252,7 @@
                                 window.huntarrUI.showNotification('Root folder removed.', 'success');
                             }
                             window.RootFolders.refreshList();
+                        if (window.updateMovieHuntSettingsVisibility) window.updateMovieHuntSettingsVisibility();
                         } else {
                             if (window.huntarrUI && window.huntarrUI.showNotification) {
                                 window.huntarrUI.showNotification(data.message || 'Delete failed', 'error');

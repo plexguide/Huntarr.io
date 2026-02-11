@@ -97,6 +97,9 @@
                         // Call the stored callback
                         var entry = _wiredElements[selectId];
                         if (entry && typeof entry.onChanged === 'function') entry.onChanged();
+
+                        // Global sidebar update
+                        if (window.updateMovieHuntSettingsVisibility) window.updateMovieHuntSettingsVisibility();
                     })
                     .catch(function(err) {
                         console.warn('[MovieHuntInstanceDropdown] Set current error:', err);

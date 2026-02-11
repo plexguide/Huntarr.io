@@ -287,6 +287,7 @@
 }
 
 /* Sub-group hidden by default, shown when expanded */
+#movie-hunt-collection-sub,
 #movie-hunt-settings-sub,
 #movie-hunt-activity-sub,
 #system-sub,
@@ -296,6 +297,7 @@
     margin-top: 0;
 }
 
+#movie-hunt-collection-sub.expanded,
 #movie-hunt-settings-sub.expanded,
 #movie-hunt-activity-sub.expanded,
 #system-sub.expanded,
@@ -304,6 +306,7 @@
     display: block;
 }
 
+#movie-hunt-collection-sub .nav-item-sub,
 #movie-hunt-settings-sub .nav-item-sub,
 #movie-hunt-activity-sub .nav-item-sub,
 #nzb-hunt-settings-sub .nav-item-sub,

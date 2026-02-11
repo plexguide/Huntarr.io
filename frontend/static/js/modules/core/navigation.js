@@ -455,8 +455,13 @@ window.HuntarrNavigation = {
         });
         var subGroup = document.getElementById('movie-hunt-settings-sub');
         if (subGroup) {
-            var showSub = ['movie-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-sizes', 'profile-editor', 'settings-custom-formats', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-import-media', 'settings-root-folders', 'instance-editor'].indexOf(currentSection) !== -1;
+            var showSub = ['movie-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-sizes', 'profile-editor', 'settings-custom-formats', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-root-folders', 'instance-editor'].indexOf(currentSection) !== -1;
             subGroup.classList.toggle('expanded', showSub);
+        }
+        var collectionSub = document.getElementById('movie-hunt-collection-sub');
+        if (collectionSub) {
+            var showCollectionSub = ['movie-hunt-home', 'movie-hunt-collection', 'settings-import-media'].indexOf(currentSection) !== -1;
+            collectionSub.classList.toggle('expanded', showCollectionSub);
         }
         var activitySub = document.getElementById('movie-hunt-activity-sub');
         if (activitySub) {
