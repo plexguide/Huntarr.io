@@ -287,6 +287,56 @@ def _add_import_history(title: str, year: str, client_name: str, dest_file: str,
         logger.error(f"Error adding import history: {e}")
 
 
+def _auto_probe_file(title: str, year: str, file_path: str, instance_id: int = None):
+    """
+    Auto-probe a newly imported file and cache media_info on the collection item.
+    Respects universal video settings (analyze_video_files toggle, scan profile).
+    Non-fatal: any failure is logged but does not affect the import result.
+    """
+    try:
+        # Check if video analysis is enabled
+        from src.primary.routes.movie_hunt.instances import get_universal_video_settings
+        uvs = get_universal_video_settings()
+        if not uvs.get('analyze_video_files', True):
+            return  # Analysis disabled by user
+
+        scan_profile = (uvs.get('video_scan_profile') or 'default').strip().lower()
+
+        from src.primary.utils.media_probe import probe_media_file
+        probe_data = probe_media_file(file_path, scan_profile=scan_profile)
+
+        if not probe_data:
+            _mh_log().debug("Import probe: no data for '%s' (%s)", title, year)
+            return
+
+        # Save probe data to collection item
+        from src.primary.utils.database import get_database
+        db = get_database()
+        if instance_id is None:
+            instance_id = db.get_current_movie_hunt_instance_id()
+
+        config = db.get_app_config_for_instance('movie_hunt_collection', instance_id)
+        if not config or not isinstance(config.get('items'), list):
+            return
+
+        for item in config['items']:
+            if item.get('title') == title and item.get('year') == year:
+                item['media_info'] = probe_data
+                db.save_app_config_for_instance(
+                    'movie_hunt_collection', instance_id, {'items': config['items']}
+                )
+                res = probe_data.get('video_resolution', '')
+                codec = probe_data.get('video_codec', '')
+                _mh_log().info(
+                    "Import probe: cached media info for '%s' (%s) — %s %s",
+                    title, year, res, codec,
+                )
+                break
+
+    except Exception as e:
+        _mh_log().debug("Import probe: error for '%s' (%s): %s", title, year, e)
+
+
 def import_movie(client: Dict[str, Any], title: str, year: str, download_path: str, instance_id: int = None) -> bool:
     """
     Import a completed movie download to its root folder.
@@ -366,6 +416,7 @@ def import_movie(client: Dict[str, Any], title: str, year: str, download_path: s
             _update_collection_status(title, year, 'available', dest_file, instance_id=instance_id)
             client_name = client.get('name', 'Download client')
             _add_import_history(title, year, client_name, dest_file, success=True)
+            _auto_probe_file(title, year, dest_file, instance_id)
             return True
         
         # 7. Move file (use shutil.move which handles cross-filesystem moves)
@@ -386,6 +437,9 @@ def import_movie(client: Dict[str, Any], title: str, year: str, download_path: s
         # 9. Add to history
         client_name = client.get('name', 'Download client')
         _add_import_history(title, year, client_name, dest_file, success=True)
+        
+        # 10. Auto-probe the imported file (cache media info for detail page)
+        _auto_probe_file(title, year, dest_file, instance_id)
         
         _mh_log().info("Import: completed '%s' (%s) -> %s", title, year, dest_file)
         return True

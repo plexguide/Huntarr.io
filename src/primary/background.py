@@ -1405,6 +1405,169 @@ def _start_import_media_scan_thread():
     logger.info("Import Media scan thread started")
 
 
+# ---------------------------------------------------------------------------
+# Media Probe background thread — auto-probe collection items with files
+# ---------------------------------------------------------------------------
+_media_probe_thread = None
+
+
+def _media_probe_sweep():
+    """
+    Sweep all Movie Hunt collection items across all instances.
+    Probe any item that has a file on disk but no cached media_info.
+    Respects universal video settings (analyze toggle, scan profile).
+    """
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+
+        # Check universal video settings
+        try:
+            from src.primary.routes.movie_hunt.instances import get_universal_video_settings
+            uvs = get_universal_video_settings()
+            if not uvs.get('analyze_video_files', True):
+                return  # Analysis disabled
+            scan_profile = (uvs.get('video_scan_profile') or 'default').strip().lower()
+        except Exception:
+            scan_profile = 'default'
+
+        # Get all Movie Hunt instances
+        try:
+            from src.primary.apps.movie_hunt.api import get_configured_instances
+            instances = get_configured_instances(quiet=True)
+        except Exception:
+            instances = []
+
+        if not instances:
+            return
+
+        from src.primary.utils.media_probe import probe_media_file
+        import os
+
+        probed_count = 0
+        max_per_sweep = 10  # Limit probes per sweep to avoid overloading
+
+        for inst in instances:
+            if stop_event.is_set():
+                break
+
+            try:
+                instance_id = int(inst.get('instance_id'))
+            except (TypeError, ValueError):
+                continue
+
+            config = db.get_app_config_for_instance('movie_hunt_collection', instance_id)
+            if not config or not isinstance(config.get('items'), list):
+                continue
+
+            items = config['items']
+            items_changed = False
+
+            for item in items:
+                if stop_event.is_set() or probed_count >= max_per_sweep:
+                    break
+
+                # Skip items that already have cached media_info
+                if item.get('media_info') and isinstance(item['media_info'], dict):
+                    continue
+
+                # Find file path — either stored on the item or discovered via root folder
+                file_path = (item.get('file_path') or '').strip()
+                if not file_path or not os.path.isfile(file_path):
+                    # Try to find via root folder scan (same logic as detail page)
+                    root_folder = (item.get('root_folder') or '').strip()
+                    title = (item.get('title') or '').strip()
+                    year = str(item.get('year') or '').strip()
+                    if root_folder and title:
+                        # Try exact title first, then sanitized (colons, special chars stripped)
+                        sanitized = ''.join(c for c in title if c not in r'<>:"/\|?*')
+                        candidates = [
+                            f"{title} ({year})" if year else title,
+                            f"{sanitized} ({year})" if year else sanitized,
+                        ]
+                        for folder_name in candidates:
+                            movie_folder = os.path.join(root_folder, folder_name)
+                            if os.path.isdir(movie_folder):
+                                video_exts = {'.mkv', '.mp4', '.avi', '.mov', '.wmv', '.m4v', '.ts', '.flv'}
+                                best_size = 0
+                                for f in os.listdir(movie_folder):
+                                    ext = os.path.splitext(f)[1].lower()
+                                    if ext in video_exts:
+                                        fpath = os.path.join(movie_folder, f)
+                                        try:
+                                            fsize = os.path.getsize(fpath)
+                                            if fsize > best_size:
+                                                best_size = fsize
+                                                file_path = fpath
+                                        except OSError:
+                                            pass
+                                if file_path:
+                                    break
+
+                if not file_path or not os.path.isfile(file_path):
+                    continue
+
+                # Probe the file
+                try:
+                    probe_data = probe_media_file(file_path, scan_profile=scan_profile)
+                    if probe_data:
+                        item['media_info'] = probe_data
+                        # Also persist file_path if it was discovered via folder scan
+                        if not item.get('file_path'):
+                            item['file_path'] = file_path
+                        items_changed = True
+                        probed_count += 1
+                        title_display = item.get('title', '?')
+                        year_display = item.get('year', '?')
+                        res = probe_data.get('video_resolution', '')
+                        codec = probe_data.get('video_codec', '')
+                        logger.info(
+                            "Media probe sweep: cached info for '%s' (%s) — %s %s",
+                            title_display, year_display, res, codec,
+                        )
+                except Exception as e:
+                    logger.debug("Media probe sweep: error probing %s: %s", file_path, e)
+
+            if items_changed:
+                db.save_app_config_for_instance(
+                    'movie_hunt_collection', instance_id, {'items': items}
+                )
+
+        if probed_count > 0:
+            logger.info("Media probe sweep: probed %d files this cycle", probed_count)
+
+    except Exception as e:
+        logger.debug("Media probe sweep error: %s", e)
+
+
+def _media_probe_loop():
+    """Background loop: periodically probe unscanned collection files."""
+    # Wait 3 minutes after startup before first sweep
+    stop_event.wait(180)
+    while not stop_event.is_set():
+        try:
+            _media_probe_sweep()
+        except Exception as e:
+            logger.error("Media probe sweep cycle error: %s", e)
+        # Run every 30 minutes (items are only probed once; subsequent sweeps are fast no-ops)
+        stop_event.wait(1800)
+
+
+def _start_media_probe_thread():
+    """Start the background media probe sweep thread."""
+    global _media_probe_thread
+    if _media_probe_thread and _media_probe_thread.is_alive():
+        logger.info("Media probe thread already running")
+        return
+    _media_probe_thread = threading.Thread(
+        target=_media_probe_loop,
+        name="MediaProbeSweep",
+        daemon=True,
+    )
+    _media_probe_thread.start()
+    logger.info("Media probe sweep thread started")
+
+
 def start_swaparr_thread():
     """Start the dedicated Swaparr processing thread"""
     global swaparr_thread
@@ -1471,6 +1634,13 @@ def start_huntarr():
         logger.info("Import Media scan thread started successfully")
     except Exception as e:
         logger.error(f"Failed to start Import Media scan thread: {e}")
+
+    # Start Media Probe background sweep thread
+    try:
+        _start_media_probe_thread()
+        logger.info("Media probe sweep thread started successfully")
+    except Exception as e:
+        logger.error(f"Failed to start Media probe sweep thread: {e}")
 
     # Configuration logging has been disabled to reduce log spam
     # Settings are loaded and used internally without verbose logging
