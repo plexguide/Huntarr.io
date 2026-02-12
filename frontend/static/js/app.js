@@ -714,7 +714,6 @@ let huntarrUI = {
             if (window.NzbHunt && typeof window.NzbHunt._showSettingsTab === 'function') {
                 var tab = 'folders'; // default
                 if (section === 'nzb-hunt-settings-servers') tab = 'servers';
-                else if (section === 'nzb-hunt-settings-processing') tab = 'processing';
                 else if (section === 'nzb-hunt-settings-advanced') tab = 'advanced';
                 window.NzbHunt._showSettingsTab(tab);
             }
@@ -1632,7 +1631,6 @@ let huntarrUI = {
             var subId = '';
             if (section === 'nzb-hunt-settings-folders') subId = 'nzbHuntSettingsFoldersNav';
             else if (section === 'nzb-hunt-settings-servers' || section === 'nzb-hunt-server-editor') subId = 'nzbHuntSettingsServersNav';
-            else if (section === 'nzb-hunt-settings-processing') subId = 'nzbHuntSettingsProcessingNav';
             else if (section === 'nzb-hunt-settings-advanced') subId = 'nzbHuntSettingsAdvancedNav';
             
             if (subId) {

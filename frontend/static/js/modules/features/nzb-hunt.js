@@ -846,13 +846,12 @@
             this._setupBrowseModal();
             this._setupCategoryGrid();
             this._setupCategoryModal();
-            this._setupProcessing();
             this._setupAdvanced();
             this._loadFolders();
             this._loadServers();
             this._loadCategories();
-            this._loadProcessing();
             this._loadAdvanced();
+            this._loadProcessing();
             console.log('[NzbHunt] Settings initialized');
         },
 
@@ -1731,23 +1730,8 @@
         },
 
         /* ──────────────────────────────────────────────
-           Processing  – load / save settings
+           Processing  – load / save (merged into Advanced)
         ────────────────────────────────────────────── */
-        _setupProcessing: function () {
-            var self = this;
-            var saveBtn = document.getElementById('nzb-save-processing');
-            if (saveBtn) saveBtn.addEventListener('click', function () { self._saveProcessing(); });
-
-            // Show/hide abort threshold row based on toggle
-            var abortToggle = document.getElementById('nzb-proc-abort-hopeless');
-            var thresholdRow = document.getElementById('nzb-proc-abort-threshold-row');
-            if (abortToggle && thresholdRow) {
-                abortToggle.addEventListener('change', function () {
-                    thresholdRow.style.display = abortToggle.checked ? '' : 'none';
-                });
-            }
-        },
-
         _loadProcessing: function () {
             fetch('./api/nzb-hunt/settings/processing?t=' + Date.now())
                 .then(function (r) { return r.json(); })
@@ -1790,45 +1774,22 @@
                 .catch(function () { /* use defaults */ });
         },
 
-        _saveProcessing: function () {
-            var payload = {
-                max_retries: parseInt((document.getElementById('nzb-proc-max-retries') || {}).value || '3', 10),
-                abort_hopeless: !!(document.getElementById('nzb-proc-abort-hopeless') || {}).checked,
-                abort_threshold_pct: parseInt((document.getElementById('nzb-proc-abort-threshold') || {}).value || '5', 10),
-                propagation_delay: parseInt((document.getElementById('nzb-proc-propagation-delay') || {}).value || '0', 10),
-                disconnect_on_empty: !!(document.getElementById('nzb-proc-disconnect-empty') || {}).checked,
-                direct_unpack: !!(document.getElementById('nzb-proc-direct-unpack') || {}).checked,
-                encrypted_rar_action: (document.getElementById('nzb-proc-encrypted-rar') || {}).value || 'pause',
-                unwanted_ext_action: (document.getElementById('nzb-proc-unwanted-action') || {}).value || 'off',
-                unwanted_extensions: (document.getElementById('nzb-proc-unwanted-ext') || {}).value || ''
-            };
-
-            fetch('./api/nzb-hunt/settings/processing', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            })
-                .then(function (r) { return r.json(); })
-                .then(function (data) {
-                    if (data.success && window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification('Processing settings saved.', 'success');
-                    }
-                })
-                .catch(function () {
-                    if (window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification('Failed to save processing settings.', 'error');
-                    }
-                });
-        },
-
         /* ──────────────────────────────────────────────
-           Advanced settings
+           Advanced settings (includes Processing)
         ────────────────────────────────────────────── */
         _setupAdvanced: function () {
             var self = this;
             var saveBtn = document.getElementById('nzb-save-advanced');
             if (saveBtn) {
                 saveBtn.addEventListener('click', function () { self._saveAdvanced(); });
+            }
+            // Show/hide abort threshold row based on toggle (processing settings in Advanced)
+            var abortToggle = document.getElementById('nzb-proc-abort-hopeless');
+            var thresholdRow = document.getElementById('nzb-proc-abort-threshold-row');
+            if (abortToggle && thresholdRow) {
+                abortToggle.addEventListener('change', function () {
+                    thresholdRow.style.display = abortToggle.checked ? '' : 'none';
+                });
             }
         },
 
@@ -1859,7 +1820,7 @@
         },
 
         _saveAdvanced: function () {
-            var payload = {
+            var advPayload = {
                 receive_threads: parseInt((document.getElementById('nzb-adv-receive-threads') || {}).value || '2', 10),
                 downloader_sleep_time: parseInt((document.getElementById('nzb-adv-sleep-time') || {}).value || '10', 10),
                 direct_unpack_threads: parseInt((document.getElementById('nzb-adv-unpack-threads') || {}).value || '3', 10),
@@ -1867,15 +1828,35 @@
                 req_completion_rate: parseFloat((document.getElementById('nzb-adv-completion-rate') || {}).value || '100.2'),
                 max_url_retries: parseInt((document.getElementById('nzb-adv-url-retries') || {}).value || '10', 10)
             };
+            var procPayload = {
+                max_retries: parseInt((document.getElementById('nzb-proc-max-retries') || {}).value || '3', 10),
+                abort_hopeless: !!(document.getElementById('nzb-proc-abort-hopeless') || {}).checked,
+                abort_threshold_pct: parseInt((document.getElementById('nzb-proc-abort-threshold') || {}).value || '5', 10),
+                propagation_delay: parseInt((document.getElementById('nzb-proc-propagation-delay') || {}).value || '0', 10),
+                disconnect_on_empty: !!(document.getElementById('nzb-proc-disconnect-empty') || {}).checked,
+                direct_unpack: !!(document.getElementById('nzb-proc-direct-unpack') || {}).checked,
+                encrypted_rar_action: (document.getElementById('nzb-proc-encrypted-rar') || {}).value || 'pause',
+                unwanted_ext_action: (document.getElementById('nzb-proc-unwanted-action') || {}).value || 'off',
+                unwanted_extensions: (document.getElementById('nzb-proc-unwanted-ext') || {}).value || ''
+            };
 
-            fetch('./api/nzb-hunt/settings/advanced', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            })
-                .then(function (r) { return r.json(); })
-                .then(function (data) {
-                    if (data.success && window.huntarrUI && window.huntarrUI.showNotification) {
+            var self = this;
+            Promise.all([
+                fetch('./api/nzb-hunt/settings/advanced', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(advPayload)
+                }).then(function (r) { return r.json(); }),
+                fetch('./api/nzb-hunt/settings/processing', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(procPayload)
+                }).then(function (r) { return r.json(); })
+            ])
+                .then(function (results) {
+                    var advOk = results[0] && results[0].success;
+                    var procOk = results[1] && results[1].success;
+                    if ((advOk || procOk) && window.huntarrUI && window.huntarrUI.showNotification) {
                         window.huntarrUI.showNotification('Advanced settings saved.', 'success');
                     }
                 })

@@ -850,6 +850,16 @@
     color: #60a5fa;
 }
 
+#nzb-hunt-settings-advanced .nzb-adv-icon-teal {
+    background: rgba(20, 184, 166, 0.12);
+    color: #2dd4bf;
+}
+
+#nzb-hunt-settings-advanced .nzb-adv-icon-purple {
+    background: rgba(139, 92, 246, 0.12);
+    color: #a78bfa;
+}
+
 #nzb-hunt-settings-advanced .nzb-adv-card-desc {
     margin: 0;
     padding: 18px 24px;

@@ -75,6 +75,13 @@ window.HuntarrNavigation = {
                 window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#nzb-hunt-settings-folders');
             }
         }
+        // NZB Hunt Processing → merged into Advanced
+        if (section === 'nzb-hunt-settings-processing') {
+            section = 'nzb-hunt-settings-advanced';
+            if (window.location.hash !== '#nzb-hunt-settings-advanced') {
+                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#nzb-hunt-settings-advanced');
+            }
+        }
         // Instances merged into Settings: old bookmark redirects to Movie Hunt Settings
         if (section === 'settings-instance-management') {
             section = 'movie-hunt-settings';
