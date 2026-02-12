@@ -36,6 +36,7 @@ window.HuntarrStats = {
             clearInterval(this._pollInterval);
             this._pollInterval = null;
         }
+        this._stopNzbHomePoll();
     },
 
     // ─── Layout Persistence ───────────────────────────────────────────
@@ -223,6 +224,7 @@ window.HuntarrStats = {
 
         // Also fetch NZB Hunt home stats (separate from main stats pipeline)
         self._fetchNzbHuntHomeStats();
+        self._initNzbHomePauseBtn();
     },
 
     // ─── Main Display Update ──────────────────────────────────────────
@@ -858,51 +860,109 @@ window.HuntarrStats = {
         }
     },
 
-    // ─── NZB Hunt Home Card ─────────────────────────────────────────
+    // ─── NZB Hunt Home Status Bar ──────────────────────────────────
+    _nzbHomePollTimer: null,
+
     _fetchNzbHuntHomeStats: function() {
         var card = document.getElementById('nzb-hunt-home-card');
         if (!card) return;
+        var self = this;
 
+        // First check visibility setting
         fetch('./api/nzb-hunt/home-stats?t=' + Date.now())
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (!data.visible) {
                     card.style.display = 'none';
+                    self._stopNzbHomePoll();
                     return;
                 }
                 card.style.display = '';
-
-                // Speed
-                var speedEl = document.getElementById('nzb_hunt-speed');
-                if (speedEl) {
-                    var bps = data.speed_bps || 0;
-                    speedEl.textContent = window.HuntarrStats._formatSpeed(bps);
-                }
-
-                // Queue (active + queued)
-                var queueEl = document.getElementById('nzb_hunt-queue');
-                if (queueEl) queueEl.textContent = (data.active_count || 0) + (data.queued_count || 0);
-
-                // Completed
-                var completedEl = document.getElementById('nzb_hunt-completed');
-                if (completedEl) completedEl.textContent = data.completed || 0;
-
-                // Failed
-                var failedEl = document.getElementById('nzb_hunt-failed');
-                if (failedEl) failedEl.textContent = data.failed || 0;
+                // Fetch full status for the status bar
+                self._fetchNzbHuntStatus();
+                // Start polling if not already
+                self._startNzbHomePoll();
             })
-            .catch(function(err) {
-                console.error('[HuntarrStats] NZB Hunt home stats fetch error:', err);
+            .catch(function() {
                 if (card) card.style.display = 'none';
             });
     },
 
-    _formatSpeed: function(bps) {
-        if (!bps || bps <= 0) return '0 B/s';
-        if (bps < 1024) return bps + ' B/s';
-        if (bps < 1048576) return (bps / 1024).toFixed(1) + ' KB/s';
-        if (bps < 1073741824) return (bps / 1048576).toFixed(1) + ' MB/s';
-        return (bps / 1073741824).toFixed(2) + ' GB/s';
+    _fetchNzbHuntStatus: function() {
+        var card = document.getElementById('nzb-hunt-home-card');
+        if (!card || card.style.display === 'none') return;
+
+        fetch('./api/nzb-hunt/status?t=' + Date.now())
+            .then(function(r) { return r.json(); })
+            .then(function(status) {
+                // Connections
+                var connEl = document.getElementById('nzb-home-connections');
+                if (connEl) {
+                    var connStats = status.connection_stats || [];
+                    var totalActive = connStats.reduce(function(s, c) { return s + (c.active || 0); }, 0);
+                    var totalMax = connStats.reduce(function(s, c) { return s + (c.max || 0); }, 0);
+                    connEl.textContent = totalMax > 0 ? totalActive + ' / ' + totalMax : String(totalActive);
+                }
+                // Speed
+                var speedEl = document.getElementById('nzb-home-speed');
+                if (speedEl) speedEl.textContent = status.speed_human || '0 B/s';
+                // ETA
+                var etaEl = document.getElementById('nzb-home-eta');
+                if (etaEl) etaEl.textContent = status.eta_human || '--';
+                // Remaining
+                var remainEl = document.getElementById('nzb-home-remaining');
+                if (remainEl) remainEl.textContent = status.remaining_human || '0 B';
+                // Space
+                var spaceEl = document.getElementById('nzb-home-space');
+                if (spaceEl) spaceEl.textContent = status.free_space_human || '--';
+                // Pause button state
+                var pauseBtn = document.getElementById('nzb-home-pause-btn');
+                if (pauseBtn && status.paused_global !== undefined) {
+                    var icon = pauseBtn.querySelector('i');
+                    if (icon) icon.className = status.paused_global ? 'fas fa-play' : 'fas fa-pause';
+                    pauseBtn.title = status.paused_global ? 'Resume all downloads' : 'Pause all downloads';
+                }
+            })
+            .catch(function(err) {
+                console.error('[HuntarrStats] NZB Hunt status fetch error:', err);
+            });
+    },
+
+    _startNzbHomePoll: function() {
+        if (this._nzbHomePollTimer) return; // already polling
+        var self = this;
+        // Poll every 3 seconds (same as NZB Home default)
+        this._nzbHomePollTimer = setInterval(function() {
+            self._fetchNzbHuntStatus();
+        }, 3000);
+    },
+
+    _stopNzbHomePoll: function() {
+        if (this._nzbHomePollTimer) {
+            clearInterval(this._nzbHomePollTimer);
+            this._nzbHomePollTimer = null;
+        }
+    },
+
+    _initNzbHomePauseBtn: function() {
+        var btn = document.getElementById('nzb-home-pause-btn');
+        if (!btn || btn._nzbBound) return;
+        btn._nzbBound = true;
+        btn.addEventListener('click', function() {
+            var icon = btn.querySelector('i');
+            var isPaused = icon && icon.classList.contains('fa-play');
+            var endpoint = isPaused ? './api/nzb-hunt/resume' : './api/nzb-hunt/pause';
+            fetch(endpoint, { method: 'POST' })
+                .then(function(r) { return r.json(); })
+                .then(function() {
+                    // Flip the icon immediately for responsiveness
+                    if (icon) {
+                        icon.className = isPaused ? 'fas fa-pause' : 'fas fa-play';
+                        btn.title = isPaused ? 'Pause all downloads' : 'Resume all downloads';
+                    }
+                })
+                .catch(function() {});
+        });
     },
 
     updateEmptyStateVisibility: function(forceShowGrid) {
