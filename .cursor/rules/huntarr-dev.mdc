@@ -18,6 +18,7 @@ Development rules are split into focused files for Cursor. This index is always 
 | **huntarr-scan-debug.mdc** | Key files, violation scan commands, debugging tips |
 | **confirm-modals.mdc** | HuntarrConfirm for destructive/critical actions |
 | **hunt-media-operations.mdc** | Shared MediaUtils for Movie Hunt, TV Hunt, Requestarr — no duplication |
+| **indexer-hunt.mdc** | Indexer Hunt architecture, sync, search strategy, API, key files |
 | **unraid-always-redeploy.mdc** | Deploy to Unraid after code changes; use deploy-with-build.exp |
 
 Deploy after code changes: see **huntarr-critical.mdc** and **unraid-always-redeploy.mdc**.
