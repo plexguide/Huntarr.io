@@ -383,6 +383,37 @@
                             <button class="cycle-reset-button" data-app="eros"><i class="fas fa-sync-alt"></i> Reset</button>
                         </div>
                     </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- NZB Hunt Activity (own section, independent of grid/list rendering) -->
+        <div class="card stats-card" id="nzb-hunt-home-card" style="display: none;">
+            <div class="home-section-bar">
+                <div class="home-section-bar-left">
+                    <i class="fas fa-download home-section-icon" style="color: #6366f1;"></i>
+                    <span class="home-section-title">NZB Hunt</span>
+                </div>
+            </div>
+            <div class="media-stats-container">
+                <div class="app-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; padding: 16px;">
+                    <div class="stat-box" style="text-align: center;">
+                        <span class="stat-number" id="nzb_hunt-speed" style="font-size: 1.4rem; font-weight: 700; color: #6366f1;">--</span>
+                        <span class="stat-label" style="display: block; font-size: 0.75rem; color: #94a3b8; margin-top: 4px;">Speed</span>
+                    </div>
+                    <div class="stat-box" style="text-align: center;">
+                        <span class="stat-number" id="nzb_hunt-queue" style="font-size: 1.4rem; font-weight: 700; color: #f59e0b;">0</span>
+                        <span class="stat-label" style="display: block; font-size: 0.75rem; color: #94a3b8; margin-top: 4px;">Queue</span>
+                    </div>
+                    <div class="stat-box" style="text-align: center;">
+                        <span class="stat-number" id="nzb_hunt-completed" style="font-size: 1.4rem; font-weight: 700; color: #22c55e;">0</span>
+                        <span class="stat-label" style="display: block; font-size: 0.75rem; color: #94a3b8; margin-top: 4px;">Completed</span>
+                    </div>
+                    <div class="stat-box" style="text-align: center;">
+                        <span class="stat-number" id="nzb_hunt-failed" style="font-size: 1.4rem; font-weight: 700; color: #ef4444;">0</span>
+                        <span class="stat-label" style="display: block; font-size: 0.75rem; color: #94a3b8; margin-top: 4px;">Failed</span>
+                    </div>
                 </div>
             </div>
         </div>

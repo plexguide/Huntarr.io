@@ -220,6 +220,9 @@ window.HuntarrStats = {
             .finally(function() {
                 self.isLoadingStats = false;
             });
+
+        // Also fetch NZB Hunt home stats (separate from main stats pipeline)
+        self._fetchNzbHuntHomeStats();
     },
 
     // ─── Main Display Update ──────────────────────────────────────────
@@ -853,6 +856,53 @@ window.HuntarrStats = {
                 statusElement.innerHTML = '<i class="fas fa-times-circle"></i> Not Connected';
             }
         }
+    },
+
+    // ─── NZB Hunt Home Card ─────────────────────────────────────────
+    _fetchNzbHuntHomeStats: function() {
+        var card = document.getElementById('nzb-hunt-home-card');
+        if (!card) return;
+
+        fetch('./api/nzb-hunt/home-stats?t=' + Date.now())
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data.visible) {
+                    card.style.display = 'none';
+                    return;
+                }
+                card.style.display = '';
+
+                // Speed
+                var speedEl = document.getElementById('nzb_hunt-speed');
+                if (speedEl) {
+                    var bps = data.speed_bps || 0;
+                    speedEl.textContent = window.HuntarrStats._formatSpeed(bps);
+                }
+
+                // Queue (active + queued)
+                var queueEl = document.getElementById('nzb_hunt-queue');
+                if (queueEl) queueEl.textContent = (data.active_count || 0) + (data.queued_count || 0);
+
+                // Completed
+                var completedEl = document.getElementById('nzb_hunt-completed');
+                if (completedEl) completedEl.textContent = data.completed || 0;
+
+                // Failed
+                var failedEl = document.getElementById('nzb_hunt-failed');
+                if (failedEl) failedEl.textContent = data.failed || 0;
+            })
+            .catch(function(err) {
+                console.error('[HuntarrStats] NZB Hunt home stats fetch error:', err);
+                if (card) card.style.display = 'none';
+            });
+    },
+
+    _formatSpeed: function(bps) {
+        if (!bps || bps <= 0) return '0 B/s';
+        if (bps < 1024) return bps + ' B/s';
+        if (bps < 1048576) return (bps / 1024).toFixed(1) + ' KB/s';
+        if (bps < 1073741824) return (bps / 1048576).toFixed(1) + ' MB/s';
+        return (bps / 1073741824).toFixed(2) + ' GB/s';
     },
 
     updateEmptyStateVisibility: function(forceShowGrid) {

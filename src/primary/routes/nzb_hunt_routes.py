@@ -11,6 +11,8 @@ Provides:
   - /api/nzb-hunt/queue/<id>/*      POST/DELETE - pause/resume/remove queue items
   - /api/nzb-hunt/status            GET         - overall status
   - /api/nzb-hunt/history           GET         - download history
+  - /api/nzb-hunt/universal-settings GET / PUT  - universal settings (show on home)
+  - /api/nzb-hunt/home-stats        GET         - aggregated stats for home page card
 """
 
 import os
@@ -859,3 +861,96 @@ def nzb_hunt_test_single_server():
     except Exception as e:
         logger.exception("NZB Hunt test single server error")
         return jsonify({"success": False, "message": str(e)}), 200
+
+
+# ──────────────────────────────────────────────────────────────────
+# Universal Settings (show on home page toggle)
+# ──────────────────────────────────────────────────────────────────
+
+@nzb_hunt_bp.route("/api/nzb-hunt/universal-settings", methods=["GET"])
+def get_nzb_universal_settings():
+    """Return NZB Hunt universal settings."""
+    try:
+        cfg = _load_config()
+        universal = cfg.get("universal", {})
+        folders = cfg.get("folders", {})
+        categories = cfg.get("categories", [])
+        return jsonify({
+            "show_on_home": universal.get("show_on_home", True),
+            "temp_folder": folders.get("temp_folder", "/downloads/incomplete"),
+            "category_count": len(categories),
+        })
+    except Exception as e:
+        logger.exception("NZB Hunt universal settings GET error")
+        return jsonify({"show_on_home": True, "temp_folder": "/downloads/incomplete", "category_count": 0}), 200
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/universal-settings", methods=["PUT"])
+def save_nzb_universal_settings():
+    """Save NZB Hunt universal settings."""
+    try:
+        data = request.get_json(silent=True) or {}
+        cfg = _load_config()
+        universal = cfg.get("universal", {})
+        if "show_on_home" in data:
+            universal["show_on_home"] = bool(data["show_on_home"])
+        cfg["universal"] = universal
+        _save_config(cfg)
+        return jsonify({"success": True})
+    except Exception as e:
+        logger.exception("NZB Hunt universal settings PUT error")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ──────────────────────────────────────────────────────────────────
+# Home Page Stats (aggregated for dashboard card)
+# ──────────────────────────────────────────────────────────────────
+
+@nzb_hunt_bp.route("/api/nzb-hunt/home-stats", methods=["GET"])
+def nzb_hunt_home_stats():
+    """Return aggregated NZB Hunt stats for the home page activity card."""
+    try:
+        cfg = _load_config()
+        show_on_home = cfg.get("universal", {}).get("show_on_home", True)
+        if not show_on_home:
+            return jsonify({"visible": False})
+
+        # Live status from download manager
+        speed_bps = 0
+        active_count = 0
+        queued_count = 0
+        try:
+            mgr = _get_download_manager()
+            status = mgr.get_status()
+            speed_bps = status.get("speed_bps", 0)
+            active_count = status.get("active_count", 0)
+            queued_count = status.get("queued_count", 0)
+        except Exception:
+            pass
+
+        # Cumulative stats from history
+        completed = 0
+        failed = 0
+        try:
+            mgr = _get_download_manager()
+            history = mgr.get_history(limit=50000)
+            for item in history:
+                state = item.get("state", "")
+                if state == "completed":
+                    completed += 1
+                elif state == "failed":
+                    failed += 1
+        except Exception:
+            pass
+
+        return jsonify({
+            "visible": True,
+            "speed_bps": speed_bps,
+            "active_count": active_count,
+            "queued_count": queued_count,
+            "completed": completed,
+            "failed": failed,
+        })
+    except Exception as e:
+        logger.exception("NZB Hunt home stats error")
+        return jsonify({"visible": False, "error": str(e)}), 200

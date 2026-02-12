@@ -69,7 +69,8 @@ def get_default_stats() -> Dict[str, Dict[str, int]]:
         "readarr": {"hunted": 0, "upgraded": 0},
         "whisparr": {"hunted": 0, "upgraded": 0},
         "eros": {"hunted": 0, "upgraded": 0},
-        "movie_hunt": {"hunted": 0, "upgraded": 0}
+        "movie_hunt": {"hunted": 0, "upgraded": 0},
+        "nzb_hunt": {"completed": 0, "failed": 0}
     }
 
 def get_default_hourly_caps() -> Dict[str, Dict[str, int]]:
