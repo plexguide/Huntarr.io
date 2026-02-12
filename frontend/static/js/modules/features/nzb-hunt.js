@@ -74,7 +74,8 @@
                 var queueData = results[0];
                 var statusData = results[1];
                 self._lastStatus = statusData;
-                self._renderQueue(queueData.queue || []);
+                self._lastQueue = queueData.queue || [];
+                self._renderQueue(self._lastQueue);
                 self._updateStatusBar(statusData);
                 self._updateQueueBadge(queueData.queue || []);
                 // Update history count from status
@@ -174,6 +175,23 @@
             }
 
             var self = this;
+            var filter = (this._queueFilter || '').toLowerCase();
+            var filtered = filter
+                ? queue.filter(function (q) { return (q.name || '').toLowerCase().indexOf(filter) !== -1; })
+                : queue;
+            var perPage = this._queuePerPage || 20;
+            var totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+            if (this._queuePage > totalPages) this._queuePage = totalPages;
+            var start = (this._queuePage - 1) * perPage;
+            var page = filtered.slice(start, start + perPage);
+
+            var totalRemaining = 0;
+            filtered.forEach(function (q) {
+                var tb = q.total_bytes || 0;
+                var db = Math.min(q.downloaded_bytes || 0, tb);
+                totalRemaining += Math.max(0, tb - db);
+            });
+
             var html =
                 '<table class="nzb-queue-table">' +
                 '<thead><tr>' +
@@ -187,7 +205,7 @@
                 '<th class="nzb-col-actions"></th>' +
                 '</tr></thead><tbody>';
 
-            queue.forEach(function (item) {
+            page.forEach(function (item) {
                 var progress = item.progress_pct || 0;
                 var stateClass = 'nzb-item-' + (item.state || 'queued');
                 var stateIcon = self._stateIcon(item.state);
@@ -246,7 +264,45 @@
             });
 
             html += '</tbody></table>';
+
+            html += '<div class="nzb-queue-footer">';
+            html += '<div class="nzb-hist-search"><i class="fas fa-search"></i><input type="text" id="nzb-queue-search-input" placeholder="Search" value="' + self._escHtml(this._queueFilter) + '" /></div>';
+            html += '<div class="nzb-hist-pagination">';
+            if (totalPages > 1) {
+                html += '<button data-queue-page="prev" ' + (this._queuePage <= 1 ? 'disabled' : '') + '>&laquo;</button>';
+                var pages = self._paginationRange(this._queuePage, totalPages);
+                for (var i = 0; i < pages.length; i++) {
+                    if (pages[i] === '…') {
+                        html += '<span>…</span>';
+                    } else {
+                        html += '<button data-queue-page="' + pages[i] + '" ' + (pages[i] === this._queuePage ? 'class="active"' : '') + '>' + pages[i] + '</button>';
+                    }
+                }
+                html += '<button data-queue-page="next" ' + (this._queuePage >= totalPages ? 'disabled' : '') + '>&raquo;</button>';
+            }
+            html += '</div>';
+            html += '<div class="nzb-hist-stats"><span><i class="fas fa-download"></i>' + self._formatBytes(totalRemaining) + ' Remaining</span><span>' + filtered.length + ' items</span></div>';
+            html += '</div>';
+
             body.innerHTML = html;
+
+            var searchInput = document.getElementById('nzb-queue-search-input');
+            if (searchInput) {
+                searchInput.addEventListener('input', function () {
+                    self._queueFilter = this.value;
+                    self._queuePage = 1;
+                    self._renderQueue(self._lastQueue || []);
+                });
+            }
+            body.querySelectorAll('[data-queue-page]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var val = btn.getAttribute('data-queue-page');
+                    if (val === 'prev') { self._queuePage = Math.max(1, self._queuePage - 1); }
+                    else if (val === 'next') { self._queuePage++; }
+                    else { self._queuePage = parseInt(val, 10); }
+                    self._renderQueue(self._lastQueue || []);
+                });
+            });
 
             // Wire up item control buttons
             body.querySelectorAll('.nzb-item-btn').forEach(function (btn) {
@@ -432,6 +488,7 @@
                         self._displayPrefs.history.showIndexer = !!data.history.showIndexer;
                     }
                     self._histPerPage = self._displayPrefs.history.perPage;
+                    self._queuePerPage = self._displayPrefs.queue.perPage || 20;
                     self._prefsLoaded = true;
                     console.log('[NzbHunt] Display prefs loaded from server');
                     if (callback) callback();
@@ -579,6 +636,10 @@
         _histPerPage: 20,
         _histAll: [],
         _histFilter: '',
+        _queuePage: 1,
+        _queuePerPage: 20,
+        _queueFilter: '',
+        _lastQueue: [],
 
         _fetchHistory: function () {
             var self = this;

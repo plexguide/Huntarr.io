@@ -366,10 +366,46 @@ class NZBHuntDownloadManager:
             if migrated > 0:
                 logger.info(f"Migrated {migrated} NZB content files to separate storage")
             
-            # Reset any items that were downloading when we crashed
+            # Reset items that were downloading when we crashed, but mark hopeless ones as FAILED
+            # so they don't retry forever on restart (same bad download looping)
+            proc = self._get_processing_settings()
+            abort_hopeless = proc.get("abort_hopeless", True)
+            abort_threshold_pct = float(proc.get("abort_threshold_pct", 5))
+            to_remove = []
             for item in self._queue:
                 if item.state in (STATE_DOWNLOADING, STATE_EXTRACTING):
+                    total_attempted = item.completed_segments + item.failed_segments
+                    if abort_hopeless and item.failed_segments > 0 and total_attempted >= 50:
+                        fail_pct = (item.failed_segments / total_attempted) * 100
+                        if fail_pct > abort_threshold_pct:
+                            mb = item.missing_bytes / (1024 * 1024)
+                            mb_str = f"{mb:.1f} MB" if mb >= 1.0 else f"{item.missing_bytes / 1024:.0f} KB"
+                            item.state = STATE_FAILED
+                            item.error_message = (
+                                f"Aborted on restart: {mb_str} missing articles "
+                                f"({item.failed_segments}/{total_attempted} segments, {fail_pct:.1f}%). "
+                                f"Content may have been removed."
+                            )
+                            item.status_message = f"Failed: {mb_str} missing articles"
+                            to_remove.append(item)
+                            logger.warning(f"[{item.id}] Marked as FAILED on load (hopeless: {fail_pct:.1f}% missing)")
+                            try:
+                                folders = self._get_folders()
+                                temp_dir = folders.get("temp_folder", "/downloads/incomplete")
+                                safe_name = "".join(c for c in (item.name or "") if c.isalnum() or c in " ._-")[:100].strip() or item.id
+                                temp_path = os.path.join(temp_dir, safe_name)
+                                if os.path.isdir(temp_path):
+                                    shutil.rmtree(temp_path, ignore_errors=True)
+                                    logger.info(f"[{item.id}] Cleaned up orphaned temp dir")
+                            except Exception:
+                                pass
+                            continue
                     item.state = STATE_QUEUED
+            for item in to_remove:
+                self._queue = [i for i in self._queue if i.id != item.id]
+                self._history.append(item)
+            if to_remove:
+                self._save_state()
             logger.info(f"Loaded NZB Hunt state: {len(self._queue)} queued, {len(self._history)} history")
         except Exception as e:
             logger.error(f"Failed to load NZB Hunt state: {e}")

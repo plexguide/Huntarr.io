@@ -2352,6 +2352,19 @@
     background: rgba(239, 68, 68, 0.1);
 }
 
+/* ─── Queue footer (search, pagination, stats) ─── */
+.nzb-queue-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-top: 1px solid rgba(71, 85, 105, 0.3);
+    font-size: 0.76rem;
+    color: #64748b;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
 /* ─── History footer (pagination + stats) ─── */
 .nzb-history-footer {
     display: flex;
