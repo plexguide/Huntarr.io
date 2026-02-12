@@ -1598,10 +1598,10 @@ class RequestarrAPI:
         """Search for media using TMDB API and check availability in specified app instance"""
         api_key = self.get_tmdb_api_key()
         
-        # Determine search type based on app (movie_hunt searches movies, same as radarr)
+        # Determine search type based on app (movie_hunt searches movies; tv_hunt searches TV)
         if app_type in ("radarr", "movie_hunt"):
             media_type = "movie"
-        elif app_type == "sonarr":
+        elif app_type in ("sonarr", "tv_hunt"):
             media_type = "tv"
         else:
             media_type = "multi"
@@ -1622,9 +1622,9 @@ class RequestarrAPI:
             results = []
             
             # Get instance configuration for availability checking
-            # Movie Hunt instances don't have an app_config entry, so skip for movie_hunt
+            # Movie Hunt / TV Hunt instances don't use requestarr app_config, so skip
             target_instance = None
-            if app_type not in ('movie_hunt',):
+            if app_type not in ('movie_hunt', 'tv_hunt'):
                 app_config = self.db.get_app_config(app_type)
                 if app_config and app_config.get('instances'):
                     for instance in app_config['instances']:
@@ -1646,7 +1646,7 @@ class RequestarrAPI:
                 # Skip if media type doesn't match app type
                 if app_type in ("radarr", "movie_hunt") and item_type != "movie":
                     continue
-                if app_type == "sonarr" and item_type != "tv":
+                if app_type in ("sonarr", "tv_hunt") and item_type != "tv":
                     continue
                 
                 # Get title and year
@@ -1667,9 +1667,9 @@ class RequestarrAPI:
                 backdrop_path = item.get('backdrop_path')
                 backdrop_url = f"{self.tmdb_image_base_url}{backdrop_path}" if backdrop_path else None
                 
-                # Check availability status (skip per-item check for movie_hunt — batch check handles it)
+                # Check availability status (skip per-item check for movie_hunt/tv_hunt — batch check handles it)
                 tmdb_id = item.get('id')
-                if app_type == 'movie_hunt':
+                if app_type in ('movie_hunt', 'tv_hunt'):
                     availability_status = {'status': 'unknown', 'in_app': False, 'already_requested': False}
                 else:
                     availability_status = self._get_availability_status(tmdb_id, item_type, target_instance, app_type)
@@ -1708,7 +1708,7 @@ class RequestarrAPI:
         api_key = self.get_tmdb_api_key()
         
         # Determine search type based on app
-        media_type = "movie" if app_type == "radarr" else "tv" if app_type == "sonarr" else "multi"
+        media_type = "movie" if app_type in ("radarr", "movie_hunt") else "tv" if app_type in ("sonarr", "tv_hunt") else "multi"
         
         try:
             # Use search to get movies or TV shows
@@ -1724,8 +1724,8 @@ class RequestarrAPI:
             
             data = response.json()
             
-            # Get instance configuration for availability checking
-            app_config = self.db.get_app_config(app_type)
+            # Get instance configuration for availability checking (skip for hunt apps)
+            app_config = self.db.get_app_config(app_type) if app_type not in ('movie_hunt', 'tv_hunt') else None
             target_instance = None
             if app_config and app_config.get('instances'):
                 for instance in app_config['instances']:
@@ -1750,7 +1750,7 @@ class RequestarrAPI:
                 # Skip if media type doesn't match app type
                 if app_type in ("radarr", "movie_hunt") and item_type != "movie":
                     continue
-                if app_type == "sonarr" and item_type != "tv":
+                if app_type in ("sonarr", "tv_hunt") and item_type != "tv":
                     continue
                 
                 # Get title and year

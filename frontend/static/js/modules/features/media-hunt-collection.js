@@ -662,7 +662,7 @@
         },
 
         performCollectionSearch: function(query) {
-            // Search within collection or TMDB for adding
+            // Use same requestarr search as movie collection (app_type=tv_hunt)
             var self = this;
             var mainView = document.getElementById('media-hunt-collection-main-content');
             var searchView = document.getElementById('media-hunt-collection-search-results-view');
@@ -673,8 +673,19 @@
             if (searchView) searchView.style.display = 'block';
             if (grid) grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Searching...</p></div>';
 
-            fetch('./api/tv-hunt/search?q=' + encodeURIComponent(query))
-                .then(function(r) { return r.json(); })
+            var instanceSelect = document.getElementById('media-hunt-collection-instance-select');
+            var instanceName = instanceSelect ? instanceSelect.value : '';
+            var url = './api/requestarr/search?q=' + encodeURIComponent(query) + '&app_type=tv_hunt&instance_name=' + encodeURIComponent(instanceName);
+
+            fetch(url)
+                .then(function(r) {
+                    if (!r.ok) {
+                        return r.json().then(function(data) {
+                            throw new Error(data.error || 'Search failed');
+                        }).catch(function() { throw new Error('Search failed'); });
+                    }
+                    return r.json();
+                })
                 .then(function(data) {
                     var results = data.results || [];
                     if (!grid) return;
@@ -688,8 +699,8 @@
                         grid.appendChild(card);
                     });
                 })
-                .catch(function() {
-                    if (grid) grid.innerHTML = '<p style="text-align:center;color:#f87171;">Search failed.</p>';
+                .catch(function(err) {
+                    if (grid) grid.innerHTML = '<p style="text-align:center;color:#f87171;">' + (err && err.message ? HuntarrUtils.escapeHtml(err.message) : 'Search failed.') + '</p>';
                 });
         },
 
@@ -697,14 +708,16 @@
             var self = this;
             var card = document.createElement('div');
             card.className = 'media-card';
+            // requestarr returns full poster URL; raw TMDB returns relative path
             var posterUrl = show.poster_path
-                ? 'https://image.tmdb.org/t/p/w300' + show.poster_path
+                ? (show.poster_path.indexOf('http') === 0 ? show.poster_path : 'https://image.tmdb.org/t/p/w300' + show.poster_path)
                 : './static/images/no-poster.png';
-            var title = show.name || show.original_name || 'Unknown';
-            var year = (show.first_air_date || '').substring(0, 4);
+            var title = show.name || show.title || show.original_name || 'Unknown';
+            var year = show.year != null ? show.year : (show.first_air_date || '').substring(0, 4);
 
-            // Check if already in collection
-            var inCollection = self.items.some(function(s) { return s.tmdb_id === show.id; });
+            // Check if already in collection (supports both requestarr shape and raw TMDB shape)
+            var showId = show.tmdb_id != null ? show.tmdb_id : show.id;
+            var inCollection = self.items.some(function(s) { return s.tmdb_id === showId; });
 
             card.innerHTML =
                 '<div class="media-poster">' +
@@ -723,9 +736,12 @@
             if (!inCollection) {
                 var addBtn = card.querySelector('.add-to-collection-btn');
                 if (addBtn) {
+                    var instSelect = document.getElementById('media-hunt-collection-instance-select');
+                    var instanceId = instSelect ? instSelect.value : '';
                     addBtn.addEventListener('click', function(e) {
                         e.stopPropagation();
-                        (window.MediaHunt && window.MediaHunt.addToCollection) ? window.MediaHunt.addToCollection(show) : (window.TVHunt && window.TVHunt.addToCollection(show));
+                        var add = (window.MediaHunt && window.MediaHunt.addToCollection) ? window.MediaHunt.addToCollection : (window.TVHunt && window.TVHunt.addToCollection);
+                        if (add) add(show, instanceId);
                         addBtn.outerHTML = '<span style="color:#4ade80;font-size:0.9em;"><i class="fas fa-check"></i> Added</span>';
                     });
                 }

@@ -26,16 +26,22 @@ def search_media():
             return jsonify({'error': 'App type is required'}), 400
         
         # Relax instance_name requirement to allow TMDB-only search when no instance is selected
-        if app_type == 'movie_hunt' and instance_name and instance_name.isdigit():
+        if instance_name and instance_name.isdigit():
             from src.primary.utils.database import get_database
             db = get_database()
-            mh_instances = db.get_movie_hunt_instances()
             resolved = None
-            for inst in (mh_instances or []):
-                if str(inst.get('id')) == instance_name:
-                    resolved = (inst.get('name') or '').strip()
-                    break
-            instance_name = resolved or instance_name
+            if app_type == 'movie_hunt':
+                for inst in (db.get_movie_hunt_instances() or []):
+                    if str(inst.get('id')) == instance_name:
+                        resolved = (inst.get('name') or '').strip()
+                        break
+            elif app_type == 'tv_hunt':
+                for inst in (db.get_tv_hunt_instances() or []):
+                    if str(inst.get('id')) == instance_name:
+                        resolved = (inst.get('name') or '').strip()
+                        break
+            if resolved is not None:
+                instance_name = resolved
         
         results = requestarr_api.search_media_with_availability(query, app_type, instance_name or None)
         return jsonify({'results': results})

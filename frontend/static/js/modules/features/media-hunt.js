@@ -444,19 +444,26 @@
             return card;
         },
 
-        addToCollection(show) {
-            const instId = document.getElementById('media-hunt-instance-select') ? document.getElementById('media-hunt-instance-select').value : '';
+        addToCollection(show, instanceIdFromContext) {
+            const collectionSelect = document.getElementById('media-hunt-collection-instance-select');
+            const discoverSelect = document.getElementById('media-hunt-instance-select');
+            const instId = (instanceIdFromContext !== undefined && instanceIdFromContext !== '') ? instanceIdFromContext
+                : (collectionSelect ? collectionSelect.value : '')
+                || (discoverSelect ? discoverSelect.value : '');
             if (!instId) {
                 if (window.huntarrUI) window.huntarrUI.showNotification('Please select an instance first.', 'error');
                 return;
             }
+            const tmdbId = show.tmdb_id != null ? show.tmdb_id : show.id;
+            const title = show.title || show.name || show.original_name;
+            const posterPath = (show.poster_path && show.poster_path.indexOf('http') !== 0) ? show.poster_path : (show.poster_path || '');
             fetch('./api/tv-hunt/collection?instance_id=' + instId, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    tmdb_id: show.id,
-                    title: show.name || show.original_name,
-                    poster_path: show.poster_path || '',
+                    tmdb_id: tmdbId,
+                    title: title,
+                    poster_path: posterPath,
                     backdrop_path: show.backdrop_path || '',
                     first_air_date: show.first_air_date || '',
                     vote_average: show.vote_average || 0,
