@@ -17,7 +17,7 @@ stateful_logger = logging.getLogger("stateful_manager")
 DEFAULT_HOURS = 72  # Default 3 days (72 hours)
 
 # App types
-APP_TYPES = ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "movie_hunt"]
+APP_TYPES = ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "movie_hunt", "tv_hunt"]
 
 # Import database
 from src.primary.utils.database import get_database

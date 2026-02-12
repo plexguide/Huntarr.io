@@ -1,0 +1,66 @@
+<section id="tvHuntInstanceEditorSection" class="content-section">
+    <link rel="stylesheet" href="./static/css/instance-editor.css?v=1.0.1">
+    {% with section_id='tv-hunt-instance-editor' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
+    <div id="tvHuntInstanceEditorContainer" class="app-content-panel">
+        <div class="instance-editor-header">
+            <div class="instance-editor-nav">
+                <button type="button" id="tv-hunt-instance-editor-back" class="ie-btn ie-btn-ghost">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back</span>
+                </button>
+                <div class="instance-editor-breadcrumb" id="tv-hunt-instance-editor-breadcrumb">
+                    <span class="ie-breadcrumb-app">
+                        <i class="fas fa-tv"></i>
+                        <span id="th-ie-breadcrumb-app-name">TV Hunt</span>
+                    </span>
+                    <i class="fas fa-chevron-right"></i>
+                    <span class="ie-breadcrumb-name" id="th-ie-breadcrumb-instance-name">Instance</span>
+                </div>
+            </div>
+            <button type="button" id="tv-hunt-instance-editor-save" class="ie-btn save-btn-dynamic" disabled>
+                <i class="fas fa-save"></i>
+                <span>Save</span>
+            </button>
+        </div>
+        <div id="tv-hunt-instance-editor-content">
+            <!-- Search Settings, Stateful Management, Additional Settings -->
+        </div>
+    </div>
+</section>
+
+<style>
+    #tvHuntInstanceEditorSection { display: none; width: 100%; height: auto !important; min-height: 100vh; overflow-y: visible !important; overflow-x: hidden; padding: 0; margin: 0; position: relative !important; z-index: 1; }
+    #tvHuntInstanceEditorSection.active { display: block !important; }
+    #tvHuntInstanceEditorContainer { width: 100%; max-width: 1400px; margin: 0 auto; padding: 30px 24px; padding-bottom: 150px; min-height: 100%; }
+    #tvHuntInstanceEditorSection .editor-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 22px; padding: 0; width: 100%; align-items: start; }
+    #tvHuntInstanceEditorSection .editor-field-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 22px; width: 100%; }
+    #tvHuntInstanceEditorSection .editor-field-group:last-child { margin-bottom: 0; }
+    #tvHuntInstanceEditorSection .editor-setting-item { display: flex; flex-direction: column; gap: 8px; width: 100%; align-items: flex-start; }
+    #tvHuntInstanceEditorSection .editor-setting-item label { color: #e2e8f0; font-weight: 500; font-size: 0.9rem; margin: 0 !important; width: auto !important; display: block !important; text-align: left !important; }
+    #tvHuntInstanceEditorSection .editor-setting-item input[type="text"],
+    #tvHuntInstanceEditorSection .editor-setting-item input[type="number"],
+    #tvHuntInstanceEditorSection .editor-setting-item input[type="password"],
+    #tvHuntInstanceEditorSection .editor-field-group input[type="text"],
+    #tvHuntInstanceEditorSection .editor-field-group input[type="number"],
+    #tvHuntInstanceEditorSection .editor-field-group input[type="password"],
+    #tvHuntInstanceEditorSection .editor-setting-item select,
+    #tvHuntInstanceEditorSection .editor-field-group select {
+        width: 100%; padding: 11px 14px; border-radius: 10px; border: 1px solid rgba(148, 163, 184, 0.12); background: rgba(15, 23, 42, 0.5); color: #f1f5f9; font-size: 0.925rem; transition: all 0.2s ease; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08); margin: 0 !important;
+    }
+    #tvHuntInstanceEditorSection .editor-setting-item select,
+    #tvHuntInstanceEditorSection .editor-field-group select {
+        cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 38px;
+    }
+    #tvHuntInstanceEditorSection .editor-setting-item input:focus,
+    #tvHuntInstanceEditorSection .editor-setting-item select:focus,
+    #tvHuntInstanceEditorSection .editor-field-group input:focus,
+    #tvHuntInstanceEditorSection .editor-field-group select:focus {
+        border-color: rgba(99, 102, 241, 0.45); outline: none; background: rgba(15, 23, 42, 0.7);
+    }
+    #tvHuntInstanceEditorSection .editor-help-text { color: #64748b; font-size: 0.82rem; margin: 2px 0 0 0 !important; line-height: 1.5; }
+    #tvHuntInstanceEditorSection .editor-section-header-inline { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 22px; padding-bottom: 14px; border-bottom: 1px solid rgba(148, 163, 184, 0.08); }
+    #tvHuntInstanceEditorSection .btn-reset-state { width: 100%; justify-content: center; padding: 12px; margin-bottom: 15px; border-radius: 10px; }
+    #tv-hunt-instance-editor-content .th-info-status-pill { display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 9999px; font-size: 0.875rem; font-weight: 500; }
+    #tv-hunt-instance-editor-content .th-info-status-enabled { background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #10b981; }
+    #tv-hunt-instance-editor-content .th-info-status-disabled { background: rgba(148, 163, 184, 0.15); border: 1px solid rgba(148, 163, 184, 0.25); color: #94a3b8; }
+</style>

@@ -12,6 +12,7 @@ window.HuntarrStats = {
 
     // App metadata: order, display names, icons, accent colors
     APP_META: {
+        tv_hunt:    { label: 'TV Hunt',    icon: './static/logo/256.png', accent: '#a855f7' },
         movie_hunt: { label: 'Movie Hunt', icon: './static/logo/256.png', accent: '#f59e0b' },
         sonarr:     { label: 'Sonarr',     icon: './static/images/app-icons/sonarr.png', accent: '#3b82f6' },
         radarr:     { label: 'Radarr',     icon: './static/images/app-icons/radarr.png', accent: '#f59e0b' },
@@ -20,7 +21,7 @@ window.HuntarrStats = {
         whisparr:   { label: 'Whisparr V2', icon: './static/images/app-icons/whisparr.png', accent: '#ec4899' },
         eros:       { label: 'Whisparr V3', icon: './static/images/app-icons/whisparr.png', accent: '#ec4899' }
     },
-    DEFAULT_APP_ORDER: ['movie_hunt', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'],
+    DEFAULT_APP_ORDER: ['tv_hunt', 'movie_hunt', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'],
 
     // ─── Polling ──────────────────────────────────────────────────────
     startPolling: function() {
@@ -376,16 +377,16 @@ window.HuntarrStats = {
             '</div>' +
             '<div class="stats-numbers">' +
                 '<div class="stat-box">' +
-                    (app === 'movie_hunt'
+                    (app === 'movie_hunt' || app === 'tv_hunt'
                         ? '<span class="stat-number-found-wrap"><span class="stat-number stat-found">0</span> / <span class="stat-number">0</span></span>'
                         : '<span class="stat-number">0</span>') +
-                    '<span class="stat-label">' + (app === 'movie_hunt' ? 'Found / Searched' : 'Searches Triggered') + '</span>' +
+                    '<span class="stat-label">' + (app === 'movie_hunt' || app === 'tv_hunt' ? 'Found / Searched' : 'Searches Triggered') + '</span>' +
                 '</div>' +
                 '<div class="stat-box">' +
-                    (app === 'movie_hunt'
+                    (app === 'movie_hunt' || app === 'tv_hunt'
                         ? '<span class="stat-number-found-wrap"><span class="stat-number stat-found">0</span> / <span class="stat-number">0</span></span>'
                         : '<span class="stat-number">0</span>') +
-                    '<span class="stat-label">' + (app === 'movie_hunt' ? 'Found / Upgrades' : 'Upgrades Triggered') + '</span>' +
+                    '<span class="stat-label">' + (app === 'movie_hunt' || app === 'tv_hunt' ? 'Found / Upgrades' : 'Upgrades Triggered') + '</span>' +
                 '</div>' +
             '</div>' +
             '<div class="reset-button-container">' +
@@ -435,7 +436,7 @@ window.HuntarrStats = {
         }
 
         // Stat numbers — Movie Hunt uses "found / searched" layout
-        if (app === 'movie_hunt') {
+        if (app === 'movie_hunt' || app === 'tv_hunt') {
             var found = Math.max(0, parseInt(inst.found) || 0);
             var foundUpgrade = Math.max(0, parseInt(inst.found_upgrade) || 0);
             var statBoxes = card.querySelectorAll('.stat-box');
@@ -585,8 +586,8 @@ window.HuntarrStats = {
                     '</colgroup>' +
                     '<thead><tr>' +
                         '<th>Instance</th>' +
-                        '<th>' + (app === 'movie_hunt' ? 'Found / Searches' : 'Searches') + '</th>' +
-                        '<th>' + (app === 'movie_hunt' ? 'Found / Upgrades' : 'Upgrades') + '</th>' +
+                        '<th>' + (app === 'movie_hunt' || app === 'tv_hunt' ? 'Found / Searches' : 'Searches') + '</th>' +
+                        '<th>' + (app === 'movie_hunt' || app === 'tv_hunt' ? 'Found / Upgrades' : 'Upgrades') + '</th>' +
                         '<th>API Usage</th>' +
                         '<th>Status</th>' +
                         '<th></th>' +
@@ -604,10 +605,10 @@ window.HuntarrStats = {
                 var name = inst.instance_name || 'Default';
 
                 // Movie Hunt shows "found / searched" and "found / upgrades"
-                var searchesCell = (app === 'movie_hunt')
+                var searchesCell = (app === 'movie_hunt' || app === 'tv_hunt')
                     ? '<span class="found-ratio"><span class="found-num">' + self.formatLargeNumber(found) + '</span> / ' + self.formatLargeNumber(hunted) + '</span>'
                     : self.formatLargeNumber(hunted);
-                var upgradesCell = (app === 'movie_hunt')
+                var upgradesCell = (app === 'movie_hunt' || app === 'tv_hunt')
                     ? '<span class="found-ratio"><span class="found-num">' + self.formatLargeNumber(foundUpgrade) + '</span> / ' + self.formatLargeNumber(upgraded) + '</span>'
                     : self.formatLargeNumber(upgraded);
 

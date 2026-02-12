@@ -1429,7 +1429,8 @@
     background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-.app-stats-card.movie_hunt .stat-found {
+.app-stats-card.movie_hunt .stat-found,
+.app-stats-card.tv_hunt .stat-found {
     background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     text-shadow: 0 0 12px rgba(34, 197, 94, 0.4);

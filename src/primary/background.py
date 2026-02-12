@@ -46,11 +46,11 @@ swaparr_thread = None
 prowlarr_stats_thread = None
 
 # Define which apps have background processing cycles
-CYCLICAL_APP_TYPES = ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "movie_hunt"]
+CYCLICAL_APP_TYPES = ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "movie_hunt", "tv_hunt"]
 
 # Apps that schedule each instance on its own interval (only run an instance when its next_cycle_time is due)
 # All cyclical *arr apps use per-instance scheduling for true independent timing.
-PER_INSTANCE_SCHEDULING_APP_TYPES = {"sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "movie_hunt"}
+PER_INSTANCE_SCHEDULING_APP_TYPES = {"sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "movie_hunt", "tv_hunt"}
 
 # Instance list generator has been removed
 
@@ -290,6 +290,11 @@ def app_specific_loop(app_type: str) -> None:
             process_upgrades = getattr(upgrade_module, 'process_cutoff_upgrades')
             hunt_missing_setting = "hunt_missing_movies"
             hunt_upgrade_setting = "hunt_upgrade_movies"
+        elif app_type == "tv_hunt":
+            process_missing = getattr(missing_module, 'process_missing_episodes')
+            process_upgrades = getattr(upgrade_module, 'process_cutoff_upgrades')
+            hunt_missing_setting = "hunt_missing_episodes"
+            hunt_upgrade_setting = "hunt_upgrade_episodes"
 
         else:
             app_logger.error(f"Unsupported app_type: {app_type}")
@@ -487,8 +492,8 @@ def app_specific_loop(app_type: str) -> None:
             # Initialize API usage tracking (overridden below for *arr apps)
             api_usage_at_start = 0
 
-            # --- Connection Check (skip for Movie Hunt; no *arr API) --- #
-            if app_type != "movie_hunt":
+            # --- Connection Check (skip for Movie Hunt / TV Hunt; no *arr API) --- #
+            if app_type not in ("movie_hunt", "tv_hunt"):
                 if not api_url or not api_key:
                     app_logger.warning(f"Missing API URL or Key for instance '{instance_name}'. Skipping.")
                     if end_cycle:
@@ -565,6 +570,9 @@ def app_specific_loop(app_type: str) -> None:
             elif app_type == "movie_hunt":
                 hunt_missing_value = instance_details.get("hunt_missing_movies", 1)  # Default to 1
                 hunt_upgrade_value = instance_details.get("hunt_upgrade_movies", 0)  # Default to 0
+            elif app_type == "tv_hunt":
+                hunt_missing_value = instance_details.get("hunt_missing_episodes", 1)  # Default to 1
+                hunt_upgrade_value = instance_details.get("hunt_upgrade_episodes", 0)  # Default to 0
             else:
                 # Fall back to global settings for other apps
                 hunt_missing_value = app_settings.get(hunt_missing_setting, 0)
@@ -576,8 +584,8 @@ def app_specific_loop(app_type: str) -> None:
             # Debug logging for per-instance hunt values
             app_logger.info(f"Instance '{instance_name}' - Missing: {hunt_missing_value} (enabled: {hunt_missing_enabled}), Upgrade: {hunt_upgrade_value} (enabled: {hunt_upgrade_enabled})")
 
-            # --- Queue Size Check --- # Now using per-instance setting (skip for Movie Hunt)
-            if app_type != "movie_hunt":
+            # --- Queue Size Check --- # Now using per-instance setting (skip for Movie Hunt / TV Hunt)
+            if app_type not in ("movie_hunt", "tv_hunt"):
                 max_queue_size = instance_details.get("max_download_queue_size", -1)
                 if max_queue_size == -1:
                     # Fallback to general settings if instance doesn't have it set
@@ -607,7 +615,7 @@ def app_specific_loop(app_type: str) -> None:
                 max_seed_queue_size = int(raw) if raw is not None and str(raw).strip() != "" else -1
             except (TypeError, ValueError):
                 max_seed_queue_size = -1
-            if app_type != "movie_hunt" and max_seed_queue_size >= 0:
+            if app_type not in ("movie_hunt", "tv_hunt") and max_seed_queue_size >= 0:
                 seed_client = instance_details.get("seed_check_torrent_client")
                 if seed_client and isinstance(seed_client, dict) and (seed_client.get("host") or "").strip():
                     try:

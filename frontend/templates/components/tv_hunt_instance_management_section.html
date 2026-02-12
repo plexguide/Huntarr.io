@@ -1,0 +1,77 @@
+<!-- TV Hunt Instance Management Section -->
+<section id="tvHuntInstanceManagementSection" class="content-section" style="display: none;">
+    {% with section_id='tv-hunt-instance-management' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
+    <div id="tvHuntInstanceManagementContainer" class="app-content-panel">
+        <p class="instance-management-description">Configure how each TV Hunt instance runs: missing/upgrade search counts, state management, and cycle settings. Each instance has its own queue, history, blocklist, and media.</p>
+        <div class="settings-group instance-management-settings-group">
+            <h3>TV Hunt Instances</h3>
+            <div class="instance-card-grid" id="tvHuntInstanceManagementGrid">
+                <div class="add-instance-card" id="th-instance-management-add-card" data-app-type="instance">
+                    <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
+                    <div class="add-text">Add Instance</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Instance modal -->
+    <div id="th-instance-add-modal" class="instance-add-modal" style="display: none;">
+        <div class="instance-add-modal-backdrop" id="th-instance-add-modal-backdrop"></div>
+        <div class="instance-add-modal-content">
+            <div class="instance-add-modal-header">
+                <button type="button" class="instance-add-modal-close" id="th-instance-add-modal-close" aria-label="Close"><i class="fas fa-times"></i></button>
+                <h2 class="instance-add-modal-title">Add TV Hunt Instance</h2>
+                <p class="instance-add-modal-subtitle">Enter a name for the new instance.</p>
+            </div>
+            <div class="instance-add-modal-body">
+                <label for="th-instance-add-name">Instance name</label>
+                <input type="text" id="th-instance-add-name" class="instance-add-name-input" placeholder="e.g. Main TV" maxlength="64" autocomplete="off">
+            </div>
+            <div class="instance-add-modal-actions">
+                <button type="button" class="instance-add-modal-cancel" id="th-instance-add-modal-cancel">Cancel</button>
+                <button type="button" class="instance-add-modal-ok" id="th-instance-add-modal-ok"><i class="fas fa-plus"></i> Add</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Instance confirmation modal -->
+    <div id="th-instance-delete-modal" class="instance-delete-modal" style="display: none;">
+        <div class="instance-delete-modal-backdrop" id="th-instance-delete-modal-backdrop"></div>
+        <div class="instance-delete-modal-content">
+            <div class="instance-delete-modal-header">
+                <button type="button" class="instance-delete-modal-close" id="th-instance-delete-modal-close" aria-label="Close"><i class="fas fa-times"></i></button>
+                <h2 class="instance-delete-modal-title">Delete Instance</h2>
+                <p class="instance-delete-modal-message" id="th-instance-delete-modal-message"></p>
+            </div>
+            <div class="instance-delete-modal-actions">
+                <button type="button" class="instance-delete-modal-cancel" id="th-instance-delete-modal-cancel">Cancel</button>
+                <button type="button" class="instance-delete-modal-confirm" id="th-instance-delete-modal-confirm"><i class="fas fa-trash"></i> Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rename Instance modal -->
+    <div id="th-instance-rename-modal" class="instance-rename-modal" style="display: none;">
+        <div class="instance-rename-modal-backdrop" id="th-instance-rename-modal-backdrop"></div>
+        <div class="instance-rename-modal-content">
+            <div class="instance-rename-modal-header">
+                <button type="button" class="instance-rename-modal-close" id="th-instance-rename-modal-close" aria-label="Close"><i class="fas fa-times"></i></button>
+                <h2 class="instance-rename-modal-title">Rename Instance</h2>
+                <p class="instance-rename-modal-subtitle">Enter a new name for this instance.</p>
+            </div>
+            <div class="instance-rename-modal-body">
+                <label for="th-instance-rename-name">Instance name</label>
+                <input type="text" id="th-instance-rename-name" class="instance-rename-name-input" placeholder="e.g. Main TV" maxlength="64" autocomplete="off">
+            </div>
+            <div class="instance-rename-modal-actions">
+                <button type="button" class="instance-rename-modal-cancel" id="th-instance-rename-modal-cancel">Cancel</button>
+                <button type="button" class="instance-rename-modal-save" id="th-instance-rename-modal-save"><i class="fas fa-save"></i> Save</button>
+            </div>
+        </div>
+    </div>
+</section>
+<style>
+#tvHuntInstanceManagementSection { display: none; padding: 0; margin: 0; width: 100%; min-height: 100vh; overflow-y: auto; overflow-x: hidden; }
+#tvHuntInstanceManagementSection.active { display: block !important; }
+#tvHuntInstanceManagementContainer { width: 100%; padding: 20px; margin: 0; background-color: transparent; box-shadow: none; border: none; }
+</style>

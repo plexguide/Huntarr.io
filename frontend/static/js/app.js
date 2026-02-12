@@ -144,6 +144,9 @@ let huntarrUI = {
         } else if (this.currentSection === 'indexer-hunt' || this.currentSection === 'indexer-hunt-stats' || this.currentSection === 'indexer-hunt-history') {
             console.log('[huntarrUI] Initialization - showing main sidebar for indexer hunt');
             this.showMainSidebar();
+        } else if ((this.currentSection && this.currentSection.startsWith('tv-hunt')) || this.currentSection === 'logs-tv-hunt') {
+            console.log('[huntarrUI] Initialization - showing tv hunt sidebar');
+            this.showTVHuntSidebar();
         } else if (this.currentSection === 'movie-hunt-home' || this.currentSection === 'movie-hunt-collection' || this.currentSection === 'activity-queue' || this.currentSection === 'activity-history' || this.currentSection === 'activity-blocklist' || this.currentSection === 'activity-logs' || this.currentSection === 'logs-movie-hunt' || this.currentSection === 'movie-hunt-settings' || this.currentSection === 'movie-hunt-instance-editor' || this.currentSection === 'settings-instance-management' || this.currentSection === 'settings-movie-management' || this.currentSection === 'settings-profiles' || this.currentSection === 'settings-sizes' || this.currentSection === 'profile-editor' || this.currentSection === 'settings-custom-formats' || this.currentSection === 'settings-indexers' || this.currentSection === 'settings-clients' || this.currentSection === 'settings-import-lists' || this.currentSection === 'settings-import-media' || this.currentSection === 'settings-root-folders') {
             console.log('[huntarrUI] Initialization - showing movie hunt sidebar');
             this.showMovieHuntSidebar();
@@ -555,7 +558,7 @@ let huntarrUI = {
             }
             
             // Don't refresh page when navigating to/from instance editor or between app sections
-            const noRefreshSections = ['home', 'instance-editor', 'profile-editor', 'movie-hunt-instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'movie-hunt-calendar', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'movie-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-sizes', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-import-media', 'settings-custom-formats', 'settings-root-folders', 'system', 'hunt-manager', 'logs', 'about', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-settings', 'nzb-hunt-settings-folders', 'nzb-hunt-settings-servers', 'nzb-hunt-settings-processing', 'nzb-hunt-settings-advanced', 'nzb-hunt-server-editor', 'requestarr', 'requestarr-discover', 'requestarr-movies', 'requestarr-tv', 'requestarr-hidden', 'requestarr-settings', 'requestarr-smarthunt-settings', 'indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history'];
+            const noRefreshSections = ['home', 'instance-editor', 'profile-editor', 'movie-hunt-instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'movie-hunt-calendar', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'movie-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-sizes', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-import-media', 'settings-custom-formats', 'settings-root-folders', 'tv-hunt-collection', 'tv-hunt-calendar', 'tv-hunt-settings', 'tv-hunt-settings-profiles', 'tv-hunt-settings-indexers', 'tv-hunt-settings-clients', 'tv-hunt-settings-root-folders', 'tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist', 'tv-hunt-instance-editor', 'logs-tv-hunt', 'system', 'hunt-manager', 'logs', 'about', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-settings', 'nzb-hunt-settings-folders', 'nzb-hunt-settings-servers', 'nzb-hunt-settings-processing', 'nzb-hunt-settings-advanced', 'nzb-hunt-server-editor', 'requestarr', 'requestarr-discover', 'requestarr-movies', 'requestarr-tv', 'requestarr-hidden', 'requestarr-settings', 'requestarr-smarthunt-settings', 'indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history'];
             const skipRefresh = noRefreshSections.includes(section) || noRefreshSections.includes(this.currentSection);
             
             if (!skipRefresh) {
@@ -768,6 +771,95 @@ let huntarrUI = {
             if (window.IndexerHuntHistory && typeof window.IndexerHuntHistory.init === 'function') {
                 window.IndexerHuntHistory.init();
             }
+        } else if (section === 'logs-tv-hunt' && this.elements.logsSection) {
+            // TV Hunt logs - show logsSection under TV Hunt sidebar
+            var tvActSection = document.getElementById('tv-hunt-section');
+            if (tvActSection) { tvActSection.classList.remove('active'); tvActSection.style.display = 'none'; }
+            this.elements.logsSection.classList.add('active');
+            this.elements.logsSection.style.display = 'block';
+            newTitle = 'TV Hunt Logs';
+            this.currentSection = 'logs-tv-hunt';
+            this.showTVHuntSidebar();
+            var logAppSelect2 = document.getElementById('logAppSelect');
+            if (logAppSelect2) logAppSelect2.value = 'tv_hunt';
+            if (window.LogsModule) window.LogsModule.currentLogApp = 'tv_hunt';
+            if (window.LogsModule && typeof window.LogsModule.updateDebugLevelVisibility === 'function') {
+                window.LogsModule.updateDebugLevelVisibility();
+            }
+            if (window.LogsModule && typeof window.LogsModule.loadLogs === 'function') {
+                window.LogsModule.loadLogs();
+            }
+        } else if (section === 'tv-hunt-collection' && document.getElementById('tv-hunt-section')) {
+            document.getElementById('tv-hunt-section').classList.add('active');
+            document.getElementById('tv-hunt-section').style.display = 'block';
+            var tvMainContent = document.querySelector('#tv-hunt-section .tv-hunt-content');
+            var tvCollectionView = document.getElementById('tv-hunt-collection-view');
+            var tvCalendarView = document.getElementById('tv-hunt-calendar-view');
+            if (tvMainContent) tvMainContent.style.display = 'none';
+            if (tvCollectionView) tvCollectionView.style.display = 'block';
+            if (tvCalendarView) tvCalendarView.style.display = 'none';
+            newTitle = 'TV Collection';
+            this.currentSection = 'tv-hunt-collection';
+            this.showTVHuntSidebar();
+            if (window.TVHuntCollection && typeof window.TVHuntCollection.init === 'function') {
+                window.TVHuntCollection.init();
+            }
+        } else if (section === 'tv-hunt-calendar' && document.getElementById('tv-hunt-section')) {
+            document.getElementById('tv-hunt-section').classList.add('active');
+            document.getElementById('tv-hunt-section').style.display = 'block';
+            var tvMainContentCal = document.querySelector('#tv-hunt-section .tv-hunt-content');
+            var tvCollectionViewCal = document.getElementById('tv-hunt-collection-view');
+            var tvCalendarViewCal = document.getElementById('tv-hunt-calendar-view');
+            if (tvMainContentCal) tvMainContentCal.style.display = 'none';
+            if (tvCollectionViewCal) tvCollectionViewCal.style.display = 'none';
+            if (tvCalendarViewCal) tvCalendarViewCal.style.display = 'block';
+            newTitle = 'TV Calendar';
+            this.currentSection = 'tv-hunt-calendar';
+            this.showTVHuntSidebar();
+            if (window.TVHuntCalendar && typeof window.TVHuntCalendar.init === 'function') {
+                window.TVHuntCalendar.init();
+            }
+        } else if (section === 'tv-hunt-settings' && document.getElementById('tvHuntInstanceManagementSection')) {
+            document.getElementById('tvHuntInstanceManagementSection').classList.add('active');
+            document.getElementById('tvHuntInstanceManagementSection').style.display = 'block';
+            if (document.getElementById('tvHuntInstanceEditorSection')) {
+                document.getElementById('tvHuntInstanceEditorSection').classList.remove('active');
+                document.getElementById('tvHuntInstanceEditorSection').style.display = 'none';
+            }
+            if (document.getElementById('tv-hunt-section')) {
+                document.getElementById('tv-hunt-section').classList.remove('active');
+                document.getElementById('tv-hunt-section').style.display = 'none';
+            }
+            newTitle = 'TV Hunt Settings';
+            this.currentSection = 'tv-hunt-settings';
+            this.showTVHuntSidebar();
+            if (window.TVHuntInstanceManagement && typeof window.TVHuntInstanceManagement.init === 'function') {
+                window.TVHuntInstanceManagement.init();
+            }
+        } else if (section === 'tv-hunt-instance-editor' && document.getElementById('tvHuntInstanceEditorSection')) {
+            document.getElementById('tvHuntInstanceEditorSection').classList.add('active');
+            document.getElementById('tvHuntInstanceEditorSection').style.display = 'block';
+            if (document.getElementById('tvHuntInstanceManagementSection')) {
+                document.getElementById('tvHuntInstanceManagementSection').classList.remove('active');
+                document.getElementById('tvHuntInstanceManagementSection').style.display = 'none';
+            }
+            if (document.getElementById('tv-hunt-section')) {
+                document.getElementById('tv-hunt-section').classList.remove('active');
+                document.getElementById('tv-hunt-section').style.display = 'none';
+            }
+            newTitle = 'TV Hunt Instance Editor';
+            this.currentSection = 'tv-hunt-instance-editor';
+            this.showTVHuntSidebar();
+        } else if (section && section.startsWith('tv-hunt-activity')) {
+            // TV Hunt Activity - reuse Movie Hunt activity pattern
+            if (document.getElementById('tv-hunt-section')) {
+                document.getElementById('tv-hunt-section').classList.remove('active');
+                document.getElementById('tv-hunt-section').style.display = 'none';
+            }
+            var view = section === 'tv-hunt-activity-queue' ? 'queue' : section === 'tv-hunt-activity-history' ? 'history' : 'blocklist';
+            newTitle = 'TV Hunt ' + view.charAt(0).toUpperCase() + view.slice(1);
+            this.currentSection = section;
+            this.showTVHuntSidebar();
         } else if (section === 'movie-hunt-collection' && document.getElementById('movie-hunt-section')) {
             document.getElementById('movie-hunt-section').classList.add('active');
             document.getElementById('movie-hunt-section').style.display = 'block';
@@ -1566,6 +1658,8 @@ let huntarrUI = {
         document.getElementById('requestarr-sidebar').style.display = 'none';
         var mh = document.getElementById('movie-hunt-sidebar');
         if (mh) mh.style.display = 'none';
+        var th = document.getElementById('tv-hunt-sidebar');
+        if (th) th.style.display = 'none';
         var nh = document.getElementById('nzb-hunt-sidebar');
         if (nh) nh.style.display = 'none';
     },
@@ -1634,6 +1728,12 @@ let huntarrUI = {
     showRequestarrSidebar: function() {
         this._hideAllSidebars();
         document.getElementById('requestarr-sidebar').style.display = 'flex';
+    },
+
+    showTVHuntSidebar: function() {
+        this._hideAllSidebars();
+        var th = document.getElementById('tv-hunt-sidebar');
+        if (th) th.style.display = 'flex';
     },
 
     showMovieHuntSidebar: function() {

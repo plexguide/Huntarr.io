@@ -76,6 +76,10 @@
 
         <div class="nav-group" id="main-sidebar-beta-group">
             <div class="nav-group-title">Beta</div>
+            <a href="./#tv-hunt-collection" class="nav-item" id="tvHuntCollectionMainNav">
+                <div class="nav-icon-wrapper"><i class="fas fa-tv"></i></div>
+                <span>TV Hunt</span>
+            </a>
             <a href="./#movie-hunt-collection" class="nav-item" id="mediaCollectionNav">
                 <div class="nav-icon-wrapper"><i class="fas fa-folder-open"></i></div>
                 <span>Movie Hunt</span>
@@ -108,6 +112,121 @@
         <div class="dev-mode-indicator" id="sidebar-dev-indicator">
             <i class="fas fa-code"></i>
             <span><a href="https://github.com/Admin9705/" target="_blank" rel="noopener" id="sidebar-dev-username">Admin9705</a></span>
+        </div>
+    </div>
+</div>
+
+<!-- ===== TV HUNT SIDEBAR ===== -->
+<div class="sidebar tv-hunt-sidebar" id="tv-hunt-sidebar" style="display: none;">
+    <div class="logo-container">
+        <a href="https://huntarr.io" target="_blank" rel="noopener noreferrer"
+            style="display: flex; align-items: center; text-decoration: none; color: inherit;">
+            <img src="./static/logo/256.png" alt="Huntarr Logo" class="logo logo-large">
+            <img src="./static/logo/32.png" alt="Huntarr Logo" class="logo logo-small">
+            <h1>Huntarr</h1>
+        </a>
+    </div>
+    <nav class="nav-menu">
+        <div class="nav-group" id="tv-hunt-sidebar-huntarr-home-group">
+            <div class="nav-group-title">Huntarr</div>
+            <a href="#home" class="nav-item" id="tvHuntMainHomeNav">
+                <div class="nav-icon-wrapper"><i class="fas fa-home"></i></div>
+                <span>Home</span>
+            </a>
+        </div>
+        <div class="nav-group">
+            <div class="nav-group-title">TV Hunt</div>
+            <a href="./#tv-hunt-collection" class="nav-item" id="tvHuntCollectionNav">
+                <div class="nav-icon-wrapper"><i class="fas fa-tv"></i></div>
+                <span>TV Collection</span>
+            </a>
+            <div class="nav-sub-group" id="tv-hunt-collection-sub">
+                <a href="./#tv-hunt-calendar" class="nav-item nav-item-sub" id="tvHuntCalendarNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-calendar-alt"></i></div>
+                    <span>Calendar</span>
+                </a>
+            </div>
+            <a href="./#tv-hunt-activity-queue" class="nav-item" id="tvHuntActivityNav">
+                <div class="nav-icon-wrapper"><i class="fas fa-clock"></i></div>
+                <span>Activity</span>
+            </a>
+            <div class="nav-sub-group" id="tv-hunt-activity-sub">
+                <a href="./#tv-hunt-activity-queue" class="nav-item nav-item-sub" id="tvHuntActivityQueueNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-list-ul"></i></div>
+                    <span>Queue</span>
+                </a>
+                <a href="./#tv-hunt-activity-history" class="nav-item nav-item-sub" id="tvHuntActivityHistoryNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-history"></i></div>
+                    <span>History</span>
+                </a>
+                <a href="./#tv-hunt-activity-blocklist" class="nav-item nav-item-sub" id="tvHuntActivityBlocklistNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-ban"></i></div>
+                    <span>Blocklist</span>
+                </a>
+                <a href="./#logs-tv-hunt" class="nav-item nav-item-sub" id="tvHuntLogsNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-file-alt"></i></div>
+                    <span>Logs</span>
+                </a>
+            </div>
+            <a href="./#tv-hunt-settings" class="nav-item" id="tvHuntSettingsNav">
+                <div class="nav-icon-wrapper"><i class="fas fa-cog"></i></div>
+                <span>Settings</span>
+            </a>
+            <div class="nav-sub-group" id="tv-hunt-settings-sub" style="display: none;">
+                <a href="./#tv-hunt-settings-profiles" class="nav-item nav-item-sub" id="tvHuntSettingsProfilesNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-id-card"></i></div>
+                    <span>Profiles</span>
+                </a>
+                <a href="./#tv-hunt-settings-indexers" class="nav-item nav-item-sub" id="tvHuntSettingsIndexersNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-server"></i></div>
+                    <span>Indexers</span>
+                </a>
+                <a href="./#tv-hunt-settings-clients" class="nav-item nav-item-sub" id="tvHuntSettingsClientsNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-cloud-download-alt"></i></div>
+                    <span>Clients</span>
+                </a>
+                <a href="./#tv-hunt-settings-root-folders" class="nav-item nav-item-sub" id="tvHuntSettingsRootFoldersNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-folder-open"></i></div>
+                    <span>Root Folders</span>
+                </a>
+            </div>
+            <script>
+            (function() {
+                function updateTVHuntSettingsVisibility() {
+                    var subGroup = document.getElementById('tv-hunt-settings-sub');
+                    var collectionSub = document.getElementById('tv-hunt-collection-sub');
+                    if (!subGroup) return;
+                    fetch('./api/tv-hunt/instances')
+                        .then(function(r) { return r.json(); })
+                        .then(function(data) {
+                            var instances = data.instances || [];
+                            var hasInstances = instances.length > 0;
+                            subGroup.style.display = hasInstances ? '' : 'none';
+                            if (collectionSub) collectionSub.style.display = hasInstances ? '' : 'none';
+                            if (typeof setActiveNavItem === 'function') setActiveNavItem();
+                        })
+                        .catch(function() {
+                            subGroup.style.display = 'none';
+                            if (collectionSub) collectionSub.style.display = 'none';
+                        });
+                }
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', updateTVHuntSettingsVisibility);
+                } else {
+                    updateTVHuntSettingsVisibility();
+                }
+                window.updateTVHuntSettingsVisibility = updateTVHuntSettingsVisibility;
+            })();
+            </script>
+        </div>
+    </nav>
+    <div class="sidebar-footer">
+        <a href="https://plexguide.github.io/Huntarr.io/donate.html" class="sidebar-footer-sponsor" target="_blank" rel="noopener noreferrer">
+            <i class="fas fa-heart"></i><span>Become a Sponsor</span>
+        </a>
+        <div class="dev-mode-indicator" id="sidebar-dev-indicator-tv-hunt">
+            <i class="fas fa-code"></i>
+            <span><a href="https://github.com/Admin9705/" target="_blank" rel="noopener" id="sidebar-dev-username-tv-hunt">Admin9705</a></span>
         </div>
     </div>
 </div>
@@ -582,6 +701,14 @@
         else if (currentHash === '#activity-logs' || currentHash === '#logs-movie-hunt') { selector = '#movieHuntActivityLogsNav'; expandSub('movie-hunt-activity-sub'); }
         // NZB Hunt
         else if (currentHash.startsWith('#nzb-hunt-settings')) { selector = '#nzbHuntSettingsNav'; expandSub('nzb-hunt-settings-sub'); }
+        // TV Hunt
+        else if (currentHash === '#tv-hunt-collection' || currentHash === '#tv-hunt-home') { selector = '#tvHuntCollectionNav'; expandSub('tv-hunt-collection-sub'); }
+        else if (currentHash === '#tv-hunt-calendar') { selector = '#tvHuntCalendarNav'; expandSub('tv-hunt-collection-sub'); }
+        else if (currentHash === '#tv-hunt-activity-queue') { selector = '#tvHuntActivityQueueNav'; expandSub('tv-hunt-activity-sub'); }
+        else if (currentHash === '#tv-hunt-activity-history') { selector = '#tvHuntActivityHistoryNav'; expandSub('tv-hunt-activity-sub'); }
+        else if (currentHash === '#tv-hunt-activity-blocklist') { selector = '#tvHuntActivityBlocklistNav'; expandSub('tv-hunt-activity-sub'); }
+        else if (currentHash === '#logs-tv-hunt') { selector = '#tvHuntLogsNav'; expandSub('tv-hunt-activity-sub'); }
+        else if (currentHash === '#tv-hunt-settings' || currentHash === '#tv-hunt-instance-editor' || currentHash === '#tv-hunt-settings-profiles' || currentHash === '#tv-hunt-settings-indexers' || currentHash === '#tv-hunt-settings-clients' || currentHash === '#tv-hunt-settings-root-folders') { selector = '#tvHuntSettingsNav'; expandSub('tv-hunt-settings-sub'); }
         // Indexer Hunt
         else if (currentHash === '#indexer-hunt') { selector = '#indexerHuntNav'; expandSub('indexer-hunt-sub'); }
         else if (currentHash === '#indexer-hunt-stats') { selector = '#indexerHuntStatsNav'; expandSub('indexer-hunt-sub'); }
@@ -614,6 +741,14 @@
 
         var mhCollectionHashes = ['#movie-hunt-home', '#movie-hunt-collection', '#settings-import-media', '#movie-hunt-calendar'];
         if (mhCollectionHashes.indexOf(currentHash) === -1) collapseSub('movie-hunt-collection-sub');
+
+        // Collapse TV Hunt subs
+        var thSettingsHashes = ['#tv-hunt-settings', '#tv-hunt-settings-profiles', '#tv-hunt-settings-indexers', '#tv-hunt-settings-clients', '#tv-hunt-settings-root-folders'];
+        if (thSettingsHashes.indexOf(currentHash) === -1) collapseSub('tv-hunt-settings-sub');
+        var thActivityHashes = ['#tv-hunt-activity-queue', '#tv-hunt-activity-history', '#tv-hunt-activity-blocklist', '#logs-tv-hunt'];
+        if (thActivityHashes.indexOf(currentHash) === -1) collapseSub('tv-hunt-activity-sub');
+        var thCollectionHashes = ['#tv-hunt-home', '#tv-hunt-collection', '#tv-hunt-calendar'];
+        if (thCollectionHashes.indexOf(currentHash) === -1) collapseSub('tv-hunt-collection-sub');
 
         // Collapse Indexer Hunt sub when not on indexer-hunt pages
         var ihHashes = ['#indexer-hunt', '#indexer-hunt-stats', '#indexer-hunt-history'];

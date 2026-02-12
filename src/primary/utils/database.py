@@ -810,6 +810,15 @@ class HuntarrDatabase:
             ''')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_movie_hunt_instances_id ON movie_hunt_instances(id)')
 
+            # TV Hunt multi-instance: one row per tenant (ID never reused)
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS tv_hunt_instances (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+
             # Create requestarr_requests table for tracking media requests
             conn.execute('''
                 CREATE TABLE IF NOT EXISTS requestarr_requests (
@@ -1157,7 +1166,80 @@ class HuntarrDatabase:
     def set_current_movie_hunt_instance_id(self, instance_id: int):
         """Set current Movie Hunt instance (server-stored)."""
         self.set_general_setting('movie_hunt_current_instance_id', instance_id)
-    
+
+    # ── TV Hunt Instance Methods ──
+
+    def get_tv_hunt_instances(self) -> List[Dict[str, Any]]:
+        """List all TV Hunt instances (id, name, created_at)."""
+        with self.get_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.execute(
+                'SELECT id, name, created_at FROM tv_hunt_instances ORDER BY id'
+            )
+            return [dict(row) for row in cursor.fetchall()]
+
+    def create_tv_hunt_instance(self, name: str) -> int:
+        """Create a new TV Hunt instance. Returns new id (never reused)."""
+        name = (name or '').strip() or 'Unnamed'
+        with self.get_connection() as conn:
+            cursor = conn.execute('SELECT name FROM tv_hunt_instances')
+            existing_names = {row[0] for row in cursor.fetchall()}
+            display_name = name
+            suffix = 0
+            while display_name in existing_names:
+                suffix += 1
+                display_name = f'{name}-{suffix}'
+            cursor = conn.execute(
+                'INSERT INTO tv_hunt_instances (name, created_at) VALUES (?, CURRENT_TIMESTAMP)',
+                (display_name,)
+            )
+            conn.commit()
+            return cursor.lastrowid
+
+    def update_tv_hunt_instance(self, instance_id: int, name: str) -> bool:
+        """Rename a TV Hunt instance."""
+        name = (name or '').strip() or 'Unnamed'
+        with self.get_connection() as conn:
+            cursor = conn.execute('SELECT id, name FROM tv_hunt_instances')
+            rows = cursor.fetchall()
+            existing = {r[0]: r[1] for r in rows}
+            if instance_id not in existing:
+                return False
+            existing_names = {n for i, n in rows if i != instance_id}
+            display_name = name
+            suffix = 0
+            while display_name in existing_names:
+                suffix += 1
+                display_name = f'{name}-{suffix}'
+            conn.execute('UPDATE tv_hunt_instances SET name = ? WHERE id = ?', (display_name, instance_id))
+            conn.commit()
+            return True
+
+    def delete_tv_hunt_instance(self, instance_id: int) -> bool:
+        """Delete a TV Hunt instance. ID is never reused."""
+        with self.get_connection() as conn:
+            cursor = conn.execute('DELETE FROM tv_hunt_instances WHERE id = ?', (instance_id,))
+            conn.commit()
+            return cursor.rowcount > 0
+
+    def get_current_tv_hunt_instance_id(self) -> int:
+        """Current TV Hunt instance (server-stored). Returns 0 when no instances exist."""
+        ids = [i['id'] for i in self.get_tv_hunt_instances()]
+        if not ids:
+            return 0
+        val = self.get_general_setting('tv_hunt_current_instance_id')
+        if val is None:
+            return ids[0]
+        try:
+            iid = int(val)
+            return iid if iid in ids else ids[0]
+        except (TypeError, ValueError):
+            return ids[0]
+
+    def set_current_tv_hunt_instance_id(self, instance_id: int):
+        """Set current TV Hunt instance (server-stored)."""
+        self.set_general_setting('tv_hunt_current_instance_id', instance_id)
+
     def get_general_settings(self) -> Dict[str, Any]:
         """Get all general settings as a dictionary"""
         with self.get_connection() as conn:

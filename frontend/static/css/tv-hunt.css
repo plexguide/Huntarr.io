@@ -1,0 +1,362 @@
+/* TV Hunt Styles */
+
+/* Beta notice */
+.tv-hunt-beta-notice {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(138, 43, 226, 0.08);
+    border: 1px solid rgba(138, 43, 226, 0.25);
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin-bottom: 16px;
+    font-size: 0.92em;
+    color: #c0a8e0;
+}
+.tv-hunt-beta-notice i { color: #a855f7; }
+.tv-hunt-beta-notice a {
+    margin-left: auto;
+    white-space: nowrap;
+    color: #a855f7;
+    text-decoration: underline;
+}
+
+/* Series Detail View */
+.tv-hunt-series-detail-view {
+    padding: 0;
+}
+
+.series-detail-header {
+    padding: 16px 0;
+}
+
+.series-detail-header .back-btn {
+    background: rgba(138, 43, 226, 0.15);
+    border: 1px solid rgba(138, 43, 226, 0.3);
+    color: #c0a8e0;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.95em;
+    transition: all 0.2s;
+}
+.series-detail-header .back-btn:hover {
+    background: rgba(138, 43, 226, 0.3);
+    color: #fff;
+}
+
+/* Series Info Banner */
+.series-info-banner {
+    display: flex;
+    gap: 24px;
+    padding: 20px;
+    background: rgba(30, 30, 50, 0.6);
+    border-radius: 10px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(138, 43, 226, 0.15);
+}
+
+.series-info-banner .series-poster {
+    width: 180px;
+    min-width: 180px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+.series-info-banner .series-poster img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 8px;
+}
+
+.series-info-banner .series-meta {
+    flex: 1;
+}
+.series-info-banner .series-meta h2 {
+    margin: 0 0 8px 0;
+    font-size: 1.6em;
+    color: #fff;
+}
+.series-info-banner .series-meta-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.series-info-banner .series-meta-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 0.82em;
+    background: rgba(255, 255, 255, 0.08);
+    color: #aaa;
+}
+.series-info-banner .series-overview {
+    color: #bbb;
+    font-size: 0.93em;
+    line-height: 1.5;
+    max-height: 4.5em;
+    overflow: hidden;
+}
+
+/* Season Accordion */
+.season-accordion {
+    margin-bottom: 4px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.season-accordion-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(30, 30, 50, 0.5);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+    gap: 12px;
+}
+.season-accordion-header:hover {
+    background: rgba(30, 30, 50, 0.8);
+}
+.season-accordion-header .season-chevron {
+    color: #888;
+    transition: transform 0.2s;
+    width: 16px;
+    text-align: center;
+}
+.season-accordion-header.expanded .season-chevron {
+    transform: rotate(90deg);
+}
+.season-accordion-header .season-icon {
+    color: #a855f7;
+}
+.season-accordion-header .season-name {
+    font-weight: 600;
+    color: #eee;
+    flex: 1;
+}
+.season-accordion-header .season-episode-count {
+    font-size: 0.85em;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+.season-episode-count.all-available {
+    background: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+}
+.season-episode-count.partial {
+    background: rgba(234, 179, 8, 0.2);
+    color: #facc15;
+}
+.season-episode-count.none-available {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+}
+.season-accordion-header .season-size {
+    font-size: 0.82em;
+    color: #888;
+}
+.season-accordion-header .season-status-icon {
+    width: 20px;
+    text-align: center;
+}
+.season-accordion-header .season-monitor-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    color: #888;
+    font-size: 1em;
+}
+.season-accordion-header .season-monitor-toggle.monitored {
+    color: #a855f7;
+}
+.season-accordion-header .season-actions {
+    display: flex;
+    gap: 8px;
+}
+.season-accordion-header .season-action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 6px;
+    color: #888;
+    font-size: 0.9em;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+.season-accordion-header .season-action-btn:hover {
+    background: rgba(138, 43, 226, 0.2);
+    color: #c0a8e0;
+}
+
+/* Episode table */
+.season-episodes-body {
+    display: none;
+}
+.season-episodes-body.expanded {
+    display: block;
+}
+.episode-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.episode-table th {
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 0.8em;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: rgba(20, 20, 40, 0.5);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.episode-table td {
+    padding: 10px 12px;
+    font-size: 0.9em;
+    color: #ccc;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.episode-table tr:hover td {
+    background: rgba(138, 43, 226, 0.05);
+}
+.episode-table .ep-monitor {
+    width: 30px;
+    text-align: center;
+}
+.episode-table .ep-number {
+    width: 40px;
+    text-align: center;
+    font-weight: 600;
+    color: #aaa;
+}
+.episode-table .ep-title {
+    font-weight: 500;
+    color: #eee;
+}
+.episode-table .ep-airdate {
+    width: 120px;
+    color: #999;
+    font-size: 0.85em;
+}
+.episode-table .ep-status {
+    width: 100px;
+}
+.episode-table .ep-actions {
+    width: 80px;
+    text-align: right;
+}
+.episode-table .ep-status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: 600;
+}
+.ep-status-badge.available {
+    background: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+}
+.ep-status-badge.missing {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+}
+.ep-status-badge.unaired {
+    background: rgba(100, 100, 140, 0.2);
+    color: #888;
+}
+.episode-table .ep-action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 6px;
+    color: #888;
+    font-size: 0.85em;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+.episode-table .ep-action-btn:hover {
+    background: rgba(138, 43, 226, 0.2);
+    color: #c0a8e0;
+}
+
+/* Season/episode monitor checkbox */
+.monitor-checkbox {
+    cursor: pointer;
+    color: #666;
+    font-size: 1em;
+}
+.monitor-checkbox.monitored {
+    color: #a855f7;
+}
+
+/* Calendar view */
+.tv-hunt-calendar-view {
+    padding: 0;
+}
+.calendar-episode-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(30, 30, 50, 0.5);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.calendar-episode-card .cal-poster {
+    width: 40px;
+    height: 60px;
+    border-radius: 4px;
+    object-fit: cover;
+}
+.calendar-episode-card .cal-info {
+    flex: 1;
+}
+.calendar-episode-card .cal-series-title {
+    font-weight: 600;
+    color: #eee;
+    font-size: 0.95em;
+}
+.calendar-episode-card .cal-ep-title {
+    color: #999;
+    font-size: 0.85em;
+}
+.calendar-episode-card .cal-date {
+    color: #888;
+    font-size: 0.82em;
+    white-space: nowrap;
+}
+
+/* TV Hunt collection controls */
+.tv-hunt-collection-view .collection-controls {
+    margin-bottom: 16px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .series-info-banner {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    .series-info-banner .series-poster {
+        width: 140px;
+        min-width: 140px;
+    }
+    .series-info-banner .series-meta-tags {
+        justify-content: center;
+    }
+    .season-accordion-header {
+        flex-wrap: wrap;
+    }
+    .episode-table .ep-actions,
+    .episode-table .ep-airdate {
+        display: none;
+    }
+}
