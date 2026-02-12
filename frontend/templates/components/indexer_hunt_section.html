@@ -3,100 +3,114 @@
     <link rel="stylesheet" href="./static/css/indexer-hunt.css">
     {% with section_id='indexer-hunt' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
 
-    <div class="ih-container">
-        <div class="ih-header">
-            <h2><i class="fas fa-search-plus" style="margin-right: 8px; opacity: 0.7;"></i>Indexer Hunt</h2>
-            <div class="ih-header-actions">
-                <input type="text" class="ih-search" id="ih-search-input" placeholder="Search indexers...">
-                <button class="ih-btn-add" id="ih-add-btn">
+    <div class="ih-page">
+        <!-- Section header -->
+        <div class="ih-page-header">
+            <div class="ih-page-title">
+                <i class="fas fa-search-plus"></i>
+                <h2>Indexer Hunt</h2>
+            </div>
+            <div class="ih-page-actions">
+                <div class="ih-search-wrap">
+                    <i class="fas fa-search ih-search-icon"></i>
+                    <input type="text" class="ih-search-input" id="ih-search-input" placeholder="Filter indexers...">
+                </div>
+                <button class="ih-btn-primary" id="ih-add-btn">
                     <i class="fas fa-plus"></i> Add Indexer
                 </button>
             </div>
         </div>
 
-        <!-- Add/Edit form panel (hidden by default) -->
-        <div id="ih-form-panel" class="ih-form-panel" style="display: none;">
-            <h3 class="ih-form-title" id="ih-form-title">Add Indexer</h3>
-            <div class="ih-form-grid">
-                <div class="ih-form-group">
-                    <label class="ih-form-label">Preset</label>
-                    <select class="ih-form-select" id="ih-form-preset">
-                        <option value="manual">Custom (Manual)</option>
-                        <!-- Populated dynamically -->
-                    </select>
-                </div>
-                <div class="ih-form-group">
-                    <label class="ih-form-label">Protocol</label>
-                    <select class="ih-form-select" id="ih-form-protocol">
-                        <option value="usenet">Usenet</option>
-                        <option value="torrent" disabled>Torrent (coming soon)</option>
-                    </select>
-                </div>
-                <div class="ih-form-group">
-                    <label class="ih-form-label">Name</label>
-                    <input type="text" class="ih-form-input" id="ih-form-name" placeholder="Indexer name">
-                </div>
-                <div class="ih-form-group">
-                    <label class="ih-form-label">Display Name (optional)</label>
-                    <input type="text" class="ih-form-input" id="ih-form-display-name" placeholder="Custom display name">
-                </div>
-                <div class="ih-form-group">
-                    <label class="ih-form-label">URL</label>
-                    <input type="text" class="ih-form-input" id="ih-form-url" placeholder="https://...">
-                </div>
-                <div class="ih-form-group">
-                    <label class="ih-form-label">API Path</label>
-                    <input type="text" class="ih-form-input" id="ih-form-api-path" value="/api">
-                </div>
-                <div class="ih-form-group">
-                    <label class="ih-form-label">API Key</label>
-                    <input type="text" class="ih-form-input" id="ih-form-api-key" placeholder="Enter API key">
-                </div>
-                <div class="ih-form-group">
-                    <label class="ih-form-label">Priority (1-99)</label>
-                    <input type="number" class="ih-form-input" id="ih-form-priority" value="50" min="1" max="99">
-                </div>
-                <div class="ih-form-group">
-                    <label class="ih-form-label">Enabled</label>
-                    <div class="ih-toggle-wrap">
-                        <div class="ih-toggle active" id="ih-form-enabled"></div>
-                        <span id="ih-form-enabled-label">Enabled</span>
-                    </div>
-                </div>
-            </div>
-            <div class="ih-form-actions">
-                <button class="ih-btn-test-form" id="ih-form-test-btn">
-                    <i class="fas fa-plug"></i> Test
-                </button>
-                <button class="ih-btn-cancel" id="ih-form-cancel-btn">Cancel</button>
-                <button class="ih-btn-save" id="ih-form-save-btn">Save</button>
-            </div>
-        </div>
-
-        <!-- Indexer table -->
-        <div class="ih-table-wrap" id="ih-table-wrap">
-            <table class="ih-table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Protocol</th>
-                        <th>URL</th>
-                        <th>Priority</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="ih-table-body">
-                    <!-- Populated by JS -->
-                </tbody>
-            </table>
+        <!-- Indexer card grid -->
+        <div class="ih-card-grid" id="ih-card-grid">
+            <!-- Populated by JS — cards + Add card -->
         </div>
 
         <!-- Empty state -->
         <div class="ih-empty" id="ih-empty-state" style="display: none;">
-            <i class="fas fa-search-plus"></i>
-            <p><strong>No indexers configured</strong></p>
-            <p>Click "Add Indexer" to get started with centralized indexer management.</p>
+            <div class="ih-empty-icon"><i class="fas fa-satellite-dish"></i></div>
+            <h3>No Indexers Configured</h3>
+            <p>Add your first indexer to get started with centralized indexer management.</p>
+            <button class="ih-btn-primary" id="ih-empty-add-btn">
+                <i class="fas fa-plus"></i> Add Indexer
+            </button>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div class="ih-modal-overlay" id="ih-modal-overlay">
+        <div class="ih-modal">
+            <div class="ih-modal-header">
+                <h3 class="ih-modal-title" id="ih-modal-title">Add Indexer</h3>
+                <button class="ih-modal-close" id="ih-modal-close">&times;</button>
+            </div>
+            <div class="ih-modal-body">
+                <div class="ih-modal-grid">
+                    <!-- Left column: Connection -->
+                    <div class="ih-modal-section">
+                        <div class="ih-modal-section-title">Connection Settings</div>
+                        <div class="ih-field">
+                            <label for="ih-form-preset">Preset</label>
+                            <select id="ih-form-preset" class="ih-input">
+                                <option value="manual">Custom (Manual)</option>
+                            </select>
+                        </div>
+                        <div class="ih-field">
+                            <label for="ih-form-protocol">Protocol</label>
+                            <select id="ih-form-protocol" class="ih-input">
+                                <option value="usenet">Usenet</option>
+                                <option value="torrent" disabled>Torrent (coming soon)</option>
+                            </select>
+                        </div>
+                        <div class="ih-field">
+                            <label for="ih-form-name">Name</label>
+                            <input type="text" id="ih-form-name" class="ih-input" placeholder="Indexer name">
+                        </div>
+                        <div class="ih-field">
+                            <label for="ih-form-display-name">Display Name <span class="ih-optional">(optional)</span></label>
+                            <input type="text" id="ih-form-display-name" class="ih-input" placeholder="Custom display name">
+                        </div>
+                        <div class="ih-field">
+                            <label for="ih-form-url">URL</label>
+                            <input type="text" id="ih-form-url" class="ih-input" placeholder="https://...">
+                        </div>
+                        <div class="ih-field">
+                            <label for="ih-form-api-path">API Path</label>
+                            <input type="text" id="ih-form-api-path" class="ih-input" value="/api">
+                        </div>
+                        <div class="ih-field">
+                            <label for="ih-form-api-key">API Key</label>
+                            <input type="text" id="ih-form-api-key" class="ih-input" placeholder="Enter API key">
+                        </div>
+                    </div>
+                    <!-- Right column: Configuration -->
+                    <div class="ih-modal-section">
+                        <div class="ih-modal-section-title">Configuration</div>
+                        <div class="ih-field">
+                            <label for="ih-form-priority">Priority (1-99)</label>
+                            <input type="number" id="ih-form-priority" class="ih-input" value="50" min="1" max="99">
+                            <p class="ih-help-text">Lower number = higher priority. Results from higher-priority indexers are preferred.</p>
+                        </div>
+                        <div class="ih-field">
+                            <label>Status</label>
+                            <div class="ih-toggle-row">
+                                <div class="ih-toggle active" id="ih-form-enabled"></div>
+                                <span id="ih-form-enabled-label" class="ih-toggle-label">Enabled</span>
+                            </div>
+                        </div>
+                        <div class="ih-field ih-test-area">
+                            <button class="ih-btn-test" id="ih-form-test-btn">
+                                <i class="fas fa-plug"></i> Test Connection
+                            </button>
+                            <div class="ih-test-result" id="ih-test-result"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ih-modal-footer">
+                <button class="ih-btn-secondary" id="ih-form-cancel-btn">Cancel</button>
+                <button class="ih-btn-primary" id="ih-form-save-btn"><i class="fas fa-save"></i> Save</button>
+            </div>
         </div>
     </div>
 </section>

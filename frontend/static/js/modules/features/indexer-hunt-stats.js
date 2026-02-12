@@ -20,9 +20,9 @@
                 _setVal('ih-stat-grabs', data.total_grabs || 0);
                 _setVal('ih-stat-failures', data.total_failures || 0);
                 var respEl = document.getElementById('ih-stat-response');
-                if (respEl) respEl.innerHTML = (data.avg_response_ms || 0) + '<span style="font-size: 0.8rem; font-weight: 400;">ms</span>';
+                if (respEl) respEl.innerHTML = (data.avg_response_ms || 0) + '<span class="ih-stat-unit">ms</span>';
                 var rateEl = document.getElementById('ih-stat-failure-rate');
-                if (rateEl) rateEl.innerHTML = (data.failure_rate || 0) + '<span style="font-size: 0.8rem; font-weight: 400;">%</span>';
+                if (rateEl) rateEl.innerHTML = (data.failure_rate || 0) + '<span class="ih-stat-unit">%</span>';
             })
             .catch(function(err) {
                 console.error('[IndexerHuntStats] Aggregate load error:', err);
@@ -50,18 +50,18 @@
 
                 var html = '';
                 indexers.forEach(function(idx) {
-                    var statusBadge = idx.enabled
-                        ? '<span class="ih-badge ih-badge-enabled" style="font-size:0.7rem;">Enabled</span>'
-                        : '<span class="ih-badge ih-badge-disabled" style="font-size:0.7rem;">Disabled</span>';
+                    var statusHtml = idx.enabled
+                        ? '<span class="ih-card-status enabled" style="font-size:0.7rem;"><i class="fas fa-check-circle"></i> Enabled</span>'
+                        : '<span class="ih-card-status disabled" style="font-size:0.7rem;"><i class="fas fa-minus-circle"></i> Disabled</span>';
                     html += '<tr>'
                         + '<td><strong>' + _esc(idx.name) + '</strong></td>'
-                        + '<td><span class="ih-priority">' + (idx.priority || 50) + '</span></td>'
+                        + '<td><span class="ih-card-priority-badge">' + (idx.priority || 50) + '</span></td>'
                         + '<td>' + (idx.searches || 0) + '</td>'
                         + '<td>' + (idx.grabs || 0) + '</td>'
                         + '<td>' + (idx.failures || 0) + '</td>'
                         + '<td>' + (idx.avg_response_ms || 0) + 'ms</td>'
                         + '<td>' + (idx.failure_rate || 0) + '%</td>'
-                        + '<td>' + statusBadge + '</td>'
+                        + '<td>' + statusHtml + '</td>'
                         + '</tr>';
                 });
                 tbody.innerHTML = html;

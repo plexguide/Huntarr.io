@@ -1,6 +1,6 @@
 /**
  * Indexer Hunt — Centralized indexer management module.
- * Provides CRUD operations for global indexers that sync to Movie Hunt instances.
+ * Renders indexers as cards (Huntarr design), modal for add/edit.
  */
 (function() {
     'use strict';
@@ -15,6 +15,10 @@
     // ── Initialization ────────────────────────────────────────────────
 
     IH.init = function() {
+        // Clear search on load so users always see their indexers
+        var searchInput = document.getElementById('ih-search-input');
+        if (searchInput) searchInput.value = '';
+
         _loadPresets(function() {
             _loadIndexers();
         });
@@ -26,10 +30,16 @@
 
     function _bindEvents() {
         var addBtn = document.getElementById('ih-add-btn');
-        if (addBtn) addBtn.addEventListener('click', function() { _openForm(null); });
+        if (addBtn) addBtn.addEventListener('click', function() { _openModal(null); });
+
+        var emptyAddBtn = document.getElementById('ih-empty-add-btn');
+        if (emptyAddBtn) emptyAddBtn.addEventListener('click', function() { _openModal(null); });
 
         var cancelBtn = document.getElementById('ih-form-cancel-btn');
-        if (cancelBtn) cancelBtn.addEventListener('click', _closeForm);
+        if (cancelBtn) cancelBtn.addEventListener('click', _closeModal);
+
+        var closeBtn = document.getElementById('ih-modal-close');
+        if (closeBtn) closeBtn.addEventListener('click', _closeModal);
 
         var saveBtn = document.getElementById('ih-form-save-btn');
         if (saveBtn) saveBtn.addEventListener('click', _saveForm);
@@ -38,7 +48,7 @@
         if (testBtn) testBtn.addEventListener('click', _testFromForm);
 
         var searchInput = document.getElementById('ih-search-input');
-        if (searchInput) searchInput.addEventListener('input', function() { _renderTable(); });
+        if (searchInput) searchInput.addEventListener('input', function() { _renderCards(); });
 
         var presetSelect = document.getElementById('ih-form-preset');
         if (presetSelect) presetSelect.addEventListener('change', _onPresetChange);
@@ -48,6 +58,20 @@
             this.classList.toggle('active');
             var label = document.getElementById('ih-form-enabled-label');
             if (label) label.textContent = this.classList.contains('active') ? 'Enabled' : 'Disabled';
+        });
+
+        // Close modal on overlay click
+        var overlay = document.getElementById('ih-modal-overlay');
+        if (overlay) overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) _closeModal();
+        });
+
+        // Close modal on Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                var overlay = document.getElementById('ih-modal-overlay');
+                if (overlay && overlay.classList.contains('active')) _closeModal();
+            }
         });
     }
 
@@ -69,7 +93,7 @@
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 _indexers = data.indexers || [];
-                _renderTable();
+                _renderCards();
             })
             .catch(function(err) {
                 console.error('[IndexerHunt] Load error:', err);
@@ -79,7 +103,6 @@
     function _populatePresetDropdown() {
         var sel = document.getElementById('ih-form-preset');
         if (!sel) return;
-        // Keep "Custom (Manual)" as first option
         sel.innerHTML = '<option value="manual">Custom (Manual)</option>';
         _presets.forEach(function(p) {
             var opt = document.createElement('option');
@@ -89,13 +112,12 @@
         });
     }
 
-    // ── Table rendering ───────────────────────────────────────────────
+    // ── Card rendering ─────────────────────────────────────────────────
 
-    function _renderTable() {
-        var tbody = document.getElementById('ih-table-body');
+    function _renderCards() {
+        var grid = document.getElementById('ih-card-grid');
         var empty = document.getElementById('ih-empty-state');
-        var tableWrap = document.getElementById('ih-table-wrap');
-        if (!tbody) return;
+        if (!grid) return;
 
         var query = (document.getElementById('ih-search-input') || {}).value || '';
         query = query.toLowerCase().trim();
@@ -110,55 +132,76 @@
             });
         }
 
-        if (filtered.length === 0) {
-            tbody.innerHTML = '';
-            if (tableWrap) tableWrap.style.display = 'none';
-            if (empty) empty.style.display = 'block';
+        if (filtered.length === 0 && _indexers.length === 0) {
+            grid.style.display = 'none';
+            if (empty) empty.style.display = '';
             return;
         }
 
-        if (tableWrap) tableWrap.style.display = '';
+        grid.style.display = '';
         if (empty) empty.style.display = 'none';
 
         var html = '';
         filtered.forEach(function(idx) {
-            var nameHtml = '<div class="ih-name-cell"><span class="ih-name-primary">' + _esc(idx.name) + '</span>';
-            if (idx.display_name) {
-                nameHtml += '<span class="ih-name-display">' + _esc(idx.display_name) + '</span>';
-            }
-            nameHtml += '</div>';
-
-            var protocol = (idx.protocol || 'usenet').toUpperCase();
-            var url = idx.url || '—';
             var enabled = idx.enabled !== false;
-            var statusBadge = enabled
-                ? '<span class="ih-badge ih-badge-enabled">Enabled</span>'
-                : '<span class="ih-badge ih-badge-disabled">Disabled</span>';
+            var statusClass = enabled ? 'enabled' : 'disabled';
+            var statusText = enabled ? 'Enabled' : 'Disabled';
+            var statusIcon = enabled ? 'fa-check-circle' : 'fa-minus-circle';
+            var presetLabel = _getPresetLabel(idx.preset);
+            var url = idx.url || '—';
+            var keyDisplay = idx.api_key_last4 ? '\u2022\u2022\u2022\u2022' + _esc(idx.api_key_last4) : 'No key';
+            var displayName = idx.display_name ? '<span class="ih-card-display-name">' + _esc(idx.display_name) + '</span>' : '';
 
-            html += '<tr data-id="' + _esc(idx.id) + '">'
-                + '<td>' + nameHtml + '</td>'
-                + '<td><span class="ih-badge ih-badge-protocol">' + _esc(protocol) + '</span></td>'
-                + '<td class="ih-url-cell" title="' + _esc(url) + '">' + _esc(url) + '</td>'
-                + '<td><span class="ih-priority">' + (idx.priority || 50) + '</span></td>'
-                + '<td>' + statusBadge + '</td>'
-                + '<td class="ih-actions">'
-                    + '<button class="ih-action-btn ih-btn-test" onclick="IndexerHunt.testIndexer(\'' + _esc(idx.id) + '\')" title="Test"><i class="fas fa-plug"></i></button>'
-                    + '<button class="ih-action-btn" onclick="IndexerHunt.editIndexer(\'' + _esc(idx.id) + '\')" title="Edit"><i class="fas fa-edit"></i></button>'
-                    + '<button class="ih-action-btn ih-btn-delete" onclick="IndexerHunt.deleteIndexer(\'' + _esc(idx.id) + '\', \'' + _esc(idx.name) + '\')" title="Delete"><i class="fas fa-trash"></i></button>'
-                + '</td></tr>';
+            html += '<div class="ih-card' + (enabled ? '' : ' ih-card-disabled') + '" data-id="' + _esc(idx.id) + '">'
+                + '<div class="ih-card-header">'
+                    + '<div class="ih-card-name"><span>' + _esc(idx.name) + displayName + '</span></div>'
+                    + '<span class="ih-card-status ' + statusClass + '"><i class="fas ' + statusIcon + '"></i> ' + statusText + '</span>'
+                + '</div>'
+                + '<div class="ih-card-body">'
+                    + '<div class="ih-card-detail"><i class="fas fa-globe"></i><span class="ih-detail-value">' + _esc(url) + '</span></div>'
+                    + '<div class="ih-card-detail"><i class="fas fa-key"></i><span class="ih-detail-value">' + keyDisplay + '</span></div>'
+                    + '<div class="ih-card-detail" style="gap: 8px;">'
+                        + '<span class="ih-card-priority-badge"><i class="fas fa-sort-amount-up" style="font-size:0.7rem;"></i> ' + (idx.priority || 50) + '</span>'
+                        + '<span class="ih-card-preset-badge">' + _esc(presetLabel) + '</span>'
+                    + '</div>'
+                + '</div>'
+                + '<div class="ih-card-footer">'
+                    + '<button class="ih-card-btn test" onclick="IndexerHunt.testIndexer(\'' + _esc(idx.id) + '\')" title="Test"><i class="fas fa-plug"></i> Test</button>'
+                    + '<button class="ih-card-btn edit" onclick="IndexerHunt.editIndexer(\'' + _esc(idx.id) + '\')" title="Edit"><i class="fas fa-edit"></i> Edit</button>'
+                    + '<button class="ih-card-btn delete" onclick="IndexerHunt.deleteIndexer(\'' + _esc(idx.id) + '\', \'' + _esc(idx.name) + '\')" title="Delete"><i class="fas fa-trash"></i></button>'
+                + '</div>'
+            + '</div>';
         });
-        tbody.innerHTML = html;
+
+        // "Add Indexer" card at the end
+        html += '<div class="ih-add-card" id="ih-add-card-inline">'
+            + '<div class="ih-add-icon"><i class="fas fa-plus-circle"></i></div>'
+            + '<div class="ih-add-text">Add Indexer</div>'
+        + '</div>';
+
+        grid.innerHTML = html;
+
+        // Wire up inline add card
+        var addCard = document.getElementById('ih-add-card-inline');
+        if (addCard) addCard.addEventListener('click', function() { _openModal(null); });
     }
 
-    // ── Form handling ─────────────────────────────────────────────────
+    function _getPresetLabel(preset) {
+        if (!preset || preset === 'manual') return 'Custom';
+        for (var i = 0; i < _presets.length; i++) {
+            if (_presets[i].key === preset) return _presets[i].name;
+        }
+        return preset;
+    }
 
-    function _openForm(existingIdx) {
+    // ── Modal handling ─────────────────────────────────────────────────
+
+    function _openModal(existingIdx) {
         _editingId = existingIdx ? existingIdx.id : null;
-        var panel = document.getElementById('ih-form-panel');
-        var title = document.getElementById('ih-form-title');
-        if (!panel) return;
+        var overlay = document.getElementById('ih-modal-overlay');
+        var title = document.getElementById('ih-modal-title');
+        if (!overlay) return;
 
-        panel.style.display = 'block';
         if (title) title.textContent = _editingId ? 'Edit Indexer' : 'Add Indexer';
 
         var presetSel = document.getElementById('ih-form-preset');
@@ -170,6 +213,9 @@
         var priorityEl = document.getElementById('ih-form-priority');
         var enabledEl = document.getElementById('ih-form-enabled');
         var protocolEl = document.getElementById('ih-form-protocol');
+        var testResult = document.getElementById('ih-test-result');
+
+        if (testResult) testResult.innerHTML = '';
 
         if (existingIdx) {
             if (presetSel) { presetSel.value = existingIdx.preset || 'manual'; presetSel.disabled = true; }
@@ -178,7 +224,7 @@
             if (urlEl) { urlEl.value = existingIdx.url || ''; urlEl.readOnly = existingIdx.preset !== 'manual'; }
             if (apiPathEl) { apiPathEl.value = existingIdx.api_path || '/api'; apiPathEl.readOnly = existingIdx.preset !== 'manual'; }
             if (apiKeyEl) apiKeyEl.value = '';
-            if (apiKeyEl) apiKeyEl.placeholder = existingIdx.api_key_last4 ? '****' + existingIdx.api_key_last4 : 'Enter API key';
+            if (apiKeyEl) apiKeyEl.placeholder = existingIdx.api_key_last4 ? 'Leave blank to keep (\u2022\u2022\u2022\u2022' + existingIdx.api_key_last4 + ')' : 'Enter API key';
             if (priorityEl) priorityEl.value = existingIdx.priority || 50;
             if (enabledEl) {
                 if (existingIdx.enabled !== false) enabledEl.classList.add('active');
@@ -200,13 +246,13 @@
         var enabledLabel = document.getElementById('ih-form-enabled-label');
         if (enabledLabel && enabledEl) enabledLabel.textContent = enabledEl.classList.contains('active') ? 'Enabled' : 'Disabled';
 
-        // Scroll to form
-        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Show modal
+        overlay.classList.add('active');
     }
 
-    function _closeForm() {
-        var panel = document.getElementById('ih-form-panel');
-        if (panel) panel.style.display = 'none';
+    function _closeModal() {
+        var overlay = document.getElementById('ih-modal-overlay');
+        if (overlay) overlay.classList.remove('active');
         _editingId = null;
     }
 
@@ -272,7 +318,10 @@
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.success) {
-                _closeForm();
+                _closeModal();
+                // Clear search so newly added indexer is visible
+                var searchInput = document.getElementById('ih-search-input');
+                if (searchInput) searchInput.value = '';
                 _loadIndexers();
                 var msg = _editingId ? 'Indexer updated.' : 'Indexer added.';
                 if (data.linked_instances_updated > 0) {
@@ -293,6 +342,7 @@
         var urlEl = document.getElementById('ih-form-url');
         var apiPathEl = document.getElementById('ih-form-api-path');
         var apiKeyEl = document.getElementById('ih-form-api-key');
+        var resultEl = document.getElementById('ih-test-result');
 
         var body = {
             preset: presetEl ? presetEl.value : 'manual',
@@ -308,6 +358,7 @@
 
         var btn = document.getElementById('ih-form-test-btn');
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...'; }
+        if (resultEl) resultEl.innerHTML = '';
 
         fetch('./api/indexer-hunt/validate', {
             method: 'POST',
@@ -317,16 +368,16 @@
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.valid) {
-                if (window.huntarrUI) window.huntarrUI.showNotification('Connection successful!', 'success');
+                if (resultEl) resultEl.innerHTML = '<div class="ih-test-ok"><i class="fas fa-check-circle"></i> Connection successful</div>';
             } else {
-                if (window.huntarrUI) window.huntarrUI.showNotification(data.message || 'Connection failed.', 'error');
+                if (resultEl) resultEl.innerHTML = '<div class="ih-test-fail"><i class="fas fa-times-circle"></i> ' + _esc(data.message || 'Connection failed') + '</div>';
             }
         })
         .catch(function(err) {
-            if (window.huntarrUI) window.huntarrUI.showNotification('Test error: ' + err, 'error');
+            if (resultEl) resultEl.innerHTML = '<div class="ih-test-fail"><i class="fas fa-times-circle"></i> ' + _esc(String(err)) + '</div>';
         })
         .finally(function() {
-            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-plug"></i> Test'; }
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-plug"></i> Test Connection'; }
         });
     }
 
@@ -335,7 +386,7 @@
     IH.editIndexer = function(id) {
         var idx = null;
         _indexers.forEach(function(i) { if (i.id === id) idx = i; });
-        if (idx) _openForm(idx);
+        if (idx) _openModal(idx);
     };
 
     IH.testIndexer = function(id) {
@@ -354,7 +405,6 @@
     };
 
     IH.deleteIndexer = function(id, name) {
-        // Check linked instances first
         fetch('./api/indexer-hunt/linked-instances/' + id)
             .then(function(r) { return r.json(); })
             .then(function(data) {

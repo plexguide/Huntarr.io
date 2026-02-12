@@ -1,11 +1,15 @@
 <!-- Indexer Hunt — History Page -->
 <section id="indexer-hunt-history-section" class="content-section" style="display: none;">
     <link rel="stylesheet" href="./static/css/indexer-hunt.css">
+    {% with section_id='indexer-hunt-history' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
 
-    <div class="ih-history-container">
-        <div class="ih-history-header">
-            <h2><i class="fas fa-history" style="margin-right: 8px; opacity: 0.7;"></i>Indexer Hunt — History</h2>
-            <div class="ih-history-filters">
+    <div class="ih-history-page">
+        <div class="ih-history-page-header">
+            <div class="ih-history-title">
+                <i class="fas fa-history"></i>
+                <h2>Indexer Hunt History</h2>
+            </div>
+            <div class="ih-history-controls">
                 <select class="ih-history-select" id="ih-history-type-filter">
                     <option value="">All Events</option>
                     <option value="search">Searches</option>
@@ -17,13 +21,13 @@
                     <option value="">All Indexers</option>
                     <!-- Populated by JS -->
                 </select>
-                <button class="ih-btn-clear" id="ih-history-clear-btn">
+                <button class="ih-btn-danger" id="ih-history-clear-btn">
                     <i class="fas fa-trash"></i> Clear History
                 </button>
             </div>
         </div>
 
-        <div class="ih-history-table-wrap" id="ih-history-table-wrap">
+        <div class="ih-history-group" id="ih-history-table-wrap">
             <table class="ih-history-table">
                 <thead>
                     <tr>

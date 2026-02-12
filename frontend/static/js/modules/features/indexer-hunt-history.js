@@ -64,7 +64,6 @@
             .then(function(data) {
                 var sel = document.getElementById('ih-history-indexer-filter');
                 if (!sel) return;
-                // Keep "All Indexers" option
                 var firstOpt = sel.querySelector('option[value=""]');
                 sel.innerHTML = '';
                 if (firstOpt) sel.appendChild(firstOpt);
@@ -126,7 +125,6 @@
         var html = '';
         items.forEach(function(ev) {
             var date = ev.created_at || '';
-            // Format date nicely
             try {
                 var d = new Date(date);
                 if (!isNaN(d.getTime())) {
@@ -136,14 +134,16 @@
 
             var typeClass = 'ih-event-' + (ev.event_type || 'search');
             var typeBadge = '<span class="ih-event-badge ' + typeClass + '">' + _esc(ev.event_type || 'unknown') + '</span>';
-            var statusIcon = ev.success ? '<i class="fas fa-check-circle" style="color: #2ecc71;"></i>' : '<i class="fas fa-times-circle" style="color: #e74c3c;"></i>';
+            var statusIcon = ev.success
+                ? '<i class="fas fa-check-circle" style="color: #10b981;"></i>'
+                : '<i class="fas fa-times-circle" style="color: #ef4444;"></i>';
 
             html += '<tr>'
-                + '<td style="white-space: nowrap; font-size: 0.85rem;">' + _esc(date) + '</td>'
+                + '<td style="white-space: nowrap; font-size: 0.85rem; color: #94a3b8;">' + _esc(date) + '</td>'
                 + '<td>' + typeBadge + '</td>'
-                + '<td>' + _esc(ev.indexer_name || '—') + '</td>'
-                + '<td>' + _esc(ev.query || '—') + '</td>'
-                + '<td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' + _esc(ev.result_title || '—') + '</td>'
+                + '<td>' + _esc(ev.indexer_name || '\u2014') + '</td>'
+                + '<td>' + _esc(ev.query || '\u2014') + '</td>'
+                + '<td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' + _esc(ev.result_title || '\u2014') + '</td>'
                 + '<td>' + (ev.response_time_ms || 0) + 'ms</td>'
                 + '<td>' + statusIcon + '</td>'
                 + '</tr>';
