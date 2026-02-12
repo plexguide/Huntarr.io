@@ -35,7 +35,7 @@
             <!-- Requestarr Section -->
             {% include 'components/requestarr_section.html' %}
 
-            <!-- Movie Hunt Section (movies only) -->
+            <!-- Media Hunt Section (discover + collection; mode: movie / tv) -->
             {% include 'components/media_hunt_section.html' %}
             {% include 'components/media_hunt_instance_management_section.html' %}
             {% include 'components/media_hunt_calendar_section.html' %}
@@ -48,11 +48,11 @@
             {% include 'components/tv_hunt_settings_sizes_section.html' %}
             {% include 'components/tv_hunt_settings_tv_management_section.html' %}
             {% include 'components/tv_hunt_settings_import_lists_section.html' %}
-            <!-- Movie Hunt Settings default page (instance list + hunt settings editor) -->
-            {% include 'components/movie_hunt_settings_default_section.html' %}
-            <!-- Activity (Queue, History, Blocklist) - Movie Hunt only -->
+            <!-- Media Hunt (Movie) settings default page (instance list + hunt settings editor) -->
+            {% include 'components/media_hunt_settings_default_section.html' %}
+            <!-- Media Hunt Activity – Movie (Queue, History, Blocklist, Logs) -->
             {% include 'components/activity_section.html' %}
-            <!-- TV Hunt Activity (Queue, History, Blocklist) - separate from Movie Hunt -->
+            <!-- Media Hunt Activity – TV (Queue, History, Blocklist) -->
             {% include 'components/tv_hunt_activity_section.html' %}
 
             <!-- NZB Hunt (standalone module - dev key required) -->

@@ -1,9 +1,9 @@
 /**
- * Movie Hunt Calendar – Modern list-style upcoming releases view
+ * Media Hunt Calendar – list-style upcoming releases (movie/tv mode).
  */
 
-/* Calendar view container — match Discover/Movie Collection width */
-.movie-hunt-calendar-view {
+/* Calendar view container */
+.media-hunt-calendar-view {
     padding: 0 0 20px 0;
     width: 100%;
     max-width: none !important;
@@ -324,7 +324,7 @@
 
 /* Responsive */
 @media (max-width: 768px) {
-    .movie-hunt-calendar-view {
+    .media-hunt-calendar-view {
         padding: 0 15px 20px;
     }
     .mh-calendar-controls {

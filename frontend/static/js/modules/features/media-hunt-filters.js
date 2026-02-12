@@ -283,7 +283,7 @@
     function openFiltersModal() {
         var modal = el('media-hunt-filter-modal');
         if (!modal) return;
-        // Move modal to body so it isn't clipped by #media-hunt-section (same as Requestarr / request modal)
+        // Move modal to body so it isn't clipped by #mediaHuntSection (same as Requestarr / request modal)
         if (modal.parentNode !== document.body) {
             document.body.appendChild(modal);
         }
