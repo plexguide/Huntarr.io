@@ -1,0 +1,157 @@
+{# Media Hunt Instance Management – single section for Movie Hunt and TV Hunt. Mode set by router. #}
+<section id="mediaHuntInstanceManagementSection" class="content-section" style="display: none;">
+    <div id="mediaHuntInstanceManagementBanner">{% with section_id='media-hunt-instance-management' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}</div>
+    <div id="mediaHuntInstanceManagementContainer" class="app-content-panel">
+        <p id="media-hunt-instance-management-description" class="instance-management-description">Configure how each instance runs. Each instance has its own queue, history, blocklist, and media.</p>
+        <div class="settings-group instance-management-settings-group">
+            <h3 id="media-hunt-instance-management-title">Instances</h3>
+            <div class="instance-card-grid" id="media-hunt-instance-management-grid">
+                <div class="add-instance-card" id="media-hunt-instance-management-add-card" data-app-type="media-hunt-instance">
+                    <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
+                    <div class="add-text">Add Instance</div>
+                </div>
+            </div>
+        </div>
+        <div class="settings-group instance-management-settings-group" id="media-hunt-universal-settings-group" style="display: none;">
+            <h3>Universal Settings</h3>
+            <div class="instance-card-grid">
+                <div class="instance-card" id="mh-universal-video-card">
+                    <div class="instance-card-header">
+                        <span class="instance-name"><i class="fas fa-video" style="margin-right: 8px;"></i>Video</span>
+                        <div class="instance-status-icon status-connected" id="mh-universal-video-status-icon" title="Enabled"><i class="fas fa-check-circle"></i></div>
+                    </div>
+                    <div class="instance-card-body">
+                        <div class="instance-detail"><i class="fas fa-shield-alt"></i><span>Strategy: <strong id="mh-universal-video-strategy-label">Trust Filename</strong></span></div>
+                        <div class="instance-detail"><i class="fas fa-microscope"></i><span>Scan Power: <strong id="mh-universal-video-profile-label">Default</strong></span></div>
+                    </div>
+                    <div class="instance-card-footer">
+                        <button type="button" class="btn-card edit" id="mh-universal-video-edit-btn"><i class="fas fa-cog"></i> Edit</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="mh-universal-video-modal" class="instance-add-modal" style="display: none;">
+            <div class="instance-add-modal-backdrop" id="mh-universal-video-modal-backdrop"></div>
+            <div class="instance-add-modal-content" style="max-width: 480px;">
+                <div class="instance-add-modal-header">
+                    <button type="button" class="instance-add-modal-close" id="mh-universal-video-modal-close" aria-label="Close"><i class="fas fa-times"></i></button>
+                    <h2 class="instance-add-modal-title"><i class="fas fa-video" style="margin-right: 8px;"></i>Video Settings</h2>
+                    <p class="instance-add-modal-subtitle">Applies to all Movie Hunt instances.</p>
+                </div>
+                <div class="instance-add-modal-body">
+                    <div class="editor-field-group" style="margin-bottom: 16px;">
+                        <div class="editor-setting-item flex-row">
+                            <label style="color: #f1f5f9;">Analyze Video Files</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="mh-universal-analyze-video-files">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <p class="editor-help-text">Use ffprobe to extract resolution, video codec, and audio codec.</p>
+                    </div>
+                    <div class="editor-field-group" id="mh-universal-video-scan-strategy-group">
+                        <label style="display: block; margin-bottom: 8px; font-size: 0.9rem; color: #f1f5f9;">Scan Strategy</label>
+                        <select id="mh-universal-video-scan-strategy" style="width: 100%; padding: 10px 12px; font-size: 1rem; color: #f8fafc; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 8px;">
+                            <option value="trust_filename" selected>Trust Filename</option>
+                            <option value="always_verify">Always Verify</option>
+                        </select>
+                    </div>
+                    <div class="editor-field-group" id="mh-universal-video-scan-profile-group">
+                        <label style="display: block; margin-bottom: 8px; font-size: 0.9rem; color: #f1f5f9;">Video Scan Power</label>
+                        <select id="mh-universal-video-scan-profile" style="width: 100%; padding: 10px 12px; font-size: 1rem; color: #f8fafc; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 8px;">
+                            <option value="light">Light</option>
+                            <option value="default" selected>Default</option>
+                            <option value="moderate">Moderate</option>
+                            <option value="heavy">Heavy</option>
+                            <option value="maximum">Maximum</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="instance-add-modal-actions">
+                    <button type="button" class="instance-add-modal-cancel" id="mh-universal-video-modal-cancel">Cancel</button>
+                    <button type="button" class="instance-add-modal-ok" id="mh-universal-video-save-btn"><i class="fas fa-save"></i> Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="media-hunt-instance-add-modal" class="instance-add-modal" style="display: none;">
+        <div class="instance-add-modal-backdrop" id="media-hunt-instance-add-modal-backdrop"></div>
+        <div class="instance-add-modal-content">
+            <div class="instance-add-modal-header">
+                <button type="button" class="instance-add-modal-close" id="media-hunt-instance-add-modal-close" aria-label="Close"><i class="fas fa-times"></i></button>
+                <h2 class="instance-add-modal-title" id="media-hunt-instance-add-modal-title">Add Instance</h2>
+                <p class="instance-add-modal-subtitle" id="media-hunt-instance-add-modal-subtitle">Enter a name for the new instance.</p>
+            </div>
+            <div class="instance-add-modal-body">
+                <label for="media-hunt-instance-add-name">Instance name</label>
+                <input type="text" id="media-hunt-instance-add-name" class="instance-add-name-input" placeholder="e.g. Main" maxlength="64" autocomplete="off">
+            </div>
+            <div class="instance-add-modal-actions">
+                <button type="button" class="instance-add-modal-cancel" id="media-hunt-instance-add-modal-cancel">Cancel</button>
+                <button type="button" class="instance-add-modal-ok" id="media-hunt-instance-add-modal-ok"><i class="fas fa-plus"></i> Add</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="media-hunt-instance-delete-modal" class="instance-delete-modal" style="display: none;">
+        <div class="instance-delete-modal-backdrop" id="media-hunt-instance-delete-modal-backdrop"></div>
+        <div class="instance-delete-modal-content">
+            <div class="instance-delete-modal-header">
+                <button type="button" class="instance-delete-modal-close" id="media-hunt-instance-delete-modal-close" aria-label="Close"><i class="fas fa-times"></i></button>
+                <h2 class="instance-delete-modal-title">Delete Instance</h2>
+                <p class="instance-delete-modal-message" id="media-hunt-instance-delete-modal-message"></p>
+            </div>
+            <div class="instance-delete-modal-actions">
+                <button type="button" class="instance-delete-modal-cancel" id="media-hunt-instance-delete-modal-cancel">Cancel</button>
+                <button type="button" class="instance-delete-modal-confirm" id="media-hunt-instance-delete-modal-confirm"><i class="fas fa-trash"></i> Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="media-hunt-instance-rename-modal" class="instance-rename-modal" style="display: none;">
+        <div class="instance-rename-modal-backdrop" id="media-hunt-instance-rename-modal-backdrop"></div>
+        <div class="instance-rename-modal-content">
+            <div class="instance-rename-modal-header">
+                <button type="button" class="instance-rename-modal-close" id="media-hunt-instance-rename-modal-close" aria-label="Close"><i class="fas fa-times"></i></button>
+                <h2 class="instance-rename-modal-title">Rename Instance</h2>
+                <p class="instance-rename-modal-subtitle">Enter a new name for this instance.</p>
+            </div>
+            <div class="instance-rename-modal-body">
+                <label for="media-hunt-instance-rename-name">Instance name</label>
+                <input type="text" id="media-hunt-instance-rename-name" class="instance-rename-name-input" placeholder="e.g. Main" maxlength="64" autocomplete="off">
+            </div>
+            <div class="instance-rename-modal-actions">
+                <button type="button" class="instance-rename-modal-cancel" id="media-hunt-instance-rename-modal-cancel">Cancel</button>
+                <button type="button" class="instance-rename-modal-save" id="media-hunt-instance-rename-modal-save"><i class="fas fa-save"></i> Save</button>
+            </div>
+        </div>
+    </div>
+</section>
+<style>
+#mediaHuntInstanceManagementSection { display: none; padding: 0; margin: 0; width: 100%; min-height: 100vh; overflow-y: auto; overflow-x: hidden; }
+#mediaHuntInstanceManagementSection.active { display: block !important; }
+#mediaHuntInstanceManagementContainer { width: 100%; padding: 20px; margin: 0; background-color: transparent; box-shadow: none; border: none; }
+.instance-management-description { color: #94a3b8; margin: 0 0 20px 0; font-size: 0.95rem; line-height: 1.5; }
+.instance-management-settings-group { background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(148, 163, 184, 0.08); border-radius: 12px; padding: 24px; margin: 12px 0 20px 0; }
+.instance-management-settings-group h3 { margin: 0 0 18px 0; padding: 0 0 12px 0; font-size: 1.1rem; font-weight: 600; color: #f1f5f9; border-bottom: 1px solid rgba(148, 163, 184, 0.12); background: none; box-shadow: none; }
+.instance-management-loading { grid-column: 1 / -1; color: #94a3b8; padding: 24px; text-align: center; }
+.instance-add-modal,.instance-delete-modal,.instance-rename-modal{position:fixed;top:0;left:0;right:0;bottom:0;z-index:1000;display:none;align-items:center;justify-content:center;}
+.instance-add-modal[style*="display: flex"],.instance-delete-modal[style*="display: flex"],.instance-rename-modal[style*="display: flex"]{display:flex!important;}
+body.instance-add-modal-open,body.instance-delete-modal-open,body.instance-rename-modal-open{overflow:hidden;}
+body.instance-add-modal-open .app-container,body.instance-delete-modal-open .app-container,body.instance-rename-modal-open .app-container{filter:blur(10px);}
+.instance-add-modal-backdrop,.instance-delete-modal-backdrop,.instance-rename-modal-backdrop{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:1000;}
+.instance-add-modal-content,.instance-delete-modal-content,.instance-rename-modal-content{position:relative;z-index:1001;background:rgba(15,23,42,0.98);border:2px solid rgba(99,102,241,0.4);border-radius:12px;max-width:420px;width:90%;box-shadow:0 25px 50px rgba(0,0,0,0.5);overflow:hidden;}
+.instance-add-modal-header,.instance-delete-modal-header,.instance-rename-modal-header{position:relative;padding:20px 24px 12px;background:linear-gradient(135deg,#1e293b 0%,#334155 50%,#0f172a 100%);}
+.instance-add-modal-close,.instance-delete-modal-close,.instance-rename-modal-close{position:absolute;top:12px;right:12px;background:transparent;border:none;color:#94a3b8;font-size:1.2rem;cursor:pointer;padding:4px;}
+.instance-add-modal-title,.instance-delete-modal-title,.instance-rename-modal-title{margin:0 0 4px 0;font-size:1.25rem;font-weight:600;color:#f8fafc;}
+.instance-add-modal-subtitle,.instance-delete-modal-message,.instance-rename-modal-subtitle{margin:0;font-size:0.9rem;color:#94a3b8;}
+.instance-add-modal-body,.instance-rename-modal-body{padding:20px 24px;}
+.instance-add-modal-body label,.instance-rename-modal-body label{display:block;margin-bottom:8px;font-size:0.9rem;color:#cbd5e1;}
+.instance-add-name-input,.instance-rename-name-input{width:100%;padding:10px 12px;font-size:1rem;color:#f8fafc;background:rgba(15,23,42,0.8);border:1px solid rgba(148,163,184,0.3);border-radius:8px;box-sizing:border-box;}
+.instance-add-modal-actions,.instance-delete-modal-actions,.instance-rename-modal-actions{display:flex;justify-content:flex-end;gap:12px;padding:16px 24px 20px;border-top:1px solid rgba(148,163,184,0.1);}
+.instance-add-modal-cancel,.instance-delete-modal-cancel,.instance-rename-modal-cancel{padding:10px 20px;background:rgba(255,255,255,0.1);border:1px solid rgba(148,163,184,0.3);border-radius:8px;color:#e2e8f0;font-size:14px;cursor:pointer;}
+.instance-add-modal-ok,.instance-delete-modal-confirm,.instance-rename-modal-save{padding:10px 20px;background:linear-gradient(135deg,#6366f1 0%,#4f46e5 100%);border:1px solid rgba(99,102,241,0.5);border-radius:8px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;}
+.instance-add-modal-ok:disabled,.instance-delete-modal-confirm:disabled,.instance-rename-modal-save:disabled{opacity:0.5;cursor:not-allowed;}
+</style>

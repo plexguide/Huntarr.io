@@ -1,0 +1,85 @@
+{# Media Hunt Profiles – single section for both Movie Hunt and TV Hunt. Mode (movie/tv) set by router from hash. #}
+<section id="mediaHuntProfilesSection" class="content-section" style="display: none;" data-media-hunt-profiles="true">
+    <div id="mediaHuntProfilesBannerContainer">{% with section_id='media-hunt-profiles' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}</div>
+    <div id="mediaHuntProfilesManagementContainer" class="app-content-panel">
+        <div class="movie-hunt-settings-instance-bar" style="margin-bottom: 16px;">
+            <select id="media-hunt-profiles-instance-select" class="control-select" aria-label="Instance">
+                <option value="">Loading...</option>
+            </select>
+        </div>
+        <div class="settings-group profiles-settings-group">
+            <h3>Profiles</h3>
+            <p id="media-hunt-profiles-subtitle" class="profiles-subtitle" style="margin:0 0 12px 0;font-size:0.9rem;color:#94a3b8;">Quality profiles for the selected instance.</p>
+            <div class="instance-card-grid" id="media-hunt-profiles-grid">
+                <div class="add-instance-card" data-app-type="media-hunt-profile">
+                    <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
+                    <div class="add-text">Add Profile</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="media-hunt-profile-add-modal" class="profile-add-modal" style="display: none;">
+        <div class="profile-add-modal-backdrop" id="media-hunt-profile-add-modal-backdrop"></div>
+        <div class="profile-add-modal-content">
+            <div class="profile-add-modal-header">
+                <button type="button" class="profile-add-modal-close" id="media-hunt-profile-add-modal-close" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+                <h2 class="profile-add-modal-title">Add Profile</h2>
+                <p class="profile-add-modal-subtitle" id="media-hunt-profile-add-subtitle">Enter a name for the new profile.</p>
+            </div>
+            <div class="profile-add-modal-body">
+                <label for="media-hunt-profile-add-name">Profile name</label>
+                <input type="text" id="media-hunt-profile-add-name" class="profile-add-name-input" placeholder="e.g. HD Only" maxlength="64" autocomplete="off">
+            </div>
+            <div class="profile-add-modal-actions">
+                <button type="button" class="btn-card profile-add-modal-cancel" id="media-hunt-profile-add-modal-cancel">Cancel</button>
+                <button type="button" class="btn-card profile-add-modal-save" id="media-hunt-profile-add-modal-save"><i class="fas fa-plus"></i> Add</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    #mediaHuntProfilesSection { width: 100%; min-height: 100vh; overflow-y: auto; overflow-x: hidden; }
+    #mediaHuntProfilesSection.active { display: block !important; }
+    #mediaHuntProfilesManagementContainer { width: 100%; padding: 20px; margin: 0; background-color: transparent; box-shadow: none; border: none; }
+    #media-hunt-profiles-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+    #media-hunt-profiles-grid .instance-card { padding: 12px 14px; border-radius: 10px; display: flex; flex-direction: column; height: 100%; }
+    #media-hunt-profiles-grid .instance-card-header { margin-bottom: 10px; }
+    #media-hunt-profiles-grid .instance-name { font-size: 0.95rem; gap: 6px; font-family: inherit; }
+    #media-hunt-profiles-grid .instance-name i { font-size: 0.85rem; }
+    #media-hunt-profiles-grid .default-badge { font-size: 0.6rem; padding: 2px 6px; font-family: inherit; }
+    #media-hunt-profiles-grid .instance-card-body { margin-bottom: 12px; flex: 1; min-height: 0; }
+    #media-hunt-profiles-grid .instance-card-footer { gap: 6px; margin-top: 0; }
+    #media-hunt-profiles-grid .btn-card { padding: 6px 10px; font-size: 0.8rem; }
+    #media-hunt-profiles-grid .add-instance-card { min-height: 100px; }
+    #media-hunt-profiles-grid .instance-card-header-actions { display: flex; align-items: center; gap: 8px; margin-left: 8px; }
+    #media-hunt-profiles-grid .btn-clone-profile { background: transparent; border: none; color: #94a3b8; padding: 2px 4px; cursor: pointer; border-radius: 4px; font-size: 0.8rem; }
+    #media-hunt-profiles-grid .btn-clone-profile:hover { color: #6366f1; background: rgba(99, 102, 241, 0.15); }
+    #media-hunt-profiles-grid .profile-card-quality-tags { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+    #media-hunt-profiles-grid .profile-quality-tag { display: inline-block; padding: 2px 6px; font-size: 0.68rem; border-radius: 4px; background: rgba(71, 85, 105, 0.5); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.2); }
+    #media-hunt-profiles-grid .profile-quality-tag-highest { background: linear-gradient(135deg, rgba(202, 138, 4, 0.35) 0%, rgba(180, 83, 9, 0.35) 100%); color: #fcd34d; border-color: rgba(202, 138, 4, 0.5); font-weight: 600; }
+    #media-hunt-profiles-grid .profile-quality-tag-empty { color: #64748b; font-style: italic; font-size: 0.7rem; }
+    .profile-add-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000; display: none; align-items: center; justify-content: center; }
+    .profile-add-modal[style*="display: flex"] { display: flex !important; }
+    body.profile-add-modal-open { overflow: hidden; }
+    body.profile-add-modal-open .app-container { filter: blur(10px); }
+    .profile-add-modal-backdrop { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 1000; }
+    .profile-add-modal-content { position: relative; z-index: 1001; background: rgba(15, 23, 42, 0.98); border: 2px solid rgba(99, 102, 241, 0.4); border-radius: 12px; max-width: 420px; width: 90%; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5); overflow: hidden; }
+    .profile-add-modal-header { position: relative; padding: 20px 24px 12px; background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #0f172a 100%); }
+    .profile-add-modal-close { position: absolute; top: 12px; right: 12px; background: transparent; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; padding: 4px; }
+    .profile-add-modal-close:hover { color: #f8fafc; }
+    .profile-add-modal-title { margin: 0 0 4px 0; font-size: 1.25rem; font-weight: 600; color: #f8fafc; }
+    .profile-add-modal-subtitle { margin: 0; font-size: 0.9rem; color: #94a3b8; }
+    .profile-add-modal-body { padding: 20px 24px; }
+    .profile-add-modal-body label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: #cbd5e1; }
+    .profile-add-name-input { width: 100%; padding: 10px 12px; font-size: 1rem; color: #f8fafc; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 8px; box-sizing: border-box; }
+    .profile-add-name-input:focus { outline: none; border-color: #6366f1; }
+    .profile-add-modal-actions { display: flex; justify-content: flex-end; gap: 12px; padding: 16px 24px 20px; border-top: 1px solid rgba(148, 163, 184, 0.1); }
+</style>

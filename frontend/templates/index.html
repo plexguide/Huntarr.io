@@ -37,10 +37,10 @@
 
             <!-- Movie Hunt Section (movies only) -->
             {% include 'components/tv_hunt_section.html' %}
-            {% include 'components/tv_hunt_instance_management_section.html' %}
+            {% include 'components/media_hunt_instance_management_section.html' %}
             {% include 'components/tv_hunt_instance_editor_section.html' %}
             {% include 'components/tv_hunt_settings_custom_formats_section.html' %}
-            {% include 'components/tv_hunt_settings_profiles_section.html' %}
+            {% include 'components/media_hunt_profiles_section.html' %}
             {% include 'components/tv_hunt_settings_indexers_section.html' %}
             {% include 'components/tv_hunt_settings_clients_section.html' %}
             {% include 'components/tv_hunt_settings_root_folders_section.html' %}
@@ -52,8 +52,6 @@
             {% include 'components/movie_hunt_settings_default_section.html' %}
             <!-- Movie Hunt Instance Editor (Search, Stateful, Additional per instance) -->
             {% include 'components/movie_hunt_instance_editor_section.html' %}
-            <!-- Movie Hunt Instance Management -->
-            {% include 'components/movie_hunt_instance_management_section.html' %}
             <!-- Activity (Queue, History, Blocklist) - Movie Hunt only -->
             {% include 'components/activity_section.html' %}
             <!-- TV Hunt Activity (Queue, History, Blocklist) - separate from Movie Hunt -->
@@ -93,7 +91,6 @@
 
             <!-- Settings sub-pages (Movie Management, Profiles, Indexers, Clients) -->
             {% include 'components/settings_movie_management_section.html' %}
-            {% include 'components/settings_profiles_section.html' %}
             {% include 'components/settings_sizes_section.html' %}
             {% include 'components/profile_editor_section.html' %}
             {% include 'components/settings_custom_formats_section.html' %}

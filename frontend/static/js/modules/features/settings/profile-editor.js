@@ -527,7 +527,9 @@
                         if (optionalNextSection != null && window.huntarrUI && window.huntarrUI.switchSection) {
                             window.huntarrUI.switchSection(nextSection);
                         }
-                        if (isTVHunt && window.TVHuntSettingsForms && window.TVHuntSettingsForms.refreshTVHuntProfilesList) {
+                        if (window.MediaHuntProfiles && typeof window.MediaHuntProfiles.refreshProfilesList === 'function' && window._mediaHuntProfilesMode) {
+                            window.MediaHuntProfiles.refreshProfilesList(window._mediaHuntProfilesMode);
+                        } else if (isTVHunt && window.TVHuntSettingsForms && window.TVHuntSettingsForms.refreshTVHuntProfilesList) {
                             window.TVHuntSettingsForms.refreshTVHuntProfilesList();
                         } else if (Forms.refreshProfilesList) Forms.refreshProfilesList();
                     }).catch(function() {
@@ -537,7 +539,9 @@
                         if (optionalNextSection != null && window.huntarrUI && window.huntarrUI.switchSection) {
                             window.huntarrUI.switchSection(nextSection);
                         }
-                        if (isTVHunt && window.TVHuntSettingsForms && window.TVHuntSettingsForms.refreshTVHuntProfilesList) {
+                        if (window.MediaHuntProfiles && typeof window.MediaHuntProfiles.refreshProfilesList === 'function' && window._mediaHuntProfilesMode) {
+                            window.MediaHuntProfiles.refreshProfilesList(window._mediaHuntProfilesMode);
+                        } else if (isTVHunt && window.TVHuntSettingsForms && window.TVHuntSettingsForms.refreshTVHuntProfilesList) {
                             window.TVHuntSettingsForms.refreshTVHuntProfilesList();
                         } else if (Forms.refreshProfilesList) Forms.refreshProfilesList();
                     });
