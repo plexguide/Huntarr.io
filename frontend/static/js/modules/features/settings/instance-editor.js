@@ -343,6 +343,16 @@
     isInstanceEditorDirty: function() {
         return !!_instanceEditorDirty;
     },
+
+    // Public method to clear the dirty flag and disable the save button (used by Prowlarr editor etc.)
+    clearInstanceEditorDirty: function() {
+        _instanceEditorDirty = false;
+        const saveBtn = document.getElementById('instance-editor-save');
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.classList.remove('enabled');
+        }
+    },
     
     // Check connection status for editor
     checkEditorConnection: function(appType, url, apiKey) {

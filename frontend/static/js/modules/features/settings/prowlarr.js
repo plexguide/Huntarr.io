@@ -184,11 +184,33 @@
         if (saveBtn) {
             saveBtn.onclick = () => window.SettingsForms.saveProwlarrFromEditor();
         }
+        const navigateBack = () => {
+            if (window.SettingsForms.clearInstanceEditorDirty) {
+                window.SettingsForms.clearInstanceEditorDirty();
+            }
+            window.huntarrUI.switchSection('prowlarr');
+        };
         if (cancelBtn) {
-            cancelBtn.onclick = () => window.huntarrUI.switchSection('prowlarr');
+            cancelBtn.onclick = () => {
+                if (window.SettingsForms.isInstanceEditorDirty && window.SettingsForms.isInstanceEditorDirty()) {
+                    window.SettingsForms.confirmLeaveInstanceEditor((result) => {
+                        if (result === 'discard') navigateBack();
+                    });
+                } else {
+                    navigateBack();
+                }
+            };
         }
         if (backBtn) {
-            backBtn.onclick = () => window.huntarrUI.switchSection('prowlarr');
+            backBtn.onclick = () => {
+                if (window.SettingsForms.isInstanceEditorDirty && window.SettingsForms.isInstanceEditorDirty()) {
+                    window.SettingsForms.confirmLeaveInstanceEditor((result) => {
+                        if (result === 'discard') navigateBack();
+                    });
+                } else {
+                    navigateBack();
+                }
+            };
         }
 
         // Switch to the editor section
@@ -211,7 +233,23 @@
         settings.api_key = document.getElementById('editor-key').value;
 
         window.SettingsForms.saveAppSettings('prowlarr', settings);
-        // Stay on the editor page; do not switch back to prowlarr section
+
+        // Clear dirty flag so navigating away doesn't trigger "Unsaved Changes"
+        if (window.SettingsForms.clearInstanceEditorDirty) {
+            window.SettingsForms.clearInstanceEditorDirty();
+        }
+
+        // Show brief "Saved!" feedback on the save button
+        const saveBtn = document.getElementById('instance-editor-save');
+        if (saveBtn) {
+            const originalText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved!';
+            saveBtn.style.opacity = '0.7';
+            setTimeout(() => {
+                saveBtn.innerHTML = originalText;
+                saveBtn.style.opacity = '';
+            }, 1500);
+        }
     };
 
 })();
