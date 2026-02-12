@@ -1,13 +1,13 @@
 /**
  * Indexer Hunt — Centralized indexer management module.
- * Renders indexers as cards (Huntarr design), modal for add/edit.
+ * Full-page editor (no modal), card grid list.
  */
 (function() {
     'use strict';
 
     var _indexers = [];
     var _presets = [];
-    var _editingId = null; // null = add mode, string = edit mode
+    var _editingId = null;
     var _initialized = false;
 
     var IH = window.IndexerHunt = {};
@@ -15,10 +15,9 @@
     // ── Initialization ────────────────────────────────────────────────
 
     IH.init = function() {
-        // Clear search on load so users always see their indexers
         var searchInput = document.getElementById('ih-search-input');
         if (searchInput) searchInput.value = '';
-
+        _showListView();
         _loadPresets(function() {
             _loadIndexers();
         });
@@ -29,29 +28,13 @@
     };
 
     function _bindEvents() {
-        var addBtn = document.getElementById('ih-add-btn');
-        if (addBtn) addBtn.addEventListener('click', function() { _openModal(null); });
-
-        var emptyAddBtn = document.getElementById('ih-empty-add-btn');
-        if (emptyAddBtn) emptyAddBtn.addEventListener('click', function() { _openModal(null); });
-
-        var cancelBtn = document.getElementById('ih-form-cancel-btn');
-        if (cancelBtn) cancelBtn.addEventListener('click', _closeModal);
-
-        var closeBtn = document.getElementById('ih-modal-close');
-        if (closeBtn) closeBtn.addEventListener('click', _closeModal);
-
-        var saveBtn = document.getElementById('ih-form-save-btn');
-        if (saveBtn) saveBtn.addEventListener('click', _saveForm);
-
-        var testBtn = document.getElementById('ih-form-test-btn');
-        if (testBtn) testBtn.addEventListener('click', _testFromForm);
-
-        var searchInput = document.getElementById('ih-search-input');
-        if (searchInput) searchInput.addEventListener('input', function() { _renderCards(); });
-
-        var presetSelect = document.getElementById('ih-form-preset');
-        if (presetSelect) presetSelect.addEventListener('change', _onPresetChange);
+        _on('ih-add-btn', 'click', function() { _openEditor(null); });
+        _on('ih-empty-add-btn', 'click', function() { _openEditor(null); });
+        _on('ih-editor-back', 'click', function() { _showListView(); });
+        _on('ih-editor-save', 'click', _saveForm);
+        _on('ih-form-test-btn', 'click', _testFromForm);
+        _on('ih-search-input', 'input', function() { _renderCards(); });
+        _on('ih-form-preset', 'change', _onPresetChange);
 
         var toggleEl = document.getElementById('ih-form-enabled');
         if (toggleEl) toggleEl.addEventListener('click', function() {
@@ -59,20 +42,31 @@
             var label = document.getElementById('ih-form-enabled-label');
             if (label) label.textContent = this.classList.contains('active') ? 'Enabled' : 'Disabled';
         });
+    }
 
-        // Close modal on overlay click
-        var overlay = document.getElementById('ih-modal-overlay');
-        if (overlay) overlay.addEventListener('click', function(e) {
-            if (e.target === overlay) _closeModal();
-        });
+    function _on(id, event, fn) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener(event, fn);
+    }
 
-        // Close modal on Escape
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                var overlay = document.getElementById('ih-modal-overlay');
-                if (overlay && overlay.classList.contains('active')) _closeModal();
-            }
-        });
+    // ── View switching ─────────────────────────────────────────────────
+
+    function _showListView() {
+        var list = document.getElementById('ih-list-view');
+        var editor = document.getElementById('ih-editor-view');
+        if (list) list.style.display = '';
+        if (editor) editor.style.display = 'none';
+        _editingId = null;
+    }
+
+    function _showEditorView() {
+        var list = document.getElementById('ih-list-view');
+        var editor = document.getElementById('ih-editor-view');
+        if (list) list.style.display = 'none';
+        if (editor) editor.style.display = '';
+        // Scroll to top
+        var section = document.getElementById('indexer-hunt-section');
+        if (section) section.scrollTop = 0;
     }
 
     // ── Data loading ──────────────────────────────────────────────────
@@ -148,7 +142,7 @@
             var statusText = enabled ? 'Enabled' : 'Disabled';
             var statusIcon = enabled ? 'fa-check-circle' : 'fa-minus-circle';
             var presetLabel = _getPresetLabel(idx.preset);
-            var url = idx.url || '—';
+            var url = idx.url || '\u2014';
             var keyDisplay = idx.api_key_last4 ? '\u2022\u2022\u2022\u2022' + _esc(idx.api_key_last4) : 'No key';
             var displayName = idx.display_name ? '<span class="ih-card-display-name">' + _esc(idx.display_name) + '</span>' : '';
 
@@ -173,7 +167,7 @@
             + '</div>';
         });
 
-        // "Add Indexer" card at the end
+        // Add card at the end
         html += '<div class="ih-add-card" id="ih-add-card-inline">'
             + '<div class="ih-add-icon"><i class="fas fa-plus-circle"></i></div>'
             + '<div class="ih-add-text">Add Indexer</div>'
@@ -181,9 +175,8 @@
 
         grid.innerHTML = html;
 
-        // Wire up inline add card
         var addCard = document.getElementById('ih-add-card-inline');
-        if (addCard) addCard.addEventListener('click', function() { _openModal(null); });
+        if (addCard) addCard.addEventListener('click', function() { _openEditor(null); });
     }
 
     function _getPresetLabel(preset) {
@@ -194,15 +187,13 @@
         return preset;
     }
 
-    // ── Modal handling ─────────────────────────────────────────────────
+    // ── Editor (full page) ─────────────────────────────────────────────
 
-    function _openModal(existingIdx) {
+    function _openEditor(existingIdx) {
         _editingId = existingIdx ? existingIdx.id : null;
-        var overlay = document.getElementById('ih-modal-overlay');
-        var title = document.getElementById('ih-modal-title');
-        if (!overlay) return;
 
-        if (title) title.textContent = _editingId ? 'Edit Indexer' : 'Add Indexer';
+        var breadcrumb = document.getElementById('ih-editor-breadcrumb-name');
+        if (breadcrumb) breadcrumb.textContent = _editingId ? 'Edit Indexer' : 'Add Indexer';
 
         var presetSel = document.getElementById('ih-form-preset');
         var nameEl = document.getElementById('ih-form-name');
@@ -246,14 +237,7 @@
         var enabledLabel = document.getElementById('ih-form-enabled-label');
         if (enabledLabel && enabledEl) enabledLabel.textContent = enabledEl.classList.contains('active') ? 'Enabled' : 'Disabled';
 
-        // Show modal
-        overlay.classList.add('active');
-    }
-
-    function _closeModal() {
-        var overlay = document.getElementById('ih-modal-overlay');
-        if (overlay) overlay.classList.remove('active');
-        _editingId = null;
+        _showEditorView();
     }
 
     function _onPresetChange() {
@@ -318,16 +302,15 @@
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.success) {
-                _closeModal();
-                // Clear search so newly added indexer is visible
-                var searchInput = document.getElementById('ih-search-input');
-                if (searchInput) searchInput.value = '';
-                _loadIndexers();
                 var msg = _editingId ? 'Indexer updated.' : 'Indexer added.';
                 if (data.linked_instances_updated > 0) {
                     msg += ' Updated in ' + data.linked_instances_updated + ' Movie Hunt instance(s).';
                 }
                 if (window.huntarrUI) window.huntarrUI.showNotification(msg, 'success');
+                var searchInput = document.getElementById('ih-search-input');
+                if (searchInput) searchInput.value = '';
+                _loadIndexers();
+                _showListView();
             } else {
                 if (window.huntarrUI) window.huntarrUI.showNotification(data.error || 'Failed to save.', 'error');
             }
@@ -386,7 +369,7 @@
     IH.editIndexer = function(id) {
         var idx = null;
         _indexers.forEach(function(i) { if (i.id === id) idx = i; });
-        if (idx) _openModal(idx);
+        if (idx) _openEditor(idx);
     };
 
     IH.testIndexer = function(id) {
@@ -436,8 +419,6 @@
                 });
             });
     };
-
-    // ── Helpers ────────────────────────────────────────────────────────
 
     function _esc(s) {
         if (!s) return '';

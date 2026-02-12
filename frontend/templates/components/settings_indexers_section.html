@@ -6,20 +6,49 @@
                 <option value="">Loading...</option>
             </select>
         </div>
+
+        <!-- Standard Indexer Management -->
         <div class="settings-group indexer-settings-group">
-            <h3>Indexer Management</h3>
-            <div class="instance-card-grid" id="indexer-instances-grid">
-                <div class="add-instance-card" data-app-type="indexer">
+            <h3>Standard Indexer Management</h3>
+            <p class="ih-mgmt-desc">Indexers configured manually for this instance.</p>
+            <div class="instance-card-grid" id="indexer-instances-grid-standard">
+                <div class="add-instance-card" data-app-type="indexer" data-source="standard">
                     <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
                     <div class="add-text">Add Indexer</div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Indexer Hunt Management -->
+        <div class="settings-group indexer-settings-group ih-mgmt-group">
+            <h3><i class="fas fa-search-plus" style="color: #6366f1; margin-right: 8px; font-size: 0.95rem;"></i>Indexer Hunt Management</h3>
+            <p class="ih-mgmt-desc">Indexers synced from Indexer Hunt. Priority and categories can be customized per-instance.</p>
+            <div class="instance-card-grid" id="indexer-instances-grid-ih">
+                <div class="add-instance-card" data-app-type="indexer" data-source="indexer-hunt">
+                    <div class="add-icon"><i class="fas fa-plus-circle" style="color: #6366f1;"></i></div>
+                    <div class="add-text">Import from Indexer Hunt</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Import from Indexer Hunt checklist panel (hidden by default) -->
+        <div class="settings-group indexer-settings-group ih-import-panel" id="ih-import-panel" style="display: none;">
+            <h3><i class="fas fa-download" style="color: #6366f1; margin-right: 8px; font-size: 0.95rem;"></i>Import Indexers from Indexer Hunt</h3>
+            <p class="ih-mgmt-desc">Select indexers to import to this instance. Imported indexers stay linked for API key and enable/disable sync.</p>
+            <div class="ih-import-list" id="ih-import-list">
+                <div style="color: #94a3b8; padding: 20px; text-align: center;">Loading available indexers...</div>
+            </div>
+            <div class="ih-import-actions" id="ih-import-actions" style="display: none;">
+                <button type="button" class="ih-import-cancel-btn" id="ih-import-cancel">Cancel</button>
+                <button type="button" class="ih-import-confirm-btn" id="ih-import-confirm">
+                    <i class="fas fa-download"></i> Import Selected
+                </button>
             </div>
         </div>
     </div>
 </section>
 
 <style>
-    /* Match Sonarr section layout: full width, same padding */
     #settingsIndexersSection {
         width: 100%;
         min-height: 100vh;
@@ -37,7 +66,6 @@
         box-shadow: none;
         border: none;
     }
-    /* Same box as Sonarr Instances: dark slate gradient, border, rounded */
     .indexer-settings-group {
         background: rgba(15, 23, 42, 0.4);
         border: 1px solid rgba(148, 163, 184, 0.08);
@@ -46,7 +74,7 @@
         margin: 12px 0 20px 0;
     }
     .indexer-settings-group h3 {
-        margin: 0 0 18px 0;
+        margin: 0 0 8px 0;
         padding: 0 0 12px 0;
         font-size: 1.1rem;
         font-weight: 600;
@@ -54,19 +82,152 @@
         border-bottom: 1px solid rgba(148, 163, 184, 0.12);
         background: none;
         box-shadow: none;
+        display: flex;
+        align-items: center;
+    }
+    .ih-mgmt-desc {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin: 0 0 16px 0;
+    }
+    .ih-mgmt-group {
+        border-left: 3px solid #6366f1;
+    }
+
+    /* Import checklist */
+    .ih-import-panel {
+        border-left: 3px solid #6366f1;
+    }
+    .ih-import-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+    .ih-import-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 16px;
+        background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid rgba(148, 163, 184, 0.1);
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .ih-import-item:hover {
+        border-color: rgba(99, 102, 241, 0.3);
+        background: rgba(30, 41, 59, 0.8);
+    }
+    .ih-import-item.selected {
+        border-color: #6366f1;
+        background: rgba(99, 102, 241, 0.08);
+    }
+    .ih-import-checkbox {
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(148, 163, 184, 0.3);
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.2s;
+    }
+    .ih-import-item.selected .ih-import-checkbox {
+        background: #6366f1;
+        border-color: #6366f1;
+    }
+    .ih-import-checkbox i {
+        color: #fff;
+        font-size: 0.7rem;
+        display: none;
+    }
+    .ih-import-item.selected .ih-import-checkbox i {
+        display: block;
+    }
+    .ih-import-info {
+        flex: 1;
+        min-width: 0;
+    }
+    .ih-import-name {
+        font-weight: 600;
+        color: #f1f5f9;
+        font-size: 0.95rem;
+    }
+    .ih-import-meta {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin-top: 2px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .ih-import-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .ih-import-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(148, 163, 184, 0.08);
+    }
+    .ih-import-cancel-btn {
+        background: rgba(148, 163, 184, 0.1);
+        color: #cbd5e1;
+        border: 1px solid rgba(148, 163, 184, 0.15);
+        border-radius: 8px;
+        padding: 9px 20px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .ih-import-cancel-btn:hover {
+        background: rgba(148, 163, 184, 0.2);
+        color: #fff;
+    }
+    .ih-import-confirm-btn {
+        background: #6366f1;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 9px 20px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+        transition: background 0.2s;
+    }
+    .ih-import-confirm-btn:hover {
+        background: #4f46e5;
+    }
+    .ih-import-confirm-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+    .ih-import-empty {
+        text-align: center;
+        padding: 24px;
+        color: #64748b;
+        font-size: 0.9rem;
     }
 </style>
 
 <script>
 (function() {
     function initIndexerGrid() {
-        var grid = document.getElementById('indexer-instances-grid');
-        if (!grid) return;
+        // Standard grid
+        var stdGrid = document.getElementById('indexer-instances-grid-standard');
+        var ihGrid = document.getElementById('indexer-instances-grid-ih');
 
-        grid.addEventListener('click', function(e) {
+        function handleGridClick(e) {
             var editBtn = e.target.closest('.btn-card.edit[data-app-type="indexer"]');
             var deleteBtn = e.target.closest('.btn-card.delete[data-app-type="indexer"]');
-            var addCard = e.target.closest('.add-instance-card[data-app-type="indexer"]');
+            var addCardStd = e.target.closest('.add-instance-card[data-source="standard"]');
+            var addCardIH = e.target.closest('.add-instance-card[data-source="indexer-hunt"]');
 
             if (editBtn) {
                 e.preventDefault();
@@ -85,12 +246,14 @@
                 if (window.SettingsForms && window.SettingsForms.openIndexerEditor) {
                     window.SettingsForms.openIndexerEditor(false, index, instance);
                 }
-            } else if (addCard) {
+            } else if (addCardStd) {
                 e.preventDefault();
-                // Go directly to editor in Add mode (no modal)
                 if (window.SettingsForms && window.SettingsForms.openIndexerEditor) {
                     window.SettingsForms.openIndexerEditor(true, null, {});
                 }
+            } else if (addCardIH) {
+                e.preventDefault();
+                _openIHImportPanel();
             } else if (deleteBtn) {
                 e.preventDefault();
                 var index = parseInt(deleteBtn.dataset.instanceIndex, 10);
@@ -122,8 +285,141 @@
                     });
                 }
             }
+        }
+
+        if (stdGrid) stdGrid.addEventListener('click', handleGridClick);
+        if (ihGrid) ihGrid.addEventListener('click', handleGridClick);
+
+        // Import panel buttons
+        var cancelBtn = document.getElementById('ih-import-cancel');
+        if (cancelBtn) cancelBtn.addEventListener('click', _closeIHImportPanel);
+        var confirmBtn = document.getElementById('ih-import-confirm');
+        if (confirmBtn) confirmBtn.addEventListener('click', _confirmIHImport);
+    }
+
+    // ── Import panel logic ──────────────────────────────────────────
+
+    function _openIHImportPanel() {
+        var panel = document.getElementById('ih-import-panel');
+        if (panel) panel.style.display = '';
+
+        var instanceId = 1;
+        if (window.MovieHuntInstanceDropdown && window.MovieHuntInstanceDropdown.getCurrentInstanceId) {
+            instanceId = window.MovieHuntInstanceDropdown.getCurrentInstanceId() || 1;
+        }
+
+        var list = document.getElementById('ih-import-list');
+        var actions = document.getElementById('ih-import-actions');
+        if (list) list.innerHTML = '<div style="color: #94a3b8; padding: 20px; text-align: center;"><i class="fas fa-spinner fa-spin"></i> Loading available indexers...</div>';
+        if (actions) actions.style.display = 'none';
+
+        fetch('./api/indexer-hunt/available/' + instanceId)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var available = data.available || [];
+                if (available.length === 0) {
+                    if (list) list.innerHTML = '<div class="ih-import-empty"><i class="fas fa-check-circle" style="color: #10b981; margin-right: 6px;"></i>All Indexer Hunt indexers are already imported to this instance.</div>';
+                    return;
+                }
+
+                var html = '';
+                available.forEach(function(idx) {
+                    var keyDisplay = idx.api_key_last4 ? '\u2022\u2022\u2022\u2022' + idx.api_key_last4 : 'No key';
+                    html += '<div class="ih-import-item" data-ih-id="' + idx.id + '">'
+                        + '<div class="ih-import-checkbox"><i class="fas fa-check"></i></div>'
+                        + '<div class="ih-import-info">'
+                            + '<div class="ih-import-name">' + _esc(idx.name) + '</div>'
+                            + '<div class="ih-import-meta">'
+                                + '<span><i class="fas fa-globe"></i> ' + _esc(idx.url || 'N/A') + '</span>'
+                                + '<span><i class="fas fa-sort-amount-up"></i> Priority: ' + (idx.priority || 50) + '</span>'
+                                + '<span><i class="fas fa-key"></i> ' + keyDisplay + '</span>'
+                            + '</div>'
+                        + '</div>'
+                    + '</div>';
+                });
+                if (list) list.innerHTML = html;
+                if (actions) actions.style.display = 'flex';
+
+                // Wire up item clicks
+                var items = list.querySelectorAll('.ih-import-item');
+                items.forEach(function(item) {
+                    item.addEventListener('click', function() {
+                        item.classList.toggle('selected');
+                        _updateImportButton();
+                    });
+                });
+            })
+            .catch(function(err) {
+                if (list) list.innerHTML = '<div class="ih-import-empty">Failed to load available indexers: ' + _esc(String(err)) + '</div>';
+            });
+    }
+
+    function _closeIHImportPanel() {
+        var panel = document.getElementById('ih-import-panel');
+        if (panel) panel.style.display = 'none';
+    }
+
+    function _updateImportButton() {
+        var selected = document.querySelectorAll('#ih-import-list .ih-import-item.selected');
+        var btn = document.getElementById('ih-import-confirm');
+        if (btn) {
+            btn.disabled = selected.length === 0;
+            btn.innerHTML = '<i class="fas fa-download"></i> Import Selected (' + selected.length + ')';
+        }
+    }
+
+    function _confirmIHImport() {
+        var selected = document.querySelectorAll('#ih-import-list .ih-import-item.selected');
+        if (selected.length === 0) return;
+
+        var ids = [];
+        selected.forEach(function(item) {
+            ids.push(item.getAttribute('data-ih-id'));
+        });
+
+        var instanceId = 1;
+        if (window.MovieHuntInstanceDropdown && window.MovieHuntInstanceDropdown.getCurrentInstanceId) {
+            instanceId = window.MovieHuntInstanceDropdown.getCurrentInstanceId() || 1;
+        }
+
+        var btn = document.getElementById('ih-import-confirm');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importing...'; }
+
+        fetch('./api/indexer-hunt/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ instance_id: instanceId, indexer_ids: ids }),
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                var msg = 'Imported ' + (data.added || 0) + ' indexer(s) from Indexer Hunt.';
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification(msg, 'success');
+                }
+                _closeIHImportPanel();
+                if (window.SettingsForms && window.SettingsForms.refreshIndexersList) {
+                    window.SettingsForms.refreshIndexersList();
+                }
+            } else {
+                if (window.huntarrUI) window.huntarrUI.showNotification(data.error || 'Import failed.', 'error');
+            }
+        })
+        .catch(function(err) {
+            if (window.huntarrUI) window.huntarrUI.showNotification('Import error: ' + err, 'error');
+        })
+        .finally(function() {
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-download"></i> Import Selected'; }
         });
     }
+
+    function _esc(s) {
+        if (!s) return '';
+        var d = document.createElement('div');
+        d.appendChild(document.createTextNode(s));
+        return d.innerHTML;
+    }
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initIndexerGrid);
     } else {
