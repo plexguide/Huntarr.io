@@ -1,9 +1,4 @@
-/* TV Hunt Styles */
-
-/* Same dark blue background as Movie Hunt / Discover */
-#tv-hunt-section {
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.85) 100%);
-}
+/* Media Hunt TV – styles for TV mode (shared section #mediaHuntSection). Base layout in media-hunt.css. */
 
 /* Beta notice */
 .tv-hunt-beta-notice {
@@ -339,8 +334,8 @@
 }
 
 /* TV Hunt collection – same layout as Movie Collection (controls + grid + table + overview) */
-#tv-hunt-collection-view .tv-hunt-collection-controls,
-#tv-hunt-collection-view .movies-controls {
+#media-hunt-collection-view .media-hunt-collection-controls,
+#media-hunt-collection-view .movies-controls {
     display: flex;
     align-items: center;
     gap: 16px;
@@ -348,9 +343,9 @@
     margin-bottom: 20px;
 }
 
-#tv-hunt-collection-view .instance-selector-container .control-select,
-#tv-hunt-collection-view .sort-dropdown .control-select,
-#tv-hunt-collection-view .view-mode-selector .control-select {
+#media-hunt-collection-view .instance-selector-container .control-select,
+#media-hunt-collection-view .sort-dropdown .control-select,
+#media-hunt-collection-view .view-mode-selector .control-select {
     min-width: 140px;
     padding: 8px 12px;
     background: rgba(30, 41, 59, 0.8);
@@ -361,55 +356,55 @@
     cursor: pointer;
 }
 
-#tv-hunt-collection-view .view-mode-selector .control-select {
+#media-hunt-collection-view .view-mode-selector .control-select {
     min-width: 120px;
 }
 
-#tv-hunt-collection-view .media-grid {
+#media-hunt-collection-view .media-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 20px;
     justify-items: start;
 }
 
-#tv-hunt-collection-view .media-table-container {
+#media-hunt-collection-view .media-table-container {
     width: 100%;
     overflow-x: auto;
     margin-top: 0;
 }
 
-#tv-hunt-collection-view .media-table {
+#media-hunt-collection-view .media-table {
     width: 100%;
     border-collapse: collapse;
 }
 
-#tv-hunt-collection-view .media-table th,
-#tv-hunt-collection-view .media-table td {
+#media-hunt-collection-view .media-table th,
+#media-hunt-collection-view .media-table td {
     padding: 10px 14px;
     text-align: left;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     color: #e2e8f0;
 }
 
-#tv-hunt-collection-view .media-table th {
+#media-hunt-collection-view .media-table th {
     color: #94a3b8;
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
 
-#tv-hunt-collection-view .media-table .table-poster {
+#media-hunt-collection-view .media-table .table-poster {
     width: 40px;
     height: 60px;
     object-fit: cover;
     border-radius: 4px;
 }
 
-#tv-hunt-collection-view .media-overview-container {
+#media-hunt-collection-view .media-overview-container {
     width: 100%;
 }
 
-#tv-hunt-collection-view .loading-spinner {
+#media-hunt-collection-view .loading-spinner {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -418,12 +413,12 @@
     color: #64748b;
 }
 
-#tv-hunt-collection-view .loading-spinner i {
+#media-hunt-collection-view .loading-spinner i {
     font-size: 2rem;
     margin-bottom: 12px;
 }
 
-#tv-hunt-collection-view .loading-spinner p {
+#media-hunt-collection-view .loading-spinner p {
     margin: 0;
     font-size: 14px;
 }

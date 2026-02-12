@@ -1,6 +1,6 @@
 /**
- * TV Hunt Root Folders - same behavior as Movie Hunt, independent code and TV wording.
- * Card grid, add via modal, browse, test, set default, delete. Uses /api/tv-hunt/root-folders.
+ * Media Hunt – Root Folders for TV. File: media-hunt-root-folders.js.
+ * Card grid, add via modal, browse, test, set default, delete. Uses /api/tv-hunt/root-folders; DOM IDs remain tv-hunt-*.
  */
 (function() {
     'use strict';

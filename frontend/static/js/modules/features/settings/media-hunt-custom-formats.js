@@ -1,7 +1,6 @@
 /**
- * Custom Formats (TV Hunt) - Sonarr-style JSON. Pre-Format (dropdown) or Import (paste JSON).
- * Cards like Profiles; title editable, name auto from JSON.
- * Mirrors Movie Hunt custom-formats.js but uses TV Hunt API endpoints and Sonarr TRaSH data.
+ * Media Hunt – Custom Formats for TV (Sonarr-style JSON). Pre-Format (dropdown) or Import (paste JSON).
+ * File: media-hunt-custom-formats.js. Uses /api/tv-hunt/ endpoints; DOM IDs remain tv-hunt-* for compatibility.
  */
 (function() {
     'use strict';
