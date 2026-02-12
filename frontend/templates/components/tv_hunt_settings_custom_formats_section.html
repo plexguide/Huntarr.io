@@ -1,0 +1,113 @@
+<section id="tvHuntSettingsCustomFormatsSection" class="content-section" style="display: none;">
+    {% with section_id='tv-hunt-settings-custom-formats' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
+    <div id="tvHuntCustomFormatsManagementContainer" class="app-content-panel">
+        <div class="movie-hunt-settings-instance-bar" style="margin-bottom: 16px;">
+            <select id="tv-hunt-settings-custom-formats-instance-select" class="control-select" aria-label="Instance">
+                <option value="">Loading...</option>
+            </select>
+        </div>
+        <!-- Pre-Formatted Section -->
+        <div class="settings-group custom-formats-settings-group">
+            <div class="custom-formats-section-header">
+                <div class="custom-formats-header-text">
+                    <h3>Pre-Formatted Custom Formats</h3>
+                </div>
+                <div class="custom-formats-header-actions">
+                    <button type="button" class="btn-add-format" id="tv-hunt-add-preformatted-btn" title="Add pre-formatted custom formats">
+                        <i class="fas fa-plus-circle"></i> Add Pre-Formatted
+                    </button>
+                    <button type="button" class="btn-delete-all" id="tv-hunt-delete-all-preformatted" title="Delete all pre-formatted custom formats">
+                        <i class="fas fa-trash-alt"></i> Delete All
+                    </button>
+                </div>
+            </div>
+            <p class="custom-formats-description">To learn more about Pre-Formatted Custom Formats, please visit <a href="https://trash-guides.info/Sonarr/sonarr-collection-of-custom-formats/" target="_blank" rel="noopener">TRaSH Guides (Sonarr)</a>.</p>
+            <div class="instance-card-grid" id="tv-hunt-custom-formats-preformatted-grid">
+                <!-- Cards will be dynamically populated here -->
+            </div>
+        </div>
+
+        <!-- Imported Section -->
+        <div class="settings-group custom-formats-settings-group">
+            <div class="custom-formats-section-header">
+                <div class="custom-formats-header-text">
+                    <h3>Imported Custom Formats</h3>
+                </div>
+                <div class="custom-formats-header-actions">
+                    <button type="button" class="btn-add-format" id="tv-hunt-add-imported-btn" title="Add imported custom format">
+                        <i class="fas fa-plus-circle"></i> Add Imported
+                    </button>
+                    <button type="button" class="btn-delete-all" id="tv-hunt-delete-all-imported" title="Delete all imported custom formats">
+                        <i class="fas fa-trash-alt"></i> Delete All
+                    </button>
+                </div>
+            </div>
+            <p class="custom-formats-description">To learn how to use imported formats, please visit <a href="https://trash-guides.info/Sonarr/sonarr-import-custom-formats/" target="_blank" rel="noopener">TRaSH Guides (Sonarr)</a>.</p>
+            <div class="instance-card-grid" id="tv-hunt-custom-formats-imported-grid">
+                <!-- Cards will be dynamically populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Custom Format modal -->
+    <div id="tv-hunt-custom-format-modal" class="custom-format-modal" style="display: none;">
+        <div class="custom-format-modal-backdrop" id="tv-hunt-custom-format-modal-backdrop"></div>
+        <div class="custom-format-modal-content">
+            <div class="custom-format-modal-header">
+                <button type="button" class="custom-format-modal-close" id="tv-hunt-custom-format-modal-close" aria-label="Close"><i class="fas fa-times"></i></button>
+                <h2 class="custom-format-modal-title" id="tv-hunt-custom-format-modal-title">Add Custom Format</h2>
+                <p class="custom-format-modal-subtitle">Pre-Formatted: pick TRaSH Guides Sonarr formats by category. Import: paste your own JSON.</p>
+            </div>
+            <div class="custom-format-modal-body">
+                <div class="custom-format-source-row">
+                    <label class="custom-format-source-option">
+                        <input type="radio" name="tv-hunt-custom-format-source" value="preformat" id="tv-hunt-custom-format-source-preformat" checked>
+                        <span>Pre-Formatted</span>
+                    </label>
+                    <label class="custom-format-source-option">
+                        <input type="radio" name="tv-hunt-custom-format-source" value="import" id="tv-hunt-custom-format-source-import">
+                        <span>Import</span>
+                    </label>
+                </div>
+                <div id="tv-hunt-custom-format-preformat-area" class="custom-format-area">
+                    <p class="custom-format-preformat-hint">Select categories below, then check the formats you want to add. Already-added formats are checked and disabled.</p>
+                    <div id="tv-hunt-custom-format-preformat-tree" class="custom-format-preformat-tree"></div>
+                </div>
+                <div id="tv-hunt-custom-format-import-area" class="custom-format-area" style="display: none;">
+                    <label for="tv-hunt-custom-format-json-textarea">Paste custom format JSON</label>
+                    <textarea id="tv-hunt-custom-format-json-textarea" class="custom-format-json-textarea" placeholder='{"name": "My Format", ...}' rows="10"></textarea>
+                </div>
+            </div>
+            <div class="custom-format-modal-actions">
+                <button type="button" class="btn-card custom-format-modal-cancel" id="tv-hunt-custom-format-modal-cancel">Cancel</button>
+                <button type="button" class="btn-card custom-format-modal-save" id="tv-hunt-custom-format-modal-save"><i class="fas fa-plus"></i> Add</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View JSON modal (read-only) -->
+    <div id="tv-hunt-custom-format-view-modal" class="custom-format-modal" style="display: none;">
+        <div class="custom-format-modal-backdrop" id="tv-hunt-custom-format-view-modal-backdrop"></div>
+        <div class="custom-format-modal-content">
+            <div class="custom-format-modal-header">
+                <button type="button" class="custom-format-modal-close" id="tv-hunt-custom-format-view-modal-close" aria-label="Close"><i class="fas fa-times"></i></button>
+                <h2 class="custom-format-modal-title" id="tv-hunt-custom-format-view-modal-title">View Custom Format JSON</h2>
+                <p class="custom-format-modal-subtitle">Read-only view of the custom format JSON.</p>
+            </div>
+            <div class="custom-format-modal-body">
+                <pre id="tv-hunt-custom-format-view-json" class="custom-format-view-json"></pre>
+            </div>
+            <div class="custom-format-modal-actions">
+                <button type="button" class="btn-card custom-format-modal-cancel" id="tv-hunt-custom-format-view-modal-close-btn">Close</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    #tvHuntSettingsCustomFormatsSection { width: 100%; min-height: 100vh; overflow-y: auto; overflow-x: hidden; }
+    #tvHuntSettingsCustomFormatsSection.active { display: block !important; }
+    #tvHuntCustomFormatsManagementContainer { width: 100%; padding: 20px; margin: 0; background: transparent; box-shadow: none; border: none; }
+    #tv-hunt-custom-formats-preformatted-grid,
+    #tv-hunt-custom-formats-imported-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; margin-bottom: 20px; }
+</style>
