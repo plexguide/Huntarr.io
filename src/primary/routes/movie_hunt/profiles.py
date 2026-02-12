@@ -152,8 +152,8 @@ def _get_profile_by_name_or_default(quality_profile_name, instance_id):
 def _get_size_limits_for_quality(quality_name):
     """Return (min, preferred, max) MB/min for the given quality name from Sizes config."""
     try:
-        from .sizes import _get_sizes
-        sizes = _get_sizes()
+        from ..media_hunt.sizes import get_sizes
+        sizes = get_sizes(None, 'movie_hunt_sizes')
     except Exception:
         return 0, 0, 400
     q = (quality_name or '').strip()

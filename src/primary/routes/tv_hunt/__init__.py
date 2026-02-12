@@ -15,4 +15,6 @@ from . import activity        # noqa: E402, F401
 from . import discovery       # noqa: E402, F401
 from . import storage         # noqa: E402, F401
 from . import custom_formats  # noqa: E402, F401
-from . import sizes  # noqa: E402, F401
+from ._helpers import _get_tv_hunt_instance_id_from_request
+from ..media_hunt.sizes import register_tv_sizes_routes
+register_tv_sizes_routes(tv_hunt_bp, _get_tv_hunt_instance_id_from_request)  # noqa: E402

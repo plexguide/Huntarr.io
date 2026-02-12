@@ -15,6 +15,7 @@ from . import custom_formats  # noqa: E402, F401
 from . import activity        # noqa: E402, F401
 from . import discovery       # noqa: E402, F401
 from . import storage         # noqa: E402, F401
-from . import sizes           # noqa: E402, F401
+from ..media_hunt.sizes import register_movie_sizes_routes
+register_movie_sizes_routes(movie_hunt_bp)  # noqa: E402
 from . import import_lists    # noqa: E402, F401
 from . import import_media    # noqa: E402, F401
