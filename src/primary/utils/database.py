@@ -974,6 +974,60 @@ class HuntarrDatabase:
             # Hidden media filter index for requestarr (frequently filtered by media_type + app_type + instance_name)
             conn.execute('CREATE INDEX IF NOT EXISTS idx_hidden_media_filter ON requestarr_hidden_media(media_type, app_type, instance_name, hidden_at)')
             
+            # ── Indexer Hunt tables ─────────────────────────────────────
+            # Centralized indexer storage (global, not per-instance)
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS indexer_hunt_indexers (
+                    id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    display_name TEXT DEFAULT '',
+                    preset TEXT DEFAULT 'manual',
+                    protocol TEXT DEFAULT 'usenet',
+                    url TEXT DEFAULT '',
+                    api_path TEXT DEFAULT '/api',
+                    api_key TEXT DEFAULT '',
+                    enabled INTEGER DEFAULT 1,
+                    priority INTEGER DEFAULT 50,
+                    categories TEXT DEFAULT '[]',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+
+            # Stats tracking per indexer (aggregate counters)
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS indexer_hunt_stats (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    indexer_id TEXT NOT NULL,
+                    stat_type TEXT NOT NULL,
+                    stat_value REAL DEFAULT 0,
+                    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(indexer_id, stat_type)
+                )
+            ''')
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_ih_stats_indexer ON indexer_hunt_stats(indexer_id)')
+
+            # Event history (searches, grabs, failures)
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS indexer_hunt_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    indexer_id TEXT NOT NULL,
+                    indexer_name TEXT DEFAULT '',
+                    event_type TEXT NOT NULL,
+                    query TEXT DEFAULT '',
+                    result_title TEXT DEFAULT '',
+                    response_time_ms INTEGER DEFAULT 0,
+                    success INTEGER DEFAULT 1,
+                    error_message TEXT DEFAULT '',
+                    instance_id INTEGER DEFAULT NULL,
+                    instance_name TEXT DEFAULT '',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_ih_history_indexer ON indexer_hunt_history(indexer_id)')
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_ih_history_type ON indexer_hunt_history(event_type)')
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_ih_history_date ON indexer_hunt_history(created_at)')
+
             conn.commit()
             logger.info(f"Database initialized at: {self.db_path}")
     
@@ -3374,6 +3428,173 @@ class HuntarrDatabase:
             )
             conn.commit()
             return cursor.rowcount > 0
+
+    # ── Indexer Hunt accessors ───────────────────────────────────────────
+
+    def add_indexer_hunt_indexer(self, indexer_data: Dict[str, Any]) -> str:
+        """Add a new Indexer Hunt indexer. Returns the id."""
+        import uuid
+        idx_id = indexer_data.get('id') or str(uuid.uuid4())
+        cats = indexer_data.get('categories', [])
+        if isinstance(cats, list):
+            cats = json.dumps(cats)
+        with self.get_connection() as conn:
+            conn.execute('''
+                INSERT INTO indexer_hunt_indexers
+                    (id, name, display_name, preset, protocol, url, api_path, api_key, enabled, priority, categories)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                idx_id,
+                indexer_data.get('name', 'Unnamed'),
+                indexer_data.get('display_name', ''),
+                indexer_data.get('preset', 'manual'),
+                indexer_data.get('protocol', 'usenet'),
+                indexer_data.get('url', ''),
+                indexer_data.get('api_path', '/api'),
+                indexer_data.get('api_key', ''),
+                1 if indexer_data.get('enabled', True) else 0,
+                indexer_data.get('priority', 50),
+                cats,
+            ))
+            conn.commit()
+        return idx_id
+
+    def get_indexer_hunt_indexers(self) -> List[Dict[str, Any]]:
+        """Return all Indexer Hunt indexers."""
+        with self.get_connection() as conn:
+            with self._use_row_factory(conn) as c:
+                rows = c.execute('SELECT * FROM indexer_hunt_indexers ORDER BY priority ASC, name ASC').fetchall()
+            out = []
+            for r in rows:
+                d = dict(r)
+                try:
+                    d['categories'] = json.loads(d.get('categories') or '[]')
+                except (json.JSONDecodeError, TypeError):
+                    d['categories'] = []
+                d['enabled'] = bool(d.get('enabled', 1))
+                out.append(d)
+            return out
+
+    def get_indexer_hunt_indexer(self, idx_id: str) -> Optional[Dict[str, Any]]:
+        """Return a single Indexer Hunt indexer by id."""
+        with self.get_connection() as conn:
+            with self._use_row_factory(conn) as c:
+                row = c.execute('SELECT * FROM indexer_hunt_indexers WHERE id = ?', (idx_id,)).fetchone()
+            if not row:
+                return None
+            d = dict(row)
+            try:
+                d['categories'] = json.loads(d.get('categories') or '[]')
+            except (json.JSONDecodeError, TypeError):
+                d['categories'] = []
+            d['enabled'] = bool(d.get('enabled', 1))
+            return d
+
+    def update_indexer_hunt_indexer(self, idx_id: str, updates: Dict[str, Any]) -> bool:
+        """Update fields on an Indexer Hunt indexer. Returns True if a row was updated."""
+        allowed = ['name', 'display_name', 'preset', 'protocol', 'url', 'api_path',
+                    'api_key', 'enabled', 'priority', 'categories']
+        sets = []
+        vals = []
+        for k in allowed:
+            if k in updates:
+                v = updates[k]
+                if k == 'categories' and isinstance(v, list):
+                    v = json.dumps(v)
+                if k == 'enabled':
+                    v = 1 if v else 0
+                sets.append(f'{k} = ?')
+                vals.append(v)
+        if not sets:
+            return False
+        sets.append('updated_at = CURRENT_TIMESTAMP')
+        vals.append(idx_id)
+        with self.get_connection() as conn:
+            cur = conn.execute(f'UPDATE indexer_hunt_indexers SET {", ".join(sets)} WHERE id = ?', vals)
+            conn.commit()
+            return cur.rowcount > 0
+
+    def delete_indexer_hunt_indexer(self, idx_id: str) -> bool:
+        """Delete an Indexer Hunt indexer and its stats/history."""
+        with self.get_connection() as conn:
+            conn.execute('DELETE FROM indexer_hunt_stats WHERE indexer_id = ?', (idx_id,))
+            conn.execute('DELETE FROM indexer_hunt_history WHERE indexer_id = ?', (idx_id,))
+            cur = conn.execute('DELETE FROM indexer_hunt_indexers WHERE id = ?', (idx_id,))
+            conn.commit()
+            return cur.rowcount > 0
+
+    def record_indexer_hunt_event(self, indexer_id: str, indexer_name: str, event_type: str,
+                                  query: str = '', result_title: str = '', response_time_ms: int = 0,
+                                  success: bool = True, error_message: str = '',
+                                  instance_id: int = None, instance_name: str = ''):
+        """Log an event to indexer_hunt_history and update aggregate stats."""
+        with self.get_connection() as conn:
+            conn.execute('''
+                INSERT INTO indexer_hunt_history
+                    (indexer_id, indexer_name, event_type, query, result_title,
+                     response_time_ms, success, error_message, instance_id, instance_name)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (indexer_id, indexer_name, event_type, query, result_title,
+                  response_time_ms, 1 if success else 0, error_message,
+                  instance_id, instance_name))
+            # Update aggregate stats
+            stat_key = event_type  # e.g. 'search', 'grab', 'failure'
+            conn.execute('''
+                INSERT INTO indexer_hunt_stats (indexer_id, stat_type, stat_value)
+                VALUES (?, ?, 1)
+                ON CONFLICT(indexer_id, stat_type) DO UPDATE SET
+                    stat_value = stat_value + 1,
+                    recorded_at = CURRENT_TIMESTAMP
+            ''', (indexer_id, stat_key))
+            # Update response time average
+            if response_time_ms > 0:
+                conn.execute('''
+                    INSERT INTO indexer_hunt_stats (indexer_id, stat_type, stat_value)
+                    VALUES (?, 'avg_response_ms', ?)
+                    ON CONFLICT(indexer_id, stat_type) DO UPDATE SET
+                        stat_value = (stat_value + ?) / 2.0,
+                        recorded_at = CURRENT_TIMESTAMP
+                ''', (indexer_id, response_time_ms, response_time_ms))
+            conn.commit()
+
+    def get_indexer_hunt_stats(self, indexer_id: str = None) -> List[Dict[str, Any]]:
+        """Get Indexer Hunt stats, optionally filtered by indexer_id."""
+        with self.get_connection() as conn:
+            with self._use_row_factory(conn) as c:
+                if indexer_id:
+                    rows = c.execute('SELECT * FROM indexer_hunt_stats WHERE indexer_id = ?', (indexer_id,)).fetchall()
+                else:
+                    rows = c.execute('SELECT * FROM indexer_hunt_stats ORDER BY indexer_id').fetchall()
+            return [dict(r) for r in rows]
+
+    def get_indexer_hunt_history(self, indexer_id: str = None, event_type: str = None,
+                                 page: int = 1, page_size: int = 50) -> Dict[str, Any]:
+        """Get paginated Indexer Hunt history with optional filters."""
+        conditions = []
+        params = []
+        if indexer_id:
+            conditions.append('indexer_id = ?')
+            params.append(indexer_id)
+        if event_type:
+            conditions.append('event_type = ?')
+            params.append(event_type)
+        where = ('WHERE ' + ' AND '.join(conditions)) if conditions else ''
+        offset = (max(1, page) - 1) * page_size
+        with self.get_connection() as conn:
+            with self._use_row_factory(conn) as c:
+                count_row = c.execute(f'SELECT COUNT(*) as cnt FROM indexer_hunt_history {where}', params).fetchone()
+                total = count_row['cnt'] if count_row else 0
+                rows = c.execute(
+                    f'SELECT * FROM indexer_hunt_history {where} ORDER BY created_at DESC LIMIT ? OFFSET ?',
+                    params + [page_size, offset]
+                ).fetchall()
+            return {
+                'items': [dict(r) for r in rows],
+                'total': total,
+                'page': page,
+                'page_size': page_size,
+                'total_pages': max(1, (total + page_size - 1) // page_size),
+            }
 
 # Separate LogsDatabase class for logs.db
 class LogsDatabase:

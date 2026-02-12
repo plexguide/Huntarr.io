@@ -2309,12 +2309,21 @@ class RequestarrAPI:
             profile = _get_profile_by_name_or_default(quality_profile_name, instance_id)
             verify_ssl = get_ssl_verify_setting()
             
+            import time as _time
             nzb_url = None
             nzb_title = None
             indexer_used = None
             request_score = 0
             request_score_breakdown = ''
             
+            # Search ALL indexers, collect results with priority (Prowlarr-like strategy)
+            all_candidates = []
+            blocklist_titles = _get_blocklist_source_titles(instance_id)
+            min_score = profile.get('min_custom_format_score', 0)
+            try:
+                min_score = int(min_score)
+            except (TypeError, ValueError):
+                min_score = 0
             for idx in enabled_indexers:
                 base_url = _resolve_indexer_api_url(idx)
                 if not base_url:
@@ -2323,9 +2332,24 @@ class RequestarrAPI:
                 if not api_key:
                     continue
                 categories = idx.get('categories') or [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2070]
+                priority = idx.get('priority', 50)
+                ih_id = idx.get('indexer_hunt_id', '')
+                _search_start = _time.time()
                 results = _search_newznab_movie(base_url, api_key, query, categories, timeout=15)
+                _search_ms = int((_time.time() - _search_start) * 1000)
+                if ih_id:
+                    try:
+                        from src.primary.utils.database import get_database as _get_db
+                        _get_db().record_indexer_hunt_event(
+                            indexer_id=ih_id, indexer_name=idx.get('name', ''),
+                            event_type='search', query=query,
+                            response_time_ms=_search_ms,
+                            success=bool(results),
+                            instance_id=instance_id, instance_name='',
+                        )
+                    except Exception:
+                        pass
                 if results:
-                    blocklist_titles = _get_blocklist_source_titles(instance_id)
                     if blocklist_titles:
                         results = [r for r in results if _blocklist_normalize_source_title(r.get('title')) not in blocklist_titles]
                         if not results:
@@ -2333,18 +2357,25 @@ class RequestarrAPI:
                     chosen, chosen_score, chosen_breakdown = _best_result_matching_profile(
                         results, profile, instance_id, runtime_minutes=runtime_minutes
                     )
-                    min_score = profile.get('min_custom_format_score', 0)
-                    try:
-                        min_score = int(min_score)
-                    except (TypeError, ValueError):
-                        min_score = 0
                     if chosen and chosen_score >= min_score:
-                        nzb_url = chosen.get('nzb_url')
-                        nzb_title = chosen.get('title', 'Unknown')
-                        indexer_used = idx.get('name') or preset
-                        request_score = chosen_score
-                        request_score_breakdown = chosen_breakdown or ''
-                        break
+                        all_candidates.append((priority, idx.get('name', ''), chosen, chosen_score, chosen_breakdown or '', ih_id))
+            # Pick best: lowest priority number first, then highest score
+            if all_candidates:
+                all_candidates.sort(key=lambda x: (x[0], -x[3]))
+                _, indexer_used, chosen, request_score, request_score_breakdown, _grab_ih_id = all_candidates[0]
+                nzb_url = chosen.get('nzb_url')
+                nzb_title = chosen.get('title', 'Unknown')
+                if _grab_ih_id:
+                    try:
+                        from src.primary.utils.database import get_database as _get_db
+                        _get_db().record_indexer_hunt_event(
+                            indexer_id=_grab_ih_id, indexer_name=indexer_used,
+                            event_type='grab', query=query,
+                            result_title=nzb_title,
+                            instance_id=instance_id, instance_name='',
+                        )
+                    except Exception:
+                        pass
             
             if not nzb_url:
                 profile_name = (profile.get('name') or 'Standard').strip()

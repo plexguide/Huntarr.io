@@ -179,6 +179,15 @@
             var val = (presetSelect.value || '').trim();
             if (!val) return;
 
+            // Handle "Import from Indexer Hunt"
+            if (val === '__import_ih__') {
+                var ihPanel = document.getElementById('editor-ih-import-panel');
+                if (ihPanel) ihPanel.style.display = '';
+                self._loadIndexerHuntAvailable();
+                presetSelect.value = '';  // reset to placeholder
+                return;
+            }
+
             // Lock the dropdown
             presetSelect.disabled = true;
             presetSelect.classList.add('editor-readonly');
@@ -266,6 +275,89 @@
 
             // Wire up rest of editor fields now
             self._wireEditorFields();
+        });
+    };
+
+    // ── Import from Indexer Hunt ─────────────────────────────────────────
+    Forms._loadIndexerHuntAvailable = function() {
+        var self = this;
+        // Determine current Movie Hunt instance ID (use default 1 as fallback)
+        var instanceId = 1;
+        if (window.MovieHuntInstanceDropdown && window.MovieHuntInstanceDropdown.getCurrentInstanceId) {
+            instanceId = window.MovieHuntInstanceDropdown.getCurrentInstanceId() || 1;
+        }
+        fetch('./api/indexer-hunt/available/' + instanceId)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var sel = document.getElementById('editor-ih-select');
+                if (!sel) return;
+                sel.innerHTML = '<option value="">Select an indexer from Indexer Hunt...</option>';
+                (data.available || []).forEach(function(idx) {
+                    var opt = document.createElement('option');
+                    opt.value = idx.id;
+                    opt.textContent = idx.name + ' (Priority: ' + idx.priority + ', ' + (idx.api_key_last4 ? '****' + idx.api_key_last4 : 'no key') + ')';
+                    opt.setAttribute('data-name', idx.name);
+                    opt.setAttribute('data-preset', idx.preset);
+                    opt.setAttribute('data-priority', idx.priority);
+                    opt.setAttribute('data-url', idx.url || '');
+                    sel.appendChild(opt);
+                });
+                if ((data.available || []).length === 0) {
+                    sel.innerHTML = '<option value="">No available indexers in Indexer Hunt</option>';
+                }
+                // Wire change handler
+                sel.addEventListener('change', function() {
+                    self._onIndexerHuntImportSelect(sel);
+                });
+            })
+            .catch(function(err) {
+                console.error('[IndexerEditor] Failed to load Indexer Hunt available:', err);
+            });
+    };
+
+    Forms._onIndexerHuntImportSelect = function(sel) {
+        var ihId = sel.value;
+        if (!ihId) return;
+        var opt = sel.options[sel.selectedIndex];
+        if (!opt) return;
+
+        var name = opt.getAttribute('data-name') || '';
+        var preset = opt.getAttribute('data-preset') || 'manual';
+        var priority = parseInt(opt.getAttribute('data-priority') || '50', 10);
+
+        // Get instance ID for sync
+        var instanceId = 1;
+        if (window.MovieHuntInstanceDropdown && window.MovieHuntInstanceDropdown.getCurrentInstanceId) {
+            instanceId = window.MovieHuntInstanceDropdown.getCurrentInstanceId() || 1;
+        }
+
+        // Sync this indexer to the current instance via the API
+        fetch('./api/indexer-hunt/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ instance_id: instanceId, indexer_ids: [ihId] }),
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success && data.added > 0) {
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('Imported "' + name + '" from Indexer Hunt.', 'success');
+                }
+                if (window.SettingsForms && window.SettingsForms.refreshIndexersList) {
+                    window.SettingsForms.refreshIndexersList();
+                }
+                // Go back to indexer list
+                if (window.SettingsForms && window.SettingsForms.cancelInstanceEditor) {
+                    window.SettingsForms.cancelInstanceEditor();
+                }
+            } else if (data.success && data.added === 0) {
+                if (window.huntarrUI) window.huntarrUI.showNotification('This indexer is already synced to this instance.', 'info');
+            } else {
+                if (window.huntarrUI) window.huntarrUI.showNotification(data.error || 'Import failed.', 'error');
+            }
+        })
+        .catch(function(err) {
+            if (window.huntarrUI) window.huntarrUI.showNotification('Import error: ' + err, 'error');
         });
     };
 
@@ -385,6 +477,8 @@
                 '<label for="editor-preset-select">Indexer Type</label>' +
                 '<select id="editor-preset-select" class="settings-select" style="width: 100%; padding: 10px 12px; background: #1e293b; border: 1px solid #475569; border-radius: 6px; color: #e2e8f0;">' +
                 '<option value="">Select an indexer...</option>' +
+                '<option value="__import_ih__">Import from Indexer Hunt</option>' +
+                '<option disabled>\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500</option>' +
                 '<option value="dognzb">DOGnzb</option>' +
                 '<option value="drunkenslug">DrunkenSlug</option>' +
                 '<option value="nzb.su">Nzb.su</option>' +
@@ -398,7 +492,14 @@
                 '<option disabled>\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500</option>' +
                 '<option value="manual">Custom (Manual Configuration)</option>' +
                 '</select>' +
-                '<p class="editor-help-text">Choose a preset or Custom to configure manually.</p>' +
+                '<p class="editor-help-text">Choose a preset, import from Indexer Hunt, or configure manually.</p>' +
+                '</div>' +
+                '<div class="editor-field-group" id="editor-ih-import-panel" style="display: none;">' +
+                    '<label>Available from Indexer Hunt</label>' +
+                    '<select id="editor-ih-select" class="settings-select" style="width: 100%; padding: 10px 12px; background: #1e293b; border: 1px solid #475569; border-radius: 6px; color: #e2e8f0;">' +
+                        '<option value="">Select an indexer from Indexer Hunt...</option>' +
+                    '</select>' +
+                    '<p class="editor-help-text">Select an indexer configured in Indexer Hunt to import it to this instance.</p>' +
                 '</div>';
         } else {
             // Edit mode or Add with preset already selected: locked display
@@ -414,11 +515,16 @@
                 '</div>';
         }
 
+        // Priority
+        var priority = instance.priority !== undefined ? instance.priority : 50;
+        var indexerHuntId = instance.indexer_hunt_id || '';
+
         // Should we hide fields until preset is picked? (Add mode, no preset)
         var fieldsHidden = isAdd && !hasPreset;
         var hideStyle = fieldsHidden ? ' style="display: none;"' : '';
 
         return '<input type="hidden" id="editor-preset" value="' + (preset || '') + '">' +
+            '<input type="hidden" id="editor-indexer-hunt-id" value="' + indexerHuntId + '">' +
             '<div class="editor-grid">' +
                 '<div class="editor-section">' +
                     '<div class="editor-section-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">' +
@@ -462,6 +568,11 @@
                 '</div>' +
                 '<div class="editor-section" id="editor-categories-section"' + hideStyle + '>' +
                     '<div class="editor-section-title">Additional Configurations</div>' +
+                    '<div class="editor-field-group">' +
+                        '<label for="editor-priority">Indexer Priority</label>' +
+                        '<input type="number" id="editor-priority" value="' + priority + '" min="1" max="99" style="width: 100%; padding: 10px 12px; background: #1e293b; border: 1px solid #475569; border-radius: 6px; color: #e2e8f0;">' +
+                        '<p class="editor-help-text">Lower number = higher priority (1-99, default 50). When multiple indexers find a match, results from higher-priority indexers are preferred.</p>' +
+                    '</div>' +
                     '<div class="editor-field-group">' +
                         '<label for="editor-categories-select">Categories</label>' +
                         '<select id="editor-categories-select" class="settings-select" style="width: 100%; padding: 10px 12px; background: #1e293b; border: 1px solid #475569; border-radius: 6px; color: #e2e8f0;">' +
@@ -594,7 +705,15 @@
         var categories = pillsEl ? Array.from(pillsEl.querySelectorAll('.indexer-category-pill')).map(function(el) { return parseInt(el.getAttribute('data-category-id'), 10); }).filter(function(id) { return !isNaN(id); }) : [];
         if (categories.length === 0) categories = Forms.getIndexerDefaultIdsForPreset(preset);
 
-        var body = { name: name || 'Unnamed', preset: preset, api_key: apiKey, enabled: enabled, categories: categories, url: indexerUrl, api_path: apiPath };
+        var priorityEl = document.getElementById('editor-priority');
+        var ihIdEl = document.getElementById('editor-indexer-hunt-id');
+        var priority = parseInt(priorityEl ? priorityEl.value : '50', 10) || 50;
+        if (priority < 1) priority = 1;
+        if (priority > 99) priority = 99;
+        var indexerHuntId = ihIdEl ? ihIdEl.value.trim() : '';
+
+        var body = { name: name || 'Unnamed', preset: preset, api_key: apiKey, enabled: enabled, categories: categories, url: indexerUrl, api_path: apiPath, priority: priority };
+        if (indexerHuntId) body.indexer_hunt_id = indexerHuntId;
         var endpoint = isAdd ? './api/indexers' : './api/indexers/' + index;
         var method = isAdd ? 'POST' : 'PUT';
         fetch(endpoint, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })

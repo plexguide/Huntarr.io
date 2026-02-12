@@ -230,6 +230,8 @@ def api_indexers_list():
                 'categories': cats,
                 'url': idx.get('url', ''),
                 'api_path': idx.get('api_path', '/api'),
+                'priority': idx.get('priority', 50),
+                'indexer_hunt_id': idx.get('indexer_hunt_id', ''),
             })
         return jsonify({'indexers': out}), 200
     except Exception as e:
@@ -256,9 +258,18 @@ def api_indexers_add():
             url = url or INDEXER_PRESETS[preset]['url']
             api_path = api_path or INDEXER_PRESETS[preset].get('api_path', '/api')
 
+        # Priority (1-99, default 50)
+        priority = data.get('priority', 50)
+        try:
+            priority = max(1, min(99, int(priority)))
+        except (TypeError, ValueError):
+            priority = 50
+        # Indexer Hunt link (set when synced from Indexer Hunt)
+        indexer_hunt_id = (data.get('indexer_hunt_id') or '').strip() or None
+
         instance_id = _get_movie_hunt_instance_id_from_request()
         indexers = _get_indexers_config(instance_id)
-        indexers.append({
+        new_idx = {
             'name': name,
             'preset': preset,
             'api_key': api_key,
@@ -266,7 +277,11 @@ def api_indexers_add():
             'categories': categories,
             'url': url,
             'api_path': api_path,
-        })
+            'priority': priority,
+        }
+        if indexer_hunt_id:
+            new_idx['indexer_hunt_id'] = indexer_hunt_id
+        indexers.append(new_idx)
         _save_indexers_list(indexers, instance_id)
         return jsonify({'success': True, 'index': len(indexers) - 1}), 200
     except Exception as e:
@@ -295,7 +310,12 @@ def api_indexers_update(index):
         api_key = api_key_new if api_key_new else (existing.get('api_key') or '')
         url = (data.get('url') or '').strip() or existing.get('url', '')
         api_path = (data.get('api_path') or '').strip() or existing.get('api_path', '/api')
-        indexers[index] = {
+        priority = data.get('priority', existing.get('priority', 50))
+        try:
+            priority = max(1, min(99, int(priority)))
+        except (TypeError, ValueError):
+            priority = existing.get('priority', 50)
+        updated = {
             'name': name,
             'preset': preset,
             'api_key': api_key,
@@ -303,7 +323,13 @@ def api_indexers_update(index):
             'categories': categories,
             'url': url,
             'api_path': api_path,
+            'priority': priority,
         }
+        # Preserve Indexer Hunt link if present
+        ih_id = existing.get('indexer_hunt_id')
+        if ih_id:
+            updated['indexer_hunt_id'] = ih_id
+        indexers[index] = updated
         _save_indexers_list(indexers, instance_id)
         return jsonify({'success': True}), 200
     except Exception as e:

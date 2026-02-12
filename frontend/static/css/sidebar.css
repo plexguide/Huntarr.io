@@ -292,7 +292,8 @@
 #movie-hunt-activity-sub,
 #system-sub,
 #settings-sub,
-#nzb-hunt-settings-sub {
+#nzb-hunt-settings-sub,
+#indexer-hunt-sub {
     display: none;
     margin-top: 0;
 }
@@ -302,7 +303,8 @@
 #movie-hunt-activity-sub.expanded,
 #system-sub.expanded,
 #settings-sub.expanded,
-#nzb-hunt-settings-sub.expanded {
+#nzb-hunt-settings-sub.expanded,
+#indexer-hunt-sub.expanded {
     display: block;
 }
 
@@ -310,6 +312,7 @@
 #movie-hunt-settings-sub .nav-item-sub,
 #movie-hunt-activity-sub .nav-item-sub,
 #nzb-hunt-settings-sub .nav-item-sub,
+#indexer-hunt-sub .nav-item-sub,
 #system-sub .nav-item-sub,
 #settings-sub .nav-item-sub {
     margin-top: 0;

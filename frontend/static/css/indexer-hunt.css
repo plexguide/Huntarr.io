@@ -1,0 +1,651 @@
+/* ===== INDEXER HUNT STYLES ===== */
+
+/* Main container */
+#indexer-hunt-section .ih-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+#indexer-hunt-section .ih-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+#indexer-hunt-section .ih-header h2 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--text-primary, #e0e0e0);
+}
+
+#indexer-hunt-section .ih-header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* Search input */
+#indexer-hunt-section .ih-search {
+    background: var(--input-bg, #1a1a2e);
+    border: 1px solid var(--border-color, #333);
+    border-radius: 8px;
+    padding: 8px 14px;
+    color: var(--text-primary, #e0e0e0);
+    font-size: 0.9rem;
+    width: 220px;
+    transition: border-color 0.2s;
+}
+
+#indexer-hunt-section .ih-search:focus {
+    outline: none;
+    border-color: var(--accent-color, #7b2fbe);
+}
+
+/* Add button */
+#indexer-hunt-section .ih-btn-add {
+    background: var(--accent-color, #7b2fbe);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s, transform 0.1s;
+}
+
+#indexer-hunt-section .ih-btn-add:hover {
+    background: var(--accent-hover, #9333ea);
+    transform: translateY(-1px);
+}
+
+/* Indexer table */
+#indexer-hunt-section .ih-table-wrap {
+    background: var(--card-bg, #16162a);
+    border-radius: 12px;
+    border: 1px solid var(--border-color, #333);
+    overflow: hidden;
+}
+
+#indexer-hunt-section .ih-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#indexer-hunt-section .ih-table thead th {
+    background: var(--card-header-bg, #1a1a35);
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary, #888);
+    border-bottom: 1px solid var(--border-color, #333);
+}
+
+#indexer-hunt-section .ih-table tbody td {
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    color: var(--text-primary, #e0e0e0);
+    border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.05));
+    vertical-align: middle;
+}
+
+#indexer-hunt-section .ih-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+#indexer-hunt-section .ih-table tbody tr:hover {
+    background: rgba(123, 47, 190, 0.05);
+}
+
+/* Name cell */
+#indexer-hunt-section .ih-name-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+#indexer-hunt-section .ih-name-primary {
+    font-weight: 600;
+}
+
+#indexer-hunt-section .ih-name-display {
+    font-size: 0.8rem;
+    color: var(--text-secondary, #888);
+}
+
+/* Status badge */
+#indexer-hunt-section .ih-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+#indexer-hunt-section .ih-badge-enabled {
+    background: rgba(46, 204, 113, 0.15);
+    color: #2ecc71;
+}
+
+#indexer-hunt-section .ih-badge-disabled {
+    background: rgba(231, 76, 60, 0.15);
+    color: #e74c3c;
+}
+
+#indexer-hunt-section .ih-badge-protocol {
+    background: rgba(52, 152, 219, 0.15);
+    color: #3498db;
+}
+
+/* Priority pill */
+#indexer-hunt-section .ih-priority {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    background: rgba(123, 47, 190, 0.15);
+    color: var(--accent-color, #7b2fbe);
+}
+
+/* Action buttons */
+#indexer-hunt-section .ih-actions {
+    display: flex;
+    gap: 6px;
+}
+
+#indexer-hunt-section .ih-action-btn {
+    background: none;
+    border: 1px solid var(--border-color, #444);
+    border-radius: 6px;
+    padding: 5px 10px;
+    color: var(--text-secondary, #aaa);
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.15s;
+}
+
+#indexer-hunt-section .ih-action-btn:hover {
+    border-color: var(--accent-color, #7b2fbe);
+    color: var(--accent-color, #7b2fbe);
+}
+
+#indexer-hunt-section .ih-action-btn.ih-btn-delete:hover {
+    border-color: #e74c3c;
+    color: #e74c3c;
+}
+
+#indexer-hunt-section .ih-action-btn.ih-btn-test:hover {
+    border-color: #2ecc71;
+    color: #2ecc71;
+}
+
+/* Empty state */
+#indexer-hunt-section .ih-empty {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-secondary, #888);
+}
+
+#indexer-hunt-section .ih-empty i {
+    font-size: 2.5rem;
+    margin-bottom: 12px;
+    opacity: 0.4;
+}
+
+#indexer-hunt-section .ih-empty p {
+    margin: 4px 0;
+    font-size: 0.95rem;
+}
+
+/* ── Add/Edit Form (inline panel) ─────────────────────────────── */
+
+#indexer-hunt-section .ih-form-panel {
+    background: var(--card-bg, #16162a);
+    border-radius: 12px;
+    border: 1px solid var(--border-color, #333);
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+#indexer-hunt-section .ih-form-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 0 20px 0;
+    color: var(--text-primary, #e0e0e0);
+}
+
+#indexer-hunt-section .ih-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+#indexer-hunt-section .ih-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+#indexer-hunt-section .ih-form-group.ih-form-full {
+    grid-column: 1 / -1;
+}
+
+#indexer-hunt-section .ih-form-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary, #888);
+}
+
+#indexer-hunt-section .ih-form-input,
+#indexer-hunt-section .ih-form-select {
+    background: var(--input-bg, #1a1a2e);
+    border: 1px solid var(--border-color, #444);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text-primary, #e0e0e0);
+    font-size: 0.9rem;
+    transition: border-color 0.2s;
+}
+
+#indexer-hunt-section .ih-form-input:focus,
+#indexer-hunt-section .ih-form-select:focus {
+    outline: none;
+    border-color: var(--accent-color, #7b2fbe);
+}
+
+#indexer-hunt-section .ih-form-input[readonly] {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+#indexer-hunt-section .ih-form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    justify-content: flex-end;
+}
+
+#indexer-hunt-section .ih-btn-save {
+    background: var(--accent-color, #7b2fbe);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 24px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+#indexer-hunt-section .ih-btn-save:hover {
+    background: var(--accent-hover, #9333ea);
+}
+
+#indexer-hunt-section .ih-btn-cancel {
+    background: transparent;
+    color: var(--text-secondary, #aaa);
+    border: 1px solid var(--border-color, #444);
+    border-radius: 8px;
+    padding: 10px 24px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+#indexer-hunt-section .ih-btn-cancel:hover {
+    border-color: var(--text-primary, #e0e0e0);
+    color: var(--text-primary, #e0e0e0);
+}
+
+#indexer-hunt-section .ih-btn-test-form {
+    background: transparent;
+    color: #2ecc71;
+    border: 1px solid #2ecc71;
+    border-radius: 8px;
+    padding: 10px 24px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-right: auto;
+}
+
+#indexer-hunt-section .ih-btn-test-form:hover {
+    background: rgba(46, 204, 113, 0.1);
+}
+
+/* Toggle switch */
+#indexer-hunt-section .ih-toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-top: 4px;
+}
+
+#indexer-hunt-section .ih-toggle {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: #444;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+#indexer-hunt-section .ih-toggle.active {
+    background: var(--accent-color, #7b2fbe);
+}
+
+#indexer-hunt-section .ih-toggle::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+}
+
+#indexer-hunt-section .ih-toggle.active::after {
+    transform: translateX(20px);
+}
+
+/* URL display in table */
+#indexer-hunt-section .ih-url-cell {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.85rem;
+    color: var(--text-secondary, #999);
+}
+
+/* ===== STATS PAGE ===== */
+
+#indexer-hunt-stats-section .ih-stats-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+#indexer-hunt-stats-section .ih-stats-header {
+    margin-bottom: 24px;
+}
+
+#indexer-hunt-stats-section .ih-stats-header h2 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--text-primary, #e0e0e0);
+}
+
+/* Summary cards */
+#indexer-hunt-stats-section .ih-stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+#indexer-hunt-stats-section .ih-stats-card {
+    background: var(--card-bg, #16162a);
+    border: 1px solid var(--border-color, #333);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+}
+
+#indexer-hunt-stats-section .ih-stats-card-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent-color, #7b2fbe);
+    line-height: 1;
+    margin-bottom: 6px;
+}
+
+#indexer-hunt-stats-section .ih-stats-card-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary, #888);
+}
+
+/* Per-indexer breakdown table */
+#indexer-hunt-stats-section .ih-stats-table-wrap {
+    background: var(--card-bg, #16162a);
+    border-radius: 12px;
+    border: 1px solid var(--border-color, #333);
+    overflow: hidden;
+}
+
+#indexer-hunt-stats-section .ih-stats-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#indexer-hunt-stats-section .ih-stats-table thead th {
+    background: var(--card-header-bg, #1a1a35);
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary, #888);
+    border-bottom: 1px solid var(--border-color, #333);
+}
+
+#indexer-hunt-stats-section .ih-stats-table tbody td {
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    color: var(--text-primary, #e0e0e0);
+    border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.05));
+}
+
+#indexer-hunt-stats-section .ih-stats-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* ===== HISTORY PAGE ===== */
+
+#indexer-hunt-history-section .ih-history-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+#indexer-hunt-history-section .ih-history-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+#indexer-hunt-history-section .ih-history-header h2 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--text-primary, #e0e0e0);
+}
+
+#indexer-hunt-history-section .ih-history-filters {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+#indexer-hunt-history-section .ih-history-select,
+#indexer-hunt-history-section .ih-history-search {
+    background: var(--input-bg, #1a1a2e);
+    border: 1px solid var(--border-color, #333);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text-primary, #e0e0e0);
+    font-size: 0.85rem;
+}
+
+#indexer-hunt-history-section .ih-history-table-wrap {
+    background: var(--card-bg, #16162a);
+    border-radius: 12px;
+    border: 1px solid var(--border-color, #333);
+    overflow: hidden;
+}
+
+#indexer-hunt-history-section .ih-history-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#indexer-hunt-history-section .ih-history-table thead th {
+    background: var(--card-header-bg, #1a1a35);
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary, #888);
+    border-bottom: 1px solid var(--border-color, #333);
+}
+
+#indexer-hunt-history-section .ih-history-table tbody td {
+    padding: 10px 16px;
+    font-size: 0.9rem;
+    color: var(--text-primary, #e0e0e0);
+    border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.05));
+}
+
+#indexer-hunt-history-section .ih-history-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+#indexer-hunt-history-section .ih-event-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+#indexer-hunt-history-section .ih-event-search {
+    background: rgba(52, 152, 219, 0.15);
+    color: #3498db;
+}
+
+#indexer-hunt-history-section .ih-event-grab {
+    background: rgba(46, 204, 113, 0.15);
+    color: #2ecc71;
+}
+
+#indexer-hunt-history-section .ih-event-failure {
+    background: rgba(231, 76, 60, 0.15);
+    color: #e74c3c;
+}
+
+#indexer-hunt-history-section .ih-event-test {
+    background: rgba(241, 196, 15, 0.15);
+    color: #f1c40f;
+}
+
+/* Pagination */
+#indexer-hunt-history-section .ih-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px;
+}
+
+#indexer-hunt-history-section .ih-pagination button {
+    background: var(--input-bg, #1a1a2e);
+    border: 1px solid var(--border-color, #444);
+    border-radius: 6px;
+    padding: 6px 14px;
+    color: var(--text-primary, #e0e0e0);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.15s;
+}
+
+#indexer-hunt-history-section .ih-pagination button:hover {
+    border-color: var(--accent-color, #7b2fbe);
+}
+
+#indexer-hunt-history-section .ih-pagination button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+#indexer-hunt-history-section .ih-pagination span {
+    font-size: 0.85rem;
+    color: var(--text-secondary, #888);
+}
+
+/* Empty state shared */
+.ih-empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-secondary, #888);
+}
+
+.ih-empty-state i {
+    font-size: 2.5rem;
+    margin-bottom: 12px;
+    opacity: 0.4;
+    display: block;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    #indexer-hunt-section .ih-form-grid {
+        grid-template-columns: 1fr;
+    }
+    #indexer-hunt-section .ih-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    #indexer-hunt-section .ih-search {
+        width: 100%;
+    }
+    #indexer-hunt-stats-section .ih-stats-cards {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* Clear history button */
+#indexer-hunt-history-section .ih-btn-clear {
+    background: transparent;
+    color: #e74c3c;
+    border: 1px solid #e74c3c;
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+#indexer-hunt-history-section .ih-btn-clear:hover {
+    background: rgba(231, 76, 60, 0.1);
+}

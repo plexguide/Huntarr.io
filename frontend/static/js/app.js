@@ -141,6 +141,9 @@ let huntarrUI = {
         } else if (this.currentSection === 'nzb-hunt-home' || this.currentSection === 'nzb-hunt-activity' || this.currentSection === 'nzb-hunt-server-editor' || (this.currentSection && this.currentSection.startsWith('nzb-hunt-settings'))) {
             console.log('[huntarrUI] Initialization - showing nzb hunt sidebar');
             this.showNzbHuntSidebar();
+        } else if (this.currentSection === 'indexer-hunt' || this.currentSection === 'indexer-hunt-stats' || this.currentSection === 'indexer-hunt-history') {
+            console.log('[huntarrUI] Initialization - showing main sidebar for indexer hunt');
+            this.showMainSidebar();
         } else if (this.currentSection === 'movie-hunt-home' || this.currentSection === 'movie-hunt-collection' || this.currentSection === 'activity-queue' || this.currentSection === 'activity-history' || this.currentSection === 'activity-blocklist' || this.currentSection === 'activity-logs' || this.currentSection === 'logs-movie-hunt' || this.currentSection === 'movie-hunt-settings' || this.currentSection === 'movie-hunt-instance-editor' || this.currentSection === 'settings-instance-management' || this.currentSection === 'settings-movie-management' || this.currentSection === 'settings-profiles' || this.currentSection === 'settings-sizes' || this.currentSection === 'profile-editor' || this.currentSection === 'settings-custom-formats' || this.currentSection === 'settings-indexers' || this.currentSection === 'settings-clients' || this.currentSection === 'settings-import-lists' || this.currentSection === 'settings-import-media' || this.currentSection === 'settings-root-folders') {
             console.log('[huntarrUI] Initialization - showing movie hunt sidebar');
             this.showMovieHuntSidebar();
@@ -733,6 +736,34 @@ let huntarrUI = {
             if (window.NzbHunt) {
                 if (typeof window.NzbHunt.initSettings === 'function') window.NzbHunt.initSettings();
                 if (typeof window.NzbHunt._populateServerEditorForm === 'function') window.NzbHunt._populateServerEditorForm();
+            }
+        // ── Indexer Hunt sections ──────────────────────────────────────
+        } else if (section === 'indexer-hunt' && document.getElementById('indexer-hunt-section')) {
+            document.getElementById('indexer-hunt-section').classList.add('active');
+            document.getElementById('indexer-hunt-section').style.display = 'block';
+            newTitle = 'Indexer Hunt';
+            this.currentSection = 'indexer-hunt';
+            this.showMainSidebar();
+            if (window.IndexerHunt && typeof window.IndexerHunt.init === 'function') {
+                window.IndexerHunt.init();
+            }
+        } else if (section === 'indexer-hunt-stats' && document.getElementById('indexer-hunt-stats-section')) {
+            document.getElementById('indexer-hunt-stats-section').classList.add('active');
+            document.getElementById('indexer-hunt-stats-section').style.display = 'block';
+            newTitle = 'Indexer Hunt – Stats';
+            this.currentSection = 'indexer-hunt-stats';
+            this.showMainSidebar();
+            if (window.IndexerHuntStats && typeof window.IndexerHuntStats.init === 'function') {
+                window.IndexerHuntStats.init();
+            }
+        } else if (section === 'indexer-hunt-history' && document.getElementById('indexer-hunt-history-section')) {
+            document.getElementById('indexer-hunt-history-section').classList.add('active');
+            document.getElementById('indexer-hunt-history-section').style.display = 'block';
+            newTitle = 'Indexer Hunt – History';
+            this.currentSection = 'indexer-hunt-history';
+            this.showMainSidebar();
+            if (window.IndexerHuntHistory && typeof window.IndexerHuntHistory.init === 'function') {
+                window.IndexerHuntHistory.init();
             }
         } else if (section === 'movie-hunt-collection' && document.getElementById('movie-hunt-section')) {
             document.getElementById('movie-hunt-section').classList.add('active');
