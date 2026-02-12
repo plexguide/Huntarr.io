@@ -205,6 +205,9 @@ let huntarrUI = {
         // Setup Prowlarr status polling (refresh every 30 seconds)
         this.setupProwlarrStatusPolling();
         
+        // Setup Indexer Hunt home card (shows if indexers configured)
+        this.setupIndexerHuntHome();
+        
         // Make dashboard visible after initialization to prevent FOUC
         setTimeout(() => {
             this.showDashboard();
@@ -2587,6 +2590,7 @@ let huntarrUI = {
     },
 
     setupProwlarrStatusPolling: function() { if (window.HuntarrProwlarr) window.HuntarrProwlarr.setupProwlarrStatusPolling(); },
+    setupIndexerHuntHome: function() { if (window.HuntarrIndexerHuntHome) window.HuntarrIndexerHuntHome.setup(); },
 
 
 };

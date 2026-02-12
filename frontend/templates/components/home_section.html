@@ -468,6 +468,46 @@
             </div>
         </div>
 
+        <!-- Indexer Hunt Status Card (only shown when at least 1 indexer configured) -->
+        <div class="card stats-card" id="indexerHuntStatusCard" style="display: none;">
+
+            <!-- Main Header Card -->
+            <div class="prowlarr-main-card">
+                <div class="prowlarr-header-section">
+                    <div class="app-icon-wrapper">
+                        <img src="./static/logo/256.png" alt="Huntarr Logo" class="app-logo">
+                    </div>
+                    <div class="prowlarr-info">
+                        <h4>Indexer Hunt</h4>
+                        <span id="ihHomeConnectionStatus" class="status-badge">⚫ Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sub Cards Container -->
+            <div class="prowlarr-subcards">
+                <!-- Left Sub-Card: Indexers List -->
+                <div class="prowlarr-subcard prowlarr-indexers-card">
+                    <div class="subcard-header">
+                        <h5><i class="fas fa-list"></i> Indexers</h5>
+                    </div>
+                    <div class="indexers-list" id="ih-home-indexers-list">
+                        <div class="loading-text">Loading indexers...</div>
+                    </div>
+                </div>
+
+                <!-- Right Sub-Card: Statistics -->
+                <div class="prowlarr-subcard prowlarr-statistics-card">
+                    <div class="subcard-header">
+                        <h5><i class="fas fa-chart-bar"></i> Statistics</h5>
+                    </div>
+                    <div class="statistics-content" id="ih-home-statistics-content">
+                        <div class="loading-text">Loading statistics...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Prowlarr Status Card -->
         <div class="card stats-card" id="prowlarrStatusCard" style="display: none;">
             
