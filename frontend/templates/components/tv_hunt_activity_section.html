@@ -1,0 +1,163 @@
+<!-- TV Hunt Activity: Queue, History, Blocklist — separate from Movie Hunt, unique to TV Hunt -->
+<section id="tvHuntActivitySection" class="content-section" style="display: none;">
+    {% with section_id='tv-hunt-activity' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
+    <div id="tvHuntActivityQueueToolbar" class="logs-toolbar">
+        <div class="logs-toolbar-row">
+            <div class="logs-filters">
+                <div class="logs-filter-chip">
+                    <i class="fas fa-tv"></i>
+                    <select id="tv-hunt-activity-instance-select" class="chip-select" aria-label="TV Hunt instance">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="logs-search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" id="tvHuntActivitySearchInput" placeholder="Search...">
+            </div>
+            <button type="button" id="tvHuntActivitySearchButton" class="logs-btn logs-btn-search" title="Search">
+                <i class="fas fa-search"></i>
+            </button>
+            <button type="button" id="tvHuntActivityRefreshButton" class="logs-btn" title="Refresh">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+            <button type="button" id="tvHuntActivityRemoveSelectedButton" class="logs-btn logs-btn-danger" title="Remove Selected" style="display: none;">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+        </div>
+        <div class="logs-toolbar-meta">
+            <div class="logs-connection-dot">
+                <span class="logs-page-info" style="color: #64748b;">TV Hunt</span>
+            </div>
+            <div class="logs-pagination">
+                <span class="logs-page-size">
+                    Show
+                    <select id="tvHuntActivityPageSize" class="chip-select chip-select-sm">
+                        <option value="10">10</option>
+                        <option value="20" selected>20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </span>
+                <div class="logs-page-nav">
+                    <button type="button" id="tvHuntActivityPrevPage" class="logs-page-btn" title="Previous Page"><i class="fas fa-chevron-left"></i></button>
+                    <span id="tvHuntActivityPageInfo" class="logs-page-info">Page <span id="tvHuntActivityCurrentPage">1</span> of <span id="tvHuntActivityTotalPages">1</span></span>
+                    <button type="button" id="tvHuntActivityNextPage" class="logs-page-btn" title="Next Page"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tvHuntActivityQueueView" class="activity-view" style="display: none;">
+        <div class="logs-table-wrapper">
+            <table class="logs-data-table">
+                <thead>
+                    <tr>
+                        <th class="col-select" style="width: 40px;"><input type="checkbox" id="tvHuntActivityQueueSelectAll" title="Select all"></th>
+                        <th class="col-show">SHOW</th>
+                        <th class="col-languages">LANGUAGES</th>
+                        <th class="col-quality">QUALITY</th>
+                        <th class="col-formats">FORMATS</th>
+                        <th class="col-scoring">SCORING</th>
+                        <th class="col-time-left">TIME LEFT</th>
+                        <th class="col-progress">PROGRESS</th>
+                    </tr>
+                </thead>
+                <tbody id="tvHuntActivityQueueTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="tvHuntActivityHistoryView" class="activity-view" style="display: none;">
+        <div class="logs-table-wrapper">
+            <table class="logs-data-table">
+                <thead>
+                    <tr>
+                        <th class="col-show">SHOW</th>
+                        <th class="col-languages">LANGUAGES</th>
+                        <th class="col-quality">QUALITY</th>
+                        <th class="col-formats">FORMATS</th>
+                        <th class="col-date">DATE</th>
+                    </tr>
+                </thead>
+                <tbody id="tvHuntActivityHistoryTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="tvHuntActivityBlocklistView" class="activity-view" style="display: none;">
+        <div class="logs-table-wrapper">
+            <table class="logs-data-table">
+                <thead>
+                    <tr>
+                        <th class="col-source">SOURCE TITLE</th>
+                        <th class="col-date">DATE ADDED</th>
+                        <th class="col-actions" style="width: 90px;"></th>
+                    </tr>
+                </thead>
+                <tbody id="tvHuntActivityBlocklistTableBody"></tbody>
+            </table>
+        </div>
+        <div id="tvHuntActivityBlocklistDetailsModal" class="activity-blocklist-modal" style="display: none;" role="dialog" aria-label="Blocklist entry details">
+            <div class="activity-blocklist-modal-content">
+                <div class="activity-blocklist-modal-header">
+                    <h3>Details</h3>
+                    <button type="button" class="tv-hunt-activity-blocklist-modal-close" aria-label="Close">&times;</button>
+                </div>
+                <div class="activity-blocklist-modal-body">
+                    <p><strong>Source Title</strong><br><span id="tvHuntActivityBlocklistModalSourceTitle"></span></p>
+                    <p><strong>Date Added</strong><br><span id="tvHuntActivityBlocklistModalDate"></span></p>
+                </div>
+                <div class="activity-blocklist-modal-footer">
+                    <button type="button" class="activity-blocklist-modal-close-btn btn-secondary">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tvHuntActivityEmptyState" class="empty-state-card" style="display: none;">
+        <div class="empty-state-icon"><i class="fas fa-inbox"></i></div>
+        <h3 id="tvHuntActivityEmptyTitle">No items found</h3>
+        <p id="tvHuntActivityEmptyMessage">Items will appear here when available.</p>
+    </div>
+
+    <div id="tvHuntActivityLoading" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner-container">
+            <i class="fas fa-spinner fa-spin fa-2x"></i>
+            <p>Loading...</p>
+        </div>
+    </div>
+</section>
+
+<style>
+#tvHuntActivitySection .logs-table-wrapper { margin-top: 0; margin-bottom: 16px; }
+#tvHuntActivitySection .col-select { width: 40px; text-align: center; }
+#tvHuntActivitySection .col-select input[type="checkbox"] { cursor: pointer; }
+#tvHuntActivitySection .col-show { }
+#tvHuntActivitySection .col-actions { text-align: right; }
+#tvHuntActivitySection .tv-hunt-activity-blocklist-btn-info,
+#tvHuntActivitySection .tv-hunt-activity-blocklist-btn-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px 10px;
+    color: #94a3b8;
+    font-size: 1rem;
+}
+#tvHuntActivitySection .tv-hunt-activity-blocklist-btn-info:hover { color: #3b82f6; }
+#tvHuntActivitySection .tv-hunt-activity-blocklist-btn-remove:hover { color: #ef4444; }
+#tvHuntActivitySection .empty-state-card {
+    text-align: center;
+    padding: 60px 20px;
+    background: rgba(30, 41, 59, 0.3);
+    border-radius: 12px;
+    border: 1px dashed #334155;
+    margin-top: 20px;
+}
+#tvHuntActivitySection .empty-state-icon { color: #334155; font-size: 4rem; margin-bottom: 20px; }
+#tvHuntActivitySection .empty-state-card h3 { color: #f1f5f9; margin-bottom: 10px; }
+#tvHuntActivitySection .empty-state-card p { color: #64748b; }
+#tvHuntActivitySection .loading-overlay { text-align: center; padding: 60px 20px; }
+#tvHuntActivitySection .loading-spinner-container { color: #3b82f6; }
+#tvHuntActivitySection .loading-spinner-container p { margin-top: 15px; color: #94a3b8; }
+</style>

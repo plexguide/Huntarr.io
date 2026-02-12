@@ -54,8 +54,10 @@
             {% include 'components/movie_hunt_instance_editor_section.html' %}
             <!-- Movie Hunt Instance Management -->
             {% include 'components/movie_hunt_instance_management_section.html' %}
-            <!-- Activity (Queue, History, Blocklist) -->
+            <!-- Activity (Queue, History, Blocklist) - Movie Hunt only -->
             {% include 'components/activity_section.html' %}
+            <!-- TV Hunt Activity (Queue, History, Blocklist) - separate from Movie Hunt -->
+            {% include 'components/tv_hunt_activity_section.html' %}
 
             <!-- NZB Hunt (standalone module - dev key required) -->
             {% include 'components/nzb_hunt_section.html' %}
