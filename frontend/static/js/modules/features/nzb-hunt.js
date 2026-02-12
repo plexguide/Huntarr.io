@@ -33,6 +33,10 @@
             var historyClear = document.querySelector('#nzb-hunt-section [data-panel="history"] .nzb-btn-danger');
             if (historyClear) historyClear.addEventListener('click', function () { self._clearHistory(); });
 
+            // Wire up Warnings dismiss all
+            var warnDismiss = document.getElementById('nzb-warnings-dismiss-all');
+            if (warnDismiss) warnDismiss.addEventListener('click', function () { self._dismissAllWarnings(); });
+
             // Wire up Pause / Resume ALL button (actually hits backend)
             var pauseBtn = document.getElementById('nzb-pause-btn');
             if (pauseBtn) {
@@ -81,6 +85,8 @@
                 // Update history count from status
                 var hBadge = document.getElementById('nzb-history-count');
                 if (hBadge) hBadge.textContent = statusData.history_count || 0;
+                // Update warnings tab
+                self._updateWarnings(statusData.warnings || []);
             }).catch(function (err) {
                 console.error('[NzbHunt] Poll error:', err);
             });
@@ -210,8 +216,9 @@
                 var stateClass = 'nzb-item-' + (item.state || 'queued');
                 var stateIcon = self._stateIcon(item.state);
                 var stateLabel = self._stateLabel(item.state);
-                var speed = item.state === 'downloading' ? self._formatBytes(item.speed_bps || 0) + '/s' : '—';
-                var timeLeft = item.time_left || '—';
+                var isActivelyDownloading = (item.state === 'downloading' && progress < 100);
+                var speed = isActivelyDownloading ? self._formatBytes(item.speed_bps || 0) + '/s' : '—';
+                var timeLeft = isActivelyDownloading ? (item.time_left || '—') : '—';
                 var db = item.downloaded_bytes || 0;
                 var tb = item.total_bytes || 0;
                 if (tb > 0 && db > tb) db = tb;
@@ -220,19 +227,36 @@
                 var name = self._escHtml(item.name || 'Unknown');
                 var catLabel = item.category ? self._escHtml(String(item.category)) : '—';
 
-                // Build status display: primary state, secondary message when relevant.
-                // Wrap in tooltip container when there's extra info to show on hover.
-                var statusHtml = '<i class="' + stateIcon + '"></i> ' + stateLabel;
+                // Build status display
                 var failedSegs = item.failed_segments || 0;
                 var tooltipText = '';
-                if (item.status_message && item.state !== 'downloading') {
-                    var msgClass = failedSegs > 0 ? ' nzb-status-msg-warn' : ' nzb-status-msg';
-                    statusHtml += '<span class="nzb-status-sub' + msgClass + '">' + self._escHtml(item.status_message) + '</span>';
-                    tooltipText = item.status_message;
-                } else if (item.error_message) {
+                var statusHtml = '<i class="' + stateIcon + '"></i> ';
+
+                if (item.state === 'assembling') {
+                    // Compact: "Assembling 3/49"
+                    var cf = item.completed_files || 0;
+                    var tf = item.total_files || 0;
+                    statusHtml += 'Assembling <span class="nzb-status-sub nzb-status-msg">' + cf + '/' + tf + ' files</span>';
+                    if (failedSegs > 0) tooltipText = 'par2 repair will be needed (' + failedSegs + ' missing segments)';
+                } else if (item.state === 'extracting') {
+                    statusHtml += stateLabel;
+                    if (item.status_message) {
+                        statusHtml += '<span class="nzb-status-sub nzb-status-msg">' + self._escHtml(item.status_message) + '</span>';
+                        tooltipText = item.status_message;
+                    }
+                } else {
+                    statusHtml += stateLabel;
+                    if (item.status_message && item.state !== 'downloading') {
+                        var msgClass = failedSegs > 0 ? ' nzb-status-msg-warn' : ' nzb-status-msg';
+                        statusHtml += '<span class="nzb-status-sub' + msgClass + '">' + self._escHtml(item.status_message) + '</span>';
+                        tooltipText = item.status_message;
+                    }
+                    if (item.state === 'downloading' && item.completed_segments === 0 && item.speed_bps === 0) {
+                        statusHtml += '<span class="nzb-status-sub nzb-status-msg">Connecting...</span>';
+                    }
+                }
+                if (!tooltipText && item.error_message) {
                     tooltipText = item.error_message;
-                } else if (item.state === 'downloading' && item.completed_segments === 0 && item.speed_bps === 0) {
-                    statusHtml += '<span class="nzb-status-sub">Connecting...</span>';
                 }
                 if (tooltipText) {
                     statusHtml = '<span class="nzb-status-with-tooltip" title="">' + statusHtml + '<div class="nzb-cell-tooltip">' + self._escHtml(tooltipText) + '</div></span>';
@@ -262,7 +286,7 @@
                         '<td class="nzb-col-eta" data-label="ETA">' + timeLeft + '</td>' +
                         '<td class="nzb-col-status" data-label="Status">' + statusHtml + '</td>' +
                         '<td class="nzb-col-actions" data-label="">' +
-                            (item.state === 'downloading' || item.state === 'queued' ?
+                            (item.state === 'downloading' || item.state === 'assembling' || item.state === 'queued' ?
                                 '<button class="nzb-item-btn" title="Pause" data-action="pause" data-id="' + item.id + '"><i class="fas fa-pause"></i></button>' : '') +
                             (item.state === 'paused' ?
                                 '<button class="nzb-item-btn" title="Resume" data-action="resume" data-id="' + item.id + '"><i class="fas fa-play"></i></button>' : '') +
@@ -346,6 +370,7 @@
         _stateIcon: function (state) {
             switch (state) {
                 case 'downloading': return 'fas fa-arrow-down nzb-icon-downloading';
+                case 'assembling': return 'fas fa-file-export nzb-icon-assembling';
                 case 'queued': return 'fas fa-clock nzb-icon-queued';
                 case 'paused': return 'fas fa-pause-circle nzb-icon-paused';
                 case 'extracting': return 'fas fa-file-archive nzb-icon-extracting';
@@ -358,6 +383,7 @@
         _stateLabel: function (state) {
             switch (state) {
                 case 'downloading': return 'Downloading';
+                case 'assembling': return 'Assembling';
                 case 'queued': return 'Queued';
                 case 'paused': return 'Paused';
                 case 'extracting': return 'Extracting';
@@ -635,6 +661,78 @@
                     if (e.target === overlay) self._closePrefsModal();
                 });
             }
+        },
+
+        /* ──────────────────────────────────────────────
+           Warnings Tab
+        ────────────────────────────────────────────── */
+        _updateWarnings: function (warnings) {
+            var tab = document.getElementById('nzb-warnings-tab');
+            var badge = document.getElementById('nzb-warnings-count');
+            var count = (warnings && warnings.length) || 0;
+            // Show/hide the tab
+            if (tab) tab.style.display = count > 0 ? '' : 'none';
+            if (badge) badge.textContent = count;
+            // If warnings panel is visible, render
+            this._lastWarnings = warnings || [];
+            if (this.currentTab === 'warnings') this._renderWarnings();
+        },
+
+        _renderWarnings: function () {
+            var body = document.getElementById('nzb-warnings-body');
+            if (!body) return;
+            var warnings = this._lastWarnings || [];
+            if (warnings.length === 0) {
+                body.innerHTML =
+                    '<div class="nzb-queue-empty">' +
+                        '<div class="nzb-queue-empty-icon"><i class="fas fa-check-circle" style="color: #4ade80;"></i></div>' +
+                        '<h3>No warnings</h3>' +
+                        '<p>Everything looks good.</p>' +
+                    '</div>';
+                return;
+            }
+            var self = this;
+            var html = '<div class="nzb-warnings-list">';
+            warnings.forEach(function (w) {
+                var icon = w.level === 'error' ? 'fa-times-circle' : w.level === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle';
+                var cls = 'nzb-warning-item nzb-warning-' + w.level;
+                html +=
+                    '<div class="' + cls + '">' +
+                        '<div class="nzb-warning-icon"><i class="fas ' + icon + '"></i></div>' +
+                        '<div class="nzb-warning-body">' +
+                            '<div class="nzb-warning-title">' + self._escHtml(w.title) + '</div>' +
+                            '<div class="nzb-warning-msg">' + self._escHtml(w.message) + '</div>' +
+                            '<div class="nzb-warning-time">' + self._timeAgo(w.time) + '</div>' +
+                        '</div>' +
+                        '<button class="nzb-warning-dismiss" data-warn-id="' + self._escHtml(w.id) + '" title="Dismiss"><i class="fas fa-times"></i></button>' +
+                    '</div>';
+            });
+            html += '</div>';
+            body.innerHTML = html;
+            // Bind dismiss buttons
+            body.querySelectorAll('.nzb-warning-dismiss').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    self._dismissWarning(btn.getAttribute('data-warn-id'));
+                });
+            });
+        },
+
+        _dismissWarning: function (warnId) {
+            var self = this;
+            fetch('./api/nzb-hunt/warnings/dismiss', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: warnId })
+            }).then(function () { self._fetchQueueAndStatus(); });
+        },
+
+        _dismissAllWarnings: function () {
+            var self = this;
+            fetch('./api/nzb-hunt/warnings/dismiss', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: '__all__' })
+            }).then(function () { self._fetchQueueAndStatus(); });
         },
 
         /* ──────────────────────────────────────────────
@@ -937,6 +1035,8 @@
             document.querySelectorAll('#nzb-hunt-section .nzb-tab-panel').forEach(function (p) {
                 p.style.display = p.getAttribute('data-panel') === tab ? 'block' : 'none';
             });
+            if (tab === 'history') { this._fetchHistory(); }
+            if (tab === 'warnings') { this._renderWarnings(); }
         },
 
         /* ──────────────────────────────────────────────

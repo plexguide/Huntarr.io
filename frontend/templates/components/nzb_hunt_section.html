@@ -76,6 +76,9 @@
             <button class="nzb-tab" data-tab="history">
                 History <span class="nzb-tab-badge nzb-tab-badge-default" id="nzb-history-count">0</span>
             </button>
+            <button class="nzb-tab" data-tab="warnings" id="nzb-warnings-tab" style="display: none;">
+                Warnings <span class="nzb-tab-badge nzb-tab-badge-warn" id="nzb-warnings-count">0</span>
+            </button>
         </div>
 
         <!-- Queue panel -->
@@ -112,6 +115,25 @@
                         <div class="nzb-queue-empty-icon"><i class="fas fa-history"></i></div>
                         <h3>No history yet</h3>
                         <p>Completed downloads will be logged here.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Warnings panel -->
+        <div class="nzb-tab-panel" data-panel="warnings" style="display: none;">
+            <div class="nzb-queue-panel">
+                <div class="nzb-queue-header">
+                    <div class="nzb-queue-title"><i class="fas fa-exclamation-triangle"></i> Warnings</div>
+                    <div class="nzb-queue-actions">
+                        <button class="nzb-btn" title="Dismiss All" id="nzb-warnings-dismiss-all"><i class="fas fa-check-double"></i> Dismiss All</button>
+                    </div>
+                </div>
+                <div id="nzb-warnings-body">
+                    <div class="nzb-queue-empty">
+                        <div class="nzb-queue-empty-icon"><i class="fas fa-check-circle" style="color: #4ade80;"></i></div>
+                        <h3>No warnings</h3>
+                        <p>Everything looks good.</p>
                     </div>
                 </div>
             </div>

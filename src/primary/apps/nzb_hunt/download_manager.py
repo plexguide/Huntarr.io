@@ -118,6 +118,7 @@ class _RateLimiter:
 # Download states
 STATE_QUEUED = "queued"
 STATE_DOWNLOADING = "downloading"
+STATE_ASSEMBLING = "assembling"  # 100% segments done, writing files to disk
 STATE_PAUSED = "paused"
 STATE_COMPLETED = "completed"
 STATE_FAILED = "failed"
@@ -284,6 +285,11 @@ class NZBHuntDownloadManager:
         # Rate limiter (token-bucket, thread-safe)
         self._rate_limiter = _RateLimiter()
         
+        # Warnings system (like SABnzbd)
+        self._warnings: List[dict] = []
+        self._warnings_lock = threading.Lock()
+        self._dismissed_warnings: set = set()  # dismissed warning IDs
+        
         # yEnc decoding now runs in-thread using sabyenc3 (C extension,
         # releases GIL) or a fast bytes.translate() decoder.  No more
         # ProcessPoolExecutor — eliminates ~2ms of pickling overhead per
@@ -354,7 +360,7 @@ class NZBHuntDownloadManager:
             abort_threshold_pct = float(proc.get("abort_threshold_pct", 5))
             to_remove = []
             for item in self._queue:
-                if item.state in (STATE_DOWNLOADING, STATE_EXTRACTING):
+                if item.state in (STATE_DOWNLOADING, STATE_ASSEMBLING, STATE_EXTRACTING):
                     total_attempted = item.completed_segments + item.failed_segments
                     if abort_hopeless and item.failed_segments > 0 and total_attempted >= 50:
                         fail_pct = (item.failed_segments / total_attempted) * 100
@@ -777,7 +783,7 @@ class NZBHuntDownloadManager:
         """Pause a queued/downloading item."""
         with self._queue_lock:
             for item in self._queue:
-                if item.id == nzb_id and item.state in (STATE_QUEUED, STATE_DOWNLOADING):
+                if item.id == nzb_id and item.state in (STATE_QUEUED, STATE_DOWNLOADING, STATE_ASSEMBLING):
                     item.state = STATE_PAUSED
                     self._save_state()
                     return True
@@ -817,7 +823,7 @@ class NZBHuntDownloadManager:
         self._paused_global = True
         with self._queue_lock:
             for item in self._queue:
-                if item.state in (STATE_QUEUED, STATE_DOWNLOADING):
+                if item.state in (STATE_QUEUED, STATE_DOWNLOADING, STATE_ASSEMBLING):
                     item.state = STATE_PAUSED
             self._save_state()
     
@@ -831,21 +837,136 @@ class NZBHuntDownloadManager:
             self._save_state()
         self._ensure_worker_running()
     
+    # ── Warnings System ──────────────────────────────────────────
+    
+    def _add_warning(self, warning_id: str, level: str, title: str, message: str):
+        """Add or update a warning. Deduplicates by warning_id."""
+        if warning_id in self._dismissed_warnings:
+            return
+        with self._warnings_lock:
+            # Update existing or add new
+            for w in self._warnings:
+                if w["id"] == warning_id:
+                    w["title"] = title
+                    w["message"] = message
+                    w["level"] = level
+                    w["time"] = datetime.now(timezone.utc).isoformat()
+                    return
+            self._warnings.append({
+                "id": warning_id,
+                "level": level,  # "warning", "error", "info"
+                "title": title,
+                "message": message,
+                "time": datetime.now(timezone.utc).isoformat(),
+            })
+    
+    def _remove_warning(self, warning_id: str):
+        """Remove a warning by ID (condition cleared)."""
+        with self._warnings_lock:
+            self._warnings = [w for w in self._warnings if w["id"] != warning_id]
+    
+    def _check_warnings(self, connection_stats: list):
+        """Run warning detectors and update the warnings list."""
+        # 1. Too many connections – server may reject or throttle
+        servers = self._get_servers()
+        for srv in servers:
+            if not srv.get("enabled", True):
+                continue
+            name = srv.get("name", srv.get("host", "Server"))
+            max_conns = int(srv.get("connections", 8))
+            host = srv.get("host", "")
+            wid = f"too_many_conns_{host}"
+            if max_conns > 50:
+                self._add_warning(wid, "warning",
+                    f"High connection count: {name}",
+                    f"{max_conns} connections configured for {name} ({host}). "
+                    f"Most Usenet providers allow 20-50 connections per account. "
+                    f"Too many connections can cause throttling, disconnects, or account suspension. "
+                    f"Check your provider's limit."
+                )
+            else:
+                self._remove_warning(wid)
+        
+        # 2. Connection failures in stats
+        for stat in connection_stats:
+            host = stat.get("host", "")
+            active = stat.get("active", 0)
+            max_c = stat.get("max", 0)
+            name = stat.get("name", host)
+            wid = f"conn_underutilized_{host}"
+            # If we're downloading but barely using connections
+            has_downloading = any(
+                i.state == STATE_DOWNLOADING 
+                for i in self._queue
+            )
+            if has_downloading and max_c > 10 and active < max_c * 0.1:
+                self._add_warning(wid, "info",
+                    f"Low connection utilization: {name}",
+                    f"Only {active}/{max_c} connections active on {name}. "
+                    f"This may indicate server-side throttling or connection issues."
+                )
+            else:
+                self._remove_warning(wid)
+        
+        # 3. Disk space warning
+        try:
+            folders = self._get_folders()
+            dl_folder = folders.get("download_folder", "/downloads")
+            if os.path.isdir(dl_folder):
+                usage = shutil.disk_usage(dl_folder)
+                free_gb = usage.free / (1024 ** 3)
+                total_gb = usage.total / (1024 ** 3)
+                pct_free = (usage.free / usage.total) * 100 if usage.total > 0 else 100
+                wid = "low_disk_space"
+                if free_gb < 5 or pct_free < 5:
+                    self._add_warning(wid, "error",
+                        "Low disk space",
+                        f"Only {free_gb:.1f} GB ({pct_free:.0f}%) free on download volume. "
+                        f"Downloads may fail if disk fills up."
+                    )
+                elif free_gb < 20 or pct_free < 10:
+                    self._add_warning(wid, "warning",
+                        "Disk space getting low",
+                        f"{free_gb:.1f} GB ({pct_free:.0f}%) free on download volume."
+                    )
+                else:
+                    self._remove_warning(wid)
+        except Exception:
+            pass
+    
+    def get_warnings(self) -> list:
+        """Get current active warnings."""
+        with self._warnings_lock:
+            return list(self._warnings)
+    
+    def dismiss_warning(self, warning_id: str):
+        """Dismiss a specific warning."""
+        self._dismissed_warnings.add(warning_id)
+        self._remove_warning(warning_id)
+    
+    def dismiss_all_warnings(self):
+        """Dismiss all current warnings."""
+        with self._warnings_lock:
+            for w in self._warnings:
+                self._dismissed_warnings.add(w["id"])
+            self._warnings.clear()
+
     def get_status(self) -> dict:
         """Get overall download status."""
         with self._queue_lock:
-            active = [i for i in self._queue if i.state == STATE_DOWNLOADING]
+            active = [i for i in self._queue if i.state in (STATE_DOWNLOADING, STATE_ASSEMBLING)]
             queued = [i for i in self._queue if i.state == STATE_QUEUED]
             paused = [i for i in self._queue if i.state == STATE_PAUSED]
         
-        # Use rolling speed instead of summing item speeds
-        total_speed = self._get_rolling_speed()
+        # Use rolling speed when actually downloading; 0 when only assembling/extracting
+        _actually_downloading = [i for i in active if getattr(i, 'progress_pct', 0) < 100]
+        total_speed = self._get_rolling_speed() if _actually_downloading else 0
         
         # Calculate remaining bytes and ETA
         total_remaining = 0
         with self._queue_lock:
             for i in self._queue:
-                if i.state in (STATE_DOWNLOADING, STATE_QUEUED):
+                if i.state in (STATE_DOWNLOADING, STATE_ASSEMBLING, STATE_QUEUED):
                     total_remaining += max(0, i.total_bytes - i.downloaded_bytes)
         
         eta_seconds = int(total_remaining / total_speed) if total_speed > 0 else 0
@@ -877,6 +998,10 @@ class NZBHuntDownloadManager:
                         "max": int(srv.get("connections", 8)),
                     })
         
+        # Run warning detectors
+        self._check_warnings(connection_stats)
+        warnings = self.get_warnings()
+        
         return {
             "active_count": len(active),
             "queued_count": len(queued),
@@ -899,6 +1024,8 @@ class NZBHuntDownloadManager:
             "servers_configured": self.has_servers(),
             "connection_ok": self._has_working_connection(),
             "worker_running": self._running,
+            "warnings": warnings,
+            "warnings_count": len(warnings),
         }
     
     # ── Worker Thread ─────────────────────────────────────────────
@@ -934,11 +1061,11 @@ class NZBHuntDownloadManager:
                 # Do not start any download until we have a working server connection
                 if not self.has_servers():
                     logger.debug("NZB Hunt: no servers configured, waiting...")
-                    time.sleep(30)
+                    time.sleep(5)
                     continue
                 if not self._has_working_connection():
-                    logger.debug("NZB Hunt: no successful server connection, keeping queue idle...")
-                    time.sleep(60)
+                    logger.debug("NZB Hunt: no successful server connection, retrying shortly...")
+                    time.sleep(5)
                     continue
 
                 # Find next queued item
@@ -1237,8 +1364,18 @@ class NZBHuntDownloadManager:
                             remaining = max(0, item.total_bytes - item.downloaded_bytes)
                             item.eta_seconds = int(remaining / speed) if speed > 0 else 0
                             
-                            # Update status message
-                            if item.failed_segments > 0:
+                            # Update status message and state
+                            if item.completed_segments >= total_segments:
+                                item.state = STATE_ASSEMBLING
+                                item.speed_bps = 0
+                                item.eta_seconds = 0
+                                # Assemble status with file progress
+                                msg = (
+                                    "Assembling files (par2 repair needed)" if item.failed_segments > 0
+                                    else "Assembling files"
+                                )
+                                item.status_message = f"{msg} ({item.completed_files}/{len(sorted_files)})"
+                            elif item.failed_segments > 0:
                                 mb_missing = item.missing_bytes / (1024 * 1024)
                                 if mb_missing >= 1.0:
                                     item.status_message = f"{mb_missing:.1f} MB Missing articles"
@@ -1334,19 +1471,27 @@ class NZBHuntDownloadManager:
                         file_segment_data[fidx] = {}
                         
                         item.completed_files += 1
+                        msg = "Assembling files (par2 repair needed)" if item.failed_segments > 0 else "Assembling files"
+                        item.status_message = f"{msg} ({item.completed_files}/{len(sorted_files)})"
                         self._save_state()
                         next_file_to_write += 1
                 
+                # All futures done – release connections immediately so the
+                # header shows 0 connections during assembly/post-processing.
+                executor.shutdown(wait=False, cancel_futures=True)
+                self._release_held_connections()
+
                 # Handle pause
                 if item.state == STATE_PAUSED or self._paused_global:
                     self._save_state()
-                    executor.shutdown(wait=False, cancel_futures=True)
-                    self._release_held_connections()
                     return
                 
                 # Write any remaining completed files (edge case: last file(s)
                 # completed but the while-loop exited before we got to them)
                 while next_file_to_write < len(sorted_files):
+                    if item.state == STATE_PAUSED or self._paused_global:
+                        self._save_state()
+                        return
                     fidx = next_file_to_write
                     nzb_file = sorted_files[fidx]
                     filename = nzb_file.filename
@@ -1377,6 +1522,8 @@ class NZBHuntDownloadManager:
                     
                     file_segment_data[fidx] = {}
                     item.completed_files += 1
+                    msg = "Assembling files (par2 repair needed)" if item.failed_segments > 0 else "Assembling files"
+                    item.status_message = f"{msg} ({item.completed_files}/{len(sorted_files)})"
                     self._save_state()
                     next_file_to_write += 1
             finally:
@@ -1430,7 +1577,7 @@ class NZBHuntDownloadManager:
                 ext_mb_str = f"{ext_mb:.1f} MB" if ext_mb >= 1.0 else f"{item.failed_segments} segments"
                 item.status_message = f"Verifying & repairing ({ext_mb_str} missing articles)..."
             else:
-                item.status_message = "Post-processing..."
+                item.status_message = "Verifying (par2) & extracting..."
             self._save_state()
             logger.info(f"[{item.id}] Starting post-processing for {item.name}")
             

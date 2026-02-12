@@ -494,6 +494,92 @@
     color: #fbbf24;
 }
 
+.nzb-tab-badge-warn {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+}
+
+/* ── Warnings panel ──────────────────────────────────────────── */
+.nzb-warnings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 16px;
+}
+
+.nzb-warning-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border-left: 3px solid;
+}
+
+.nzb-warning-error {
+    background: rgba(239, 68, 68, 0.06);
+    border-left-color: #ef4444;
+}
+.nzb-warning-error .nzb-warning-icon { color: #ef4444; }
+
+.nzb-warning-warning {
+    background: rgba(245, 158, 11, 0.06);
+    border-left-color: #f59e0b;
+}
+.nzb-warning-warning .nzb-warning-icon { color: #f59e0b; }
+
+.nzb-warning-info {
+    background: rgba(59, 130, 246, 0.06);
+    border-left-color: #3b82f6;
+}
+.nzb-warning-info .nzb-warning-icon { color: #3b82f6; }
+
+.nzb-warning-icon {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    padding-top: 2px;
+}
+
+.nzb-warning-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.nzb-warning-title {
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: #e2e8f0;
+    margin-bottom: 4px;
+}
+
+.nzb-warning-msg {
+    font-size: 0.82rem;
+    color: #94a3b8;
+    line-height: 1.45;
+}
+
+.nzb-warning-time {
+    font-size: 0.72rem;
+    color: #64748b;
+    margin-top: 6px;
+}
+
+.nzb-warning-dismiss {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: #475569;
+    cursor: pointer;
+    padding: 4px;
+    font-size: 0.85rem;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+}
+.nzb-warning-dismiss:hover {
+    color: #e2e8f0;
+    background: rgba(148, 163, 184, 0.1);
+}
+
 /* ── Queue panel ─────────────────────────────────────────────────── */
 .nzb-queue-panel {
     background: rgba(15, 23, 42, 0.4);
@@ -2287,6 +2373,7 @@
 
 /* Status column state colors */
 .nzb-queue-row.nzb-item-downloading .nzb-col-status { color: #4ade80; }
+.nzb-queue-row.nzb-item-assembling .nzb-col-status { color: #818cf8; }
 .nzb-queue-row.nzb-item-queued .nzb-col-status     { color: #94a3b8; }
 .nzb-queue-row.nzb-item-paused .nzb-col-status     { color: #fbbf24; }
 .nzb-queue-row.nzb-item-failed .nzb-col-status     { color: #f87171; }
@@ -2321,6 +2408,7 @@
 
 /* State icons */
 .nzb-icon-downloading { color: #4ade80; }
+.nzb-icon-assembling { color: #818cf8; }
 .nzb-icon-queued { color: #94a3b8; }
 .nzb-icon-paused { color: #fbbf24; }
 .nzb-icon-extracting { color: #818cf8; }

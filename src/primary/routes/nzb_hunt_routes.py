@@ -771,6 +771,32 @@ def nzb_hunt_resume_all():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@nzb_hunt_bp.route("/api/nzb-hunt/warnings", methods=["GET"])
+def nzb_hunt_warnings():
+    """Get active warnings."""
+    try:
+        mgr = _get_download_manager()
+        return jsonify({"warnings": mgr.get_warnings()})
+    except Exception as e:
+        return jsonify({"warnings": [], "error": str(e)}), 500
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/warnings/dismiss", methods=["POST"])
+def nzb_hunt_dismiss_warning():
+    """Dismiss a specific warning or all warnings."""
+    try:
+        data = request.get_json(silent=True) or {}
+        mgr = _get_download_manager()
+        warning_id = data.get("id")
+        if warning_id == "__all__":
+            mgr.dismiss_all_warnings()
+        elif warning_id:
+            mgr.dismiss_warning(warning_id)
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @nzb_hunt_bp.route("/api/nzb-hunt/test-servers", methods=["POST"])
 def nzb_hunt_test_servers():
     """Test all configured NNTP server connections."""
