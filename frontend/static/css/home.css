@@ -1686,6 +1686,19 @@
     gap: 10px;
 }
 
+/* Prowlarr statistics content should be a full-width grid, not split columns */
+.prowlarr-statistics-card .statistics-content {
+    display: block;
+    padding: 12px;
+}
+
+.prowlarr-statistics-card .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 10px;
+    width: 100%;
+}
+
 .stat-card {
     background: linear-gradient(135deg, rgba(16, 20, 28, 0.8) 0%, rgba(30, 35, 45, 0.6) 100%);
     border: 1px solid rgba(90, 109, 137, 0.15);
@@ -1780,6 +1793,10 @@
     .statistics-content {
         grid-template-columns: 1fr;
         gap: 8px;
+    }
+
+    .prowlarr-statistics-card .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .stat-card { padding: 10px; }

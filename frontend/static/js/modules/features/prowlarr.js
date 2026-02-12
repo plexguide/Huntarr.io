@@ -91,8 +91,9 @@ window.HuntarrProwlarr = {
             .then(response => response.json())
             .then(data => {
                 if (data.success && data.stats) {
-                    this.currentIndexerStats = data.stats;
-                    this.updateProwlarrStatistics(data.stats);
+                    const normalizedStats = this.normalizeStatsPayload(data.stats);
+                    this.currentIndexerStats = normalizedStats;
+                    this.updateProwlarrStatistics(normalizedStats);
                 } else {
                     console.error('Failed to load Prowlarr stats:', data.error);
                     this.updateProwlarrStatistics(null, data.error || 'Failed to load stats');
@@ -102,6 +103,60 @@ window.HuntarrProwlarr = {
                 console.error('Error loading Prowlarr stats:', error);
                 this.updateProwlarrStatistics(null, 'Connection error');
             });
+    },
+
+    normalizeStatsPayload: function(rawStats) {
+        if (!rawStats || typeof rawStats !== 'object') {
+            return null;
+        }
+
+        // Already in the legacy UI format expected by this module.
+        if (rawStats.overall && rawStats.indexers) {
+            return rawStats;
+        }
+
+        // Newer backend payload shape: flat keys + individual_indexer_stats/indexer_performance.
+        const indexersByName = {};
+        const individual = rawStats.individual_indexer_stats || {};
+        Object.keys(individual).forEach((name) => {
+            const idx = individual[name] || {};
+            indexersByName[name] = {
+                total_queries: Number(idx.queries ?? idx.searches_today ?? 0) || 0,
+                total_grabs: Number(idx.grabs ?? idx.successful_today ?? 0) || 0,
+                avg_response_time: Number(idx.response_time ?? 0) || 0
+            };
+        });
+
+        // Fallback when individual stats aren't present but indexer_performance is.
+        if (Object.keys(indexersByName).length === 0 && Array.isArray(rawStats.indexer_performance)) {
+            rawStats.indexer_performance.forEach((idx) => {
+                const name = idx && idx.name ? idx.name : 'Unknown';
+                indexersByName[name] = {
+                    total_queries: Number(idx.queries ?? idx.searches_today ?? 0) || 0,
+                    total_grabs: Number(idx.grabs ?? idx.successful_today ?? 0) || 0,
+                    avg_response_time: Number(idx.response_time ?? 0) || 0
+                };
+            });
+        }
+
+        const totalIndexers = Object.keys(indexersByName).length || Number(rawStats.total_indexers || 0) || 0;
+        const totalQueries = Number(rawStats.searches_today ?? rawStats.total_queries ?? 0) || 0;
+        const totalGrabs = Number(rawStats.grabs_today ?? rawStats.total_grabs ?? 0) || 0;
+        const successRate = Number(rawStats.recent_success_rate ?? 0) || 0;
+        const failedSearches = Number(rawStats.recent_failed_searches ?? 0) || 0;
+        const avgResponseTime = Number(rawStats.avg_response_time ?? 0) || 0;
+
+        return {
+            overall: {
+                total_queries: totalQueries,
+                total_grabs: totalGrabs,
+                total_indexers: totalIndexers,
+                success_rate: successRate,
+                failed_searches: failedSearches,
+                avg_response_time: avgResponseTime
+            },
+            indexers: indexersByName
+        };
     },
 
     updateIndexersList: function(indexerDetails, errorMessage = null) {
@@ -214,20 +269,24 @@ window.HuntarrProwlarr = {
         const formatNumber = window.HuntarrStats ? 
             window.HuntarrStats.formatLargeNumber.bind(window.HuntarrStats) : 
             (n => n.toLocaleString());
+        const formatExactNumber = (n) => {
+            const v = Number(n || 0);
+            return Number.isFinite(v) ? String(Math.round(v)) : '0';
+        };
         
         statisticsContent.innerHTML = `
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-value">${formatNumber(indexerStats.total_queries || 0)}</div>
-                    <div class="stat-label">Total Queries</div>
+                    <div class="stat-label">SEARCHES (24H)</div>
+                    <div class="stat-value success">${formatExactNumber(indexerStats.total_queries || 0)}</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">${formatNumber(indexerStats.total_grabs || 0)}</div>
-                    <div class="stat-label">Total Grabs</div>
+                    <div class="stat-label">GRABS (24H)</div>
+                    <div class="stat-value success">${formatExactNumber(indexerStats.total_grabs || 0)}</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">${indexerStats.avg_response_time ? indexerStats.avg_response_time.toFixed(0) + 'ms' : 'N/A'}</div>
-                    <div class="stat-label">Avg Response</div>
+                    <div class="stat-label">AVG RESPONSE</div>
+                    <div class="stat-value success">${indexerStats.avg_response_time ? Number(indexerStats.avg_response_time).toFixed(0) + 'ms' : 'N/A'}</div>
                 </div>
             </div>
             <div class="indexer-name-display">${indexerName}</div>
@@ -244,20 +303,32 @@ window.HuntarrProwlarr = {
         const formatNumber = window.HuntarrStats ? 
             window.HuntarrStats.formatLargeNumber.bind(window.HuntarrStats) : 
             (n => n.toLocaleString());
+        const formatExactNumber = (n) => {
+            const v = Number(n || 0);
+            return Number.isFinite(v) ? String(Math.round(v)) : '0';
+        };
         
         statisticsContent.innerHTML = `
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-value">${formatNumber(overall.total_queries || 0)}</div>
-                    <div class="stat-label">Total Queries</div>
+                    <div class="stat-label">SEARCHES (24H)</div>
+                    <div class="stat-value success">${formatExactNumber(overall.total_queries || 0)}</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">${formatNumber(overall.total_grabs || 0)}</div>
-                    <div class="stat-label">Total Grabs</div>
+                    <div class="stat-label">GRABS (24H)</div>
+                    <div class="stat-value success">${formatExactNumber(overall.total_grabs || 0)}</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">${overall.total_indexers || 0}</div>
-                    <div class="stat-label">Total Indexers</div>
+                    <div class="stat-label">SUCCESS RATE</div>
+                    <div class="stat-value success">${(Number(overall.success_rate || 0)).toFixed(1)}%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">AVG RESPONSE</div>
+                    <div class="stat-value success">${overall.avg_response_time ? Number(overall.avg_response_time).toFixed(0) + 'ms' : 'N/A'}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">FAILED TODAY</div>
+                    <div class="stat-value error">${formatExactNumber(overall.failed_searches || 0)}</div>
                 </div>
             </div>
         `;
