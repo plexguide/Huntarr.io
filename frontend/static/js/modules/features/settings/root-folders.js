@@ -15,7 +15,10 @@
             }
             var gridEl = document.getElementById('root-folders-grid');
             if (!gridEl) return;
-            fetch('./api/movie-hunt/root-folders')
+            var instanceSelect = document.getElementById('settings-root-folders-instance-select');
+            var instanceId = instanceSelect && instanceSelect.value ? instanceSelect.value : '';
+            var url = './api/movie-hunt/root-folders' + (instanceId ? '?instance_id=' + encodeURIComponent(instanceId) : '');
+            fetch(url)
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     var folders = (data && data.root_folders) ? data.root_folders : [];
@@ -118,7 +121,10 @@
 
         setDefault: function(index) {
             if (typeof index !== 'number' || index < 0) return;
-            fetch('./api/movie-hunt/root-folders/' + index + '/default', { method: 'PATCH' })
+            var instanceSelect = document.getElementById('settings-root-folders-instance-select');
+            var instanceId = instanceSelect && instanceSelect.value ? instanceSelect.value : '';
+            var url = './api/movie-hunt/root-folders/' + index + '/default' + (instanceId ? '?instance_id=' + encodeURIComponent(instanceId) : '');
+            fetch(url, { method: 'PATCH' })
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     if (data.success) {
@@ -204,10 +210,14 @@
                 saveBtn.disabled = true;
                 saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
             }
+            var instanceSelect = document.getElementById('settings-root-folders-instance-select');
+            var instanceId = instanceSelect && instanceSelect.value ? parseInt(instanceSelect.value, 10) : null;
+            var body = { path: path };
+            if (instanceId != null && !isNaN(instanceId)) body.instance_id = instanceId;
             fetch('./api/movie-hunt/root-folders', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: path })
+                body: JSON.stringify(body)
             })
                 .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
                 .then(function(result) {
@@ -243,8 +253,11 @@
 
         deleteFolder: function(index) {
             if (typeof index !== 'number' || index < 0) return;
+            var instanceSelect = document.getElementById('settings-root-folders-instance-select');
+            var instanceId = instanceSelect && instanceSelect.value ? instanceSelect.value : '';
+            var deleteUrl = './api/movie-hunt/root-folders/' + index + (instanceId ? '?instance_id=' + encodeURIComponent(instanceId) : '');
             var doDelete = function() {
-                fetch('./api/movie-hunt/root-folders/' + index, { method: 'DELETE' })
+                fetch(deleteUrl, { method: 'DELETE' })
                     .then(function(r) { return r.json(); })
                     .then(function(data) {
                         if (data.success) {

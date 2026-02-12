@@ -363,6 +363,7 @@ export class RequestarrModal {
                 } else {
                     rootSelect.innerHTML = '';
                     let defaultFound = false;
+                    let firstPath = null;
                     seenPaths.forEach(rf => {
                         const opt = document.createElement('option');
                         opt.value = rf.path;
@@ -371,8 +372,12 @@ export class RequestarrModal {
                             opt.selected = true;
                             defaultFound = true;
                         }
+                        if (!firstPath) firstPath = rf.path;
                         rootSelect.appendChild(opt);
                     });
+                    if (!defaultFound && firstPath) {
+                        rootSelect.value = firstPath;
+                    }
                 }
             } else {
                 rootSelect.innerHTML = '<option value="">Use default (first root folder)</option>';

@@ -34,7 +34,7 @@ class NNTPConnection:
         self._current_group = None
     
     def connect(self) -> bool:
-        """Establish connection to the NNTP server."""
+        """Establish connection to the NNTP server with optimized buffers."""
         try:
             if self.use_ssl:
                 ctx = ssl.create_default_context()
@@ -54,6 +54,18 @@ class NNTPConnection:
                     password=self.password or None,
                     timeout=self.timeout
                 )
+            
+            # Increase socket receive buffer for high-throughput downloading.
+            # Default is typically 8-64KB; 1MB reduces syscalls significantly
+            # for large articles and helps saturate fast connections.
+            try:
+                sock = self._conn.sock
+                if sock:
+                    sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1048576)  # 1MB
+                    sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 262144)   # 256KB
+            except Exception:
+                pass
+            
             logger.debug(f"Connected to {self.host}:{self.port}")
             return True
         except Exception as e:
@@ -109,7 +121,12 @@ class NNTPConnection:
             return False
     
     def download_article(self, message_id: str) -> Optional[bytes]:
-        """Download a single article by Message-ID.
+        """Download a single article by Message-ID using fast chunk reads.
+        
+        Bypasses nntplib's line-by-line body() method (~1000 readline calls
+        per 750KB article) and reads in large chunks instead, similar to
+        SABnzbd's approach.  Uses a list-of-chunks pattern to avoid repeated
+        bytearray.extend() memory copies.
         
         Args:
             message_id: The Message-ID without angle brackets
@@ -125,11 +142,54 @@ class NNTPConnection:
             message_id = f"<{message_id}>"
         
         try:
-            resp, info = self._conn.body(message_id)
-            # info.lines is a list of bytes
-            if hasattr(info, 'lines'):
-                return b"\r\n".join(info.lines)
-            return None
+            conn = self._conn
+            # Send BODY command
+            conn._putcmd(f"BODY {message_id}")
+            
+            # Read the response status line
+            resp = conn._getresp()
+            if not resp.startswith("222"):
+                return None
+            
+            # Read body in large chunks.  NNTP multi-line response ends with
+            # "\r\n.\r\n".  We collect chunks in a list (O(1) append) and
+            # join once at the end — avoids repeated bytearray.extend() copies.
+            file = conn.file
+            chunks = []
+            total = 0
+            terminator = b"\r\n.\r\n"
+            
+            while True:
+                # read1() returns whatever is in the buffer (up to CHUNK),
+                # avoiding blocking for the full amount.  On SSL sockets
+                # this typically returns one TLS record (~16KB).
+                chunk = file.read1(262144) if hasattr(file, 'read1') else file.read(262144)
+                if not chunk:
+                    break
+                chunks.append(chunk)
+                total += len(chunk)
+                # Only check for terminator in the tail — the terminator is
+                # always at the very end so we only need to check the last chunk.
+                # Check last 5+ bytes across the boundary of last two chunks.
+                if total >= 5:
+                    tail = chunk if len(chunk) >= 5 else (chunks[-2][-5:] + chunk if len(chunks) > 1 else chunk)
+                    if terminator in tail[-min(len(tail), 10):]:
+                        break
+            
+            # Single join (one allocation)
+            raw = b"".join(chunks)
+            
+            # Strip trailing ".\r\n" terminator
+            end = raw.rfind(terminator)
+            body = raw[:end] if end != -1 else raw
+            
+            # Handle dot-stuffing (lines starting with ".." → ".")
+            # This is rare in yEnc data, so the 'in' check is almost always False.
+            if b"\r\n.." in body:
+                body = body.replace(b"\r\n..", b"\r\n.")
+            
+            return body if body else None
+            
         except nntplib.NNTPTemporaryError as e:
             code = str(e)[:3]
             if code == "430":  # Article not found
@@ -174,14 +234,27 @@ class NNTPConnectionPool:
         self._bandwidth_lock = threading.Lock()
     
     def get_connection(self, timeout: float = 30.0) -> Optional[NNTPConnection]:
-        """Get an available connection from the pool."""
+        """Get an available connection from the pool.
+        
+        Blocks up to `timeout` seconds waiting for a connection to become
+        available.  If under the limit, opens a new one immediately.  On
+        connect failure it retries (with backoff) until the deadline — 
+        SABnzbd and NZBGet both keep trying rather than giving up instantly.
+        """
         deadline = time.time() + timeout
+        backoff = 0.05  # initial retry sleep
         
         while time.time() < deadline:
             with self._lock:
-                # Return an available connection
+                # Return an available (idle) connection
                 if self._available:
-                    return self._available.pop()
+                    conn = self._available.pop()
+                    # Quick liveness check — replace dead connections
+                    if conn._conn is not None:
+                        return conn
+                    # Dead connection – remove from pool and try to open a new one
+                    if conn in self._connections:
+                        self._connections.remove(conn)
                 
                 # Create a new connection if under limit
                 if len(self._connections) < self.max_connections:
@@ -192,11 +265,12 @@ class NNTPConnectionPool:
                     if conn.connect():
                         self._connections.append(conn)
                         return conn
-                    else:
-                        return None
+                    # Connect failed — don't return None immediately, keep
+                    # retrying until deadline (server may be temporarily busy)
             
-            # Wait briefly before retrying
-            time.sleep(0.1)
+            # Wait briefly before retrying (bounded backoff)
+            time.sleep(min(backoff, max(0, deadline - time.time())))
+            backoff = min(backoff * 1.5, 1.0)
         
         return None
     
@@ -278,6 +352,62 @@ class NNTPManager:
             # Sort by priority (lower = higher priority)
             self._pools.sort(key=lambda p: p.priority)
     
+    def acquire_connection(self, timeout: float = 30.0) -> Tuple[Optional['NNTPConnection'], Optional['NNTPConnectionPool']]:
+        """Acquire a dedicated connection for persistent use by a worker thread.
+        
+        Returns (connection, pool).  The connection is checked out from the
+        pool and will show as "active" in stats until explicitly released
+        via pool.release_connection().  This is the SABnzbd/NZBGet model:
+        each downloader thread holds its own connection for the entire
+        download session, keeping all connections saturated.
+        
+        Uses priority/round-robin logic with a short per-pool timeout so
+        threads quickly fall through to the next server if one pool is full
+        (e.g., easynews full at 30/30 → immediately try NewsHosting).
+        """
+        with self._lock:
+            pools = list(self._pools)
+        
+        # Group by priority
+        by_priority: Dict[int, List[NNTPConnectionPool]] = {}
+        for pool in pools:
+            p = pool.priority
+            if p not in by_priority:
+                by_priority[p] = []
+            by_priority[p].append(pool)
+        
+        # Short per-pool timeout: enough for SSL handshake (~3s) but don't
+        # block long if the pool is full — try the next server instead.
+        per_pool_timeout = min(8.0, timeout)
+        
+        deadline = time.time() + timeout
+        
+        for priority in sorted(by_priority.keys()):
+            pools_at_priority = by_priority[priority]
+            # Round-robin across same-priority pools
+            with self._lock:
+                start = self._round_robin_index % len(pools_at_priority)
+                self._round_robin_index = (self._round_robin_index + 1) % len(pools_at_priority)
+            
+            for i in range(len(pools_at_priority)):
+                if time.time() >= deadline:
+                    return None, None
+                pool = pools_at_priority[(start + i) % len(pools_at_priority)]
+                
+                # Quick check: if pool is already full (all connections checked
+                # out), skip immediately instead of blocking
+                with pool._lock:
+                    has_room = (len(pool._connections) < pool.max_connections or
+                                len(pool._available) > 0)
+                if not has_room:
+                    continue
+                
+                conn = pool.get_connection(timeout=per_pool_timeout)
+                if conn:
+                    return conn, pool
+        
+        return None, None
+    
     def download_article(self, message_id: str, groups: List[str] = None,
                          conn_timeout: float = 5.0) -> Optional[bytes]:
         """Download an article, trying servers in priority order.
@@ -294,7 +424,7 @@ class NNTPManager:
         return result[0]
     
     def download_article_tracked(self, message_id: str, groups: List[str] = None,
-                                  conn_timeout: float = 0.5) -> Tuple[Optional[bytes], str]:
+                                  conn_timeout: float = 10.0) -> Tuple[Optional[bytes], str]:
         """Download an article, returning (data, server_name).
         
         Uses a short connection timeout for parallel downloading so threads
@@ -335,6 +465,7 @@ class NNTPManager:
                 if not conn:
                     continue
                 
+                released = False
                 try:
                     if groups:
                         for group in groups:
@@ -344,22 +475,28 @@ class NNTPManager:
                     data = conn.download_article(message_id)
                     if data is not None:
                         pool.add_bandwidth(len(data))
+                        # Release connection back BEFORE returning so it's
+                        # immediately available for the next thread
+                        pool.release_connection(conn)
+                        released = True
                         return data, pool.server_name
                 except Exception:
+                    # Connection is broken — remove from pool entirely
                     try:
-                        pool._lock.acquire()
-                        if conn in pool._connections:
-                            pool._connections.remove(conn)
-                        pool._lock.release()
+                        with pool._lock:
+                            if conn in pool._connections:
+                                pool._connections.remove(conn)
                     except Exception:
                         pass
                     conn.disconnect()
+                    released = True  # Don't release a dead connection
                     continue
                 finally:
-                    try:
-                        pool.release_connection(conn)
-                    except Exception:
-                        pass
+                    if not released:
+                        try:
+                            pool.release_connection(conn)
+                        except Exception:
+                            pass
         
         return None, ""
     

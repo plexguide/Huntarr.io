@@ -18,14 +18,14 @@ import shutil
 import hashlib
 import threading
 from collections import deque
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 from typing import Optional, List, Dict, Any, Tuple
 from datetime import datetime, timezone
 
 from src.primary.utils.logger import get_logger
 from src.primary.apps.nzb_hunt.nzb_parser import parse_nzb, NZB
-from src.primary.apps.nzb_hunt.yenc_decoder import decode_yenc
+from src.primary.apps.nzb_hunt.yenc_decoder import decode_yenc  # C-level fast decoder
 from src.primary.apps.nzb_hunt.nntp_client import NNTPManager
 from src.primary.apps.nzb_hunt.post_processor import post_process
 
@@ -60,21 +60,6 @@ def _has_proper_real_repack(name: str) -> bool:
     """Check if name contains PROPER, REAL, or REPACK (upgrade indicators)."""
     n = (name or "").upper()
     return "PROPER" in n or "REAL" in n or "REPACK" in n
-
-
-# ── Top-level function for ProcessPoolExecutor (must be picklable) ──────────
-def _decode_yenc_in_process(article_data: bytes) -> Optional[bytes]:
-    """Decode yEnc data in a worker process. Runs outside the main GIL.
-    
-    This function runs in a separate process to avoid GIL contention
-    from CPU-bound yEnc decoding, keeping the web server responsive.
-    """
-    try:
-        from src.primary.apps.nzb_hunt.yenc_decoder import decode_yenc
-        decoded, _ = decode_yenc(article_data)
-        return decoded
-    except Exception:
-        return None
 
 
 class _RateLimiter:
@@ -299,15 +284,11 @@ class NZBHuntDownloadManager:
         # Rate limiter (token-bucket, thread-safe)
         self._rate_limiter = _RateLimiter()
         
-        # Process pool for CPU-bound yEnc decoding.
-        # Runs in separate processes so decoding doesn't hold the main GIL,
-        # keeping the web server responsive during heavy downloads.
-        import multiprocessing
-        cpu_count = multiprocessing.cpu_count()
-        decode_workers = max(2, min(cpu_count, 8))
-        self._decode_pool = ProcessPoolExecutor(max_workers=decode_workers)
-        logger.info(f"yEnc decode process pool: {decode_workers} workers "
-                    f"(CPUs: {cpu_count})")
+        # yEnc decoding now runs in-thread using sabyenc3 (C extension,
+        # releases GIL) or a fast bytes.translate() decoder.  No more
+        # ProcessPoolExecutor — eliminates ~2ms of pickling overhead per
+        # segment and removes the subprocess communication bottleneck.
+        logger.info("yEnc decode: in-thread (sabyenc3 C extension or fast translate)")
         
         self._load_state()
         self._load_speed_limit()
@@ -986,6 +967,11 @@ class NZBHuntDownloadManager:
                            max_retries: int = 3) -> Tuple[int, Optional[bytes], str]:
         """Download and decode a single segment with retry logic.
         
+        Uses a persistent per-thread NNTP connection (SABnzbd/NZBGet model).
+        Each ThreadPoolExecutor worker holds its own dedicated connection for
+        the entire download session, keeping all connections active and
+        saturated instead of cycling get/release per article.
+        
         NNTP download runs in the calling thread (I/O bound, releases GIL).
         yEnc decode runs in a separate process (CPU bound, no GIL contention).
         Retries up to max_retries times on failure (like SABnzbd's max_art_tries).
@@ -997,41 +983,109 @@ class NZBHuntDownloadManager:
         if item.state == STATE_PAUSED or self._paused_global:
             return 0, None, ""
         
-        server_name = ""
+        # ── Persistent per-thread connection ──
+        # On first call, acquire a dedicated connection from the pool.
+        # The connection stays checked out (shows as "active" in stats) for
+        # the entire download, just like SABnzbd/NZBGet do.
+        conn = getattr(self._worker_conns, 'conn', None)
+        pool = getattr(self._worker_conns, 'pool', None)
+        
+        if conn is None or conn._conn is None:
+            conn, pool = self._nntp.acquire_connection(timeout=30.0)
+            if conn is None:
+                return 0, None, ""
+            self._worker_conns.conn = conn
+            self._worker_conns.pool = pool
+            # Track so we can release after download finishes
+            with self._held_conns_lock:
+                self._held_conns.append((conn, pool))
+        
+        server_name = pool.server_name if pool else ""
         
         for attempt in range(max_retries):
             if item.state == STATE_PAUSED or self._paused_global:
                 return 0, None, ""
             
-            # Download the article – I/O bound, releases GIL during socket ops
-            article_data, server_name = self._nntp.download_article_tracked(
-                message_id, groups, conn_timeout=1.0
-            )
-            
-            if article_data is not None:
-                # Mark connection as OK so status/worker don't re-test unnecessarily
-                with self._connection_lock:
-                    self._connection_ok = True
-                    self._connection_check_time = time.time()
-                # Decode yEnc in a separate process (CPU bound → avoids GIL contention)
+            try:
+                # Select newsgroup on our persistent connection
+                if groups:
+                    for group in groups:
+                        if conn.select_group(group):
+                            break
+                
+                # Download article using our held connection (I/O bound, releases GIL)
+                data = conn.download_article(message_id)
+                
+                if data is not None:
+                    if pool:
+                        pool.add_bandwidth(len(data))
+                    
+                    # Mark connection as OK
+                    with self._connection_lock:
+                        self._connection_ok = True
+                        self._connection_check_time = time.time()
+                    
+                    # Decode yEnc in-thread (fast C-level decode via sabyenc3
+                    # or bytes.translate — no ProcessPoolExecutor serialization
+                    # overhead, no subprocess pickling of 750KB per segment).
+                    try:
+                        decoded, _ = decode_yenc(data)
+                        if decoded is not None and len(decoded) > 0:
+                            self._rate_limiter.consume(len(decoded))
+                            self._record_speed(len(decoded))
+                            return len(decoded), decoded, server_name
+                    except Exception:
+                        pass
+                
+                # Article not found — retry (might be a transient issue)
+            except Exception:
+                # Connection broken — try to reconnect in place
                 try:
-                    future = self._decode_pool.submit(_decode_yenc_in_process, article_data)
-                    decoded = future.result(timeout=60)
-                    if decoded is not None:
-                        # Apply rate limiting (lightweight, stays in main process)
-                        self._rate_limiter.consume(len(decoded))
-                        # Record for rolling speed
-                        self._record_speed(len(decoded))
-                        return len(decoded), decoded, server_name
+                    conn.disconnect()
+                    if conn.connect():
+                        # Reconnected on same socket — keep using it
+                        pass
+                    else:
+                        # Dead connection — remove from pool, get a fresh one
+                        if pool:
+                            with pool._lock:
+                                if conn in pool._connections:
+                                    pool._connections.remove(conn)
+                        conn, pool = self._nntp.acquire_connection(timeout=15.0)
+                        if conn is None:
+                            self._worker_conns.conn = None
+                            self._worker_conns.pool = None
+                            return 0, None, ""
+                        self._worker_conns.conn = conn
+                        self._worker_conns.pool = pool
+                        with self._held_conns_lock:
+                            self._held_conns.append((conn, pool))
+                        server_name = pool.server_name if pool else ""
                 except Exception:
-                    pass
+                    self._worker_conns.conn = None
+                    self._worker_conns.pool = None
+                    return 0, None, ""
             
             # Retry after a brief pause (only if not last attempt)
             if attempt < max_retries - 1:
-                time.sleep(0.5 * (attempt + 1))  # Back off: 0.5s, 1s, 1.5s
+                time.sleep(0.5 * (attempt + 1))
         
-        # All retries exhausted after max_retries attempts
+        # All retries exhausted
         return 0, None, server_name
+    
+    def _release_held_connections(self):
+        """Release all persistent connections held by worker threads.
+        
+        Called after a download completes (or is aborted/paused) to return
+        all connections to their pools so they show as idle in stats.
+        """
+        with self._held_conns_lock:
+            for conn, pool in self._held_conns:
+                try:
+                    pool.release_connection(conn)
+                except Exception:
+                    pass
+            self._held_conns.clear()
     
     def _process_download(self, item: DownloadItem):
         """Process a single NZB download using parallel connections."""
@@ -1072,11 +1126,13 @@ class NZBHuntDownloadManager:
             final_path = os.path.join(download_dir, safe_name)
             os.makedirs(temp_path, exist_ok=True)
             
-            # Thread pool for NNTP I/O (releases GIL during socket ops).
-            # yEnc decoding runs in a separate ProcessPoolExecutor, so threads
-            # no longer cause GIL contention. Safe to use more workers.
+            # Thread pool for NNTP I/O — one thread per connection (SABnzbd model).
+            # Each thread holds a persistent connection, so we need as many
+            # workers as total connections.  Most time is spent in socket I/O
+            # (releases GIL) and sabyenc3 decode (C extension, releases GIL),
+            # so many threads cause minimal GIL contention.
             max_workers = self._nntp.get_total_max_connections()
-            max_workers = max(4, min(max_workers, 50))
+            max_workers = max(4, min(max_workers, 200))
             
             # Sort files: data files first, par2 files last (like SABnzbd)
             # This ensures the actual content downloads before recovery data
@@ -1087,6 +1143,14 @@ class NZBHuntDownloadManager:
             
             logger.info(f"[{item.id}] Starting parallel download with {max_workers} workers")
             
+            # Persistent per-thread connection tracking (SABnzbd/NZBGet model).
+            # Each worker thread acquires one NNTP connection on its first
+            # segment and holds it for the entire download.  This keeps all
+            # connections active and saturated instead of cycling per-article.
+            self._worker_conns = threading.local()
+            self._held_conns = []
+            self._held_conns_lock = threading.Lock()
+            
             # Track consecutive failed segments for early abort
             consecutive_failures = 0
             MAX_CONSECUTIVE_FAILURES = 500  # Abort if 500+ segments fail in a row
@@ -1094,193 +1158,231 @@ class NZBHuntDownloadManager:
             MIN_SEGMENTS_FOR_PCT_CHECK = 200  # Need at least this many before checking %
             aborted = False
             
-            # Download each file in the NZB
-            # NOTE: We manage the executor manually (not with 'with') so we can
-            # call shutdown(wait=False, cancel_futures=True) for fast abort.
+            # ── Full-pipeline download (SABnzbd/NZBGet approach) ──
+            # Submit ALL segments from ALL files into a single thread pool so
+            # every connection stays saturated.  The old file-by-file approach
+            # drained the pipeline between files → idle connections → low speed.
+            #
+            # We track which file each segment belongs to so we can still
+            # assemble files in order and write them as soon as all their
+            # segments are done.
+
+            # Build global segment list with file association
+            all_segments = []  # list of (file_idx, seg, groups)
+            for file_idx, nzb_file in enumerate(sorted_files):
+                for seg in nzb_file.segments:
+                    all_segments.append((file_idx, seg, nzb_file.groups))
+            
+            total_segments = len(all_segments)
+            logger.info(f"[{item.id}] Submitting {total_segments} segments from "
+                        f"{len(sorted_files)} files into pipeline ({max_workers} workers)")
+            
+            # Per-file tracking
+            file_segment_data = {}   # file_idx -> {seg_number -> decoded_bytes}
+            file_failed_count = {}   # file_idx -> int (failed segment count)
+            file_pending = {}        # file_idx -> int (segments still in flight)
+            for file_idx in range(len(sorted_files)):
+                file_segment_data[file_idx] = {}
+                file_failed_count[file_idx] = 0
+                file_pending[file_idx] = len(sorted_files[file_idx].segments)
+            
+            next_file_to_write = 0  # Write files in order as they complete
+
             executor = ThreadPoolExecutor(max_workers=max_workers)
             try:
-                for file_idx, nzb_file in enumerate(sorted_files):
+                # Submit everything at once — the thread pool queues
+                # excess work and workers pick up new segments immediately
+                # when they finish (no idle time between files).
+                future_to_info = {}  # future -> (file_idx, seg)
+                for file_idx, seg, groups in all_segments:
                     if item.state == STATE_PAUSED or self._paused_global:
-                        self._save_state()
-                        executor.shutdown(wait=False, cancel_futures=True)
-                        return
+                        break
                     if aborted:
                         break
+                    future = executor.submit(
+                        self._download_segment,
+                        seg.message_id, groups, item,
+                        max_retries
+                    )
+                    future_to_info[future] = (file_idx, seg)
+                
+                # Collect results as they complete (from any file)
+                for future in as_completed(future_to_info):
+                    if item.state == STATE_PAUSED or self._paused_global:
+                        for f in future_to_info:
+                            f.cancel()
+                        break
+                    if aborted:
+                        for f in future_to_info:
+                            f.cancel()
+                        break
                     
-                    filename = nzb_file.filename
-                    file_path = os.path.join(temp_path, filename)
-                    
-                    logger.info(f"[{item.id}] Downloading file {file_idx + 1}/"
-                                f"{len(sorted_files)}: {filename} "
-                                f"({len(nzb_file.segments)} segments)")
-                    
-                    # Submit all segments for this file in parallel
-                    future_to_seg = {}
-                    for seg in nzb_file.segments:
-                        if item.state == STATE_PAUSED or self._paused_global:
-                            break
-                        if aborted:
-                            break
-                        future = executor.submit(
-                            self._download_segment,
-                            seg.message_id, nzb_file.groups, item,
-                            max_retries
-                        )
-                        future_to_seg[future] = seg
-                    
-                    # Collect results as they complete
-                    segment_data = {}  # number -> decoded bytes
-                    file_failed = 0
-                    
-                    for future in as_completed(future_to_seg):
-                        if item.state == STATE_PAUSED or self._paused_global:
-                            for f in future_to_seg:
-                                f.cancel()
-                            break
-                        if aborted:
-                            for f in future_to_seg:
-                                f.cancel()
-                            break
-                        
-                        seg = future_to_seg[future]
-                        try:
-                            nbytes, decoded, server_name = future.result()
-                            if decoded is not None:
-                                segment_data[seg.number] = decoded
-                                consecutive_failures = 0  # Reset on success
-                                
-                                # Update progress (thread-safe via GIL for simple assignments)
-                                item.completed_segments += 1
-                                # Cap downloaded_bytes at total_bytes to prevent crazy size display
-                                # (can happen if NZB segment bytes are wrong or units mismatch)
-                                item.downloaded_bytes = min(
-                                    item.total_bytes,
-                                    item.downloaded_bytes + nbytes
-                                )
-                                
-                                # Update item speed from rolling window
-                                speed = self._get_rolling_speed()
-                                item.speed_bps = speed
-                                remaining = max(0, item.total_bytes - item.downloaded_bytes)
-                                item.eta_seconds = int(remaining / speed) if speed > 0 else 0
-                                
-                                # Update status message with progress
-                                if item.failed_segments > 0:
-                                    mb_missing = item.missing_bytes / (1024 * 1024)
-                                    if mb_missing >= 1.0:
-                                        item.status_message = (
-                                            f"{mb_missing:.1f} MB Missing articles"
-                                        )
-                                    else:
-                                        item.status_message = (
-                                            f"Missing articles: {item.failed_segments}"
-                                        )
-                                
-                                # Save state periodically (lightweight, no NZB content)
-                                if item.completed_segments % 200 == 0:
-                                    self._save_state()
-                            else:
-                                file_failed += 1
-                                item.failed_segments += 1
-                                consecutive_failures += 1
-                                
-                                # Track missing bytes (encoded segment size from NZB)
-                                item.missing_bytes += seg.bytes if seg.bytes else 0
-                                
-                                # Update status message with MB missing (like SABnzbd)
-                                total_attempted = item.completed_segments + item.failed_segments
+                    file_idx, seg = future_to_info[future]
+                    try:
+                        nbytes, decoded, server_name = future.result()
+                        if decoded is not None:
+                            file_segment_data[file_idx][seg.number] = decoded
+                            consecutive_failures = 0  # Reset on success
+                            
+                            # Update progress
+                            item.completed_segments += 1
+                            item.downloaded_bytes = min(
+                                item.total_bytes,
+                                item.downloaded_bytes + nbytes
+                            )
+                            
+                            # Update speed/ETA
+                            speed = self._get_rolling_speed()
+                            item.speed_bps = speed
+                            remaining = max(0, item.total_bytes - item.downloaded_bytes)
+                            item.eta_seconds = int(remaining / speed) if speed > 0 else 0
+                            
+                            # Update status message
+                            if item.failed_segments > 0:
                                 mb_missing = item.missing_bytes / (1024 * 1024)
                                 if mb_missing >= 1.0:
-                                    item.status_message = (
-                                        f"{mb_missing:.1f} MB Missing articles"
-                                    )
+                                    item.status_message = f"{mb_missing:.1f} MB Missing articles"
                                 else:
-                                    item.status_message = (
-                                        f"Missing articles: {item.failed_segments}"
-                                    )
-                                
-                                # Check for early abort (only if abort_hopeless is enabled)
-                                if abort_hopeless:
-                                    # Too many consecutive failures (content likely DMCA'd)
-                                    if consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
-                                        logger.error(
-                                            f"[{item.id}] ABORTING: {consecutive_failures} consecutive "
-                                            f"missing articles - content likely removed (DMCA)"
-                                        )
-                                        aborted = True
-                                        break
-                                    
-                                    # Check failure percentage after enough samples
-                                    if total_attempted >= MIN_SEGMENTS_FOR_PCT_CHECK:
-                                        fail_pct = (item.failed_segments / total_attempted) * 100
-                                        if fail_pct > MAX_FAILURE_PCT:
-                                            logger.error(
-                                                f"[{item.id}] ABORTING: {fail_pct:.1f}% segments "
-                                                f"missing ({item.failed_segments}/{total_attempted}) "
-                                                f"- download cannot be completed"
-                                            )
-                                            aborted = True
-                                            break
-                        except Exception as e:
-                            file_failed += 1
+                                    item.status_message = f"Missing articles: {item.failed_segments}"
+                            
+                            # Save state periodically
+                            if item.completed_segments % 200 == 0:
+                                self._save_state()
+                        else:
+                            file_failed_count[file_idx] = file_failed_count.get(file_idx, 0) + 1
                             item.failed_segments += 1
                             consecutive_failures += 1
                             item.missing_bytes += seg.bytes if seg.bytes else 0
-                            logger.debug(f"[{item.id}] Segment {seg.number} error: {e}")
+                            
+                            total_attempted = item.completed_segments + item.failed_segments
+                            mb_missing = item.missing_bytes / (1024 * 1024)
+                            if mb_missing >= 1.0:
+                                item.status_message = f"{mb_missing:.1f} MB Missing articles"
+                            else:
+                                item.status_message = f"Missing articles: {item.failed_segments}"
+                            
+                            # Early abort checks
+                            if abort_hopeless:
+                                if consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
+                                    logger.error(
+                                        f"[{item.id}] ABORTING: {consecutive_failures} consecutive "
+                                        f"missing articles - content likely removed (DMCA)"
+                                    )
+                                    aborted = True
+                                    break
+                                if total_attempted >= MIN_SEGMENTS_FOR_PCT_CHECK:
+                                    fail_pct = (item.failed_segments / total_attempted) * 100
+                                    if fail_pct > MAX_FAILURE_PCT:
+                                        logger.error(
+                                            f"[{item.id}] ABORTING: {fail_pct:.1f}% segments "
+                                            f"missing ({item.failed_segments}/{total_attempted}) "
+                                            f"- download cannot be completed"
+                                        )
+                                        aborted = True
+                                        break
+                    except Exception as e:
+                        file_failed_count[file_idx] = file_failed_count.get(file_idx, 0) + 1
+                        item.failed_segments += 1
+                        consecutive_failures += 1
+                        item.missing_bytes += seg.bytes if seg.bytes else 0
+                        logger.debug(f"[{item.id}] Segment {seg.number} error: {e}")
                     
-                    if item.state == STATE_PAUSED or self._paused_global:
+                    # Decrement pending count for this file
+                    file_pending[file_idx] = file_pending.get(file_idx, 1) - 1
+                    
+                    # Write completed files in order as they finish
+                    while next_file_to_write < len(sorted_files) and file_pending.get(next_file_to_write, 0) <= 0:
+                        fidx = next_file_to_write
+                        nzb_file = sorted_files[fidx]
+                        filename = nzb_file.filename
+                        file_path = os.path.join(temp_path, filename)
+                        seg_data = file_segment_data.get(fidx, {})
+                        ff = file_failed_count.get(fidx, 0)
+                        
+                        if ff > 0:
+                            logger.warning(f"[{item.id}] {ff}/{len(nzb_file.segments)} "
+                                           f"segments failed for {filename}")
+                        
+                        # Assemble file from ordered segments
+                        if ff > 0 and len(nzb_file.segments) > 0:
+                            seg_sizes = {s.number: s.bytes for s in nzb_file.segments}
+                            all_seg_nums = sorted(seg_sizes.keys())
+                            file_data = bytearray()
+                            for seg_num in all_seg_nums:
+                                if seg_num in seg_data:
+                                    file_data.extend(seg_data[seg_num])
+                                else:
+                                    gap_size = seg_sizes.get(seg_num, 0)
+                                    file_data.extend(b'\x00' * gap_size)
+                            logger.info(f"[{item.id}] Assembled {filename} with "
+                                        f"{ff} zero-filled gaps for par2 repair")
+                        else:
+                            file_data = bytearray()
+                            for seg_num in sorted(seg_data.keys()):
+                                file_data.extend(seg_data[seg_num])
+                        
+                        # Write file
+                        try:
+                            with open(file_path, "wb") as f:
+                                f.write(file_data)
+                            logger.info(f"[{item.id}] Saved: {filename} "
+                                        f"({len(file_data):,} bytes)")
+                        except Exception as e:
+                            logger.error(f"[{item.id}] Failed to write {filename}: {e}")
+                        
+                        # Free memory for this file's segment data
+                        file_segment_data[fidx] = {}
+                        
+                        item.completed_files += 1
                         self._save_state()
-                        executor.shutdown(wait=False, cancel_futures=True)
-                        return
+                        next_file_to_write += 1
+                
+                # Handle pause
+                if item.state == STATE_PAUSED or self._paused_global:
+                    self._save_state()
+                    executor.shutdown(wait=False, cancel_futures=True)
+                    self._release_held_connections()
+                    return
+                
+                # Write any remaining completed files (edge case: last file(s)
+                # completed but the while-loop exited before we got to them)
+                while next_file_to_write < len(sorted_files):
+                    fidx = next_file_to_write
+                    nzb_file = sorted_files[fidx]
+                    filename = nzb_file.filename
+                    file_path = os.path.join(temp_path, filename)
+                    seg_data = file_segment_data.get(fidx, {})
+                    ff = file_failed_count.get(fidx, 0)
                     
-                    if file_failed > 0:
-                        logger.warning(f"[{item.id}] {file_failed}/{len(nzb_file.segments)} "
-                                       f"segments failed for {filename}")
-                    
-                    if aborted:
-                        break
-                    
-                    # Assemble file from ordered segments.
-                    # If segments are missing, write zero-filled gaps at the
-                    # correct offsets so par2 can locate the damage and repair it.
-                    # (Simply concatenating available segments would shift all
-                    # offsets and make par2 repair impossible.)
-                    if file_failed > 0 and len(nzb_file.segments) > 0:
-                        # Build a segment-number → expected-size map from the NZB
+                    if ff > 0 and len(nzb_file.segments) > 0:
                         seg_sizes = {s.number: s.bytes for s in nzb_file.segments}
                         all_seg_nums = sorted(seg_sizes.keys())
-                        
                         file_data = bytearray()
                         for seg_num in all_seg_nums:
-                            if seg_num in segment_data:
-                                file_data.extend(segment_data[seg_num])
+                            if seg_num in seg_data:
+                                file_data.extend(seg_data[seg_num])
                             else:
-                                # Zero-fill at the expected encoded size
-                                # (close enough for par2 to locate the damage)
-                                gap_size = seg_sizes.get(seg_num, 0)
-                                file_data.extend(b'\x00' * gap_size)
-                        
-                        logger.info(f"[{item.id}] Assembled {filename} with "
-                                    f"{file_failed} zero-filled gaps for par2 repair")
+                                file_data.extend(b'\x00' * seg_sizes.get(seg_num, 0))
                     else:
-                        # No missing segments - simple concatenation
                         file_data = bytearray()
-                        for seg_num in sorted(segment_data.keys()):
-                            file_data.extend(segment_data[seg_num])
+                        for seg_num in sorted(seg_data.keys()):
+                            file_data.extend(seg_data[seg_num])
                     
-                    # Write file
                     try:
                         with open(file_path, "wb") as f:
                             f.write(file_data)
-                        logger.info(f"[{item.id}] Saved: {filename} "
-                                    f"({len(file_data):,} bytes)")
+                        logger.info(f"[{item.id}] Saved: {filename} ({len(file_data):,} bytes)")
                     except Exception as e:
                         logger.error(f"[{item.id}] Failed to write {filename}: {e}")
                     
+                    file_segment_data[fidx] = {}
                     item.completed_files += 1
                     self._save_state()
+                    next_file_to_write += 1
             finally:
                 executor.shutdown(wait=False, cancel_futures=True)
+                # Release all persistent worker connections back to pools
+                self._release_held_connections()
             
             # Check if download was aborted due to missing articles
             if aborted:
@@ -1412,15 +1514,11 @@ class NZBHuntDownloadManager:
             self._save_state()
     
     def stop(self):
-        """Stop the download worker and process pool."""
+        """Stop the download worker."""
         self._running = False
         if self._worker_thread and self._worker_thread.is_alive():
             self._worker_thread.join(timeout=10)
         self._nntp.close_all()
-        try:
-            self._decode_pool.shutdown(wait=False)
-        except Exception:
-            pass
 
 
 def _format_speed(bps: int) -> str:

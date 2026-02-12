@@ -144,10 +144,10 @@
                 if (connStats.length === 0) {
                     tooltipEl.textContent = 'Configure servers in Settings';
                 } else {
-                    tooltipEl.innerHTML = '<strong>Connections per server</strong><br>' +
-                        connStats.map(function (s) {
-                            return (s.name || s.host || 'Server') + ': ' + (s.active || 0) + ' / ' + (s.max || 0);
-                        }).join('<br>');
+                    var rows = connStats.map(function (s) {
+                        return '<span class="nzb-tooltip-server">' + (s.name || s.host || 'Server') + ': ' + (s.active || 0) + ' / ' + (s.max || 0) + '</span>';
+                    });
+                    tooltipEl.innerHTML = '<strong>Connections per server</strong><div class="nzb-tooltip-servers">' + rows.join('') + '</div>';
                 }
             }
         },

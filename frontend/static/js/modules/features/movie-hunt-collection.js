@@ -149,33 +149,40 @@
 
         createSearchCard: function(item) {
             var self = this;
-            // Use the global createMediaCard if available (via HomeRequestarr/RequestarrContent)
-            // or fall back to a simplified version if not
-            if (window.HomeRequestarr && typeof window.HomeRequestarr.createMediaCard === 'function') {
-                // Determine suggested instance
-                var instanceSelect = document.getElementById('movie-hunt-collection-instance-select');
-                var suggestedInstance = instanceSelect ? instanceSelect.value : null;
-                // If the value doesn't already have the prefix, add it
-                if (suggestedInstance && suggestedInstance.indexOf('movie_hunt:') !== 0) {
-                    suggestedInstance = 'movie_hunt:' + suggestedInstance;
+            // Use Requestarr modal (Add to Library popup) - use instance NAME (not ID) for compound value
+            var suggestedInstance = null;
+            var instanceSelect = document.getElementById('movie-hunt-collection-instance-select');
+            if (instanceSelect && instanceSelect.value) {
+                var opt = instanceSelect.options[instanceSelect.selectedIndex];
+                var instanceName = opt ? (opt.textContent || '').trim() : '';
+                if (instanceName) {
+                    suggestedInstance = instanceSelect.value.indexOf('movie_hunt:') === 0
+                        ? instanceSelect.value
+                        : 'movie_hunt:' + instanceName;
                 }
-                return window.HomeRequestarr.createMediaCard(item, suggestedInstance);
+            }
+            if (window.RequestarrDiscover && window.RequestarrDiscover.modal && window.RequestarrDiscover.content && typeof window.RequestarrDiscover.content.createMediaCard === 'function') {
+                return window.RequestarrDiscover.content.createMediaCard(item, suggestedInstance);
+            }
+            if (window.HomeRequestarr && typeof window.HomeRequestarr.createMediaCard === 'function') {
+                var card = window.HomeRequestarr.createMediaCard(item, suggestedInstance);
+                if (card) return card;
             }
 
-            // Fallback simplified card
+            // Fallback: open Requestarr modal on click (same popup as Requestarr)
             var card = document.createElement('div');
             card.className = 'media-card';
             var title = (item.title || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
             var year = item.year || 'N/A';
             var posterUrl = item.poster_path || './static/images/blackout.jpg';
-            
+
             card.innerHTML = '<div class="media-card-poster">' +
                 '<img src="' + posterUrl + '" alt="' + title + '" onerror="this.src=\'./static/images/blackout.jpg\'">' +
                 '<div class="media-card-overlay">' +
                 '<div class="media-card-overlay-title">' + title + '</div>' +
                 '<div class="media-card-overlay-content">' +
                 '<div class="media-card-overlay-year">' + year + '</div>' +
-                '<button class="media-card-request-btn"><i class="fas fa-download"></i> Request</button>' +
+                '<button class="media-card-request-btn"><i class="fas fa-plus-circle"></i> Add to Library</button>' +
                 '</div></div>' +
                 '</div>' +
                 '<div class="media-card-info">' +
@@ -185,13 +192,10 @@
                 '</div></div>';
 
             card.onclick = function() {
-                var instanceSelect = document.getElementById('movie-hunt-collection-instance-select');
-                var suggestedInstance = instanceSelect ? instanceSelect.value : null;
-                if (suggestedInstance && suggestedInstance.indexOf('movie_hunt:') !== 0) {
-                    suggestedInstance = 'movie_hunt:' + suggestedInstance;
-                }
-                
-                if (window.MovieHuntDetail && window.MovieHuntDetail.openDetail) {
+                var tmdbId = item.tmdb_id || item.id;
+                if (tmdbId && window.RequestarrDiscover && window.RequestarrDiscover.modal) {
+                    window.RequestarrDiscover.modal.openModal(tmdbId, 'movie', suggestedInstance);
+                } else if (window.MovieHuntDetail && window.MovieHuntDetail.openDetail) {
                     window.MovieHuntDetail.openDetail(item, { suggestedInstance: suggestedInstance });
                 }
             };

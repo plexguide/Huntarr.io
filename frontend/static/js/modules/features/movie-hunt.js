@@ -356,7 +356,14 @@
             const openRequestModal = () => {
                 const tmdbId = item.tmdb_id || item.id;
                 if (tmdbId && window.RequestarrDiscover && window.RequestarrDiscover.modal) {
-                    window.RequestarrDiscover.modal.openModal(tmdbId, 'movie');
+                    let suggestedInstance = null;
+                    const instSelect = document.getElementById('movie-hunt-instance-select');
+                    if (instSelect && instSelect.value) {
+                        const opt = instSelect.options[instSelect.selectedIndex];
+                        const name = opt ? (opt.textContent || '').trim() : '';
+                        if (name) suggestedInstance = 'movie_hunt:' + name;
+                    }
+                    window.RequestarrDiscover.modal.openModal(tmdbId, 'movie', suggestedInstance);
                 }
             };
 

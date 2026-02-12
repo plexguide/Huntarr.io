@@ -153,16 +153,24 @@
     border-radius: 8px;
     font-size: 0.82rem;
     color: #e2e8f0;
-    line-height: 1.5;
-    white-space: nowrap;
-    max-width: 320px;
-    white-space: normal;
+    line-height: 1.4;
+    min-width: 220px;
+    max-width: 420px;
     pointer-events: none;
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.15s, visibility 0.15s;
     z-index: 1000;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+.nzb-status-tooltip .nzb-tooltip-servers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    margin-top: 6px;
+}
+.nzb-status-tooltip .nzb-tooltip-server {
+    white-space: nowrap;
 }
 .nzb-active-connections:hover .nzb-status-tooltip {
     opacity: 1;

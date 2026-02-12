@@ -27,9 +27,15 @@ RUN wget -q https://www.rarlab.com/rar/rarlinux-x64-720.tar.gz -O /tmp/rar.tar.g
     chmod 755 /usr/local/bin/unrar && \
     rm -rf /tmp/rar /tmp/rar.tar.gz
 
-# Install required packages from the root requirements file
+# Install required packages from the root requirements file.
+# sabyenc3 (SABnzbd's C/C++ yEnc decoder) needs build tools to compile.
+# We install build-essential temporarily and remove after pip to keep image small.
 COPY requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential python3-dev && \
+    pip install --no-cache-dir -r requirements.txt && \
+    apt-get purge -y build-essential python3-dev && apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy application code
 COPY . /app/

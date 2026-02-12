@@ -1190,9 +1190,12 @@ class RequestarrAPI:
     def _resolve_movie_hunt_instance_id(self, instance_name: str) -> Optional[int]:
         """Resolve a Movie Hunt instance name to its database ID"""
         try:
+            name = (instance_name or '').strip()
+            if not name:
+                return None
             mh_instances = self.db.get_movie_hunt_instances()
             for inst in mh_instances:
-                if (inst.get('name') or '').strip() == instance_name:
+                if (inst.get('name') or '').strip() == name:
                     return inst.get('id')
             return None
         except Exception as e:
@@ -1511,6 +1514,34 @@ class RequestarrAPI:
             return result
         except Exception as e:
             logger.error(f"Error getting Movie Hunt root folders for '{instance_name}': {e}")
+            return []
+
+    def get_root_folders_by_id(self, instance_id: int) -> List[Dict[str, Any]]:
+        """Get root folders from a Movie Hunt instance by ID (for modal when instance_id is known)."""
+        try:
+            from src.primary.routes.movie_hunt.storage import _get_root_folders_config
+            folders = _get_root_folders_config(instance_id)
+            import os
+            result = []
+            for folder in folders:
+                path = (folder.get('path') or '').strip()
+                if not path:
+                    continue
+                free_space = None
+                try:
+                    if os.path.isdir(path):
+                        stat = os.statvfs(path)
+                        free_space = stat.f_bavail * stat.f_frsize
+                except (OSError, AttributeError):
+                    pass
+                result.append({
+                    'path': path,
+                    'freeSpace': free_space,
+                    'is_default': folder.get('is_default', False)
+                })
+            return result
+        except Exception as e:
+            logger.error(f"Error getting Movie Hunt root folders for instance_id={instance_id}: {e}")
             return []
 
     def get_watch_providers(self, media_type: str, region: str = '') -> List[Dict[str, Any]]:

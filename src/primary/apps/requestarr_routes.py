@@ -561,9 +561,15 @@ def get_root_folders():
     try:
         app_type = request.args.get('app_type', '').strip().lower()
         instance_name = request.args.get('instance_name', '').strip()
-        if app_type not in ('radarr', 'sonarr', 'movie_hunt') or not instance_name:
-            return jsonify({'success': False, 'error': 'app_type (radarr/sonarr/movie_hunt) and instance_name required'}), 400
-        folders = requestarr_api.get_root_folders(app_type, instance_name)
+        instance_id = request.args.get('instance_id', type=int)
+        if app_type not in ('radarr', 'sonarr', 'movie_hunt'):
+            return jsonify({'success': False, 'error': 'app_type (radarr/sonarr/movie_hunt) required'}), 400
+        if app_type == 'movie_hunt' and instance_id is not None:
+            folders = requestarr_api.get_root_folders_by_id(instance_id)
+        elif instance_name:
+            folders = requestarr_api.get_root_folders(app_type, instance_name)
+        else:
+            return jsonify({'success': False, 'error': 'instance_name or instance_id required'}), 400
         return jsonify({'success': True, 'root_folders': folders})
     except Exception as e:
         logger.error(f"Error getting root folders: {e}")

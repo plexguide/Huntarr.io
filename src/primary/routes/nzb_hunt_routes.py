@@ -341,6 +341,11 @@ def add_nzb_server():
     servers.append(server)
     cfg["servers"] = servers
     _save_config(cfg)
+    try:
+        mgr = _get_download_manager()
+        mgr.configure_servers()
+    except Exception:
+        pass
     return jsonify({"success": True, "index": len(servers) - 1})
 
 
@@ -369,6 +374,11 @@ def update_nzb_server(index):
     srv["enabled"] = bool(data.get("enabled", srv.get("enabled", True)))
     cfg["servers"] = servers
     _save_config(cfg)
+    try:
+        mgr = _get_download_manager()
+        mgr.configure_servers()
+    except Exception:
+        pass
     return jsonify({"success": True})
 
 
@@ -381,6 +391,11 @@ def delete_nzb_server(index):
     servers.pop(index)
     cfg["servers"] = servers
     _save_config(cfg)
+    try:
+        mgr = _get_download_manager()
+        mgr.configure_servers()
+    except Exception:
+        pass
     return jsonify({"success": True})
 
 
