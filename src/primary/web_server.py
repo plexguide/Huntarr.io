@@ -35,6 +35,7 @@ from src.primary.auth import (
 )
 # Import blueprint for common routes
 from src.primary.routes.common import common_bp
+from src.primary.routes.media_hunt import media_hunt_bp
 from src.primary.routes.movie_hunt import movie_hunt_bp
 from src.primary.routes.tv_hunt import tv_hunt_bp
 from src.primary.routes.plex_auth_routes import plex_auth_bp
@@ -298,6 +299,7 @@ app.secret_key = _get_or_create_secret_key()
 
 # Register blueprints
 app.register_blueprint(common_bp)
+app.register_blueprint(media_hunt_bp)
 app.register_blueprint(movie_hunt_bp)
 app.register_blueprint(tv_hunt_bp)
 app.register_blueprint(plex_auth_bp)

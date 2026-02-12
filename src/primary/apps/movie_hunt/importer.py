@@ -221,43 +221,20 @@ def _update_collection_status(title: str, year: str, status: str, file_path: Opt
 
 
 def _get_default_root_folder(instance_id: int = None) -> Optional[str]:
-    """Get the default root folder path. Checks per-instance storage first, then global."""
+    """Get the default root folder path (Media Hunt, per-instance)."""
     try:
         from src.primary.utils.database import get_database
+        from src.primary.routes.media_hunt import root_folders as mh_rf
         db = get_database()
-        
-        # Try per-instance first
         if instance_id is None:
             instance_id = db.get_current_movie_hunt_instance_id()
-        
-        config = db.get_app_config_for_instance('movie_hunt_root_folders', instance_id)
-        
-        # Per-instance stores root_folders inside instances.{id} wrapper
-        # But get_app_config_for_instance already unwraps it
-        root_folders = None
-        if config and isinstance(config.get('root_folders'), list):
-            root_folders = config['root_folders']
-        
-        # Fall back to global config
-        if not root_folders:
-            global_config = db.get_app_config('movie_hunt_root_folders')
-            if global_config and isinstance(global_config.get('root_folders'), list):
-                root_folders = global_config['root_folders']
-        
+        root_folders = mh_rf.get_root_folders_config(instance_id, 'movie_hunt_root_folders')
         if not root_folders:
             return None
-        
-        # Find default root folder
         for rf in root_folders:
             if rf.get('is_default'):
                 return rf.get('path')
-        
-        # If no default, return first one
-        if root_folders:
-            return root_folders[0].get('path')
-        
-        return None
-        
+        return root_folders[0].get('path')
     except Exception as e:
         logger.error(f"Error getting default root folder: {e}")
         return None

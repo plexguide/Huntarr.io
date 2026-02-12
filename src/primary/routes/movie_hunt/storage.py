@@ -1,9 +1,7 @@
-"""Movie Hunt storage routes: root folders, remote mappings, movie management settings, folder scanning."""
+"""Movie Hunt storage routes: root folders (Media Hunt), remote mappings, movie management, folder scanning."""
 
 import os
 import re
-import shutil
-from datetime import datetime
 
 from flask import request, jsonify
 
@@ -142,6 +140,12 @@ def _scan_root_folder_for_movies(root_path):
     return found
 
 
+def _get_root_folders_config(instance_id):
+    """Get Movie Hunt root folders (delegates to Media Hunt with movie_hunt_root_folders config)."""
+    from src.primary.routes.media_hunt import root_folders as media_hunt_root_folders
+    return media_hunt_root_folders.get_root_folders_config(instance_id, 'movie_hunt_root_folders')
+
+
 def _get_detected_movies_from_all_roots(instance_id):
     """Scan all configured Movie Hunt root folders and return list of { title, year } for every movie detected."""
     folders = _get_root_folders_config(instance_id)
@@ -197,78 +201,15 @@ def _detect_available_in_root_folder(root_path, title, year):
     return False
 
 
-# --- Root folders config ---
-
-def _normalize_root_folders(folders):
-    """Ensure list of { path, is_default }; exactly one default."""
-    if not folders:
-        return []
-    out = []
-    for i, f in enumerate(folders):
-        if isinstance(f, str):
-            path = (f or '').strip()
-        else:
-            path = (f.get('path') or '').strip()
-        out.append({'path': path, 'is_default': bool(f.get('is_default') if isinstance(f, dict) else False)})
-    defaults = [j for j, o in enumerate(out) if o.get('is_default')]
-    if len(defaults) != 1:
-        for j in range(len(out)):
-            out[j]['is_default'] = (j == 0)
-    return out
-
-
-def _get_root_folders_config(instance_id):
-    """Get Movie Hunt root folders list from database."""
-    from src.primary.utils.database import get_database
-    db = get_database()
-    config = db.get_app_config_for_instance('movie_hunt_root_folders', instance_id)
-    if not config or not isinstance(config.get('root_folders'), list):
-        return []
-    raw = config['root_folders']
-    normalized = _normalize_root_folders(raw)
-    if raw and isinstance(raw[0], str):
-        db.save_app_config_for_instance('movie_hunt_root_folders', instance_id, {'root_folders': normalized})
-    return normalized
-
-
-def _save_root_folders_config(root_folders_list, instance_id):
-    """Save Movie Hunt root folders list to database."""
-    from src.primary.utils.database import get_database
-    db = get_database()
-    normalized = _normalize_root_folders(root_folders_list)
-    db.save_app_config_for_instance('movie_hunt_root_folders', instance_id, {'root_folders': normalized})
-
-
-TEST_FILENAME = 'movie-hunt.test'
-
-BROWSE_DEFAULT_PATH = '/'
-BROWSE_ALWAYS_INCLUDE_PATHS = ('/media',)
-
-
-# --- Root folder routes ---
+# --- Root folders (Media Hunt consolidated) ---
 
 @movie_hunt_bp.route('/api/movie-hunt/root-folders', methods=['GET'])
 def api_movie_hunt_root_folders_list():
-    """List Movie Hunt root folders with free space and is_default."""
+    """List Movie Hunt root folders (Media Hunt)."""
     try:
+        from src.primary.routes.media_hunt import root_folders as mh_rf
         instance_id = _get_movie_hunt_instance_id_from_request()
-        folders = _get_root_folders_config(instance_id)
-        out = []
-        for i, f in enumerate(folders):
-            path = (f.get('path') or '').strip()
-            free_space = None
-            if path:
-                try:
-                    usage = shutil.disk_usage(path)
-                    free_space = usage.free
-                except (OSError, FileNotFoundError):
-                    pass
-            out.append({
-                'index': i,
-                'path': path,
-                'freeSpace': free_space,
-                'is_default': bool(f.get('is_default', False)),
-            })
+        out = mh_rf.list_root_folders(instance_id, 'movie_hunt_root_folders')
         return jsonify({'root_folders': out}), 200
     except Exception as e:
         logger.exception('Root folders list error')
@@ -277,23 +218,16 @@ def api_movie_hunt_root_folders_list():
 
 @movie_hunt_bp.route('/api/movie-hunt/root-folders', methods=['POST'])
 def api_movie_hunt_root_folders_add():
-    """Add a root folder."""
+    """Add a root folder (Media Hunt)."""
     try:
+        from src.primary.routes.media_hunt import root_folders as mh_rf
+        instance_id = _get_movie_hunt_instance_id_from_request()
         data = request.get_json() or {}
         path = (data.get('path') or '').strip()
-        if not path:
-            return jsonify({'success': False, 'message': 'Path is required'}), 400
-        if '..' in path:
-            return jsonify({'success': False, 'message': 'Path cannot contain ..'}), 400
-        instance_id = _get_movie_hunt_instance_id_from_request()
-        folders = _get_root_folders_config(instance_id)
-        normalized = os.path.normpath(path)
-        if any((f.get('path') or '').strip() == normalized for f in folders):
-            return jsonify({'success': False, 'message': 'That path is already added'}), 400
-        is_first = len(folders) == 0
-        folders.append({'path': normalized, 'is_default': is_first})
-        _save_root_folders_config(folders, instance_id)
-        return jsonify({'success': True, 'index': len(folders) - 1}), 200
+        success, result = mh_rf.add_root_folder(instance_id, 'movie_hunt_root_folders', path)
+        if success:
+            return jsonify({'success': True, 'index': result['index']}), 200
+        return jsonify({'success': False, 'message': result.get('message', 'Add failed')}), 400
     except Exception as e:
         logger.exception('Root folders add error')
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -301,18 +235,14 @@ def api_movie_hunt_root_folders_add():
 
 @movie_hunt_bp.route('/api/movie-hunt/root-folders/<int:index>', methods=['DELETE'])
 def api_movie_hunt_root_folders_delete(index):
-    """Delete root folder at index."""
+    """Delete root folder at index (Media Hunt)."""
     try:
+        from src.primary.routes.media_hunt import root_folders as mh_rf
         instance_id = _get_movie_hunt_instance_id_from_request()
-        folders = _get_root_folders_config(instance_id)
-        if index < 0 or index >= len(folders):
-            return jsonify({'success': False, 'message': 'Index out of range'}), 400
-        was_default = folders[index].get('is_default')
-        folders.pop(index)
-        if was_default and folders:
-            folders[0]['is_default'] = True
-        _save_root_folders_config(folders, instance_id)
-        return jsonify({'success': True}), 200
+        success, msg = mh_rf.delete_root_folder(instance_id, 'movie_hunt_root_folders', index)
+        if success:
+            return jsonify({'success': True}), 200
+        return jsonify({'success': False, 'message': msg or 'Index out of range'}), 400
     except Exception as e:
         logger.exception('Root folders delete error')
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -320,16 +250,14 @@ def api_movie_hunt_root_folders_delete(index):
 
 @movie_hunt_bp.route('/api/movie-hunt/root-folders/<int:index>/default', methods=['PATCH'])
 def api_movie_hunt_root_folders_set_default(index):
-    """Set root folder at index as default."""
+    """Set root folder at index as default (Media Hunt)."""
     try:
+        from src.primary.routes.media_hunt import root_folders as mh_rf
         instance_id = _get_movie_hunt_instance_id_from_request()
-        folders = _get_root_folders_config(instance_id)
-        if index < 0 or index >= len(folders):
-            return jsonify({'success': False, 'message': 'Index out of range'}), 400
-        for i in range(len(folders)):
-            folders[i]['is_default'] = (i == index)
-        _save_root_folders_config(folders, instance_id)
-        return jsonify({'success': True}), 200
+        success, msg = mh_rf.set_default_root_folder(instance_id, 'movie_hunt_root_folders', index)
+        if success:
+            return jsonify({'success': True}), 200
+        return jsonify({'success': False, 'message': msg or 'Index out of range'}), 400
     except Exception as e:
         logger.exception('Root folders set-default error')
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -337,29 +265,13 @@ def api_movie_hunt_root_folders_set_default(index):
 
 @movie_hunt_bp.route('/api/movie-hunt/root-folders/browse', methods=['GET'])
 def api_movie_hunt_root_folders_browse():
-    """List directories under a path for the file browser."""
+    """List directories under a path (Media Hunt)."""
     try:
-        path = (request.args.get('path') or '').strip() or BROWSE_DEFAULT_PATH
-        if '..' in path:
-            return jsonify({'path': path, 'directories': [], 'error': 'Invalid path'}), 400
-        dir_path = os.path.abspath(os.path.normpath(path))
-        if not os.path.isdir(dir_path):
-            return jsonify({'path': dir_path, 'directories': [], 'error': 'Not a directory'}), 200
-        entries = []
-        try:
-            for name in sorted(os.listdir(dir_path)):
-                full = os.path.join(dir_path, name)
-                if os.path.isdir(full):
-                    entries.append({'name': name, 'path': full})
-        except OSError as e:
-            return jsonify({'path': dir_path, 'directories': [], 'error': str(e)}), 200
-        if dir_path == os.path.abspath(BROWSE_DEFAULT_PATH) or dir_path == os.path.abspath('/'):
-            for extra in BROWSE_ALWAYS_INCLUDE_PATHS:
-                if not any(e['path'] == extra for e in entries):
-                    name = os.path.basename(extra.rstrip(os.sep)) or 'media'
-                    entries.append({'name': name, 'path': extra})
-            entries.sort(key=lambda e: (e['name'].lower(), e['path']))
-        return jsonify({'path': dir_path, 'directories': entries}), 200
+        from src.primary.routes.media_hunt import root_folders as mh_rf
+        path = (request.args.get('path') or '').strip() or mh_rf.BROWSE_DEFAULT_PATH
+        result = mh_rf.browse_root_folders(path)
+        status = 400 if result.get('error') == 'Invalid path' else 200
+        return jsonify(result), status
     except Exception as e:
         logger.exception('Root folders browse error')
         return jsonify({'path': '', 'directories': [], 'error': str(e)}), 500
@@ -367,40 +279,15 @@ def api_movie_hunt_root_folders_browse():
 
 @movie_hunt_bp.route('/api/movie-hunt/root-folders/test', methods=['POST'])
 def api_movie_hunt_root_folders_test():
-    """Test write/read on a path."""
+    """Test write/read on a path (Media Hunt)."""
     try:
+        from src.primary.routes.media_hunt import root_folders as mh_rf
         data = request.get_json() or {}
         path = (data.get('path') or '').strip()
-        if not path:
-            return jsonify({'success': False, 'message': 'Path is required'}), 400
-        if '..' in path:
-            return jsonify({'success': False, 'message': 'Path cannot contain ..'}), 400
-        dir_path = os.path.abspath(os.path.normpath(path))
-        if not os.path.isdir(dir_path):
-            return jsonify({'success': False, 'message': f'Path is not a directory: {path}'}), 400
-        test_path = os.path.join(dir_path, TEST_FILENAME)
-        content = 'movie-hunt test ' + datetime.utcnow().isoformat() + 'Z'
-        try:
-            with open(test_path, 'w') as f:
-                f.write(content)
-        except OSError as e:
-            return jsonify({'success': False, 'message': f'Could not write: {e}'}), 200
-        try:
-            with open(test_path, 'r') as f:
-                read_back = f.read()
-            if read_back != content:
-                return jsonify({'success': False, 'message': 'Read back content did not match'}), 200
-        except OSError as e:
-            try:
-                os.remove(test_path)
-            except OSError:
-                pass
-            return jsonify({'success': False, 'message': f'Could not read: {e}'}), 200
-        try:
-            os.remove(test_path)
-        except OSError:
-            pass
-        return jsonify({'success': True, 'message': 'Write and read test passed.'}), 200
+        success, message = mh_rf.test_root_folder(path)
+        if success:
+            return jsonify({'success': True, 'message': message}), 200
+        return jsonify({'success': False, 'message': message}), 200
     except Exception as e:
         logger.exception('Root folders test error')
         return jsonify({'success': False, 'message': str(e)}), 500

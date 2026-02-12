@@ -533,11 +533,9 @@ def _run_sync(list_config, instance_id):
             skipped += 1
             continue
 
-        # Get default root folder for this instance
-        from src.primary.utils.database import get_database
-        db = get_database()
-        rf_config = db.get_app_config_for_instance('movie_hunt_root_folders', instance_id) or {}
-        root_folders = rf_config.get('root_folders', [])
+        # Get default root folder for this instance (Media Hunt)
+        from src.primary.routes.media_hunt import root_folders as mh_rf
+        root_folders = mh_rf.get_root_folders_config(instance_id, 'movie_hunt_root_folders')
         default_rf = ''
         for rf in root_folders:
             if rf.get('is_default'):
