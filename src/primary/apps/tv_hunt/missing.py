@@ -220,7 +220,7 @@ def _process_season_packs(missing_items, instance_id, instance_name, instance_ke
                 tv_hunt_logger.debug("Could not increment found stat: %s", e)
 
             try:
-                from ...utils.history_manager import log_processed_media
+                from ...utils.history_utils import log_processed_media
                 log_processed_media("tv_hunt", f"{series_title} S{season_number:02d}", rep_item.get("tvdb_id"), str(instance_id), "missing", display_name_for_log=instance_name)
             except Exception as e:
                 tv_hunt_logger.debug("Could not log to history: %s", e)
@@ -281,7 +281,7 @@ def _process_individual_episodes(missing_items, instance_id, instance_name, inst
                 tv_hunt_logger.debug("Could not increment found stat: %s", e)
 
             try:
-                from ...utils.history_manager import log_processed_media
+                from ...utils.history_utils import log_processed_media
                 log_processed_media("tv_hunt", f"{series_title} S{season_number:02d}E{episode_number:02d}", tvdb_id, str(instance_id), "missing", display_name_for_log=instance_name)
             except Exception as e:
                 tv_hunt_logger.debug("Could not log to history: %s", e)

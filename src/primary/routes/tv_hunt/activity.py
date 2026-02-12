@@ -23,16 +23,19 @@ def api_tv_hunt_queue():
 
 @tv_hunt_bp.route('/api/tv-hunt/history', methods=['GET'])
 def api_tv_hunt_history():
-    """Get download history for TV Hunt."""
+    """Get download history for TV Hunt (for the selected instance)."""
     try:
         instance_id = _get_tv_hunt_instance_id_from_request()
         if not instance_id:
             return jsonify({'history': []}), 200
-        # Query from history manager
         try:
-            from src.primary.utils.history_manager import get_processed_media
-            history = get_processed_media("tv_hunt", str(instance_id))
-            return jsonify({'history': history}), 200
+            from src.primary.history_manager import get_history
+            result = get_history("tv_hunt", page=1, page_size=100)
+            entries = result.get("entries") or []
+            # Filter to this instance (instance_name in DB is instance_id string)
+            instance_key = str(instance_id)
+            entries = [e for e in entries if (e.get("instance_name") or "") == instance_key]
+            return jsonify({'history': entries}), 200
         except Exception:
             return jsonify({'history': []}), 200
     except Exception as e:
