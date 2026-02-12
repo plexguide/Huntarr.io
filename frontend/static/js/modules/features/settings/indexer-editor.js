@@ -21,9 +21,9 @@
         nzbcat:        { name: 'NZBCat',          url: 'https://nzb.cat',                   api_path: '/api', categories: [2000,2010,2020,2030,2040,2045,2050,2060] },
         'nzbfinder.ws':{ name: 'NZBFinder.ws',    url: 'https://nzbfinder.ws',              api_path: '/api', categories: [2030,2040,2045,2050,2060,2070] },
         nzbgeek:       { name: 'NZBgeek',         url: 'https://api.nzbgeek.info',          api_path: '/api', categories: [2000,2010,2020,2030,2040,2045,2050,2060] },
-        'nzbplanet.net':{ name: 'nzbplanet.net',  url: 'https://api.nzbplanet.net',         api_path: '/api', categories: [2000,2010,2020,2030,2040,2045,2050,2060] },
+        'nzbplanet.net':{ name: 'nzbplanet.net',  url: 'https://api.nzbplanet.net',         api_path: '/api', categories: [2000,2010,2020,2030,2040,2050,2060] },
         simplynzbs:    { name: 'SimplyNZBs',      url: 'https://simplynzbs.com',            api_path: '/api', categories: [2000,2010,2020,2030,2040,2045,2050,2060] },
-        tabularasa:    { name: 'Tabula Rasa',     url: 'https://www.tabula-rasa.pw',        api_path: '/api/v1/api', categories: [2000,2010,2020,2030,2040,2045,2050,2060] },
+        tabularasa:    { name: 'Tabula Rasa',     url: 'https://www.tabula-rasa.pw',        api_path: '/api/v1/api', categories: [2000,2010,2030,2040,2045,2050,2060] },
         usenetcrawler: { name: 'Usenet Crawler',  url: 'https://www.usenet-crawler.com',    api_path: '/api', categories: [2000,2010,2020,2030,2040,2045,2050,2060] },
     };
     window.INDEXER_PRESET_META = PRESET_META;
@@ -57,6 +57,31 @@
         { id: 2030, name: 'SD' }, { id: 2040, name: 'HD' }, { id: 2045, name: 'UHD' },
         { id: 2050, name: '3D' }, { id: 2060, name: 'BluRay' }, { id: 2070, name: 'DVD' }, { id: 2999, name: 'Other' }
     ];
+    // Usenet Crawler-specific: exact categories matching the dropdown
+    var USENETCRAWLER_CATEGORIES = [
+        { id: 2000, name: 'Movies' }, { id: 2010, name: 'Foreign' }, { id: 2020, name: 'Other' },
+        { id: 2030, name: 'SD' }, { id: 2040, name: 'HD' }, { id: 2045, name: 'UHD' },
+        { id: 2050, name: 'BluRay' }, { id: 2060, name: '3D' }, { id: 2070, name: 'Movies/DVD' }
+    ];
+    // Tabula Rasa-specific: 2050=3D, 2060=BluRay, 2070=DVD, 2080=WEBDL, 2090=X265, 2999=Other - no 2020
+    var TABULARASA_CATEGORIES = [
+        { id: 2000, name: 'Movies' }, { id: 2010, name: 'Foreign' },
+        { id: 2030, name: 'SD' }, { id: 2040, name: 'HD' }, { id: 2045, name: 'UHD' },
+        { id: 2050, name: '3D' }, { id: 2060, name: 'BluRay' }, { id: 2070, name: 'DVD' },
+        { id: 2080, name: 'WEBDL' }, { id: 2090, name: 'X265' }, { id: 2999, name: 'Other' }
+    ];
+    // SimplyNZBs-specific: exact categories from SimplyNZBs dropdown
+    var SIMPLYNZBS_CATEGORIES = [
+        { id: 2000, name: 'Movies' }, { id: 2010, name: 'Foreign' }, { id: 2020, name: 'Other' },
+        { id: 2030, name: 'SD' }, { id: 2040, name: 'HD' }, { id: 2045, name: 'UHD' },
+        { id: 2050, name: 'BluRay' }, { id: 2060, name: '3D' }, { id: 2070, name: 'Movies/DVD' }
+    ];
+    // NZBplanet-specific: 2050=BluRay, 2060=3D, 2070=UHD, 2080=Cam - no 2045
+    var NZBPLANET_CATEGORIES = [
+        { id: 2000, name: 'Movies' }, { id: 2010, name: 'Foreign' }, { id: 2020, name: 'Other' },
+        { id: 2030, name: 'SD' }, { id: 2040, name: 'HD' }, { id: 2050, name: 'BluRay' }, { id: 2060, name: '3D' },
+        { id: 2070, name: 'UHD' }, { id: 2080, name: 'Cam' }
+    ];
     // DrunkenSlug-specific: exact categories from DrunkenSlug dropdown - no 2020
     var DRUNKENSLUG_CATEGORIES = [
         { id: 2000, name: 'Movies' }, { id: 2010, name: 'Foreign' },
@@ -79,6 +104,10 @@
         if (p === 'nzb.su') return NZBSU_CATEGORIES;
         if (p === 'nzbcat') return NZBCAT_CATEGORIES;
         if (p === 'nzbfinder.ws') return NZBFINDER_CATEGORIES;
+        if (p === 'nzbplanet.net') return NZBPLANET_CATEGORIES;
+        if (p === 'simplynzbs') return SIMPLYNZBS_CATEGORIES;
+        if (p === 'tabularasa') return TABULARASA_CATEGORIES;
+        if (p === 'usenetcrawler') return USENETCRAWLER_CATEGORIES;
         return ALL_MOVIE_CATEGORIES;
     };
     Forms.getIndexerDefaultIdsForPreset = function(preset) {
@@ -436,7 +465,7 @@
                     '<div class="editor-field-group">' +
                         '<label for="editor-categories-select">Categories</label>' +
                         '<select id="editor-categories-select" class="settings-select" style="width: 100%; padding: 10px 12px; background: #1e293b; border: 1px solid #475569; border-radius: 6px; color: #e2e8f0;">' +
-                            '<option value="">Select a category to add...</option>' +
+                            '<option value="">Select additional categories to add...</option>' +
                         '</select>' +
                         '<p class="editor-help-text">Categories to use for this indexer.</p>' +
                         '<div id="indexer-categories-pills" class="indexer-categories-pills" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; min-height: 24px;">' + categoryChipsHtml + '</div>' +
@@ -454,7 +483,7 @@
         var preset = presetEl ? presetEl.value : '';
         var categories = Forms.getIndexerCategoriesForPreset(preset);
         var selectedIds = Array.from(pills.querySelectorAll('.indexer-category-pill')).map(function(el) { return parseInt(el.getAttribute('data-category-id'), 10); }).filter(function(id) { return !isNaN(id); });
-        select.innerHTML = '<option value="">Select a category to add...</option>';
+        select.innerHTML = '<option value="">Select additional categories to add...</option>';
         categories.forEach(function(c) {
             if (selectedIds.indexOf(c.id) === -1) {
                 var opt = document.createElement('option');

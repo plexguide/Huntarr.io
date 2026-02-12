@@ -25,10 +25,14 @@ INDEXER_PRESETS = {
     'nzbfinder.ws':   {'name': 'NZBFinder.ws',    'url': 'https://nzbfinder.ws',        'api_path': '/api',
                        'categories': [2030, 2040, 2045, 2050, 2060, 2070]},
     'nzbgeek':        {'name': 'NZBgeek',         'url': 'https://api.nzbgeek.info',    'api_path': '/api'},
-    'nzbplanet.net':  {'name': 'nzbplanet.net',   'url': 'https://api.nzbplanet.net',   'api_path': '/api'},
-    'simplynzbs':     {'name': 'SimplyNZBs',      'url': 'https://simplynzbs.com',      'api_path': '/api'},
-    'tabularasa':     {'name': 'Tabula Rasa',     'url': 'https://www.tabula-rasa.pw',  'api_path': '/api/v1/api'},
-    'usenetcrawler':  {'name': 'Usenet Crawler',  'url': 'https://www.usenet-crawler.com', 'api_path': '/api'},
+    'nzbplanet.net':  {'name': 'nzbplanet.net',   'url': 'https://api.nzbplanet.net',   'api_path': '/api',
+                       'categories': [2000, 2010, 2020, 2030, 2040, 2050, 2060]},
+    'simplynzbs':     {'name': 'SimplyNZBs',      'url': 'https://simplynzbs.com',      'api_path': '/api',
+                       'categories': [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2060]},
+    'tabularasa':     {'name': 'Tabula Rasa',     'url': 'https://www.tabula-rasa.pw',  'api_path': '/api/v1/api',
+                       'categories': [2000, 2010, 2030, 2040, 2045, 2050, 2060]},
+    'usenetcrawler':  {'name': 'Usenet Crawler',  'url': 'https://www.usenet-crawler.com', 'api_path': '/api',
+                       'categories': [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2060]},
 }
 
 # Default categories from Radarr: Movies sub-genres
