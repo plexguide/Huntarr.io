@@ -445,6 +445,19 @@ class NZBHuntDownloadManager:
         except Exception:
             pass
 
+    def _cleanup_temp_for_item(self, item: DownloadItem):
+        """Remove temp directory for a download item (partial/incomplete files)."""
+        try:
+            folders = self._get_folders()
+            temp_dir = folders.get("temp_folder", "/downloads/incomplete")
+            safe_name = "".join(c for c in (item.name or "") if c.isalnum() or c in " ._-")[:100].strip() or item.id
+            temp_path = os.path.join(temp_dir, safe_name)
+            if os.path.isdir(temp_path):
+                shutil.rmtree(temp_path, ignore_errors=True)
+                logger.info(f"[{item.id}] Cleaned up temp dir for removed item")
+        except Exception:
+            pass
+
     def _save_state(self):
         """Persist queue state to disk (atomic write to prevent corruption).
         
@@ -801,11 +814,12 @@ class NZBHuntDownloadManager:
         return False
     
     def remove_item(self, nzb_id: str) -> bool:
-        """Remove an item from the queue."""
+        """Remove an item from the queue and delete its temp/incomplete files."""
         with self._queue_lock:
             for i, item in enumerate(self._queue):
                 if item.id == nzb_id:
                     self._queue.pop(i)
+                    self._cleanup_temp_for_item(item)
                     self._delete_nzb_content(nzb_id)
                     self._save_state()
                     return True
@@ -1387,6 +1401,7 @@ class NZBHuntDownloadManager:
             item.speed_bps = 0
             item.eta_seconds = 0
             logger.error(f"[{item.id}] Download failed: {e}")
+            self._cleanup_temp_for_item(item)
         
         # Move completed/failed items to history
         with self._queue_lock:
