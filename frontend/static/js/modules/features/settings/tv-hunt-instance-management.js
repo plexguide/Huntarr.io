@@ -59,6 +59,7 @@
                         closeModal();
                         self.loadList();
                         try { document.dispatchEvent(new CustomEvent('huntarr:instances-changed', { detail: { appType: 'tv_hunt' } })); } catch(e) {}
+                        try { document.dispatchEvent(new CustomEvent('huntarr:tv-hunt-instances-changed')); } catch(e) {}
                         if (window.updateTVHuntSettingsVisibility) window.updateTVHuntSettingsVisibility();
                     })
                     .catch(function() { if (window.huntarrUI) window.huntarrUI.showNotification('Request failed.', 'error'); })
@@ -94,6 +95,7 @@
                         closeModal();
                         self.loadList();
                         try { document.dispatchEvent(new CustomEvent('huntarr:instances-changed', { detail: { appType: 'tv_hunt' } })); } catch(e) {}
+                        try { document.dispatchEvent(new CustomEvent('huntarr:tv-hunt-instances-changed')); } catch(e) {}
                         if (window.updateTVHuntSettingsVisibility) window.updateTVHuntSettingsVisibility();
                     })
                     .catch(function() { if (window.huntarrUI) window.huntarrUI.showNotification('Request failed.', 'error'); })
@@ -146,6 +148,7 @@
                         closeModal();
                         self.loadList();
                         try { document.dispatchEvent(new CustomEvent('huntarr:instances-changed', { detail: { appType: 'tv_hunt' } })); } catch(e) {}
+                        try { document.dispatchEvent(new CustomEvent('huntarr:tv-hunt-instances-changed')); } catch(e) {}
                     })
                     .catch(function() { if (window.huntarrUI) window.huntarrUI.showNotification('Request failed.', 'error'); })
                     .finally(function() { saveBtn.disabled = false; });

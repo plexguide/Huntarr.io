@@ -192,6 +192,7 @@ let huntarrUI = {
         // Setup navigation for sidebars
         this.setupRequestarrNavigation();
         this.setupMovieHuntNavigation();
+        this.setupTVHuntNavigation();
         this.setupNzbHuntNavigation();
         this.setupAppsNavigation();
         this.setupSettingsNavigation();
@@ -335,9 +336,10 @@ let huntarrUI = {
             this.elements.logoutLink.addEventListener('click', (e) => this.logout(e));
         }
         
-        // Requestarr and Movie Hunt navigation
+        // Requestarr, Movie Hunt, and TV Hunt navigation
         this.setupRequestarrNavigation();
         this.setupMovieHuntNavigation();
+        this.setupTVHuntNavigation();
         
         // Dark mode toggle
         const darkModeToggle = document.getElementById('darkModeToggle');
@@ -903,6 +905,13 @@ let huntarrUI = {
             newTitle = 'TV Hunt Profiles';
             this.currentSection = 'tv-hunt-settings-profiles';
             this.showTVHuntSidebar();
+            if (window.TVHuntInstanceDropdown && window.TVHuntInstanceDropdown.attach) {
+                window.TVHuntInstanceDropdown.attach('tv-hunt-settings-profiles-instance-select', function() {
+                    if (window.TVHuntSettingsForms && typeof window.TVHuntSettingsForms.refreshProfilesList === 'function') {
+                        window.TVHuntSettingsForms.refreshProfilesList();
+                    }
+                });
+            }
             if (window.TVHuntSettingsForms && typeof window.TVHuntSettingsForms.refreshProfilesList === 'function') {
                 window.TVHuntSettingsForms.refreshProfilesList();
             }
@@ -923,6 +932,13 @@ let huntarrUI = {
             newTitle = 'TV Hunt Indexers';
             this.currentSection = 'tv-hunt-settings-indexers';
             this.showTVHuntSidebar();
+            if (window.TVHuntInstanceDropdown && window.TVHuntInstanceDropdown.attach) {
+                window.TVHuntInstanceDropdown.attach('tv-hunt-settings-indexers-instance-select', function() {
+                    if (window.TVHuntSettingsForms && typeof window.TVHuntSettingsForms.refreshIndexersList === 'function') {
+                        window.TVHuntSettingsForms.refreshIndexersList();
+                    }
+                });
+            }
             if (window.TVHuntSettingsForms && typeof window.TVHuntSettingsForms.refreshIndexersList === 'function') {
                 window.TVHuntSettingsForms.refreshIndexersList();
             }
@@ -943,6 +959,13 @@ let huntarrUI = {
             newTitle = 'TV Hunt Clients';
             this.currentSection = 'tv-hunt-settings-clients';
             this.showTVHuntSidebar();
+            if (window.TVHuntInstanceDropdown && window.TVHuntInstanceDropdown.attach) {
+                window.TVHuntInstanceDropdown.attach('tv-hunt-settings-clients-instance-select', function() {
+                    if (window.TVHuntSettingsForms && typeof window.TVHuntSettingsForms.refreshClientsList === 'function') {
+                        window.TVHuntSettingsForms.refreshClientsList();
+                    }
+                });
+            }
             if (window.TVHuntSettingsForms && typeof window.TVHuntSettingsForms.refreshClientsList === 'function') {
                 window.TVHuntSettingsForms.refreshClientsList();
             }
@@ -963,6 +986,13 @@ let huntarrUI = {
             newTitle = 'TV Hunt Root Folders';
             this.currentSection = 'tv-hunt-settings-root-folders';
             this.showTVHuntSidebar();
+            if (window.TVHuntInstanceDropdown && window.TVHuntInstanceDropdown.attach) {
+                window.TVHuntInstanceDropdown.attach('tv-hunt-settings-root-folders-instance-select', function() {
+                    if (window.TVHuntRootFolders && typeof window.TVHuntRootFolders.refreshList === 'function') {
+                        window.TVHuntRootFolders.refreshList();
+                    }
+                });
+            }
             if (window.TVHuntRootFolders && typeof window.TVHuntRootFolders.refreshList === 'function') {
                 window.TVHuntRootFolders.refreshList();
             }
@@ -983,6 +1013,9 @@ let huntarrUI = {
             newTitle = 'TV Hunt Sizes';
             this.currentSection = 'tv-hunt-settings-sizes';
             this.showTVHuntSidebar();
+            if (window.TVHuntInstanceDropdown && window.TVHuntInstanceDropdown.attach) {
+                window.TVHuntInstanceDropdown.attach('tv-hunt-settings-sizes-instance-select', function() {});
+            }
         } else if (section === 'tv-hunt-settings-tv-management' && document.getElementById('tvHuntSettingsTVManagementSection')) {
             document.getElementById('tvHuntSettingsTVManagementSection').classList.add('active');
             document.getElementById('tvHuntSettingsTVManagementSection').style.display = 'block';
@@ -1000,6 +1033,9 @@ let huntarrUI = {
             newTitle = 'TV Management';
             this.currentSection = 'tv-hunt-settings-tv-management';
             this.showTVHuntSidebar();
+            if (window.TVHuntInstanceDropdown && window.TVHuntInstanceDropdown.attach) {
+                window.TVHuntInstanceDropdown.attach('tv-hunt-settings-tv-management-instance-select', function() {});
+            }
         } else if (section === 'tv-hunt-settings-import-lists' && document.getElementById('tvHuntSettingsImportListsSection')) {
             document.getElementById('tvHuntSettingsImportListsSection').classList.add('active');
             document.getElementById('tvHuntSettingsImportListsSection').style.display = 'block';
@@ -1017,8 +1053,13 @@ let huntarrUI = {
             newTitle = 'TV Hunt Import Lists';
             this.currentSection = 'tv-hunt-settings-import-lists';
             this.showTVHuntSidebar();
-        } else if (section && section.startsWith('tv-hunt-activity')) {
-            // TV Hunt Activity - reuse Movie Hunt activity pattern
+            if (window.TVHuntInstanceDropdown && window.TVHuntInstanceDropdown.attach) {
+                window.TVHuntInstanceDropdown.attach('tv-hunt-settings-import-lists-instance-select', function() {});
+            }
+        } else if (section && section.startsWith('tv-hunt-activity') && document.getElementById('activitySection')) {
+            // TV Hunt Activity - show shared activitySection under TV Hunt sidebar
+            document.getElementById('activitySection').classList.add('active');
+            document.getElementById('activitySection').style.display = 'block';
             // Hide all TV Hunt settings/main sections
             ['tv-hunt-section', 'tvHuntInstanceManagementSection', 'tvHuntInstanceEditorSection', 'tvHuntSettingsCustomFormatsSection', 'tvHuntSettingsProfilesSection', 'tvHuntSettingsIndexersSection', 'tvHuntSettingsClientsSection', 'tvHuntSettingsRootFoldersSection', 'tvHuntSettingsSizesSection', 'tvHuntSettingsTVManagementSection', 'tvHuntSettingsImportListsSection'].forEach(function(id) {
                 var el = document.getElementById(id);
@@ -1028,6 +1069,9 @@ let huntarrUI = {
             newTitle = 'TV Hunt ' + view.charAt(0).toUpperCase() + view.slice(1);
             this.currentSection = section;
             this.showTVHuntSidebar();
+            if (window.ActivityModule && typeof window.ActivityModule.init === 'function') {
+                window.ActivityModule.init(view);
+            }
         } else if (section === 'movie-hunt-collection' && document.getElementById('movie-hunt-section')) {
             document.getElementById('movie-hunt-section').classList.add('active');
             document.getElementById('movie-hunt-section').style.display = 'block';
@@ -1902,6 +1946,9 @@ let huntarrUI = {
         this._hideAllSidebars();
         var th = document.getElementById('tv-hunt-sidebar');
         if (th) th.style.display = 'flex';
+        if (window.HuntarrNavigation && typeof window.HuntarrNavigation.updateTVHuntSidebarActive === 'function') {
+            window.HuntarrNavigation.updateTVHuntSidebarActive();
+        }
     },
 
     showMovieHuntSidebar: function() {
@@ -2770,6 +2817,12 @@ let huntarrUI = {
     setupMovieHuntNavigation: function() {
         if (window.HuntarrNavigation && window.HuntarrNavigation.setupMovieHuntNavigation) {
             window.HuntarrNavigation.setupMovieHuntNavigation();
+        }
+    },
+
+    setupTVHuntNavigation: function() {
+        if (window.HuntarrNavigation && window.HuntarrNavigation.setupTVHuntNavigation) {
+            window.HuntarrNavigation.setupTVHuntNavigation();
         }
     },
 

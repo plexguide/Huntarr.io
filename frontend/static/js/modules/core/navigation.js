@@ -64,6 +64,13 @@ window.HuntarrNavigation = {
                 window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#movie-hunt-collection');
             }
         }
+        // Legacy TV Hunt home → TV Collection
+        if (section === 'tv-hunt-home') {
+            section = 'tv-hunt-collection';
+            if (window.location.hash !== '#tv-hunt-collection') {
+                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#tv-hunt-collection');
+            }
+        }
         if (section === 'activity') {
             section = 'activity-queue';
             if (window.location.hash !== '#activity-queue') window.location.hash = 'activity-queue';
@@ -233,14 +240,34 @@ window.HuntarrNavigation = {
         const settingsSidebar = document.getElementById('settings-sidebar');
         const requestarrSidebar = document.getElementById('requestarr-sidebar');
         const movieHuntSidebar = document.getElementById('movie-hunt-sidebar');
+        const tvHuntSidebar = document.getElementById('tv-hunt-sidebar');
         
         if (mainSidebar) mainSidebar.style.display = 'none';
         if (appsSidebar) appsSidebar.style.display = 'none';
         if (settingsSidebar) settingsSidebar.style.display = 'none';
         if (requestarrSidebar) requestarrSidebar.style.display = 'none';
+        if (tvHuntSidebar) tvHuntSidebar.style.display = 'none';
         if (movieHuntSidebar) movieHuntSidebar.style.display = 'flex';
         
         this.updateMovieHuntSidebarActive();
+    },
+
+    showTVHuntSidebar: function() {
+        const mainSidebar = document.getElementById('sidebar');
+        const appsSidebar = document.getElementById('apps-sidebar');
+        const settingsSidebar = document.getElementById('settings-sidebar');
+        const requestarrSidebar = document.getElementById('requestarr-sidebar');
+        const movieHuntSidebar = document.getElementById('movie-hunt-sidebar');
+        const tvHuntSidebar = document.getElementById('tv-hunt-sidebar');
+        
+        if (mainSidebar) mainSidebar.style.display = 'none';
+        if (appsSidebar) appsSidebar.style.display = 'none';
+        if (settingsSidebar) settingsSidebar.style.display = 'none';
+        if (requestarrSidebar) requestarrSidebar.style.display = 'none';
+        if (movieHuntSidebar) movieHuntSidebar.style.display = 'none';
+        if (tvHuntSidebar) tvHuntSidebar.style.display = 'flex';
+        
+        this.updateTVHuntSidebarActive();
     },
 
     updateMovieHuntSidebarActive: function() {
@@ -276,6 +303,42 @@ window.HuntarrNavigation = {
         var activitySub = document.getElementById('movie-hunt-activity-sub');
         if (activitySub) {
             var showActivitySub = ['activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt'].indexOf(currentSection) !== -1;
+            activitySub.classList.toggle('expanded', showActivitySub);
+        }
+    },
+
+    updateTVHuntSidebarActive: function() {
+        if (!window.huntarrUI) return;
+        const currentSection = window.huntarrUI.currentSection;
+        let sectionForNav = currentSection;
+        if (currentSection === 'tv-hunt-instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing) {
+            const appType = window.SettingsForms._currentEditing.appType;
+            if (appType === 'indexer') sectionForNav = 'tv-hunt-settings-indexers';
+            else if (appType === 'client') sectionForNav = 'tv-hunt-settings-clients';
+        }
+        const items = document.querySelectorAll('#tv-hunt-sidebar .nav-item');
+        const isActivitySub = ['tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist', 'logs-tv-hunt'].indexOf(sectionForNav) !== -1;
+        items.forEach(item => {
+            item.classList.remove('active');
+            if (isActivitySub && item.id === 'tvHuntActivityNav') return;
+            const href = item.getAttribute && item.getAttribute('href') || (item.querySelector('a') && item.querySelector('a').getAttribute('href'));
+            if (href && (href === '#' + sectionForNav || href.endsWith('#' + sectionForNav))) {
+                item.classList.add('active');
+            }
+        });
+        var subGroup = document.getElementById('tv-hunt-settings-sub');
+        if (subGroup) {
+            var showSub = ['tv-hunt-settings', 'tv-hunt-instance-editor', 'tv-hunt-settings-tv-management', 'tv-hunt-settings-profiles', 'tv-hunt-settings-sizes', 'tv-hunt-settings-custom-formats', 'tv-hunt-settings-indexers', 'tv-hunt-settings-clients', 'tv-hunt-settings-import-lists', 'tv-hunt-settings-root-folders'].indexOf(currentSection) !== -1;
+            subGroup.classList.toggle('expanded', showSub);
+        }
+        var collectionSub = document.getElementById('tv-hunt-collection-sub');
+        if (collectionSub) {
+            var showCollectionSub = ['tv-hunt-home', 'tv-hunt-collection', 'tv-hunt-calendar'].indexOf(currentSection) !== -1;
+            collectionSub.classList.toggle('expanded', showCollectionSub);
+        }
+        var activitySub = document.getElementById('tv-hunt-activity-sub');
+        if (activitySub) {
+            var showActivitySub = ['tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist', 'logs-tv-hunt'].indexOf(currentSection) !== -1;
             activitySub.classList.toggle('expanded', showActivitySub);
         }
     },
@@ -366,6 +429,21 @@ window.HuntarrNavigation = {
             item.addEventListener('click', (e) => {
                 e.preventDefault();
                 const href = item.getAttribute('href') || '';
+                const hashIdx = href.indexOf('#');
+                const fragment = hashIdx >= 0 ? href.substring(hashIdx + 1) : href.replace(/^\.?\/*/, '');
+                if (fragment) window.location.hash = fragment;
+            });
+        });
+    },
+
+    setupTVHuntNavigation: function() {
+        const tvHuntNavItems = document.querySelectorAll('#tv-hunt-sidebar .nav-item');
+        tvHuntNavItems.forEach(item => {
+            const link = item.tagName === 'A' ? item : item.querySelector('a');
+            if (!link) return;
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const href = (link.getAttribute('href') || '').trim();
                 const hashIdx = href.indexOf('#');
                 const fragment = hashIdx >= 0 ? href.substring(hashIdx + 1) : href.replace(/^\.?\/*/, '');
                 if (fragment) window.location.hash = fragment;
