@@ -39,18 +39,10 @@
                 pauseBtn.addEventListener('click', function () {
                     self._paused = !self._paused;
                     var icon = pauseBtn.querySelector('i');
-                    var label = pauseBtn.querySelector('span');
-                    if (self._paused) {
-                        if (icon) icon.className = 'fas fa-play';
-                        if (label) label.textContent = 'Resume';
-                        fetch('./api/nzb-hunt/queue/pause-all', { method: 'POST' })
-                            .then(function () { self._fetchQueueAndStatus(); });
-                    } else {
-                        if (icon) icon.className = 'fas fa-pause';
-                        if (label) label.textContent = 'Pause';
-                        fetch('./api/nzb-hunt/queue/resume-all', { method: 'POST' })
-                            .then(function () { self._fetchQueueAndStatus(); });
-                    }
+                    if (icon) icon.className = self._paused ? 'fas fa-play' : 'fas fa-pause';
+                    pauseBtn.title = self._paused ? 'Resume all downloads' : 'Pause all downloads';
+                    fetch(self._paused ? './api/nzb-hunt/queue/pause-all' : './api/nzb-hunt/queue/resume-all', { method: 'POST' })
+                        .then(function () { self._fetchQueueAndStatus(); });
                 });
             }
 
@@ -121,14 +113,8 @@
                 var pauseBtn = document.getElementById('nzb-pause-btn');
                 if (pauseBtn) {
                     var icon = pauseBtn.querySelector('i');
-                    var label = pauseBtn.querySelector('span');
-                    if (this._paused) {
-                        if (icon) icon.className = 'fas fa-play';
-                        if (label) label.textContent = 'Resume';
-                    } else {
-                        if (icon) icon.className = 'fas fa-pause';
-                        if (label) label.textContent = 'Pause';
-                    }
+                    if (icon) icon.className = this._paused ? 'fas fa-play' : 'fas fa-pause';
+                    pauseBtn.title = this._paused ? 'Resume all downloads' : 'Pause all downloads';
                 }
             }
 
@@ -139,8 +125,19 @@
                 warnEl.style.display = show ? 'flex' : 'none';
             }
 
-            // Update connections-per-server tooltip
-            var tooltipEl = document.getElementById('nzb-connections-tooltip');
+            // Update Active Connections (number + hover tooltip with per-server breakdown)
+            var activeEl = document.getElementById('nzb-active-connections-value');
+            var tooltipEl = document.getElementById('nzb-active-connections-tooltip');
+            if (activeEl) {
+                var connStats = status.connection_stats || [];
+                var totalActive = connStats.reduce(function (sum, s) { return sum + (s.active || 0); }, 0);
+                var totalMax = connStats.reduce(function (sum, s) { return sum + (s.max || 0); }, 0);
+                if (connStats.length === 0) {
+                    activeEl.textContent = '0';
+                } else {
+                    activeEl.textContent = totalMax > 0 ? totalActive + ' / ' + totalMax : String(totalActive);
+                }
+            }
             if (tooltipEl) {
                 var connStats = status.connection_stats || [];
                 if (connStats.length === 0) {

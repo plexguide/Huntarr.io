@@ -88,33 +88,40 @@
     max-width: none;
 }
 
-/* ── Status bar (speed, queue, disk) ─────────────────────────────── */
+/* ── Status bar (metrics + actions) ─────────────────────────────── */
 .nzb-status-bar {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 16px 20px;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-    border: 1px solid rgba(90, 109, 137, 0.3);
-    border-radius: 12px;
-    margin-bottom: 24px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    justify-content: space-between;
+    gap: 20px;
+    padding: 12px 18px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(71, 85, 105, 0.35);
+    border-radius: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.nzb-status-metrics {
+    display: flex;
+    align-items: center;
+    gap: 20px;
     flex-wrap: wrap;
 }
 
 .nzb-status-item {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     color: #94a3b8;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     white-space: nowrap;
 }
 
-.nzb-status-item i {
-    color: #3b82f6;
-    font-size: 1rem;
-    width: 18px;
+.nzb-status-item i:first-of-type {
+    color: #64748b;
+    font-size: 0.9rem;
+    width: 16px;
     text-align: center;
 }
 
@@ -124,26 +131,18 @@
     font-variant-numeric: tabular-nums;
 }
 
-.nzb-status-divider {
-    width: 1px;
-    height: 24px;
-    background: rgba(148, 163, 184, 0.2);
-    flex-shrink: 0;
+.nzb-status-label {
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 500;
 }
 
-/* Connections info icon + hover tooltip */
-.nzb-connections-info-wrapper {
+/* Connections: hover tooltip (per-server breakdown) */
+.nzb-active-connections {
     position: relative;
     cursor: help;
 }
-.nzb-connections-info-icon {
-    color: #64748b !important;
-    font-size: 0.95rem !important;
-}
-.nzb-connections-info-wrapper:hover .nzb-connections-info-icon {
-    color: #94a3b8 !important;
-}
-.nzb-connections-tooltip {
+.nzb-status-tooltip {
     position: absolute;
     bottom: 100%;
     left: 50%;
@@ -165,9 +164,62 @@
     z-index: 1000;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
-.nzb-connections-info-wrapper:hover .nzb-connections-tooltip {
+.nzb-active-connections:hover .nzb-status-tooltip {
     opacity: 1;
     visibility: visible;
+}
+
+/* Speed control compact */
+.nzb-speed-chevron {
+    font-size: 0.65rem !important;
+    color: #64748b !important;
+    margin-left: 2px;
+}
+
+.nzb-speed-control {
+    position: relative;
+    cursor: pointer;
+    padding: 4px 6px;
+    margin: -4px -6px;
+    border-radius: 6px;
+}
+.nzb-speed-control:hover {
+    background: rgba(59, 130, 246, 0.08);
+}
+
+/* Actions: Pause + Settings */
+.nzb-status-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.nzb-btn-pause {
+    width: 40px;
+    height: 40px;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: rgba(59, 130, 246, 0.2) !important;
+    border: 1px solid rgba(59, 130, 246, 0.4) !important;
+    color: #60a5fa !important;
+}
+.nzb-btn-pause:hover {
+    background: rgba(59, 130, 246, 0.3) !important;
+    border-color: rgba(59, 130, 246, 0.6) !important;
+    color: #93c5fd !important;
+}
+
+.nzb-status-actions .nzb-display-prefs-btn {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* ── No server connected warning (same servers as Movie Hunt / TV Hunt) ─── */
@@ -198,13 +250,6 @@
 }
 
 /* ── Speed limit control ─────────────────────────────────────────── */
-.nzb-speed-control:hover {
-    background: rgba(59, 130, 246, 0.08);
-    border-radius: 8px;
-    padding: 4px 8px;
-    margin: -4px -8px;
-}
-
 .nzb-speed-limit-badge {
     font-size: 0.65rem;
     font-weight: 700;
