@@ -118,6 +118,10 @@ const huntManagerModule = {
                     window.huntarrUI.switchSection('movie-hunt-home');
                     window.location.hash = '#movie-hunt-home';
                     console.log('Navigated to Movie Hunt');
+                } else if (appType === 'tv_hunt' && window.huntarrUI) {
+                    window.huntarrUI.switchSection('tv-hunt-collection');
+                    window.location.hash = '#tv-hunt-collection';
+                    console.log('Navigated to TV Hunt');
                 } else {
                     console.log(`Clicking disabled for ${appType}`);
                 }
@@ -258,7 +262,7 @@ const huntManagerModule = {
         // App instance (formatted as "App Name (Instance Name)")
         const instanceCell = document.createElement('td');
         instanceCell.className = 'col-instance';
-        const appDisplayNames = { whisparr: 'Whisparr V2', eros: 'Whisparr V3', movie_hunt: 'Movie Hunt' };
+        const appDisplayNames = { whisparr: 'Whisparr V2', eros: 'Whisparr V3', movie_hunt: 'Movie Hunt', tv_hunt: 'TV Hunt' };
         const appName = appDisplayNames[entry.app_type] || (entry.app_type.charAt(0).toUpperCase() + entry.app_type.slice(1).replace(/_/g, ' '));
         instanceCell.textContent = `${appName} (${entry.instance_name || 'Default'})`;
         
@@ -278,17 +282,19 @@ const huntManagerModule = {
     
     // Format processed info
     formatProcessedInfo: function(entry) {
-        // Sonarr, Radarr, Lidarr: clickable to open in *arr app; Movie Hunt: clickable to go to Movie Hunt section
+        // Sonarr, Radarr, Lidarr: clickable to open in *arr app; Movie Hunt / TV Hunt: clickable to go to section
         const isArrClickable = (entry.app_type === 'sonarr' || entry.app_type === 'radarr' || entry.app_type === 'lidarr') && entry.instance_name;
         const isMovieHuntClickable = entry.app_type === 'movie_hunt';
-        const isClickable = isArrClickable || isMovieHuntClickable;
+        const isTVHuntClickable = entry.app_type === 'tv_hunt';
+        const isClickable = isArrClickable || isMovieHuntClickable || isTVHuntClickable;
         const escapeAttr = (s) => { if (s == null) return ''; return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
         const dataAttributes = isClickable ?
             `data-app="${escapeAttr(entry.app_type)}" data-instance="${escapeAttr(entry.instance_name || '')}" data-item-id="${escapeAttr(entry.media_id || '')}"` :
             `data-app="${escapeAttr(entry.app_type)}"`;
-        const title = isArrClickable ?
-            `Click to open in ${entry.app_type} (${entry.instance_name})` :
-            isMovieHuntClickable ? 'Click to open Movie Hunt' : `${entry.app_type} (${entry.instance_name || 'Default'})`;
+        let title = `${entry.app_type} (${entry.instance_name || 'Default'})`;
+        if (isArrClickable) title = `Click to open in ${entry.app_type} (${entry.instance_name})`;
+        else if (isMovieHuntClickable) title = 'Click to open Movie Hunt';
+        else if (isTVHuntClickable) title = 'Click to open TV Hunt';
 
         const linkClass = isClickable ? 'hunt-item-link' : '';
         const titleAttr = title.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -308,10 +314,11 @@ const huntManagerModule = {
     formatOperation: function(operationType) {
         const operationMap = {
             'missing': { text: 'Missing', class: 'operation-missing' },
-            'upgrade': { text: 'Upgrade', class: 'operation-upgrade' }
+            'upgrade': { text: 'Upgrade', class: 'operation-upgrade' },
+            'import': { text: 'Import', class: 'operation-upgrade' }
         };
         
-        const operation = operationMap[operationType.toLowerCase()] || { text: operationType, class: 'operation-unknown' };
+        const operation = operationMap[(operationType || '').toLowerCase()] || { text: (operationType || 'Unknown'), class: 'operation-unknown' };
         return `<span class="operation-badge ${operation.class}">${operation.text}</span>`;
     },
     
