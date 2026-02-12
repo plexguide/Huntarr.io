@@ -627,8 +627,9 @@ def reset_stats(app_type: Optional[str] = None) -> bool:
             else:
                 # Reset specific app stats (app-level + per-instance)
                 logger.info(f"Resetting statistics for {app_type}")
-                db.set_media_stat(app_type, "hunted", 0)
-                db.set_media_stat(app_type, "upgraded", 0)
+                default_stat_keys = get_default_stats().get(app_type, {"hunted": 0, "upgraded": 0})
+                for stat_type in default_stat_keys:
+                    db.set_media_stat(app_type, stat_type, 0)
                 if hasattr(db, "reset_media_stats_per_instance"):
                     db.reset_media_stats_per_instance(app_type)
             

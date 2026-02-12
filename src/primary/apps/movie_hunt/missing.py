@@ -156,9 +156,12 @@ def process_missing_movies(
         # This matches Radarr/Sonarr behavior — "processed" means "we searched for it",
         # not "we found and downloaded it".  The reset interval will clear tracked items
         # so they can be re-checked later.
-        if tmdb_id and state_mode != "disabled":
-            add_processed_id("movie_hunt", instance_key, str(tmdb_id))
-            movie_hunt_logger.debug("Movie Hunt state: tracked tmdb_id %s for instance '%s'.", tmdb_id, instance_name)
+        # Use same ID derivation as filter_unprocessed: tmdb_id first, title fallback.
+        if state_mode != "disabled":
+            track_id = str(tmdb_id) if tmdb_id else title
+            if track_id:
+                add_processed_id("movie_hunt", instance_key, track_id)
+                movie_hunt_logger.debug("Movie Hunt state: tracked '%s' (id=%s) for instance '%s'.", title, track_id, instance_name)
 
         if success:
             processed_any = True
