@@ -1150,10 +1150,11 @@
 
 .nzb-server-modal-close {
     position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 36px;
-    height: 36px;
+    top: 8px;
+    right: 8px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px;
     border: none;
     background: rgba(255, 255, 255, 0.1);
     color: #e2e8f0;
@@ -1162,7 +1163,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 2;
+    z-index: 10;
+}
+
+.nzb-server-modal-close i {
+    pointer-events: none;
 }
 
 .nzb-server-modal-close:hover {
@@ -1172,6 +1177,7 @@
 .nzb-server-modal-header-overlay {
     position: relative;
     z-index: 2;
+    padding-right: 52px;
 }
 
 .nzb-server-modal-header-overlay h2 {
