@@ -1,7 +1,7 @@
 /**
  * Movie Card Delete Modal - Shared delete/remove modal for movie cards.
- * Used by: requestarr-content.js, movie-hunt.js, movie-hunt-collection.js,
- *          movie-hunt-detail.js, requestarr-detail.js
+ * Used by: requestarr-content.js, media-hunt.js, media-hunt-collection.js,
+ *          media-hunt-detail.js, requestarr-detail.js
  *
  * Opens a modal with options:
  *   - Remove from Library (always, checked by default)

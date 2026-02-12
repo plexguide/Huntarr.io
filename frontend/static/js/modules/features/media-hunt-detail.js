@@ -1,6 +1,6 @@
 /**
- * Movie Hunt Detail Page – Modern movie detail view with management toolbar
- * Inspired by Radarr's movie detail but modernized for Movie Hunt
+ * Media Hunt Detail – Movie detail view with management toolbar (movie mode).
+ * Exposed as window.MovieHuntDetail for compatibility. CSS: movie-hunt-detail.css.
  */
 (function() {
     'use strict';
