@@ -69,7 +69,7 @@ def get_default_stats() -> Dict[str, Dict[str, int]]:
         "readarr": {"hunted": 0, "upgraded": 0},
         "whisparr": {"hunted": 0, "upgraded": 0},
         "eros": {"hunted": 0, "upgraded": 0},
-        "movie_hunt": {"hunted": 0, "upgraded": 0},
+        "movie_hunt": {"hunted": 0, "upgraded": 0, "found": 0, "found_upgrade": 0},
         "nzb_hunt": {"completed": 0, "failed": 0}
     }
 
@@ -381,12 +381,14 @@ def increment_stat(app_type: str, stat_type: str, count: int = 1, instance_name:
         logger.error(f"Invalid app_type: {app_type}")
         return False
         
-    if stat_type not in ["hunted", "upgraded"]:
+    if stat_type not in ["hunted", "upgraded", "found", "found_upgrade"]:
         logger.error(f"Invalid stat_type: {stat_type}")
         return False
     
-    # Also increment the hourly API cap (per-instance when instance_name is set)
-    increment_hourly_cap(app_type, count, instance_name=instance_name)
+    # "found" / "found_upgrade" are sub-stats that don't count towards API cap
+    if stat_type not in ("found", "found_upgrade"):
+        # Also increment the hourly API cap (per-instance when instance_name is set)
+        increment_hourly_cap(app_type, count, instance_name=instance_name)
     
     if instance_name is not None:
         instance_name = _normalize_instance_name(instance_name)
@@ -411,12 +413,14 @@ def increment_stat_only(app_type: str, stat_type: str, count: int = 1, instance_
         logger.error(f"Invalid app_type: {app_type}")
         return False
         
-    if stat_type not in ["hunted", "upgraded"]:
+    if stat_type not in ["hunted", "upgraded", "found", "found_upgrade"]:
         logger.error(f"Invalid stat_type: {stat_type}")
         return False
-
-    # Count towards API limit bar so it matches SEARCHES TRIGGERED / UPGRADES TRIGGERED (per-instance when set)
-    increment_hourly_cap(app_type, count, instance_name=instance_name)
+    
+    # "found" / "found_upgrade" are sub-stats that don't count towards API cap
+    if stat_type not in ("found", "found_upgrade"):
+        # Count towards API limit bar so it matches SEARCHES TRIGGERED / UPGRADES TRIGGERED (per-instance when set)
+        increment_hourly_cap(app_type, count, instance_name=instance_name)
     
     if instance_name is not None:
         instance_name = _normalize_instance_name(instance_name)
@@ -517,6 +521,8 @@ def get_stats() -> Dict[str, Any]:
                             "api_url": inst["api_url"],
                             "hunted": inst_stats.get("hunted", 0),
                             "upgraded": inst_stats.get("upgraded", 0),
+                            "found": inst_stats.get("found", 0),
+                            "found_upgrade": inst_stats.get("found_upgrade", 0),
                             "api_hits": api_hits,
                             "api_limit": api_limit,
                             "state_reset_hours_until": state_reset_hours_until,

@@ -1424,6 +1424,40 @@
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
 
+/* Movie Hunt: "found / searched" stat layout */
+.app-stats-card.movie_hunt .stat-number {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.app-stats-card.movie_hunt .stat-found {
+    background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    text-shadow: 0 0 12px rgba(34, 197, 94, 0.4);
+}
+.stat-number-found-wrap {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.15em;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: rgba(148, 163, 184, 0.5);
+}
+.stat-number-found-wrap .stat-number {
+    font-size: inherit;
+}
+
+/* List view: found ratio */
+.found-ratio {
+    white-space: nowrap;
+    color: rgba(148, 163, 184, 0.7);
+}
+.found-ratio .found-num {
+    color: #4ade80;
+    font-weight: 700;
+    text-shadow: 0 0 8px rgba(34, 197, 94, 0.35);
+}
+
 .app-stats-card .stat-label {
     color: #64748b;
     font-size: 0.72rem;

@@ -276,6 +276,8 @@ window.HuntarrStats = {
                     inst: {
                         hunted: stats[app].hunted || 0,
                         upgraded: stats[app].upgraded || 0,
+                        found: stats[app].found || 0,
+                        found_upgrade: stats[app].found_upgrade || 0,
                         api_hits: 0, api_limit: 20,
                         instance_name: meta.label,
                         api_url: ''
@@ -373,8 +375,18 @@ window.HuntarrStats = {
                 '<h4>' + meta.label + '</h4>' +
             '</div>' +
             '<div class="stats-numbers">' +
-                '<div class="stat-box"><span class="stat-number">0</span><span class="stat-label">Searches Triggered</span></div>' +
-                '<div class="stat-box"><span class="stat-number">0</span><span class="stat-label">Upgrades Triggered</span></div>' +
+                '<div class="stat-box">' +
+                    (app === 'movie_hunt'
+                        ? '<span class="stat-number-found-wrap"><span class="stat-number stat-found">0</span> / <span class="stat-number">0</span></span>'
+                        : '<span class="stat-number">0</span>') +
+                    '<span class="stat-label">' + (app === 'movie_hunt' ? 'Found / Searched' : 'Searches Triggered') + '</span>' +
+                '</div>' +
+                '<div class="stat-box">' +
+                    (app === 'movie_hunt'
+                        ? '<span class="stat-number-found-wrap"><span class="stat-number stat-found">0</span> / <span class="stat-number">0</span></span>'
+                        : '<span class="stat-number">0</span>') +
+                    '<span class="stat-label">' + (app === 'movie_hunt' ? 'Found / Upgrades' : 'Upgrades Triggered') + '</span>' +
+                '</div>' +
             '</div>' +
             '<div class="reset-button-container">' +
                 '<div class="reset-and-timer-container">' +
@@ -422,15 +434,45 @@ window.HuntarrStats = {
             }
         }
 
-        // Stat numbers
-        var numbers = card.querySelectorAll('.stat-number');
-        if (numbers[0]) {
-            if (isFromCache) numbers[0].textContent = this.formatLargeNumber(hunted);
-            else this.animateNumber(numbers[0], this.parseFormattedNumber(numbers[0].textContent || '0'), hunted);
-        }
-        if (numbers[1]) {
-            if (isFromCache) numbers[1].textContent = this.formatLargeNumber(upgraded);
-            else this.animateNumber(numbers[1], this.parseFormattedNumber(numbers[1].textContent || '0'), upgraded);
+        // Stat numbers — Movie Hunt uses "found / searched" layout
+        if (app === 'movie_hunt') {
+            var found = Math.max(0, parseInt(inst.found) || 0);
+            var foundUpgrade = Math.max(0, parseInt(inst.found_upgrade) || 0);
+            var statBoxes = card.querySelectorAll('.stat-box');
+            // First box: Found / Searched
+            if (statBoxes[0]) {
+                var nums0 = statBoxes[0].querySelectorAll('.stat-number');
+                if (nums0[0]) { // found
+                    if (isFromCache) nums0[0].textContent = this.formatLargeNumber(found);
+                    else this.animateNumber(nums0[0], this.parseFormattedNumber(nums0[0].textContent || '0'), found);
+                }
+                if (nums0[1]) { // hunted
+                    if (isFromCache) nums0[1].textContent = this.formatLargeNumber(hunted);
+                    else this.animateNumber(nums0[1], this.parseFormattedNumber(nums0[1].textContent || '0'), hunted);
+                }
+            }
+            // Second box: Found / Upgrades
+            if (statBoxes[1]) {
+                var nums1 = statBoxes[1].querySelectorAll('.stat-number');
+                if (nums1[0]) { // found_upgrade
+                    if (isFromCache) nums1[0].textContent = this.formatLargeNumber(foundUpgrade);
+                    else this.animateNumber(nums1[0], this.parseFormattedNumber(nums1[0].textContent || '0'), foundUpgrade);
+                }
+                if (nums1[1]) { // upgraded
+                    if (isFromCache) nums1[1].textContent = this.formatLargeNumber(upgraded);
+                    else this.animateNumber(nums1[1], this.parseFormattedNumber(nums1[1].textContent || '0'), upgraded);
+                }
+            }
+        } else {
+            var numbers = card.querySelectorAll('.stat-number');
+            if (numbers[0]) {
+                if (isFromCache) numbers[0].textContent = this.formatLargeNumber(hunted);
+                else this.animateNumber(numbers[0], this.parseFormattedNumber(numbers[0].textContent || '0'), hunted);
+            }
+            if (numbers[1]) {
+                if (isFromCache) numbers[1].textContent = this.formatLargeNumber(upgraded);
+                else this.animateNumber(numbers[1], this.parseFormattedNumber(numbers[1].textContent || '0'), upgraded);
+            }
         }
 
         // Reset button instance name
@@ -520,6 +562,8 @@ window.HuntarrStats = {
                     instance_name: meta.label,
                     hunted: (stats[app] && stats[app].hunted) || 0,
                     upgraded: (stats[app] && stats[app].upgraded) || 0,
+                    found: (stats[app] && stats[app].found) || 0,
+                    found_upgrade: (stats[app] && stats[app].found_upgrade) || 0,
                     api_hits: 0, api_limit: 20, api_url: ''
                 }];
             }
@@ -541,8 +585,8 @@ window.HuntarrStats = {
                     '</colgroup>' +
                     '<thead><tr>' +
                         '<th>Instance</th>' +
-                        '<th>Searches</th>' +
-                        '<th>Upgrades</th>' +
+                        '<th>' + (app === 'movie_hunt' ? 'Found / Searches' : 'Searches') + '</th>' +
+                        '<th>' + (app === 'movie_hunt' ? 'Found / Upgrades' : 'Upgrades') + '</th>' +
                         '<th>API Usage</th>' +
                         '<th>Status</th>' +
                         '<th></th>' +
@@ -552,15 +596,26 @@ window.HuntarrStats = {
             instances.forEach(function(inst) {
                 var hunted = Math.max(0, parseInt(inst.hunted) || 0);
                 var upgraded = Math.max(0, parseInt(inst.upgraded) || 0);
+                var found = Math.max(0, parseInt(inst.found) || 0);
+                var foundUpgrade = Math.max(0, parseInt(inst.found_upgrade) || 0);
                 var apiHits = Math.max(0, parseInt(inst.api_hits) || 0);
                 var apiLimit = Math.max(1, parseInt(inst.api_limit) || 20);
                 var pct = apiLimit > 0 ? Math.min(100, (apiHits / apiLimit) * 100) : 0;
                 var name = inst.instance_name || 'Default';
+
+                // Movie Hunt shows "found / searched" and "found / upgrades"
+                var searchesCell = (app === 'movie_hunt')
+                    ? '<span class="found-ratio"><span class="found-num">' + self.formatLargeNumber(found) + '</span> / ' + self.formatLargeNumber(hunted) + '</span>'
+                    : self.formatLargeNumber(hunted);
+                var upgradesCell = (app === 'movie_hunt')
+                    ? '<span class="found-ratio"><span class="found-num">' + self.formatLargeNumber(foundUpgrade) + '</span> / ' + self.formatLargeNumber(upgraded) + '</span>'
+                    : self.formatLargeNumber(upgraded);
+
                 html +=
                     '<tr data-instance-name="' + name + '">' +
                         '<td class="list-instance-name">' + name + '</td>' +
-                        '<td class="list-stat ' + app + '">' + self.formatLargeNumber(hunted) + '</td>' +
-                        '<td class="list-stat ' + app + '">' + self.formatLargeNumber(upgraded) + '</td>' +
+                        '<td class="list-stat ' + app + '">' + searchesCell + '</td>' +
+                        '<td class="list-stat ' + app + '">' + upgradesCell + '</td>' +
                         '<td class="list-api">' +
                             '<div class="list-api-bar"><div class="list-api-fill ' + app + '" style="width:' + pct + '%;"></div></div>' +
                             '<span class="list-api-text">' + apiHits + '/' + apiLimit + '</span>' +

@@ -6,6 +6,8 @@ Uses collection + root folder detection; triggers request via discovery.perform_
 from typing import Dict, Any, Callable
 
 from ...utils.logger import get_logger
+from src.primary.stateful_manager import add_processed_id
+from src.primary.apps._common.filtering import filter_unprocessed
 
 movie_hunt_logger = get_logger("movie_hunt")
 
@@ -101,6 +103,25 @@ def process_missing_movies(
         movie_hunt_logger.info("Movie Hunt instance '%s': no missing collection items to process.", instance_name)
         return False
 
+    # Filter out already-processed items (state management) — same pattern as Radarr
+    instance_key = str(instance_id)
+    state_mode = app_settings.get("state_management_mode", "custom")
+    if state_mode != "disabled":
+        before_count = len(missing_items)
+        missing_items = filter_unprocessed(
+            missing_items, "movie_hunt", instance_key,
+            lambda it: str(it.get("tmdb_id") or it.get("title", "")),
+            movie_hunt_logger,
+        )
+        movie_hunt_logger.info(
+            "Movie Hunt instance '%s': %d unprocessed missing movies out of %d total.",
+            instance_name, len(missing_items), before_count,
+        )
+
+    if not missing_items:
+        movie_hunt_logger.info("Movie Hunt instance '%s': all missing movies already processed.", instance_name)
+        return False
+
     to_process = missing_items[:hunt_missing_movies]
     movie_hunt_logger.info("Movie Hunt instance '%s': processing %s missing movie(s) from collection.", instance_name, len(to_process))
 
@@ -130,9 +151,26 @@ def process_missing_movies(
             root_folder=root_folder, quality_profile=quality_profile,
             tmdb_id=tmdb_id, poster_path=poster_path,
         )
+
+        # Mark as processed after every search ATTEMPT (not just success).
+        # This matches Radarr/Sonarr behavior — "processed" means "we searched for it",
+        # not "we found and downloaded it".  The reset interval will clear tracked items
+        # so they can be re-checked later.
+        if tmdb_id and state_mode != "disabled":
+            add_processed_id("movie_hunt", instance_key, str(tmdb_id))
+            movie_hunt_logger.debug("Movie Hunt state: tracked tmdb_id %s for instance '%s'.", tmdb_id, instance_name)
+
         if success:
             processed_any = True
             movie_hunt_logger.info("Movie Hunt missing: '%s' (%s) sent to download client.", title, year or "no year")
+
+            # Increment "found" stat (successful search — release was found and sent to client)
+            try:
+                from src.primary.stats_manager import increment_stat_only
+                increment_stat_only("movie_hunt", "found", 1, str(instance_id))
+            except Exception as e:
+                movie_hunt_logger.debug("Could not increment found stat: %s", e)
+
             try:
                 from ...utils.history_manager import log_processed_media
                 log_processed_media("movie_hunt", f"{title} ({year})" if year else title, tmdb_id, str(instance_id), "missing", display_name_for_log=instance_name)
