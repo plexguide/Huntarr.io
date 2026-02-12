@@ -273,15 +273,28 @@ window.HuntarrNavigation = {
     updateMovieHuntSidebarActive: function() {
         if (!window.huntarrUI) return;
         const currentSection = window.huntarrUI.currentSection;
-        // When editing indexer or client (instance-editor), highlight the corresponding sidebar item
         let sectionForNav = currentSection;
         if (currentSection === 'instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing) {
             const appType = window.SettingsForms._currentEditing.appType;
             if (appType === 'indexer') sectionForNav = 'settings-indexers';
             else if (appType === 'client') sectionForNav = 'settings-clients';
         }
+        const collectionSections = ['movie-hunt-home', 'movie-hunt-collection', 'settings-import-media', 'movie-hunt-calendar'];
+        const activitySections = ['activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt'];
+        const settingsSections = ['movie-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-sizes', 'profile-editor', 'settings-custom-formats', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-root-folders', 'instance-editor'];
+        const onCollection = collectionSections.indexOf(currentSection) !== -1;
+        const onActivity = activitySections.indexOf(sectionForNav) !== -1;
+        const onSettings = settingsSections.indexOf(currentSection) !== -1;
+
+        const colSub = document.getElementById('movie-hunt-collection-sub');
+        const actSub = document.getElementById('movie-hunt-activity-sub');
+        const setSub = document.getElementById('movie-hunt-settings-sub');
+        if (colSub) colSub.classList.toggle('expanded', onCollection);
+        if (actSub) actSub.classList.toggle('expanded', onActivity);
+        if (setSub) setSub.classList.toggle('expanded', onSettings);
+
         const items = document.querySelectorAll('#movie-hunt-sidebar .nav-item');
-        const isActivitySub = ['activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt'].indexOf(sectionForNav) !== -1;
+        const isActivitySub = activitySections.indexOf(sectionForNav) !== -1;
         items.forEach(item => {
             item.classList.remove('active');
             if (isActivitySub && item.id === 'movieHuntActivityNav') return;
@@ -290,21 +303,6 @@ window.HuntarrNavigation = {
                 item.classList.add('active');
             }
         });
-        var subGroup = document.getElementById('movie-hunt-settings-sub');
-        if (subGroup) {
-            var showSub = ['movie-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-sizes', 'profile-editor', 'settings-custom-formats', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-root-folders', 'instance-editor'].indexOf(currentSection) !== -1;
-            subGroup.classList.toggle('expanded', showSub);
-        }
-        var collectionSub = document.getElementById('movie-hunt-collection-sub');
-        if (collectionSub) {
-            var showCollectionSub = ['movie-hunt-home', 'movie-hunt-collection', 'settings-import-media', 'movie-hunt-calendar'].indexOf(currentSection) !== -1;
-            collectionSub.classList.toggle('expanded', showCollectionSub);
-        }
-        var activitySub = document.getElementById('movie-hunt-activity-sub');
-        if (activitySub) {
-            var showActivitySub = ['activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt'].indexOf(currentSection) !== -1;
-            activitySub.classList.toggle('expanded', showActivitySub);
-        }
     },
 
     updateTVHuntSidebarActive: function() {
@@ -316,8 +314,22 @@ window.HuntarrNavigation = {
             if (appType === 'indexer') sectionForNav = 'tv-hunt-settings-indexers';
             else if (appType === 'client') sectionForNav = 'tv-hunt-settings-clients';
         }
+        const collectionSections = ['tv-hunt-home', 'tv-hunt-collection', 'tv-hunt-calendar'];
+        const activitySections = ['tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist', 'logs-tv-hunt'];
+        const settingsSections = ['tv-hunt-settings', 'tv-hunt-instance-editor', 'tv-hunt-settings-tv-management', 'tv-hunt-settings-profiles', 'tv-hunt-settings-sizes', 'tv-hunt-settings-custom-formats', 'tv-hunt-settings-indexers', 'tv-hunt-settings-clients', 'tv-hunt-settings-import-lists', 'tv-hunt-settings-root-folders'];
+        const onCollection = collectionSections.indexOf(currentSection) !== -1;
+        const onActivity = activitySections.indexOf(sectionForNav) !== -1;
+        const onSettings = settingsSections.indexOf(currentSection) !== -1;
+
+        const colSub = document.getElementById('tv-hunt-collection-sub');
+        const actSub = document.getElementById('tv-hunt-activity-sub');
+        const setSub = document.getElementById('tv-hunt-settings-sub');
+        if (colSub) colSub.classList.toggle('expanded', onCollection);
+        if (actSub) actSub.classList.toggle('expanded', onActivity);
+        if (setSub) setSub.classList.toggle('expanded', onSettings);
+
         const items = document.querySelectorAll('#tv-hunt-sidebar .nav-item');
-        const isActivitySub = ['tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist', 'logs-tv-hunt'].indexOf(sectionForNav) !== -1;
+        const isActivitySub = activitySections.indexOf(sectionForNav) !== -1;
         items.forEach(item => {
             item.classList.remove('active');
             if (isActivitySub && item.id === 'tvHuntActivityNav') return;
@@ -326,21 +338,6 @@ window.HuntarrNavigation = {
                 item.classList.add('active');
             }
         });
-        var subGroup = document.getElementById('tv-hunt-settings-sub');
-        if (subGroup) {
-            var showSub = ['tv-hunt-settings', 'tv-hunt-instance-editor', 'tv-hunt-settings-tv-management', 'tv-hunt-settings-profiles', 'tv-hunt-settings-sizes', 'tv-hunt-settings-custom-formats', 'tv-hunt-settings-indexers', 'tv-hunt-settings-clients', 'tv-hunt-settings-import-lists', 'tv-hunt-settings-root-folders'].indexOf(currentSection) !== -1;
-            subGroup.classList.toggle('expanded', showSub);
-        }
-        var collectionSub = document.getElementById('tv-hunt-collection-sub');
-        if (collectionSub) {
-            var showCollectionSub = ['tv-hunt-home', 'tv-hunt-collection', 'tv-hunt-calendar'].indexOf(currentSection) !== -1;
-            collectionSub.classList.toggle('expanded', showCollectionSub);
-        }
-        var activitySub = document.getElementById('tv-hunt-activity-sub');
-        if (activitySub) {
-            var showActivitySub = ['tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist', 'logs-tv-hunt'].indexOf(currentSection) !== -1;
-            activitySub.classList.toggle('expanded', showActivitySub);
-        }
     },
 
     updateAppsSidebarActive: function() {
