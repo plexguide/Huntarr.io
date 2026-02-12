@@ -926,13 +926,13 @@ let huntarrUI = {
             this.showTVHuntSidebar();
             if (window.TVHuntInstanceDropdown && window.TVHuntInstanceDropdown.attach) {
                 window.TVHuntInstanceDropdown.attach('tv-hunt-settings-profiles-instance-select', function() {
-                    if (window.TVHuntSettingsForms && typeof window.TVHuntSettingsForms.refreshProfilesList === 'function') {
-                        window.TVHuntSettingsForms.refreshProfilesList();
+                    if (window.TVHuntSettingsForms && typeof window.TVHuntSettingsForms.refreshTVHuntProfilesList === 'function') {
+                        window.TVHuntSettingsForms.refreshTVHuntProfilesList();
                     }
                 });
             }
-            if (window.TVHuntSettingsForms && typeof window.TVHuntSettingsForms.refreshProfilesList === 'function') {
-                window.TVHuntSettingsForms.refreshProfilesList();
+            if (window.TVHuntSettingsForms && typeof window.TVHuntSettingsForms.refreshTVHuntProfilesList === 'function') {
+                window.TVHuntSettingsForms.refreshTVHuntProfilesList();
             }
         } else if (section === 'tv-hunt-settings-indexers' && document.getElementById('tvHuntSettingsIndexersSection')) {
             if (document.getElementById('tvHuntActivitySection')) { document.getElementById('tvHuntActivitySection').classList.remove('active'); document.getElementById('tvHuntActivitySection').style.display = 'none'; }
@@ -1671,10 +1671,20 @@ let huntarrUI = {
                 document.getElementById('settingsCustomFormatsSection').classList.remove('active');
                 document.getElementById('settingsCustomFormatsSection').style.display = 'none';
             }
-            if (document.getElementById('movieHuntSettingsProfilesNav')) document.getElementById('movieHuntSettingsProfilesNav').classList.add('active');
+            if (document.getElementById('tvHuntSettingsProfilesSection')) {
+                document.getElementById('tvHuntSettingsProfilesSection').classList.remove('active');
+                document.getElementById('tvHuntSettingsProfilesSection').style.display = 'none';
+            }
             newTitle = 'Profile Editor';
             this.currentSection = 'profile-editor';
-            this.showMovieHuntSidebar();
+            if (window._profileEditorTVHunt) {
+                window._profileEditorTVHunt = false;
+                this.showTVHuntSidebar();
+                if (document.getElementById('tvHuntSettingsProfilesNav')) document.getElementById('tvHuntSettingsProfilesNav').classList.add('active');
+            } else {
+                this.showMovieHuntSidebar();
+                if (document.getElementById('movieHuntSettingsProfilesNav')) document.getElementById('movieHuntSettingsProfilesNav').classList.add('active');
+            }
         } else if (section === 'settings-indexers' && document.getElementById('settingsIndexersSection')) {
             document.getElementById('settingsIndexersSection').classList.add('active');
             document.getElementById('settingsIndexersSection').style.display = 'block';

@@ -172,7 +172,9 @@
         const emptyEl = document.getElementById('profile-editor-scores-empty');
         const table = document.querySelector('.profile-editor-scores-table');
         if (!tbody) return;
-        fetch('./api/custom-formats')
+        var state = Forms._currentProfileEditing;
+        var apiUrl = (state && state.tvHunt) ? './api/tv-hunt/custom-formats' : './api/custom-formats';
+        fetch(apiUrl)
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 const list = (data && data.custom_formats) ? data.custom_formats : [];
@@ -192,7 +194,7 @@
                         index: i,
                         title: item.title || item.name || 'Unnamed',
                         name: item.name || 'Unnamed',
-                        recommended_score: item.recommended_score,
+                        recommended_score: item.recommended_score != null ? item.recommended_score : item.recommended,
                         score: score
                     };
                 });
@@ -220,7 +222,9 @@
             if (isNaN(val)) val = 0;
             scores[idx] = val;
         });
-        return fetch('./api/custom-formats/scores', {
+        var state = Forms._currentProfileEditing;
+        var scoresUrl = (state && state.tvHunt) ? './api/tv-hunt/custom-formats/scores' : './api/custom-formats/scores';
+        return fetch(scoresUrl, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ scores: scores })
@@ -390,9 +394,42 @@
         Forms._openProfileEditorWithProfile(index, list[index]);
     };
 
-    Forms._openProfileEditorWithProfile = function(index, profile) {
+    /** Open profile editor for TV Hunt (independent from Movie Hunt). */
+    Forms.openTVHuntProfileEditor = function(profileId) {
+        window._profileEditorTVHunt = true;
+        fetch('./api/tv-hunt/profiles', { cache: 'no-store' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var list = (data && data.profiles) ? data.profiles : [];
+                var profile = list.find(function(p) { return p.id === profileId; });
+                if (profile) {
+                    Forms._openProfileEditorWithProfile(
+                        { tvHunt: true, profileId: profileId, originalProfile: JSON.parse(JSON.stringify(profile)) },
+                        profile
+                    );
+                } else {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Profile not found.', 'error');
+                    }
+                }
+            })
+            .catch(function() {
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('Failed to load profile.', 'error');
+                }
+            });
+    };
+
+    Forms._openProfileEditorWithProfile = function(indexOrState, profile) {
         _profileEditorDirty = false;
-        Forms._currentProfileEditing = { index: index, originalProfile: JSON.parse(JSON.stringify(profile)) };
+        var state;
+        if (typeof indexOrState === 'object' && indexOrState !== null && indexOrState.tvHunt) {
+            state = indexOrState;
+            if (!state.originalProfile) state.originalProfile = JSON.parse(JSON.stringify(profile));
+        } else {
+            state = { index: indexOrState, originalProfile: JSON.parse(JSON.stringify(profile)) };
+        }
+        Forms._currentProfileEditing = state;
         const contentEl = document.getElementById('profile-editor-content');
         const saveBtn = document.getElementById('profile-editor-save');
         const backBtn = document.getElementById('profile-editor-back');
@@ -403,11 +440,12 @@
             saveBtn.classList.remove('enabled');
             saveBtn.onclick = function() { Forms.saveProfileFromEditor(); };
         }
+        var nextSection = state.tvHunt ? 'tv-hunt-settings-profiles' : 'settings-profiles';
         if (backBtn) {
             backBtn.onclick = function() {
                 confirmLeaveProfileEditor(function(result) {
-                    if (result === 'save') Forms.saveProfileFromEditor('settings-profiles');
-                    else if (result === 'discard') Forms.cancelProfileEditor();
+                    if (result === 'save') Forms.saveProfileFromEditor(nextSection);
+                    else if (result === 'discard') Forms.cancelProfileEditor(nextSection);
                 });
             };
         }
@@ -425,7 +463,8 @@
     Forms.saveProfileFromEditor = function(optionalNextSection) {
         const state = Forms._currentProfileEditing;
         if (!state) return;
-        const nextSection = optionalNextSection || 'settings-profiles';
+        const isTVHunt = state.tvHunt && state.profileId;
+        const nextSection = optionalNextSection || (isTVHunt ? 'tv-hunt-settings-profiles' : 'settings-profiles');
         const index = state.index;
         const nameEl = document.getElementById('profile-editor-name');
         const defaultEl = document.getElementById('profile-editor-default');
@@ -471,7 +510,8 @@
         };
         const saveBtn = document.getElementById('profile-editor-save');
         if (saveBtn) saveBtn.disabled = true;
-        fetch('./api/profiles/' + index, {
+        var patchUrl = isTVHunt ? './api/tv-hunt/profiles/' + encodeURIComponent(state.profileId) : './api/profiles/' + index;
+        fetch(patchUrl, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
@@ -487,7 +527,9 @@
                         if (optionalNextSection != null && window.huntarrUI && window.huntarrUI.switchSection) {
                             window.huntarrUI.switchSection(nextSection);
                         }
-                        if (Forms.refreshProfilesList) Forms.refreshProfilesList();
+                        if (isTVHunt && window.TVHuntSettingsForms && window.TVHuntSettingsForms.refreshTVHuntProfilesList) {
+                            window.TVHuntSettingsForms.refreshTVHuntProfilesList();
+                        } else if (Forms.refreshProfilesList) Forms.refreshProfilesList();
                     }).catch(function() {
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
                             window.huntarrUI.showNotification('Profile saved; some scores may not have saved.', 'warning');
@@ -495,7 +537,9 @@
                         if (optionalNextSection != null && window.huntarrUI && window.huntarrUI.switchSection) {
                             window.huntarrUI.switchSection(nextSection);
                         }
-                        if (Forms.refreshProfilesList) Forms.refreshProfilesList();
+                        if (isTVHunt && window.TVHuntSettingsForms && window.TVHuntSettingsForms.refreshTVHuntProfilesList) {
+                            window.TVHuntSettingsForms.refreshTVHuntProfilesList();
+                        } else if (Forms.refreshProfilesList) Forms.refreshProfilesList();
                     });
                 } else {
                     if (window.huntarrUI && window.huntarrUI.showNotification) {
@@ -515,10 +559,12 @@
     };
 
     Forms.cancelProfileEditor = function(optionalNextSection) {
+        var state = Forms._currentProfileEditing;
         _profileEditorDirty = false;
         Forms._currentProfileEditing = null;
+        var defaultSection = (state && state.tvHunt) ? 'tv-hunt-settings-profiles' : 'settings-profiles';
         if (window.huntarrUI && window.huntarrUI.switchSection) {
-            window.huntarrUI.switchSection(optionalNextSection || 'settings-profiles');
+            window.huntarrUI.switchSection(optionalNextSection || defaultSection);
         }
     };
 
