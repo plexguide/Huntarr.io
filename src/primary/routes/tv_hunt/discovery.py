@@ -13,10 +13,11 @@ from ._helpers import (
     _get_blocklist_source_titles,
     _blocklist_normalize_source_title,
     _add_requested_queue_id,
+    _tv_profiles_context,
     TV_HUNT_DEFAULT_CATEGORY,
 )
 from .indexers import _get_indexers_config, _resolve_indexer_api_url
-from .profiles import _get_profile_by_name_or_default, _best_result_matching_profile
+from ..media_hunt.profiles import get_profile_by_name_or_default, best_result_matching_profile
 from .clients import _get_clients_config
 from .storage import _get_root_folders_config
 from ...utils.logger import logger
@@ -186,7 +187,7 @@ def perform_tv_hunt_request(
         return False, "No download clients configured"
 
     # Get profile
-    profile = _get_profile_by_name_or_default(quality_profile, instance_id) if quality_profile else None
+    profile = get_profile_by_name_or_default(quality_profile, instance_id, _tv_profiles_context()) if quality_profile else None
 
     # Get blocklist
     blocklist = _get_blocklist_source_titles(instance_id)
@@ -230,7 +231,7 @@ def perform_tv_hunt_request(
 
     # Score against profile if available
     if profile:
-        best = _best_result_matching_profile(all_results, profile, instance_id, runtime_minutes)
+        best = best_result_matching_profile(all_results, profile, instance_id, _tv_profiles_context(), runtime_minutes=runtime_minutes)
     else:
         # Pick best by priority then size
         all_results.sort(key=lambda x: (x.get('indexer_priority', 50), -(x.get('size', 0))))

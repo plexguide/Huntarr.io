@@ -35,6 +35,17 @@ def _get_movie_hunt_instance_id_from_request():
     return db.get_current_movie_hunt_instance_id()
 
 
+def _movie_profiles_context():
+    """Context for media_hunt.profiles (movie_hunt_profiles + movie_hunt_sizes + movie custom formats)."""
+    from .custom_formats import _get_custom_formats_config
+    return {
+        'profiles_config_key': 'movie_hunt_profiles',
+        'sizes_config_key': 'movie_hunt_sizes',
+        'use_profile_id': False,
+        'get_custom_formats': _get_custom_formats_config,
+    }
+
+
 # --- Download client URL ---
 
 def _download_client_base_url(client):

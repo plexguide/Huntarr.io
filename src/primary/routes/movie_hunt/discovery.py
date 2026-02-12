@@ -13,10 +13,16 @@ from ._helpers import (
     _get_blocklist_source_titles,
     _blocklist_normalize_source_title,
     _add_requested_queue_id,
+    _movie_profiles_context,
     MOVIE_HUNT_DEFAULT_CATEGORY,
 )
 from .indexers import _get_indexers_config, _resolve_indexer_api_url
-from .profiles import _get_profile_by_name_or_default, _best_result_matching_profile
+from ..media_hunt.profiles import (
+    get_profile_by_name_or_default,
+    best_result_matching_profile,
+    get_profiles_config,
+    score_release,
+)
 from .clients import _get_clients_config
 from .storage import _get_root_folders_config
 from ...utils.logger import logger
@@ -582,7 +588,7 @@ def perform_movie_hunt_request(instance_id, title, year='', root_folder=None, qu
     query = f'{title}'
     if year:
         query = f'{title} {year}'
-    profile = _get_profile_by_name_or_default(quality_profile, instance_id)
+    profile = get_profile_by_name_or_default(quality_profile, instance_id, _movie_profiles_context())
     from src.primary.settings_manager import get_ssl_verify_setting
     verify_ssl = get_ssl_verify_setting()
     import time as _time
@@ -630,8 +636,8 @@ def perform_movie_hunt_request(instance_id, title, year='', root_folder=None, qu
                 results = [r for r in results if _blocklist_normalize_source_title(r.get('title')) not in blocklist_titles]
                 if not results:
                     continue
-            chosen, chosen_score, chosen_breakdown = _best_result_matching_profile(
-                results, profile, instance_id, runtime_minutes=runtime_minutes
+            chosen, chosen_score, chosen_breakdown = best_result_matching_profile(
+                results, profile, instance_id, _movie_profiles_context(), runtime_minutes=runtime_minutes, return_breakdown=True
             )
             if chosen and chosen_score >= min_score:
                 all_candidates.append((priority, idx.get('name', ''), chosen, chosen_score, chosen_breakdown or '', ih_id, idx))
@@ -789,7 +795,6 @@ def api_movie_hunt_force_upgrade():
         )
 
         # Search indexers for candidates
-        from .profiles import _get_profile_by_name_or_default, _best_result_matching_profile
         from .indexers import _get_indexers_config, _resolve_indexer_api_url
         from .clients import _get_clients_config
 
@@ -804,7 +809,7 @@ def api_movie_hunt_force_upgrade():
             return jsonify({'success': False, 'message': 'No download clients configured or enabled.'}), 400
 
         query = f'{title} {year}'.strip() if year else title
-        profile = _get_profile_by_name_or_default(quality_profile, instance_id)
+        profile = get_profile_by_name_or_default(quality_profile, instance_id, _movie_profiles_context())
 
         from src.primary.settings_manager import get_ssl_verify_setting
         verify_ssl = get_ssl_verify_setting()
@@ -831,8 +836,8 @@ def api_movie_hunt_force_upgrade():
                 results = [r for r in results if _blocklist_normalize_source_title(r.get('title')) not in blocklist_titles]
             if not results:
                 continue
-            chosen, chosen_score, chosen_breakdown = _best_result_matching_profile(
-                results, profile, instance_id, runtime_minutes=runtime_minutes
+            chosen, chosen_score, chosen_breakdown = best_result_matching_profile(
+                results, profile, instance_id, _movie_profiles_context(), runtime_minutes=runtime_minutes, return_breakdown=True
             )
             if chosen and chosen_score > best_score:
                 best_result = chosen
@@ -992,8 +997,7 @@ def api_movie_hunt_movie_status():
             status = 'requested'
 
         # Get quality profile info — check per-movie first, then default
-        from .profiles import _get_profiles_config
-        profiles = _get_profiles_config(instance_id)
+        profiles = get_profiles_config(instance_id, _movie_profiles_context())
         quality_profile_name = (movie.get('quality_profile') or '').strip()
         if not quality_profile_name:
             for p in profiles:
@@ -1038,9 +1042,8 @@ def api_movie_hunt_movie_status():
 
             # Score the current file against the quality profile's custom formats
             try:
-                from .profiles import _score_release, _get_profile_by_name_or_default
-                profile = _get_profile_by_name_or_default(quality_profile_name, instance_id)
-                file_score, file_score_breakdown = _score_release(fname, profile, instance_id)
+                profile = get_profile_by_name_or_default(quality_profile_name, instance_id, _movie_profiles_context())
+                file_score, file_score_breakdown = score_release(fname, profile, instance_id, _movie_profiles_context())
             except Exception:
                 file_score = None
                 file_score_breakdown = ''
@@ -1181,9 +1184,8 @@ def api_movie_hunt_movie_status():
                                 tokens_to_add.append(file_audio_channels)
                         if tokens_to_add:
                             enriched = fname + ' ' + ' '.join(tokens_to_add)
-                        from .profiles import _score_release, _get_profile_by_name_or_default
-                        profile = _get_profile_by_name_or_default(quality_profile_name, instance_id)
-                        probe_score, probe_breakdown = _score_release(enriched, profile, instance_id)
+                        profile = get_profile_by_name_or_default(quality_profile_name, instance_id, _movie_profiles_context())
+                        probe_score, probe_breakdown = score_release(enriched, profile, instance_id, _movie_profiles_context())
                         file_score = probe_score
                         file_score_breakdown = probe_breakdown
                     except Exception:

@@ -1167,8 +1167,9 @@ class RequestarrAPI:
                 logger.warning(f"Movie Hunt instance '{instance_name}' not found")
                 return []
             
-            from src.primary.routes.movie_hunt.profiles import _get_profiles_config
-            profiles = _get_profiles_config(instance_id)
+            from src.primary.routes.movie_hunt._helpers import _movie_profiles_context
+            from src.primary.routes.media_hunt.profiles import get_profiles_config
+            profiles = get_profiles_config(instance_id, _movie_profiles_context())
             
             # Return in same format as Radarr/Sonarr profiles (id + name)
             # Movie Hunt profiles use name-based identification, so use name as both id and name
@@ -2273,7 +2274,8 @@ class RequestarrAPI:
             # We call the discovery module's internal functions directly
             from src.primary.routes.movie_hunt.discovery import _get_collection_config
             from src.primary.routes.movie_hunt.indexers import _get_indexers_config, _resolve_indexer_api_url
-            from src.primary.routes.movie_hunt.profiles import _get_profile_by_name_or_default, _best_result_matching_profile
+            from src.primary.routes.movie_hunt._helpers import _movie_profiles_context
+            from src.primary.routes.media_hunt.profiles import get_profile_by_name_or_default, best_result_matching_profile
             from src.primary.routes.movie_hunt.clients import _get_clients_config
             from src.primary.routes.movie_hunt._helpers import (
                 _get_blocklist_source_titles, _blocklist_normalize_source_title,
@@ -2306,7 +2308,7 @@ class RequestarrAPI:
             query = f'{title} {year_str}'.strip()
             runtime_minutes = 90  # Default runtime
             
-            profile = _get_profile_by_name_or_default(quality_profile_name, instance_id)
+            profile = get_profile_by_name_or_default(quality_profile_name, instance_id, _movie_profiles_context())
             verify_ssl = get_ssl_verify_setting()
             
             import time as _time
@@ -2354,8 +2356,8 @@ class RequestarrAPI:
                         results = [r for r in results if _blocklist_normalize_source_title(r.get('title')) not in blocklist_titles]
                         if not results:
                             continue
-                    chosen, chosen_score, chosen_breakdown = _best_result_matching_profile(
-                        results, profile, instance_id, runtime_minutes=runtime_minutes
+                    chosen, chosen_score, chosen_breakdown = best_result_matching_profile(
+                        results, profile, instance_id, _movie_profiles_context(), runtime_minutes=runtime_minutes, return_breakdown=True
                     )
                     if chosen and chosen_score >= min_score:
                         all_candidates.append((priority, idx.get('name', ''), chosen, chosen_score, chosen_breakdown or '', ih_id))

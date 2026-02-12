@@ -24,6 +24,17 @@ def _get_tv_hunt_instance_id_from_request():
     return instance_id or 0
 
 
+def _tv_profiles_context():
+    """Context for media_hunt.profiles (tv_hunt_profiles + tv_hunt_sizes + tv custom formats)."""
+    from .custom_formats import _get_custom_formats_config
+    return {
+        'profiles_config_key': 'tv_hunt_profiles',
+        'sizes_config_key': 'tv_hunt_sizes',
+        'use_profile_id': True,
+        'get_custom_formats': _get_custom_formats_config,
+    }
+
+
 def _get_blocklist_source_titles(instance_id):
     """Return set of normalized source titles on the blocklist for this instance."""
     from src.primary.utils.database import get_database
