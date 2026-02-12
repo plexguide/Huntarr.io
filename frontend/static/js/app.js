@@ -908,12 +908,11 @@ let huntarrUI = {
             if (document.getElementById('tvHuntSettingsImportListsSection')) { document.getElementById('tvHuntSettingsImportListsSection').classList.remove('active'); document.getElementById('tvHuntSettingsImportListsSection').style.display = 'none'; }
             if (document.getElementById('mediaHuntSection')) { document.getElementById('mediaHuntSection').classList.remove('active'); document.getElementById('mediaHuntSection').style.display = 'none'; }
             if (document.getElementById('mediaHuntCalendarSection')) { document.getElementById('mediaHuntCalendarSection').classList.remove('active'); document.getElementById('mediaHuntCalendarSection').style.display = 'none'; }
-            newTitle = 'TV Hunt Profiles';
+            newTitle = 'Profiles';
             this.currentSection = 'tv-hunt-settings-profiles';
             this.showTVHuntSidebar();
-            window._mediaHuntProfilesMode = 'tv';
-            if (window.MediaHuntProfiles && typeof window.MediaHuntProfiles.refreshProfilesList === 'function') {
-                window.MediaHuntProfiles.refreshProfilesList('tv');
+            if (window.MediaHuntProfiles && typeof window.MediaHuntProfiles.initOrRefresh === 'function') {
+                window.MediaHuntProfiles.initOrRefresh('tv');
             }
         } else if (section === 'tv-hunt-settings-indexers' && document.getElementById('tvHuntSettingsIndexersSection')) {
             if (document.getElementById('tvHuntActivitySection')) { document.getElementById('tvHuntActivitySection').classList.remove('active'); document.getElementById('tvHuntActivitySection').style.display = 'none'; }
@@ -1591,9 +1590,8 @@ let huntarrUI = {
             newTitle = 'Profiles';
             this.currentSection = 'settings-profiles';
             this.showMovieHuntSidebar();
-            window._mediaHuntProfilesMode = 'movie';
-            if (window.MediaHuntProfiles && typeof window.MediaHuntProfiles.refreshProfilesList === 'function') {
-                window.MediaHuntProfiles.refreshProfilesList('movie');
+            if (window.MediaHuntProfiles && typeof window.MediaHuntProfiles.initOrRefresh === 'function') {
+                window.MediaHuntProfiles.initOrRefresh('movie');
             }
         } else if (section === 'settings-sizes' && document.getElementById('settingsSizesSection')) {
             document.getElementById('settingsSizesSection').classList.add('active');

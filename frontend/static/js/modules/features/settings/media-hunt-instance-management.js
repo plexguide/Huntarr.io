@@ -33,7 +33,7 @@
 
     var MOVIE_DROPDOWN_IDS = [
         'movie-hunt-instance-select', 'movie-hunt-collection-instance-select', 'activity-instance-select',
-        'movie-management-instance-select', 'media-hunt-profiles-instance-select', 'settings-custom-formats-instance-select',
+        'movie-management-instance-select', 'settings-custom-formats-instance-select',
         'settings-indexers-instance-select', 'settings-clients-instance-select', 'settings-import-lists-instance-select',
         'import-media-instance-select', 'settings-root-folders-instance-select'
     ];
