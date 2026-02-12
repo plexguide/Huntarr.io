@@ -138,7 +138,8 @@ const huntManagerModule = {
     
     // Clear hunt history
     clearHuntHistory: function() {
-        const appName = this.currentApp === 'all' ? 'all apps' : this.currentApp;
+        const appDisplayNames = { movie_hunt: 'Movie Hunt', tv_hunt: 'TV Hunt', sonarr: 'Sonarr', radarr: 'Radarr', lidarr: 'Lidarr', readarr: 'Readarr', whisparr: 'Whisparr V2', eros: 'Whisparr V3' };
+        const appName = this.currentApp === 'all' ? 'all apps' : (appDisplayNames[this.currentApp] || this.currentApp);
         const msg = `Are you sure you want to clear hunt history for ${appName}? This action cannot be undone.`;
         const self = this;
         const doClear = function() {

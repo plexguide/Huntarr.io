@@ -939,7 +939,7 @@ def api_app_status(app_name):
         return jsonify({"configured": False, "connected": False, "error": "Invalid app name"}), 400
     
     try:
-        if app_name in ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'movie_hunt']:
+        if app_name in ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'movie_hunt', 'tv_hunt']:
             # --- Multi-Instance Status Check --- # 
             connected_count = 0
             total_configured = 0
@@ -1165,7 +1165,7 @@ def reset_app_cycle(app_name):
     web_logger.info(f"Manual cycle reset requested for {app_name} via API")
     
     # Check if app name is valid
-    if app_name not in ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr', 'movie_hunt']:
+    if app_name not in ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr', 'movie_hunt', 'tv_hunt']:
         return jsonify({
             'success': False,
             'error': f"Invalid app name: {app_name}"

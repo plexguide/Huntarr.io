@@ -580,10 +580,13 @@ window.LogsModule = {
                         levelBadge = `<span class="log-level-badge log-level-info">${level}</span>`;
                 }
                 
-                // Determine app source for display: "APP - INSTANCE NAME" when app_type has instance (e.g. sonarr-test -> SONARR - test)
+                // Determine app source for display: friendly names for hunt apps; "APP - INSTANCE" for *arr (e.g. sonarr-test -> SONARR - test)
+                const appDisplayNames = { movie_hunt: 'Movie Hunt', tv_hunt: 'TV Hunt', swaparr: 'Swaparr', whisparr: 'Whisparr V2', eros: 'Whisparr V3' };
                 let appSource = 'SYSTEM';
                 if (logAppType && logAppType !== 'system') {
-                    if (logAppType.indexOf('-') !== -1) {
+                    if (appDisplayNames[logAppType]) {
+                        appSource = appDisplayNames[logAppType];
+                    } else if (logAppType.indexOf('-') !== -1) {
                         const parts = logAppType.split('-');
                         const appPart = (parts[0] || '').toUpperCase();
                         const instancePart = (parts.slice(1).join('-') || '').trim();
@@ -675,9 +678,9 @@ window.LogsModule = {
         // Get current app filter - use logAppSelect when available, fallback to currentLogApp
         const logAppSelect = document.getElementById('logAppSelect');
         const currentApp = logAppSelect ? logAppSelect.value : (this.currentLogApp || 'all');
-        
-        const appText = currentApp === 'all' ? 'all logs' : `${currentApp.toUpperCase()} logs`;
-        const msg = `Are you sure you want to clear ${appText}? This action cannot be undone.`;
+        const appDisplayNames = { movie_hunt: 'Movie Hunt', tv_hunt: 'TV Hunt', swaparr: 'Swaparr', sonarr: 'Sonarr', radarr: 'Radarr', lidarr: 'Lidarr', readarr: 'Readarr', whisparr: 'Whisparr V2', eros: 'Whisparr V3', system: 'System' };
+        const appLabel = currentApp === 'all' ? 'all logs' : (appDisplayNames[currentApp] ? appDisplayNames[currentApp] + ' logs' : currentApp + ' logs');
+        const msg = `Are you sure you want to clear ${appLabel}? This action cannot be undone.`;
         const self = this;
         const doClear = function() {
             console.log(`[LogsModule] Clearing logs for app: ${currentApp}`);
@@ -703,7 +706,7 @@ window.LogsModule = {
             
             // Show success notification
             if (typeof huntarrUI !== 'undefined' && typeof huntarrUI.showNotification === 'function') {
-                huntarrUI.showNotification(`Cleared ${data.deleted_count || 0} ${appText}`, 'success');
+                huntarrUI.showNotification(`Cleared ${data.deleted_count || 0} ${appLabel}`, 'success');
             }
             
             // Reload logs to show any new entries that may have arrived
