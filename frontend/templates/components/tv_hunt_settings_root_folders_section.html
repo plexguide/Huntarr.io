@@ -1,24 +1,354 @@
 <section id="tvHuntSettingsRootFoldersSection" class="content-section" style="display: none;">
     {% with section_id='tv-hunt-settings-root-folders' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
-    <div class="app-content-panel" style="width:100%;padding:20px;margin:0;background:transparent;box-shadow:none;border:none;">
+    <div id="tvHuntRootFoldersManagementContainer" class="app-content-panel">
         <div class="movie-hunt-settings-instance-bar" style="margin-bottom: 16px;">
             <select id="tv-hunt-settings-root-folders-instance-select" class="control-select" aria-label="Instance">
                 <option value="">Loading...</option>
             </select>
         </div>
-        <div class="settings-group" style="background:rgba(15,23,42,0.4);border:1px solid rgba(148,163,184,0.08);border-radius:12px;padding:24px;margin:12px 0 20px 0;">
-            <h3 style="margin:0 0 12px 0;padding:0 0 10px 0;font-size:1.1rem;font-weight:600;color:#f1f5f9;border-bottom:1px solid rgba(148,163,184,0.12);background:none;box-shadow:none;">Root Folders</h3>
-            <p style="margin:0 0 20px 0;color:#94a3b8;font-size:0.95rem;">Root folders are where your media is stored. TV Hunt uses these paths to know if you already have a show (e.g. for Docker, use the path inside the container such as <code style="background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:4px;">/tv</code>).</p>
+        <div class="settings-group tv-hunt-root-folders-settings-group">
+            <h3>Root Folders</h3>
+            <p class="root-folders-help">Root folders are where your media is stored. TV Hunt uses these paths to know if you already have a show (e.g. for Docker, use the path inside the container such as <code>/tv</code>).</p>
             <div class="instance-card-grid" id="tv-hunt-root-folders-grid">
-                <div class="add-instance-card" data-app-type="tv-hunt-root-folder">
+                <div class="add-instance-card add-root-folder-card" id="tv-hunt-root-folders-add-card" data-app-type="tv-hunt-root-folder">
                     <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
                     <div class="add-text">Add Root Folder</div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Add Root Folder modal (TV Hunt) -->
+    <div id="tv-hunt-root-folder-add-modal" class="root-folder-add-modal" style="display: none;">
+        <div class="root-folder-add-modal-backdrop" id="tv-hunt-root-folder-add-modal-backdrop"></div>
+        <div class="root-folder-add-modal-content">
+            <div class="root-folder-add-modal-header">
+                <button type="button" class="root-folder-add-modal-close" id="tv-hunt-root-folder-add-modal-close" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+                <h2 class="root-folder-add-modal-title">Add Root Folder</h2>
+                <p class="root-folder-add-modal-subtitle">Enter or browse to a folder path. Use Test to confirm write/read permissions.</p>
+            </div>
+            <div class="root-folder-add-modal-body">
+                <label for="tv-hunt-root-folder-add-path">Path</label>
+                <div class="root-folder-add-path-row">
+                    <input type="text" id="tv-hunt-root-folder-add-path" class="root-folder-add-path-input" placeholder="e.g. /media or /tv" autocomplete="off" />
+                    <button type="button" class="btn-root-folders-browse-in-modal" id="tv-hunt-root-folder-add-browse-btn"><i class="fas fa-folder-open"></i> Browse</button>
+                    <button type="button" class="btn-root-folders-test-in-modal" id="tv-hunt-root-folder-add-test-btn"><i class="fas fa-vial"></i> Test</button>
+                </div>
+            </div>
+            <div class="root-folder-add-modal-actions">
+                <button type="button" class="btn-card root-folder-add-modal-cancel" id="tv-hunt-root-folder-add-modal-cancel">Cancel</button>
+                <button type="button" class="btn-card root-folder-add-modal-save" id="tv-hunt-root-folder-add-modal-save"><i class="fas fa-plus"></i> Add</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Browser modal (TV Hunt) -->
+    <div id="tv-hunt-root-folders-browse-modal" class="root-folders-browse-modal" style="display: none;">
+        <div class="root-folders-browse-backdrop" id="tv-hunt-root-folders-browse-backdrop"></div>
+        <div class="root-folders-browse-content">
+            <div class="root-folders-browse-header">
+                <h2 class="root-folders-browse-title">File Browser</h2>
+                <button type="button" class="root-folders-browse-close" id="tv-hunt-root-folders-browse-close" aria-label="Close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="root-folders-browse-body">
+                <label for="tv-hunt-root-folders-browse-path-input">Start typing or select a path below</label>
+                <input type="text" id="tv-hunt-root-folders-browse-path-input" class="root-folders-browse-path-input" placeholder="/" />
+                <div class="root-folders-browse-up-row">
+                    <button type="button" class="btn-root-folders-browse-up" id="tv-hunt-root-folders-browse-up" title="Go to parent directory">
+                        <i class="fas fa-arrow-up"></i> Go Back
+                    </button>
+                </div>
+                <div id="tv-hunt-root-folders-browse-list" class="root-folders-browse-list"></div>
+            </div>
+            <div class="root-folders-browse-actions">
+                <button type="button" class="btn-root-folders-browse-cancel" id="tv-hunt-root-folders-browse-cancel">Cancel</button>
+                <button type="button" class="btn-root-folders-browse-ok" id="tv-hunt-root-folders-browse-ok">Ok</button>
+            </div>
+        </div>
+    </div>
 </section>
+
 <style>
-    #tvHuntSettingsRootFoldersSection { width:100%; min-height:100vh; overflow-y:auto; overflow-x:hidden; }
-    #tvHuntSettingsRootFoldersSection.active { display:block !important; }
+    #tvHuntSettingsRootFoldersSection { width: 100%; min-height: 100vh; overflow-y: auto; overflow-x: hidden; }
+    #tvHuntSettingsRootFoldersSection.active { display: block !important; }
+    #tvHuntRootFoldersManagementContainer {
+        width: 100%;
+        padding: 20px;
+        margin: 0;
+        background-color: transparent;
+        box-shadow: none;
+        border: none;
+    }
+    #tvHuntSettingsRootFoldersSection .tv-hunt-root-folders-settings-group {
+        background: rgba(15, 23, 42, 0.4);
+        border: 1px solid rgba(148, 163, 184, 0.08);
+        border-radius: 12px;
+        padding: 24px;
+        margin: 12px 0 20px 0;
+    }
+    #tvHuntSettingsRootFoldersSection .tv-hunt-root-folders-settings-group h3 {
+        margin: 0 0 12px 0;
+        padding: 0 0 10px 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #f1f5f9;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+        background: none;
+        box-shadow: none;
+        font-family: inherit;
+    }
+    #tvHuntSettingsRootFoldersSection .root-folders-help {
+        margin: 0 0 20px 0;
+        color: #94a3b8;
+        font-size: 0.95rem;
+    }
+    #tvHuntSettingsRootFoldersSection .root-folders-help code {
+        background: rgba(0,0,0,0.3);
+        padding: 2px 6px;
+        border-radius: 4px;
+    }
+    #tvHuntSettingsRootFoldersSection #tv-hunt-root-folders-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+    #tvHuntSettingsRootFoldersSection .root-folder-card {
+        padding: 14px 16px;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 140px;
+        background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid rgba(148, 163, 184, 0.1);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    #tvHuntSettingsRootFoldersSection .root-folder-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        border-color: rgba(99, 102, 241, 0.3);
+    }
+    #tvHuntSettingsRootFoldersSection .root-folder-card.default-root-folder {
+        border-left: 4px solid #6366f1;
+    }
+    #tvHuntSettingsRootFoldersSection .root-folder-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    #tvHuntSettingsRootFoldersSection .root-folder-card-path {
+        flex: 1;
+        min-width: 0;
+        font-family: monospace;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #f8fafc;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        word-break: break-all;
+    }
+    #tvHuntSettingsRootFoldersSection .root-folder-default-badge {
+        font-size: 0.6rem;
+        padding: 2px 6px;
+        background: #4f46e5;
+        color: white;
+        border-radius: 12px;
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        flex-shrink: 0;
+        font-family: inherit;
+    }
+    #tvHuntSettingsRootFoldersSection .root-folder-card-body {
+        margin-bottom: 12px;
+        flex: 1;
+        min-height: 0;
+        color: #94a3b8;
+        font-size: 0.85rem;
+    }
+    #tvHuntSettingsRootFoldersSection .root-folder-card-footer {
+        display: flex;
+        gap: 6px;
+        margin-top: 0;
+    }
+    #tvHuntSettingsRootFoldersSection .root-folder-card .btn-card {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+    }
+    #tvHuntSettingsRootFoldersSection .add-root-folder-card {
+        min-height: 140px;
+    }
+    .root-folder-add-modal {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+    .root-folder-add-modal[style*="display: flex"] { display: flex !important; }
+    body.tv-hunt-root-folder-add-modal-open { overflow: hidden; }
+    body.tv-hunt-root-folder-add-modal-open .app-container { filter: blur(10px); }
+    .root-folder-add-modal-backdrop {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        z-index: 1000;
+    }
+    .root-folder-add-modal-content {
+        position: relative;
+        z-index: 1001;
+        background: rgba(15, 23, 42, 0.98);
+        border: 2px solid rgba(99, 102, 241, 0.4);
+        border-radius: 12px;
+        max-width: 480px;
+        width: 90%;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+    }
+    .root-folder-add-modal-header {
+        position: relative;
+        padding: 20px 24px 12px;
+        background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #0f172a 100%);
+    }
+    .root-folder-add-modal-close {
+        position: absolute;
+        top: 12px; right: 12px;
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 4px;
+    }
+    .root-folder-add-modal-close:hover { color: #f8fafc; }
+    .root-folder-add-modal-title { margin: 0 0 4px 0; font-size: 1.25rem; font-weight: 600; color: #f8fafc; }
+    .root-folder-add-modal-subtitle { margin: 0; font-size: 0.9rem; color: #94a3b8; }
+    .root-folder-add-modal-body { padding: 20px 24px; }
+    .root-folder-add-modal-body label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: #cbd5e1; }
+    .root-folder-add-path-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .root-folder-add-path-input {
+        flex: 1;
+        min-width: 200px;
+        padding: 10px 12px;
+        font-size: 1rem;
+        color: #f8fafc;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        border-radius: 8px;
+        font-family: monospace;
+        box-sizing: border-box;
+    }
+    .root-folder-add-path-input:focus { outline: none; border-color: #6366f1; }
+    .btn-root-folders-browse-in-modal, .btn-root-folders-test-in-modal {
+        padding: 10px 16px;
+        border-radius: 8px;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        background: rgba(148, 163, 184, 0.2);
+        color: #e2e8f0;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-root-folders-browse-in-modal:hover, .btn-root-folders-test-in-modal:hover {
+        background: rgba(148, 163, 184, 0.3);
+    }
+    .root-folder-add-modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        padding: 16px 24px 20px;
+        border-top: 1px solid rgba(148, 163, 184, 0.1);
+    }
+    .root-folders-browse-modal {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1100;
+        display: none; align-items: center; justify-content: center;
+    }
+    .root-folders-browse-modal[style*="display: flex"] { display: flex !important; }
+    .root-folders-browse-backdrop {
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        z-index: 1100;
+    }
+    .root-folders-browse-content {
+        position: relative; z-index: 1101;
+        background: rgba(15, 23, 42, 0.98);
+        border: 2px solid rgba(148, 163, 184, 0.3);
+        border-radius: 12px;
+        min-width: 400px; max-width: 90vw; max-height: 80vh;
+        display: flex; flex-direction: column; overflow: hidden;
+    }
+    .root-folders-browse-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 16px 20px; border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    .root-folders-browse-title { margin: 0; font-size: 1.1rem; color: #f8fafc; }
+    .root-folders-browse-close {
+        background: none; border: none; color: #94a3b8; cursor: pointer; padding: 8px;
+    }
+    .root-folders-browse-body {
+        padding: 16px 20px; overflow-y: auto; flex: 1;
+    }
+    .root-folders-browse-body label {
+        display: block; margin-bottom: 8px; color: #94a3b8; font-size: 0.9rem;
+    }
+    .root-folders-browse-path-input {
+        width: 100%; padding: 10px 12px; margin-bottom: 12px;
+        background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(148, 163, 184, 0.3);
+        border-radius: 8px; color: #f8fafc; font-family: monospace; box-sizing: border-box;
+    }
+    .root-folders-browse-up-row { margin-bottom: 12px; }
+    .btn-root-folders-browse-up {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 10px 16px;
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        color: #fff;
+        border: 1px solid rgba(99, 102, 241, 0.5);
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .btn-root-folders-browse-up:hover { filter: brightness(1.1); }
+    .btn-root-folders-browse-up:disabled { opacity: 0.5; cursor: not-allowed; }
+    .root-folders-browse-list {
+        max-height: 280px; overflow-y: auto;
+        border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 8px;
+        background: rgba(15, 23, 42, 0.5);
+    }
+    .root-folders-browse-item {
+        display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+        cursor: pointer; border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        color: #e2e8f0;
+    }
+    .root-folders-browse-item:hover { background: rgba(148, 163, 184, 0.15); }
+    .root-folders-browse-item i { color: #94a3b8; }
+    .root-folders-browse-item-path { font-family: monospace; font-size: 0.9rem; word-break: break-all; }
+    .root-folders-browse-actions {
+        display: flex; justify-content: flex-end; gap: 12px;
+        padding: 16px 20px; border-top: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    .btn-root-folders-browse-cancel {
+        padding: 10px 18px; background: #334155; color: #e2e8f0; border: none; border-radius: 8px;
+        font-weight: 600; cursor: pointer;
+    }
+    .btn-root-folders-browse-ok {
+        padding: 10px 18px;
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        color: #fff;
+        border: 1px solid rgba(99, 102, 241, 0.5);
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .btn-root-folders-browse-ok:hover { filter: brightness(1.1); }
 </style>
