@@ -26,6 +26,31 @@
     max-width: none !important;
     margin: 0 !important;
     padding: 24px 0 !important;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* Give queue/history result area more vertical space */
+#nzb-hunt-section .nzb-tab-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+#nzb-hunt-section .nzb-queue-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+#nzb-hunt-section .nzb-queue-panel #nzb-queue-body,
+#nzb-hunt-section .nzb-queue-panel #nzb-history-body {
+    flex: 1;
+    min-height: 420px;
+    max-height: 70vh;
+    overflow-y: auto;
+    overflow-x: auto;
 }
 
 /* ── Server Editor (full page) ───────────────────────────────────── */
@@ -173,6 +198,43 @@
     white-space: nowrap;
 }
 .nzb-active-connections:hover .nzb-status-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Status/error cell tooltip (queue status, history result) — hover to see full message */
+#nzb-hunt-section .nzb-status-with-tooltip {
+    position: relative;
+    cursor: help;
+    display: inline-flex;
+    align-items: center;
+}
+#nzb-hunt-section .nzb-cell-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-6px);
+    padding: 10px 14px;
+    background: rgba(15, 23, 42, 0.98);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 8px;
+    font-size: 0.82rem;
+    color: #e2e8f0;
+    line-height: 1.4;
+    min-width: 220px;
+    max-width: 520px;
+    max-height: 300px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s, visibility 0.15s;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+#nzb-hunt-section .nzb-status-with-tooltip:hover .nzb-cell-tooltip {
     opacity: 1;
     visibility: visible;
 }
@@ -425,7 +487,7 @@
     border: 1px solid rgba(148, 163, 184, 0.08);
     border-radius: 12px;
     overflow: visible;
-    min-height: 300px;
+    min-height: 350px;
 }
 
 .nzb-queue-header {
@@ -2148,9 +2210,7 @@
 /* ═══════════════════════════════════════════════════
    Queue Table (SABnzbd-style one-liner columns)
 ═══════════════════════════════════════════════════ */
-.nzb-queue-panel #nzb-queue-body {
-    overflow-x: auto;
-}
+/* overflow handled by #nzb-hunt-section rule above */
 
 .nzb-queue-table {
     width: 100%;
@@ -2288,59 +2348,14 @@
     color: #ef4444;
 }
 
-/* ═══ History table – SABnzbd-inspired clean layout ═══ */
+/* ═══ History table – same layout as Queue (NAME | CATEGORY | SIZE | RESULT | AGE | actions) ═══ */
 .nzb-history-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.82rem;
-    table-layout: fixed;
+    /* Inherits nzb-queue-table styles; RESULT/AGE columns use status/eta slots */
 }
-.nzb-history-table thead {
-    background: rgba(15, 23, 42, 0.8);
-    border-bottom: 1px solid rgba(71, 85, 105, 0.5);
-}
-.nzb-history-table th {
-    padding: 8px 12px;
-    text-align: left;
-    font-weight: 600;
-    color: #94a3b8;
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-.nzb-history-table td {
-    padding: 7px 12px;
-    border-bottom: 1px solid rgba(71, 85, 105, 0.2);
-    color: #cbd5e1;
-    vertical-align: middle;
-}
-.nzb-history-table tbody tr:hover {
-    background: rgba(255, 255, 255, 0.03);
-}
+.nzb-history-table .nzb-col-status { width: 14%; min-width: 100px; }  /* RESULT: wider for error text */
+.nzb-history-table .nzb-col-eta { width: 10%; min-width: 80px; text-align: right; color: #64748b; font-size: 0.78rem; }  /* AGE */
 
-/* Column widths – SABnzbd style: icon | name | status | time ago | actions */
-.nzb-history-table .nzb-hist-col-status { width: 28px; min-width: 28px; max-width: 28px; text-align: center; padding-right: 0; }
-.nzb-history-table .nzb-hist-col-name   { /* flex fill */ }
-.nzb-history-table .nzb-hist-col-result { width: 120px; min-width: 100px; }
-.nzb-history-table .nzb-hist-col-age    { width: 120px; min-width: 90px; text-align: right; color: #64748b; font-size: 0.78rem; }
-.nzb-history-table .nzb-hist-col-actions { width: 36px; min-width: 36px; max-width: 36px; text-align: center; }
-
-/* Status icons */
-.nzb-hist-status-icon { font-size: 0.85rem; }
-.nzb-hist-status-icon.success { color: #22c55e; }
-.nzb-hist-status-icon.fail    { color: #ef4444; }
-
-/* Name cell */
-.nzb-hist-cell-name {
-    display: block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    color: #e2e8f0;
-    font-weight: 500;
-}
-
-/* Result column */
+/* Result column styling */
 .nzb-hist-result-ok   { color: #22c55e; font-weight: 500; }
 .nzb-hist-result-fail  { color: #ef4444; font-weight: 500; }
 
@@ -2360,20 +2375,9 @@
     background: rgba(239, 68, 68, 0.1);
 }
 
-/* ─── Queue footer (search, pagination, stats) ─── */
-.nzb-queue-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 14px;
-    border-top: 1px solid rgba(71, 85, 105, 0.3);
-    font-size: 0.76rem;
-    color: #64748b;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-/* ─── History footer (pagination + stats) ─── */
+/* ─── Queue/History footer (search, pagination, stats) ───
+   width: fit-content so border only spans content, not full panel width */
+.nzb-queue-footer,
 .nzb-history-footer {
     display: flex;
     align-items: center;
@@ -2384,6 +2388,8 @@
     color: #64748b;
     flex-wrap: wrap;
     gap: 10px;
+    width: fit-content;
+    box-sizing: border-box;
 }
 .nzb-hist-search {
     display: flex;
@@ -2432,21 +2438,6 @@
 }
 .nzb-hist-stats span { white-space: nowrap; }
 .nzb-hist-stats i { margin-right: 4px; color: #475569; }
-
-/* Extra optional columns */
-.nzb-history-table .nzb-hist-col-cat  { width: 90px; min-width: 70px; }
-.nzb-history-table .nzb-hist-col-size { width: 80px; min-width: 60px; text-align: right; color: #94a3b8; }
-.nzb-history-table .nzb-hist-col-indexer { width: 100px; min-width: 70px; color: #94a3b8; }
-
-.nzb-hist-cat {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 4px;
-    background: rgba(99, 102, 241, 0.15);
-    color: #a5b4fc;
-    font-size: 0.72rem;
-    font-weight: 500;
-}
 
 /* ═══ Gear / Display-prefs button in status bar ═══ */
 .nzb-display-prefs-btn {

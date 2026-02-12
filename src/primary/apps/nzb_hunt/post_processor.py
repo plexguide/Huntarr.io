@@ -320,28 +320,49 @@ def _extract_zip(zip_path: str, output_dir: str) -> Tuple[bool, str]:
 
 
 def _extract_7z(sevenz_path: str, output_dir: str) -> Tuple[bool, str]:
-    """Extract a 7z archive."""
+    """Extract a 7z archive using 7z or 7za (p7zip).
+
+    p7zip/7z can write errors to stdout or stderr depending on version.
+    We capture both and combine for a useful error message.
+    """
     basename = os.path.basename(sevenz_path)
     logger.info(f"Extracting 7z: {basename}")
-    
-    try:
-        result = subprocess.run(
-            ["7z", "x", "-y", f"-o{output_dir}", sevenz_path],
-            capture_output=True,
-            text=True,
-            timeout=7200
-        )
-        
-        if result.returncode == 0:
-            logger.info("7z extraction successful")
-            return True, "Extracted 7z"
-        else:
-            logger.error(f"7z extraction failed: {result.stderr[:300]}")
-            return False, f"7z failed: {result.stderr[:200]}"
-    except FileNotFoundError:
-        return False, "7z command not found"
-    except Exception as e:
-        return False, str(e)
+
+    for cmd in (["7z", "x", "-y", f"-o{output_dir}", sevenz_path],
+                ["7za", "x", "-y", f"-o{output_dir}", sevenz_path]):
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=7200
+            )
+
+            if result.returncode == 0:
+                logger.info("7z extraction successful")
+                return True, "Extracted 7z"
+
+            # 7z/p7zip may write errors to stdout or stderr; combine both
+            out = (result.stdout or "").strip()
+            err = (result.stderr or "").strip()
+            combined = "\n".join(s for s in (out, err) if s)
+            if not combined:
+                combined = f"Exit code {result.returncode}"
+
+            full_msg = combined[:1200]  # Store enough for diagnostics
+            if len(combined) > 1200:
+                full_msg += "…"
+
+            logger.error(f"7z extraction failed: {full_msg[:400]}")
+            return False, f"7z failed: {full_msg[:800]}"
+        except FileNotFoundError:
+            continue  # Try next command (7za)
+        except subprocess.TimeoutExpired:
+            return False, "7z extraction timed out (2 hours)"
+        except Exception as e:
+            return False, str(e)
+
+    return False, "7z/7za command not found (install p7zip-full)"
 
 
 # ── Cleanup ──────────────────────────────────────────────────────

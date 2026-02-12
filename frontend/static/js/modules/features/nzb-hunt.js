@@ -220,14 +220,22 @@
                 var name = self._escHtml(item.name || 'Unknown');
                 var catLabel = item.category ? self._escHtml(String(item.category)) : '—';
 
-                // Build status display: primary state, secondary message when relevant
+                // Build status display: primary state, secondary message when relevant.
+                // Wrap in tooltip container when there's extra info to show on hover.
                 var statusHtml = '<i class="' + stateIcon + '"></i> ' + stateLabel;
                 var failedSegs = item.failed_segments || 0;
+                var tooltipText = '';
                 if (item.status_message && item.state !== 'downloading') {
                     var msgClass = failedSegs > 0 ? ' nzb-status-msg-warn' : ' nzb-status-msg';
                     statusHtml += '<span class="nzb-status-sub' + msgClass + '">' + self._escHtml(item.status_message) + '</span>';
+                    tooltipText = item.status_message;
+                } else if (item.error_message) {
+                    tooltipText = item.error_message;
                 } else if (item.state === 'downloading' && item.completed_segments === 0 && item.speed_bps === 0) {
                     statusHtml += '<span class="nzb-status-sub">Connecting...</span>';
+                }
+                if (tooltipText) {
+                    statusHtml = '<span class="nzb-status-with-tooltip" title="">' + statusHtml + '<div class="nzb-cell-tooltip">' + self._escHtml(tooltipText) + '</div></span>';
                 }
 
                 // Progress: clean percentage; missing articles in tooltip only
@@ -715,63 +723,57 @@
 
             var self = this;
             var prefs = this._displayPrefs.history;
+            // Same column structure as Queue: NAME | CATEGORY | SIZE | RESULT | AGE | actions
             var html =
-                '<table class="nzb-history-table">' +
+                '<table class="nzb-queue-table nzb-history-table">' +
                 '<thead><tr>' +
-                '<th class="nzb-hist-col-status"></th>' +
-                '<th class="nzb-hist-col-name">Name</th>';
-            if (prefs.showCategory) html += '<th class="nzb-hist-col-cat">Category</th>';
-            if (prefs.showSize) html += '<th class="nzb-hist-col-size">Size</th>';
-            if (prefs.showIndexer) html += '<th class="nzb-hist-col-indexer">Indexer</th>';
-            html += '<th class="nzb-hist-col-result">Result</th>' +
-                '<th class="nzb-hist-col-age"></th>' +
-                '<th class="nzb-hist-col-actions"></th>' +
+                '<th class="nzb-col-name">Name</th>' +
+                '<th class="nzb-col-cat">Category</th>' +
+                '<th class="nzb-col-size">Size</th>' +
+                '<th class="nzb-col-status">Result</th>' +
+                '<th class="nzb-col-eta">Age</th>' +
+                '<th class="nzb-col-actions"></th>' +
                 '</tr></thead><tbody>';
 
             page.forEach(function (item) {
                 var isSuccess = item.state === 'completed';
-                var statusIcon = isSuccess
-                    ? '<i class="fas fa-check-circle nzb-hist-status-icon success"></i>'
-                    : '<i class="fas fa-times-circle nzb-hist-status-icon fail"></i>';
                 var name = self._escHtml(item.name || 'Unknown');
+                var catLabel = item.category ? self._escHtml(String(item.category)) : '—';
+                var size = self._formatBytes(item.total_bytes || item.downloaded_bytes || 0);
                 var dateVal = item.completed_at || item.added_at;
                 var age = prefs.dateFormat === 'absolute'
                     ? (dateVal ? new Date(dateVal).toLocaleString() : '—')
                     : self._timeAgo(dateVal);
 
-                // Result text
+                // Result — same styling as Queue STATUS column
                 var resultHtml;
                 if (isSuccess) {
-                    resultHtml = '<span class="nzb-hist-result-ok">Completed</span>';
+                    resultHtml = '<i class="fas fa-check-circle nzb-icon-completed"></i> <span class="nzb-hist-result-ok">Completed</span>';
                 } else {
                     var shortErr = 'Aborted';
                     if (item.error_message && !/missing article/i.test(item.error_message)) {
-                        shortErr = item.error_message.length > 24
-                            ? self._escHtml(item.error_message.substring(0, 22)) + '…'
+                        shortErr = item.error_message.length > 26
+                            ? self._escHtml(item.error_message.substring(0, 24)) + '…'
                             : self._escHtml(item.error_message);
                     }
-                    resultHtml = '<span class="nzb-hist-result-fail">' + shortErr + '</span>';
+                    resultHtml = '<i class="fas fa-times-circle nzb-icon-failed"></i> <span class="nzb-hist-result-fail">' + shortErr + '</span>';
+                    if (item.error_message) {
+                        resultHtml = '<span class="nzb-status-with-tooltip" title="">' + resultHtml +
+                            '<div class="nzb-cell-tooltip">' + self._escHtml(item.error_message) + '</div></span>';
+                    }
                 }
 
                 var nzbId = item.nzo_id || item.id || '';
 
-                html += '<tr>';
-                html += '<td class="nzb-hist-col-status">' + statusIcon + '</td>';
-                html += '<td class="nzb-hist-col-name" title="' + name + '"><span class="nzb-hist-cell-name">' + name + '</span></td>';
-                if (prefs.showCategory) {
-                    var catLabel = item.category ? '<span class="nzb-hist-cat">' + self._escHtml(item.category) + '</span>' : '—';
-                    html += '<td class="nzb-hist-col-cat">' + catLabel + '</td>';
-                }
-                if (prefs.showSize) {
-                    html += '<td class="nzb-hist-col-size">' + self._formatBytes(item.total_bytes || item.downloaded_bytes || 0) + '</td>';
-                }
-                if (prefs.showIndexer) {
-                    html += '<td class="nzb-hist-col-indexer">' + self._escHtml(item.indexer || '—') + '</td>';
-                }
-                html += '<td class="nzb-hist-col-result">' + resultHtml + '</td>';
-                html += '<td class="nzb-hist-col-age">' + age + '</td>';
-                html += '<td class="nzb-hist-col-actions"><button type="button" class="nzb-hist-delete-btn" data-nzb-id="' + nzbId + '" title="Delete"><i class="fas fa-trash-alt"></i></button></td>';
-                html += '</tr>';
+                html += '<tr class="nzb-queue-row ' + (isSuccess ? 'nzb-item-completed' : 'nzb-item-failed') + '">' +
+                    '<td class="nzb-col-name" data-label="Name" title="' + name + '"><span class="nzb-cell-name">' + name + '</span></td>' +
+                    '<td class="nzb-col-cat" data-label="Category"><span class="nzb-cell-cat">' + catLabel + '</span></td>' +
+                    '<td class="nzb-col-size" data-label="Size">' + size + '</td>' +
+                    '<td class="nzb-col-status" data-label="Result">' + resultHtml + '</td>' +
+                    '<td class="nzb-col-eta" data-label="Age">' + age + '</td>' +
+                    '<td class="nzb-col-actions" data-label="">' +
+                    '<button type="button" class="nzb-item-btn nzb-item-btn-danger nzb-hist-delete-btn" data-nzb-id="' + nzbId + '" title="Delete"><i class="fas fa-trash-alt"></i></button>' +
+                    '</td></tr>';
             });
 
             html += '</tbody></table>';
