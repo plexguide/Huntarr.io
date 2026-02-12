@@ -275,19 +275,21 @@ window.HuntarrProwlarr = {
         };
         
         statisticsContent.innerHTML = `
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-label">SEARCHES (24H)</div>
-                    <div class="stat-value success">${formatExactNumber(indexerStats.total_queries || 0)}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">GRABS (24H)</div>
-                    <div class="stat-value success">${formatExactNumber(indexerStats.total_grabs || 0)}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">AVG RESPONSE</div>
-                    <div class="stat-value success">${indexerStats.avg_response_time ? Number(indexerStats.avg_response_time).toFixed(0) + 'ms' : 'N/A'}</div>
-                </div>
+            <div class="stat-card">
+                <div class="stat-label">SEARCHES (24H)</div>
+                <div class="stat-value success">${formatExactNumber(indexerStats.total_queries || 0)}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">GRABS (24H)</div>
+                <div class="stat-value success">${formatExactNumber(indexerStats.total_grabs || 0)}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">SUCCESS RATE</div>
+                <div class="stat-value success">${indexerStats.avg_response_time ? ((indexerStats.total_grabs || 0) / Math.max(indexerStats.total_queries || 1, 1) * 100).toFixed(1) + '%' : 'N/A'}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">AVG RESPONSE</div>
+                <div class="stat-value success">${indexerStats.avg_response_time ? Number(indexerStats.avg_response_time).toFixed(0) + 'ms' : 'N/A'}</div>
             </div>
             <div class="indexer-name-display">${indexerName}</div>
         `;
@@ -309,27 +311,25 @@ window.HuntarrProwlarr = {
         };
         
         statisticsContent.innerHTML = `
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-label">SEARCHES (24H)</div>
-                    <div class="stat-value success">${formatExactNumber(overall.total_queries || 0)}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">GRABS (24H)</div>
-                    <div class="stat-value success">${formatExactNumber(overall.total_grabs || 0)}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">SUCCESS RATE</div>
-                    <div class="stat-value success">${(Number(overall.success_rate || 0)).toFixed(1)}%</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">AVG RESPONSE</div>
-                    <div class="stat-value success">${overall.avg_response_time ? Number(overall.avg_response_time).toFixed(0) + 'ms' : 'N/A'}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">FAILED TODAY</div>
-                    <div class="stat-value error">${formatExactNumber(overall.failed_searches || 0)}</div>
-                </div>
+            <div class="stat-card">
+                <div class="stat-label">SEARCHES (24H)</div>
+                <div class="stat-value success">${formatExactNumber(overall.total_queries || 0)}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">GRABS (24H)</div>
+                <div class="stat-value success">${formatExactNumber(overall.total_grabs || 0)}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">SUCCESS RATE</div>
+                <div class="stat-value success">${(Number(overall.success_rate || 0)).toFixed(1)}%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">AVG RESPONSE</div>
+                <div class="stat-value success">${overall.avg_response_time ? Number(overall.avg_response_time).toFixed(0) + 'ms' : 'N/A'}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">FAILED TODAY</div>
+                <div class="stat-value error">${formatExactNumber(overall.failed_searches || 0)}</div>
             </div>
         `;
     },
