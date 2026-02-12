@@ -17,7 +17,8 @@ window.huntarrSchedules = window.huntarrSchedules || {
     readarr: [],
     whisparr: [],
     eros: [],
-    movie_hunt: []
+    movie_hunt: [],
+    tv_hunt: []
 };
 
 (function() {
@@ -88,11 +89,12 @@ window.huntarrSchedules = window.huntarrSchedules || {
         if (!appTypeSelect || !instanceSelect) return;
 
         try {
-            // Fetch standard app settings and Movie Hunt instances in parallel (cache-bust for fresh data)
+            // Fetch standard app settings, Movie Hunt instances, and TV Hunt instances in parallel (cache-bust for fresh data)
             const _ts = Date.now();
-            const [settingsResp, movieHuntResp] = await Promise.all([
+            const [settingsResp, movieHuntResp, tvHuntResp] = await Promise.all([
                 HuntarrUtils.fetchWithTimeout(`./api/settings?t=${_ts}`),
-                HuntarrUtils.fetchWithTimeout(`./api/movie-hunt/instances?t=${_ts}`).catch(function() { return null; })
+                HuntarrUtils.fetchWithTimeout(`./api/movie-hunt/instances?t=${_ts}`).catch(function() { return null; }),
+                HuntarrUtils.fetchWithTimeout(`./api/tv-hunt/instances?t=${_ts}`).catch(function() { return null; })
             ]);
 
             if (settingsResp.ok) {
@@ -118,12 +120,22 @@ window.huntarrSchedules = window.huntarrSchedules || {
                 window._movieHuntInstances = [];
             }
 
+            // Cache TV Hunt instances separately (they come from a different API)
+            if (tvHuntResp && tvHuntResp.ok) {
+                const thData = await tvHuntResp.json();
+                window._tvHuntInstances = Array.isArray(thData.instances) ? thData.instances : [];
+                console.debug('[Scheduler] TV Hunt instances loaded:', window._tvHuntInstances.length);
+            } else {
+                window._tvHuntInstances = [];
+            }
+
             // Trigger instance dropdown population based on current app selection
             populateInstanceDropdown();
             console.debug('[Scheduler] Instance dropdowns populated from API');
         } catch (err) {
             console.warn('[Scheduler] Could not fetch settings for instances', err);
             window._movieHuntInstances = window._movieHuntInstances || [];
+            window._tvHuntInstances = window._tvHuntInstances || [];
             populateInstanceDropdown();
         }
     }
@@ -154,6 +166,20 @@ window.huntarrSchedules = window.huntarrSchedules || {
         if (appType === 'movie_hunt') {
             var mhInstances = window._movieHuntInstances || [];
             mhInstances.forEach(function(inst) {
+                if (!inst || typeof inst !== 'object') return;
+                var opt = document.createElement('option');
+                opt.value = String(inst.id);
+                opt.textContent = inst.name || ('Instance ' + inst.id);
+                instanceSelect.appendChild(opt);
+            });
+            updateHiddenApp();
+            return;
+        }
+
+        // TV Hunt uses a dedicated instance list (numeric IDs from DB)
+        if (appType === 'tv_hunt') {
+            var thInstances = window._tvHuntInstances || [];
+            thInstances.forEach(function(inst) {
                 if (!inst || typeof inst !== 'object') return;
                 var opt = document.createElement('option');
                 opt.value = String(inst.id);
@@ -454,8 +480,8 @@ window.huntarrSchedules = window.huntarrSchedules || {
             base = parts[0];
             instanceId = parts[1];
         }
-        // Legacy format: app-id (but NOT movie_hunt which uses underscores)
-        else if (appValue.indexOf('-') > 0 && appValue.indexOf('movie_hunt') !== 0) {
+        // Legacy format: app-id (but NOT movie_hunt/tv_hunt which use underscores)
+        else if (appValue.indexOf('-') > 0 && appValue.indexOf('movie_hunt') !== 0 && appValue.indexOf('tv_hunt') !== 0) {
             var dashParts = appValue.split('-', 2);
             base = dashParts[0];
             instanceId = dashParts[1];
@@ -473,6 +499,17 @@ window.huntarrSchedules = window.huntarrSchedules || {
             for (var m = 0; m < mhInstances.length; m++) {
                 if (String(mhInstances[m].id) === instanceId) {
                     return label + ' — ' + (mhInstances[m].name || 'Instance ' + mhInstances[m].id);
+                }
+            }
+            return label + ' — Instance ' + instanceId;
+        }
+
+        // TV Hunt: resolve from dedicated instance cache
+        if (base === 'tv_hunt') {
+            var thInstances = window._tvHuntInstances || [];
+            for (var t = 0; t < thInstances.length; t++) {
+                if (String(thInstances[t].id) === instanceId) {
+                    return label + ' — ' + (thInstances[t].name || 'Instance ' + thInstances[t].id);
                 }
             }
             return label + ' — Instance ' + instanceId;
@@ -502,6 +539,7 @@ window.huntarrSchedules = window.huntarrSchedules || {
 
     function formatAppLabel(appName) {
         if (appName === 'movie_hunt') return 'Movie Hunt';
+        if (appName === 'tv_hunt') return 'TV Hunt';
         return capitalizeFirst(appName);
     }
 

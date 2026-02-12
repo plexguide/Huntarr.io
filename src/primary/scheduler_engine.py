@@ -32,7 +32,7 @@ EXECUTION_WINDOW_MINUTES = 2  # minutes after scheduled time to still execute
 COOLDOWN_MINUTES = 5          # minutes before same schedule can re-execute
 
 # Supported app types
-SUPPORTED_APPS = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'movie_hunt']
+SUPPORTED_APPS = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'movie_hunt', 'tv_hunt']
 
 # Track last executed actions to prevent duplicates
 last_executed_actions = {}
@@ -159,6 +159,8 @@ def _apply_to_all_apps(action_fn, action_label: str) -> Tuple[bool, str]:
         try:
             if app == 'movie_hunt':
                 _apply_to_movie_hunt(None, action_fn, action_label)
+            elif app == 'tv_hunt':
+                _apply_to_tv_hunt(None, action_fn, action_label)
             else:
                 config = load_settings(app)
                 if config:
@@ -177,6 +179,8 @@ def _apply_to_app(base_app: str, instance_id: Optional[str], action_fn, action_l
     """Apply an action to a specific app/instance. Returns (success, message)."""
     if base_app == 'movie_hunt':
         return _apply_to_movie_hunt(instance_id, action_fn, action_label)
+    if base_app == 'tv_hunt':
+        return _apply_to_tv_hunt(instance_id, action_fn, action_label)
 
     config = load_settings(base_app)
     if not config:
@@ -235,6 +239,50 @@ def _apply_to_movie_hunt(instance_id: Optional[str], action_fn, action_label: st
 
     except Exception as e:
         return False, f"Error in {action_label} for movie_hunt: {e}"
+
+
+def _apply_to_tv_hunt(instance_id: Optional[str], action_fn, action_label: str) -> Tuple[bool, str]:
+    """Apply an action to TV Hunt instances.
+
+    TV Hunt uses a different config model: instances are in a DB table
+    and per-instance settings are stored via save_app_config_for_instance().
+    """
+    try:
+        db = get_database()
+        from src.primary.routes.tv_hunt.instances import _get_tv_hunt_instance_settings
+        SETTINGS_KEY = "tv_hunt_hunt_settings"
+
+        all_instances = db.get_tv_hunt_instances()
+
+        if instance_id:
+            # Target a specific instance by its numeric ID
+            int_id = int(instance_id)
+            target = next((i for i in all_instances if i['id'] == int_id), None)
+            if not target:
+                return False, f"TV Hunt instance {instance_id} not found"
+
+            settings = _get_tv_hunt_instance_settings(int_id)
+            # Use a wrapper config so the action_fn can modify it
+            wrapper = {"enabled": settings.get("enabled", True), "hourly_cap": settings.get("hourly_cap", 20)}
+            action_fn(wrapper, 'tv_hunt', None)  # None instance_id since we're already targeting
+            settings["enabled"] = wrapper.get("enabled", settings.get("enabled"))
+            settings["hourly_cap"] = wrapper.get("hourly_cap", settings.get("hourly_cap"))
+            db.save_app_config_for_instance(SETTINGS_KEY, int_id, settings)
+            return True, f"{action_label} for TV Hunt instance {target.get('name', int_id)}"
+        else:
+            # Target all TV Hunt instances
+            for inst in all_instances:
+                int_id = inst['id']
+                settings = _get_tv_hunt_instance_settings(int_id)
+                wrapper = {"enabled": settings.get("enabled", True), "hourly_cap": settings.get("hourly_cap", 20)}
+                action_fn(wrapper, 'tv_hunt', None)
+                settings["enabled"] = wrapper.get("enabled", settings.get("enabled"))
+                settings["hourly_cap"] = wrapper.get("hourly_cap", settings.get("hourly_cap"))
+                db.save_app_config_for_instance(SETTINGS_KEY, int_id, settings)
+            return True, f"{action_label} for all TV Hunt instances"
+
+    except Exception as e:
+        return False, f"Error in {action_label} for tv_hunt: {e}"
 
 
 def _set_enabled(config, app_name, instance_id, enabled_value):
@@ -444,7 +492,7 @@ def load_schedule():
         return db.get_schedules()
     except Exception as e:
         scheduler_logger.error(f"Error loading schedule from database: {e}")
-        return {"global": [], "sonarr": [], "radarr": [], "lidarr": [], "readarr": [], "whisparr": [], "eros": []}
+        return {"global": [], "sonarr": [], "radarr": [], "lidarr": [], "readarr": [], "whisparr": [], "eros": [], "movie_hunt": [], "tv_hunt": []}
 
 
 # ---------------------------------------------------------------------------
