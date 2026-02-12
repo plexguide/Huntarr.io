@@ -7,7 +7,7 @@
     <!-- Immediate CSS to prevent sidebar flash -->
     <style id="initial-sidebar-state">
         /* Hide all sidebars initially, JavaScript will show the correct one */
-        #sidebar, #settings-sidebar, #requestarr-sidebar, #apps-sidebar, #movie-hunt-sidebar {
+        #sidebar, #settings-sidebar, #requestarr-sidebar, #apps-sidebar, #movie-hunt-sidebar, #tv-hunt-sidebar {
             display: none !important;
         }
     </style>
@@ -40,6 +40,13 @@
             {% include 'components/tv_hunt_instance_management_section.html' %}
             {% include 'components/tv_hunt_instance_editor_section.html' %}
             {% include 'components/tv_hunt_settings_custom_formats_section.html' %}
+            {% include 'components/tv_hunt_settings_profiles_section.html' %}
+            {% include 'components/tv_hunt_settings_indexers_section.html' %}
+            {% include 'components/tv_hunt_settings_clients_section.html' %}
+            {% include 'components/tv_hunt_settings_root_folders_section.html' %}
+            {% include 'components/tv_hunt_settings_sizes_section.html' %}
+            {% include 'components/tv_hunt_settings_tv_management_section.html' %}
+            {% include 'components/tv_hunt_settings_import_lists_section.html' %}
             {% include 'components/movie_hunt_section.html' %}
             <!-- Movie Hunt Settings default page (instance list + hunt settings editor) -->
             {% include 'components/movie_hunt_settings_default_section.html' %}

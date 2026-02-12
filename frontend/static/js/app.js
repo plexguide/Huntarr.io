@@ -558,7 +558,7 @@ let huntarrUI = {
             }
             
             // Don't refresh page when navigating to/from instance editor or between app sections
-            const noRefreshSections = ['home', 'instance-editor', 'profile-editor', 'movie-hunt-instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'movie-hunt-calendar', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'movie-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-sizes', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-import-media', 'settings-custom-formats', 'settings-root-folders', 'tv-hunt-collection', 'tv-hunt-calendar', 'tv-hunt-settings', 'tv-hunt-settings-profiles', 'tv-hunt-settings-custom-formats', 'tv-hunt-settings-indexers', 'tv-hunt-settings-clients', 'tv-hunt-settings-root-folders', 'tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist', 'tv-hunt-instance-editor', 'logs-tv-hunt', 'system', 'hunt-manager', 'logs', 'about', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-settings', 'nzb-hunt-settings-folders', 'nzb-hunt-settings-servers', 'nzb-hunt-settings-processing', 'nzb-hunt-settings-advanced', 'nzb-hunt-server-editor', 'requestarr', 'requestarr-discover', 'requestarr-movies', 'requestarr-tv', 'requestarr-hidden', 'requestarr-settings', 'requestarr-smarthunt-settings', 'indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history'];
+            const noRefreshSections = ['home', 'instance-editor', 'profile-editor', 'movie-hunt-instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'movie-hunt-calendar', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'movie-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-sizes', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-import-media', 'settings-custom-formats', 'settings-root-folders', 'tv-hunt-collection', 'tv-hunt-calendar', 'tv-hunt-settings', 'tv-hunt-settings-profiles', 'tv-hunt-settings-sizes', 'tv-hunt-settings-custom-formats', 'tv-hunt-settings-indexers', 'tv-hunt-settings-clients', 'tv-hunt-settings-import-lists', 'tv-hunt-settings-root-folders', 'tv-hunt-settings-tv-management', 'tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist', 'tv-hunt-instance-editor', 'logs-tv-hunt', 'system', 'hunt-manager', 'logs', 'about', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-settings', 'nzb-hunt-settings-folders', 'nzb-hunt-settings-servers', 'nzb-hunt-settings-processing', 'nzb-hunt-settings-advanced', 'nzb-hunt-server-editor', 'requestarr', 'requestarr-discover', 'requestarr-movies', 'requestarr-tv', 'requestarr-hidden', 'requestarr-settings', 'requestarr-smarthunt-settings', 'indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history'];
             const skipRefresh = noRefreshSections.includes(section) || noRefreshSections.includes(this.currentSection);
             
             if (!skipRefresh) {
@@ -773,8 +773,10 @@ let huntarrUI = {
             }
         } else if (section === 'logs-tv-hunt' && this.elements.logsSection) {
             // TV Hunt logs - show logsSection under TV Hunt sidebar
-            var tvActSection = document.getElementById('tv-hunt-section');
-            if (tvActSection) { tvActSection.classList.remove('active'); tvActSection.style.display = 'none'; }
+            ['tv-hunt-section', 'tvHuntInstanceManagementSection', 'tvHuntInstanceEditorSection', 'tvHuntSettingsCustomFormatsSection', 'tvHuntSettingsProfilesSection', 'tvHuntSettingsIndexersSection', 'tvHuntSettingsClientsSection', 'tvHuntSettingsRootFoldersSection', 'tvHuntSettingsSizesSection', 'tvHuntSettingsTVManagementSection', 'tvHuntSettingsImportListsSection'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) { el.classList.remove('active'); el.style.display = 'none'; }
+            });
             this.elements.logsSection.classList.add('active');
             this.elements.logsSection.style.display = 'block';
             newTitle = 'TV Hunt Logs';
@@ -792,6 +794,11 @@ let huntarrUI = {
         } else if (section === 'tv-hunt-collection' && document.getElementById('tv-hunt-section')) {
             document.getElementById('tv-hunt-section').classList.add('active');
             document.getElementById('tv-hunt-section').style.display = 'block';
+            // Hide all TV Hunt settings sections
+            ['tvHuntInstanceManagementSection', 'tvHuntInstanceEditorSection', 'tvHuntSettingsCustomFormatsSection', 'tvHuntSettingsProfilesSection', 'tvHuntSettingsIndexersSection', 'tvHuntSettingsClientsSection', 'tvHuntSettingsRootFoldersSection', 'tvHuntSettingsSizesSection', 'tvHuntSettingsTVManagementSection', 'tvHuntSettingsImportListsSection'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) { el.classList.remove('active'); el.style.display = 'none'; }
+            });
             var tvMainContent = document.querySelector('#tv-hunt-section .tv-hunt-content');
             var tvCollectionView = document.getElementById('tv-hunt-collection-view');
             var tvCalendarView = document.getElementById('tv-hunt-calendar-view');
@@ -807,6 +814,11 @@ let huntarrUI = {
         } else if (section === 'tv-hunt-calendar' && document.getElementById('tv-hunt-section')) {
             document.getElementById('tv-hunt-section').classList.add('active');
             document.getElementById('tv-hunt-section').style.display = 'block';
+            // Hide all TV Hunt settings sections
+            ['tvHuntInstanceManagementSection', 'tvHuntInstanceEditorSection', 'tvHuntSettingsCustomFormatsSection', 'tvHuntSettingsProfilesSection', 'tvHuntSettingsIndexersSection', 'tvHuntSettingsClientsSection', 'tvHuntSettingsRootFoldersSection', 'tvHuntSettingsSizesSection', 'tvHuntSettingsTVManagementSection', 'tvHuntSettingsImportListsSection'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) { el.classList.remove('active'); el.style.display = 'none'; }
+            });
             var tvMainContentCal = document.querySelector('#tv-hunt-section .tv-hunt-content');
             var tvCollectionViewCal = document.getElementById('tv-hunt-collection-view');
             var tvCalendarViewCal = document.getElementById('tv-hunt-calendar-view');
@@ -822,14 +834,16 @@ let huntarrUI = {
         } else if (section === 'tv-hunt-settings' && document.getElementById('tvHuntInstanceManagementSection')) {
             document.getElementById('tvHuntInstanceManagementSection').classList.add('active');
             document.getElementById('tvHuntInstanceManagementSection').style.display = 'block';
-            if (document.getElementById('tvHuntInstanceEditorSection')) {
-                document.getElementById('tvHuntInstanceEditorSection').classList.remove('active');
-                document.getElementById('tvHuntInstanceEditorSection').style.display = 'none';
-            }
-            if (document.getElementById('tv-hunt-section')) {
-                document.getElementById('tv-hunt-section').classList.remove('active');
-                document.getElementById('tv-hunt-section').style.display = 'none';
-            }
+            if (document.getElementById('tvHuntInstanceEditorSection')) { document.getElementById('tvHuntInstanceEditorSection').classList.remove('active'); document.getElementById('tvHuntInstanceEditorSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsCustomFormatsSection')) { document.getElementById('tvHuntSettingsCustomFormatsSection').classList.remove('active'); document.getElementById('tvHuntSettingsCustomFormatsSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsProfilesSection')) { document.getElementById('tvHuntSettingsProfilesSection').classList.remove('active'); document.getElementById('tvHuntSettingsProfilesSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsIndexersSection')) { document.getElementById('tvHuntSettingsIndexersSection').classList.remove('active'); document.getElementById('tvHuntSettingsIndexersSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsClientsSection')) { document.getElementById('tvHuntSettingsClientsSection').classList.remove('active'); document.getElementById('tvHuntSettingsClientsSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsRootFoldersSection')) { document.getElementById('tvHuntSettingsRootFoldersSection').classList.remove('active'); document.getElementById('tvHuntSettingsRootFoldersSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsSizesSection')) { document.getElementById('tvHuntSettingsSizesSection').classList.remove('active'); document.getElementById('tvHuntSettingsSizesSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsTVManagementSection')) { document.getElementById('tvHuntSettingsTVManagementSection').classList.remove('active'); document.getElementById('tvHuntSettingsTVManagementSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsImportListsSection')) { document.getElementById('tvHuntSettingsImportListsSection').classList.remove('active'); document.getElementById('tvHuntSettingsImportListsSection').style.display = 'none'; }
+            if (document.getElementById('tv-hunt-section')) { document.getElementById('tv-hunt-section').classList.remove('active'); document.getElementById('tv-hunt-section').style.display = 'none'; }
             newTitle = 'TV Hunt Settings';
             this.currentSection = 'tv-hunt-settings';
             this.showTVHuntSidebar();
@@ -839,14 +853,16 @@ let huntarrUI = {
         } else if (section === 'tv-hunt-instance-editor' && document.getElementById('tvHuntInstanceEditorSection')) {
             document.getElementById('tvHuntInstanceEditorSection').classList.add('active');
             document.getElementById('tvHuntInstanceEditorSection').style.display = 'block';
-            if (document.getElementById('tvHuntInstanceManagementSection')) {
-                document.getElementById('tvHuntInstanceManagementSection').classList.remove('active');
-                document.getElementById('tvHuntInstanceManagementSection').style.display = 'none';
-            }
-            if (document.getElementById('tv-hunt-section')) {
-                document.getElementById('tv-hunt-section').classList.remove('active');
-                document.getElementById('tv-hunt-section').style.display = 'none';
-            }
+            if (document.getElementById('tvHuntInstanceManagementSection')) { document.getElementById('tvHuntInstanceManagementSection').classList.remove('active'); document.getElementById('tvHuntInstanceManagementSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsCustomFormatsSection')) { document.getElementById('tvHuntSettingsCustomFormatsSection').classList.remove('active'); document.getElementById('tvHuntSettingsCustomFormatsSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsProfilesSection')) { document.getElementById('tvHuntSettingsProfilesSection').classList.remove('active'); document.getElementById('tvHuntSettingsProfilesSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsIndexersSection')) { document.getElementById('tvHuntSettingsIndexersSection').classList.remove('active'); document.getElementById('tvHuntSettingsIndexersSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsClientsSection')) { document.getElementById('tvHuntSettingsClientsSection').classList.remove('active'); document.getElementById('tvHuntSettingsClientsSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsRootFoldersSection')) { document.getElementById('tvHuntSettingsRootFoldersSection').classList.remove('active'); document.getElementById('tvHuntSettingsRootFoldersSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsSizesSection')) { document.getElementById('tvHuntSettingsSizesSection').classList.remove('active'); document.getElementById('tvHuntSettingsSizesSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsTVManagementSection')) { document.getElementById('tvHuntSettingsTVManagementSection').classList.remove('active'); document.getElementById('tvHuntSettingsTVManagementSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsImportListsSection')) { document.getElementById('tvHuntSettingsImportListsSection').classList.remove('active'); document.getElementById('tvHuntSettingsImportListsSection').style.display = 'none'; }
+            if (document.getElementById('tv-hunt-section')) { document.getElementById('tv-hunt-section').classList.remove('active'); document.getElementById('tv-hunt-section').style.display = 'none'; }
             newTitle = 'TV Hunt Instance Editor';
             this.currentSection = 'tv-hunt-instance-editor';
             this.showTVHuntSidebar();
@@ -854,30 +870,160 @@ let huntarrUI = {
             document.getElementById('tvHuntSettingsCustomFormatsSection').classList.add('active');
             document.getElementById('tvHuntSettingsCustomFormatsSection').style.display = 'block';
             if (document.getElementById('tvHuntSettingsCustomFormatsNav')) document.getElementById('tvHuntSettingsCustomFormatsNav').classList.add('active');
-            if (document.getElementById('tvHuntInstanceManagementSection')) {
-                document.getElementById('tvHuntInstanceManagementSection').classList.remove('active');
-                document.getElementById('tvHuntInstanceManagementSection').style.display = 'none';
-            }
-            if (document.getElementById('tvHuntInstanceEditorSection')) {
-                document.getElementById('tvHuntInstanceEditorSection').classList.remove('active');
-                document.getElementById('tvHuntInstanceEditorSection').style.display = 'none';
-            }
-            if (document.getElementById('tv-hunt-section')) {
-                document.getElementById('tv-hunt-section').classList.remove('active');
-                document.getElementById('tv-hunt-section').style.display = 'none';
-            }
+            if (document.getElementById('tvHuntInstanceManagementSection')) { document.getElementById('tvHuntInstanceManagementSection').classList.remove('active'); document.getElementById('tvHuntInstanceManagementSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntInstanceEditorSection')) { document.getElementById('tvHuntInstanceEditorSection').classList.remove('active'); document.getElementById('tvHuntInstanceEditorSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsProfilesSection')) { document.getElementById('tvHuntSettingsProfilesSection').classList.remove('active'); document.getElementById('tvHuntSettingsProfilesSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsIndexersSection')) { document.getElementById('tvHuntSettingsIndexersSection').classList.remove('active'); document.getElementById('tvHuntSettingsIndexersSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsClientsSection')) { document.getElementById('tvHuntSettingsClientsSection').classList.remove('active'); document.getElementById('tvHuntSettingsClientsSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsRootFoldersSection')) { document.getElementById('tvHuntSettingsRootFoldersSection').classList.remove('active'); document.getElementById('tvHuntSettingsRootFoldersSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsSizesSection')) { document.getElementById('tvHuntSettingsSizesSection').classList.remove('active'); document.getElementById('tvHuntSettingsSizesSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsTVManagementSection')) { document.getElementById('tvHuntSettingsTVManagementSection').classList.remove('active'); document.getElementById('tvHuntSettingsTVManagementSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsImportListsSection')) { document.getElementById('tvHuntSettingsImportListsSection').classList.remove('active'); document.getElementById('tvHuntSettingsImportListsSection').style.display = 'none'; }
+            if (document.getElementById('tv-hunt-section')) { document.getElementById('tv-hunt-section').classList.remove('active'); document.getElementById('tv-hunt-section').style.display = 'none'; }
             newTitle = 'TV Hunt Custom Formats';
             this.currentSection = 'tv-hunt-settings-custom-formats';
             this.showTVHuntSidebar();
             if (window.TVHuntCustomFormats && typeof window.TVHuntCustomFormats.refreshList === 'function') {
                 window.TVHuntCustomFormats.refreshList();
             }
+        } else if (section === 'tv-hunt-settings-profiles' && document.getElementById('tvHuntSettingsProfilesSection')) {
+            document.getElementById('tvHuntSettingsProfilesSection').classList.add('active');
+            document.getElementById('tvHuntSettingsProfilesSection').style.display = 'block';
+            if (document.getElementById('tvHuntSettingsProfilesNav')) document.getElementById('tvHuntSettingsProfilesNav').classList.add('active');
+            if (document.getElementById('tvHuntInstanceManagementSection')) { document.getElementById('tvHuntInstanceManagementSection').classList.remove('active'); document.getElementById('tvHuntInstanceManagementSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntInstanceEditorSection')) { document.getElementById('tvHuntInstanceEditorSection').classList.remove('active'); document.getElementById('tvHuntInstanceEditorSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsCustomFormatsSection')) { document.getElementById('tvHuntSettingsCustomFormatsSection').classList.remove('active'); document.getElementById('tvHuntSettingsCustomFormatsSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsIndexersSection')) { document.getElementById('tvHuntSettingsIndexersSection').classList.remove('active'); document.getElementById('tvHuntSettingsIndexersSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsClientsSection')) { document.getElementById('tvHuntSettingsClientsSection').classList.remove('active'); document.getElementById('tvHuntSettingsClientsSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsRootFoldersSection')) { document.getElementById('tvHuntSettingsRootFoldersSection').classList.remove('active'); document.getElementById('tvHuntSettingsRootFoldersSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsSizesSection')) { document.getElementById('tvHuntSettingsSizesSection').classList.remove('active'); document.getElementById('tvHuntSettingsSizesSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsTVManagementSection')) { document.getElementById('tvHuntSettingsTVManagementSection').classList.remove('active'); document.getElementById('tvHuntSettingsTVManagementSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsImportListsSection')) { document.getElementById('tvHuntSettingsImportListsSection').classList.remove('active'); document.getElementById('tvHuntSettingsImportListsSection').style.display = 'none'; }
+            if (document.getElementById('tv-hunt-section')) { document.getElementById('tv-hunt-section').classList.remove('active'); document.getElementById('tv-hunt-section').style.display = 'none'; }
+            newTitle = 'TV Hunt Profiles';
+            this.currentSection = 'tv-hunt-settings-profiles';
+            this.showTVHuntSidebar();
+            if (window.TVHuntSettingsForms && typeof window.TVHuntSettingsForms.refreshProfilesList === 'function') {
+                window.TVHuntSettingsForms.refreshProfilesList();
+            }
+        } else if (section === 'tv-hunt-settings-indexers' && document.getElementById('tvHuntSettingsIndexersSection')) {
+            document.getElementById('tvHuntSettingsIndexersSection').classList.add('active');
+            document.getElementById('tvHuntSettingsIndexersSection').style.display = 'block';
+            if (document.getElementById('tvHuntSettingsIndexersNav')) document.getElementById('tvHuntSettingsIndexersNav').classList.add('active');
+            if (document.getElementById('tvHuntInstanceManagementSection')) { document.getElementById('tvHuntInstanceManagementSection').classList.remove('active'); document.getElementById('tvHuntInstanceManagementSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntInstanceEditorSection')) { document.getElementById('tvHuntInstanceEditorSection').classList.remove('active'); document.getElementById('tvHuntInstanceEditorSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsCustomFormatsSection')) { document.getElementById('tvHuntSettingsCustomFormatsSection').classList.remove('active'); document.getElementById('tvHuntSettingsCustomFormatsSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsProfilesSection')) { document.getElementById('tvHuntSettingsProfilesSection').classList.remove('active'); document.getElementById('tvHuntSettingsProfilesSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsClientsSection')) { document.getElementById('tvHuntSettingsClientsSection').classList.remove('active'); document.getElementById('tvHuntSettingsClientsSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsRootFoldersSection')) { document.getElementById('tvHuntSettingsRootFoldersSection').classList.remove('active'); document.getElementById('tvHuntSettingsRootFoldersSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsSizesSection')) { document.getElementById('tvHuntSettingsSizesSection').classList.remove('active'); document.getElementById('tvHuntSettingsSizesSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsTVManagementSection')) { document.getElementById('tvHuntSettingsTVManagementSection').classList.remove('active'); document.getElementById('tvHuntSettingsTVManagementSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsImportListsSection')) { document.getElementById('tvHuntSettingsImportListsSection').classList.remove('active'); document.getElementById('tvHuntSettingsImportListsSection').style.display = 'none'; }
+            if (document.getElementById('tv-hunt-section')) { document.getElementById('tv-hunt-section').classList.remove('active'); document.getElementById('tv-hunt-section').style.display = 'none'; }
+            newTitle = 'TV Hunt Indexers';
+            this.currentSection = 'tv-hunt-settings-indexers';
+            this.showTVHuntSidebar();
+            if (window.TVHuntSettingsForms && typeof window.TVHuntSettingsForms.refreshIndexersList === 'function') {
+                window.TVHuntSettingsForms.refreshIndexersList();
+            }
+        } else if (section === 'tv-hunt-settings-clients' && document.getElementById('tvHuntSettingsClientsSection')) {
+            document.getElementById('tvHuntSettingsClientsSection').classList.add('active');
+            document.getElementById('tvHuntSettingsClientsSection').style.display = 'block';
+            if (document.getElementById('tvHuntSettingsClientsNav')) document.getElementById('tvHuntSettingsClientsNav').classList.add('active');
+            if (document.getElementById('tvHuntInstanceManagementSection')) { document.getElementById('tvHuntInstanceManagementSection').classList.remove('active'); document.getElementById('tvHuntInstanceManagementSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntInstanceEditorSection')) { document.getElementById('tvHuntInstanceEditorSection').classList.remove('active'); document.getElementById('tvHuntInstanceEditorSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsCustomFormatsSection')) { document.getElementById('tvHuntSettingsCustomFormatsSection').classList.remove('active'); document.getElementById('tvHuntSettingsCustomFormatsSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsProfilesSection')) { document.getElementById('tvHuntSettingsProfilesSection').classList.remove('active'); document.getElementById('tvHuntSettingsProfilesSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsIndexersSection')) { document.getElementById('tvHuntSettingsIndexersSection').classList.remove('active'); document.getElementById('tvHuntSettingsIndexersSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsRootFoldersSection')) { document.getElementById('tvHuntSettingsRootFoldersSection').classList.remove('active'); document.getElementById('tvHuntSettingsRootFoldersSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsSizesSection')) { document.getElementById('tvHuntSettingsSizesSection').classList.remove('active'); document.getElementById('tvHuntSettingsSizesSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsTVManagementSection')) { document.getElementById('tvHuntSettingsTVManagementSection').classList.remove('active'); document.getElementById('tvHuntSettingsTVManagementSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsImportListsSection')) { document.getElementById('tvHuntSettingsImportListsSection').classList.remove('active'); document.getElementById('tvHuntSettingsImportListsSection').style.display = 'none'; }
+            if (document.getElementById('tv-hunt-section')) { document.getElementById('tv-hunt-section').classList.remove('active'); document.getElementById('tv-hunt-section').style.display = 'none'; }
+            newTitle = 'TV Hunt Clients';
+            this.currentSection = 'tv-hunt-settings-clients';
+            this.showTVHuntSidebar();
+            if (window.TVHuntSettingsForms && typeof window.TVHuntSettingsForms.refreshClientsList === 'function') {
+                window.TVHuntSettingsForms.refreshClientsList();
+            }
+        } else if (section === 'tv-hunt-settings-root-folders' && document.getElementById('tvHuntSettingsRootFoldersSection')) {
+            document.getElementById('tvHuntSettingsRootFoldersSection').classList.add('active');
+            document.getElementById('tvHuntSettingsRootFoldersSection').style.display = 'block';
+            if (document.getElementById('tvHuntSettingsRootFoldersNav')) document.getElementById('tvHuntSettingsRootFoldersNav').classList.add('active');
+            if (document.getElementById('tvHuntInstanceManagementSection')) { document.getElementById('tvHuntInstanceManagementSection').classList.remove('active'); document.getElementById('tvHuntInstanceManagementSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntInstanceEditorSection')) { document.getElementById('tvHuntInstanceEditorSection').classList.remove('active'); document.getElementById('tvHuntInstanceEditorSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsCustomFormatsSection')) { document.getElementById('tvHuntSettingsCustomFormatsSection').classList.remove('active'); document.getElementById('tvHuntSettingsCustomFormatsSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsProfilesSection')) { document.getElementById('tvHuntSettingsProfilesSection').classList.remove('active'); document.getElementById('tvHuntSettingsProfilesSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsIndexersSection')) { document.getElementById('tvHuntSettingsIndexersSection').classList.remove('active'); document.getElementById('tvHuntSettingsIndexersSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsClientsSection')) { document.getElementById('tvHuntSettingsClientsSection').classList.remove('active'); document.getElementById('tvHuntSettingsClientsSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsSizesSection')) { document.getElementById('tvHuntSettingsSizesSection').classList.remove('active'); document.getElementById('tvHuntSettingsSizesSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsTVManagementSection')) { document.getElementById('tvHuntSettingsTVManagementSection').classList.remove('active'); document.getElementById('tvHuntSettingsTVManagementSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsImportListsSection')) { document.getElementById('tvHuntSettingsImportListsSection').classList.remove('active'); document.getElementById('tvHuntSettingsImportListsSection').style.display = 'none'; }
+            if (document.getElementById('tv-hunt-section')) { document.getElementById('tv-hunt-section').classList.remove('active'); document.getElementById('tv-hunt-section').style.display = 'none'; }
+            newTitle = 'TV Hunt Root Folders';
+            this.currentSection = 'tv-hunt-settings-root-folders';
+            this.showTVHuntSidebar();
+            if (window.TVHuntRootFolders && typeof window.TVHuntRootFolders.refreshList === 'function') {
+                window.TVHuntRootFolders.refreshList();
+            }
+        } else if (section === 'tv-hunt-settings-sizes' && document.getElementById('tvHuntSettingsSizesSection')) {
+            document.getElementById('tvHuntSettingsSizesSection').classList.add('active');
+            document.getElementById('tvHuntSettingsSizesSection').style.display = 'block';
+            if (document.getElementById('tvHuntSettingsSizesNav')) document.getElementById('tvHuntSettingsSizesNav').classList.add('active');
+            if (document.getElementById('tvHuntInstanceManagementSection')) { document.getElementById('tvHuntInstanceManagementSection').classList.remove('active'); document.getElementById('tvHuntInstanceManagementSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntInstanceEditorSection')) { document.getElementById('tvHuntInstanceEditorSection').classList.remove('active'); document.getElementById('tvHuntInstanceEditorSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsCustomFormatsSection')) { document.getElementById('tvHuntSettingsCustomFormatsSection').classList.remove('active'); document.getElementById('tvHuntSettingsCustomFormatsSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsProfilesSection')) { document.getElementById('tvHuntSettingsProfilesSection').classList.remove('active'); document.getElementById('tvHuntSettingsProfilesSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsIndexersSection')) { document.getElementById('tvHuntSettingsIndexersSection').classList.remove('active'); document.getElementById('tvHuntSettingsIndexersSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsClientsSection')) { document.getElementById('tvHuntSettingsClientsSection').classList.remove('active'); document.getElementById('tvHuntSettingsClientsSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsRootFoldersSection')) { document.getElementById('tvHuntSettingsRootFoldersSection').classList.remove('active'); document.getElementById('tvHuntSettingsRootFoldersSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsTVManagementSection')) { document.getElementById('tvHuntSettingsTVManagementSection').classList.remove('active'); document.getElementById('tvHuntSettingsTVManagementSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsImportListsSection')) { document.getElementById('tvHuntSettingsImportListsSection').classList.remove('active'); document.getElementById('tvHuntSettingsImportListsSection').style.display = 'none'; }
+            if (document.getElementById('tv-hunt-section')) { document.getElementById('tv-hunt-section').classList.remove('active'); document.getElementById('tv-hunt-section').style.display = 'none'; }
+            newTitle = 'TV Hunt Sizes';
+            this.currentSection = 'tv-hunt-settings-sizes';
+            this.showTVHuntSidebar();
+        } else if (section === 'tv-hunt-settings-tv-management' && document.getElementById('tvHuntSettingsTVManagementSection')) {
+            document.getElementById('tvHuntSettingsTVManagementSection').classList.add('active');
+            document.getElementById('tvHuntSettingsTVManagementSection').style.display = 'block';
+            if (document.getElementById('tvHuntSettingsTVManagementNav')) document.getElementById('tvHuntSettingsTVManagementNav').classList.add('active');
+            if (document.getElementById('tvHuntInstanceManagementSection')) { document.getElementById('tvHuntInstanceManagementSection').classList.remove('active'); document.getElementById('tvHuntInstanceManagementSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntInstanceEditorSection')) { document.getElementById('tvHuntInstanceEditorSection').classList.remove('active'); document.getElementById('tvHuntInstanceEditorSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsCustomFormatsSection')) { document.getElementById('tvHuntSettingsCustomFormatsSection').classList.remove('active'); document.getElementById('tvHuntSettingsCustomFormatsSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsProfilesSection')) { document.getElementById('tvHuntSettingsProfilesSection').classList.remove('active'); document.getElementById('tvHuntSettingsProfilesSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsIndexersSection')) { document.getElementById('tvHuntSettingsIndexersSection').classList.remove('active'); document.getElementById('tvHuntSettingsIndexersSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsClientsSection')) { document.getElementById('tvHuntSettingsClientsSection').classList.remove('active'); document.getElementById('tvHuntSettingsClientsSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsRootFoldersSection')) { document.getElementById('tvHuntSettingsRootFoldersSection').classList.remove('active'); document.getElementById('tvHuntSettingsRootFoldersSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsSizesSection')) { document.getElementById('tvHuntSettingsSizesSection').classList.remove('active'); document.getElementById('tvHuntSettingsSizesSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsImportListsSection')) { document.getElementById('tvHuntSettingsImportListsSection').classList.remove('active'); document.getElementById('tvHuntSettingsImportListsSection').style.display = 'none'; }
+            if (document.getElementById('tv-hunt-section')) { document.getElementById('tv-hunt-section').classList.remove('active'); document.getElementById('tv-hunt-section').style.display = 'none'; }
+            newTitle = 'TV Management';
+            this.currentSection = 'tv-hunt-settings-tv-management';
+            this.showTVHuntSidebar();
+        } else if (section === 'tv-hunt-settings-import-lists' && document.getElementById('tvHuntSettingsImportListsSection')) {
+            document.getElementById('tvHuntSettingsImportListsSection').classList.add('active');
+            document.getElementById('tvHuntSettingsImportListsSection').style.display = 'block';
+            if (document.getElementById('tvHuntSettingsImportListsNav')) document.getElementById('tvHuntSettingsImportListsNav').classList.add('active');
+            if (document.getElementById('tvHuntInstanceManagementSection')) { document.getElementById('tvHuntInstanceManagementSection').classList.remove('active'); document.getElementById('tvHuntInstanceManagementSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntInstanceEditorSection')) { document.getElementById('tvHuntInstanceEditorSection').classList.remove('active'); document.getElementById('tvHuntInstanceEditorSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsCustomFormatsSection')) { document.getElementById('tvHuntSettingsCustomFormatsSection').classList.remove('active'); document.getElementById('tvHuntSettingsCustomFormatsSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsProfilesSection')) { document.getElementById('tvHuntSettingsProfilesSection').classList.remove('active'); document.getElementById('tvHuntSettingsProfilesSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsIndexersSection')) { document.getElementById('tvHuntSettingsIndexersSection').classList.remove('active'); document.getElementById('tvHuntSettingsIndexersSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsClientsSection')) { document.getElementById('tvHuntSettingsClientsSection').classList.remove('active'); document.getElementById('tvHuntSettingsClientsSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsRootFoldersSection')) { document.getElementById('tvHuntSettingsRootFoldersSection').classList.remove('active'); document.getElementById('tvHuntSettingsRootFoldersSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsSizesSection')) { document.getElementById('tvHuntSettingsSizesSection').classList.remove('active'); document.getElementById('tvHuntSettingsSizesSection').style.display = 'none'; }
+            if (document.getElementById('tvHuntSettingsTVManagementSection')) { document.getElementById('tvHuntSettingsTVManagementSection').classList.remove('active'); document.getElementById('tvHuntSettingsTVManagementSection').style.display = 'none'; }
+            if (document.getElementById('tv-hunt-section')) { document.getElementById('tv-hunt-section').classList.remove('active'); document.getElementById('tv-hunt-section').style.display = 'none'; }
+            newTitle = 'TV Hunt Import Lists';
+            this.currentSection = 'tv-hunt-settings-import-lists';
+            this.showTVHuntSidebar();
         } else if (section && section.startsWith('tv-hunt-activity')) {
             // TV Hunt Activity - reuse Movie Hunt activity pattern
-            if (document.getElementById('tv-hunt-section')) {
-                document.getElementById('tv-hunt-section').classList.remove('active');
-                document.getElementById('tv-hunt-section').style.display = 'none';
-            }
+            // Hide all TV Hunt settings/main sections
+            ['tv-hunt-section', 'tvHuntInstanceManagementSection', 'tvHuntInstanceEditorSection', 'tvHuntSettingsCustomFormatsSection', 'tvHuntSettingsProfilesSection', 'tvHuntSettingsIndexersSection', 'tvHuntSettingsClientsSection', 'tvHuntSettingsRootFoldersSection', 'tvHuntSettingsSizesSection', 'tvHuntSettingsTVManagementSection', 'tvHuntSettingsImportListsSection'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) { el.classList.remove('active'); el.style.display = 'none'; }
+            });
             var view = section === 'tv-hunt-activity-queue' ? 'queue' : section === 'tv-hunt-activity-history' ? 'history' : 'blocklist';
             newTitle = 'TV Hunt ' + view.charAt(0).toUpperCase() + view.slice(1);
             this.currentSection = section;

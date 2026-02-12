@@ -173,21 +173,33 @@
                 <span>Settings</span>
             </a>
             <div class="nav-sub-group" id="tv-hunt-settings-sub" style="display: none;">
+                <a href="./#tv-hunt-settings-tv-management" class="nav-item nav-item-sub" id="tvHuntSettingsTVManagementNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-tv"></i></div>
+                    <span>TV Management</span>
+                </a>
                 <a href="./#tv-hunt-settings-profiles" class="nav-item nav-item-sub" id="tvHuntSettingsProfilesNav">
                     <div class="nav-icon-wrapper"><i class="fas fa-id-card"></i></div>
                     <span>Profiles</span>
                 </a>
-                <a href="./#tv-hunt-settings-indexers" class="nav-item nav-item-sub" id="tvHuntSettingsIndexersNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-server"></i></div>
-                    <span>Indexers</span>
+                <a href="./#tv-hunt-settings-sizes" class="nav-item nav-item-sub" id="tvHuntSettingsSizesNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-weight-hanging"></i></div>
+                    <span>Sizes</span>
                 </a>
                 <a href="./#tv-hunt-settings-custom-formats" class="nav-item nav-item-sub" id="tvHuntSettingsCustomFormatsNav">
                     <div class="nav-icon-wrapper"><i class="fas fa-code"></i></div>
                     <span>Custom Formats</span>
                 </a>
+                <a href="./#tv-hunt-settings-indexers" class="nav-item nav-item-sub" id="tvHuntSettingsIndexersNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-server"></i></div>
+                    <span>Indexers</span>
+                </a>
                 <a href="./#tv-hunt-settings-clients" class="nav-item nav-item-sub" id="tvHuntSettingsClientsNav">
                     <div class="nav-icon-wrapper"><i class="fas fa-cloud-download-alt"></i></div>
                     <span>Clients</span>
+                </a>
+                <a href="./#tv-hunt-settings-import-lists" class="nav-item nav-item-sub" id="tvHuntSettingsImportListsNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-stream"></i></div>
+                    <span>Import Lists</span>
                 </a>
                 <a href="./#tv-hunt-settings-root-folders" class="nav-item nav-item-sub" id="tvHuntSettingsRootFoldersNav">
                     <div class="nav-icon-wrapper"><i class="fas fa-folder-open"></i></div>
@@ -713,10 +725,13 @@
         else if (currentHash === '#tv-hunt-activity-blocklist') { selector = '#tvHuntActivityBlocklistNav'; expandSub('tv-hunt-activity-sub'); }
         else if (currentHash === '#logs-tv-hunt') { selector = '#tvHuntLogsNav'; expandSub('tv-hunt-activity-sub'); }
         else if (currentHash === '#tv-hunt-settings' || currentHash === '#tv-hunt-instance-editor') { selector = '#tvHuntSettingsNav'; expandSub('tv-hunt-settings-sub'); }
+        else if (currentHash === '#tv-hunt-settings-tv-management') { selector = '#tvHuntSettingsTVManagementNav'; expandSub('tv-hunt-settings-sub'); }
         else if (currentHash === '#tv-hunt-settings-profiles') { selector = '#tvHuntSettingsProfilesNav'; expandSub('tv-hunt-settings-sub'); }
+        else if (currentHash === '#tv-hunt-settings-sizes') { selector = '#tvHuntSettingsSizesNav'; expandSub('tv-hunt-settings-sub'); }
         else if (currentHash === '#tv-hunt-settings-custom-formats') { selector = '#tvHuntSettingsCustomFormatsNav'; expandSub('tv-hunt-settings-sub'); }
         else if (currentHash === '#tv-hunt-settings-indexers') { selector = '#tvHuntSettingsIndexersNav'; expandSub('tv-hunt-settings-sub'); }
         else if (currentHash === '#tv-hunt-settings-clients') { selector = '#tvHuntSettingsClientsNav'; expandSub('tv-hunt-settings-sub'); }
+        else if (currentHash === '#tv-hunt-settings-import-lists') { selector = '#tvHuntSettingsImportListsNav'; expandSub('tv-hunt-settings-sub'); }
         else if (currentHash === '#tv-hunt-settings-root-folders') { selector = '#tvHuntSettingsRootFoldersNav'; expandSub('tv-hunt-settings-sub'); }
         // Indexer Hunt
         else if (currentHash === '#indexer-hunt') { selector = '#indexerHuntNav'; expandSub('indexer-hunt-sub'); }
@@ -752,7 +767,7 @@
         if (mhCollectionHashes.indexOf(currentHash) === -1) collapseSub('movie-hunt-collection-sub');
 
         // Collapse TV Hunt subs
-        var thSettingsHashes = ['#tv-hunt-settings', '#tv-hunt-settings-profiles', '#tv-hunt-settings-custom-formats', '#tv-hunt-settings-indexers', '#tv-hunt-settings-clients', '#tv-hunt-settings-root-folders'];
+        var thSettingsHashes = ['#tv-hunt-settings', '#tv-hunt-instance-editor', '#tv-hunt-settings-tv-management', '#tv-hunt-settings-profiles', '#tv-hunt-settings-sizes', '#tv-hunt-settings-custom-formats', '#tv-hunt-settings-indexers', '#tv-hunt-settings-clients', '#tv-hunt-settings-import-lists', '#tv-hunt-settings-root-folders'];
         if (thSettingsHashes.indexOf(currentHash) === -1) collapseSub('tv-hunt-settings-sub');
         var thActivityHashes = ['#tv-hunt-activity-queue', '#tv-hunt-activity-history', '#tv-hunt-activity-blocklist', '#logs-tv-hunt'];
         if (thActivityHashes.indexOf(currentHash) === -1) collapseSub('tv-hunt-activity-sub');

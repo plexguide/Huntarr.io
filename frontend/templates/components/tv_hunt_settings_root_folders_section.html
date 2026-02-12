@@ -1,0 +1,24 @@
+<section id="tvHuntSettingsRootFoldersSection" class="content-section" style="display: none;">
+    {% with section_id='tv-hunt-settings-root-folders' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
+    <div class="app-content-panel" style="width:100%;padding:20px;margin:0;background:transparent;box-shadow:none;border:none;">
+        <div class="movie-hunt-settings-instance-bar" style="margin-bottom: 16px;">
+            <select id="tv-hunt-settings-root-folders-instance-select" class="control-select" aria-label="Instance">
+                <option value="">Loading...</option>
+            </select>
+        </div>
+        <div class="settings-group" style="background:rgba(15,23,42,0.4);border:1px solid rgba(148,163,184,0.08);border-radius:12px;padding:24px;margin:12px 0 20px 0;">
+            <h3 style="margin:0 0 12px 0;padding:0 0 10px 0;font-size:1.1rem;font-weight:600;color:#f1f5f9;border-bottom:1px solid rgba(148,163,184,0.12);background:none;box-shadow:none;">Root Folders</h3>
+            <p style="margin:0 0 20px 0;color:#94a3b8;font-size:0.95rem;">Root folders are where your media is stored. TV Hunt uses these paths to know if you already have a show (e.g. for Docker, use the path inside the container such as <code style="background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:4px;">/tv</code>).</p>
+            <div class="instance-card-grid" id="tv-hunt-root-folders-grid">
+                <div class="add-instance-card" data-app-type="tv-hunt-root-folder">
+                    <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
+                    <div class="add-text">Add Root Folder</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<style>
+    #tvHuntSettingsRootFoldersSection { width:100%; min-height:100vh; overflow-y:auto; overflow-x:hidden; }
+    #tvHuntSettingsRootFoldersSection.active { display:block !important; }
+</style>

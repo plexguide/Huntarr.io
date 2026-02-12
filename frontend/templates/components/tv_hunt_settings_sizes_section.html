@@ -1,0 +1,21 @@
+<section id="tvHuntSettingsSizesSection" class="content-section" style="display: none;">
+    {% with section_id='tv-hunt-settings-sizes' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
+    <div class="app-content-panel" style="width:100%;padding:20px;margin:0;background:transparent;box-shadow:none;border:none;">
+        <div class="settings-group" style="background:rgba(15,23,42,0.4);border:1px solid rgba(148,163,184,0.08);border-radius:12px;padding:24px;margin:12px 0 20px 0;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+                <div>
+                    <h3 style="margin:0 0 8px 0;padding:0;font-size:1.1rem;font-weight:600;color:#f1f5f9;background:none;box-shadow:none;border:none;display:flex;align-items:center;gap:8px;"><i class="fas fa-weight-hanging"></i> Sizes</h3>
+                    <p style="font-size:0.9rem;color:#94a3b8;margin:0;">Set file size limits per quality. Values are in <strong>MB per minute</strong> of runtime.</p>
+                </div>
+            </div>
+            <div style="text-align:center;padding:40px 20px;color:#64748b;">
+                <i class="fas fa-weight-hanging" style="font-size:2rem;margin-bottom:12px;display:block;opacity:0.5;"></i>
+                <p style="margin:0;font-size:0.95rem;">Size limits for TV Hunt will be available in a future update.</p>
+            </div>
+        </div>
+    </div>
+</section>
+<style>
+    #tvHuntSettingsSizesSection { width:100%; min-height:100vh; overflow-y:auto; overflow-x:hidden; }
+    #tvHuntSettingsSizesSection.active { display:block !important; }
+</style>

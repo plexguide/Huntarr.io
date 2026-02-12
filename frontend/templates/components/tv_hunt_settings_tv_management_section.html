@@ -1,0 +1,21 @@
+<section id="tvHuntSettingsTVManagementSection" class="content-section" style="display: none;">
+    {% with section_id='tv-hunt-settings-tv-management' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
+    <div class="app-content-panel" style="width:100%;padding:20px;margin:0;background:transparent;box-shadow:none;border:none;">
+        <div class="movie-hunt-settings-instance-bar" style="margin-bottom: 16px;">
+            <select id="tv-hunt-settings-tv-management-instance-select" class="control-select" aria-label="Instance">
+                <option value="">Loading...</option>
+            </select>
+        </div>
+        <div class="settings-group" style="background:rgba(15,23,42,0.4);border:1px solid rgba(148,163,184,0.08);border-radius:12px;padding:24px;margin:12px 0 20px 0;">
+            <h3 style="margin:0 0 12px 0;padding:0 0 10px 0;font-size:1.1rem;font-weight:600;color:#f1f5f9;border-bottom:1px solid rgba(148,163,184,0.12);background:none;box-shadow:none;">TV Management</h3>
+            <div style="text-align:center;padding:40px 20px;color:#64748b;">
+                <i class="fas fa-tv" style="font-size:2rem;margin-bottom:12px;display:block;opacity:0.5;"></i>
+                <p style="margin:0;font-size:0.95rem;">TV management settings (naming, folder structure, episode handling) will be available in a future update.</p>
+            </div>
+        </div>
+    </div>
+</section>
+<style>
+    #tvHuntSettingsTVManagementSection { width:100%; min-height:100vh; overflow-y:auto; overflow-x:hidden; }
+    #tvHuntSettingsTVManagementSection.active { display:block !important; }
+</style>

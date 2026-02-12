@@ -1,0 +1,28 @@
+<section id="tvHuntSettingsImportListsSection" class="content-section" style="display: none;">
+    {% with section_id='tv-hunt-settings-import-lists' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
+    <div class="app-content-panel" style="width:100%;padding:20px;margin:0;background:transparent;box-shadow:none;border:none;">
+        <div class="movie-hunt-settings-instance-bar" style="margin-bottom: 16px;">
+            <select id="tv-hunt-settings-import-lists-instance-select" class="control-select" aria-label="Instance">
+                <option value="">Loading...</option>
+            </select>
+        </div>
+        <div class="settings-group" style="background:rgba(15,23,42,0.4);border:1px solid rgba(148,163,184,0.08);border-radius:12px;padding:24px;margin:12px 0 20px 0;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+                <div>
+                    <h3 style="margin:0 0 8px 0;padding:0 0 10px 0;font-size:1.1rem;font-weight:600;color:#f1f5f9;border-bottom:1px solid rgba(148,163,184,0.12);background:none;box-shadow:none;">Import Lists</h3>
+                    <p style="color:#94a3b8;font-size:0.9rem;margin:0 0 16px 0;">Automatically add TV shows to your collection from external lists.</p>
+                </div>
+            </div>
+            <div class="instance-card-grid" id="tv-hunt-import-lists-grid">
+                <div class="add-instance-card" data-app-type="tv-hunt-import-list">
+                    <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
+                    <div class="add-text">Add Import List</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<style>
+    #tvHuntSettingsImportListsSection { width:100%; min-height:100vh; overflow-y:auto; overflow-x:hidden; }
+    #tvHuntSettingsImportListsSection.active { display:block !important; }
+</style>
