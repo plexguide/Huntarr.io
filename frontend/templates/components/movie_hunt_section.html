@@ -2,7 +2,6 @@
 <div id="movie-hunt-section" class="content-section" style="display: none;">
     <link rel="stylesheet" href="./static/css/movie-hunt.css?v=1.3.0">
     <link rel="stylesheet" href="./static/css/movie-hunt-detail.css?v=1.5.0">
-    <link rel="stylesheet" href="./static/css/movie-hunt-calendar.css">
     {% with section_id='movie-hunt' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <div class="requestarr-content movie-hunt-content">
         <!-- Beta notice -->
@@ -134,46 +133,6 @@
                 </div>
             </div>
         </div>
-        </div>
-    </div>
-
-    <!-- Calendar View (upcoming release dates) -->
-    <div id="movie-hunt-calendar-view" class="movie-hunt-calendar-view" style="display: none;">
-        <div class="mh-calendar-header">
-            <h2 class="mh-calendar-title"><i class="fas fa-calendar-alt"></i> Upcoming Releases</h2>
-            <div class="mh-calendar-controls">
-                <div class="instance-selector-container">
-                    <select id="movie-hunt-calendar-instance-select" class="control-select instance-select">
-                        <option value="">Loading instances...</option>
-                    </select>
-                </div>
-                <div class="mh-calendar-tabs">
-                    <button class="mh-calendar-tab active" data-tab="collection">My Collection</button>
-                    <button class="mh-calendar-tab" data-tab="upcoming">Discover Upcoming</button>
-                </div>
-            </div>
-        </div>
-        <div id="mh-calendar-collection-view" class="mh-calendar-content">
-            <div class="mh-calendar-legend">
-                <span class="mh-calendar-legend-item"><span class="mh-cal-dot mh-cal-dot-cinemas"></span> In Cinemas</span>
-                <span class="mh-calendar-legend-item"><span class="mh-cal-dot mh-cal-dot-digital"></span> Digital Release</span>
-                <span class="mh-calendar-legend-item"><span class="mh-cal-dot mh-cal-dot-physical"></span> Physical Release</span>
-                <span class="mh-calendar-legend-item"><span class="mh-cal-dot mh-cal-dot-tba"></span> Date TBA</span>
-            </div>
-            <div id="mh-calendar-timeline" class="mh-calendar-timeline">
-                <div class="loading-spinner">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <p>Loading calendar...</p>
-                </div>
-            </div>
-        </div>
-        <div id="mh-calendar-upcoming-view" class="mh-calendar-content" style="display: none;">
-            <div id="mh-calendar-upcoming-timeline" class="mh-calendar-timeline">
-                <div class="loading-spinner">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <p>Loading upcoming movies...</p>
-                </div>
-            </div>
         </div>
     </div>
 

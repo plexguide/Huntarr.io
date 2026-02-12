@@ -1,0 +1,42 @@
+{# Media Hunt Calendar – single section for Movie Hunt and TV Hunt. Mode set by router. #}
+<section id="mediaHuntCalendarSection" class="content-section" style="display: none;">
+    <link rel="stylesheet" href="./static/css/movie-hunt-calendar.css">
+    <div class="movie-hunt-calendar-view media-hunt-calendar-view" style="padding: 0 0 20px 0; width: 100%; max-width: none !important; margin: 0; box-sizing: border-box;">
+        <div class="mh-calendar-header">
+            <h2 class="mh-calendar-title" id="media-hunt-calendar-title"><i class="fas fa-calendar-alt"></i> Calendar</h2>
+            <div class="mh-calendar-controls">
+                <div class="instance-selector-container">
+                    <select id="media-hunt-calendar-instance-select" class="control-select instance-select" aria-label="Instance">
+                        <option value="">Loading instances...</option>
+                    </select>
+                </div>
+                <div class="mh-calendar-tabs" id="media-hunt-calendar-tabs-wrap">
+                    <button type="button" class="mh-calendar-tab active" data-tab="collection">My Collection</button>
+                    <button type="button" class="mh-calendar-tab" data-tab="upcoming">Discover Upcoming</button>
+                </div>
+            </div>
+        </div>
+        <div id="media-hunt-calendar-collection-view" class="mh-calendar-content">
+            <div class="mh-calendar-legend" id="media-hunt-calendar-legend">
+                <span class="mh-calendar-legend-item"><span class="mh-cal-dot mh-cal-dot-cinemas"></span> In Cinemas</span>
+                <span class="mh-calendar-legend-item"><span class="mh-cal-dot mh-cal-dot-digital"></span> Digital Release</span>
+                <span class="mh-calendar-legend-item"><span class="mh-cal-dot mh-cal-dot-physical"></span> Physical Release</span>
+                <span class="mh-calendar-legend-item"><span class="mh-cal-dot mh-cal-dot-tba"></span> Date TBA</span>
+            </div>
+            <div id="media-hunt-calendar-timeline" class="mh-calendar-timeline">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading calendar...</p>
+                </div>
+            </div>
+        </div>
+        <div id="media-hunt-calendar-upcoming-view" class="mh-calendar-content" style="display: none;">
+            <div id="media-hunt-calendar-upcoming-timeline" class="mh-calendar-timeline">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading upcoming...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
