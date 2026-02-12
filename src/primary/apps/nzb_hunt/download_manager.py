@@ -387,12 +387,26 @@ class NZBHuntDownloadManager:
                             except Exception:
                                 pass
                             continue
+                    # Reset to queued AND clear all progress counters —
+                    # in-memory segment data is gone after restart, so the
+                    # download must start fresh.
                     item.state = STATE_QUEUED
+                    item.completed_segments = 0
+                    item.downloaded_bytes = 0
+                    item.completed_files = 0
+                    item.failed_segments = 0
+                    item.missing_bytes = 0
+                    item.speed_bps = 0
+                    item.eta_seconds = 0
+                    item.status_message = ""
+                    item.error_message = ""
+                    item.started_at = None
+                    logger.info(f"[{item.id}] Reset to QUEUED with cleared counters (restart recovery)")
             for item in to_remove:
                 self._queue = [i for i in self._queue if i.id != item.id]
                 self._history.append(item)
-            if to_remove:
-                self._save_state()
+            # Always save after recovery (counters were reset)
+            self._save_state()
             logger.info(f"Loaded NZB Hunt state: {len(self._queue)} queued, {len(self._history)} history")
         except Exception as e:
             logger.error(f"Failed to load NZB Hunt state: {e}")
@@ -1218,6 +1232,17 @@ class NZBHuntDownloadManager:
         """Process a single NZB download using parallel connections."""
         item.state = STATE_DOWNLOADING
         item.started_at = datetime.now(timezone.utc).isoformat()
+        # Reset all progress counters (critical after restart recovery –
+        # in-memory segment data is gone, must download everything fresh)
+        item.completed_segments = 0
+        item.downloaded_bytes = 0
+        item.completed_files = 0
+        item.failed_segments = 0
+        item.missing_bytes = 0
+        item.speed_bps = 0
+        item.eta_seconds = 0
+        item.status_message = ""
+        item.error_message = ""
         self._save_state()
         
         try:
