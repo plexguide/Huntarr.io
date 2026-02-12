@@ -16,8 +16,8 @@
     // ── Preset metadata (must match backend INDEXER_PRESETS) ────────────
     var PRESET_META = {
         dognzb:        { name: 'DOGnzb',         url: 'https://api.dognzb.cr',            api_path: '/api', categories: [2000,2010,2020,2030,2040,2045,2050,2060] },
-        drunkenslug:   { name: 'DrunkenSlug',     url: 'https://drunkenslug.com',           api_path: '/api', categories: [2000,2010,2020,2030,2040,2045,2050,2060] },
-        'nzb.su':      { name: 'Nzb.su',          url: 'https://api.nzb.su',                api_path: '/api', categories: [2000,2010,2020,2030,2040,2045,2050,2060] },
+        drunkenslug:   { name: 'DrunkenSlug',     url: 'https://drunkenslug.com',           api_path: '/api', categories: [2000,2010,2030,2040,2045,2050,2060] },
+        'nzb.su':      { name: 'Nzb.su',          url: 'https://api.nzb.su',                api_path: '/api', categories: [2000,2010,2020,2030,2040,2045] },
         nzbcat:        { name: 'NZBCat',          url: 'https://nzb.cat',                   api_path: '/api', categories: [2000,2010,2020,2030,2040,2045,2050,2060] },
         'nzbfinder.ws':{ name: 'NZBFinder.ws',    url: 'https://nzbfinder.ws',              api_path: '/api', categories: [2030,2040,2045,2050,2060,2070] },
         nzbgeek:       { name: 'NZBgeek',         url: 'https://api.nzbgeek.info',          api_path: '/api', categories: [2000,2010,2020,2030,2040,2045,2050,2060] },
@@ -28,11 +28,40 @@
     };
     window.INDEXER_PRESET_META = PRESET_META;
 
-    // ── All Newznab movie categories ───────────────────────────────────
+    // ── Standard Newznab movie categories (most indexers) ───────────────
     var ALL_MOVIE_CATEGORIES = [
         { id: 2000, name: 'Movies' }, { id: 2010, name: 'Movies/Foreign' }, { id: 2020, name: 'Movies/Other' },
         { id: 2030, name: 'Movies/SD' }, { id: 2040, name: 'Movies/HD' }, { id: 2045, name: 'Movies/UHD' },
         { id: 2050, name: 'Movies/BluRay' }, { id: 2060, name: 'Movies/3D' }, { id: 2070, name: 'Movies/DVD' }
+    ];
+    // DOGnzb-specific: exact categories from DOGnzb dropdown
+    var DOGNZB_CATEGORIES = [
+        { id: 2000, name: 'Movies' }, { id: 2010, name: 'Foreign' }, { id: 2020, name: 'Other' },
+        { id: 2030, name: 'SD' }, { id: 2040, name: 'HD' }, { id: 2045, name: '4K' },
+        { id: 2050, name: 'BluRay' }, { id: 2060, name: '3D' }, { id: 2070, name: 'Mobile' }
+    ];
+    // NZBCat-specific: exact categories from NZBCat dropdown
+    var NZBCAT_CATEGORIES = [
+        { id: 2000, name: 'Movies' }, { id: 2010, name: 'Foreign' }, { id: 2020, name: 'Other' },
+        { id: 2030, name: 'SD' }, { id: 2040, name: 'HD' }, { id: 2045, name: 'UHD' },
+        { id: 2050, name: 'BluRay' }, { id: 2060, name: '3D' }, { id: 2070, name: 'Movies/DVD' }
+    ];
+    // NZB.su-specific: exact categories from NZB.su dropdown - only these 6
+    var NZBSU_CATEGORIES = [
+        { id: 2000, name: 'Movies' }, { id: 2010, name: 'Foreign' }, { id: 2020, name: 'Other' },
+        { id: 2030, name: 'SD' }, { id: 2040, name: 'HD' }, { id: 2045, name: 'UHD' }
+    ];
+    // NZBFinder-specific: 2050=3D, 2060=BluRay, 2070=DVD, 2999=Other
+    var NZBFINDER_CATEGORIES = [
+        { id: 2000, name: 'Movies' }, { id: 2010, name: 'Foreign' },
+        { id: 2030, name: 'SD' }, { id: 2040, name: 'HD' }, { id: 2045, name: 'UHD' },
+        { id: 2050, name: '3D' }, { id: 2060, name: 'BluRay' }, { id: 2070, name: 'DVD' }, { id: 2999, name: 'Other' }
+    ];
+    // DrunkenSlug-specific: exact categories from DrunkenSlug dropdown - no 2020
+    var DRUNKENSLUG_CATEGORIES = [
+        { id: 2000, name: 'Movies' }, { id: 2010, name: 'Foreign' },
+        { id: 2030, name: 'SD' }, { id: 2040, name: 'HD' }, { id: 2045, name: 'UHD' },
+        { id: 2050, name: '3D' }, { id: 2060, name: 'BluRay' }, { id: 2070, name: 'DVD' }, { id: 2999, name: 'Other' }
     ];
     var DEFAULT_CATEGORIES = [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2060];
 
@@ -43,7 +72,13 @@
         if (p === 'manual') return 'Custom (Manual)';
         return p;
     };
-    Forms.getIndexerCategoriesForPreset = function() {
+    Forms.getIndexerCategoriesForPreset = function(preset) {
+        var p = (preset || '').toLowerCase().trim();
+        if (p === 'dognzb') return DOGNZB_CATEGORIES;
+        if (p === 'drunkenslug') return DRUNKENSLUG_CATEGORIES;
+        if (p === 'nzb.su') return NZBSU_CATEGORIES;
+        if (p === 'nzbcat') return NZBCAT_CATEGORIES;
+        if (p === 'nzbfinder.ws') return NZBFINDER_CATEGORIES;
         return ALL_MOVIE_CATEGORIES;
     };
     Forms.getIndexerDefaultIdsForPreset = function(preset) {
@@ -176,7 +211,7 @@
             var pillsEl = document.getElementById('indexer-categories-pills');
             if (pillsEl) {
                 pillsEl.innerHTML = '';
-                var allCats = Forms.getIndexerCategoriesForPreset();
+                var allCats = Forms.getIndexerCategoriesForPreset(val);
                 defaultCats.forEach(function(id) {
                     var c = allCats.find(function(x) { return x.id === id; });
                     var label = c ? (c.name + ' (' + c.id + ')') : String(id);
@@ -220,7 +255,8 @@
                 if (!id) return;
                 var pill = catPills ? catPills.querySelector('.indexer-category-pill[data-category-id="' + id + '"]') : null;
                 if (pill) return;
-                var cats = Forms.getIndexerCategoriesForPreset();
+                var preset = presetElForCat ? presetElForCat.value : '';
+                var cats = Forms.getIndexerCategoriesForPreset(preset);
                 var c = cats.find(function(x) { return x.id === id; });
                 var label = c ? (c.name + ' (' + c.id + ')') : String(id);
                 var span = document.createElement('span');
@@ -302,7 +338,7 @@
         var urlReadonly = hasPreset && !isManual;
 
         // Categories
-        var allCats = Forms.getIndexerCategoriesForPreset();
+        var allCats = Forms.getIndexerCategoriesForPreset(preset);
         var defaultIds = hasPreset ? Forms.getIndexerDefaultIdsForPreset(preset) : [];
         var categoryIds = Array.isArray(instance.categories) ? instance.categories : defaultIds;
         if (categoryIds.length === 0) categoryIds = defaultIds;
@@ -413,8 +449,10 @@
     Forms.populateIndexerCategoriesDropdown = function() {
         var select = document.getElementById('editor-categories-select');
         var pills = document.getElementById('indexer-categories-pills');
+        var presetEl = document.getElementById('editor-preset');
         if (!select || !pills) return;
-        var categories = Forms.getIndexerCategoriesForPreset();
+        var preset = presetEl ? presetEl.value : '';
+        var categories = Forms.getIndexerCategoriesForPreset(preset);
         var selectedIds = Array.from(pills.querySelectorAll('.indexer-category-pill')).map(function(el) { return parseInt(el.getAttribute('data-category-id'), 10); }).filter(function(id) { return !isNaN(id); });
         select.innerHTML = '<option value="">Select a category to add...</option>';
         categories.forEach(function(c) {

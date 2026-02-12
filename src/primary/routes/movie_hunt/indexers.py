@@ -16,9 +16,12 @@ from ...utils.logger import logger
 # Categories follow Newznab standard: 2000-series = Movies
 INDEXER_PRESETS = {
     'dognzb':         {'name': 'DOGnzb',         'url': 'https://api.dognzb.cr',      'api_path': '/api'},
-    'drunkenslug':    {'name': 'DrunkenSlug',     'url': 'https://drunkenslug.com',     'api_path': '/api'},
-    'nzb.su':         {'name': 'Nzb.su',          'url': 'https://api.nzb.su',          'api_path': '/api'},
-    'nzbcat':         {'name': 'NZBCat',          'url': 'https://nzb.cat',             'api_path': '/api'},
+    'drunkenslug':    {'name': 'DrunkenSlug',     'url': 'https://drunkenslug.com',     'api_path': '/api',
+                       'categories': [2000, 2010, 2030, 2040, 2045, 2050, 2060]},
+    'nzb.su':         {'name': 'Nzb.su',          'url': 'https://api.nzb.su',          'api_path': '/api',
+                       'categories': [2000, 2010, 2020, 2030, 2040, 2045]},
+    'nzbcat':         {'name': 'NZBCat',          'url': 'https://nzb.cat',             'api_path': '/api',
+                       'categories': [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2060]},
     'nzbfinder.ws':   {'name': 'NZBFinder.ws',    'url': 'https://nzbfinder.ws',        'api_path': '/api',
                        'categories': [2030, 2040, 2045, 2050, 2060, 2070]},
     'nzbgeek':        {'name': 'NZBgeek',         'url': 'https://api.nzbgeek.info',    'api_path': '/api'},
