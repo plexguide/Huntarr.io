@@ -76,11 +76,11 @@
 
         <div class="nav-group" id="main-sidebar-beta-group">
             <div class="nav-group-title">Beta</div>
-            <a href="./#tv-hunt-collection" class="nav-item" id="tvHuntCollectionMainNav">
+            <a href="./#media-hunt-collection" class="nav-item" id="tvHuntCollectionMainNav">
                 <div class="nav-icon-wrapper"><i class="fas fa-tv"></i></div>
                 <span>TV Hunt</span>
             </a>
-            <a href="./#movie-hunt-collection" class="nav-item" id="mediaCollectionNav">
+            <a href="./#media-hunt-collection" class="nav-item" id="mediaCollectionNav">
                 <div class="nav-icon-wrapper"><i class="fas fa-folder-open"></i></div>
                 <span>Movie Hunt</span>
             </a>
@@ -136,7 +136,7 @@
         </div>
         <div class="nav-group">
             <div class="nav-group-title">TV Hunt</div>
-            <a href="./#tv-hunt-collection" class="nav-item" id="tvHuntCollectionNav">
+            <a href="./#media-hunt-collection" class="nav-item" id="tvHuntCollectionNav">
                 <div class="nav-icon-wrapper"><i class="fas fa-tv"></i></div>
                 <span>TV Collection</span>
             </a>
@@ -267,7 +267,7 @@
         </div>
         <div class="nav-group">
             <div class="nav-group-title">Movie Hunt</div>
-            <a href="./#movie-hunt-collection" class="nav-item" id="movieHuntCollectionNav">
+            <a href="./#media-hunt-collection" class="nav-item" id="movieHuntCollectionNav">
                 <div class="nav-icon-wrapper"><i class="fas fa-folder-open"></i></div>
                 <span>Movie Collection</span>
             </a>
@@ -715,6 +715,11 @@
         else if (currentHash === '#settings-root-folders') { selector = '#movieHuntSettingsRootFoldersNav'; expandSub('movie-hunt-settings-sub'); }
         // Movie Hunt sections
         else if (currentHash === '#movie-hunt-home' || currentHash === '#movie-hunt-collection') { selector = '#movieHuntCollectionNav'; expandSub('movie-hunt-collection-sub'); }
+        else if (currentHash === '#media-hunt-collection') {
+            expandSub('tv-hunt-collection-sub');
+            expandSub('movie-hunt-collection-sub');
+            selector = (document.getElementById('tv-hunt-sidebar') && document.getElementById('tv-hunt-sidebar').style.display !== 'none') ? '#tvHuntCollectionNav' : '#movieHuntCollectionNav';
+        }
         else if (currentHash === '#movie-hunt-calendar') { selector = '#movieHuntCalendarNav'; expandSub('movie-hunt-collection-sub'); }
         else if (currentHash === '#activity-queue') { selector = '#movieHuntActivityQueueNav'; expandSub('movie-hunt-activity-sub'); }
         else if (currentHash === '#activity-history') { selector = '#movieHuntActivityHistoryNav'; expandSub('movie-hunt-activity-sub'); }
@@ -768,7 +773,7 @@
         var mhActivityHashes = ['#activity-queue', '#activity-history', '#activity-blocklist', '#activity-logs', '#logs-movie-hunt'];
         if (mhActivityHashes.indexOf(currentHash) === -1) collapseSub('movie-hunt-activity-sub');
 
-        var mhCollectionHashes = ['#movie-hunt-home', '#movie-hunt-collection', '#settings-import-media', '#movie-hunt-calendar'];
+        var mhCollectionHashes = ['#movie-hunt-home', '#movie-hunt-collection', '#media-hunt-collection', '#settings-import-media', '#movie-hunt-calendar'];
         if (mhCollectionHashes.indexOf(currentHash) === -1) collapseSub('movie-hunt-collection-sub');
 
         // Collapse TV Hunt subs
@@ -776,7 +781,7 @@
         if (thSettingsHashes.indexOf(currentHash) === -1) collapseSub('tv-hunt-settings-sub');
         var thActivityHashes = ['#tv-hunt-activity-queue', '#tv-hunt-activity-history', '#tv-hunt-activity-blocklist', '#logs-tv-hunt'];
         if (thActivityHashes.indexOf(currentHash) === -1) collapseSub('tv-hunt-activity-sub');
-        var thCollectionHashes = ['#tv-hunt-home', '#tv-hunt-collection', '#tv-hunt-calendar'];
+        var thCollectionHashes = ['#tv-hunt-home', '#tv-hunt-collection', '#media-hunt-collection', '#tv-hunt-calendar'];
         if (thCollectionHashes.indexOf(currentHash) === -1) collapseSub('tv-hunt-collection-sub');
 
         // Collapse Indexer Hunt sub when not on indexer-hunt pages

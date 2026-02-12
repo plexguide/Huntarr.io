@@ -57,18 +57,26 @@ window.HuntarrNavigation = {
                 window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#requestarr-discover');
             }
         }
-        // Legacy Movie Hunt home → Media Collection (discovery is under Requestarr)
+        // Legacy Movie Hunt home → Media Hunt Collection
         if (section === 'movie-hunt-home') {
-            section = 'movie-hunt-collection';
-            if (window.location.hash !== '#movie-hunt-collection') {
-                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#movie-hunt-collection');
+            section = 'media-hunt-collection';
+            if (window.location.hash !== '#media-hunt-collection') {
+                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#media-hunt-collection');
             }
         }
-        // Legacy TV Hunt home → TV Collection
+        // TV/Movie Collection → unified Media Hunt Collection
+        if (section === 'tv-hunt-collection' || section === 'movie-hunt-collection') {
+            if (window.huntarrUI) window.huntarrUI._pendingMediaHuntSidebar = section === 'tv-hunt-collection' ? 'tv' : 'movie';
+            section = 'media-hunt-collection';
+            if (window.location.hash !== '#media-hunt-collection') {
+                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#media-hunt-collection');
+            }
+        }
+        // Legacy TV Hunt home → Media Hunt Collection
         if (section === 'tv-hunt-home') {
-            section = 'tv-hunt-collection';
-            if (window.location.hash !== '#tv-hunt-collection') {
-                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#tv-hunt-collection');
+            section = 'media-hunt-collection';
+            if (window.location.hash !== '#media-hunt-collection') {
+                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#media-hunt-collection');
             }
         }
         if (section === 'activity') {
@@ -279,7 +287,7 @@ window.HuntarrNavigation = {
             if (appType === 'indexer') sectionForNav = 'settings-indexers';
             else if (appType === 'client') sectionForNav = 'settings-clients';
         }
-        const collectionSections = ['movie-hunt-home', 'movie-hunt-collection', 'settings-import-media', 'movie-hunt-calendar'];
+        const collectionSections = ['movie-hunt-home', 'movie-hunt-collection', 'media-hunt-collection', 'settings-import-media', 'movie-hunt-calendar'];
         const activitySections = ['activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt'];
         const settingsSections = ['movie-hunt-settings', 'media-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-sizes', 'profile-editor', 'settings-custom-formats', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-root-folders', 'instance-editor'];
         const onCollection = collectionSections.indexOf(currentSection) !== -1;
@@ -314,7 +322,7 @@ window.HuntarrNavigation = {
             if (appType === 'indexer') sectionForNav = 'tv-hunt-settings-indexers';
             else if (appType === 'client') sectionForNav = 'tv-hunt-settings-clients';
         }
-        const collectionSections = ['tv-hunt-home', 'tv-hunt-collection', 'tv-hunt-calendar'];
+        const collectionSections = ['tv-hunt-home', 'tv-hunt-collection', 'media-hunt-collection', 'tv-hunt-calendar'];
         const activitySections = ['tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist', 'logs-tv-hunt'];
         const settingsSections = ['tv-hunt-settings', 'media-hunt-settings', 'tv-hunt-instance-editor', 'tv-hunt-settings-tv-management', 'tv-hunt-settings-profiles', 'tv-hunt-settings-sizes', 'tv-hunt-settings-custom-formats', 'tv-hunt-settings-indexers', 'tv-hunt-settings-clients', 'tv-hunt-settings-import-lists', 'tv-hunt-settings-root-folders'];
         const onCollection = collectionSections.indexOf(currentSection) !== -1;
