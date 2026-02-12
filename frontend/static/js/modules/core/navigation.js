@@ -66,7 +66,7 @@ window.HuntarrNavigation = {
         }
         // TV/Movie Collection → unified Media Hunt Collection
         if (section === 'tv-hunt-collection' || section === 'movie-hunt-collection') {
-            if (window.huntarrUI) window.huntarrUI._pendingMediaHuntSidebar = section === 'tv-hunt-collection' ? 'tv' : 'movie';
+            if (window.huntarrUI) window.huntarrUI._pendingMediaHuntSidebar = 'movie';
             section = 'media-hunt-collection';
             if (window.location.hash !== '#media-hunt-collection') {
                 window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#media-hunt-collection');
@@ -248,34 +248,19 @@ window.HuntarrNavigation = {
         const settingsSidebar = document.getElementById('settings-sidebar');
         const requestarrSidebar = document.getElementById('requestarr-sidebar');
         const movieHuntSidebar = document.getElementById('movie-hunt-sidebar');
-        const tvHuntSidebar = document.getElementById('tv-hunt-sidebar');
         
         if (mainSidebar) mainSidebar.style.display = 'none';
         if (appsSidebar) appsSidebar.style.display = 'none';
         if (settingsSidebar) settingsSidebar.style.display = 'none';
         if (requestarrSidebar) requestarrSidebar.style.display = 'none';
-        if (tvHuntSidebar) tvHuntSidebar.style.display = 'none';
         if (movieHuntSidebar) movieHuntSidebar.style.display = 'flex';
         
         this.updateMovieHuntSidebarActive();
     },
 
     showTVHuntSidebar: function() {
-        const mainSidebar = document.getElementById('sidebar');
-        const appsSidebar = document.getElementById('apps-sidebar');
-        const settingsSidebar = document.getElementById('settings-sidebar');
-        const requestarrSidebar = document.getElementById('requestarr-sidebar');
-        const movieHuntSidebar = document.getElementById('movie-hunt-sidebar');
-        const tvHuntSidebar = document.getElementById('tv-hunt-sidebar');
-        
-        if (mainSidebar) mainSidebar.style.display = 'none';
-        if (appsSidebar) appsSidebar.style.display = 'none';
-        if (settingsSidebar) settingsSidebar.style.display = 'none';
-        if (requestarrSidebar) requestarrSidebar.style.display = 'none';
-        if (movieHuntSidebar) movieHuntSidebar.style.display = 'none';
-        if (tvHuntSidebar) tvHuntSidebar.style.display = 'flex';
-        
-        this.updateTVHuntSidebarActive();
+        // TV Hunt menu removed; use Media Hunt (movie-hunt) sidebar for all media-hunt sections
+        this.showMovieHuntSidebar();
     },
 
     updateMovieHuntSidebarActive: function() {
@@ -314,38 +299,7 @@ window.HuntarrNavigation = {
     },
 
     updateTVHuntSidebarActive: function() {
-        if (!window.huntarrUI) return;
-        const currentSection = window.huntarrUI.currentSection;
-        let sectionForNav = currentSection;
-        if (currentSection === 'tv-hunt-instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing) {
-            const appType = window.SettingsForms._currentEditing.appType;
-            if (appType === 'indexer') sectionForNav = 'tv-hunt-settings-indexers';
-            else if (appType === 'client') sectionForNav = 'tv-hunt-settings-clients';
-        }
-        const collectionSections = ['tv-hunt-home', 'tv-hunt-collection', 'media-hunt-collection', 'tv-hunt-calendar'];
-        const activitySections = ['tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist', 'logs-tv-hunt'];
-        const settingsSections = ['tv-hunt-settings', 'media-hunt-settings', 'tv-hunt-instance-editor', 'tv-hunt-settings-tv-management', 'tv-hunt-settings-profiles', 'tv-hunt-settings-sizes', 'tv-hunt-settings-custom-formats', 'tv-hunt-settings-indexers', 'tv-hunt-settings-clients', 'tv-hunt-settings-import-lists', 'tv-hunt-settings-root-folders'];
-        const onCollection = collectionSections.indexOf(currentSection) !== -1;
-        const onActivity = activitySections.indexOf(sectionForNav) !== -1;
-        const onSettings = settingsSections.indexOf(currentSection) !== -1;
-
-        const colSub = document.getElementById('tv-hunt-collection-sub');
-        const actSub = document.getElementById('tv-hunt-activity-sub');
-        const setSub = document.getElementById('tv-hunt-settings-sub');
-        if (colSub) colSub.classList.toggle('expanded', onCollection);
-        if (actSub) actSub.classList.toggle('expanded', onActivity);
-        if (setSub) setSub.classList.toggle('expanded', onSettings);
-
-        const items = document.querySelectorAll('#tv-hunt-sidebar .nav-item');
-        const isActivitySub = activitySections.indexOf(sectionForNav) !== -1;
-        items.forEach(item => {
-            item.classList.remove('active');
-            if (isActivitySub && item.id === 'tvHuntActivityNav') return;
-            const href = item.getAttribute && item.getAttribute('href') || (item.querySelector('a') && item.querySelector('a').getAttribute('href'));
-            if (href && (href === '#' + sectionForNav || href.endsWith('#' + sectionForNav))) {
-                item.classList.add('active');
-            }
-        });
+        // TV Hunt sidebar removed; no-op
     },
 
     updateAppsSidebarActive: function() {
@@ -442,18 +396,7 @@ window.HuntarrNavigation = {
     },
 
     setupTVHuntNavigation: function() {
-        const tvHuntNavItems = document.querySelectorAll('#tv-hunt-sidebar .nav-item');
-        tvHuntNavItems.forEach(item => {
-            const link = item.tagName === 'A' ? item : item.querySelector('a');
-            if (!link) return;
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const href = (link.getAttribute('href') || '').trim();
-                const hashIdx = href.indexOf('#');
-                const fragment = hashIdx >= 0 ? href.substring(hashIdx + 1) : href.replace(/^\.?\/*/, '');
-                if (fragment) window.location.hash = fragment;
-            });
-        });
+        // TV Hunt sidebar removed; no-op
     },
 
     setupNzbHuntNavigation: function() {

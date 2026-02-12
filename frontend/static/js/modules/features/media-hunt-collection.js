@@ -27,6 +27,7 @@
             this.setupSort();
             this.setupViewMode();
             this.setupSearch();
+            if (window._mediaHuntCollectionUnified) return;
             this.loadHiddenMediaIds().then(function() {
                 window.MovieHuntCollection.loadCollection();
             });
@@ -63,7 +64,17 @@
         getCurrentInstanceName: function() {
             var select = this.getEl('instance-select');
             if (!select) return '';
+            var opt = select.options[select.selectedIndex];
+            if (opt && opt.value && opt.value.indexOf('movie:') === 0)
+                return opt.getAttribute('data-name') || (opt.textContent || '').replace(/^Movie\s*-\s*/, '').trim();
             return select.value || '';
+        },
+        getCurrentInstanceId: function() {
+            var select = this.getEl('instance-select');
+            if (!select) return '';
+            var v = select.value || '';
+            if (v.indexOf('movie:') === 0) return v.slice(6);
+            return v;
         },
 
         hideMedia: function(tmdbId, title, posterPath, cardElement) {
@@ -88,6 +99,10 @@
             if (!input) return;
 
             input.addEventListener('input', function() {
+                if (window._mediaHuntCollectionUnified) {
+                    var isel = self.getEl('instance-select');
+                    if (isel && isel.value && isel.value.indexOf('movie:') !== 0) return;
+                }
                 if (self.searchTimeout) clearTimeout(self.searchTimeout);
                 var query = (input.value || '').trim();
 
@@ -210,6 +225,7 @@
 
         // ─── Instance / Sort / View Mode Setup ────────────────────────
         setupInstanceSelect: function() {
+            if (window._mediaHuntCollectionUnified) return;
             var select = this.getEl('instance-select');
             if (!select) return;
             var id = (this._prefix || 'media-hunt-collection') + '-instance-select';
@@ -230,12 +246,20 @@
             var self = this;
             var select = this.getEl('sort');
             if (!select) return;
+            if (window._mediaHuntCollectionUnified) {
+                var isel = this.getEl('instance-select');
+                if (isel && isel.value && isel.value.indexOf('movie:') !== 0) return;
+            }
             var saved = HuntarrUtils.getUIPreference('movie-hunt-collection-sort', 'title.asc');
             if (saved) {
                 self.sortBy = saved;
                 try { select.value = saved; } catch (e) {}
             }
             select.onchange = function() {
+                if (window._mediaHuntCollectionUnified) {
+                    var isel = self.getEl('instance-select');
+                    if (isel && isel.value && isel.value.indexOf('movie:') !== 0) return;
+                }
                 self.sortBy = (select.value || 'title.asc').trim();
                 HuntarrUtils.setUIPreference('movie-hunt-collection-sort', self.sortBy);
                 self.page = 1;
@@ -249,6 +273,10 @@
             if (!select) return;
             select.value = this.viewMode;
             select.onchange = function() {
+                if (window._mediaHuntCollectionUnified) {
+                    var isel = self.getEl('instance-select');
+                    if (isel && isel.value && isel.value.indexOf('movie:') !== 0) return;
+                }
                 self.viewMode = select.value;
                 HuntarrUtils.setUIPreference(self._prefix + '-view', self.viewMode);
                 self.renderPage();
@@ -262,8 +290,9 @@
             if (!grid) return;
             grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading media collection...</p></div>';
             grid.style.display = 'flex';
-            // No pagination - load all items at once
+            var instanceId = window._mediaHuntCollectionUnified ? this.getCurrentInstanceId() : (this.getEl('instance-select') && this.getEl('instance-select').value);
             var url = './api/movie-hunt/collection?page=' + this.page + '&page_size=' + this.pageSize + '&sort=' + encodeURIComponent(this.sortBy || 'title.asc');
+            if (instanceId) url += '&instance_id=' + encodeURIComponent(instanceId);
             if (this.searchQuery) url += '&q=' + encodeURIComponent(this.searchQuery);
             fetch(url)
                 .then(function(r) { return r.json(); })
@@ -288,8 +317,8 @@
 
             var instanceSelect = this.getEl('instance-select');
             var opt = instanceSelect && instanceSelect.options[instanceSelect.selectedIndex];
-            var noInstances = instanceSelect && (!instanceSelect.value || instanceSelect.value === '') &&
-                (!opt || (opt.value === '' && (opt.textContent || '').trim().indexOf('No Movie Hunt') !== -1));
+            var val = instanceSelect ? instanceSelect.value : '';
+            var noInstances = !val || (opt && (opt.value === '' || (opt.textContent || '').trim().indexOf('No Movie Hunt') !== -1));
 
             if (noInstances) {
                 if (grid) {
@@ -572,10 +601,11 @@
             this.setupViewMode();
             this.setupSearch();
             this.setupBackButton();
-            this.loadCollection();
+            if (!window._mediaHuntCollectionUnified) this.loadCollection();
         },
 
         setupInstanceSelect: function() {
+            if (window._mediaHuntCollectionUnified) return;
             var self = this;
             var select = this.getEl('instance-select');
             if (!select) return;
@@ -615,6 +645,10 @@
             var sortSelect = this.getEl('sort');
             if (!sortSelect) return;
             sortSelect.addEventListener('change', function() {
+                if (window._mediaHuntCollectionUnified) {
+                    var isel = self.getEl('instance-select');
+                    if (isel && isel.value && isel.value.indexOf('tv:') !== 0) return;
+                }
                 self.sortBy = sortSelect.value;
                 self.renderCollection();
             });
@@ -626,6 +660,10 @@
             if (!select) return;
             select.value = this.viewMode;
             select.addEventListener('change', function() {
+                if (window._mediaHuntCollectionUnified) {
+                    var isel = self.getEl('instance-select');
+                    if (isel && isel.value && isel.value.indexOf('tv:') !== 0) return;
+                }
                 self.viewMode = select.value;
                 HuntarrUtils.setUIPreference(self._prefix + '-view', self.viewMode);
                 self.renderCollection();
@@ -638,6 +676,10 @@
             if (!input) return;
             var timeout;
             input.addEventListener('input', function() {
+                if (window._mediaHuntCollectionUnified) {
+                    var isel = self.getEl('instance-select');
+                    if (isel && isel.value && isel.value.indexOf('tv:') !== 0) return;
+                }
                 if (timeout) clearTimeout(timeout);
                 var q = (input.value || '').trim();
                 if (!q) {
@@ -762,7 +804,10 @@
 
         getCurrentInstanceId: function() {
             var select = this.getEl('instance-select');
-            return select ? select.value : '';
+            if (!select) return '';
+            var v = select.value || '';
+            if (v.indexOf('tv:') === 0) return v.slice(3);
+            return v;
         },
 
         loadCollection: function() {
@@ -1266,50 +1311,111 @@
 })();
 
 /**
- * Media Hunt Collection – unified page with TV (first) and Movie (second) blocks.
- * When both media-hunt-tv-collection-grid and media-hunt-movie-collection-grid exist, inits both.
+ * Media Hunt Collection – one combined instance dropdown (TV - Name / Movie - Name), one content area.
  */
 (function() {
     'use strict';
 
-    function isCombinedView() {
-        return !!(document.getElementById('media-hunt-tv-collection-grid') && document.getElementById('media-hunt-movie-collection-grid'));
+    var selectId = 'media-hunt-collection-instance-select';
+
+    function isUnifiedSingleDropdown() {
+        return !!document.getElementById(selectId) && !document.getElementById('media-hunt-tv-collection-grid');
+    }
+
+    function populateUnifiedDropdown(select, tvInstances, movieInstances) {
+        select.innerHTML = '';
+        var hasAny = (tvInstances && tvInstances.length > 0) || (movieInstances && movieInstances.length > 0);
+        if (!hasAny) {
+            select.innerHTML = '<option value="">No instances</option>';
+            return;
+        }
+        tvInstances.forEach(function(inst) {
+            var opt = document.createElement('option');
+            opt.value = 'tv:' + inst.id;
+            opt.textContent = 'TV - ' + (inst.name || 'Instance ' + inst.id);
+            select.appendChild(opt);
+        });
+        movieInstances.forEach(function(inst) {
+            var opt = document.createElement('option');
+            opt.value = 'movie:' + inst.id;
+            opt.setAttribute('data-name', inst.name || 'Instance ' + inst.id);
+            opt.textContent = 'Movie - ' + (inst.name || 'Instance ' + inst.id);
+            select.appendChild(opt);
+        });
     }
 
     window.MediaHuntCollection = {
         init: function() {
-            if (isCombinedView()) {
-                if (window.TVHuntCollection && typeof window.TVHuntCollection.init === 'function') {
-                    window.TVHuntCollection._prefix = 'media-hunt-tv-collection';
-                    window.TVHuntCollection.init();
-                }
-                if (window.MovieHuntCollection && typeof window.MovieHuntCollection.init === 'function') {
-                    window.MovieHuntCollection._prefix = 'media-hunt-movie-collection';
-                    window.MovieHuntCollection.init();
-                }
-            } else {
-                var mode = (window._mediaHuntSectionMode || 'movie').toLowerCase();
-                if (mode === 'tv' && window.TVHuntCollection && typeof window.TVHuntCollection.init === 'function') {
-                    window.TVHuntCollection._prefix = 'media-hunt-collection';
-                    window.TVHuntCollection.init();
-                } else if (window.MovieHuntCollection && typeof window.MovieHuntCollection.init === 'function') {
-                    window.MovieHuntCollection._prefix = 'media-hunt-collection';
-                    window.MovieHuntCollection.init();
-                }
+            if (isUnifiedSingleDropdown()) {
+                window._mediaHuntCollectionUnified = true;
+                var select = document.getElementById(selectId);
+                if (!select) return;
+                select.innerHTML = '<option value="">Loading instances...</option>';
+                var tvPromise = fetch('./api/tv-hunt/instances').then(function(r) { return r.json(); }).then(function(d) { return d.instances || []; }).catch(function() { return []; });
+                var moviePromise = fetch('./api/movie-hunt/instances').then(function(r) { return r.json(); }).then(function(d) { return d.instances || []; }).catch(function() { return []; });
+                Promise.all([tvPromise, moviePromise]).then(function(results) {
+                    var tvInstances = results[0];
+                    var movieInstances = results[1];
+                    populateUnifiedDropdown(select, tvInstances, movieInstances);
+                    if (select.options.length > 0 && select.options[0].value) {
+                        select.dispatchEvent(new Event('change', { bubbles: true }));
+                    } else {
+                        if (window.TVHuntCollection && window.TVHuntCollection._prefix) window.TVHuntCollection.renderCollection();
+                        if (window.MovieHuntCollection && window.MovieHuntCollection._prefix) window.MovieHuntCollection.renderPage();
+                    }
+                });
+                select.addEventListener('change', function() {
+                    var val = select.value || '';
+                    if (!val) return;
+                    if (val.indexOf('tv:') === 0) {
+                        window._mediaHuntSectionMode = 'tv';
+                        fetch('./api/tv-hunt/current-instance', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ instance_id: parseInt(val.slice(3), 10) })
+                        }).then(function() {});
+                        if (window.TVHuntCollection && typeof window.TVHuntCollection.loadCollection === 'function') {
+                            window.TVHuntCollection.showMainView();
+                            window.TVHuntCollection.loadCollection();
+                        }
+                    } else if (val.indexOf('movie:') === 0) {
+                        window._mediaHuntSectionMode = 'movie';
+                        var id = val.slice(6);
+                        fetch('./api/movie-hunt/current-instance', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ instance_id: parseInt(id, 10) })
+                        }).then(function() {});
+                        if (window.MovieHuntCollection && typeof window.MovieHuntCollection.loadCollection === 'function') {
+                            window.MovieHuntCollection.showMainView();
+                            window.MovieHuntCollection.loadHiddenMediaIds().then(function() {
+                                window.MovieHuntCollection.loadCollection();
+                            });
+                        }
+                    }
+                });
+                window.TVHuntCollection._prefix = 'media-hunt-collection';
+                window.MovieHuntCollection._prefix = 'media-hunt-collection';
+                if (window.TVHuntCollection && typeof window.TVHuntCollection.init === 'function') window.TVHuntCollection.init();
+                if (window.MovieHuntCollection && typeof window.MovieHuntCollection.init === 'function') window.MovieHuntCollection.init();
+                return;
+            }
+            window._mediaHuntCollectionUnified = false;
+            var mode = (window._mediaHuntSectionMode || 'movie').toLowerCase();
+            if (mode === 'tv' && window.TVHuntCollection && typeof window.TVHuntCollection.init === 'function') {
+                window.TVHuntCollection._prefix = 'media-hunt-collection';
+                window.TVHuntCollection.init();
+            } else if (window.MovieHuntCollection && typeof window.MovieHuntCollection.init === 'function') {
+                window.MovieHuntCollection._prefix = 'media-hunt-collection';
+                window.MovieHuntCollection.init();
             }
         },
         showMainView: function() {
-            if (window.TVHuntCollection && typeof window.TVHuntCollection.showMainView === 'function') {
-                window.TVHuntCollection.showMainView();
-            }
-            if (window.MovieHuntCollection && typeof window.MovieHuntCollection.showMainView === 'function') {
-                window.MovieHuntCollection.showMainView();
-            }
+            if (window.TVHuntCollection && typeof window.TVHuntCollection.showMainView === 'function') window.TVHuntCollection.showMainView();
+            if (window.MovieHuntCollection && typeof window.MovieHuntCollection.showMainView === 'function') window.MovieHuntCollection.showMainView();
         },
         openSeriesDetail: function(tmdbId, seriesData) {
-            if (window.TVHuntCollection && typeof window.TVHuntCollection.openSeriesDetail === 'function') {
-                window.TVHuntCollection.openSeriesDetail(tmdbId, seriesData);
-            }
+            if (window.TVHuntCollection && typeof window.TVHuntCollection.openSeriesDetail === 'function') window.TVHuntCollection.openSeriesDetail(tmdbId, seriesData);
         }
     };
 })();

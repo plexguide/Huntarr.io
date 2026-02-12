@@ -46,109 +46,58 @@
         </div>
     </div>
 
-    <!-- Media Hunt Collection: TV (first) and Movie (second), each with own dropdowns -->
+    <!-- Media Hunt Collection: one combined instance dropdown (TV - Name / Movie - Name), one content area -->
     <div id="media-hunt-collection-view" class="media-hunt-collection-view" style="display: none;">
         <h2 class="content-section-title" style="margin-bottom: 12px;">Media Hunt Collection</h2>
-        <p class="instance-management-description" style="margin-bottom: 24px;">View and manage your TV and Movie collections. Each has its own instance, sort, and view options.</p>
+        <p class="instance-management-description" style="margin-bottom: 24px;">View and manage your TV and Movie collections. Select an instance below to view its collection.</p>
 
-        <!-- TV Collection (first) -->
-        <div class="settings-group instance-management-settings-group" id="media-hunt-tv-collection-group">
-            <h3 class="instance-management-settings-group-title">TV Collection</h3>
-            <div class="global-search-bar" style="margin-bottom: 12px;">
-                <i class="fas fa-search"></i>
-                <input type="text" id="media-hunt-tv-collection-search-input" placeholder="Search" aria-label="Search TV collection">
-            </div>
-            <div id="media-hunt-tv-collection-search-results-view" class="requestarr-view" style="display: none;">
-                <h2 class="search-results-title">Search Results</h2>
-                <div id="media-hunt-tv-collection-search-results-grid" class="search-results-grid"></div>
-            </div>
-            <div id="media-hunt-tv-collection-main-content">
-                <div class="movies-controls media-hunt-collection-controls">
-                    <div class="instance-selector-container">
-                        <select id="media-hunt-tv-collection-instance-select" class="control-select instance-select" aria-label="Instance">
-                            <option value="">Loading instances...</option>
-                        </select>
-                    </div>
-                    <div class="sort-dropdown">
-                        <select id="media-hunt-tv-collection-sort" class="control-select">
-                            <option value="title.asc">Title (A-Z)</option>
-                        </select>
-                    </div>
-                    <div class="view-mode-selector">
-                        <select id="media-hunt-tv-collection-view-mode" class="control-select">
-                            <option value="posters">Posters</option>
-                            <option value="table">Table</option>
-                            <option value="overview">Overview</option>
-                        </select>
-                    </div>
+        <div class="global-search-bar" style="margin-bottom: 12px;">
+            <i class="fas fa-search"></i>
+            <input type="text" id="media-hunt-collection-search-input" placeholder="Search" aria-label="Search collection">
+        </div>
+        <div id="media-hunt-collection-search-results-view" class="requestarr-view" style="display: none;">
+            <h2 class="search-results-title">Search Results</h2>
+            <div id="media-hunt-collection-search-results-grid" class="search-results-grid"></div>
+        </div>
+        <div id="media-hunt-collection-main-content">
+            <div class="movies-controls media-hunt-collection-controls">
+                <div class="instance-selector-container">
+                    <select id="media-hunt-collection-instance-select" class="control-select instance-select" aria-label="Instance">
+                        <option value="">Loading instances...</option>
+                    </select>
                 </div>
-                <div id="media-hunt-tv-collection-grid" class="media-grid">
-                    <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading collection...</p></div>
+                <div class="sort-dropdown">
+                    <select id="media-hunt-collection-sort" class="control-select">
+                        <option value="title.asc">Title (A-Z)</option>
+                    </select>
                 </div>
-                <div id="media-hunt-tv-collection-table" class="media-table-container" style="display: none;">
-                    <table class="media-table">
-                        <thead><tr><th style="width: 60px;"></th><th>Title</th><th style="width: 80px;">Year</th><th style="width: 120px;">Status</th></tr></thead>
-                        <tbody id="media-hunt-tv-collection-table-body"></tbody>
-                    </table>
-                </div>
-                <div id="media-hunt-tv-collection-overview" class="media-overview-container" style="display: none;">
-                    <div id="media-hunt-tv-collection-overview-list"></div>
+                <div class="view-mode-selector">
+                    <select id="media-hunt-collection-view-mode" class="control-select">
+                        <option value="posters">Posters</option>
+                        <option value="table">Table</option>
+                        <option value="overview">Overview</option>
+                    </select>
                 </div>
             </div>
-            <div id="media-hunt-tv-collection-series-detail-view" class="tv-hunt-series-detail-view" style="display: none;">
-                <div class="series-detail-header">
-                    <button type="button" class="back-btn" id="media-hunt-tv-collection-series-back-btn"><i class="fas fa-arrow-left"></i> Back to Collection</button>
-                </div>
-                <div id="media-hunt-tv-collection-series-detail-content"></div>
+            <div id="media-hunt-collection-grid" class="media-grid">
+                <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading collection...</p></div>
+            </div>
+            <div id="media-hunt-collection-table" class="media-table-container" style="display: none;">
+                <table class="media-table">
+                    <thead><tr><th style="width: 60px;"></th><th>Title</th><th style="width: 80px;">Year</th><th style="width: 120px;">Status</th></tr></thead>
+                    <tbody id="media-hunt-collection-table-body"></tbody>
+                </table>
+            </div>
+            <div id="media-hunt-collection-overview" class="media-overview-container" style="display: none;">
+                <div id="media-hunt-collection-overview-list"></div>
             </div>
         </div>
-
-        <!-- Movie Collection (second) -->
-        <div class="settings-group instance-management-settings-group" id="media-hunt-movie-collection-group">
-            <h3 class="instance-management-settings-group-title">Movie Collection</h3>
-            <div class="global-search-bar" style="margin-bottom: 12px;">
-                <i class="fas fa-search"></i>
-                <input type="text" id="media-hunt-movie-collection-search-input" placeholder="Search" aria-label="Search movie collection">
+        <div id="media-hunt-collection-series-detail-view" class="tv-hunt-series-detail-view" style="display: none;">
+            <div class="series-detail-header">
+                <button type="button" class="back-btn" id="media-hunt-collection-series-back-btn"><i class="fas fa-arrow-left"></i> Back to Collection</button>
             </div>
-            <div id="media-hunt-movie-collection-search-results-view" class="requestarr-view" style="display: none;">
-                <h2 class="search-results-title">Search Results</h2>
-                <div id="media-hunt-movie-collection-search-results-grid" class="search-results-grid"></div>
-            </div>
-            <div id="media-hunt-movie-collection-main-content">
-                <div class="movies-controls media-hunt-collection-controls">
-                    <div class="instance-selector-container">
-                        <select id="media-hunt-movie-collection-instance-select" class="control-select instance-select" aria-label="Instance">
-                            <option value="">Loading instances...</option>
-                        </select>
-                    </div>
-                    <div class="sort-dropdown">
-                        <select id="media-hunt-movie-collection-sort" class="control-select">
-                            <option value="title.asc">Title (A-Z)</option>
-                        </select>
-                    </div>
-                    <div class="view-mode-selector">
-                        <select id="media-hunt-movie-collection-view-mode" class="control-select">
-                            <option value="posters">Posters</option>
-                            <option value="table">Table</option>
-                            <option value="overview">Overview</option>
-                        </select>
-                    </div>
-                </div>
-                <div id="media-hunt-movie-collection-grid" class="media-grid">
-                    <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading collection...</p></div>
-                </div>
-                <div id="media-hunt-movie-collection-table" class="media-table-container" style="display: none;">
-                    <table class="media-table">
-                        <thead><tr><th style="width: 60px;"></th><th>Title</th><th style="width: 80px;">Year</th><th style="width: 120px;">Status</th></tr></thead>
-                        <tbody id="media-hunt-movie-collection-table-body"></tbody>
-                    </table>
-                </div>
-                <div id="media-hunt-movie-collection-overview" class="media-overview-container" style="display: none;">
-                    <div id="media-hunt-movie-collection-overview-list"></div>
-                </div>
-            </div>
+            <div id="media-hunt-collection-series-detail-content"></div>
         </div>
-
     </div>
 
     <!-- Filters (Movie mode only; visibility set by JS) -->

@@ -145,8 +145,8 @@ let huntarrUI = {
             console.log('[huntarrUI] Initialization - showing main sidebar for indexer hunt');
             this.showMainSidebar();
         } else if ((this.currentSection && this.currentSection.startsWith('tv-hunt')) || this.currentSection === 'logs-tv-hunt') {
-            console.log('[huntarrUI] Initialization - showing tv hunt sidebar');
-            this.showTVHuntSidebar();
+            console.log('[huntarrUI] Initialization - showing media hunt sidebar (tv-hunt redirect)');
+            this.showMovieHuntSidebar();
         } else if (this.currentSection === 'movie-hunt-home' || this.currentSection === 'movie-hunt-collection' || this.currentSection === 'media-hunt-collection' || this.currentSection === 'activity-queue' || this.currentSection === 'activity-history' || this.currentSection === 'activity-blocklist' || this.currentSection === 'activity-logs' || this.currentSection === 'logs-movie-hunt' || this.currentSection === 'movie-hunt-settings' || this.currentSection === 'media-hunt-settings' || this.currentSection === 'movie-hunt-instance-editor' || this.currentSection === 'settings-instance-management' || this.currentSection === 'settings-movie-management' || this.currentSection === 'settings-profiles' || this.currentSection === 'settings-sizes' || this.currentSection === 'profile-editor' || this.currentSection === 'settings-custom-formats' || this.currentSection === 'settings-indexers' || this.currentSection === 'settings-clients' || this.currentSection === 'settings-import-lists' || this.currentSection === 'settings-import-media' || this.currentSection === 'settings-root-folders') {
             console.log('[huntarrUI] Initialization - showing movie hunt sidebar');
             this.showMovieHuntSidebar();
@@ -240,19 +240,30 @@ let huntarrUI = {
     setupEventListeners: function() {
         // Navigation
         document.addEventListener('click', (e) => {
-            // Navigation link handling
+            // Main sidebar: hash links use client-side navigation so Media Hunt etc. switch correctly
+            const sidebarNavItem = e.target.closest('#sidebar .nav-item');
+            if (sidebarNavItem) {
+                const link = sidebarNavItem.tagName === 'A' ? sidebarNavItem : sidebarNavItem.querySelector('a');
+                const href = link && link.getAttribute('href');
+                if (href && href.indexOf('#') >= 0) {
+                    e.preventDefault();
+                    const hash = href.substring(href.indexOf('#'));
+                    if (window.location.hash !== hash) window.location.hash = hash;
+                    const mainSidebarNavItems = document.querySelectorAll('#sidebar .nav-item');
+                    mainSidebarNavItems.forEach(item => item.classList.remove('active'));
+                    sidebarNavItem.classList.add('active');
+                    return;
+                }
+                const mainSidebarNavItems = document.querySelectorAll('#sidebar .nav-item');
+                mainSidebarNavItems.forEach(item => item.classList.remove('active'));
+                sidebarNavItem.classList.add('active');
+            }
+
+            // Navigation link handling (other nav areas)
             if (e.target.matches('.nav-link') || e.target.closest('.nav-link')) {
                 const link = e.target.matches('.nav-link') ? e.target : e.target.closest('.nav-link');
                 e.preventDefault();
                 this.handleNavigation(e);
-            }
-
-            // Main sidebar active state handling (including external links)
-            const sidebarNavItem = e.target.closest('#sidebar .nav-item');
-            if (sidebarNavItem) {
-                const mainSidebarNavItems = document.querySelectorAll('#sidebar .nav-item');
-                mainSidebarNavItems.forEach(item => item.classList.remove('active'));
-                sidebarNavItem.classList.add('active');
             }
             
             // Handle cycle reset button clicks
@@ -830,7 +841,9 @@ let huntarrUI = {
             this.currentSection = 'media-hunt-collection';
             if (this._pendingMediaHuntSidebar === 'tv') { this.showTVHuntSidebar(); }
             else if (this._pendingMediaHuntSidebar === 'movie') { this.showMovieHuntSidebar(); }
+            else { this.showMovieHuntSidebar(); }
             this._pendingMediaHuntSidebar = undefined;
+            if (typeof setActiveNavItem === 'function') setActiveNavItem();
             if (window.MediaHuntCollection && typeof window.MediaHuntCollection.init === 'function') {
                 window.MediaHuntCollection.init();
             }
@@ -882,7 +895,9 @@ let huntarrUI = {
             this.currentSection = 'media-hunt-settings';
             if (this._pendingMediaHuntSidebar === 'tv') { this.showTVHuntSidebar(); }
             else if (this._pendingMediaHuntSidebar === 'movie') { this.showMovieHuntSidebar(); }
+            else { this.showMovieHuntSidebar(); }
             this._pendingMediaHuntSidebar = undefined;
+            if (typeof setActiveNavItem === 'function') setActiveNavItem();
             if (window.MediaHuntInstanceManagement && typeof window.MediaHuntInstanceManagement.init === 'function') {
                 window.MediaHuntInstanceManagement.init();
             }
