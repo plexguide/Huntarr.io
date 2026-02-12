@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - '*'  # This will trigger on any branch push
+      - 'B-*'  # Explicit beta branch pattern
     tags:
       - "*"  # This will trigger on any tag push
   pull_request:
