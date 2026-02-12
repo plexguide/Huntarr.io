@@ -224,6 +224,7 @@ def api_indexers_list():
             out.append({
                 'index': i,
                 'name': idx.get('name') or 'Unnamed',
+                'display_name': idx.get('display_name', ''),
                 'preset': idx.get('preset') or 'manual',
                 'enabled': idx.get('enabled', True),
                 'api_key_last4': last4,

@@ -134,6 +134,7 @@ def api_ih_sync():
 
             existing.append({
                 'name': ih_idx.get('name', 'Unnamed'),
+                'display_name': ih_idx.get('display_name', ''),
                 'preset': preset,
                 'api_key': ih_idx.get('api_key', ''),
                 'enabled': ih_idx.get('enabled', True),

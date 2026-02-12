@@ -281,11 +281,10 @@
     // ── Import from Indexer Hunt ─────────────────────────────────────────
     Forms._loadIndexerHuntAvailable = function() {
         var self = this;
-        // Determine current Movie Hunt instance ID (use default 1 as fallback)
+        // Read instance ID synchronously from the instance select dropdown
         var instanceId = 1;
-        if (window.MovieHuntInstanceDropdown && window.MovieHuntInstanceDropdown.getCurrentInstanceId) {
-            instanceId = window.MovieHuntInstanceDropdown.getCurrentInstanceId() || 1;
-        }
+        var sel = document.getElementById('settings-indexers-instance-select');
+        if (sel && sel.value) instanceId = parseInt(sel.value, 10) || 1;
         fetch('./api/indexer-hunt/available/' + instanceId)
             .then(function(r) { return r.json(); })
             .then(function(data) {
@@ -325,11 +324,10 @@
         var preset = opt.getAttribute('data-preset') || 'manual';
         var priority = parseInt(opt.getAttribute('data-priority') || '50', 10);
 
-        // Get instance ID for sync
+        // Read instance ID synchronously from dropdown
         var instanceId = 1;
-        if (window.MovieHuntInstanceDropdown && window.MovieHuntInstanceDropdown.getCurrentInstanceId) {
-            instanceId = window.MovieHuntInstanceDropdown.getCurrentInstanceId() || 1;
-        }
+        var instSel = document.getElementById('settings-indexers-instance-select');
+        if (instSel && instSel.value) instanceId = parseInt(instSel.value, 10) || 1;
 
         // Sync this indexer to the current instance via the API
         fetch('./api/indexer-hunt/sync', {

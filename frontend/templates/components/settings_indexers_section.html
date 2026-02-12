@@ -299,14 +299,18 @@
 
     // ── Import panel logic ──────────────────────────────────────────
 
+    function _getInstanceIdSync() {
+        // Read directly from the instance select dropdown (synchronous, always available)
+        var sel = document.getElementById('settings-indexers-instance-select');
+        if (sel && sel.value) return parseInt(sel.value, 10) || 1;
+        return 1;
+    }
+
     function _openIHImportPanel() {
         var panel = document.getElementById('ih-import-panel');
         if (panel) panel.style.display = '';
 
-        var instanceId = 1;
-        if (window.MovieHuntInstanceDropdown && window.MovieHuntInstanceDropdown.getCurrentInstanceId) {
-            instanceId = window.MovieHuntInstanceDropdown.getCurrentInstanceId() || 1;
-        }
+        var instanceId = _getInstanceIdSync();
 
         var list = document.getElementById('ih-import-list');
         var actions = document.getElementById('ih-import-actions');
@@ -377,10 +381,7 @@
             ids.push(item.getAttribute('data-ih-id'));
         });
 
-        var instanceId = 1;
-        if (window.MovieHuntInstanceDropdown && window.MovieHuntInstanceDropdown.getCurrentInstanceId) {
-            instanceId = window.MovieHuntInstanceDropdown.getCurrentInstanceId() || 1;
-        }
+        var instanceId = _getInstanceIdSync();
 
         var btn = document.getElementById('ih-import-confirm');
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importing...'; }

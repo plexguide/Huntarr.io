@@ -12,7 +12,10 @@
 
     Forms.renderIndexerCard = function(indexer, index) {
         const isDefault = index === 0;
-        const name = (indexer.name || 'Unnamed').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        // For IH-synced indexers, show display_name (custom tracking name) in header; fall back to preset name
+        const isIHCard = !!(indexer.indexer_hunt_id);
+        const headerName = isIHCard && indexer.display_name ? indexer.display_name : (indexer.name || 'Unnamed');
+        const name = headerName.replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const last4 = indexer.api_key_last4 || '****';
         const preset = (indexer.preset || 'manual').replace(/"/g, '&quot;');
         const enabled = indexer.enabled !== false;
@@ -30,7 +33,7 @@
             urlDisplay = '<div class="instance-detail"><i class="fas fa-link"></i><span>' + shortUrl.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span></div>';
         }
         // IH linked badge
-        var ihBadge = isIH ? '<span style="font-size:0.65rem;background:rgba(99,102,241,0.15);color:#818cf8;padding:2px 6px;border-radius:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-left:6px;">IH Synced</span>' : '';
+        var ihBadge = isIH ? '<span style="font-size:0.65rem;background:rgba(99,102,241,0.15);color:#818cf8;padding:2px 6px;border-radius:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-left:6px;">Synced</span>' : '';
 
         return '<div class="instance-card ' + (isDefault ? 'default-instance' : '') + '" data-instance-index="' + index + '" data-app-type="indexer" data-preset="' + preset + '" data-enabled="' + enabled + '" data-ih="' + (isIH ? '1' : '0') + '">' +
             '<div class="instance-card-header">' +

@@ -144,7 +144,8 @@
             var presetLabel = _getPresetLabel(idx.preset);
             var url = idx.url || '\u2014';
             var keyDisplay = idx.api_key_last4 ? '\u2022\u2022\u2022\u2022' + _esc(idx.api_key_last4) : 'No key';
-            var displayName = idx.display_name ? '<span class="ih-card-display-name">' + _esc(idx.display_name) + '</span>' : '';
+            var displayLabel = idx.display_name || idx.name || '';
+            var displayName = displayLabel ? '<span class="ih-card-display-name">' + _esc(displayLabel) + '</span>' : '';
 
             html += '<div class="ih-card' + (enabled ? '' : ' ih-card-disabled') + '" data-id="' + _esc(idx.id) + '">'
                 + '<div class="ih-card-header">'
