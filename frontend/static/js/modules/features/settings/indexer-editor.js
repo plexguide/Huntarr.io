@@ -122,11 +122,13 @@
     // isAdd=true: new indexer (preset dropdown unlocked, no preset chosen yet)
     // isAdd=false: editing existing (preset locked)
     Forms.openIndexerEditor = function(isAdd, index, instance) {
+        var inst = instance || {};
         this._currentEditing = {
             appType: 'indexer',
             index: index,
+            indexerId: (inst.id != null && inst.id !== '') ? String(inst.id) : null,
             isAdd: isAdd,
-            originalInstance: JSON.parse(JSON.stringify(instance || {})),
+            originalInstance: JSON.parse(JSON.stringify(inst)),
             presetLocked: !isAdd  // locked on edit, unlocked on add
         };
 
@@ -712,7 +714,9 @@
 
         var body = { name: name || 'Unnamed', preset: preset, api_key: apiKey, enabled: enabled, categories: categories, url: indexerUrl, api_path: apiPath, priority: priority };
         if (indexerHuntId) body.indexer_hunt_id = indexerHuntId;
-        var endpoint = isAdd ? './api/indexers' : './api/indexers/' + index;
+        var apiBase = (window.SettingsForms && window.SettingsForms.getIndexersApiBase) ? window.SettingsForms.getIndexersApiBase() : './api/indexers';
+        var editId = (window.SettingsForms && window.SettingsForms._currentEditing && window.SettingsForms._currentEditing.indexerId) ? window.SettingsForms._currentEditing.indexerId : index;
+        var endpoint = isAdd ? apiBase : apiBase + '/' + editId;
         var method = isAdd ? 'POST' : 'PUT';
         fetch(endpoint, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
             .then(function(r) { return r.json(); })

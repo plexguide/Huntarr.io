@@ -260,13 +260,15 @@
                 var card = deleteBtn.closest('.instance-card');
                 var nameEl = card ? card.querySelector('.instance-name span') : null;
                 var name = nameEl ? nameEl.textContent.trim() : 'this indexer';
+                var apiBase = (window.SettingsForms && window.SettingsForms.getIndexersApiBase) ? window.SettingsForms.getIndexersApiBase() : './api/indexers';
+                var idParam = (window.SettingsForms && window.SettingsForms._indexersMode === 'tv' && card && card.dataset.indexerId) ? card.dataset.indexerId : index;
                 if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
                     window.HuntarrConfirm.show({
                         title: 'Delete Indexer',
                         message: 'Delete "' + name + '"?',
                         confirmLabel: 'Delete',
                         onConfirm: function() {
-                            fetch('./api/indexers/' + index, { method: 'DELETE' })
+                            fetch(apiBase + '/' + idParam, { method: 'DELETE' })
                                 .then(function(r) { return r.json(); })
                                 .then(function(data) {
                                     if (data.success && window.SettingsForms && window.SettingsForms.refreshIndexersList) {
