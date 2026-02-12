@@ -1037,7 +1037,14 @@ let huntarrUI = {
             this.currentSection = 'tv-hunt-settings-sizes';
             this.showTVHuntSidebar();
             if (window.TVHuntInstanceDropdown && window.TVHuntInstanceDropdown.attach) {
-                window.TVHuntInstanceDropdown.attach('tv-hunt-settings-sizes-instance-select', function() {});
+                window.TVHuntInstanceDropdown.attach('tv-hunt-settings-sizes-instance-select', function() {
+                    if (window.TVHuntSizesModule && typeof window.TVHuntSizesModule.load === 'function') {
+                        window.TVHuntSizesModule.load();
+                    }
+                });
+            }
+            if (window.TVHuntSizesModule && typeof window.TVHuntSizesModule.load === 'function') {
+                window.TVHuntSizesModule.load();
             }
         } else if (section === 'tv-hunt-settings-tv-management' && document.getElementById('tvHuntSettingsTVManagementSection')) {
             if (document.getElementById('tvHuntActivitySection')) { document.getElementById('tvHuntActivitySection').classList.remove('active'); document.getElementById('tvHuntActivitySection').style.display = 'none'; }

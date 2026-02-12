@@ -214,6 +214,9 @@ def perform_tv_hunt_request(
         for r in results:
             r['indexer_name'] = idx.get('name', 'Unknown')
             r['indexer_priority'] = idx.get('priority', 50)
+            # Ensure size_bytes for size filtering (TV search returns 'size' in bytes)
+            if 'size_bytes' not in r and r.get('size') is not None:
+                r['size_bytes'] = r.get('size')
             # Filter blocklist
             if _blocklist_normalize_source_title(r.get('title', '')) in blocklist:
                 continue
@@ -222,9 +225,12 @@ def perform_tv_hunt_request(
     if not all_results:
         return False, f"No results found for '{query}'"
 
+    # Runtime for size filtering: episode ~45 min, season pack ~450 min (10 eps)
+    runtime_minutes = 450 if search_type == "season" else 45
+
     # Score against profile if available
     if profile:
-        best = _best_result_matching_profile(all_results, profile)
+        best = _best_result_matching_profile(all_results, profile, instance_id, runtime_minutes)
     else:
         # Pick best by priority then size
         all_results.sort(key=lambda x: (x.get('indexer_priority', 50), -(x.get('size', 0))))

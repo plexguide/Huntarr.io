@@ -241,36 +241,134 @@ def _score_release(release_title, profile, instance_id):
     return total, ', '.join(parts)
 
 
-def _best_result_matching_profile(results, profile, instance_id=None):
-    """Score results against a quality profile with custom format scoring and return the best match."""
+# --- Size limits (from TV Hunt Sizes settings) ---
+
+def _get_size_limits_for_quality(quality_name, instance_id):
+    """Return (min, preferred, max) MB/min for the given quality from TV Hunt Sizes config."""
+    try:
+        from .sizes import _get_sizes
+        sizes = _get_sizes(instance_id)
+    except Exception:
+        return 0, 0, 400
+    q = (quality_name or '').strip()
+    for s in (sizes or []):
+        if (s.get('name') or '').strip() == q:
+            return (
+                max(0, int(s.get('min', 0))),
+                max(0, int(s.get('preferred', 0))),
+                max(1, int(s.get('max', 400))),
+            )
+    return 0, 0, 400
+
+
+def _size_mb_per_min(size_bytes, runtime_minutes):
+    """Convert size in bytes and runtime in minutes to MB per minute. Returns None if invalid."""
+    if not size_bytes or size_bytes <= 0 or not runtime_minutes or runtime_minutes <= 0:
+        return None
+    return (float(size_bytes) / (1024.0 * 1024.0)) / float(runtime_minutes)
+
+
+def _size_filter_and_preference(result, quality_name, runtime_minutes, instance_id):
+    """
+    Check result size against TV Hunt Sizes config for the given quality.
+    Returns (passes_filter, preference_score).
+    """
+    size_bytes = result.get('size_bytes') or result.get('size') or 0
+    mb_per_min = _size_mb_per_min(size_bytes, runtime_minutes) if size_bytes else None
+    min_s, pref_s, max_s = _get_size_limits_for_quality(quality_name, instance_id)
+    if mb_per_min is None:
+        return True, 50
+    if mb_per_min < min_s or mb_per_min > max_s:
+        return False, None
+    if max_s <= min_s:
+        return True, 100
+    dist = abs(mb_per_min - pref_s)
+    range_len = max_s - min_s
+    pref_score = max(0, min(100, 100 - (dist / range_len) * 100))
+    return True, pref_score
+
+
+def _release_matches_quality(release_title, quality_name):
+    """Return True if release_title appears to match the quality (e.g. 'WEB 1080p', 'Bluray-2160p')."""
+    if not release_title or not quality_name:
+        return False
+    t = (release_title or '').lower()
+    q = (quality_name or '').lower().replace('-', ' ')
+    if '2160' in q or '2160p' in q:
+        if '2160' not in t:
+            return False
+    elif '1080' in q or '1080p' in q:
+        if '1080' not in t:
+            return False
+    elif '720' in q or '720p' in q:
+        if '720' not in t:
+            return False
+    elif '480' in q or '480p' in q:
+        if '480' not in t:
+            return False
+    if 'web' in q:
+        if 'web' not in t and 'web-dl' not in t and 'webdl' not in t and 'webrip' not in t:
+            return False
+    if 'bluray' in q or 'blu-ray' in q:
+        if 'bluray' not in t and 'blu-ray' not in t and 'brrip' not in t and 'bdrip' not in t:
+            return False
+    if 'hdtv' in q:
+        if 'hdtv' not in t:
+            return False
+    if 'remux' in q:
+        if 'remux' not in t:
+            return False
+    if 'sdtv' in q:
+        if 'sdtv' not in t and 'sd' not in t and '480' not in t:
+            return False
+    if 'dvd' in q and 'dvdscr' not in q:
+        if 'dvd' not in t:
+            return False
+    return True
+
+
+def _best_result_matching_profile(results, profile, instance_id=None, runtime_minutes=45):
+    """
+    Score results against a quality profile with custom format scoring and size filtering.
+    Respects TV Hunt Sizes settings: only results within min-max for that quality are considered;
+    among those, prefers releases closer to the preferred size.
+    """
     if not results:
         return None
     if not profile:
         return results[0]
-    
-    qualities = profile.get('qualities') or []
-    quality_order = {}
-    for i, q in enumerate(qualities):
-        if isinstance(q, dict) and q.get('enabled', True):
-            name = (q.get('name') or '').lower()
-            quality_order[name] = i
-    
-    def score_result(r):
-        title = (r.get('title') or '').lower()
-        best_quality_idx = len(qualities)
-        for qname, idx in quality_order.items():
-            if qname in title:
-                best_quality_idx = min(best_quality_idx, idx)
-        # Apply custom format scoring if instance_id is available
-        cf_score = 0
-        if instance_id:
-            cf_score, _ = _score_release(r.get('title') or '', profile, instance_id)
-        priority = r.get('indexer_priority', 50)
-        # Sort: best quality first, then highest CF score, then priority
-        return (best_quality_idx, -cf_score, priority)
-    
-    results_sorted = sorted(results, key=score_result)
-    return results_sorted[0]
+
+    runtime = max(1, int(runtime_minutes)) if runtime_minutes is not None else 45
+    enabled_names = [q.get('name') or '' for q in (profile.get('qualities') or []) if q.get('enabled')]
+
+    if not enabled_names:
+        scored = []
+        for r in results:
+            sc, br = _score_release((r.get('title') or '').strip(), profile, instance_id or 0)
+            passes, pref = _size_filter_and_preference(r, '', runtime, instance_id or 0)
+            if not passes:
+                continue
+            scored.append((sc, pref or 50, br, r))
+        if not scored:
+            return None
+        scored.sort(key=lambda x: (-x[0], -x[1], x[3].get('title') or ''))
+        return scored[0][3]
+
+    candidates = []
+    for r in results:
+        title = (r.get('title') or '').strip()
+        for qname in enabled_names:
+            if _release_matches_quality(title, qname):
+                passes, pref = _size_filter_and_preference(r, qname, runtime, instance_id or 0)
+                if not passes:
+                    break
+                sc, br = _score_release(title, profile, instance_id or 0)
+                candidates.append((sc, pref or 50, br, r))
+                break
+    if not candidates:
+        return None
+    candidates.sort(key=lambda x: (-x[0], -x[1], x[3].get('title') or ''))
+    return candidates[0][3]
 
 
 @tv_hunt_bp.route('/api/tv-hunt/profiles', methods=['GET'])
