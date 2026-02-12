@@ -1,6 +1,6 @@
 /**
- * Custom Formats (Movie Hunt) - Radarr-style JSON. Pre-Format (dropdown) or Import (paste JSON).
- * Cards like Profiles; title editable, name auto from JSON.
+ * Custom Formats – single view for Movie Hunt and TV Hunt. Combined instance dropdown
+ * (Movie - X / TV - X, alphabetical). Each instance keeps its own formats; same page linked from both sidebars.
  */
 (function() {
     'use strict';
@@ -9,17 +9,22 @@
         _list: [],
         _editingIndex: null,
         _modalMode: null,
+        _mode: 'movie',
+
+        getApiBase: function() {
+            return this._mode === 'tv' ? './api/tv-hunt/custom-formats' : './api/custom-formats';
+        },
+
+        getInstanceApiBase: function(mode) {
+            return mode === 'tv' ? './api/tv-hunt' : './api/movie-hunt';
+        },
 
         refreshList: function() {
-            if (window.MovieHuntInstanceDropdown && document.getElementById('settings-custom-formats-instance-select') && !window.CustomFormats._instanceDropdownAttached) {
-                window.MovieHuntInstanceDropdown.attach('settings-custom-formats-instance-select', function() { window.CustomFormats.refreshList(); });
-                window.CustomFormats._instanceDropdownAttached = true;
-            }
             var preformattedGrid = document.getElementById('custom-formats-preformatted-grid');
             var importedGrid = document.getElementById('custom-formats-imported-grid');
             if (!preformattedGrid || !importedGrid) return;
-            
-            fetch('./api/custom-formats')
+            var apiBase = window.CustomFormats.getApiBase();
+            fetch(apiBase)
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     var list = (data && data.custom_formats) ? data.custom_formats : [];
@@ -110,6 +115,106 @@
                     importedGrid.innerHTML = '';
                     window.CustomFormats._bindAddButtons();
                 });
+        },
+
+        setCurrentInstanceAndRefresh: function(mode, instanceId) {
+            var self = window.CustomFormats;
+            self._mode = mode;
+            var apiBase = self.getInstanceApiBase(mode);
+            fetch(apiBase + '/current-instance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ instance_id: parseInt(instanceId, 10) })
+            }).then(function(r) { return r.json(); }).then(function() {
+                self.refreshList();
+            }).catch(function() {
+                self.refreshList();
+            });
+        },
+
+        populateCombinedInstanceDropdown: function(preferMode) {
+            var selectEl = document.getElementById('settings-custom-formats-instance-select');
+            if (!selectEl) return;
+            selectEl.innerHTML = '<option value="">Loading...</option>';
+            var ts = Date.now();
+            Promise.all([
+                fetch('./api/movie-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                fetch('./api/movie-hunt/current-instance?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                fetch('./api/tv-hunt/current-instance?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+            ]).then(function(results) {
+                var movieList = (results[0].instances || []).map(function(inst) {
+                    return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
+                });
+                var tvList = (results[1].instances || []).map(function(inst) {
+                    return { value: 'tv:' + inst.id, label: 'TV - ' + (inst.name || 'Instance ' + inst.id) };
+                });
+                var combined = movieList.concat(tvList);
+                combined.sort(function(a, b) { return (a.label || '').localeCompare(b.label || '', undefined, { sensitivity: 'base' }); });
+                var currentMovie = results[2].instance_id != null ? Number(results[2].instance_id) : null;
+                var currentTv = results[3].instance_id != null ? Number(results[3].instance_id) : null;
+                selectEl.innerHTML = '';
+                if (combined.length === 0) {
+                    var emptyOpt = document.createElement('option');
+                    emptyOpt.value = '';
+                    emptyOpt.textContent = 'No Movie or TV Hunt instances';
+                    selectEl.appendChild(emptyOpt);
+                    return;
+                }
+                combined.forEach(function(item) {
+                    var opt = document.createElement('option');
+                    opt.value = item.value;
+                    opt.textContent = item.label;
+                    selectEl.appendChild(opt);
+                });
+                var saved = (typeof localStorage !== 'undefined' && localStorage.getItem('media-hunt-custom-formats-last-instance')) || '';
+                var selected = '';
+                if (preferMode === 'movie' && currentMovie != null) {
+                    selected = 'movie:' + currentMovie;
+                    if (!combined.some(function(i) { return i.value === selected; })) selected = combined[0].value;
+                } else if (preferMode === 'tv' && currentTv != null) {
+                    selected = 'tv:' + currentTv;
+                    if (!combined.some(function(i) { return i.value === selected; })) selected = combined[0].value;
+                } else if (saved && combined.some(function(i) { return i.value === saved; })) {
+                    selected = saved;
+                } else if (currentMovie != null && combined.some(function(i) { return i.value === 'movie:' + currentMovie; })) {
+                    selected = 'movie:' + currentMovie;
+                } else if (currentTv != null && combined.some(function(i) { return i.value === 'tv:' + currentTv; })) {
+                    selected = 'tv:' + currentTv;
+                } else {
+                    selected = combined[0].value;
+                }
+                selectEl.value = selected;
+                var parts = (selected || '').split(':');
+                if (parts.length === 2) {
+                    var m = parts[0] === 'tv' ? 'tv' : 'movie';
+                    if (typeof localStorage !== 'undefined') localStorage.setItem('media-hunt-custom-formats-last-instance', selected);
+                    window.CustomFormats.setCurrentInstanceAndRefresh(m, parts[1]);
+                }
+            }).catch(function() {
+                selectEl.innerHTML = '<option value="">Failed to load instances</option>';
+            });
+        },
+
+        onCombinedInstanceChange: function() {
+            var selectEl = document.getElementById('settings-custom-formats-instance-select');
+            var val = (selectEl && selectEl.value) ? selectEl.value.trim() : '';
+            if (!val) return;
+            var parts = val.split(':');
+            if (parts.length !== 2) return;
+            var mode = parts[0] === 'tv' ? 'tv' : 'movie';
+            if (typeof localStorage !== 'undefined') localStorage.setItem('media-hunt-custom-formats-last-instance', val);
+            window.CustomFormats.setCurrentInstanceAndRefresh(mode, parts[1]);
+        },
+
+        initOrRefresh: function(preferMode) {
+            var selectEl = document.getElementById('settings-custom-formats-instance-select');
+            if (!selectEl) return;
+            if (!selectEl._customFormatsChangeBound) {
+                selectEl.addEventListener('change', function() { window.CustomFormats.onCombinedInstanceChange(); });
+                selectEl._customFormatsChangeBound = true;
+            }
+            window.CustomFormats.populateCombinedInstanceDropdown(preferMode);
         },
 
         _getGroupFromPreformatId: function(preformatId) {
@@ -305,7 +410,7 @@
             (window.CustomFormats._list || []).forEach(function(item) {
                 if (item.preformat_id) existingIds[item.preformat_id] = true;
             });
-            fetch('./api/custom-formats/preformats')
+            fetch(window.CustomFormats.getApiBase() + '/preformats')
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     var categories = (data && data.categories) ? data.categories : [];
@@ -442,7 +547,7 @@
                 }
                 var title = window.CustomFormats._nameFromJson(jsonRaw);
                 if (title === '—') title = 'Unnamed';
-                fetch('./api/custom-formats/' + editing, {
+                fetch(window.CustomFormats.getApiBase() + '/' + editing, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ title: title, custom_format_json: jsonRaw })
@@ -504,7 +609,7 @@
                     var item = toAdd[currentIndex];
                     currentIndex++;
                     
-                    fetch('./api/custom-formats', {
+                    fetch(window.CustomFormats.getApiBase(), {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ source: 'preformat', preformat_id: item.id, title: item.name })
@@ -541,7 +646,7 @@
             title = window.CustomFormats._checkTitleCollision(title);
             var body = { source: 'import', custom_format_json: jsonRaw, title: title };
 
-            fetch('./api/custom-formats', {
+            fetch(window.CustomFormats.getApiBase(), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
@@ -568,8 +673,9 @@
         },
 
         deleteFormat: function(index) {
+            var self = window.CustomFormats;
             var doDelete = function() {
-                fetch('./api/custom-formats/' + index, { method: 'DELETE' })
+                fetch(self.getApiBase() + '/' + index, { method: 'DELETE' })
                     .then(function(r) { return r.json(); })
                     .then(function(data) {
                         if (data.success) {
@@ -650,7 +756,7 @@
                 var idx = toDelete[currentIndex];
                 currentIndex--;
                 
-                fetch('./api/custom-formats/' + idx, { method: 'DELETE' })
+                fetch(window.CustomFormats.getApiBase() + '/' + idx, { method: 'DELETE' })
                     .then(function(r) { return r.json(); })
                     .then(function(data) {
                         if (data.success) deleted++; else failed++;
@@ -720,6 +826,17 @@
             });
         }
     };
+
+    document.addEventListener('huntarr:instances-changed', function() {
+        if (document.getElementById('settingsCustomFormatsSection') && document.getElementById('settingsCustomFormatsSection').classList.contains('active')) {
+            window.CustomFormats.initOrRefresh();
+        }
+    });
+    document.addEventListener('huntarr:tv-hunt-instances-changed', function() {
+        if (document.getElementById('settingsCustomFormatsSection') && document.getElementById('settingsCustomFormatsSection').classList.contains('active')) {
+            window.CustomFormats.initOrRefresh();
+        }
+    });
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() { window.CustomFormats.init(); });

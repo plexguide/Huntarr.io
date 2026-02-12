@@ -33,14 +33,14 @@
 
     var MOVIE_DROPDOWN_IDS = [
         'movie-hunt-instance-select', 'movie-hunt-collection-instance-select', 'activity-instance-select',
-        'movie-management-instance-select', 'settings-custom-formats-instance-select',
+        'movie-management-instance-select',
         'settings-indexers-instance-select', 'settings-clients-instance-select', 'settings-import-lists-instance-select',
         'import-media-instance-select', 'settings-root-folders-instance-select'
     ];
 
     var TV_DROPDOWN_IDS = [
         'tv-hunt-instance-select', 'tv-hunt-collection-instance-select', 'tv-hunt-activity-instance-select',
-        'tv-hunt-settings-custom-formats-instance-select', 'tv-hunt-settings-indexers-instance-select',
+        'tv-hunt-settings-indexers-instance-select',
         'tv-hunt-settings-clients-instance-select', 'tv-hunt-settings-root-folders-instance-select',
         'tv-hunt-settings-tv-management-instance-select', 'tv-hunt-settings-import-lists-instance-select'
     ];
