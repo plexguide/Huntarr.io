@@ -941,7 +941,7 @@ input#stateful_management_hours {
    Settings sub-pages — Match home page width (no centering, no extra
    horizontal padding; content-section 40px provides consistent alignment)
    ═══════════════════════════════════════════════════════════════════ */
-#movie-hunt-settings-default-section .app-content-panel,
+#media-hunt-settings-default-section .app-content-panel,
 #movieManagementSection .app-content-panel,
 #mediaHuntProfilesSection .app-content-panel,
 #settingsSizesSection .app-content-panel,

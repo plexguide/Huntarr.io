@@ -504,13 +504,13 @@
 
 /* Add Import List card — Huntarr blue (match rest of app) */
 /* Instance bar dropdown — slim, blue focus */
-#settingsImportListsSection .movie-hunt-settings-instance-bar .control-select {
+#settingsImportListsSection .media-hunt-settings-instance-bar .control-select {
     padding: 6px 12px;
     min-height: 34px;
     font-size: 13px;
     border-color: rgba(148,163,184,0.2);
 }
-#settingsImportListsSection .movie-hunt-settings-instance-bar .control-select:focus {
+#settingsImportListsSection .media-hunt-settings-instance-bar .control-select:focus {
     border-color: #3b82f6;
     box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
 }

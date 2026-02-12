@@ -17,7 +17,7 @@
 
         init: function() {
             this.page = 1;
-            this.viewMode = HuntarrUtils.getUIPreference('movie-hunt-collection-view', 'posters');
+            this.viewMode = HuntarrUtils.getUIPreference('media-hunt-collection-view', 'posters');
             this.setupInstanceSelect();
             this.setupSort();
             this.setupViewMode();
@@ -244,7 +244,7 @@
             select.value = this.viewMode;
             select.onchange = function() {
                 self.viewMode = select.value;
-                HuntarrUtils.setUIPreference('movie-hunt-collection-view', self.viewMode);
+                HuntarrUtils.setUIPreference('media-hunt-collection-view', self.viewMode);
                 self.renderPage();
             };
         },

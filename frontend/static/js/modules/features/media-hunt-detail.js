@@ -1,6 +1,6 @@
 /**
  * Media Hunt Detail – Movie detail view with management toolbar (movie mode).
- * Exposed as window.MovieHuntDetail for compatibility. CSS: movie-hunt-detail.css.
+ * Exposed as window.MovieHuntDetail for compatibility. CSS: media-hunt-detail.css.
  */
 (function() {
     'use strict';
@@ -79,10 +79,10 @@
                 }
             }
 
-            let detailView = document.getElementById('movie-hunt-detail-view');
+            let detailView = document.getElementById('media-hunt-detail-view');
             if (!detailView) {
                 detailView = document.createElement('div');
-                detailView.id = 'movie-hunt-detail-view';
+                detailView.id = 'media-hunt-detail-view';
                 detailView.className = 'movie-detail-view';
                 document.body.appendChild(detailView);
             }
@@ -112,7 +112,7 @@
         },
 
         closeDetail(fromHistory = false) {
-            const detailView = document.getElementById('movie-hunt-detail-view');
+            const detailView = document.getElementById('media-hunt-detail-view');
             if (detailView) detailView.classList.remove('active');
             if (!fromHistory) history.back();
         },
