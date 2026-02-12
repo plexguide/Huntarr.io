@@ -169,9 +169,9 @@ def clear_logs(app_type):
     try:
         logs_db = get_logs_database()
 
-        # When clearing 'all' (main Logs page): clear only main app logs, never movie_hunt
+        # When clearing 'all' (main Logs page): clear only main app logs, never movie_hunt or tv_hunt
         if app_type == 'all':
-            deleted_count = logs_db.clear_logs(app_type=None, exclude_app_types=['movie_hunt'])
+            deleted_count = logs_db.clear_logs(app_type=None, exclude_app_types=['movie_hunt', 'tv_hunt'])
         else:
             # Map 'system' to actual app type in database
             db_app_type = 'system' if app_type == 'system' else app_type

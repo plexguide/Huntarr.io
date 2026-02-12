@@ -303,6 +303,7 @@ window.LogsModule = {
         if (app === 'whisparr') displayName = 'Whisparr V2';
         else if (app === 'eros') displayName = 'Whisparr V3';
         else if (app === 'movie_hunt') displayName = 'Movie Hunt';
+        else if (app === 'tv_hunt') displayName = 'TV Hunt';
 
         if (this.elements.currentLogApp) this.elements.currentLogApp.textContent = displayName;
         
@@ -330,6 +331,7 @@ window.LogsModule = {
         if (app === 'whisparr') displayName = 'Whisparr V2';
         else if (app === 'eros') displayName = 'Whisparr V3';
         else if (app === 'movie_hunt') displayName = 'Movie Hunt';
+        else if (app === 'tv_hunt') displayName = 'TV Hunt';
 
         if (this.elements.currentLogApp) this.elements.currentLogApp.textContent = displayName;
         

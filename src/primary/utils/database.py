@@ -4075,7 +4075,7 @@ class LogsDatabase:
                 part = (at or "").split("-")[0].strip().lower()
                 if part:
                     base.add(part)
-            order = ["all", "system", "sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "swaparr"]
+            order = ["all", "system", "sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "swaparr", "movie_hunt", "tv_hunt"]
             result = [a for a in order if a in base or (a == "all" and base)]
             if "all" not in result and base:
                 result.insert(0, "all")

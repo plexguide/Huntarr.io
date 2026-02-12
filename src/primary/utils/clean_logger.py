@@ -206,8 +206,8 @@ def setup_clean_logging():
     
     from src.primary.utils.logger import get_logger
     
-    # Known app types for Huntarr (movie_hunt = Activity → Logs)
-    app_types = ['system', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr', 'movie_hunt']
+    # Known app types for Huntarr (movie_hunt, tv_hunt = Activity → Logs)
+    app_types = ['system', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr', 'movie_hunt', 'tv_hunt']
     
     # Set up database handlers for each app type
     for app_type in app_types:
