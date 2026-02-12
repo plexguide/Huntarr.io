@@ -68,6 +68,13 @@ window.HuntarrNavigation = {
             section = 'activity-queue';
             if (window.location.hash !== '#activity-queue') window.location.hash = 'activity-queue';
         }
+        // NZB Hunt Settings → go directly to Folders
+        if (section === 'nzb-hunt-settings') {
+            section = 'nzb-hunt-settings-folders';
+            if (window.location.hash !== '#nzb-hunt-settings-folders') {
+                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#nzb-hunt-settings-folders');
+            }
+        }
         // Instances merged into Settings: old bookmark redirects to Movie Hunt Settings
         if (section === 'settings-instance-management') {
             section = 'movie-hunt-settings';

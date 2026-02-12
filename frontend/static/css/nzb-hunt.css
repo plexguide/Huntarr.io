@@ -790,6 +790,116 @@
     border-color: rgba(148, 163, 184, 0.4);
 }
 
+/* ── Advanced Settings (modernized card layout) ───────────────────── */
+#nzb-hunt-settings-advanced .nzb-adv-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    gap: 24px;
+    align-items: start;
+}
+
+#nzb-hunt-settings-advanced .nzb-adv-card {
+    background: rgba(30, 41, 59, 0.32);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(148, 163, 184, 0.07);
+    border-radius: 16px;
+    padding: 0;
+    overflow: hidden;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+#nzb-hunt-settings-advanced .nzb-adv-card:hover {
+    border-color: rgba(148, 163, 184, 0.14);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+#nzb-hunt-settings-advanced .nzb-adv-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 24px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.07);
+}
+
+#nzb-hunt-settings-advanced .nzb-adv-card-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #f8fafc;
+}
+
+#nzb-hunt-settings-advanced .nzb-adv-card-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+#nzb-hunt-settings-advanced .nzb-adv-icon-amber {
+    background: rgba(245, 158, 11, 0.12);
+    color: #fbbf24;
+}
+
+#nzb-hunt-settings-advanced .nzb-adv-icon-blue {
+    background: rgba(59, 130, 246, 0.12);
+    color: #60a5fa;
+}
+
+#nzb-hunt-settings-advanced .nzb-adv-card-desc {
+    margin: 0;
+    padding: 18px 24px;
+    color: #94a3b8;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+#nzb-hunt-settings-advanced .nzb-adv-card-body {
+    padding: 0 24px 24px;
+}
+
+#nzb-hunt-settings-advanced .nzb-adv-setting {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 26px;
+}
+
+#nzb-hunt-settings-advanced .nzb-adv-setting:last-child {
+    margin-bottom: 0;
+}
+
+#nzb-hunt-settings-advanced .nzb-adv-setting-label {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #e2e8f0;
+    margin: 0;
+}
+
+#nzb-hunt-settings-advanced .nzb-adv-setting-help {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #64748b;
+    line-height: 1.6;
+}
+
+#nzb-hunt-settings-advanced .nzb-adv-setting-input {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+#nzb-hunt-settings-advanced .nzb-adv-size-hint {
+    color: #64748b;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
 /* ── Server cards  (reuses instance-card-grid from movie hunt) ──── */
 #nzb-server-grid {
     display: grid;
@@ -1456,6 +1566,12 @@
 }
 
 /* ── Responsive ──────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+    #nzb-hunt-settings-advanced .nzb-adv-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 @media (max-width: 768px) {
     .nzb-hunt-container {
         padding: 16px 0;
