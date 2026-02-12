@@ -10,10 +10,12 @@ This is the main integration point for Movie Hunt → NZB Hunt.
 """
 
 import os
+import re
 import json
 import time
 import uuid
 import shutil
+import hashlib
 import threading
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
@@ -28,6 +30,36 @@ from src.primary.apps.nzb_hunt.nntp_client import NNTPManager
 from src.primary.apps.nzb_hunt.post_processor import post_process
 
 logger = get_logger("nzb_hunt.manager")
+
+
+def _nzb_content_hash(content: str) -> str:
+    """Compute SHA256 hash of NZB content for identical detection."""
+    return hashlib.sha256(content.encode("utf-8", errors="replace")).hexdigest()
+
+
+def _release_key(name: str) -> str:
+    """
+    Extract a normalized release key for smart duplicate detection.
+    Strips PROPER/REAL/REPACK/INTERNAL, lowercases, removes extension.
+    E.g. "Movie.Name.2024.1080p.PROPER.BluRay" -> "movie.name.2024.1080p.bluray"
+    """
+    s = (name or "").strip()
+    if not s:
+        return ""
+    # Remove extension
+    if "." in s:
+        s = s.rsplit(".", 1)[0]
+    # Remove common upgrade suffixes (case insensitive)
+    for suffix in ("PROPER", "REAL", "REPACK", "INTERNAL"):
+        s = re.sub(rf"\.{re.escape(suffix)}\b", "", s, flags=re.I)
+        s = re.sub(rf"\b{re.escape(suffix)}\b", "", s, flags=re.I)
+    return " ".join(s.lower().split())
+
+
+def _has_proper_real_repack(name: str) -> bool:
+    """Check if name contains PROPER, REAL, or REPACK (upgrade indicators)."""
+    n = (name or "").upper()
+    return "PROPER" in n or "REAL" in n or "REPACK" in n
 
 
 # ── Top-level function for ProcessPoolExecutor (must be picklable) ──────────
@@ -142,7 +174,8 @@ class DownloadItem:
         self.completed_files = 0
         self.speed_bps = 0  # bytes per second
         self.eta_seconds = 0
-    
+        self.nzb_hash = ""  # SHA256 of NZB content for duplicate detection
+
     @property
     def progress_pct(self) -> float:
         if self.total_segments == 0:
@@ -190,6 +223,7 @@ class DownloadItem:
             "eta_seconds": self.eta_seconds,
             "time_left": self.time_left_str,
             "nzb_url": self.nzb_url,
+            "nzb_hash": getattr(self, "nzb_hash", ""),
         }
     
     @classmethod
@@ -222,6 +256,7 @@ class DownloadItem:
         item.completed_files = d.get("completed_files", 0)
         item.speed_bps = d.get("speed_bps", 0)
         item.eta_seconds = d.get("eta_seconds", 0)
+        item.nzb_hash = d.get("nzb_hash", "")
         return item
 
 
@@ -436,6 +471,9 @@ class NZBHuntDownloadManager:
             "encrypted_rar_action": "pause",
             "unwanted_ext_action": "off",
             "unwanted_extensions": "exe",
+            "identical_detection": "on",
+            "smart_detection": "on",
+            "allow_proper": True,
         }
         try:
             config_path = os.path.join(self._config_dir, "nzb_hunt_config.json")
@@ -616,6 +654,39 @@ class NZBHuntDownloadManager:
         
         if not name:
             name = nzb.files[0].filename if nzb.files else "Unknown"
+
+        # Duplicate detection (SABnzbd-style)
+        proc = self._get_processing_settings()
+        identical_on = (proc.get("identical_detection", "on") or "").lower() == "on"
+        smart_on = (proc.get("smart_detection", "on") or "").lower() == "on"
+        allow_proper = proc.get("allow_proper", True)
+
+        new_hash = _nzb_content_hash(nzb_content)
+        new_release_key = _release_key(name)
+        bypass_smart = allow_proper and _has_proper_real_repack(name)
+
+        with self._queue_lock:
+            for existing in self._queue:
+                if existing.state in (STATE_QUEUED, STATE_DOWNLOADING, STATE_PAUSED):
+                    # Identical: same NZB content
+                    if identical_on:
+                        exist_hash = getattr(existing, "nzb_hash", "") or ""
+                        if not exist_hash:
+                            try:
+                                content = self._load_nzb_content(existing.id)
+                                if content:
+                                    exist_hash = _nzb_content_hash(content)
+                                    existing.nzb_hash = exist_hash
+                            except Exception:
+                                pass
+                        if exist_hash and exist_hash == new_hash:
+                            return False, f"Identical download already in queue: {existing.name[:50]}...", ""
+
+                    # Smart: same release (unless new is PROPER/REAL/REPACK)
+                    if smart_on and not bypass_smart and new_release_key:
+                        exist_key = _release_key(existing.name or "")
+                        if exist_key and exist_key == new_release_key:
+                            return False, f"Duplicate release already in queue: {existing.name[:50]}...", ""
         
         item = DownloadItem(
             nzb_id=nzb_id,
@@ -631,7 +702,8 @@ class NZBHuntDownloadManager:
         item.total_bytes = nzb.total_bytes
         item.total_segments = nzb.total_segments
         item.total_files = len(nzb.files)
-        
+        item.nzb_hash = new_hash
+
         # Save NZB content to separate file (large, only once)
         self._save_nzb_content(nzb_id, nzb_content)
         

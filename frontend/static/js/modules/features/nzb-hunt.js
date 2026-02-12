@@ -202,27 +202,28 @@
                 var name = self._escHtml(item.name || 'Unknown');
                 var catLabel = item.category ? self._escHtml(String(item.category)) : '—';
 
-                // Build status display: show status_message if available
+                // Build status display: primary state, secondary message when relevant
                 var statusHtml = '<i class="' + stateIcon + '"></i> ' + stateLabel;
                 var failedSegs = item.failed_segments || 0;
                 if (item.status_message && item.state !== 'downloading') {
-                    var msgClass = failedSegs > 0 ? ' style="color:#f59e0b;"' : '';
-                    statusHtml += '<br><small' + msgClass + '>' + self._escHtml(item.status_message) + '</small>';
+                    var msgClass = failedSegs > 0 ? ' nzb-status-msg-warn' : ' nzb-status-msg';
+                    statusHtml += '<span class="nzb-status-sub' + msgClass + '">' + self._escHtml(item.status_message) + '</span>';
                 } else if (item.state === 'downloading' && item.completed_segments === 0 && item.speed_bps === 0) {
-                    // Downloading but no progress - show connecting message
-                    statusHtml += '<br><small style="color:#94a3b8;">Connecting...</small>';
+                    statusHtml += '<span class="nzb-status-sub">Connecting...</span>';
                 }
 
-                // Build progress display with inline missing articles (like SABnzbd)
-                var pctHtml = progress.toFixed(1) + '%';
+                // Progress: clean percentage; missing articles in tooltip only
                 var missingBytes = item.missing_bytes || 0;
+                var missingStr = '';
                 if (missingBytes > 0 && item.state === 'downloading') {
                     var mbMissing = missingBytes / (1024 * 1024);
-                    var missingStr = mbMissing >= 1024 ? (mbMissing / 1024).toFixed(1) + ' GB' :
-                                     mbMissing >= 1.0 ? mbMissing.toFixed(1) + ' MB' :
-                                     (missingBytes / 1024).toFixed(0) + ' KB';
-                    pctHtml += ' <span style="color:#f59e0b; font-style:italic; font-size:0.85em;">' +
-                               missingStr + ' Missing articles</span>';
+                    missingStr = mbMissing >= 1024 ? (mbMissing / 1024).toFixed(1) + ' GB' :
+                                 mbMissing >= 1.0 ? mbMissing.toFixed(1) + ' MB' :
+                                 (missingBytes / 1024).toFixed(0) + ' KB';
+                }
+                var pctHtml = '<span class="nzb-progress-pct">' + progress.toFixed(1) + '%</span>';
+                if (missingStr) {
+                    pctHtml += ' <i class="fas fa-exclamation-triangle nzb-missing-icon" title="' + _esc(missingStr + ' missing articles') + '"></i>';
                 }
 
                 html +=
@@ -1793,6 +1794,15 @@
                     el = document.getElementById('nzb-proc-unwanted-ext');
                     if (el && data.unwanted_extensions !== undefined) el.value = data.unwanted_extensions;
 
+                    el = document.getElementById('nzb-proc-identical-detection');
+                    if (el && data.identical_detection) el.value = data.identical_detection;
+
+                    el = document.getElementById('nzb-proc-smart-detection');
+                    if (el && data.smart_detection) el.value = data.smart_detection;
+
+                    el = document.getElementById('nzb-proc-allow-proper');
+                    if (el) el.checked = data.allow_proper !== false;
+
                     // Hide threshold row if abort is off
                     var abortEl = document.getElementById('nzb-proc-abort-hopeless');
                     var thresholdRow = document.getElementById('nzb-proc-abort-threshold-row');
@@ -1866,7 +1876,10 @@
                 direct_unpack: !!(document.getElementById('nzb-proc-direct-unpack') || {}).checked,
                 encrypted_rar_action: (document.getElementById('nzb-proc-encrypted-rar') || {}).value || 'pause',
                 unwanted_ext_action: (document.getElementById('nzb-proc-unwanted-action') || {}).value || 'off',
-                unwanted_extensions: (document.getElementById('nzb-proc-unwanted-ext') || {}).value || ''
+                unwanted_extensions: (document.getElementById('nzb-proc-unwanted-ext') || {}).value || '',
+                identical_detection: (document.getElementById('nzb-proc-identical-detection') || {}).value || 'on',
+                smart_detection: (document.getElementById('nzb-proc-smart-detection') || {}).value || 'on',
+                allow_proper: !!(document.getElementById('nzb-proc-allow-proper') || {}).checked
             };
 
             var self = this;

@@ -170,6 +170,38 @@
                                 </label>
                             </div>
                         </div>
+                        <div class="nzb-adv-setting-divider"></div>
+                        <div class="nzb-adv-setting-group-title">Duplicate Detection</div>
+                        <div class="nzb-adv-setting">
+                            <label class="nzb-adv-setting-label">Identical download detection</label>
+                            <p class="nzb-adv-setting-help">Reject downloads that are byte-for-byte identical to an item already in the queue. Uses NZB content hash.</p>
+                            <div class="nzb-adv-setting-input">
+                                <select id="nzb-proc-identical-detection" class="nzb-form-select" style="max-width: 100px;">
+                                    <option value="on" selected>On</option>
+                                    <option value="off">Off</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="nzb-adv-setting">
+                            <label class="nzb-adv-setting-label">Smart duplicate detection</label>
+                            <p class="nzb-adv-setting-help">Reject downloads that match the same release (by filename analysis). Detects same movie/episode from different indexers.</p>
+                            <div class="nzb-adv-setting-input">
+                                <select id="nzb-proc-smart-detection" class="nzb-form-select" style="max-width: 100px;">
+                                    <option value="on" selected>On</option>
+                                    <option value="off">Off</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="nzb-adv-setting">
+                            <label class="nzb-adv-setting-label">Allow proper releases</label>
+                            <p class="nzb-adv-setting-help">Bypass smart duplicate detection when PROPER, REAL, or REPACK is detected in the new download name. Allows upgrades.</p>
+                            <div class="nzb-adv-setting-input">
+                                <label class="nzb-toggle-row" style="margin:0;">
+                                    <input type="checkbox" id="nzb-proc-allow-proper" checked />
+                                    <span class="nzb-toggle-switch"></span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

@@ -98,6 +98,9 @@ _PROCESSING_DEFAULTS = {
     "encrypted_rar_action": "pause",
     "unwanted_ext_action": "off",
     "unwanted_extensions": "exe",
+    "identical_detection": "on",
+    "smart_detection": "on",
+    "allow_proper": True,
 }
 
 

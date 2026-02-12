@@ -955,6 +955,21 @@
     white-space: nowrap;
 }
 
+#nzb-hunt-settings-advanced .nzb-adv-setting-divider {
+    height: 1px;
+    background: rgba(71, 85, 105, 0.35);
+    margin: 24px 0 16px;
+    width: 100%;
+}
+
+#nzb-hunt-settings-advanced .nzb-adv-setting-group-title {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #94a3b8;
+    margin: 0 0 16px;
+    width: 100%;
+}
+
 /* ── Server cards  (reuses instance-card-grid from movie hunt) ──── */
 #nzb-server-grid {
     display: grid;
@@ -2079,9 +2094,30 @@
 .nzb-queue-row.nzb-item-extracting .nzb-col-status { color: #818cf8; }
 .nzb-queue-row.nzb-item-completed .nzb-col-status  { color: #22c55e; }
 
+.nzb-queue-table .nzb-col-status {
+    min-width: 95px;
+}
 .nzb-queue-table .nzb-col-status i {
     margin-right: 4px;
     font-size: 0.7rem;
+}
+.nzb-status-sub {
+    display: block;
+    font-size: 0.68rem;
+    color: #64748b;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.nzb-status-msg-warn { color: #f59e0b !important; }
+
+.nzb-progress-pct { font-variant-numeric: tabular-nums; }
+.nzb-missing-icon {
+    color: #f59e0b;
+    font-size: 0.7rem;
+    margin-left: 2px;
+    cursor: help;
 }
 
 /* State icons */
