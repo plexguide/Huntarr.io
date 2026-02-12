@@ -228,14 +228,14 @@
 
                 html +=
                     '<tr class="nzb-queue-row ' + stateClass + '" data-nzb-id="' + item.id + '">' +
-                        '<td class="nzb-col-name" title="' + name + '"><span class="nzb-cell-name">' + name + '</span></td>' +
-                        '<td class="nzb-col-cat"><span class="nzb-cell-cat">' + catLabel + '</span></td>' +
-                        '<td class="nzb-col-pct">' + pctHtml + '</td>' +
-                        '<td class="nzb-col-size">' + downloaded + ' / ' + totalSize + '</td>' +
-                        '<td class="nzb-col-speed">' + speed + '</td>' +
-                        '<td class="nzb-col-eta">' + timeLeft + '</td>' +
-                        '<td class="nzb-col-status">' + statusHtml + '</td>' +
-                        '<td class="nzb-col-actions">' +
+                        '<td class="nzb-col-name" data-label="Name" title="' + name + '"><span class="nzb-cell-name">' + name + '</span></td>' +
+                        '<td class="nzb-col-cat" data-label="Category"><span class="nzb-cell-cat">' + catLabel + '</span></td>' +
+                        '<td class="nzb-col-pct" data-label="Progress">' + pctHtml + '</td>' +
+                        '<td class="nzb-col-size" data-label="Size">' + downloaded + ' / ' + totalSize + '</td>' +
+                        '<td class="nzb-col-speed" data-label="Speed">' + speed + '</td>' +
+                        '<td class="nzb-col-eta" data-label="ETA">' + timeLeft + '</td>' +
+                        '<td class="nzb-col-status" data-label="Status">' + statusHtml + '</td>' +
+                        '<td class="nzb-col-actions" data-label="">' +
                             (item.state === 'downloading' || item.state === 'queued' ?
                                 '<button class="nzb-item-btn" title="Pause" data-action="pause" data-id="' + item.id + '"><i class="fas fa-pause"></i></button>' : '') +
                             (item.state === 'paused' ?

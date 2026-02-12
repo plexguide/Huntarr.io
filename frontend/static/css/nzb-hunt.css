@@ -1728,6 +1728,124 @@
     }
 }
 
+/* ── Mobile: Queue as compact cards (≤768px) ───────────────────── */
+@media (max-width: 768px) {
+    .nzb-queue-table,
+    .nzb-queue-table thead,
+    .nzb-queue-table tbody,
+    .nzb-queue-table tr,
+    .nzb-queue-table th,
+    .nzb-queue-table td {
+        display: block;
+    }
+    .nzb-queue-table thead {
+        display: none;
+    }
+    .nzb-queue-table tbody tr {
+        background: rgba(30, 41, 59, 0.4);
+        border: 1px solid rgba(71, 85, 105, 0.35);
+        border-radius: 10px;
+        margin-bottom: 10px;
+        padding: 12px 14px;
+        overflow: hidden;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto auto auto;
+        gap: 0 16px;
+        align-items: start;
+    }
+    .nzb-queue-table tbody tr:last-child {
+        margin-bottom: 0;
+    }
+    .nzb-queue-table td {
+        padding: 5px 0;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        min-width: 0;
+    }
+    .nzb-queue-table td[data-label]::before {
+        content: attr(data-label);
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        flex-shrink: 0;
+    }
+    .nzb-queue-table td[data-label=""]:before {
+        display: none;
+    }
+    .nzb-queue-table .nzb-col-name {
+        grid-column: 1 / -1;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+        padding-bottom: 8px;
+        margin-bottom: 4px;
+        border-bottom: 1px solid rgba(71, 85, 105, 0.25);
+    }
+    .nzb-queue-table .nzb-col-name::before {
+        display: none;
+    }
+    .nzb-queue-table .nzb-cell-name {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        font-size: 0.85rem;
+        line-height: 1.35;
+    }
+    .nzb-queue-table .nzb-col-size {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .nzb-queue-table .nzb-col-speed,
+    .nzb-queue-table .nzb-col-eta {
+        white-space: nowrap;
+    }
+    .nzb-queue-table .nzb-col-actions {
+        grid-column: 1 / -1;
+        justify-content: flex-end;
+        padding-top: 8px;
+        margin-top: 4px;
+        border-top: 1px solid rgba(71, 85, 105, 0.25);
+    }
+    .nzb-queue-table .nzb-col-actions .nzb-item-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 0.75rem;
+    }
+}
+
+/* ── Mobile: Status bar improvements (≤768px) ──────────────────── */
+@media (max-width: 768px) {
+    .nzb-status-bar {
+        padding: 12px 14px;
+        gap: 12px;
+    }
+    .nzb-status-metrics {
+        flex-wrap: wrap;
+        gap: 12px 20px;
+    }
+    .nzb-status-item {
+        font-size: 0.8rem;
+    }
+    .nzb-status-value {
+        font-size: 0.9rem;
+    }
+    .nzb-status-actions {
+        width: 100%;
+        justify-content: flex-end;
+        margin-top: 4px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(71, 85, 105, 0.3);
+    }
+}
+
 /* ═════════════════════════════════════════════════════════════════
    CATEGORIES
    ═════════════════════════════════════════════════════════════════ */
