@@ -1,23 +1,130 @@
 /**
- * Root Folders (Movie Hunt) - card grid (Profiles-style), add via modal, delete, test, set default.
- * Attaches to window.RootFolders. Load after settings core.
+ * Root Folders – single view for Movie Hunt and TV Hunt. Combined instance dropdown
+ * (Movie - X / TV - X, alphabetical). Each instance keeps its own root folders; same page linked from both sidebars.
  */
 (function() {
     'use strict';
 
     window.RootFolders = {
         _browseTargetInput: null,
+        _rfMode: 'movie',
+
+        getApiBase: function() {
+            return this._rfMode === 'tv' ? './api/tv-hunt/root-folders' : './api/movie-hunt/root-folders';
+        },
+
+        getInstanceId: function() {
+            var sel = document.getElementById('settings-root-folders-instance-select');
+            var v = sel && sel.value ? sel.value : '';
+            if (v && v.indexOf(':') >= 0) return v.split(':')[1] || '';
+            return v || '';
+        },
+
+        _appendInstanceParam: function(url) {
+            var id = this.getInstanceId();
+            if (!id) return url;
+            return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'instance_id=' + encodeURIComponent(id);
+        },
+
+        populateCombinedInstanceDropdown: function(preferMode) {
+            var self = window.RootFolders;
+            var selectEl = document.getElementById('settings-root-folders-instance-select');
+            if (!selectEl) return;
+            selectEl.innerHTML = '<option value="">Loading...</option>';
+            var ts = Date.now();
+            Promise.all([
+                fetch('./api/movie-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                fetch('./api/movie-hunt/current-instance?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                fetch('./api/tv-hunt/current-instance?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+            ]).then(function(results) {
+                var movieList = (results[0].instances || []).map(function(inst) {
+                    return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
+                });
+                var tvList = (results[1].instances || []).map(function(inst) {
+                    return { value: 'tv:' + inst.id, label: 'TV - ' + (inst.name || 'Instance ' + inst.id) };
+                });
+                var combined = movieList.concat(tvList);
+                combined.sort(function(a, b) { return (a.label || '').localeCompare(b.label || '', undefined, { sensitivity: 'base' }); });
+                var currentMovie = results[2].instance_id != null ? Number(results[2].instance_id) : null;
+                var currentTv = results[3].instance_id != null ? Number(results[3].instance_id) : null;
+                selectEl.innerHTML = '';
+                if (combined.length === 0) {
+                    var emptyOpt = document.createElement('option');
+                    emptyOpt.value = '';
+                    emptyOpt.textContent = 'No Movie or TV Hunt instances';
+                    selectEl.appendChild(emptyOpt);
+                    return;
+                }
+                combined.forEach(function(item) {
+                    var opt = document.createElement('option');
+                    opt.value = item.value;
+                    opt.textContent = item.label;
+                    selectEl.appendChild(opt);
+                });
+                var saved = (typeof localStorage !== 'undefined' && localStorage.getItem('media-hunt-root-folders-last-instance')) || '';
+                var selected = '';
+                if (preferMode === 'movie' && currentMovie != null) {
+                    selected = 'movie:' + currentMovie;
+                    if (!combined.some(function(i) { return i.value === selected; })) selected = combined[0].value;
+                } else if (preferMode === 'tv' && currentTv != null) {
+                    selected = 'tv:' + currentTv;
+                    if (!combined.some(function(i) { return i.value === selected; })) selected = combined[0].value;
+                } else if (saved && combined.some(function(i) { return i.value === saved; })) {
+                    selected = saved;
+                } else if (currentMovie != null && combined.some(function(i) { return i.value === 'movie:' + currentMovie; })) {
+                    selected = 'movie:' + currentMovie;
+                } else if (currentTv != null && combined.some(function(i) { return i.value === 'tv:' + currentTv; })) {
+                    selected = 'tv:' + currentTv;
+                } else {
+                    selected = combined[0].value;
+                }
+                selectEl.value = selected;
+                var parts = (selected || '').split(':');
+                if (parts.length === 2) {
+                    self._rfMode = parts[0] === 'tv' ? 'tv' : 'movie';
+                    if (typeof localStorage !== 'undefined') localStorage.setItem('media-hunt-root-folders-last-instance', selected);
+                    self.refreshList();
+                }
+            }).catch(function() {
+                selectEl.innerHTML = '<option value="">Failed to load instances</option>';
+            });
+        },
+
+        onCombinedInstanceChange: function() {
+            var selectEl = document.getElementById('settings-root-folders-instance-select');
+            if (!selectEl) return;
+            var val = selectEl.value || '';
+            var parts = val.split(':');
+            if (parts.length === 2) {
+                window.RootFolders._rfMode = parts[0] === 'tv' ? 'tv' : 'movie';
+                if (typeof localStorage !== 'undefined') localStorage.setItem('media-hunt-root-folders-last-instance', val);
+                window.RootFolders.refreshList();
+            }
+        },
+
+        initOrRefresh: function(preferMode) {
+            var self = window.RootFolders;
+            self._rfMode = (preferMode === 'tv') ? 'tv' : 'movie';
+            var selectEl = document.getElementById('settings-root-folders-instance-select');
+            if (selectEl && selectEl.options.length <= 1) {
+                self.populateCombinedInstanceDropdown(preferMode);
+            } else {
+                var val = selectEl.value || '';
+                var parts = val.split(':');
+                if (parts.length === 2) self._rfMode = parts[0] === 'tv' ? 'tv' : 'movie';
+                self.refreshList();
+            }
+            if (selectEl && !selectEl._rfChangeBound) {
+                selectEl._rfChangeBound = true;
+                selectEl.addEventListener('change', function() { window.RootFolders.onCombinedInstanceChange(); });
+            }
+        },
 
         refreshList: function() {
-            if (window.MovieHuntInstanceDropdown && document.getElementById('settings-root-folders-instance-select') && !window.RootFolders._instanceDropdownAttached) {
-                window.MovieHuntInstanceDropdown.attach('settings-root-folders-instance-select', function() { window.RootFolders.refreshList(); });
-                window.RootFolders._instanceDropdownAttached = true;
-            }
             var gridEl = document.getElementById('root-folders-grid');
             if (!gridEl) return;
-            var instanceSelect = document.getElementById('settings-root-folders-instance-select');
-            var instanceId = instanceSelect && instanceSelect.value ? instanceSelect.value : '';
-            var url = './api/movie-hunt/root-folders' + (instanceId ? '?instance_id=' + encodeURIComponent(instanceId) : '');
+            var url = window.RootFolders._appendInstanceParam(window.RootFolders.getApiBase());
             fetch(url)
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
@@ -121,9 +228,8 @@
 
         setDefault: function(index) {
             if (typeof index !== 'number' || index < 0) return;
-            var instanceSelect = document.getElementById('settings-root-folders-instance-select');
-            var instanceId = instanceSelect && instanceSelect.value ? instanceSelect.value : '';
-            var url = './api/movie-hunt/root-folders/' + index + '/default' + (instanceId ? '?instance_id=' + encodeURIComponent(instanceId) : '');
+            var url = window.RootFolders.getApiBase() + '/' + index + '/default';
+            url = window.RootFolders._appendInstanceParam(url);
             fetch(url, { method: 'PATCH' })
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
@@ -164,10 +270,14 @@
                 testBtn.disabled = true;
                 testBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
             }
-            fetch('./api/movie-hunt/root-folders/test', {
+            var testUrl = window.RootFolders._appendInstanceParam(window.RootFolders.getApiBase() + '/test');
+            var body = { path: path };
+            var instId = window.RootFolders.getInstanceId();
+            if (instId) body.instance_id = parseInt(instId, 10);
+            fetch(testUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: path })
+                body: JSON.stringify(body)
             })
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
@@ -210,11 +320,11 @@
                 saveBtn.disabled = true;
                 saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
             }
-            var instanceSelect = document.getElementById('settings-root-folders-instance-select');
-            var instanceId = instanceSelect && instanceSelect.value ? parseInt(instanceSelect.value, 10) : null;
             var body = { path: path };
-            if (instanceId != null && !isNaN(instanceId)) body.instance_id = instanceId;
-            fetch('./api/movie-hunt/root-folders', {
+            var instId = window.RootFolders.getInstanceId();
+            if (instId) body.instance_id = parseInt(instId, 10);
+            var addUrl = window.RootFolders._appendInstanceParam(window.RootFolders.getApiBase());
+            fetch(addUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
@@ -253,9 +363,8 @@
 
         deleteFolder: function(index) {
             if (typeof index !== 'number' || index < 0) return;
-            var instanceSelect = document.getElementById('settings-root-folders-instance-select');
-            var instanceId = instanceSelect && instanceSelect.value ? instanceSelect.value : '';
-            var deleteUrl = './api/movie-hunt/root-folders/' + index + (instanceId ? '?instance_id=' + encodeURIComponent(instanceId) : '');
+            var deleteUrl = window.RootFolders.getApiBase() + '/' + index;
+            deleteUrl = window.RootFolders._appendInstanceParam(deleteUrl);
             var doDelete = function() {
                 fetch(deleteUrl, { method: 'DELETE' })
                     .then(function(r) { return r.json(); })
@@ -346,7 +455,9 @@
                 upBtn.disabled = (parent === path || path === '/' || path === '');
             }
             listEl.innerHTML = '<div style="padding: 16px; color: #94a3b8;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
-            fetch('./api/movie-hunt/root-folders/browse?path=' + encodeURIComponent(path))
+            var browseUrl = window.RootFolders.getApiBase() + '/browse?path=' + encodeURIComponent(path);
+            browseUrl = window.RootFolders._appendInstanceParam(browseUrl);
+            fetch(browseUrl)
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     var dirs = (data && data.directories) ? data.directories : [];
@@ -435,6 +546,8 @@
             }
             var upBtn = document.getElementById('root-folders-browse-up');
             if (upBtn) upBtn.onclick = function() { self.goToParent(); };
+            document.addEventListener('huntarr:instances-changed', function() { if (self._rfMode === 'movie') self.populateCombinedInstanceDropdown('movie'); });
+            document.addEventListener('huntarr:tv-hunt-instances-changed', function() { if (self._rfMode === 'tv') self.populateCombinedInstanceDropdown('tv'); });
         }
     };
 

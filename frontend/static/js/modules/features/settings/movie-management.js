@@ -1,9 +1,11 @@
 /**
- * Movie Management settings (Movie Hunt) - Movie Naming first, then Importing.
- * Same format as Profile Editor: Back/Save, editor-grid panels, dirty tracking, unsaved prompt.
+ * Management settings – single view for Movie Hunt and TV Hunt. Combined instance dropdown
+ * (Movie - X / TV - X). Movie: naming + importing; TV: placeholder until TV management is implemented.
  */
 (function() {
     'use strict';
+
+    var _mgmtMode = 'movie';
 
     function escapeHtml(s) {
         if (s == null) return '';
@@ -176,20 +178,27 @@
         var backBtn = document.getElementById('movie-management-back');
         if (!contentEl) return;
 
+        if (_mgmtMode === 'tv') {
+            contentEl.innerHTML = tvPlaceholderHtml();
+            if (saveBtn) { saveBtn.disabled = true; saveBtn.classList.remove('enabled'); saveBtn.style.display = 'none'; }
+            if (backBtn) backBtn.style.display = '';
+            if (backBtn) {
+                backBtn.onclick = function() {
+                    if (window.huntarrUI && window.huntarrUI.switchSection) {
+                        window.huntarrUI.switchSection('media-hunt-settings');
+                    }
+                };
+            }
+            return;
+        }
+
+        if (saveBtn) { saveBtn.disabled = true; saveBtn.classList.remove('enabled'); saveBtn.style.display = ''; }
+        if (backBtn) backBtn.style.display = '';
+
         contentEl.innerHTML = '<p class="editor-help-text">Loading…</p>';
-        if (saveBtn) {
-            saveBtn.disabled = true;
-            saveBtn.classList.remove('enabled');
-        }
 
-        if (window.MovieHuntInstanceDropdown && window.MovieHuntInstanceDropdown.attach && document.getElementById('movie-management-instance-select') && !window.MovieManagement._instanceDropdownAttached) {
-            window.MovieHuntInstanceDropdown.attach('movie-management-instance-select', function() {
-                window.MovieManagement.load();
-            });
-            window.MovieManagement._instanceDropdownAttached = true;
-        }
-
-        fetch('./api/settings/movie-management')
+        var url = appendInstanceParam(getApiBase());
+        fetch(url)
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 _movieManagementData = data;
@@ -201,8 +210,8 @@
                 if (backBtn) {
                     backBtn.onclick = function() {
                         confirmLeaveMovieManagement(function(result) {
-                            if (result === 'save') window.MovieManagement.save('movie-hunt-settings');
-                            else if (result === 'discard') window.MovieManagement.cancel('movie-hunt-settings');
+                            if (result === 'save') window.MovieManagement.save('media-hunt-settings');
+                            else if (result === 'discard') window.MovieManagement.cancel('media-hunt-settings');
                         });
                     };
                 }
@@ -214,20 +223,24 @@
                 if (saveBtn) saveBtn.onclick = function() { window.MovieManagement.save(); };
                 if (backBtn) backBtn.onclick = function() {
                     confirmLeaveMovieManagement(function(result) {
-                        if (result === 'save') window.MovieManagement.save('movie-hunt-settings');
-                        else if (result === 'discard') window.MovieManagement.cancel('movie-hunt-settings');
+                        if (result === 'save') window.MovieManagement.save('media-hunt-settings');
+                        else if (result === 'discard') window.MovieManagement.cancel('media-hunt-settings');
                     });
                 };
             });
     }
 
     function save(optionalNextSection) {
-        var nextSection = optionalNextSection || 'movie-hunt-settings';
+        if (_mgmtMode === 'tv') return;
+        var nextSection = optionalNextSection || 'media-hunt-settings';
         var body = collectFormData();
+        var instId = getInstanceId();
+        if (instId) body.instance_id = parseInt(instId, 10);
         var saveBtn = document.getElementById('movie-management-save');
         if (saveBtn) saveBtn.disabled = true;
 
-        fetch('./api/settings/movie-management', {
+        var url = appendInstanceParam(getApiBase());
+        fetch(url, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
@@ -261,15 +274,144 @@
         _movieManagementDirty = false;
         _movieManagementData = null;
         if (window.huntarrUI && window.huntarrUI.switchSection) {
-            window.huntarrUI.switchSection(optionalNextSection || 'movie-hunt-settings');
+            window.huntarrUI.switchSection(optionalNextSection || 'media-hunt-settings');
+        }
+    }
+
+    function getApiBase() {
+        return _mgmtMode === 'tv' ? './api/tv-hunt/settings/tv-management' : './api/settings/movie-management';
+    }
+
+    function getInstanceId() {
+        var sel = document.getElementById('movie-management-instance-select');
+        var v = sel && sel.value ? sel.value : '';
+        if (v && v.indexOf(':') >= 0) return v.split(':')[1] || '';
+        return v || '';
+    }
+
+    function appendInstanceParam(url) {
+        var id = getInstanceId();
+        if (!id) return url;
+        return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'instance_id=' + encodeURIComponent(id);
+    }
+
+    function tvPlaceholderHtml() {
+        return '<div class="editor-grid"><div class="editor-section">' +
+            '<div class="editor-section-title">TV Management</div>' +
+            '<div style="text-align:center;padding:40px 20px;color:#64748b;">' +
+            '<i class="fas fa-tv" style="font-size:2rem;margin-bottom:12px;display:block;opacity:0.5;"></i>' +
+            '<p style="margin:0;font-size:0.95rem;">TV management settings (naming, folder structure, episode handling) will be available in a future update.</p>' +
+            '</div></div></div>';
+    }
+
+    function populateCombinedInstanceDropdown(preferMode) {
+        var selectEl = document.getElementById('movie-management-instance-select');
+        if (!selectEl) return;
+        selectEl.innerHTML = '<option value="">Loading...</option>';
+        var ts = Date.now();
+        Promise.all([
+            fetch('./api/movie-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch('./api/movie-hunt/current-instance?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch('./api/tv-hunt/current-instance?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+        ]).then(function(results) {
+            var movieList = (results[0].instances || []).map(function(inst) {
+                return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
+            });
+            var tvList = (results[1].instances || []).map(function(inst) {
+                return { value: 'tv:' + inst.id, label: 'TV - ' + (inst.name || 'Instance ' + inst.id) };
+            });
+            var combined = movieList.concat(tvList);
+            combined.sort(function(a, b) { return (a.label || '').localeCompare(b.label || '', undefined, { sensitivity: 'base' }); });
+            var currentMovie = results[2].instance_id != null ? Number(results[2].instance_id) : null;
+            var currentTv = results[3].instance_id != null ? Number(results[3].instance_id) : null;
+            selectEl.innerHTML = '';
+            if (combined.length === 0) {
+                var emptyOpt = document.createElement('option');
+                emptyOpt.value = '';
+                emptyOpt.textContent = 'No Movie or TV Hunt instances';
+                selectEl.appendChild(emptyOpt);
+                return;
+            }
+            combined.forEach(function(item) {
+                var opt = document.createElement('option');
+                opt.value = item.value;
+                opt.textContent = item.label;
+                selectEl.appendChild(opt);
+            });
+            var saved = (typeof localStorage !== 'undefined' && localStorage.getItem('media-hunt-management-last-instance')) || '';
+            var selected = '';
+            if (preferMode === 'movie' && currentMovie != null) {
+                selected = 'movie:' + currentMovie;
+                if (!combined.some(function(i) { return i.value === selected; })) selected = combined[0].value;
+            } else if (preferMode === 'tv' && currentTv != null) {
+                selected = 'tv:' + currentTv;
+                if (!combined.some(function(i) { return i.value === selected; })) selected = combined[0].value;
+            } else if (saved && combined.some(function(i) { return i.value === saved; })) {
+                selected = saved;
+            } else if (currentMovie != null && combined.some(function(i) { return i.value === 'movie:' + currentMovie; })) {
+                selected = 'movie:' + currentMovie;
+            } else if (currentTv != null && combined.some(function(i) { return i.value === 'tv:' + currentTv; })) {
+                selected = 'tv:' + currentTv;
+            } else {
+                selected = combined[0].value;
+            }
+            selectEl.value = selected;
+            var parts = (selected || '').split(':');
+            if (parts.length === 2) {
+                _mgmtMode = parts[0] === 'tv' ? 'tv' : 'movie';
+                if (typeof localStorage !== 'undefined') localStorage.setItem('media-hunt-management-last-instance', selected);
+                load();
+            }
+        }).catch(function() {
+            selectEl.innerHTML = '<option value="">Failed to load instances</option>';
+        });
+    }
+
+    function onCombinedInstanceChange() {
+        var selectEl = document.getElementById('movie-management-instance-select');
+        if (!selectEl) return;
+        var val = selectEl.value || '';
+        var parts = val.split(':');
+        if (parts.length === 2) {
+            _mgmtMode = parts[0] === 'tv' ? 'tv' : 'movie';
+            if (typeof localStorage !== 'undefined') localStorage.setItem('media-hunt-management-last-instance', val);
+            load();
+        }
+    }
+
+    function initOrRefresh(preferMode) {
+        _mgmtMode = (preferMode === 'tv') ? 'tv' : 'movie';
+        var selectEl = document.getElementById('movie-management-instance-select');
+        if (selectEl && selectEl.options.length <= 1) {
+            populateCombinedInstanceDropdown(preferMode);
+        } else {
+            var val = selectEl.value || '';
+            var parts = val.split(':');
+            if (parts.length === 2) _mgmtMode = parts[0] === 'tv' ? 'tv' : 'movie';
+            load();
+        }
+        if (selectEl && !selectEl._mgmtChangeBound) {
+            selectEl._mgmtChangeBound = true;
+            selectEl.addEventListener('change', function() { onCombinedInstanceChange(); });
+        }
+        if (!window.MovieManagement._eventsBound) {
+            window.MovieManagement._eventsBound = true;
+            document.addEventListener('huntarr:instances-changed', function() { if (_mgmtMode === 'movie') populateCombinedInstanceDropdown('movie'); });
+            document.addEventListener('huntarr:tv-hunt-instances-changed', function() { if (_mgmtMode === 'tv') populateCombinedInstanceDropdown('tv'); });
         }
     }
 
     window.MovieManagement = {
+        _mgmtMode: function() { return _mgmtMode; },
+        getApiBase: getApiBase,
+        getInstanceId: getInstanceId,
         load: load,
         save: save,
         cancel: cancel,
         isDirty: function() { return _movieManagementDirty; },
-        confirmLeave: confirmLeaveMovieManagement
+        confirmLeave: confirmLeaveMovieManagement,
+        populateCombinedInstanceDropdown: populateCombinedInstanceDropdown,
+        initOrRefresh: initOrRefresh
     };
 })();

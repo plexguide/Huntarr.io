@@ -168,7 +168,7 @@
                     <span>Logs</span>
                 </a>
             </div>
-            <a href="./#tv-hunt-settings" class="nav-item" id="tvHuntSettingsNav">
+            <a href="./#media-hunt-settings" class="nav-item" id="tvHuntSettingsNav">
                 <div class="nav-icon-wrapper"><i class="fas fa-cog"></i></div>
                 <span>Settings</span>
             </a>
@@ -303,7 +303,7 @@
                     <span>Logs</span>
                 </a>
             </div>
-            <a href="./#movie-hunt-settings" class="nav-item" id="movieHuntSettingsNav">
+            <a href="./#media-hunt-settings" class="nav-item" id="movieHuntSettingsNav">
                 <div class="nav-icon-wrapper"><i class="fas fa-cog"></i></div>
                 <span>Settings</span>
             </a>
@@ -697,8 +697,13 @@
         else if (currentHash === '#backup-restore') { selector = '#mainSettingsBackupRestoreNav'; expandSub('settings-sub'); }
         else if (currentHash === '#settings-logs') { selector = '#mainSettingsLogsNav'; expandSub('settings-sub'); }
         else if (currentHash === '#user') { selector = '#mainSettingsUserNav'; expandSub('settings-sub'); }
-        // Movie Hunt settings
+        // Movie Hunt settings (media-hunt-settings is shared; active item depends on visible sidebar)
         else if (currentHash === '#settings-instance-management' || currentHash === '#movie-hunt-settings') { selector = '#movieHuntSettingsNav'; expandSub('movie-hunt-settings-sub'); }
+        else if (currentHash === '#media-hunt-settings') {
+            expandSub('tv-hunt-settings-sub');
+            expandSub('movie-hunt-settings-sub');
+            selector = (document.getElementById('tv-hunt-sidebar') && document.getElementById('tv-hunt-sidebar').style.display !== 'none') ? '#tvHuntSettingsNav' : '#movieHuntSettingsNav';
+        }
         else if (currentHash === '#settings-movie-management') { selector = '#movieHuntSettingsMovieManagementNav'; expandSub('movie-hunt-settings-sub'); }
         else if (currentHash === '#settings-profiles') { selector = '#movieHuntSettingsProfilesNav'; expandSub('movie-hunt-settings-sub'); }
         else if (currentHash === '#settings-sizes') { selector = '#movieHuntSettingsSizesNav'; expandSub('movie-hunt-settings-sub'); }
@@ -757,7 +762,7 @@
         if (systemHashes.indexOf(currentHash) === -1) collapseSub('system-sub');
 
         // Collapse Movie Hunt subs
-        var mhSettingsHashes = ['#movie-hunt-settings', '#settings-instance-management', '#settings-movie-management', '#settings-profiles', '#settings-sizes', '#settings-custom-formats', '#settings-indexers', '#settings-clients', '#settings-import-lists', '#settings-root-folders'];
+        var mhSettingsHashes = ['#movie-hunt-settings', '#media-hunt-settings', '#settings-instance-management', '#settings-movie-management', '#settings-profiles', '#settings-sizes', '#settings-custom-formats', '#settings-indexers', '#settings-clients', '#settings-import-lists', '#settings-root-folders'];
         if (mhSettingsHashes.indexOf(currentHash) === -1) collapseSub('movie-hunt-settings-sub');
 
         var mhActivityHashes = ['#activity-queue', '#activity-history', '#activity-blocklist', '#activity-logs', '#logs-movie-hunt'];
@@ -767,7 +772,7 @@
         if (mhCollectionHashes.indexOf(currentHash) === -1) collapseSub('movie-hunt-collection-sub');
 
         // Collapse TV Hunt subs
-        var thSettingsHashes = ['#tv-hunt-settings', '#tv-hunt-instance-editor', '#tv-hunt-settings-tv-management', '#tv-hunt-settings-profiles', '#tv-hunt-settings-sizes', '#tv-hunt-settings-custom-formats', '#tv-hunt-settings-indexers', '#tv-hunt-settings-clients', '#tv-hunt-settings-import-lists', '#tv-hunt-settings-root-folders'];
+        var thSettingsHashes = ['#tv-hunt-settings', '#tv-hunt-instance-editor', '#media-hunt-settings', '#tv-hunt-settings-tv-management', '#tv-hunt-settings-profiles', '#tv-hunt-settings-sizes', '#tv-hunt-settings-custom-formats', '#tv-hunt-settings-indexers', '#tv-hunt-settings-clients', '#tv-hunt-settings-import-lists', '#tv-hunt-settings-root-folders'];
         if (thSettingsHashes.indexOf(currentHash) === -1) collapseSub('tv-hunt-settings-sub');
         var thActivityHashes = ['#tv-hunt-activity-queue', '#tv-hunt-activity-history', '#tv-hunt-activity-blocklist', '#logs-tv-hunt'];
         if (thActivityHashes.indexOf(currentHash) === -1) collapseSub('tv-hunt-activity-sub');

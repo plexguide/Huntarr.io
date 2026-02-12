@@ -21,6 +21,14 @@
         return getMode() === 'tv' ? './api/tv-hunt' : './api/movie-hunt';
     }
 
+    function getApiBaseForMode(mode) {
+        return (mode === 'tv') ? './api/tv-hunt' : './api/movie-hunt';
+    }
+
+    function isCombinedView() {
+        return !!(document.getElementById('media-hunt-tv-instances-grid') && document.getElementById('media-hunt-movie-instances-grid'));
+    }
+
     function escapeHtml(s) {
         if (s == null) return '';
         var str = String(s);
@@ -33,15 +41,13 @@
 
     var MOVIE_DROPDOWN_IDS = [
         'movie-hunt-instance-select', 'movie-hunt-collection-instance-select', 'activity-instance-select',
-        'movie-management-instance-select',
-        'settings-clients-instance-select', 'settings-import-lists-instance-select',
-        'import-media-instance-select', 'settings-root-folders-instance-select'
+        'settings-clients-instance-select',
+        'import-media-instance-select'
     ];
 
     var TV_DROPDOWN_IDS = [
         'tv-hunt-instance-select', 'tv-hunt-collection-instance-select', 'tv-hunt-activity-instance-select',
-        'tv-hunt-settings-clients-instance-select', 'tv-hunt-settings-root-folders-instance-select',
-        'tv-hunt-settings-tv-management-instance-select', 'tv-hunt-settings-import-lists-instance-select'
+        'tv-hunt-settings-clients-instance-select'
     ];
 
     function refreshDropdowns() {
@@ -74,24 +80,43 @@
 
         init: function() {
             var self = this;
+            var combined = isCombinedView();
+
+            if (combined) {
+                var desc = document.getElementById('media-hunt-instance-management-description');
+                if (desc) desc.textContent = 'Configure instances for TV Hunt and Movie Hunt. Each instance has its own queue, history, blocklist, and media.';
+                var universalGroup = document.getElementById('media-hunt-universal-settings-group');
+                if (universalGroup) universalGroup.style.display = 'block';
+                if (!this._initialized) {
+                    this._initialized = true;
+                    var tvAdd = document.getElementById('media-hunt-tv-instances-add-card');
+                    var movieAdd = document.getElementById('media-hunt-movie-instances-add-card');
+                    if (tvAdd) tvAdd.addEventListener('click', function() { self.openAddModal('tv'); });
+                    if (movieAdd) movieAdd.addEventListener('click', function() { self.openAddModal('movie'); });
+                    this.initAddModal();
+                    this.initDeleteModal();
+                    this.initRenameModal();
+                }
+                if (!this._universalInitialized) {
+                    this._universalInitialized = true;
+                    this.initUniversalVideoModal();
+                }
+                this.loadListForMode('tv');
+                this.loadListForMode('movie');
+                this.loadUniversalVideoCard();
+                return;
+            }
+
             var mode = getMode();
-
-            var desc = document.getElementById('media-hunt-instance-management-description');
             var title = document.getElementById('media-hunt-instance-management-title');
-            var addTitle = document.getElementById('media-hunt-instance-add-modal-title');
-            var addSub = document.getElementById('media-hunt-instance-add-modal-subtitle');
-            if (desc) desc.textContent = 'Configure how each instance runs. Each instance has its own queue, history, blocklist, and media.';
             if (title) title.textContent = (mode === 'movie' ? 'Movie Hunt' : 'TV Hunt') + ' Instances';
-            if (addTitle) addTitle.textContent = 'Add Instance';
-            if (addSub) addSub.textContent = 'Enter a name for the new instance.';
-
             var universalGroup = document.getElementById('media-hunt-universal-settings-group');
             if (universalGroup) universalGroup.style.display = (mode === 'movie') ? 'block' : 'none';
 
             if (!this._initialized) {
                 this._initialized = true;
                 var addCard = document.getElementById('media-hunt-instance-management-add-card');
-                if (addCard) addCard.addEventListener('click', function() { self.openAddModal(); });
+                if (addCard) addCard.addEventListener('click', function() { self.openAddModal(mode); });
                 this.initAddModal();
                 this.initDeleteModal();
                 this.initRenameModal();
@@ -251,9 +276,10 @@
             if (okBtn) {
                 okBtn.onclick = function() {
                     var name = (input && input.value) ? input.value.trim() : '';
+                    var addMode = self._addModalMode || getMode();
                     if (!name) name = 'Unnamed';
                     okBtn.disabled = true;
-                    fetch(api(getApiBase() + '/instances'), {
+                    fetch(api(getApiBaseForMode(addMode) + '/instances'), {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ name: name })
@@ -266,7 +292,7 @@
                             }
                             if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Instance added.', 'success');
                             closeModal();
-                            self.loadList();
+                            if (isCombinedView()) self.loadListForMode(addMode); else self.loadList();
                             afterInstanceChange();
                         })
                         .catch(function() {
@@ -293,6 +319,7 @@
                 modal.style.display = 'none';
                 document.body.classList.remove('instance-delete-modal-open');
                 modal.removeAttribute('data-pending-id');
+                modal.removeAttribute('data-pending-mode');
             }
             if (backdrop) backdrop.onclick = closeModal;
             if (closeBtn) closeBtn.onclick = closeModal;
@@ -300,9 +327,10 @@
             if (confirmBtn) {
                 confirmBtn.onclick = function() {
                     var id = modal.getAttribute('data-pending-id');
+                    var pendingMode = modal.getAttribute('data-pending-mode') || getMode();
                     if (!id) return;
                     confirmBtn.disabled = true;
-                    fetch(api(getApiBase() + '/instances/' + id), { method: 'DELETE' })
+                    fetch(api(getApiBaseForMode(pendingMode) + '/instances/' + id), { method: 'DELETE' })
                         .then(function(r) { return r.json(); })
                         .then(function(data) {
                             if (data.error) {
@@ -311,7 +339,7 @@
                             }
                             if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Instance deleted.', 'success');
                             closeModal();
-                            self.loadList();
+                            if (isCombinedView()) self.loadListForMode(pendingMode); else self.loadList();
                             afterInstanceChange();
                         })
                         .catch(function() {
@@ -325,13 +353,15 @@
             });
         },
 
-        openDeleteModal: function(id, name) {
+        openDeleteModal: function(id, name, mode) {
+            var m = (mode === 'tv' || mode === 'movie') ? mode : getMode();
             var modal = document.getElementById('media-hunt-instance-delete-modal');
             var messageEl = document.getElementById('media-hunt-instance-delete-modal-message');
             if (!modal || !messageEl) return;
             var displayName = (name || id || 'this instance').trim() || 'this instance';
             messageEl.textContent = 'Delete instance "' + displayName + '"? This cannot be undone.';
             modal.setAttribute('data-pending-id', String(id));
+            modal.setAttribute('data-pending-mode', m);
             if (modal.parentNode !== document.body) document.body.appendChild(modal);
             modal.style.display = 'flex';
             document.body.classList.add('instance-delete-modal-open');
@@ -350,6 +380,7 @@
                 modal.style.display = 'none';
                 document.body.classList.remove('instance-rename-modal-open');
                 modal.removeAttribute('data-pending-id');
+                modal.removeAttribute('data-pending-mode');
             }
             if (backdrop) backdrop.onclick = closeModal;
             if (closeBtn) closeBtn.onclick = closeModal;
@@ -357,11 +388,12 @@
             if (saveBtn) {
                 saveBtn.onclick = function() {
                     var id = modal.getAttribute('data-pending-id');
+                    var pendingMode = modal.getAttribute('data-pending-mode') || getMode();
                     var name = (input && input.value) ? input.value.trim() : '';
                     if (!id) return;
                     if (!name) name = 'Unnamed';
                     saveBtn.disabled = true;
-                    fetch(api(getApiBase() + '/instances/' + id), {
+                    fetch(api(getApiBaseForMode(pendingMode) + '/instances/' + id), {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ name: name })
@@ -374,7 +406,7 @@
                             }
                             if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Instance renamed.', 'success');
                             closeModal();
-                            self.loadList();
+                            if (isCombinedView()) self.loadListForMode(pendingMode); else self.loadList();
                             afterInstanceChange();
                         })
                         .catch(function() {
@@ -388,11 +420,13 @@
             });
         },
 
-        openRenameModal: function(id, currentName) {
+        openRenameModal: function(id, currentName, mode) {
+            var m = (mode === 'tv' || mode === 'movie') ? mode : getMode();
             var modal = document.getElementById('media-hunt-instance-rename-modal');
             var input = document.getElementById('media-hunt-instance-rename-name');
             if (!modal || !input) return;
             modal.setAttribute('data-pending-id', String(id));
+            modal.setAttribute('data-pending-mode', m);
             input.value = (currentName || '').trim() || '';
             if (modal.parentNode !== document.body) document.body.appendChild(modal);
             modal.style.display = 'flex';
@@ -400,13 +434,95 @@
             setTimeout(function() { input.focus(); }, 100);
         },
 
-        openAddModal: function() {
+        _addModalMode: 'movie',
+
+        openAddModal: function(mode) {
+            var m = (mode === 'tv' || mode === 'movie') ? mode : getMode();
+            this._addModalMode = m;
             var modal = document.getElementById('media-hunt-instance-add-modal');
             var input = document.getElementById('media-hunt-instance-add-name');
+            var addTitle = document.getElementById('media-hunt-instance-add-modal-title');
+            var addSub = document.getElementById('media-hunt-instance-add-modal-subtitle');
+            if (addTitle) addTitle.textContent = m === 'tv' ? 'Add TV Hunt Instance' : 'Add Movie Hunt Instance';
+            if (addSub) addSub.textContent = 'Enter a name for the new ' + (m === 'tv' ? 'TV Hunt' : 'Movie Hunt') + ' instance.';
             if (modal && modal.parentNode !== document.body) document.body.appendChild(modal);
             if (modal) modal.style.display = 'flex';
             if (input) { input.value = ''; setTimeout(function() { input.focus(); }, 100); }
             document.body.classList.add('instance-add-modal-open');
+        },
+
+        loadListForMode: function(mode) {
+            var gridId = mode === 'tv' ? 'media-hunt-tv-instances-grid' : 'media-hunt-movie-instances-grid';
+            var addCardId = mode === 'tv' ? 'media-hunt-tv-instances-add-card' : 'media-hunt-movie-instances-add-card';
+            var grid = document.getElementById(gridId);
+            if (!grid) return;
+            var addCard = document.getElementById(addCardId);
+            var addCardClone = addCard ? addCard.cloneNode(true) : null;
+            if (addCard) addCard.remove();
+            grid.innerHTML = '<div class="instance-management-loading">Loading...</div>';
+
+            var iconClass = mode === 'movie' ? 'fa-film' : 'fa-tv';
+            var self = this;
+
+            fetch(api(getApiBaseForMode(mode) + '/instances'), { cache: 'no-store' })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    var list = data.instances || [];
+                    grid.innerHTML = '';
+                    list.forEach(function(inst) {
+                        var enabled = inst.enabled !== false;
+                        var statusClass = enabled ? 'status-connected' : 'status-disabled';
+                        var statusIcon = enabled ? 'fa-check-circle' : 'fa-minus-circle';
+                        var card = document.createElement('div');
+                        card.className = 'instance-card';
+                        card.setAttribute('data-mode', mode);
+                        card.innerHTML =
+                            '<div class="instance-card-header">' +
+                            '<span class="instance-name"><i class="fas ' + iconClass + '" style="margin-right: 8px;"></i>' + escapeHtml(inst.name || 'Instance ' + inst.id) + '</span>' +
+                            '<div class="instance-status-icon ' + statusClass + '" title="' + (enabled ? 'Enabled' : 'Disabled') + '"><i class="fas ' + statusIcon + '"></i></div>' +
+                            '</div>' +
+                            '<div class="instance-card-body"><div class="instance-detail"><i class="fas fa-hashtag"></i><span>ID ' + escapeHtml(inst.id) + '</span></div></div>' +
+                            '<div class="instance-card-footer">' +
+                            '<button type="button" class="btn-card edit" data-id="' + escapeAttr(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '" data-mode="' + mode + '" aria-label="Edit"><i class="fas fa-cog"></i> Edit</button>' +
+                            '<button type="button" class="btn-card delete" data-id="' + escapeAttr(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '" data-mode="' + mode + '" aria-label="Delete"><i class="fas fa-trash"></i> Delete</button>' +
+                            '</div>';
+                        grid.appendChild(card);
+                    });
+                    if (addCardClone) {
+                        addCardClone.id = addCardId;
+                        addCardClone.setAttribute('data-mode', mode);
+                        grid.appendChild(addCardClone);
+                        addCardClone.addEventListener('click', function() { self.openAddModal(mode); });
+                    }
+                    grid.querySelectorAll('.btn-card.edit').forEach(function(btn) {
+                        btn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            var id = btn.getAttribute('data-id');
+                            var name = btn.getAttribute('data-name') || ('Instance ' + id);
+                            var cardMode = btn.getAttribute('data-mode') || mode;
+                            if (cardMode === 'movie' && window.MovieHuntInstanceEditor && typeof window.MovieHuntInstanceEditor.openEditor === 'function') {
+                                window.MovieHuntInstanceEditor.openEditor(id, name);
+                            } else if (cardMode === 'tv' && window.TVHuntInstanceEditor && typeof window.TVHuntInstanceEditor.openEditor === 'function') {
+                                window.TVHuntInstanceEditor.openEditor(id, name);
+                            }
+                        });
+                    });
+                    grid.querySelectorAll('.btn-card.delete').forEach(function(btn) {
+                        btn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            var cardMode = btn.getAttribute('data-mode') || mode;
+                            self.openDeleteModal(btn.getAttribute('data-id'), btn.getAttribute('data-name') || '', cardMode);
+                        });
+                    });
+                })
+                .catch(function() {
+                    grid.innerHTML = '<div class="instance-management-loading" style="color: #f87171;">Failed to load instances.</div>';
+                    if (addCardClone) {
+                        addCardClone.id = addCardId;
+                        grid.appendChild(addCardClone);
+                        addCardClone.addEventListener('click', function() { self.openAddModal(mode); });
+                    }
+                });
         },
 
         loadList: function() {
@@ -447,7 +563,7 @@
                         addCardClone.id = 'media-hunt-instance-management-add-card';
                         addCardClone.setAttribute('data-app-type', 'media-hunt-instance');
                         grid.appendChild(addCardClone);
-                        addCardClone.addEventListener('click', function() { window.MediaHuntInstanceManagement.openAddModal(); });
+                        addCardClone.addEventListener('click', function() { window.MediaHuntInstanceManagement.openAddModal(mode); });
                     }
                     grid.querySelectorAll('.btn-card.edit').forEach(function(btn) {
                         btn.addEventListener('click', function(e) {
@@ -464,7 +580,7 @@
                     grid.querySelectorAll('.btn-card.delete').forEach(function(btn) {
                         btn.addEventListener('click', function(e) {
                             e.stopPropagation();
-                            window.MediaHuntInstanceManagement.openDeleteModal(btn.getAttribute('data-id'), btn.getAttribute('data-name') || '');
+                            window.MediaHuntInstanceManagement.openDeleteModal(btn.getAttribute('data-id'), btn.getAttribute('data-name') || '', mode);
                         });
                     });
                 })
@@ -472,13 +588,13 @@
                     grid.innerHTML = '<div class="instance-management-loading" style="color: #f87171;">Failed to load instances.</div>';
                     if (addCardClone) {
                         grid.appendChild(addCardClone);
-                        addCardClone.addEventListener('click', function() { window.MediaHuntInstanceManagement.openAddModal(); });
+                        addCardClone.addEventListener('click', function() { window.MediaHuntInstanceManagement.openAddModal(mode); });
                     }
                 });
         },
 
         promptAdd: function() { this.openAddModal(); },
-        promptDelete: function(id, name) { this.openDeleteModal(id, name); },
-        promptRename: function(id, currentName) { this.openRenameModal(id, currentName); }
+        promptDelete: function(id, name, mode) { this.openDeleteModal(id, name, mode); },
+        promptRename: function(id, currentName, mode) { this.openRenameModal(id, currentName, mode); }
     };
 })();

@@ -1,6 +1,7 @@
 /**
- * Import Lists (Movie Hunt) — card grid, add/edit modals, sync.
- * Attaches to window.ImportLists. Load after settings core.
+ * Import Lists – single view for Movie Hunt and TV Hunt. Combined instance dropdown
+ * (Movie - X / TV - X, alphabetical). Each instance keeps its own lists; same page linked from both sidebars.
+ * TV Hunt returns empty lists (stub) until TV import lists are implemented.
  */
 (function() {
     'use strict';
@@ -10,19 +11,128 @@
     var selectedType = null;
 
     window.ImportLists = {
+        _ilMode: 'movie',
+
+        getApiBase: function() {
+            return this._ilMode === 'tv' ? './api/tv-hunt/import-lists' : './api/movie-hunt/import-lists';
+        },
+
+        getInstanceId: function() {
+            var sel = document.getElementById('settings-import-lists-instance-select');
+            var v = sel && sel.value ? sel.value : '';
+            if (v && v.indexOf(':') >= 0) return v.split(':')[1] || '';
+            return v || '';
+        },
+
+        _appendInstanceParam: function(url) {
+            var id = this.getInstanceId();
+            if (!id) return url;
+            return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'instance_id=' + encodeURIComponent(id);
+        },
+
+        populateCombinedInstanceDropdown: function(preferMode) {
+            var self = window.ImportLists;
+            var selectEl = document.getElementById('settings-import-lists-instance-select');
+            if (!selectEl) return;
+            selectEl.innerHTML = '<option value="">Loading...</option>';
+            var ts = Date.now();
+            Promise.all([
+                fetch('./api/movie-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                fetch('./api/movie-hunt/current-instance?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                fetch('./api/tv-hunt/current-instance?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+            ]).then(function(results) {
+                var movieList = (results[0].instances || []).map(function(inst) {
+                    return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
+                });
+                var tvList = (results[1].instances || []).map(function(inst) {
+                    return { value: 'tv:' + inst.id, label: 'TV - ' + (inst.name || 'Instance ' + inst.id) };
+                });
+                var combined = movieList.concat(tvList);
+                combined.sort(function(a, b) { return (a.label || '').localeCompare(b.label || '', undefined, { sensitivity: 'base' }); });
+                var currentMovie = results[2].instance_id != null ? Number(results[2].instance_id) : null;
+                var currentTv = results[3].instance_id != null ? Number(results[3].instance_id) : null;
+                selectEl.innerHTML = '';
+                if (combined.length === 0) {
+                    var emptyOpt = document.createElement('option');
+                    emptyOpt.value = '';
+                    emptyOpt.textContent = 'No Movie or TV Hunt instances';
+                    selectEl.appendChild(emptyOpt);
+                    return;
+                }
+                combined.forEach(function(item) {
+                    var opt = document.createElement('option');
+                    opt.value = item.value;
+                    opt.textContent = item.label;
+                    selectEl.appendChild(opt);
+                });
+                var saved = (typeof localStorage !== 'undefined' && localStorage.getItem('media-hunt-import-lists-last-instance')) || '';
+                var selected = '';
+                if (preferMode === 'movie' && currentMovie != null) {
+                    selected = 'movie:' + currentMovie;
+                    if (!combined.some(function(i) { return i.value === selected; })) selected = combined[0].value;
+                } else if (preferMode === 'tv' && currentTv != null) {
+                    selected = 'tv:' + currentTv;
+                    if (!combined.some(function(i) { return i.value === selected; })) selected = combined[0].value;
+                } else if (saved && combined.some(function(i) { return i.value === saved; })) {
+                    selected = saved;
+                } else if (currentMovie != null && combined.some(function(i) { return i.value === 'movie:' + currentMovie; })) {
+                    selected = 'movie:' + currentMovie;
+                } else if (currentTv != null && combined.some(function(i) { return i.value === 'tv:' + currentTv; })) {
+                    selected = 'tv:' + currentTv;
+                } else {
+                    selected = combined[0].value;
+                }
+                selectEl.value = selected;
+                var parts = (selected || '').split(':');
+                if (parts.length === 2) {
+                    self._ilMode = parts[0] === 'tv' ? 'tv' : 'movie';
+                    if (typeof localStorage !== 'undefined') localStorage.setItem('media-hunt-import-lists-last-instance', selected);
+                    self.refreshList();
+                }
+            }).catch(function() {
+                selectEl.innerHTML = '<option value="">Failed to load instances</option>';
+            });
+        },
+
+        onCombinedInstanceChange: function() {
+            var selectEl = document.getElementById('settings-import-lists-instance-select');
+            if (!selectEl) return;
+            var val = selectEl.value || '';
+            var parts = val.split(':');
+            if (parts.length === 2) {
+                window.ImportLists._ilMode = parts[0] === 'tv' ? 'tv' : 'movie';
+                if (typeof localStorage !== 'undefined') localStorage.setItem('media-hunt-import-lists-last-instance', val);
+                window.ImportLists.refreshList();
+            }
+        },
+
+        initOrRefresh: function(preferMode) {
+            var self = window.ImportLists;
+            self._ilMode = (preferMode === 'tv') ? 'tv' : 'movie';
+            var selectEl = document.getElementById('settings-import-lists-instance-select');
+            if (selectEl && selectEl.options.length <= 1) {
+                self.populateCombinedInstanceDropdown(preferMode);
+            } else {
+                var val = selectEl.value || '';
+                var parts = val.split(':');
+                if (parts.length === 2) self._ilMode = parts[0] === 'tv' ? 'tv' : 'movie';
+                self.refreshList();
+            }
+            if (selectEl && !selectEl._ilChangeBound) {
+                selectEl._ilChangeBound = true;
+                selectEl.addEventListener('change', function() { window.ImportLists.onCombinedInstanceChange(); });
+            }
+        },
 
         // ---------------------------------------------------------------
         // Refresh / render
         // ---------------------------------------------------------------
         refreshList: function() {
-            if (window.MovieHuntInstanceDropdown && document.getElementById('settings-import-lists-instance-select') && !window.ImportLists._instanceDropdownAttached) {
-                window.MovieHuntInstanceDropdown.attach('settings-import-lists-instance-select', function() { window.ImportLists.refreshList(); });
-                window.ImportLists._instanceDropdownAttached = true;
-            }
             var gridEl = document.getElementById('import-lists-grid');
             if (!gridEl) return;
-
-            fetch('./api/movie-hunt/import-lists')
+            var url = window.ImportLists._appendInstanceParam(window.ImportLists.getApiBase());
+            fetch(url)
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     var lists = (data && data.lists) ? data.lists : [];
@@ -70,21 +180,29 @@
                         '</div>';
                     }
 
-                    // Add card always at end
-                    html += '<div class="add-instance-card add-import-list-card" id="import-lists-add-card" data-app-type="import-list">' +
-                        '<div class="add-icon"><i class="fas fa-plus-circle"></i></div>' +
-                        '<div class="add-text">Add Import List</div></div>';
+                    // Add card at end (hide for TV - import lists not implemented for TV yet)
+                    if (window.ImportLists._ilMode !== 'tv') {
+                        html += '<div class="add-instance-card add-import-list-card" id="import-lists-add-card" data-app-type="import-list">' +
+                            '<div class="add-icon"><i class="fas fa-plus-circle"></i></div>' +
+                            '<div class="add-text">Add Import List</div></div>';
+                    } else if (lists.length === 0) {
+                        html += '<p class="import-lists-tv-empty" style="color:#94a3b8;margin:12px 0;">Import lists for TV Hunt are not available yet.</p>';
+                    }
 
                     gridEl.innerHTML = html;
                     window.ImportLists._bindCardButtons();
+                    var syncAllBtn = document.getElementById('import-lists-sync-all-btn');
+                    if (syncAllBtn) syncAllBtn.style.display = window.ImportLists._ilMode === 'tv' ? 'none' : '';
                 })
                 .catch(function(e) {
                     console.error('[ImportLists] Failed to load:', e);
-                    gridEl.innerHTML =
-                        '<p style="color: #ef4444; margin: 0 0 12px 0;">Failed to load import lists.</p>' +
-                        '<div class="add-instance-card add-import-list-card" id="import-lists-add-card" data-app-type="import-list">' +
-                        '<div class="add-icon"><i class="fas fa-plus-circle"></i></div>' +
-                        '<div class="add-text">Add Import List</div></div>';
+                    var errHtml = '<p style="color: #ef4444; margin: 0 0 12px 0;">Failed to load import lists.</p>';
+                    if (window.ImportLists._ilMode !== 'tv') {
+                        errHtml += '<div class="add-instance-card add-import-list-card" id="import-lists-add-card" data-app-type="import-list">' +
+                            '<div class="add-icon"><i class="fas fa-plus-circle"></i></div>' +
+                            '<div class="add-text">Add Import List</div></div>';
+                    }
+                    gridEl.innerHTML = errHtml;
                     window.ImportLists._bindAddCard();
                 });
         },
@@ -120,7 +238,12 @@
         // ---------------------------------------------------------------
         syncList: function(listId) {
             _notify('Syncing list...', 'info');
-            fetch('./api/movie-hunt/import-lists/' + listId + '/sync', { method: 'POST' })
+            var url = window.ImportLists.getApiBase() + '/' + listId + '/sync';
+            url = window.ImportLists._appendInstanceParam(url);
+            var body = {};
+            var instId = window.ImportLists.getInstanceId();
+            if (instId) body.instance_id = parseInt(instId, 10);
+            fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     if (data.success) {
@@ -136,7 +259,12 @@
 
         syncAll: function() {
             _notify('Syncing all lists...', 'info');
-            fetch('./api/movie-hunt/import-lists/sync-all', { method: 'POST' })
+            var url = window.ImportLists.getApiBase() + '/sync-all';
+            url = window.ImportLists._appendInstanceParam(url);
+            var body = {};
+            var instId = window.ImportLists.getInstanceId();
+            if (instId) body.instance_id = parseInt(instId, 10);
+            fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     if (data.success) {
@@ -153,7 +281,12 @@
         },
 
         toggleList: function(listId) {
-            fetch('./api/movie-hunt/import-lists/' + listId + '/toggle', { method: 'POST' })
+            var url = window.ImportLists.getApiBase() + '/' + listId + '/toggle';
+            url = window.ImportLists._appendInstanceParam(url);
+            var body = {};
+            var instId = window.ImportLists.getInstanceId();
+            if (instId) body.instance_id = parseInt(instId, 10);
+            fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
                 .then(function(r) { return r.json(); })
                 .then(function() { window.ImportLists.refreshList(); })
                 .catch(function(e) { _notify('Toggle failed: ' + e, 'error'); });
@@ -239,8 +372,10 @@
                 settings: settings,
                 sync_interval_hours: parseInt(intervalSelect.value, 10) || 12,
             };
-
-            fetch('./api/movie-hunt/import-lists', {
+            var instId = window.ImportLists.getInstanceId();
+            if (instId) payload.instance_id = parseInt(instId, 10);
+            var url = window.ImportLists._appendInstanceParam(window.ImportLists.getApiBase());
+            fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -263,8 +398,8 @@
         // ---------------------------------------------------------------
         openEditModal: function(listId) {
             currentEditId = listId;
-            // Fetch current data
-            fetch('./api/movie-hunt/import-lists')
+            var url = window.ImportLists._appendInstanceParam(window.ImportLists.getApiBase());
+            fetch(url)
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     var lists = (data && data.lists) || [];
@@ -336,8 +471,11 @@
                 settings: settings,
                 sync_interval_hours: parseInt(intervalSelect.value, 10) || 12,
             };
-
-            fetch('./api/movie-hunt/import-lists/' + currentEditId, {
+            var instId = window.ImportLists.getInstanceId();
+            if (instId) payload.instance_id = parseInt(instId, 10);
+            var editUrl = window.ImportLists.getApiBase() + '/' + currentEditId;
+            editUrl = window.ImportLists._appendInstanceParam(editUrl);
+            fetch(editUrl, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -392,6 +530,9 @@
 
             // Sync All
             _bindClick('import-lists-sync-all-btn', function() { window.ImportLists.syncAll(); });
+
+            document.addEventListener('huntarr:instances-changed', function() { if (window.ImportLists._ilMode === 'movie') window.ImportLists.populateCombinedInstanceDropdown('movie'); });
+            document.addEventListener('huntarr:tv-hunt-instances-changed', function() { if (window.ImportLists._ilMode === 'tv') window.ImportLists.populateCombinedInstanceDropdown('tv'); });
         }
     };
 
@@ -400,7 +541,9 @@
     // -------------------------------------------------------------------
 
     function _doDelete(listId) {
-        fetch('./api/movie-hunt/import-lists/' + listId, { method: 'DELETE' })
+        var deleteUrl = window.ImportLists.getApiBase() + '/' + listId;
+        deleteUrl = window.ImportLists._appendInstanceParam(deleteUrl);
+        fetch(deleteUrl, { method: 'DELETE' })
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (data.success) {
@@ -416,7 +559,7 @@
 
     function _loadListTypes(cb) {
         if (listTypes) { if (cb) cb(); return; }
-        fetch('./api/movie-hunt/import-lists/types')
+        fetch(window.ImportLists._appendInstanceParam(window.ImportLists.getApiBase() + '/types'))
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 listTypes = (data && data.types) || [];

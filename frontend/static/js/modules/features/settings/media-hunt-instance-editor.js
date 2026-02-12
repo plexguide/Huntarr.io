@@ -398,7 +398,7 @@
                     var saveBtn = document.getElementById('media-hunt-instance-editor-save');
                     if (backBtn) backBtn.onclick = function() {
                         if (!_editorDirty) {
-                            window.huntarrUI.switchSection('movie-hunt-settings');
+                            window.huntarrUI.switchSection('media-hunt-settings');
                             return;
                         }
                         if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
@@ -410,11 +410,11 @@
                                 onConfirm: function() {
                                     // Stay on the editor — modal just closes, user can save manually
                                 },
-                                onCancel: function() { window.huntarrUI.switchSection('movie-hunt-settings'); }
+                                onCancel: function() { window.huntarrUI.switchSection('media-hunt-settings'); }
                             });
                         } else {
                             if (confirm('You have unsaved changes that will be lost. Leave anyway?')) {
-                                window.huntarrUI.switchSection('movie-hunt-settings');
+                                window.huntarrUI.switchSection('media-hunt-settings');
                             }
                         }
                     };
@@ -824,14 +824,14 @@
                 var backBtn = document.getElementById('media-hunt-instance-editor-back');
                 var saveBtn = document.getElementById('media-hunt-instance-editor-save');
                 if (backBtn) backBtn.onclick = function() {
-                    if (!_editorDirty) { window.huntarrUI.switchSection('tv-hunt-settings'); return; }
+                    if (!_editorDirty) { window.huntarrUI.switchSection('media-hunt-settings'); return; }
                     window.HuntarrConfirm.show({
                         title: 'Unsaved Changes',
                         message: 'You have unsaved changes that will be lost if you leave.',
                         confirmLabel: 'Go Back',
                         cancelLabel: 'Leave',
                         onConfirm: function() {},
-                        onCancel: function() { window.huntarrUI.switchSection('tv-hunt-settings'); }
+                        onCancel: function() { window.huntarrUI.switchSection('media-hunt-settings'); }
                     });
                 };
                 if (saveBtn) saveBtn.onclick = function() { self.saveEditor(); };

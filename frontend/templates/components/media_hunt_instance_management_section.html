@@ -1,18 +1,31 @@
-{# Media Hunt Instance Management – single section for Movie Hunt and TV Hunt. Mode set by router. #}
+{# Media Hunt Settings – TV Hunt Instances (first) and Movie Hunt Instances (second). #}
 <section id="mediaHuntInstanceManagementSection" class="content-section" style="display: none;">
-    <div id="mediaHuntInstanceManagementBanner">{% with section_id='media-hunt-instance-management' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}</div>
+    <div id="mediaHuntInstanceManagementBanner">{% with section_id='media-hunt-settings' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}</div>
     <div id="mediaHuntInstanceManagementContainer" class="app-content-panel">
-        <p id="media-hunt-instance-management-description" class="instance-management-description">Configure how each instance runs. Each instance has its own queue, history, blocklist, and media.</p>
-        <div class="settings-group instance-management-settings-group">
-            <h3 id="media-hunt-instance-management-title">Instances</h3>
-            <div class="instance-card-grid" id="media-hunt-instance-management-grid">
-                <div class="add-instance-card" id="media-hunt-instance-management-add-card" data-app-type="media-hunt-instance">
+        <h2 class="content-section-title" style="margin-bottom: 8px;">Media Hunt Settings</h2>
+        <p id="media-hunt-instance-management-description" class="instance-management-description">Configure instances for TV Hunt and Movie Hunt. Each instance has its own queue, history, blocklist, and media.</p>
+
+        <div class="settings-group instance-management-settings-group" id="media-hunt-tv-instances-group">
+            <h3 class="instance-management-settings-group-title">TV Hunt Instances</h3>
+            <div class="instance-card-grid" id="media-hunt-tv-instances-grid">
+                <div class="add-instance-card" id="media-hunt-tv-instances-add-card" data-app-type="media-hunt-instance" data-mode="tv">
                     <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
                     <div class="add-text">Add Instance</div>
                 </div>
             </div>
         </div>
-        <div class="settings-group instance-management-settings-group" id="media-hunt-universal-settings-group" style="display: none;">
+
+        <div class="settings-group instance-management-settings-group" id="media-hunt-movie-instances-group">
+            <h3 class="instance-management-settings-group-title">Movie Hunt Instances</h3>
+            <div class="instance-card-grid" id="media-hunt-movie-instances-grid">
+                <div class="add-instance-card" id="media-hunt-movie-instances-add-card" data-app-type="media-hunt-instance" data-mode="movie">
+                    <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
+                    <div class="add-text">Add Instance</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-group instance-management-settings-group" id="media-hunt-universal-settings-group">
             <h3>Universal Settings</h3>
             <div class="instance-card-grid">
                 <div class="instance-card" id="mh-universal-video-card">
@@ -135,7 +148,8 @@
 #mediaHuntInstanceManagementContainer { width: 100%; padding: 20px; margin: 0; background-color: transparent; box-shadow: none; border: none; }
 .instance-management-description { color: #94a3b8; margin: 0 0 20px 0; font-size: 0.95rem; line-height: 1.5; }
 .instance-management-settings-group { background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(148, 163, 184, 0.08); border-radius: 12px; padding: 24px; margin: 12px 0 20px 0; }
-.instance-management-settings-group h3 { margin: 0 0 18px 0; padding: 0 0 12px 0; font-size: 1.1rem; font-weight: 600; color: #f1f5f9; border-bottom: 1px solid rgba(148, 163, 184, 0.12); background: none; box-shadow: none; }
+.instance-management-settings-group h3,
+.instance-management-settings-group-title { margin: 0 0 18px 0; padding: 0 0 12px 0; font-size: 1.1rem; font-weight: 600; color: #f1f5f9; border-bottom: 1px solid rgba(148, 163, 184, 0.12); background: none; box-shadow: none; }
 .instance-management-loading { grid-column: 1 / -1; color: #94a3b8; padding: 24px; text-align: center; }
 .instance-add-modal,.instance-delete-modal,.instance-rename-modal{position:fixed;top:0;left:0;right:0;bottom:0;z-index:1000;display:none;align-items:center;justify-content:center;}
 .instance-add-modal[style*="display: flex"],.instance-delete-modal[style*="display: flex"],.instance-rename-modal[style*="display: flex"]{display:flex!important;}

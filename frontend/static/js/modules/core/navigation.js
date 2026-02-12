@@ -89,11 +89,11 @@ window.HuntarrNavigation = {
                 window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#nzb-hunt-settings-advanced');
             }
         }
-        // Instances merged into Settings: old bookmark redirects to Movie Hunt Settings
+        // Instances merged into Settings: old bookmark redirects to Media Hunt Settings
         if (section === 'settings-instance-management') {
-            section = 'movie-hunt-settings';
-            if (window.location.hash !== '#movie-hunt-settings') {
-                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#movie-hunt-settings');
+            section = 'media-hunt-settings';
+            if (window.location.hash !== '#media-hunt-settings') {
+                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#media-hunt-settings');
             }
         }
         if (window.huntarrUI) {
@@ -281,7 +281,7 @@ window.HuntarrNavigation = {
         }
         const collectionSections = ['movie-hunt-home', 'movie-hunt-collection', 'settings-import-media', 'movie-hunt-calendar'];
         const activitySections = ['activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt'];
-        const settingsSections = ['movie-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-sizes', 'profile-editor', 'settings-custom-formats', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-root-folders', 'instance-editor'];
+        const settingsSections = ['movie-hunt-settings', 'media-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-sizes', 'profile-editor', 'settings-custom-formats', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-root-folders', 'instance-editor'];
         const onCollection = collectionSections.indexOf(currentSection) !== -1;
         const onActivity = activitySections.indexOf(sectionForNav) !== -1;
         const onSettings = settingsSections.indexOf(currentSection) !== -1;
@@ -316,7 +316,7 @@ window.HuntarrNavigation = {
         }
         const collectionSections = ['tv-hunt-home', 'tv-hunt-collection', 'tv-hunt-calendar'];
         const activitySections = ['tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist', 'logs-tv-hunt'];
-        const settingsSections = ['tv-hunt-settings', 'tv-hunt-instance-editor', 'tv-hunt-settings-tv-management', 'tv-hunt-settings-profiles', 'tv-hunt-settings-sizes', 'tv-hunt-settings-custom-formats', 'tv-hunt-settings-indexers', 'tv-hunt-settings-clients', 'tv-hunt-settings-import-lists', 'tv-hunt-settings-root-folders'];
+        const settingsSections = ['tv-hunt-settings', 'media-hunt-settings', 'tv-hunt-instance-editor', 'tv-hunt-settings-tv-management', 'tv-hunt-settings-profiles', 'tv-hunt-settings-sizes', 'tv-hunt-settings-custom-formats', 'tv-hunt-settings-indexers', 'tv-hunt-settings-clients', 'tv-hunt-settings-import-lists', 'tv-hunt-settings-root-folders'];
         const onCollection = collectionSections.indexOf(currentSection) !== -1;
         const onActivity = activitySections.indexOf(sectionForNav) !== -1;
         const onSettings = settingsSections.indexOf(currentSection) !== -1;
