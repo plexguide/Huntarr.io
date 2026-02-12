@@ -332,13 +332,14 @@ def _set_response_headers(response):
     # Content-Security-Policy: allow self + inline scripts/styles (needed for existing code)
     # + TMDB images + CDN for Font Awesome and SortableJS
     # + GitHub API for version checking, star counts, and sponsors
+    # + TMDB API for Requestarr/Movie Hunt detail fetches
     response.headers['Content-Security-Policy'] = (
         "default-src 'self'; "
         "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
         "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
         "font-src 'self' https://cdnjs.cloudflare.com; "
         "img-src 'self' data: https://image.tmdb.org https://artworks.thetvdb.com https://*.plex.direct https://github.com https://avatars.githubusercontent.com; "
-        "connect-src 'self' https://api.github.com; "
+        "connect-src 'self' https://api.github.com https://api.themoviedb.org; "
         "frame-ancestors 'self';"
     )
     # HSTS — only when request came through HTTPS (reverse proxy sets X-Forwarded-Proto)
