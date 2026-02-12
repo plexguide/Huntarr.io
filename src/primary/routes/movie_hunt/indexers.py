@@ -11,13 +11,27 @@ from ._helpers import _get_movie_hunt_instance_id_from_request
 from ...utils.logger import logger
 
 
-# Newznab indexer preset base URLs (used for API key validation)
-INDEXER_PRESET_URLS = {
-    'nzbgeek': 'https://api.nzbgeek.info/api',
-    'nzbfinder.ws': 'https://api.nzbfinder.ws/api',
+# ── Indexer presets (pulled from Radarr source) ───────────────────────
+# Each preset has: url, api_path, default_categories
+# Categories follow Newznab standard: 2000-series = Movies
+INDEXER_PRESETS = {
+    'dognzb':         {'name': 'DOGnzb',         'url': 'https://api.dognzb.cr',      'api_path': '/api'},
+    'drunkenslug':    {'name': 'DrunkenSlug',     'url': 'https://drunkenslug.com',     'api_path': '/api'},
+    'nzb.su':         {'name': 'Nzb.su',          'url': 'https://api.nzb.su',          'api_path': '/api'},
+    'nzbcat':         {'name': 'NZBCat',          'url': 'https://nzb.cat',             'api_path': '/api'},
+    'nzbfinder.ws':   {'name': 'NZBFinder.ws',    'url': 'https://nzbfinder.ws',        'api_path': '/api',
+                       'categories': [2030, 2040, 2045, 2050, 2060, 2070]},
+    'nzbgeek':        {'name': 'NZBgeek',         'url': 'https://api.nzbgeek.info',    'api_path': '/api'},
+    'nzbplanet.net':  {'name': 'nzbplanet.net',   'url': 'https://api.nzbplanet.net',   'api_path': '/api'},
+    'simplynzbs':     {'name': 'SimplyNZBs',      'url': 'https://simplynzbs.com',      'api_path': '/api'},
+    'tabularasa':     {'name': 'Tabula Rasa',     'url': 'https://www.tabula-rasa.pw',  'api_path': '/api/v1/api'},
+    'usenetcrawler':  {'name': 'Usenet Crawler',  'url': 'https://www.usenet-crawler.com', 'api_path': '/api'},
 }
 
-# Indexer categories (Movies only). By default all selected except Movies/3D (2060).
+# Default categories from Radarr: Movies sub-genres
+INDEXER_DEFAULT_CATEGORIES = [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2060]
+
+# All available Newznab movie categories
 INDEXER_CATEGORIES = [
     {'id': 2000, 'name': 'Movies'},
     {'id': 2010, 'name': 'Movies/Foreign'},
@@ -30,6 +44,38 @@ INDEXER_CATEGORIES = [
     {'id': 2070, 'name': 'Movies/DVD'},
 ]
 INDEXER_CATEGORIES_DEFAULT_IDS = [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2070]
+
+def _get_preset_url(preset_key):
+    """Get base URL for a preset indexer."""
+    p = INDEXER_PRESETS.get(preset_key, {})
+    return p.get('url', '')
+
+def _get_preset_api_url(preset_key):
+    """Get full API URL for a preset (url + api_path)."""
+    p = INDEXER_PRESETS.get(preset_key, {})
+    url = p.get('url', '').rstrip('/')
+    api_path = p.get('api_path', '/api')
+    if not url:
+        return ''
+    return url + api_path
+
+def _resolve_indexer_api_url(indexer_dict):
+    """Resolve the full API URL for an indexer dict (preset or custom).
+    Uses stored url/api_path fields, falling back to preset metadata."""
+    preset = (indexer_dict.get('preset') or 'manual').strip().lower()
+    url = (indexer_dict.get('url') or '').strip()
+    api_path = (indexer_dict.get('api_path') or '').strip()
+    # For presets, fall back to hardcoded metadata
+    if not url and preset in INDEXER_PRESETS:
+        url = INDEXER_PRESETS[preset].get('url', '')
+    if not api_path:
+        if preset in INDEXER_PRESETS:
+            api_path = INDEXER_PRESETS[preset].get('api_path', '/api')
+        else:
+            api_path = '/api'
+    if not url:
+        return ''
+    return url.rstrip('/') + api_path
 
 
 def _validate_newznab_api_key(base_url, api_key, timeout=10):
@@ -108,18 +154,44 @@ def _save_indexers_list(indexers_list, instance_id):
     db.save_app_config_for_instance('indexers', instance_id, {'indexers': indexers_list})
 
 
+@movie_hunt_bp.route('/api/indexers/presets', methods=['GET'])
+def api_indexers_presets():
+    """Return all available indexer presets with their metadata."""
+    presets = []
+    for key, info in INDEXER_PRESETS.items():
+        cats = info.get('categories', list(INDEXER_DEFAULT_CATEGORIES))
+        presets.append({
+            'key': key,
+            'name': info['name'],
+            'url': info['url'],
+            'api_path': info.get('api_path', '/api'),
+            'categories': cats,
+        })
+    # Sort alphabetically
+    presets.sort(key=lambda p: p['name'].lower())
+    return jsonify({'presets': presets, 'all_categories': INDEXER_CATEGORIES}), 200
+
+
 @movie_hunt_bp.route('/api/indexers/validate', methods=['POST'])
 def api_indexers_validate():
-    """Validate an indexer API key for a given preset."""
+    """Validate an indexer API key for a given preset or custom URL."""
     try:
         data = request.get_json() or {}
         preset = (data.get('preset') or '').strip().lower().replace(' ', '')
         api_key = (data.get('api_key') or '').strip()
+        custom_url = (data.get('url') or '').strip()
+
         if preset == 'manual':
-            return jsonify({'valid': True, 'message': 'Manual configuration is not validated'}), 200
-        base_url = INDEXER_PRESET_URLS.get(preset)
-        if not base_url:
-            return jsonify({'valid': False, 'message': 'Unknown preset'}), 400
+            # For manual/custom indexers, use the provided URL
+            if not custom_url:
+                return jsonify({'valid': False, 'message': 'URL is required for custom indexers'}), 200
+            api_path = (data.get('api_path') or '/api').strip()
+            base_url = custom_url.rstrip('/') + api_path
+        else:
+            base_url = _get_preset_api_url(preset)
+            if not base_url:
+                return jsonify({'valid': False, 'message': 'Unknown preset'}), 400
+
         valid, err_msg = _validate_newznab_api_key(base_url, api_key)
         if valid:
             return jsonify({'valid': True}), 200
@@ -149,6 +221,8 @@ def api_indexers_list():
                 'enabled': idx.get('enabled', True),
                 'api_key_last4': last4,
                 'categories': cats,
+                'url': idx.get('url', ''),
+                'api_path': idx.get('api_path', '/api'),
             })
         return jsonify({'indexers': out}), 200
     except Exception as e:
@@ -158,7 +232,7 @@ def api_indexers_list():
 
 @movie_hunt_bp.route('/api/indexers', methods=['POST'])
 def api_indexers_add():
-    """Add a new indexer. Body: { name, preset, api_key, enabled, categories }."""
+    """Add a new indexer. Body: { name, preset, api_key, enabled, categories, url, api_path }."""
     try:
         data = request.get_json() or {}
         name = (data.get('name') or '').strip() or 'Unnamed'
@@ -168,6 +242,13 @@ def api_indexers_add():
         categories = data.get('categories')
         if not isinstance(categories, list):
             categories = list(INDEXER_CATEGORIES_DEFAULT_IDS)
+        # URL: use preset URL if available, otherwise use provided URL
+        url = (data.get('url') or '').strip()
+        api_path = (data.get('api_path') or '/api').strip()
+        if preset != 'manual' and preset in INDEXER_PRESETS:
+            url = url or INDEXER_PRESETS[preset]['url']
+            api_path = api_path or INDEXER_PRESETS[preset].get('api_path', '/api')
+
         instance_id = _get_movie_hunt_instance_id_from_request()
         indexers = _get_indexers_config(instance_id)
         indexers.append({
@@ -176,6 +257,8 @@ def api_indexers_add():
             'api_key': api_key,
             'enabled': enabled,
             'categories': categories,
+            'url': url,
+            'api_path': api_path,
         })
         _save_indexers_list(indexers, instance_id)
         return jsonify({'success': True, 'index': len(indexers) - 1}), 200
@@ -203,12 +286,16 @@ def api_indexers_update(index):
             categories = list(existing_cats) if isinstance(existing_cats, list) else list(INDEXER_CATEGORIES_DEFAULT_IDS)
         existing = indexers[index]
         api_key = api_key_new if api_key_new else (existing.get('api_key') or '')
+        url = (data.get('url') or '').strip() or existing.get('url', '')
+        api_path = (data.get('api_path') or '').strip() or existing.get('api_path', '/api')
         indexers[index] = {
             'name': name,
             'preset': preset,
             'api_key': api_key,
             'enabled': enabled,
             'categories': categories,
+            'url': url,
+            'api_path': api_path,
         }
         _save_indexers_list(indexers, instance_id)
         return jsonify({'success': True}), 200

@@ -17,12 +17,24 @@
         const enabled = indexer.enabled !== false;
         const statusClass = enabled ? 'status-connected' : 'status-error';
         const statusIcon = enabled ? 'fa-check-circle' : 'fa-minus-circle';
+        // Show URL on card (truncated)
+        var urlDisplay = '';
+        var rawUrl = indexer.url || '';
+        if (!rawUrl && window.INDEXER_PRESET_META && window.INDEXER_PRESET_META[preset]) {
+            rawUrl = window.INDEXER_PRESET_META[preset].url || '';
+        }
+        if (rawUrl) {
+            var shortUrl = rawUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
+            if (shortUrl.length > 30) shortUrl = shortUrl.substring(0, 28) + '…';
+            urlDisplay = '<div class="instance-detail"><i class="fas fa-link"></i><span>' + shortUrl.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span></div>';
+        }
         return '<div class="instance-card ' + (isDefault ? 'default-instance' : '') + '" data-instance-index="' + index + '" data-app-type="indexer" data-preset="' + preset + '" data-enabled="' + enabled + '">' +
             '<div class="instance-card-header">' +
             '<div class="instance-name instance-name-with-priority"><i class="fas fa-server"></i><span>' + name + '</span>' + (isDefault ? '<span class="default-badge">Default</span>' : '') + '</div>' +
             '<div class="instance-status-icon ' + statusClass + '"><i class="fas ' + statusIcon + '"></i></div>' +
             '</div>' +
             '<div class="instance-card-body">' +
+            urlDisplay +
             '<div class="instance-detail"><i class="fas fa-key"></i><span>••••••••' + last4 + '</span></div>' +
             '</div>' +
             '<div class="instance-card-footer">' +

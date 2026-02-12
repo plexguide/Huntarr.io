@@ -11,39 +11,7 @@
             <div class="instance-card-grid" id="indexer-instances-grid">
                 <div class="add-instance-card" data-app-type="indexer">
                     <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
-                    <div class="add-text">Adding Indexer</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add Indexer type selection modal (like client modal) -->
-    <div id="indexer-type-modal" class="indexer-type-modal" style="display: none;">
-        <div class="indexer-type-modal-backdrop" id="indexer-type-modal-backdrop"></div>
-        <div class="indexer-type-modal-content">
-            <div class="indexer-type-modal-header">
-                <button type="button" class="indexer-type-modal-close" id="indexer-type-modal-close" aria-label="Close">
-                    <i class="fas fa-times"></i>
-                </button>
-                <div class="indexer-type-modal-header-overlay">
-                    <h2 class="indexer-type-modal-title">Add Indexer</h2>
-                    <p class="indexer-type-modal-subtitle">Choose an indexer type to configure.</p>
-                </div>
-            </div>
-            <div class="indexer-type-modal-body">
-                <p class="indexer-type-modal-info">Select an indexer preset or Manual Configuration to continue.</p>
-                <div class="indexer-type-form-group">
-                    <label for="indexer-type-select">Indexer Type</label>
-                    <select id="indexer-type-select" class="indexer-type-select">
-                        <option value="">Select an indexer...</option>
-                        <option value="nzbgeek">NZBGeek</option>
-                        <option value="nzbfinder.ws">NZBFinder.ws</option>
-                        <option value="manual">Manual Configuration</option>
-                    </select>
-                </div>
-                <div class="indexer-type-modal-actions">
-                    <button type="button" class="indexer-type-modal-cancel" id="indexer-type-modal-cancel">Cancel</button>
-                    <button type="button" class="indexer-type-modal-continue" id="indexer-type-modal-continue">Continue</button>
+                    <div class="add-text">Add Indexer</div>
                 </div>
             </div>
         </div>
@@ -87,243 +55,10 @@
         background: none;
         box-shadow: none;
     }
-
-    /* Indexer type selection modal (like client modal) */
-    .indexer-type-modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: 1000;
-        display: none;
-        align-items: center;
-        justify-content: center;
-    }
-    .indexer-type-modal[style*="display: flex"] {
-        display: flex !important;
-    }
-    body.indexer-type-modal-open {
-        overflow: hidden;
-    }
-    body.indexer-type-modal-open .app-container {
-        filter: blur(10px);
-    }
-    .indexer-type-modal-backdrop {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        z-index: 1000;
-    }
-    .indexer-type-modal-content {
-        position: relative;
-        z-index: 1001;
-        background: rgba(15, 23, 42, 0.98);
-        border: 2px solid rgba(99, 102, 241, 0.4);
-        border-radius: 12px;
-        max-width: 480px;
-        width: 90%;
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
-        overflow: hidden;
-    }
-    .indexer-type-modal-header {
-        position: relative;
-        min-height: 120px;
-        background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #0f172a 100%);
-        padding: 20px 24px 24px;
-    }
-    .indexer-type-modal-header::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 80px;
-        background: linear-gradient(to bottom, transparent, rgba(15, 23, 42, 0.98));
-    }
-    .indexer-type-modal-close {
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        width: 36px;
-        height: 36px;
-        border: none;
-        background: rgba(255, 255, 255, 0.1);
-        color: #e2e8f0;
-        border-radius: 8px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 2;
-    }
-    .indexer-type-modal-close:hover {
-        background: rgba(255, 255, 255, 0.2);
-    }
-    .indexer-type-modal-header-overlay {
-        position: relative;
-        z-index: 2;
-        margin-top: 20px;
-    }
-    .indexer-type-modal-title {
-        font-size: 18px;
-        font-weight: 600;
-        color: rgba(255, 255, 255, 0.9);
-        margin: 0 0 4px 0;
-    }
-    .indexer-type-modal-subtitle {
-        font-size: 13px;
-        color: rgba(255, 255, 255, 0.6);
-        margin: 0;
-    }
-    .indexer-type-modal-body {
-        padding: 24px;
-    }
-    .indexer-type-modal-info {
-        font-size: 13px;
-        color: #94a3b8;
-        margin: 0 0 20px 0;
-    }
-    .indexer-type-form-group {
-        margin-bottom: 24px;
-    }
-    .indexer-type-form-group label {
-        display: block;
-        font-size: 14px;
-        font-weight: 500;
-        color: #e2e8f0;
-        margin-bottom: 8px;
-    }
-    .indexer-type-select {
-        width: 100%;
-        padding: 12px 14px;
-        background: rgba(15, 23, 42, 0.8);
-        border: 1px solid #475569;
-        border-radius: 8px;
-        color: #e2e8f0;
-        font-size: 15px;
-        cursor: pointer;
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 12px center;
-        padding-right: 36px;
-    }
-    .indexer-type-select:focus {
-        border-color: #6366f1;
-        outline: none;
-    }
-    .indexer-type-modal-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 12px;
-    }
-    .indexer-type-modal-cancel {
-        padding: 10px 20px;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(148, 163, 184, 0.3);
-        border-radius: 8px;
-        color: #e2e8f0;
-        font-size: 14px;
-        cursor: pointer;
-    }
-    .indexer-type-modal-cancel:hover {
-        background: rgba(255, 255, 255, 0.15);
-    }
-    .indexer-type-modal-continue {
-        padding: 10px 20px;
-        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-        border: 1px solid rgba(99, 102, 241, 0.5);
-        border-radius: 8px;
-        color: #fff;
-        font-size: 14px;
-        font-weight: 600;
-        cursor: pointer;
-    }
-    .indexer-type-modal-continue:hover {
-        filter: brightness(1.1);
-    }
-    .indexer-type-modal-continue:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
 </style>
 
 <script>
 (function() {
-    function ensureIndexerTypeModalInBody() {
-        var modal = document.getElementById('indexer-type-modal');
-        if (modal && modal.parentElement !== document.body) {
-            document.body.appendChild(modal);
-        }
-    }
-    function openIndexerTypeModal() {
-        var modal = document.getElementById('indexer-type-modal');
-        if (modal) {
-            ensureIndexerTypeModalInBody();
-            var selectEl = document.getElementById('indexer-type-select');
-            var continueBtn = document.getElementById('indexer-type-modal-continue');
-            if (selectEl) selectEl.value = '';
-            if (continueBtn) continueBtn.disabled = true;
-            modal.style.display = 'flex';
-            document.body.classList.add('indexer-type-modal-open');
-        }
-    }
-    function closeIndexerTypeModal() {
-        var modal = document.getElementById('indexer-type-modal');
-        if (modal) {
-            modal.style.display = 'none';
-            document.body.classList.remove('indexer-type-modal-open');
-        }
-        var selectEl = document.getElementById('indexer-type-select');
-        if (selectEl) selectEl.value = '';
-        var continueBtn = document.getElementById('indexer-type-modal-continue');
-        if (continueBtn) continueBtn.disabled = true;
-    }
-    function selectIndexerType(preset) {
-        closeIndexerTypeModal();
-        if (window.SettingsForms && window.SettingsForms.openIndexerEditor) {
-            var defaultName = preset === 'nzbgeek' ? 'NZBGeek' : preset === 'nzbfinder.ws' ? 'NZBFinder.ws' : 'Manual';
-            var defaultIds = window.SettingsForms.getIndexerDefaultIdsForPreset ? window.SettingsForms.getIndexerDefaultIdsForPreset(preset) : [];
-            var payload = { name: defaultName, preset: preset, api_key: '', enabled: true, categories: defaultIds };
-            window.SettingsForms.openIndexerEditor(true, null, payload);
-        }
-    }
-    function initIndexerTypeModal() {
-        var modal = document.getElementById('indexer-type-modal');
-        if (!modal) return;
-        var backdrop = document.getElementById('indexer-type-modal-backdrop');
-        var closeBtn = document.getElementById('indexer-type-modal-close');
-        var cancelBtn = document.getElementById('indexer-type-modal-cancel');
-        var continueBtn = document.getElementById('indexer-type-modal-continue');
-        var selectEl = document.getElementById('indexer-type-select');
-        if (backdrop) backdrop.addEventListener('click', closeIndexerTypeModal);
-        if (closeBtn) closeBtn.addEventListener('click', closeIndexerTypeModal);
-        if (cancelBtn) cancelBtn.addEventListener('click', closeIndexerTypeModal);
-        if (continueBtn) {
-            continueBtn.addEventListener('click', function() {
-                var preset = selectEl ? (selectEl.value || '').trim() : '';
-                if (preset === 'nzbgeek' || preset === 'nzbfinder.ws' || preset === 'manual') selectIndexerType(preset);
-            });
-        }
-        if (selectEl) {
-            selectEl.addEventListener('change', function() {
-                var preset = (selectEl.value || '').trim();
-                if (continueBtn) continueBtn.disabled = preset !== 'nzbgeek' && preset !== 'nzbfinder.ws' && preset !== 'manual';
-            });
-            if (continueBtn) continueBtn.disabled = true;
-        }
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && document.getElementById('indexer-type-modal').style.display === 'flex') {
-                closeIndexerTypeModal();
-            }
-        });
-    }
     function initIndexerGrid() {
         var grid = document.getElementById('indexer-instances-grid');
         if (!grid) return;
@@ -352,7 +87,10 @@
                 }
             } else if (addCard) {
                 e.preventDefault();
-                openIndexerTypeModal();
+                // Go directly to editor in Add mode (no modal)
+                if (window.SettingsForms && window.SettingsForms.openIndexerEditor) {
+                    window.SettingsForms.openIndexerEditor(true, null, {});
+                }
             } else if (deleteBtn) {
                 e.preventDefault();
                 var index = parseInt(deleteBtn.dataset.instanceIndex, 10);
@@ -382,35 +120,14 @@
                                 });
                         }
                     });
-                } else {
-                    if (!confirm('Delete "' + name + '"?')) return;
-                    fetch('./api/indexers/' + index, { method: 'DELETE' })
-                        .then(function(r) { return r.json(); })
-                        .then(function(data) {
-                            if (data.success && window.SettingsForms && window.SettingsForms.refreshIndexersList) {
-                                window.SettingsForms.refreshIndexersList();
-                            }
-                            if (window.huntarrUI && window.huntarrUI.showNotification) {
-                                window.huntarrUI.showNotification('Indexer deleted.', 'success');
-                            }
-                        })
-                        .catch(function() {
-                            if (window.huntarrUI && window.huntarrUI.showNotification) {
-                                window.huntarrUI.showNotification('Failed to delete indexer', 'error');
-                            }
-                        });
                 }
             }
         });
     }
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-            initIndexerGrid();
-            initIndexerTypeModal();
-        });
+        document.addEventListener('DOMContentLoaded', initIndexerGrid);
     } else {
         initIndexerGrid();
-        initIndexerTypeModal();
     }
 })();
 </script>

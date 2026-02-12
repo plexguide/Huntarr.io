@@ -15,7 +15,7 @@ from ._helpers import (
     _add_requested_queue_id,
     MOVIE_HUNT_DEFAULT_CATEGORY,
 )
-from .indexers import _get_indexers_config, INDEXER_PRESET_URLS
+from .indexers import _get_indexers_config, _resolve_indexer_api_url
 from .profiles import _get_profile_by_name_or_default, _best_result_matching_profile
 from .clients import _get_clients_config
 from .storage import _get_root_folders_config
@@ -571,7 +571,7 @@ def perform_movie_hunt_request(instance_id, title, year='', root_folder=None, qu
     quality_profile = (quality_profile or '').strip() or None
     indexers = _get_indexers_config(instance_id)
     clients = _get_clients_config(instance_id)
-    enabled_indexers = [i for i in indexers if i.get('enabled', True) and (i.get('preset') or '').strip().lower() != 'manual']
+    enabled_indexers = [i for i in indexers if i.get('enabled', True)]
     enabled_clients = [c for c in clients if c.get('enabled', True)]
     if not enabled_indexers:
         movie_hunt_logger.warning("Request: no indexers configured or enabled for '%s'", title)
@@ -591,8 +591,7 @@ def perform_movie_hunt_request(instance_id, title, year='', root_folder=None, qu
     request_score = 0
     request_score_breakdown = ''
     for idx in enabled_indexers:
-        preset = (idx.get('preset') or '').strip().lower()
-        base_url = INDEXER_PRESET_URLS.get(preset)
+        base_url = _resolve_indexer_api_url(idx)
         if not base_url:
             continue
         api_key = (idx.get('api_key') or '').strip()
@@ -758,12 +757,12 @@ def api_movie_hunt_force_upgrade():
 
         # Search indexers for candidates
         from .profiles import _get_profile_by_name_or_default, _best_result_matching_profile
-        from .indexers import _get_indexers_config, INDEXER_PRESET_URLS
+        from .indexers import _get_indexers_config, _resolve_indexer_api_url
         from .clients import _get_clients_config
 
         indexers = _get_indexers_config(instance_id)
         clients = _get_clients_config(instance_id)
-        enabled_indexers = [i for i in indexers if i.get('enabled', True) and (i.get('preset') or '').strip().lower() != 'manual']
+        enabled_indexers = [i for i in indexers if i.get('enabled', True)]
         enabled_clients = [c for c in clients if c.get('enabled', True)]
 
         if not enabled_indexers:
@@ -785,8 +784,7 @@ def api_movie_hunt_force_upgrade():
         blocklist_titles = _get_blocklist_source_titles(instance_id)
 
         for idx in enabled_indexers:
-            preset = (idx.get('preset') or '').strip().lower()
-            base_url = INDEXER_PRESET_URLS.get(preset)
+            base_url = _resolve_indexer_api_url(idx)
             if not base_url:
                 continue
             api_key = (idx.get('api_key') or '').strip()

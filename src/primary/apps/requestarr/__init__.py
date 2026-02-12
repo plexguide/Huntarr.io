@@ -2272,7 +2272,7 @@ class RequestarrAPI:
             # Build request data for Movie Hunt's internal search+download pipeline
             # We call the discovery module's internal functions directly
             from src.primary.routes.movie_hunt.discovery import _get_collection_config
-            from src.primary.routes.movie_hunt.indexers import _get_indexers_config, INDEXER_PRESET_URLS
+            from src.primary.routes.movie_hunt.indexers import _get_indexers_config, _resolve_indexer_api_url
             from src.primary.routes.movie_hunt.profiles import _get_profile_by_name_or_default, _best_result_matching_profile
             from src.primary.routes.movie_hunt.clients import _get_clients_config
             from src.primary.routes.movie_hunt._helpers import (
@@ -2286,7 +2286,7 @@ class RequestarrAPI:
             
             indexers = _get_indexers_config(instance_id)
             clients = _get_clients_config(instance_id)
-            enabled_indexers = [i for i in indexers if i.get('enabled', True) and (i.get('preset') or '').strip().lower() != 'manual']
+            enabled_indexers = [i for i in indexers if i.get('enabled', True)]
             enabled_clients = [c for c in clients if c.get('enabled', True)]
             
             if not enabled_indexers:
@@ -2316,8 +2316,7 @@ class RequestarrAPI:
             request_score_breakdown = ''
             
             for idx in enabled_indexers:
-                preset = (idx.get('preset') or '').strip().lower()
-                base_url = INDEXER_PRESET_URLS.get(preset)
+                base_url = _resolve_indexer_api_url(idx)
                 if not base_url:
                     continue
                 api_key = (idx.get('api_key') or '').strip()

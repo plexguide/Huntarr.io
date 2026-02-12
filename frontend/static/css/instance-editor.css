@@ -755,3 +755,34 @@
     color: #f59e0b;
     font-weight: 700;
 }
+
+/* ============================================================
+   Indexer editor: locked preset display + readonly fields
+   ============================================================ */
+.indexer-preset-locked {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-radius: 8px;
+    color: #c7d2fe;
+    font-size: 14px;
+    font-weight: 500;
+}
+.indexer-preset-locked i:first-child {
+    color: #818cf8;
+    font-size: 15px;
+}
+.indexer-preset-lock-icon {
+    margin-left: auto;
+    color: #64748b;
+    font-size: 12px;
+}
+.editor-readonly {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: rgba(15, 23, 42, 0.5) !important;
+    border-color: rgba(71, 85, 105, 0.4) !important;
+}
