@@ -1,0 +1,85 @@
+---
+description: Known bug patterns and fixes — reference when debugging or touching these areas
+globs: ["**/new-main.js", "**/settings_forms.js", "**/hunt_manager.js", "**/auth.py", "**/lidarr/**", "**/logs_section.html", "**/logs.js", "**/sidebar.css", "**/mobile.css"]
+alwaysApply: false
+---
+# Huntarr — Bug Patterns (Reference)
+
+Use when editing these areas. Quick index; see other .mdc rules for detailed patterns.
+
+## Auth & 2FA
+- **#626**: Check both `temp_2fa_secret` (setup) and `two_fa_secret` (enabled) in auth. File: `src/primary/auth.py`.
+
+## Settings persistence & forms
+- **#624**: Include all field name variations (e.g. hunt_missing_books, hunt_upgrade_movies, hunt_missing_items) in form collection. File: `settings_forms.js`.
+- **Settings init (Critical)**: Container check must exclude HTML comments. Use `!currentContent.includes('<!-- Content will be loaded here -->')` so forms actually generate. File: `new-main.js` (all `initialize*`).
+
+## BASE_URL / reverse proxy
+- **#649, #732**: Middleware in web_server.py; redirects use `get_base_url_path() + url_for()`; path checks use `startswith`/`endswith`, not `in` or `== '/path'`. See huntarr-base-url.mdc.
+
+## Database & paths
+- **#629**: Use `get_database()` only; no hard-coded DB paths. **#615**: Synology optimizations in HuntarrDatabase; do not bypass with direct SQLite.
+
+## Frontend logs
+- **Log regex**: No double backslashes in regex in `connectEventSource()`. File: `new-main.js`.
+- **DEBUG filter**: Apply filter to new EventSource entries as they arrive (not only on existing DOM). File: `new-main.js`.
+
+## State & time
+- Per-instance locks: use `stateful_instance_locks`, not global lock. File: `stateful_manager.py`, database.py.
+- **Time override**: Do not compute reset time in form listeners with `Date.now() + (hours * 60 * 60 * 1000)`; use backend-provided locked times. File: `settings_forms.js`.
+
+## Styling & UI
+- Consistent styling across apps for similar components (e.g. state status). No Sonarr dark vs Radarr green for same element.
+- **Logs pagination**: One system only — LogsModule via API. Remove template `updateLogsPagination`/DOM counting. Files: `logs_section.html`, `logs.js`.
+
+## Lidarr
+- **#641**: Album IDs must stay int for API; use `str(album_id)` only for processed checks. Files: `lidarr/missing.py`, `lidarr/upgrade.py`.
+- **#591**: Album vs artist mode — ensure no unreachable else; both code paths explicit. File: `lidarr/missing.py`.
+
+## Hunt Manager links
+- **#628**: Only Sonarr entries clickable (`entry.app_type === 'sonarr'`). Others plain text + tooltip; Radarr expects movie ID in URL. File: `hunt_manager.js`.
+
+## Sidebars
+- Only one sidebar visible; flash prevention must hide others by section (requestarr-home, requestarr-history, settings, scheduling). File: `new-main.js`.
+- **Mobile**: `.nav-sub-group` must be `display: none !important` at max-width 768px. Files: `sidebar.css`, `mobile.css`.
+
+## Refresh / cache
+- Section change → refresh only when `isInitialized && currentSection !== section`; store target in localStorage, reload, then navigate. Prevents endless loop. File: `new-main.js`.
+
+## Backup & Restore
+- Destructive or critical confirmations use HuntarrConfirm (see confirm-modals.mdc). Key backend: backup routes, BackupManager/BackupScheduler; frontend: backup-restore UI.
+
+## Adding a new app type — FULL CHECKLIST
+When adding a new app_type (e.g. `movie_hunt`), you MUST add it to **every** validation list and loop across the entire codebase. Missing even one causes silent failures. Known locations that need updating:
+- `src/primary/background.py`: `CYCLICAL_APP_TYPES`, `PER_INSTANCE_SCHEDULING_APP_TYPES`
+- `src/primary/web_server.py`: `reset_app_cycle()` valid app names list
+- `src/primary/stats_manager.py`: `increment_stat()`, `increment_stat_only()`, `increment_hourly_cap()`, `get_hourly_cap_status()`, `load_hourly_caps_for_api()` loops and fallback
+- `src/primary/settings_manager.py`: `KNOWN_APP_TYPES`, `get_configured_apps()`
+- `src/primary/cycle_tracker.py`: `arr_apps` list in `get_cycle_status()`
+- `src/primary/routes/history_routes.py`: `valid_app_types` lists
+- `frontend/static/js/modules/ui/hourly-cap.js`: `apps` array in `updateHourlyCapDisplay()`
+- `frontend/static/js/modules/ui/cycle-countdown.js`: `trackedApps` array
+- **Scan command** (run from project root):
+  ```bash
+  rg '"sonarr".*"radarr".*"lidarr"' --type py --type js -l
+  ```
+  Every file returned likely has a validation/app list that needs the new type.
+
+## Per-instance key mismatch (frontend)
+- For per-instance apps, data is stored under `stateKey(app, instanceName)` (e.g. `"movie_hunt-Movie – First"`), NOT the bare `app` key (e.g. `"movie_hunt"`).
+- **Bug pattern**: Using `nextCycleTimes[app]` or `pendingResets[app]` instead of `nextCycleTimes[stateKey(app, instanceName)]`. The bare key is always `undefined` for per-instance apps, causing silent logic failures.
+- **Rule**: Always use `stateKey(app, instanceName)` when reading/writing per-instance state in `cycle-countdown.js`. Files: `cycle-countdown.js`.
+
+## Event delegation for dynamic elements
+- **Bug pattern**: Binding event listeners directly to buttons at page load, then dynamically cloning those buttons later (e.g. per-instance cards in `stats.js`). Cloned elements don't inherit listeners.
+- **Rule**: Use event delegation on `document` (or a stable parent) for any element that may be cloned/recreated. Files: `cycle-countdown.js`, `stats.js`.
+
+## URL normalization for reverse proxy
+- **Bug pattern**: `fetchWithTimeout()` converting `./api/stats` to `/./api/stats` when prepending `HUNTARR_BASE_URL`. The `./` prefix must be stripped first.
+- **Rule**: Always strip `./` prefix before normalizing: `url.replace(/^\.\//, '')`. File: `utils.js`.
+- See also: huntarr-base-url.mdc, GitHub issue #789.
+
+## Cycle reset flow
+- **Backend**: When `reset_requested_any` is true after instance processing, skip post-cycle work (state summaries, sleep calculation) and jump straight to `_responsive_sleep` with a short timeout. The pending reset request in DB acts as the signal — `_responsive_sleep` detects it in ~1s and breaks.
+- **Frontend**: Show "Pending Reset" immediately (set `pendingResets[key] = true` locally), then poll every 2s. Do NOT use `data-waiting-for-reset` attributes that block `updateTimerDisplay()`.
+- Files: `background.py`, `cycle-countdown.js`.

@@ -1,0 +1,39 @@
+---
+description: Prevent cross-section scroll and overflow CSS leaks
+alwaysApply: true
+---
+
+# Frontend Scroll/Overflow Scope Rule
+
+Do not add global scroll/overflow overrides in feature CSS or template inline styles.
+
+## Never use global selectors for feature fixes
+
+- Forbidden in feature files: `body`, `html`, `.main-content`, `.content-section`, `.app-container` with `overflow`, `height`, or `position` overrides.
+- Forbidden pattern: broad selectors with `!important` that are not scoped to a single section.
+
+## Required scoping
+
+- Scope all feature layout fixes to the feature root id (example: `#appsSection ...`, `#settingsImportMediaSection ...`).
+- If a fix is only for one page, selectors must start with that page/section root.
+- Prefer removing legacy hacks over adding new `!important` overrides.
+
+## Safe pattern
+
+```css
+/* GOOD: section-scoped */
+#appsSection .app-content-panel { overflow: hidden; }
+```
+
+```css
+/* BAD: leaks to whole app */
+.content-section, .app-content-panel { overflow: hidden !important; }
+```
+
+## Verification before finishing
+
+Run:
+
+`rg -n "(body|html|\\.main-content|\\.content-section|\\.app-container).*(overflow|height|position)|overflow:\\s*hidden\\s*!important" frontend/static/css frontend/templates/components`
+
+If matches are not section-scoped, fix or remove them.

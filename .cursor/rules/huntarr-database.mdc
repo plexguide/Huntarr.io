@@ -1,0 +1,31 @@
+---
+description: Database — get_database()/HuntarrDatabase only; no SQLite/JSON for persistent data
+globs: ["**/*.py", "**/database*.py", "**/settings*.py", "**/*_routes.py"]
+alwaysApply: false
+---
+# Huntarr — Database Rules
+
+## ALWAYS Use the app database (no direct SQLite/JSON)
+- Use `get_database()` from `src/primary/utils/database.py` for ALL persistent data (returns singleton). Class is `HuntarrDatabase`.
+- NEVER use `sqlite3.connect()` or direct SQLite outside this module.
+- NEVER use JSON files for persistent data.
+
+## Paths
+- Docker: `/config/huntarr.db` (volume). Local: `{project_root}/data/huntarr.db`.
+- HuntarrDatabase auto-detects environment. Do not hard-code `/config` or `/app`.
+- For non-DB paths (e.g. log dir): use `config_paths.CONFIG_DIR` / `config_paths.LOG_DIR` from `src.primary.utils.config_paths`.
+
+## Pattern
+```python
+# ✅
+from src.primary.utils.database import get_database
+db = get_database()
+db.set_setting('app', 'key', 'value')
+
+# ❌
+import sqlite3
+conn = sqlite3.connect('/config/huntarr.db')
+```
+
+## Synology
+- HuntarrDatabase applies Synology-specific SQLite optimizations when detected. Do not bypass with direct SQLite or `PRAGMA synchronous = FULL` outside its `_configure_connection()`.

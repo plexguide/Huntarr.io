@@ -1,0 +1,56 @@
+---
+description: Key files, violation scanning, and debugging reference
+globs: ["**/*.py", "**/*.js", "**/*.html", "**/templates/**", "**/static/**"]
+alwaysApply: false
+---
+# Huntarr — Key Files & Scanning
+
+## Key file locations
+- **Backend**: `src/primary/utils/database.py` (get_database/HuntarrDatabase), `src/primary/routes/common.py`, `src/primary/auth.py`, `src/primary/cycle_tracker.py`, `src/primary/web_server.py`, `src/primary/settings_manager.py`
+- **Frontend**: `frontend/static/js/new-main.js`, `frontend/static/js/settings_forms.js`, `frontend/templates/components/`
+- **Backup**: backup routes, BackupManager/BackupScheduler; confirmations use HuntarrConfirm (see confirm-modals.mdc)
+
+## Violation scan (run before commit)
+```bash
+echo "=== HUNTARR VIOLATION SCAN ==="
+grep -r "fetch('/api/" frontend/ --include="*.js" | wc -l
+grep -r "return redirect('/" src/ --include="*.py" | wc -l
+grep -r "sqlite3.connect\|import sqlite3" src/ --include="*.py" | grep -v database.py | wc -l
+grep -r "/config" src/ --include="*.py" | grep -v "_detect_environment\|_get.*path\|DatabaseManager\|HuntarrDatabase" | wc -l
+grep -r "location.reload" frontend/ --include="*.js" | grep -v "isInitialized" | wc -l
+grep -q "class BaseURLMiddleware" src/primary/web_server.py && echo "middleware OK" || echo "middleware MISSING"
+grep -q "window.HUNTARR_BASE_URL" frontend/templates/index.html && echo "injection OK" || echo "injection MISSING"
+```
+Target: 0 violations for fetch/redirect/sqlite/path/reload; middleware and injection present.
+
+## New app type completeness scan
+When adding a new app_type, run this to find all validation lists that may need updating:
+```bash
+echo "=== APP TYPE VALIDATION LISTS ==="
+rg '"sonarr".*"radarr".*"lidarr"' --type py --type js -l
+```
+Every returned file likely has a hardcoded app list. Verify the new type is in each one. See huntarr-bug-patterns.mdc for the full checklist.
+
+## Per-instance key scan (frontend)
+Check for bare app key usage where stateKey should be used:
+```bash
+echo "=== BARE APP KEY CHECKS ==="
+rg 'nextCycleTimes\[app\]|pendingResets\[app\]|runningCycles\[app\]' frontend/ --type js
+```
+These should use `stateKey(app, instanceName)` instead. Bare key is always undefined for per-instance apps.
+
+## URL normalization scan
+Check for `./` paths that may break behind reverse proxy:
+```bash
+echo "=== URL NORMALIZATION ==="
+rg "'/\./|\"\/\.\/" frontend/ --type js
+```
+Should return 0 results. Any match means a `./` prefix wasn't stripped before path normalization.
+
+## Debugging (short)
+- **Systematic**: grep for exact patterns, check browser console, verify DB in both envs.
+- **DB**: `docker exec huntarr sqlite3 /config/huntarr.db ".tables"`; local: `./data/huntarr.db`.
+- **Subpath**: Check network for 404s; use relative URLs.
+- **Settings init**: Ensure container check excludes `<!-- Content will be loaded here -->`; check SettingsForms.generate* and API.
+- **Refresh loop**: Only refresh when `isInitialized && currentSection !== section`; check console for rapid switchSection.
+- **Logs**: new-main.js `connectEventSource()` — regex (no double backslashes), apply filter to new entries.

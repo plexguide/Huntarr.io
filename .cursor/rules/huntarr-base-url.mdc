@@ -1,0 +1,26 @@
+---
+description: BASE_URL / reverse proxy — middleware, redirects, path checks (backend)
+globs: ["**/web_server.py", "**/auth.py", "**/routes/**/*.py", "**/settings_manager.py", "**/common.py"]
+alwaysApply: false
+---
+# Huntarr — BASE_URL (Backend)
+
+## Architecture
+- Use `BaseURLMiddleware` in `web_server.py` to strip BASE_URL prefix before Flask routing (e.g. `/huntarr/api/logs` → Flask sees `/api/logs`). Do not add BASE_URL inside route decorators.
+
+## Redirects
+- Use helper + url_for: `return redirect(get_base_url_path() + url_for('common.setup'))`. Never hard-code `redirect('/setup')`.
+
+## Path checks (middleware strips first; auth runs after)
+- All route and auth code sees **stripped** path (e.g. `/api/settings`, not `/huntarr/api/settings`). Use `request.path.startswith('/static/')` or `.endswith('/setup')`; never `'/static/' in request.path` or `request.path == '/setup'`. Applies in auth.py and any route that checks path.
+
+## Env precedence
+- BASE_URL from environment must override DB. In settings_manager, read `os.environ.get('BASE_URL')` and persist so backend and templates use it.
+
+## Frontend URL normalization (utils.js)
+- `HuntarrUtils.fetchWithTimeout()` prepends `HUNTARR_BASE_URL` to internal API paths.
+- **Critical**: Strip `./` prefix before normalizing. `./api/stats` must become `/api/stats`, not `/./api/stats`. Current code: `url.replace(/^\.\//, '')` then ensure leading `/`.
+- Without BASE_URL set (direct access), paths like `./api/stats` work as-is (browser resolves relative to current page). The normalization only runs when BASE_URL is non-empty.
+
+## Files
+- web_server.py: apply middleware. auth.py: path checks and redirects. common.py, plex_auth_routes: redirects. settings_manager: env BASE_URL. Templates: inject `window.HUNTARR_BASE_URL`. utils.js: `fetchWithTimeout()` URL processing.

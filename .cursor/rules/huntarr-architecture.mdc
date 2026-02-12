@@ -1,0 +1,33 @@
+---
+description: How Huntarr runs — entry point, blueprints, auth, background, adding apps
+globs: ["**/main.py", "**/web_server.py", "**/background.py", "**/apps/blueprints.py", "**/auth.py"]
+alwaysApply: false
+---
+# Huntarr — Architecture (How It Runs)
+
+## Entry point (main.py)
+1. **Config paths first**: `from src.primary.utils import config_paths` — sets CONFIG_DIR (Docker `/config`, Windows AppData, macOS Documents, Linux `~/.config/huntarr`). Used for logs; DB path is via `get_database()` (see huntarr-database.mdc).
+2. **Python path**: `sys.path.insert(0, 'src')` so both `from primary.X` and `from src.primary.X` work. main.py uses `from primary.web_server import app`; code under `src/` typically uses `from src.primary.X`.
+3. **Windows**: On win32, `--install-service` / `--remove-service` / `--start` etc. are handled and exit; do not run the normal server.
+4. **Imports**: Flask app, `primary.background.start_huntarr`, logging, timezone init, then `run_background_tasks()` in a thread and `run_web_server()` in main thread.
+5. **Port**: `HUNTARR_PORT` or `PORT` env (default 9705). Do not hard-code 9705 in new code; use env.
+
+## Web server (web_server.py)
+- **Blueprint order**: common, movie_hunt, plex_auth, *arr apps (with url_prefix `/api/<app>`), requestarr, stateful_api, history, scheduler, log_routes, nzb_hunt, indexer_hunt, backup.
+- **Auth**: `app.before_request(authenticate_request)` runs on every request. Auth sees the path **after** BASE_URL middleware strips the prefix; use `request.path.startswith('/...')` or `.endswith('/...')` in auth.py.
+- **Middleware order**: BASE_URL middleware wraps the app so Flask sees paths without the base prefix; then before_request runs.
+- **New blueprint**: (1) Create blueprint in `src/primary/apps/<name>_routes.py` or routes/. (2) If it's an *arr app, add to `apps/blueprints.py` and in web_server register with `url_prefix='/api/<app>'`. (3) Otherwise import in web_server and `app.register_blueprint(...)`.
+- **Indexer Hunt**: Centralized indexer manager (blueprint `indexer_hunt_bp` in `src/primary/routes/indexer_hunt/`). Syncs indexers to Movie Hunt instances. See indexer-hunt.mdc.
+- **Movie Hunt indexer presets**: Sourced from Radarr's indexer definitions. Presets and defaults live in `src/primary/routes/movie_hunt/indexers.py`.
+
+## Background (background.py)
+- **Cyclical apps**: `CYCLICAL_APP_TYPES = ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "movie_hunt"]` — these run on a schedule. `PER_INSTANCE_SCHEDULING_APP_TYPES` — each instance has its own next_cycle_time.
+- **Other threads**: scheduler_engine, hourly_cap_scheduler, swaparr, prowlarr stats. Shutdown: `stop_event.set()`; threads should check `stop_event` and exit.
+- **Adding a new cyclical app**: Add to CYCLICAL_APP_TYPES, PER_INSTANCE_SCHEDULING_APP_TYPES, AND every validation list across backend+frontend. See **huntarr-bug-patterns.mdc § "Adding a new app type — FULL CHECKLIST"** for the complete list of files that need updating. Missing even one causes silent failures (stats silently discarded, resets rejected with 400, hourly caps not displayed).
+
+## Config / paths
+- **Database**: Use `get_database()` from `src.primary.utils.database.py` (singleton). Class is `HuntarrDatabase`. See huntarr-database.mdc.
+- **Logs / config dir**: Use `config_paths.CONFIG_DIR`, `config_paths.LOG_DIR` from `src.primary.utils.config_paths` for file paths outside the DB (e.g. log files). Do not hard-code `/config` for non-DB paths.
+
+## Backend API responses
+- Prefer consistent JSON: success payloads `jsonify({'success': True, ...})`, errors `jsonify({'success': False, 'error': msg})` or `jsonify({'message': msg})` with appropriate status (400, 404, 500). Return 200 for success, 4xx/5xx with body for failures.

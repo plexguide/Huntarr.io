@@ -1,0 +1,89 @@
+---
+description: Indexer Hunt — centralized indexer management (inspired by Radarr's indexer model)
+globs: ["**/routes/indexer_hunt/**", "**/indexer-hunt*.js", "**/indexer_hunt_*.html", "**/indexer-hunt.css"]
+alwaysApply: false
+---
+# Indexer Hunt — Centralized Indexer Management
+
+Indexer Hunt is Huntarr's built-in centralized indexer manager. It stores indexers globally (not per-instance) and syncs them to Movie Hunt instances. Do NOT reference external tools by name in code comments, UI text, or documentation for this feature.
+
+## Architecture
+
+- **Backend**: Flask blueprint `indexer_hunt_bp` in `src/primary/routes/indexer_hunt/`.
+  - `indexers.py` — CRUD + test + validate + presets API
+  - `sync.py` — sync to Movie Hunt instances, cascade delete, push edits, read-back priorities
+  - `stats.py` — aggregate + per-indexer stats API
+  - `history.py` — paginated event history API
+- **Database**: 3 tables in `huntarr.db` (via `HuntarrDatabase`):
+  - `indexer_hunt_indexers` — centralized indexer storage (TEXT PK = UUID)
+  - `indexer_hunt_stats` — aggregate counters per indexer (UNIQUE on indexer_id + stat_type)
+  - `indexer_hunt_history` — event log (searches, grabs, failures, tests)
+- **Frontend**: 3 sections in main sidebar (Beta group):
+  - `#indexer-hunt` — main page (add/edit/delete/test/search)
+  - `#indexer-hunt-stats` — summary cards + per-indexer breakdown
+  - `#indexer-hunt-history` — paginated event table with filters
+
+## Sync Behavior
+
+| Action in Indexer Hunt | Effect on Movie Hunt Instances |
+|---|---|
+| Add indexer | No auto-sync. User imports to instances manually. |
+| Edit API key or enable/disable | Pushes to all linked instances (backend does it, frontend shows confirm) |
+| Edit priority or categories | Does NOT push. Movie Hunt copies are independent after initial sync. |
+| Delete indexer | Cascade-deletes from all linked instances (frontend shows confirm) |
+
+### Initial Sync (Import to Instance)
+- Copies: name, preset, URL, api_path, API key, enabled, priority, default categories (from preset)
+- Priority is **editable** in Movie Hunt (not locked/greyed)
+- Categories use preset defaults, **editable** in Movie Hunt
+- Linked via `indexer_hunt_id` field on the Movie Hunt indexer dict
+- Indexer Hunt can read-back current priority from Movie Hunt instances
+
+## Search Strategy (Movie Hunt)
+
+Movie Hunt searches ALL enabled indexers (does not break on first match). Results are collected with their indexer's priority, then sorted by:
+1. Lowest priority number first (= highest priority)
+2. Highest quality score second
+
+This applies in `discovery.py` (`perform_movie_hunt_request`) and `requestarr/__init__.py` (`_request_media_via_movie_hunt`).
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/primary/routes/indexer_hunt/__init__.py` | Blueprint definition |
+| `src/primary/routes/indexer_hunt/indexers.py` | CRUD, test, validate, presets |
+| `src/primary/routes/indexer_hunt/sync.py` | Sync, cascade, push, read-back |
+| `src/primary/routes/indexer_hunt/stats.py` | Stats API |
+| `src/primary/routes/indexer_hunt/history.py` | History API |
+| `src/primary/utils/database.py` | Tables + accessor methods (on `HuntarrDatabase`) |
+| `src/primary/routes/movie_hunt/indexers.py` | Per-instance indexer CRUD (has `priority`, `indexer_hunt_id`) |
+| `src/primary/routes/movie_hunt/discovery.py` | Search-all-then-pick-best logic |
+| `frontend/static/js/modules/features/indexer-hunt.js` | Main page JS |
+| `frontend/static/js/modules/features/indexer-hunt-stats.js` | Stats page JS |
+| `frontend/static/js/modules/features/indexer-hunt-history.js` | History page JS |
+| `frontend/templates/components/indexer_hunt_section.html` | Main page template |
+| `frontend/static/css/indexer-hunt.css` | All Indexer Hunt styles |
+
+## API Endpoints
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | `/api/indexer-hunt/indexers` | List all (API key masked) |
+| POST | `/api/indexer-hunt/indexers` | Add new |
+| PUT | `/api/indexer-hunt/indexers/<id>` | Update (pushes API key/enable changes) |
+| DELETE | `/api/indexer-hunt/indexers/<id>` | Delete + cascade |
+| POST | `/api/indexer-hunt/indexers/<id>/test` | Test connection |
+| POST | `/api/indexer-hunt/validate` | Validate before save |
+| GET | `/api/indexer-hunt/presets` | List available presets |
+| POST | `/api/indexer-hunt/sync` | Sync indexers to a Movie Hunt instance |
+| GET | `/api/indexer-hunt/available/<instance_id>` | Indexers not yet synced |
+| GET | `/api/indexer-hunt/linked-instances/<id>` | Which instances use this indexer |
+| GET | `/api/indexer-hunt/stats` | Aggregate stats |
+| GET | `/api/indexer-hunt/stats/per-indexer` | Per-indexer breakdown |
+| GET | `/api/indexer-hunt/history` | Paginated event history |
+| DELETE | `/api/indexer-hunt/history` | Clear all history + stats |
+
+## Presets
+
+Reuses `INDEXER_PRESETS` from `src/primary/routes/movie_hunt/indexers.py` (sourced from Radarr). Each preset has: name, url, api_path, and optional default categories. Custom (manual) indexers have user-provided URL.

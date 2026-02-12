@@ -1,0 +1,59 @@
+# Huntarr Storage Rule: Always Server-Side for Settings
+
+## The Principle
+All user preferences, configuration options, and UI states must be stored **server-side** in the Huntarr database. `localStorage` is strictly for temporary performance caching only.
+
+## 1. How to Store UI Preferences
+User-specific UI settings (view modes, sort orders, themes, etc.) should be stored in the `ui_preferences` dictionary within the **General Settings**.
+
+### Frontend (JavaScript)
+Use the `HuntarrUtils` helper methods:
+
+```javascript
+// GET a preference
+const viewMode = HuntarrUtils.getUIPreference('my-feature-view', 'default-value');
+
+// SET a preference (automatically syncs to server)
+HuntarrUtils.setUIPreference('my-feature-view', 'new-value');
+```
+
+- **DO NOT** use `localStorage.setItem()` for settings.
+- **DO NOT** use `sessionStorage` for settings.
+
+### Backend (Python)
+Ensure settings are persisted in `general_settings` under the `ui_preferences` key if they are UI-specific.
+
+## 2. NEVER Cache API Results in localStorage
+
+**Do NOT cache API/TMDB results in `localStorage` or `sessionStorage`.** This was the root cause of stale data bugs — cached results with outdated library-status flags persisted in the browser even after the server state changed (e.g., DB reset, instance removal).
+
+All result caching must happen **server-side** (Python in-memory cache with configurable TTL). The frontend always fetches from the API, and the server decides whether to return cached or fresh data.
+
+### Why not localStorage for results?
+- Server state can change (DB reset, instance added/removed) without the browser knowing.
+- Cached results may contain baked-in flags (e.g., `in_library`, `partial`) that become stale.
+- Users on multiple devices/tabs see inconsistent data.
+- The server's in-memory cache is fast enough (sub-millisecond) that client-side caching adds complexity with no meaningful benefit.
+
+## 3. Permitted use of localStorage
+
+`localStorage` may only be used for:
+- **Session recovery flags**: Data needed to restore state after a page refresh before the server settings are fully loaded (though this should be minimized).
+- **Pure UI state** that has no server-side equivalent (e.g., scroll position). Even then, prefer `HuntarrUtils.setUIPreference`.
+
+**Explicitly banned:**
+- Caching API response data (TMDB results, Smart Hunt results, trending/popular carousels)
+- Caching instance lists, library status, or any server-derived data
+- Any `localStorage` cache with a TTL (this pattern is always wrong — use server-side caching)
+
+## 4. Anti-Patterns
+- `localStorage.setItem('dark-mode', 'true')` -> **NO** (Use `HuntarrUtils.setUIPreference`)
+- `localStorage.setItem('selected-instance', 'First')` -> **NO** (Use server-side modal preferences)
+- `localStorage.setItem('cache-key', JSON.stringify({results, timestamp}))` -> **NO** (Server-side cache only)
+- Adding a "Browser-Side Storage" option to settings -> **NO** (Everything is server-side by default)
+
+## 4. Migration
+When refactoring legacy code:
+1. Identify `localStorage.getItem` calls for settings.
+2. Replace with `HuntarrUtils.getUIPreference`.
+3. Add the logic to `HuntarrUtils.setUIPreference` to ensure server-sync.

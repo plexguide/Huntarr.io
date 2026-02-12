@@ -1,0 +1,89 @@
+---
+description: Instance dropdown refresh, selection persistence, and wiring rules for all pages
+globs: frontend/static/js/**/*.js
+alwaysApply: false
+---
+
+# Instance Dropdown — Event-Driven Refresh
+
+When adding, removing, or renaming instances (Movie Hunt, Radarr, Sonarr, Lidarr, etc.), every dropdown that lists those instances across the SPA must update **without a full page reload** and **without losing the user's current selection**.
+
+## How it works: `huntarr:instances-changed` event
+
+A single custom DOM event drives all dropdown refreshes. Any code that creates, deletes, or renames an instance dispatches it:
+
+```javascript
+document.dispatchEvent(new CustomEvent('huntarr:instances-changed', { detail: { appType: 'sonarr' } }));
+```
+
+**Dispatchers** (fire after successful save):
+- `core.js` `saveAppSettings()` — covers all Sonarr/Radarr/Lidarr/Readarr/Whisparr instance changes
+- `movie-hunt-instance-management.js` — covers Movie Hunt add, delete, rename
+
+**Listeners** (refresh their dropdowns on the event):
+- `requestarr-home.js` — Home page movie + TV dropdowns
+- `requestarr-content.js` — Discover + list page dropdowns
+- `movie-hunt-instance-dropdown.js` — all wired Movie Hunt dropdowns (`refreshAll()`)
+- `scheduling.js` — scheduling page instance dropdown
+
+Navigation-based refresh in `switchSection()` also exists as a secondary mechanism.
+
+## Adding a new instance type
+
+When adding a new feature with instance dropdowns (e.g., TV Hunt):
+1. **Dispatch** the event after any instance CRUD operation succeeds
+2. **Listen** for `huntarr:instances-changed` in your dropdown module and refresh
+
+## Cache-busting on every fetch (CRITICAL)
+
+All instance-list API calls **must** use a timestamp query param and `cache: 'no-store'` to prevent the browser from returning a stale cached response:
+
+```javascript
+// GOOD — always fetches fresh data
+const resp = await fetch(`./api/requestarr/instances/sonarr?t=${Date.now()}`, { cache: 'no-store' });
+```
+
+```javascript
+// BAD — browser may return cached 200
+const resp = await fetch('./api/requestarr/instances/sonarr');
+```
+
+## Selection persistence
+
+When repopulating a `<select>`, capture the current value before clearing:
+
+```javascript
+const previousValue = this.selectedInstance || select.value || '';
+select.innerHTML = '';
+items.forEach(item => {
+    const opt = document.createElement('option');
+    opt.value = item.id;
+    opt.textContent = item.label;
+    if (previousValue && item.id === previousValue) opt.selected = true;
+    select.appendChild(opt);
+});
+if (select.value) this.selectedInstance = select.value;
+```
+
+## Prevent duplicate event listeners
+
+Populate functions may be called multiple times. Guard against stacking `change` listeners:
+
+```javascript
+if (!select._changeWired) {
+    select._changeWired = true;
+    select.addEventListener('change', handler);
+}
+```
+
+## Files to know
+
+| File | Role |
+|---|---|
+| `settings/core.js` | Dispatches event after `saveAppSettings` |
+| `settings/movie-hunt-instance-management.js` | Dispatches event after MH add/delete/rename |
+| `movie-hunt-instance-dropdown.js` | Listens + `refreshAll()` for MH dropdowns |
+| `requestarr/requestarr-home.js` | Listens + refreshes Home page dropdowns |
+| `requestarr/requestarr-content.js` | Listens + `refreshInstanceSelectors()` |
+| `scheduling.js` | Listens + `loadAppInstances()` |
+| `core/navigation.js` | Secondary nav-based refresh in `switchSection()` |

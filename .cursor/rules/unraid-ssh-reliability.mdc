@@ -1,0 +1,37 @@
+# Unraid SSH — Reliability Rules
+
+## Problem
+macOS SSH clients often have many identity keys loaded (via ssh-agent, keychain, ~/.ssh/). When connecting to Unraid with password auth, SSH tries each key first. If there are more keys than `MaxAuthTries` (usually 6), the server disconnects before the password prompt appears. This causes intermittent "Too many authentication failures" or "Permission denied" errors.
+
+## Required SSH Options
+**Every** `ssh` and `scp` command targeting Unraid (10.0.0.10) MUST include:
+
+```
+-o StrictHostKeyChecking=accept-new -o PubkeyAuthentication=no
+```
+
+- `-o PubkeyAuthentication=no` — Skips all key attempts, goes straight to password auth.
+- `-o StrictHostKeyChecking=accept-new` — Accepts new host keys without prompting.
+
+## Files That Use SSH/SCP to Unraid
+All in `unraid/` directory:
+- `deploy-with-build.exp` — 3 spawn points (2× ssh, 1× scp)
+- `deploy-moviehunt-with-mounts.exp` — 1 spawn point
+- `deploy-moviehunt.exp` — 1 spawn point
+- `ssh-exec.exp` — 1 spawn point
+- `ssh-unraid.sh` — 2 invocations (sshpass and fallback)
+
+## When Adding New SSH Commands
+1. Always include both `-o` flags on every `ssh` and `scp` call.
+2. For expect scripts: use `spawn ssh -o StrictHostKeyChecking=accept-new -o PubkeyAuthentication=no root@10.0.0.10 ...`
+3. For scp in expect: `scp -o StrictHostKeyChecking=accept-new -o PubkeyAuthentication=no ...`
+4. For shell scripts with sshpass: `sshpass -p "$PASS" ssh -o StrictHostKeyChecking=accept-new -o PubkeyAuthentication=no ...`
+
+## Quick SSH Test
+To run a one-off command on Unraid:
+```bash
+./unraid/ssh-exec.exp "docker logs huntarr-moviehunt 2>&1 | tail -30"
+```
+
+## Never Use Raw SSH
+Do NOT use `ssh root@10.0.0.10` without the options — it will fail unpredictably depending on how many keys are in the agent.

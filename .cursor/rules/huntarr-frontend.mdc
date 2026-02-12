@@ -1,0 +1,47 @@
+---
+description: Frontend — relative URLs, docs links, JS patterns, refresh/cache, sidebars
+globs: ["**/*.js", "**/*.html", "**/templates/**", "**/static/js/**", "**/static/css/**"]
+alwaysApply: false
+---
+# Huntarr — Frontend Rules
+
+## URLs
+- ALWAYS relative: `./api/endpoint`, `window.location.href = './'`. Never `/api/` or `'/'` (breaks subpaths).
+- When building URLs with `HUNTARR_BASE_URL`, strip `./` prefix first: `url.replace(/^\.\//, '')` → then prepend base. Otherwise `./api/stats` becomes `/huntarr/./api/stats` (broken).
+
+## BASE_URL (frontend)
+- Use `window.HUNTARR_BASE_URL` (injected by backend). Build URLs with it; do not detect base from `location` on the client.
+- Templates must include: `<script>window.HUNTARR_BASE_URL = '{{ base_url|default("", true) }}';</script>` where needed.
+- `HuntarrUtils.fetchWithTimeout()` in `utils.js` handles BASE_URL prepending automatically. Use it for all internal API calls.
+- **pathname checks**: Don't compare `window.location.pathname === '/'` — breaks on subpaths. Compare against `HUNTARR_BASE_URL` or use an inclusive check.
+
+## Documentation links
+- Domain: `https://plexguide.github.io/Huntarr.io/`. Pattern: `.../apps/[app-name].html#[anchor]`.
+- Verify anchors exist. Use `target="_blank" rel="noopener"`.
+
+## JavaScript
+- Declare variables before use in form generation. No double backslashes in regex. Handle undefined safely.
+
+## Event delegation (dynamic elements)
+- **Never bind listeners directly** to elements that are cloned/recreated later (e.g. per-instance app cards, dynamically generated buttons).
+- Use event delegation on `document` or a stable parent: `document.addEventListener('click', function(e) { const btn = e.target.closest('.my-button'); ... })`.
+- Known dynamic elements: per-instance `.app-stats-card` cards (cloned in `stats.js`), `.cycle-reset-button` buttons.
+
+## Per-instance state keys
+- For per-instance apps (sonarr, radarr, movie_hunt, etc.), use `stateKey(app, instanceName)` to read/write state (e.g. `nextCycleTimes`, `pendingResets`, `runningCycles`).
+- **Never use bare `app` key** (e.g. `nextCycleTimes["movie_hunt"]`) — per-instance data is stored as `"movie_hunt-Instance Name"`. Bare key is always `undefined`.
+
+## Caching / refresh
+- Use page refresh on section change (store target in localStorage, reload, then navigate). Use `isInitialized` so refresh runs only on user section change, not on first load. Prevents endless refresh loops.
+
+## Sidebars
+- Multiple sidebars: main, apps, settings, requestarr. Only one visible at a time. Flash-prevention and section logic must hide others when showing one. On mobile, hide `.nav-sub-group` (icon-only parent items only).
+
+## CSS
+- Put responsive CSS in external files (e.g. responsive-fix.css), not inline in component templates. Use debug borders (`border: 2px solid lime !important`) to verify load order.
+- **Form Alignment (Modals)**: For side-by-side label/field alignment in modals, use **CSS Grid** per row instead of flexbox. 
+- Use a fixed label column width (e.g. `160px`) to guarantee all dropdowns/inputs start at the same X position.
+- Pattern: `.field-row { display: grid; grid-template-columns: 160px 1fr; align-items: center; } label { grid-column: 1; } select/input { grid-column: 2; }`
+- This prevents wrapping and "jagged" alignment issues common with flexbox.
+- Use `!important` and high-specificity selectors (e.g. `#modal-id .field-row`) if global styles are fighting you.
+- Add a cache buster (e.g. `?v=1.0.1`) to link tags when making critical CSS changes to force browser refresh.

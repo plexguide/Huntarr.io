@@ -1,0 +1,119 @@
+---
+description: Shared media operations for Movie Hunt, TV Hunt, and Requestarr — use MediaUtils and shared modules, never duplicate
+globs: frontend/static/js/modules/features/movie-hunt*.js,frontend/static/js/modules/features/requestarr/*.js,frontend/static/js/modules/features/media-utils.js,frontend/static/js/modules/features/movie-card-delete-modal.js
+alwaysApply: false
+---
+
+# Hunt Media Operations — Single Source of Truth
+
+Movie Hunt, TV Hunt (future), and Requestarr share common media operations. **Requestarr is the canonical source.** All hunt modules delegate to shared utilities rather than reimplementing.
+
+## Shared Modules
+
+| Module | Purpose |
+|---|---|
+| `media-utils.js` → `window.MediaUtils` | Hide media, status badges, action buttons, card animation, instance resolution |
+| `movie-card-delete-modal.js` → `window.MovieCardDeleteModal` | Unified delete modal with persistent checkbox prefs |
+
+## Required: Use MediaUtils for These Operations
+
+### Status Badges
+```javascript
+// GOOD
+const badge = window.MediaUtils.getStatusBadge(inLibrary, partial, hasInstance);
+
+// BAD — never inline badge HTML in hunt modules
+if (inLibrary) { statusBadge = '<div class="media-card-status-badge complete">...'; }
+```
+
+### Action Buttons (Trash / Hide)
+```javascript
+// GOOD
+const btn = window.MediaUtils.getActionButton(inLibrary, partial, hasInstance);
+
+// BAD — never inline conditional button HTML
+if (inLibrary || partial) { actionBtn = '<button class="media-card-delete-btn">...'; }
+```
+
+### Hiding Media
+```javascript
+// GOOD
+window.MediaUtils.hideMedia({
+    tmdbId, mediaType: 'movie', title, posterPath,
+    appType: 'movie_hunt', instanceName, cardElement,
+    hiddenMediaSet: this.hiddenMediaSet
+});
+
+// BAD — never write fetch('./api/requestarr/hidden-media') directly in hunt modules
+```
+
+### Delete Modal
+```javascript
+// GOOD — always use shared modal
+window.MovieCardDeleteModal.open(item, { instanceName, instanceId, status, hasFile, appType, onDeleted });
+
+// BAD — never build delete modal HTML inline
+```
+
+### Card Removal Animation
+```javascript
+// GOOD
+window.MediaUtils.animateCardRemoval(cardElement, optionalCallback);
+
+// BAD — never duplicate fade/shrink animation
+cardElement.style.transition = 'opacity 0.3s, transform 0.3s'; // etc.
+```
+
+### Detail Page Refresh-After-Action (Event System)
+```javascript
+// GOOD — use shared event system in any detail page's setupDetailInteractions()
+if (window.MediaUtils) {
+    window.MediaUtils.teardownDetailRefreshListeners(this._refreshHandle);
+    this._refreshHandle = window.MediaUtils.setupDetailRefreshListeners({
+        getTmdbId: function() { return self.currentMovie && (self.currentMovie.tmdb_id || self.currentMovie.id); },
+        refreshCallback: function() { self.updateMovieStatus(); },
+        label: 'MovieHuntDetail'
+    });
+}
+
+// GOOD — dispatch after any action that changes status (edit, force-search, force-upgrade)
+if (window.MediaUtils) window.MediaUtils.dispatchStatusChanged(tmdbId, 'edit');
+
+// BAD — never add window.addEventListener('requestarr-request-success', ...) directly in hunt modules
+// BAD — never dispatch custom events directly — use MediaUtils.dispatchStatusChanged()
+```
+
+### Requesting Movies
+Movie Hunt discovers movies. **All request/add operations go through Requestarr modal.**
+```javascript
+// GOOD — open Requestarr modal to request
+window.RequestarrDiscover.modal.openModal(tmdbId, 'movie', instanceName);
+
+// BAD — never call request API directly from Movie Hunt detail page
+```
+
+## Rules for New Hunt Modules (e.g., TV Hunt)
+
+1. **Import nothing** — `MediaUtils` and `MovieCardDeleteModal` are on `window`
+2. **Status badges** — call `MediaUtils.getStatusBadge()`
+3. **Hide flow** — call `MediaUtils.hideMedia()` with `mediaType: 'tv'`
+4. **Delete flow** — call `MovieCardDeleteModal.open()` (rename to generic `MediaCardDeleteModal` when TV Hunt lands)
+5. **Instance resolution** — call `MediaUtils.resolveMovieInstance()` or create `MediaUtils.resolveTVInstance()`
+6. **New shared logic** — add to `media-utils.js`, not to the hunt module
+
+## Adding New Shared Operations
+
+When adding a new operation that multiple hunt modules need:
+1. Add the function to `media-utils.js`
+2. Expose it via `window.MediaUtils.newFunction`
+3. Call it from each hunt module — never copy-paste between modules
+
+## Files Reference
+
+- **Shared utils**: `frontend/static/js/modules/features/media-utils.js`
+- **Delete modal**: `frontend/static/js/modules/features/movie-card-delete-modal.js`
+- **Movie Hunt home**: `frontend/static/js/modules/features/movie-hunt.js`
+- **Movie Hunt collection**: `frontend/static/js/modules/features/movie-hunt-collection.js`
+- **Movie Hunt detail**: `frontend/static/js/modules/features/movie-hunt-detail.js`
+- **Requestarr content**: `frontend/static/js/modules/features/requestarr/requestarr-content.js`
+- **Requestarr detail**: `frontend/static/js/modules/features/requestarr/requestarr-detail.js`

@@ -1,0 +1,31 @@
+---
+description: Mandatory rules — no auto-commit, testing, deploy, version, cross-platform
+globs: ["**/*.py", "**/*.js", "**/*.html", "**/*.css"]
+alwaysApply: true
+---
+# Huntarr — Critical Mandatory Rules
+
+## NEVER AUTO-COMMIT
+- NEVER commit without explicit user approval. Present changes first; let user decide when to commit.
+
+## TESTING
+- Docker: `cd /Users/home/Huntarr/Huntarr.io && docker-compose down && COMPOSE_BAKE=true docker-compose up -d --build`
+- Check logs: `docker logs huntarr`
+- Test Docker and local (port 9705).
+
+## DEPLOY (see unraid-always-redeploy.mdc)
+- After code changes, run Unraid deploy: `./unraid/deploy-with-build.exp`. If Unraid fails, run local Docker build above.
+
+## VERSION
+- Bump version.txt only when merging to main. Keep version unchanged on feature branches.
+
+## CROSS-PLATFORM
+- No hard-coded absolute paths (e.g. `/config/file.json`). Use `os.path.join()`.
+- Frontend: relative URLs only (`./api/` not `/api/`). Test subpaths (`domain.com/huntarr/`).
+
+## WORKFLOW
+- Before changes: cwd `/Users/home/Huntarr/Huntarr.io`, activate venv for local: `source venv/bin/activate`.
+- Before commit: test Docker + local, subpath, get user approval.
+
+## IMPORTS
+- Code under `src/` should use `from src.primary.X` (or `from src.primary.utils.database import get_database`). main.py adds `src` to sys.path and uses `from primary.X`. Do not mix without reason.

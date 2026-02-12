@@ -1,0 +1,61 @@
+---
+description: Requestarr modal field visibility rules — which fields appear for which app types
+globs: frontend/static/js/modules/features/requestarr/requestarr-modal.js,frontend/templates/components/requestarr_section.html,frontend/static/css/requestarr-discover.css
+alwaysApply: false
+---
+
+# Requestarr Modal — App-Specific Fields
+
+## Minimum Availability & Start Search
+
+These fields **only** apply to Movie Hunt. They do NOT exist in Sonarr, Radarr, or the future TV Hunt.
+
+| Field | Movie Hunt | Radarr | Sonarr | TV Hunt (future) |
+|---|---|---|---|---|
+| Minimum Availability | Show | Hide | Hide | Hide |
+| Start search checkbox | Show | Hide | Hide | Hide |
+
+## CSS Specificity — Use Class Toggles, Not Inline Styles
+
+`.mh-req-field` has `display: grid !important` which **overrides** inline `style="display: none"`.
+
+**Never** hide modal fields with `element.style.display = 'none'`. Always use:
+
+```javascript
+// GOOD — wins the !important battle
+element.classList.add('mh-hidden');
+element.classList.remove('mh-hidden');
+element.classList.toggle('mh-hidden', shouldHide);
+
+// BAD — overridden by .mh-req-field { display: grid !important }
+element.style.display = 'none';
+```
+
+The `mh-hidden` class is defined in `requestarr-discover.css`:
+
+```css
+.mh-hidden { display: none !important; }
+```
+
+## HTML Template Default State
+
+In `requestarr_section.html`, Movie-Hunt-only wraps must start hidden via class, not inline style:
+
+```html
+<!-- GOOD -->
+<div class="mh-req-field mh-hidden" id="requestarr-modal-min-availability-wrap">
+
+<!-- BAD — !important on .mh-req-field overrides this -->
+<div class="mh-req-field" id="requestarr-modal-min-availability-wrap" style="display: none;">
+```
+
+## Backend — Never Send minimum_availability for TV
+
+In `requestarr_routes.py`, `minimum_availability` is explicitly ignored for `media_type == 'tv'`. The Sonarr API has no such concept. When TV Hunt is added, apply the same rule — TV Hunt should not use minimum availability.
+
+## Where the Visibility Logic Lives
+
+- **JS toggle**: `_applyMovieHuntModalMode()` in `requestarr-modal.js`
+- **Reset on open**: `openModal()` hides both wraps via `classList.add('mh-hidden')` before `renderModal`
+- **CSS class**: `.mh-hidden` in `requestarr-discover.css`
+- **HTML template**: `requestarr_section.html` — wraps start with `mh-hidden` class
