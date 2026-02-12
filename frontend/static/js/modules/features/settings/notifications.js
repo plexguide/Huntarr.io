@@ -22,8 +22,9 @@
     var editingId = null;
     var editingProvider = null;
 
-    // Movie Hunt instances (loaded from API)
+    // Movie Hunt and TV Hunt instances (loaded from API)
     var movieHuntInstances = [];
+    var tvHuntInstances = [];
 
     // App settings cache (for instance names)
     var appSettingsCache = {};
@@ -44,6 +45,7 @@
     var APP_TYPES = [
         { key: 'all', label: 'All Apps', icon: 'fas fa-layer-group', color: '#818cf8' },
         { key: 'movie_hunt', label: 'Movie Hunt', icon: 'fas fa-film', color: '#f59e0b' },
+        { key: 'tv_hunt', label: 'TV Hunt', icon: 'fas fa-tv', color: '#0ea5e9' },
         { key: 'sonarr', label: 'Sonarr', icon: 'fas fa-tv', color: '#60a5fa' },
         { key: 'radarr', label: 'Radarr', icon: 'fas fa-video', color: '#f97316' },
         { key: 'lidarr', label: 'Lidarr', icon: 'fas fa-music', color: '#34d399' },
@@ -107,12 +109,15 @@
     function loadAppData() {
         return Promise.all([
             HuntarrUtils.fetchWithTimeout('./api/settings').then(function (r) { return r.json(); }).catch(function () { return {}; }),
-            HuntarrUtils.fetchWithTimeout('./api/movie-hunt/instances').then(function (r) { return r.json(); }).catch(function () { return { instances: [] }; })
+            HuntarrUtils.fetchWithTimeout('./api/movie-hunt/instances').then(function (r) { return r.json(); }).catch(function () { return { instances: [] }; }),
+            HuntarrUtils.fetchWithTimeout('./api/tv-hunt/instances').then(function (r) { return r.json(); }).catch(function () { return { instances: [] }; })
         ]).then(function (results) {
             var settings = results[0];
             var mhData = results[1];
+            var thData = results[2];
 
             movieHuntInstances = Array.isArray(mhData.instances) ? mhData.instances : [];
+            tvHuntInstances = Array.isArray(thData.instances) ? thData.instances : [];
 
             var appTypes = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
             appTypes.forEach(function (at) {
@@ -330,6 +335,14 @@
             }
             return 'Instance ' + instanceId;
         }
+        if (appScope === 'tv_hunt') {
+            for (var t = 0; t < tvHuntInstances.length; t++) {
+                if (String(tvHuntInstances[t].id) === String(instanceId)) {
+                    return tvHuntInstances[t].name || 'Instance ' + instanceId;
+                }
+            }
+            return 'Instance ' + instanceId;
+        }
         var instances = appSettingsCache[appScope] || [];
         for (var j = 0; j < instances.length; j++) {
             var inst = instances[j];
@@ -498,6 +511,10 @@
 
         if (appKey === 'movie_hunt') {
             instances = movieHuntInstances.map(function (inst) {
+                return { id: String(inst.id), name: inst.name || 'Instance ' + inst.id };
+            });
+        } else if (appKey === 'tv_hunt') {
+            instances = tvHuntInstances.map(function (inst) {
                 return { id: String(inst.id), name: inst.name || 'Instance ' + inst.id };
             });
         } else {
