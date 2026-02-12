@@ -1,0 +1,185 @@
+<!-- Media Hunt Section – unified for Movie Hunt and TV Hunt. Mode set by router. -->
+<div id="mediaHuntSection" class="content-section" style="display: none;">
+    <link rel="stylesheet" href="./static/css/movie-hunt.css?v=1.3.0">
+    <link rel="stylesheet" href="./static/css/movie-hunt-detail.css?v=1.5.0">
+    <link rel="stylesheet" href="./static/css/tv-hunt.css?v=1.0.0">
+    {% with section_id='media-hunt' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
+    <div class="requestarr-content media-hunt-content">
+        <div id="media-hunt-beta-notice" class="movie-hunt-beta-notice" role="status">
+            <i class="fas fa-flask" aria-hidden="true"></i>
+            <span id="media-hunt-beta-text"><strong>Beta feature:</strong> Media Hunt is in active development.</span>
+        </div>
+        <div class="global-search-bar">
+            <i class="fas fa-search"></i>
+            <input type="text" id="media-hunt-search-input" placeholder="Search" aria-label="Search">
+        </div>
+        <div id="media-hunt-search-results-view" class="requestarr-view" style="display: none;">
+            <h2 class="search-results-title">Search Results</h2>
+            <div id="media-hunt-search-results-grid" class="search-results-grid"></div>
+        </div>
+        <div id="media-hunt-main-view" class="requestarr-view" style="display: block;">
+            <div class="movies-controls">
+                <div class="instance-selector-container">
+                    <select id="media-hunt-instance-select" class="control-select instance-select" aria-label="Instance">
+                        <option value="">Loading instances...</option>
+                    </select>
+                </div>
+                <div class="sort-dropdown">
+                    <select id="media-hunt-sort" class="control-select">
+                        <option value="popularity.desc">Popularity</option>
+                    </select>
+                </div>
+                <button type="button" class="filter-button" id="media-hunt-filter-btn" style="display: none;">
+                    <i class="fas fa-filter"></i>
+                    <span id="media-hunt-filter-count">0 Active Filters</span>
+                </button>
+            </div>
+            <div id="media-hunt-media-grid" class="media-grid">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p id="media-hunt-grid-loading-text">Loading...</p>
+                </div>
+            </div>
+            <div class="load-more-container">
+                <div id="media-hunt-scroll-sentinel" style="height: 1px; width: 100%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collection View -->
+    <div id="media-hunt-collection-view" class="movie-hunt-collection-view" style="display: none;">
+        <div class="global-search-bar">
+            <i class="fas fa-search"></i>
+            <input type="text" id="media-hunt-collection-search-input" placeholder="Search" aria-label="Search collection">
+        </div>
+        <div id="media-hunt-collection-search-results-view" class="requestarr-view" style="display: none;">
+            <h2 class="search-results-title">Search Results</h2>
+            <div id="media-hunt-collection-search-results-grid" class="search-results-grid"></div>
+        </div>
+        <div id="media-hunt-collection-main-content">
+            <div class="movies-controls movie-hunt-collection-controls">
+                <div class="instance-selector-container">
+                    <select id="media-hunt-collection-instance-select" class="control-select instance-select" aria-label="Instance">
+                        <option value="">Loading instances...</option>
+                    </select>
+                </div>
+                <div class="sort-dropdown">
+                    <select id="media-hunt-collection-sort" class="control-select">
+                        <option value="title.asc">Title (A-Z)</option>
+                    </select>
+                </div>
+                <div class="view-mode-selector">
+                    <select id="media-hunt-collection-view-mode" class="control-select">
+                        <option value="posters">Posters</option>
+                        <option value="table">Table</option>
+                        <option value="overview">Overview</option>
+                    </select>
+                </div>
+            </div>
+            <div id="media-hunt-collection-grid" class="media-grid">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading collection...</p>
+                </div>
+            </div>
+            <div id="media-hunt-collection-table" class="media-table-container" style="display: none;">
+                <table class="media-table">
+                    <thead>
+                        <tr id="media-hunt-collection-table-head-row">
+                            <th style="width: 60px;"></th>
+                            <th>Title</th>
+                            <th style="width: 80px;">Year</th>
+                            <th style="width: 120px;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="media-hunt-collection-table-body"></tbody>
+                </table>
+            </div>
+            <div id="media-hunt-collection-overview" class="media-overview-container" style="display: none;">
+                <div id="media-hunt-collection-overview-list"></div>
+            </div>
+        </div>
+        <div id="media-hunt-series-detail-view" class="tv-hunt-series-detail-view" style="display: none;">
+            <div class="series-detail-header">
+                <button type="button" class="back-btn" id="media-hunt-series-back-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Collection
+                </button>
+            </div>
+            <div id="media-hunt-series-detail-content"></div>
+        </div>
+    </div>
+
+    <!-- Filters (Movie mode only; visibility set by JS) -->
+    <div id="media-hunt-filter-modal" class="filter-panel" style="display: none;">
+        <div class="filter-backdrop" id="media-hunt-filter-backdrop"></div>
+        <div class="filter-panel-content">
+            <div class="filter-panel-header">
+                <h2>Filters</h2>
+                <button type="button" class="filter-close" id="media-hunt-filter-close" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="filter-panel-body">
+                <div class="filter-active-badge">
+                    <span id="media-hunt-filter-active-count">0 Active Filters</span>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-toggle-label">
+                        <input type="checkbox" id="media-hunt-hide-available-movies" class="filter-checkbox">
+                        <span class="filter-toggle-text">Hide Available Movies</span>
+                    </label>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Genres</label>
+                    <div class="selected-genres-container" id="media-hunt-selected-genres" style="display: none;"></div>
+                    <div class="genre-select-wrapper">
+                        <input type="text" id="media-hunt-genre-search-input" class="genre-search-input" placeholder="Select genres..." readonly>
+                        <div id="media-hunt-genre-dropdown" class="genre-dropdown" style="display: none;">
+                            <div id="media-hunt-genre-list" class="genre-list"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Release Year</label>
+                    <div class="filter-range-text" id="media-hunt-year-display">Movies from 1900 to 2029</div>
+                    <div class="dual-range-slider">
+                        <div class="slider-track"></div>
+                        <div class="slider-range" id="media-hunt-year-range"></div>
+                        <input type="range" id="media-hunt-filter-year-min" class="range-min" value="1900" min="1900" max="2029" step="1">
+                        <input type="range" id="media-hunt-filter-year-max" class="range-max" value="2029" min="1900" max="2029" step="1">
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Runtime</label>
+                    <div class="filter-range-text" id="media-hunt-runtime-display">0-400 minute runtime</div>
+                    <div class="dual-range-slider">
+                        <div class="slider-track"></div>
+                        <div class="slider-range" id="media-hunt-runtime-range"></div>
+                        <input type="range" id="media-hunt-filter-runtime-min" class="range-min" value="0" min="0" max="400" step="1">
+                        <input type="range" id="media-hunt-filter-runtime-max" class="range-max" value="400" min="0" max="400" step="1">
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">TMDB User Score</label>
+                    <div class="filter-range-text" id="media-hunt-rating-display">Ratings between 0 and 10</div>
+                    <div class="dual-range-slider">
+                        <div class="slider-track"></div>
+                        <div class="slider-range" id="media-hunt-rating-range"></div>
+                        <input type="range" id="media-hunt-filter-rating-min" class="range-min" value="0" min="0" max="10" step="0.1">
+                        <input type="range" id="media-hunt-filter-rating-max" class="range-max" value="10" min="0" max="10" step="0.1">
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">TMDB User Vote Count</label>
+                    <div class="filter-range-text" id="media-hunt-votes-display">Number of votes between 0 and 10000</div>
+                    <div class="dual-range-slider">
+                        <div class="slider-track"></div>
+                        <div class="slider-range" id="media-hunt-votes-range"></div>
+                        <input type="range" id="media-hunt-filter-votes-min" class="range-min" value="0" min="0" max="10000" step="10">
+                        <input type="range" id="media-hunt-filter-votes-max" class="range-max" value="10000" min="0" max="10000" step="10">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

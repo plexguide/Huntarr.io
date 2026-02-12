@@ -1,6 +1,7 @@
 /**
- * Movie Hunt Filters - Filter management for Movie Hunt discover (mirrors Requestarr movies filters).
- * Uses movie-hunt-* element IDs; calls window.MovieHunt.loadMovies(1) on apply.
+ * Media Hunt Filters - Filter management for Media Hunt discover (movie mode).
+ * Uses media-hunt-* element IDs; calls window.MediaHunt.loadMovies(1) on apply.
+ * Exposed as MediaHuntFilters and MovieHuntFilters for compatibility.
  */
 (function() {
     'use strict';
@@ -51,7 +52,7 @@
             }
             populateGenresSelect();
         }).catch(function(err) {
-            console.error('[MovieHuntFilters] Error loading genres:', err);
+            console.error('[MediaHuntFilters] Error loading genres:', err);
             genres = [
                 { id: 28, name: 'Action' }, { id: 12, name: 'Adventure' }, { id: 35, name: 'Comedy' },
                 { id: 18, name: 'Drama' }, { id: 27, name: 'Horror' }, { id: 10749, name: 'Romance' },
@@ -62,7 +63,7 @@
     }
 
     function populateGenresSelect() {
-        const list = el('movie-hunt-genre-list');
+        const list = el('media-hunt-genre-list');
         if (!list) return;
         list.innerHTML = '';
         genres.forEach(function(genre) {
@@ -84,7 +85,7 @@
                 renderSelectedGenres();
                 updateModalFilterCount();
                 autoApplyFilters();
-                const dropdown = el('movie-hunt-genre-dropdown');
+                const dropdown = el('media-hunt-genre-dropdown');
                 if (dropdown) dropdown.style.display = 'none';
             });
             list.appendChild(item);
@@ -92,7 +93,7 @@
     }
 
     function renderSelectedGenres() {
-        const container = el('movie-hunt-selected-genres');
+        const container = el('media-hunt-selected-genres');
         if (!container) return;
         container.innerHTML = '';
         if (activeFilters.genres.length === 0) {
@@ -117,7 +118,7 @@
                 renderSelectedGenres();
                 updateModalFilterCount();
                 autoApplyFilters();
-                const items = document.querySelectorAll('#movie-hunt-genre-list .genre-item');
+                const items = document.querySelectorAll('#media-hunt-genre-list .genre-item');
                 items.forEach(function(it) {
                     if (parseInt(it.dataset.genreId, 10) === genreId) it.classList.remove('selected');
                 });
@@ -129,7 +130,7 @@
     }
 
     function updateSliderRange(type, minInput, maxInput) {
-        const rangeEl = el('movie-hunt-' + type + '-range');
+        const rangeEl = el('media-hunt-' + type + '-range');
         if (!rangeEl) return;
         const min = parseFloat(minInput.value);
         const max = parseFloat(maxInput.value);
@@ -142,43 +143,43 @@
     }
 
     function updateYearDisplay() {
-        const minInput = el('movie-hunt-filter-year-min');
-        const maxInput = el('movie-hunt-filter-year-max');
+        const minInput = el('media-hunt-filter-year-min');
+        const maxInput = el('media-hunt-filter-year-max');
         if (!minInput || !maxInput) return;
         let min = parseInt(minInput.value, 10);
         let max = parseInt(maxInput.value, 10);
         if (min > max) { var t = min; min = max; max = t; }
-        const display = el('movie-hunt-year-display');
+        const display = el('media-hunt-year-display');
         if (display) display.textContent = 'Movies from ' + min + ' to ' + max;
     }
     function updateRuntimeDisplay() {
-        const minInput = el('movie-hunt-filter-runtime-min');
-        const maxInput = el('movie-hunt-filter-runtime-max');
+        const minInput = el('media-hunt-filter-runtime-min');
+        const maxInput = el('media-hunt-filter-runtime-max');
         if (!minInput || !maxInput) return;
         let min = parseInt(minInput.value, 10);
         let max = parseInt(maxInput.value, 10);
         if (min > max) { var t = min; min = max; max = t; }
-        const display = el('movie-hunt-runtime-display');
+        const display = el('media-hunt-runtime-display');
         if (display) display.textContent = min + '-' + max + ' minute runtime';
     }
     function updateRatingDisplay() {
-        const minInput = el('movie-hunt-filter-rating-min');
-        const maxInput = el('movie-hunt-filter-rating-max');
+        const minInput = el('media-hunt-filter-rating-min');
+        const maxInput = el('media-hunt-filter-rating-max');
         if (!minInput || !maxInput) return;
         let min = parseFloat(minInput.value);
         let max = parseFloat(maxInput.value);
         if (min > max) { var t = min; min = max; max = t; }
-        const display = el('movie-hunt-rating-display');
+        const display = el('media-hunt-rating-display');
         if (display) display.textContent = 'Ratings between ' + min.toFixed(1) + ' and ' + max.toFixed(1);
     }
     function updateVotesDisplay() {
-        const minInput = el('movie-hunt-filter-votes-min');
-        const maxInput = el('movie-hunt-filter-votes-max');
+        const minInput = el('media-hunt-filter-votes-min');
+        const maxInput = el('media-hunt-filter-votes-max');
         if (!minInput || !maxInput) return;
         let min = parseInt(minInput.value, 10);
         let max = parseInt(maxInput.value, 10);
         if (min > max) { var t = min; min = max; max = t; }
-        const display = el('movie-hunt-votes-display');
+        const display = el('media-hunt-votes-display');
         if (display) display.textContent = 'Number of votes between ' + min + ' and ' + max;
     }
 
@@ -190,7 +191,7 @@
         if (activeFilters.ratingMin > 0 || activeFilters.ratingMax < 10) count++;
         if (activeFilters.votesMin > 0 || activeFilters.votesMax < 10000) count++;
         if (activeFilters.hideAvailable) count++;
-        const countEl = el('movie-hunt-filter-count');
+        const countEl = el('media-hunt-filter-count');
         const text = count === 0 ? '0 Active Filters' : count === 1 ? '1 Active Filter' : count + ' Active Filters';
         if (countEl) countEl.textContent = text;
         updateModalFilterCount();
@@ -204,21 +205,21 @@
         if (activeFilters.ratingMin > 0 || activeFilters.ratingMax < 10) count++;
         if (activeFilters.votesMin > 0 || activeFilters.votesMax < 10000) count++;
         if (activeFilters.hideAvailable) count++;
-        const countEl = el('movie-hunt-filter-active-count');
+        const countEl = el('media-hunt-filter-active-count');
         const text = count === 0 ? '0 Active Filters' : count === 1 ? '1 Active Filter' : count + ' Active Filters';
         if (countEl) countEl.textContent = text;
     }
 
     function loadFilterValues() {
-        const yearMin = el('movie-hunt-filter-year-min');
-        const yearMax = el('movie-hunt-filter-year-max');
-        const runtimeMin = el('movie-hunt-filter-runtime-min');
-        const runtimeMax = el('movie-hunt-filter-runtime-max');
-        const ratingMin = el('movie-hunt-filter-rating-min');
-        const ratingMax = el('movie-hunt-filter-rating-max');
-        const votesMin = el('movie-hunt-filter-votes-min');
-        const votesMax = el('movie-hunt-filter-votes-max');
-        const hideAvailable = el('movie-hunt-hide-available-movies');
+        const yearMin = el('media-hunt-filter-year-min');
+        const yearMax = el('media-hunt-filter-year-max');
+        const runtimeMin = el('media-hunt-filter-runtime-min');
+        const runtimeMax = el('media-hunt-filter-runtime-max');
+        const ratingMin = el('media-hunt-filter-rating-min');
+        const ratingMax = el('media-hunt-filter-rating-max');
+        const votesMin = el('media-hunt-filter-votes-min');
+        const votesMax = el('media-hunt-filter-votes-max');
+        const hideAvailable = el('media-hunt-hide-available-movies');
         if (yearMin) yearMin.value = activeFilters.yearMin;
         if (yearMax) yearMax.value = activeFilters.yearMax;
         if (runtimeMin) runtimeMin.value = activeFilters.runtimeMin;
@@ -229,7 +230,7 @@
         if (votesMax) votesMax.value = activeFilters.votesMax;
         if (hideAvailable) hideAvailable.checked = activeFilters.hideAvailable;
         renderSelectedGenres();
-        var items = document.querySelectorAll('#movie-hunt-genre-list .genre-item');
+        var items = document.querySelectorAll('#media-hunt-genre-list .genre-item');
         items.forEach(function(item) {
             var genreId = parseInt(item.dataset.genreId, 10);
             if (activeFilters.genres.indexOf(genreId) !== -1) item.classList.add('selected');
@@ -243,14 +244,14 @@
     }
 
     function autoApplyFilters() {
-        var yearMinEl = el('movie-hunt-filter-year-min');
-        var yearMaxEl = el('movie-hunt-filter-year-max');
-        var runtimeMinEl = el('movie-hunt-filter-runtime-min');
-        var runtimeMaxEl = el('movie-hunt-filter-runtime-max');
-        var ratingMinEl = el('movie-hunt-filter-rating-min');
-        var ratingMaxEl = el('movie-hunt-filter-rating-max');
-        var votesMinEl = el('movie-hunt-filter-votes-min');
-        var votesMaxEl = el('movie-hunt-filter-votes-max');
+        var yearMinEl = el('media-hunt-filter-year-min');
+        var yearMaxEl = el('media-hunt-filter-year-max');
+        var runtimeMinEl = el('media-hunt-filter-runtime-min');
+        var runtimeMaxEl = el('media-hunt-filter-runtime-max');
+        var ratingMinEl = el('media-hunt-filter-rating-min');
+        var ratingMaxEl = el('media-hunt-filter-rating-max');
+        var votesMinEl = el('media-hunt-filter-votes-min');
+        var votesMaxEl = el('media-hunt-filter-votes-max');
         var yearMin = yearMinEl ? parseInt(yearMinEl.value, 10) : minYear;
         var yearMax = yearMaxEl ? parseInt(yearMaxEl.value, 10) : maxYear;
         var runtimeMin = runtimeMinEl ? parseInt(runtimeMinEl.value, 10) : 0;
@@ -272,17 +273,17 @@
         activeFilters.votesMin = votesMin;
         activeFilters.votesMax = votesMax;
         updateFilterDisplay();
-        if (window.MovieHunt && window.MovieHunt.loadMovies) {
+        if (window.MovieHunt && window.MediaHunt.loadMovies) {
             window.MovieHunt.page = 1;
             window.MovieHunt.hasMore = true;
-            window.MovieHunt.loadMovies(1);
+            window.MediaHunt.loadMovies(1);
         }
     }
 
     function openFiltersModal() {
-        var modal = el('movie-hunt-filter-modal');
+        var modal = el('media-hunt-filter-modal');
         if (!modal) return;
-        // Move modal to body so it isn't clipped by #movie-hunt-section (same as Requestarr / request modal)
+        // Move modal to body so it isn't clipped by #media-hunt-section (same as Requestarr / request modal)
         if (modal.parentNode !== document.body) {
             document.body.appendChild(modal);
         }
@@ -293,7 +294,7 @@
     }
 
     function closeFiltersModal() {
-        var modal = el('movie-hunt-filter-modal');
+        var modal = el('media-hunt-filter-modal');
         if (modal) {
             modal.classList.remove('show');
             setTimeout(function() {
@@ -314,21 +315,21 @@
         activeFilters.votesMin = 0;
         activeFilters.votesMax = 10000;
         activeFilters.hideAvailable = false;
-        var sortSelect = el('movie-hunt-sort');
+        var sortSelect = el('media-hunt-sort');
         if (sortSelect) sortSelect.value = 'popularity.desc';
         updateFilterDisplay();
         loadFilterValues();
         closeFiltersModal();
-        if (window.MovieHunt && window.MovieHunt.loadMovies) {
+        if (window.MovieHunt && window.MediaHunt.loadMovies) {
             window.MovieHunt.page = 1;
             window.MovieHunt.hasMore = true;
-            window.MovieHunt.loadMovies(1);
+            window.MediaHunt.loadMovies(1);
         }
     }
 
     function getFilterParams() {
         var params = new URLSearchParams();
-        var sortSelect = el('movie-hunt-sort');
+        var sortSelect = el('media-hunt-sort');
         params.append('sort_by', (sortSelect && sortSelect.value) ? sortSelect.value : 'popularity.desc');
         if (activeFilters.genres.length > 0) params.append('with_genres', activeFilters.genres.join(','));
         if (activeFilters.yearMin > minYear) params.append('release_date.gte', activeFilters.yearMin + '-01-01');
@@ -350,12 +351,12 @@
     }
 
     function setupEventListeners() {
-        var backdrop = el('movie-hunt-filter-backdrop');
-        var closeBtn = el('movie-hunt-filter-close');
+        var backdrop = el('media-hunt-filter-backdrop');
+        var closeBtn = el('media-hunt-filter-close');
         if (backdrop) backdrop.addEventListener('click', closeFiltersModal);
         if (closeBtn) closeBtn.addEventListener('click', closeFiltersModal);
 
-        var hideAvailable = el('movie-hunt-hide-available-movies');
+        var hideAvailable = el('media-hunt-hide-available-movies');
         if (hideAvailable) {
             hideAvailable.addEventListener('change', function(e) {
                 activeFilters.hideAvailable = e.target.checked;
@@ -364,8 +365,8 @@
             });
         }
 
-        var genreInput = el('movie-hunt-genre-search-input');
-        var genreDropdown = el('movie-hunt-genre-dropdown');
+        var genreInput = el('media-hunt-genre-search-input');
+        var genreDropdown = el('media-hunt-genre-dropdown');
         if (genreInput && genreDropdown) {
             genreInput.addEventListener('click', function(e) {
                 e.stopPropagation();
@@ -378,8 +379,8 @@
         }
 
         function bindRange(type, updateDisplayFn) {
-            var minInput = el('movie-hunt-filter-' + type + '-min');
-            var maxInput = el('movie-hunt-filter-' + type + '-max');
+            var minInput = el('media-hunt-filter-' + type + '-min');
+            var maxInput = el('media-hunt-filter-' + type + '-max');
             if (!minInput || !maxInput) return;
             minInput.addEventListener('input', function() {
                 if (parseFloat(minInput.value) > parseFloat(maxInput.value)) minInput.value = maxInput.value;
@@ -400,8 +401,8 @@
         bindRange('rating', updateRatingDisplay);
         bindRange('votes', updateVotesDisplay);
 
-        var yearMin = el('movie-hunt-filter-year-min');
-        var yearMax = el('movie-hunt-filter-year-max');
+        var yearMin = el('media-hunt-filter-year-min');
+        var yearMax = el('media-hunt-filter-year-max');
         if (yearMin && yearMax) {
             yearMin.max = maxYear;
             yearMin.value = minYear;
@@ -421,7 +422,7 @@
         });
     }
 
-    window.MovieHuntFilters = {
+    window.MovieHuntFilters = window.MediaHuntFilters = {
         init: init,
         openFiltersModal: openFiltersModal,
         closeFiltersModal: closeFiltersModal,
