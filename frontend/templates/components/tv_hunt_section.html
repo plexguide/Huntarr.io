@@ -54,7 +54,7 @@
         </div>
     </div>
 
-    <!-- TV Collection View (requested series, seasons, episodes) -->
+    <!-- TV Collection View (requested series, seasons, episodes) - same layout as Movie Collection -->
     <div id="tv-hunt-collection-view" class="tv-hunt-collection-view" style="display: none;">
         <div class="global-search-bar">
             <i class="fas fa-search"></i>
@@ -66,33 +66,54 @@
             <div id="tv-hunt-collection-search-results-grid" class="search-results-grid"></div>
         </div>
 
-        <!-- Collection controls -->
         <div id="tv-hunt-collection-main-view" class="requestarr-view" style="display: block;">
-            <div class="movies-controls collection-controls">
-                <div class="instance-selector-container">
-                    <select id="tv-hunt-collection-instance-select" class="control-select instance-select">
-                        <option value="">Loading instances...</option>
-                    </select>
+            <div id="tv-hunt-collection-main-content">
+                <div class="movies-controls tv-hunt-collection-controls">
+                    <div class="instance-selector-container">
+                        <select id="tv-hunt-collection-instance-select" class="control-select instance-select">
+                            <option value="">Loading instances...</option>
+                        </select>
+                    </div>
+                    <div class="sort-dropdown">
+                        <select id="tv-hunt-collection-sort" class="control-select">
+                            <option value="title.asc">Title (A-Z)</option>
+                            <option value="title.desc">Title (Z-A)</option>
+                            <option value="added.desc">Recently Added</option>
+                            <option value="rating.desc">Rating</option>
+                        </select>
+                    </div>
+                    <div class="view-mode-selector">
+                        <select id="tv-hunt-collection-view-mode" class="control-select">
+                            <option value="posters">Posters</option>
+                            <option value="table">Table</option>
+                            <option value="overview">Overview</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="sort-dropdown">
-                    <select id="tv-hunt-collection-sort" class="control-select">
-                        <option value="title.asc">Title (A-Z)</option>
-                        <option value="title.desc">Title (Z-A)</option>
-                        <option value="added.desc">Recently Added</option>
-                        <option value="rating.desc">Rating</option>
-                    </select>
+                <div id="tv-hunt-collection-grid" class="media-grid">
+                    <div class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading TV collection...</p>
+                    </div>
                 </div>
-                <div class="view-mode-buttons">
-                    <button class="view-mode-btn active" data-mode="posters" title="Poster View"><i class="fas fa-th-large"></i></button>
-                    <button class="view-mode-btn" data-mode="table" title="Table View"><i class="fas fa-list"></i></button>
+                <div id="tv-hunt-collection-table" class="media-table-container" style="display: none;">
+                    <table class="media-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;"></th>
+                                <th>Title</th>
+                                <th style="width: 80px;">Seasons</th>
+                                <th style="width: 80px;">Episodes</th>
+                                <th style="width: 120px;">Status</th>
+                                <th style="width: 100px;">Year</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tv-hunt-collection-table-body"></tbody>
+                    </table>
                 </div>
-            </div>
-
-            <!-- Series grid / table -->
-            <div id="tv-hunt-collection-grid" class="media-grid">
-                <p class="empty-collection-message" style="text-align: center; color: #888; padding: 40px 20px;">
-                    No TV shows in your collection yet. Use the search bar above to find and add shows.
-                </p>
+                <div id="tv-hunt-collection-overview" class="media-overview-container" style="display: none;">
+                    <div id="tv-hunt-collection-overview-list"></div>
+                </div>
             </div>
         </div>
 

@@ -68,16 +68,13 @@
 
         setupViewMode: function() {
             var self = this;
-            var btns = document.querySelectorAll('.tv-hunt-collection-view .view-mode-btn');
-            btns.forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    btns.forEach(function(b) { b.classList.remove('active'); });
-                    btn.classList.add('active');
-                    self.viewMode = btn.dataset.mode;
-                    HuntarrUtils.setUIPreference('tv-hunt-collection-view', self.viewMode);
-                    self.renderCollection();
-                });
-                if (btn.dataset.mode === self.viewMode) btn.classList.add('active');
+            var select = document.getElementById('tv-hunt-collection-view-mode');
+            if (!select) return;
+            select.value = this.viewMode;
+            select.addEventListener('change', function() {
+                self.viewMode = select.value;
+                HuntarrUtils.setUIPreference('tv-hunt-collection-view', self.viewMode);
+                self.renderCollection();
             });
         },
 
@@ -200,8 +197,16 @@
 
         loadCollection: function() {
             var self = this;
+            var grid = document.getElementById('tv-hunt-collection-grid');
+            if (grid) {
+                grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading TV collection...</p></div>';
+                grid.style.display = 'flex';
+            }
             var instanceId = self.getCurrentInstanceId();
-            if (!instanceId) return;
+            if (!instanceId) {
+                self.renderCollection();
+                return;
+            }
             fetch('./api/tv-hunt/collection?instance_id=' + instanceId)
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
@@ -217,28 +222,114 @@
         renderCollection: function() {
             var self = this;
             var grid = document.getElementById('tv-hunt-collection-grid');
-            if (!grid) return;
+            var table = document.getElementById('tv-hunt-collection-table');
+            var tableBody = document.getElementById('tv-hunt-collection-table-body');
+            var overview = document.getElementById('tv-hunt-collection-overview');
+            var overviewList = document.getElementById('tv-hunt-collection-overview-list');
+            if (grid) grid.style.display = 'none';
+            if (table) table.style.display = 'none';
+            if (overview) overview.style.display = 'none';
+
+            var instanceSelect = document.getElementById('tv-hunt-collection-instance-select');
+            var noInstances = instanceSelect && (!instanceSelect.value || instanceSelect.value === '') &&
+                (instanceSelect.options.length === 0 || (instanceSelect.options[0] && (instanceSelect.options[0].textContent || '').indexOf('No instances') !== -1));
+
+            if (noInstances) {
+                if (grid) {
+                    grid.style.display = 'flex';
+                    grid.style.alignItems = 'center';
+                    grid.style.justifyContent = 'center';
+                    grid.innerHTML = '<div style="text-align: center; color: #9ca3af; max-width: 600px;">' +
+                        '<i class="fas fa-cube" style="font-size: 64px; margin-bottom: 30px; opacity: 0.4; display: block;"></i>' +
+                        '<p style="font-size: 20px; margin-bottom: 15px; font-weight: 500;">No TV Hunt instance</p>' +
+                        '<p style="font-size: 15px; line-height: 1.6; opacity: 0.8; margin-bottom: 20px;">Create a TV Hunt instance to manage your TV collection and requested shows.</p>' +
+                        '<a href="./#tv-hunt-settings" class="action-button" style="display: inline-flex; align-items: center; gap: 8px; background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.4); color: #818cf8; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 500; transition: all 0.2s ease;">' +
+                        '<i class="fas fa-cog"></i> Set up TV Hunt instance</a></div>';
+                }
+                return;
+            }
 
             var items = self.items.slice();
-
-            // Sort
             if (self.sortBy === 'title.asc') items.sort(function(a, b) { return (a.title || '').localeCompare(b.title || ''); });
             else if (self.sortBy === 'title.desc') items.sort(function(a, b) { return (b.title || '').localeCompare(a.title || ''); });
             else if (self.sortBy === 'added.desc') items.sort(function(a, b) { return (b.added_at || '').localeCompare(a.added_at || ''); });
             else if (self.sortBy === 'rating.desc') items.sort(function(a, b) { return (b.vote_average || 0) - (a.vote_average || 0); });
 
             if (items.length === 0) {
-                grid.innerHTML = '<p style="text-align:center;color:#888;padding:40px 20px;">No TV shows in your collection yet. Use the search bar above to find and add shows.</p>';
+                if (grid) {
+                    grid.style.display = 'flex';
+                    grid.style.alignItems = 'center';
+                    grid.style.justifyContent = 'center';
+                    grid.innerHTML = '<div style="text-align: center; color: #9ca3af; max-width: 600px;">' +
+                        '<i class="fas fa-inbox" style="font-size: 64px; margin-bottom: 30px; opacity: 0.4; display: block;"></i>' +
+                        '<p style="font-size: 20px; margin-bottom: 15px; font-weight: 500;">No Requested Media</p>' +
+                        '<p style="font-size: 15px; line-height: 1.6; opacity: 0.8;">TV shows you add from TV Hunt will appear here. Track status as Requested or Available.</p></div>';
+                }
                 return;
             }
 
-            grid.innerHTML = '';
-
             if (self.viewMode === 'table') {
-                self._renderTableView(grid, items);
+                self._renderTableToContainer(table, tableBody, items);
+                if (table) table.style.display = 'block';
+            } else if (self.viewMode === 'overview') {
+                self._renderOverviewToContainer(overviewList, items);
+                if (overview) overview.style.display = 'block';
             } else {
+                grid.style.display = 'grid';
+                grid.style.alignItems = '';
+                grid.style.justifyContent = '';
+                grid.innerHTML = '';
                 self._renderPosterView(grid, items);
             }
+        },
+
+        _renderTableToContainer: function(tableEl, tbody, items) {
+            var self = this;
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            items.forEach(function(series) {
+                var tr = document.createElement('tr');
+                tr.style.cursor = 'pointer';
+                var posterUrl = series.poster_path ? 'https://image.tmdb.org/t/p/w92' + series.poster_path : './static/images/no-poster.png';
+                var episodeCount = 0;
+                (series.seasons || []).forEach(function(s) { episodeCount += (s.episodes || []).length; });
+                tr.innerHTML =
+                    '<td><img src="' + posterUrl + '" class="table-poster" style="width:40px;border-radius:4px;" loading="lazy" onerror="this.src=\'./static/images/no-poster.png\'"></td>' +
+                    '<td class="table-title">' + HuntarrUtils.escapeHtml(series.title || '') + '</td>' +
+                    '<td>' + (series.seasons || []).length + '</td>' +
+                    '<td>' + episodeCount + '</td>' +
+                    '<td>' + HuntarrUtils.escapeHtml(series.status || '') + '</td>' +
+                    '<td>' + (series.first_air_date || '').substring(0, 4) + '</td>';
+                tr.addEventListener('click', function() {
+                    self.openSeriesDetail(series.tmdb_id, series);
+                });
+                tbody.appendChild(tr);
+            });
+        },
+
+        _renderOverviewToContainer: function(listEl, items) {
+            var self = this;
+            if (!listEl) return;
+            listEl.innerHTML = '';
+            items.forEach(function(series) {
+                var posterUrl = series.poster_path ? 'https://image.tmdb.org/t/p/w92' + series.poster_path : './static/images/no-poster.png';
+                var year = (series.first_air_date || '').substring(0, 4);
+                var div = document.createElement('div');
+                div.className = 'media-overview-item';
+                div.style.display = 'flex';
+                div.style.alignItems = 'center';
+                div.style.gap = '12px';
+                div.style.padding = '10px 0';
+                div.style.borderBottom = '1px solid rgba(255,255,255,0.06)';
+                div.style.cursor = 'pointer';
+                div.innerHTML = '<img src="' + posterUrl + '" alt="" style="width:50px;height:75px;object-fit:cover;border-radius:6px;" onerror="this.src=\'./static/images/no-poster.png\'">' +
+                    '<div><div style="font-weight:600;color:#e2e8f0;">' + HuntarrUtils.escapeHtml(series.title || '') + '</div>' +
+                    '<div style="font-size:0.85rem;color:#94a3b8;">' + year + (series.status ? ' · ' + HuntarrUtils.escapeHtml(series.status) : '') + '</div></div>';
+                div.addEventListener('click', function() {
+                    self.openSeriesDetail(series.tmdb_id, series);
+                });
+                listEl.appendChild(div);
+            });
         },
 
         _renderPosterView: function(grid, items) {
@@ -275,44 +366,6 @@
                 });
                 grid.appendChild(card);
             });
-        },
-
-        _renderTableView: function(grid, items) {
-            var self = this;
-            var table = document.createElement('table');
-            table.className = 'episode-table';
-            table.innerHTML =
-                '<thead><tr>' +
-                    '<th style="width:50px;"></th>' +
-                    '<th>Title</th>' +
-                    '<th>Seasons</th>' +
-                    '<th>Episodes</th>' +
-                    '<th>Status</th>' +
-                    '<th>Year</th>' +
-                '</tr></thead>';
-            var tbody = document.createElement('tbody');
-            items.forEach(function(series) {
-                var tr = document.createElement('tr');
-                tr.style.cursor = 'pointer';
-                var posterUrl = series.poster_path
-                    ? 'https://image.tmdb.org/t/p/w92' + series.poster_path
-                    : './static/images/no-poster.png';
-                var episodeCount = 0;
-                (series.seasons || []).forEach(function(s) { episodeCount += (s.episodes || []).length; });
-                tr.innerHTML =
-                    '<td><img src="' + posterUrl + '" style="width:40px;border-radius:4px;" loading="lazy"></td>' +
-                    '<td style="font-weight:600;color:#eee;">' + HuntarrUtils.escapeHtml(series.title || '') + '</td>' +
-                    '<td>' + (series.seasons || []).length + '</td>' +
-                    '<td>' + episodeCount + '</td>' +
-                    '<td>' + HuntarrUtils.escapeHtml(series.status || '') + '</td>' +
-                    '<td>' + (series.first_air_date || '').substring(0, 4) + '</td>';
-                tr.addEventListener('click', function() {
-                    self.openSeriesDetail(series.tmdb_id, series);
-                });
-                tbody.appendChild(tr);
-            });
-            table.appendChild(tbody);
-            grid.appendChild(table);
         },
 
         // ─── Series Detail View (Sonarr-style seasons/episodes) ───
