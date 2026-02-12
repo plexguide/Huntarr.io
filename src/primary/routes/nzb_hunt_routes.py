@@ -261,11 +261,33 @@ def _mask_field(value, show_last=4):
     return "*" * (len(value) - show_last) + value[-show_last:]
 
 
+def _server_bandwidth_key(name: str, host: str) -> str:
+    return f"{name} ({host})"
+
+
 @nzb_hunt_bp.route("/api/nzb-hunt/servers", methods=["GET"])
 def list_nzb_servers():
     cfg = _load_config()
     servers = cfg.get("servers", [])
-    # Return servers with masked passwords (show last 4 chars)
+    bandwidth_by_server = {}
+    try:
+        mgr = _get_download_manager()
+        bandwidth_by_server = mgr.get_status().get("bandwidth_by_server", {})
+        # Flush bandwidth history periodically
+        from src.primary.apps.nzb_hunt.bandwidth_history import get_bandwidth_history
+        hist = get_bandwidth_history(_config_dir())
+        hist.flush(bandwidth_by_server)
+    except Exception:
+        pass
+
+    bw_stats = {}
+    try:
+        from src.primary.apps.nzb_hunt.bandwidth_history import get_bandwidth_history
+        hist = get_bandwidth_history(_config_dir())
+        bw_stats = hist.get_all_stats(bandwidth_by_server)
+    except Exception:
+        pass
+
     result = []
     for srv in servers:
         s = dict(srv)
@@ -273,9 +295,22 @@ def list_nzb_servers():
         s["has_password"] = bool(raw_pw)
         s["password_masked"] = _mask_field(raw_pw, show_last=4) if raw_pw else ""
         s["password"] = ""  # never return actual password
-        s.setdefault("bandwidth_used", 0)
-        s.setdefault("bandwidth_pct", 0)
+
+        key = _server_bandwidth_key(s.get("name", "Server"), s.get("host", ""))
+        stats = bw_stats.get(key, {})
+        s["bandwidth_1h"] = stats.get("bandwidth_1h", 0)
+        s["bandwidth_24h"] = stats.get("bandwidth_24h", 0)
+        s["bandwidth_30d"] = stats.get("bandwidth_30d", 0)
+        s["bandwidth_total"] = stats.get("bandwidth_total", 0)
+        s["bandwidth_used"] = s["bandwidth_total"]  # legacy
         result.append(s)
+
+    # Bar scale: relative to max across servers (min 1GB so bar is visible)
+    max_total = max((s["bandwidth_total"] for s in result), default=0)
+    scale = max(max_total, 1024 ** 3)
+    for s in result:
+        s["bandwidth_pct"] = min(100, 100 * s["bandwidth_total"] / scale) if scale else 0
+
     return jsonify({"servers": result})
 
 
@@ -521,7 +556,15 @@ def nzb_hunt_status():
     """Get overall NZB Hunt download status."""
     try:
         mgr = _get_download_manager()
-        return jsonify(mgr.get_status())
+        status = mgr.get_status()
+        bandwidth = status.get("bandwidth_by_server", {})
+        if bandwidth:
+            try:
+                from src.primary.apps.nzb_hunt.bandwidth_history import get_bandwidth_history
+                get_bandwidth_history(_config_dir()).flush(bandwidth)
+            except Exception:
+                pass
+        return jsonify(status)
     except Exception as e:
         logger.exception("NZB Hunt status error")
         return jsonify({"error": str(e)}), 500

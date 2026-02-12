@@ -541,6 +541,12 @@ let huntarrUI = {
                 });
                 return;
             }
+
+            // Check for unsaved NZB Hunt server editor changes if leaving server editor
+            if (this.currentSection === 'nzb-hunt-server-editor' && section !== 'nzb-hunt-server-editor' && window.NzbHunt && typeof window.NzbHunt._isServerEditorDirty === 'function' && window.NzbHunt._isServerEditorDirty()) {
+                window.NzbHunt._confirmLeaveServerEditor(section);
+                return;
+            }
             
             // Don't refresh page when navigating to/from instance editor or between app sections
             const noRefreshSections = ['home', 'instance-editor', 'profile-editor', 'movie-hunt-instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'movie-hunt-calendar', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'movie-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-sizes', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-import-media', 'settings-custom-formats', 'settings-root-folders', 'system', 'hunt-manager', 'logs', 'about', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-settings', 'nzb-hunt-settings-folders', 'nzb-hunt-settings-servers', 'nzb-hunt-settings-processing', 'nzb-hunt-settings-advanced', 'nzb-hunt-server-editor', 'requestarr', 'requestarr-discover', 'requestarr-movies', 'requestarr-tv', 'requestarr-hidden', 'requestarr-settings', 'requestarr-smarthunt-settings'];

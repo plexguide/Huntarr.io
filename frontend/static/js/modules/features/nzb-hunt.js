@@ -1095,7 +1095,12 @@
                             '<i class="fas fa-circle-notch fa-spin" style="font-size: 11px; color: #6366f1;"></i> <span style="font-size: 12px; color: #94a3b8;">Checking connection...</span>' +
                         '</div>' +
                         '<div class="nzb-server-bandwidth">' +
-                            '<div class="nzb-server-bandwidth-label"><span>Bandwidth</span><span>' + _fmtBytes(srv.bandwidth_used || 0) + '</span></div>' +
+                            '<div class="nzb-server-bandwidth-grid">' +
+                                '<span class="nzb-bw-cell"><span class="nzb-bw-label">1h</span><span class="nzb-bw-value">' + _fmtBytes(srv.bandwidth_1h || 0) + '</span></span>' +
+                                '<span class="nzb-bw-cell"><span class="nzb-bw-label">24h</span><span class="nzb-bw-value">' + _fmtBytes(srv.bandwidth_24h || 0) + '</span></span>' +
+                                '<span class="nzb-bw-cell"><span class="nzb-bw-label">30d</span><span class="nzb-bw-value">' + _fmtBytes(srv.bandwidth_30d || 0) + '</span></span>' +
+                                '<span class="nzb-bw-cell"><span class="nzb-bw-label">Total</span><span class="nzb-bw-value">' + _fmtBytes(srv.bandwidth_total || srv.bandwidth_used || 0) + '</span></span>' +
+                            '</div>' +
                             '<div class="nzb-server-bandwidth-bar"><div class="nzb-server-bandwidth-fill" style="width: ' + Math.min(100, (srv.bandwidth_pct || 0)) + '%;"></div></div>' +
                         '</div>' +
                     '</div>' +
@@ -1222,8 +1227,8 @@
             if (saveBtn) saveBtn.addEventListener('click', function () { self._saveServer(); });
             if (testBtn) testBtn.addEventListener('click', function () { self._testServerConnection(); });
 
-            // When connection-related fields change, require a new successful test before Save
-            self._setupServerModalConnectionCheck();
+            // When any field changes, update Save button and dirty state
+            self._setupServerEditorChangeDetection();
 
             // ESC key: navigate back when on server editor page
             document.addEventListener('keydown', function (e) {
@@ -1272,34 +1277,57 @@
             f('nzb-server-priority', server ? (Math.min(99, Math.max(0, server.priority !== undefined ? server.priority : 0))) : 0);
             f('nzb-server-enabled', server ? (server.enabled !== false) : true);
 
-            // Require successful connection test before Save
-            this._serverModalConnectionOk = false;
-            this._updateServerModalSaveButton();
+            // Store original values for dirty detection
+            this._serverEditorOriginalValues = this._getServerEditorFormSnapshot();
 
             // Reset test status area
             this._resetTestStatus();
+
+            this._updateServerModalSaveButton();
         },
 
-        _serverModalConnectionOk: false,
+        _getServerEditorFormSnapshot: function () {
+            var g = function (id) { var el = document.getElementById(id); if (!el) return ''; return el.type === 'checkbox' ? el.checked : el.value; };
+            return {
+                name: g('nzb-server-name') || '',
+                host: (g('nzb-server-host') || '').trim(),
+                port: String(parseInt(g('nzb-server-port'), 10) || 563),
+                ssl: !!g('nzb-server-ssl'),
+                username: g('nzb-server-username') || '',
+                password: g('nzb-server-password') || '',
+                connections: String(parseInt(g('nzb-server-connections'), 10) || 8),
+                priority: String(parseInt(g('nzb-server-priority'), 10) || 0),
+                enabled: !!g('nzb-server-enabled')
+            };
+        },
+
+        _isServerEditorDirty: function () {
+            var orig = this._serverEditorOriginalValues;
+            if (!orig) return false;
+            var cur = this._getServerEditorFormSnapshot();
+            return orig.name !== cur.name || orig.host !== cur.host || orig.port !== cur.port ||
+                orig.ssl !== cur.ssl || orig.username !== cur.username || orig.password !== cur.password ||
+                orig.connections !== cur.connections || orig.priority !== cur.priority || orig.enabled !== cur.enabled;
+        },
 
         _updateServerModalSaveButton: function () {
             var saveBtn = document.getElementById('nzb-server-editor-save');
             if (!saveBtn) return;
             var host = (document.getElementById('nzb-server-host') || {}).value;
             var hasHost = (host || '').trim().length > 0;
-            var canSave = hasHost && this._serverModalConnectionOk;
+            var isDirty = this._isServerEditorDirty();
+            var canSave = hasHost && isDirty;
             saveBtn.disabled = !canSave;
-            saveBtn.title = canSave ? 'Save server' : (hasHost ? 'Test connection first (click Test Connection)' : 'Enter host and test connection first');
+            saveBtn.title = canSave ? 'Save server' : (hasHost ? 'Save when you make changes' : 'Enter host first');
         },
 
-        _setupServerModalConnectionCheck: function () {
+        _setupServerEditorChangeDetection: function () {
             var self = this;
-            var ids = ['nzb-server-host', 'nzb-server-port', 'nzb-server-ssl', 'nzb-server-username', 'nzb-server-password'];
+            var ids = ['nzb-server-name', 'nzb-server-host', 'nzb-server-port', 'nzb-server-ssl', 'nzb-server-username', 'nzb-server-password', 'nzb-server-connections', 'nzb-server-priority', 'nzb-server-enabled'];
             ids.forEach(function (id) {
                 var el = document.getElementById(id);
                 if (!el) return;
                 var handler = function () {
-                    self._serverModalConnectionOk = false;
                     self._updateServerModalSaveButton();
                 };
                 el.removeEventListener('input', handler);
@@ -1309,7 +1337,30 @@
             });
         },
 
+        _confirmLeaveServerEditor: function (targetSection) {
+            var self = this;
+            window.HuntarrConfirm.show({
+                title: 'Unsaved Changes',
+                message: 'You have unsaved changes that will be lost if you leave.',
+                confirmLabel: 'Go Back',
+                cancelLabel: 'Leave',
+                onConfirm: function () { /* Stay on editor */ },
+                onCancel: function () {
+                    self._serverEditorOriginalValues = self._getServerEditorFormSnapshot();
+                    self._updateServerModalSaveButton();
+                    if (window.huntarrUI && typeof window.huntarrUI.switchSection === 'function') {
+                        window.huntarrUI.switchSection(targetSection);
+                        window.location.hash = targetSection;
+                    }
+                }
+            });
+        },
+
         _navigateBackFromServerEditor: function () {
+            if (this._isServerEditorDirty()) {
+                this._confirmLeaveServerEditor('nzb-hunt-settings-servers');
+                return;
+            }
             if (window.huntarrUI && typeof window.huntarrUI.switchSection === 'function') {
                 window.huntarrUI.switchSection('nzb-hunt-settings-servers');
                 window.location.hash = 'nzb-hunt-settings-servers';
@@ -1321,10 +1372,6 @@
             var host = (g('nzb-server-host') || '').trim();
             if (!host) {
                 this._showTestStatus('fail', 'Host is required.');
-                return;
-            }
-            if (!this._serverModalConnectionOk) {
-                this._showTestStatus('fail', 'Test connection successfully before saving.');
                 return;
             }
 
@@ -1363,28 +1410,19 @@
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
                     if (data.success) {
-                        // Auto-test the connection after saving
+                        self._serverEditorOriginalValues = self._getServerEditorFormSnapshot();
+                        self._updateServerModalSaveButton();
+                        self._loadServers();
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification('Server saved successfully.', 'success');
+                        }
+                        // Auto-test connection in background
                         var hostName = (document.getElementById('nzb-server-host') || {}).value || 'server';
                         self._testServerConnection(function (testSuccess, testMsg) {
                             if (testSuccess) {
                                 self._showTestStatus('success', 'Connected to ' + hostName);
                             } else {
-                                self._showTestStatus('fail', 'Saved, but connection to ' + hostName + ' failed: ' + testMsg);
-                            }
-                            self._loadServers();
-                            // Navigate back after a brief delay on success
-                            if (testSuccess) {
-                                setTimeout(function () {
-                                    self._navigateBackFromServerEditor();
-                                    if (window.huntarrUI && window.huntarrUI.showNotification) {
-                                        window.huntarrUI.showNotification('Server saved & connected!', 'success');
-                                    }
-                                }, 1500);
-                            } else {
-                                // Don't auto-close on failure so user can see the message
-                                if (window.huntarrUI && window.huntarrUI.showNotification) {
-                                    window.huntarrUI.showNotification('Server saved but connection failed.', 'warning');
-                                }
+                                self._showTestStatus('fail', 'Connection to ' + hostName + ' failed: ' + testMsg);
                             }
                         });
                     } else {
@@ -1471,12 +1509,8 @@
                         callback(data.success, data.message || '');
                     } else {
                         if (data.success) {
-                            self._serverModalConnectionOk = true;
-                            self._updateServerModalSaveButton();
-                            self._showTestStatus('success', 'Connected to ' + host + '. You can now save.');
+                            self._showTestStatus('success', 'Connected to ' + host + '.');
                         } else {
-                            self._serverModalConnectionOk = false;
-                            self._updateServerModalSaveButton();
                             self._showTestStatus('fail', 'Connection to ' + host + ' failed: ' + (data.message || 'Unknown error'));
                         }
                     }
@@ -1486,8 +1520,6 @@
                     if (callback) {
                         callback(false, errMsg);
                     } else {
-                        self._serverModalConnectionOk = false;
-                        self._updateServerModalSaveButton();
                         self._showTestStatus('fail', errMsg);
                     }
                 });

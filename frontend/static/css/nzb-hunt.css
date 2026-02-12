@@ -1034,21 +1034,40 @@
     padding: 4px 0;
 }
 
-/* bandwidth bar */
+/* bandwidth: 1h, 24h, 30d, total in compact grid + bar */
 .nzb-server-bandwidth {
-    margin-top: 4px;
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(148, 163, 184, 0.1);
 }
 
-.nzb-server-bandwidth-label {
+.nzb-server-bandwidth-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px 8px;
+    font-size: 0.7rem;
+}
+
+.nzb-server-bandwidth .nzb-bw-cell {
     display: flex;
-    justify-content: space-between;
-    font-size: 0.75rem;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+}
+
+.nzb-server-bandwidth .nzb-bw-label {
     color: #64748b;
-    margin-bottom: 4px;
+    font-size: 0.65rem;
+}
+
+.nzb-server-bandwidth .nzb-bw-value {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    color: #cbd5e1;
 }
 
 .nzb-server-bandwidth-bar {
-    height: 4px;
+    height: 5px;
+    margin-top: 6px;
     background: rgba(148, 163, 184, 0.1);
     border-radius: 2px;
     overflow: hidden;
