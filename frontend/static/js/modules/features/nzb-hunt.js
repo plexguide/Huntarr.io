@@ -272,7 +272,7 @@
             });
 
             html += '</tbody></table>';
-
+            html = '<div class="nzb-table-scroll">' + html + '</div>';
             html += '<div class="nzb-queue-footer">';
             html += '<div class="nzb-hist-search"><i class="fas fa-search"></i><input type="text" id="nzb-queue-search-input" placeholder="Search" value="' + self._escHtml(this._queueFilter) + '" /></div>';
             html += '<div class="nzb-hist-pagination">';
@@ -777,8 +777,7 @@
             });
 
             html += '</tbody></table>';
-
-            // Footer: search | pagination | stats
+            html = '<div class="nzb-table-scroll">' + html + '</div>';
             html += '<div class="nzb-history-footer">';
             html += '<div class="nzb-hist-search"><i class="fas fa-search"></i><input type="text" id="nzb-hist-search-input" placeholder="Search" value="' + self._escHtml(this._histFilter) + '" /></div>';
             html += '<div class="nzb-hist-pagination">';

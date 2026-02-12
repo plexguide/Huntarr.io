@@ -49,8 +49,21 @@
     flex: 1;
     min-height: 420px;
     max-height: 70vh;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+/* Scrollable table area — only the table scrolls, footer stays fixed at bottom */
+#nzb-hunt-section .nzb-queue-panel .nzb-table-scroll {
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     overflow-x: auto;
+}
+#nzb-hunt-section .nzb-queue-panel .nzb-queue-footer,
+#nzb-hunt-section .nzb-queue-panel .nzb-history-footer {
+    flex-shrink: 0;
 }
 
 /* ── Server Editor (full page) ───────────────────────────────────── */
@@ -2376,7 +2389,7 @@
 }
 
 /* ─── Queue/History footer (search, pagination, stats) ───
-   width: fit-content so border only spans content, not full panel width */
+   Fixed at bottom of body; only table scrolls above */
 .nzb-queue-footer,
 .nzb-history-footer {
     display: flex;
@@ -2388,7 +2401,6 @@
     color: #64748b;
     flex-wrap: wrap;
     gap: 10px;
-    width: fit-content;
     box-sizing: border-box;
 }
 .nzb-hist-search {
