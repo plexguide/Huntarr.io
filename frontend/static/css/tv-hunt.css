@@ -1,5 +1,10 @@
 /* TV Hunt Styles */
 
+/* Same dark blue background as Movie Hunt / Discover */
+#tv-hunt-section {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.85) 100%);
+}
+
 /* Beta notice */
 .tv-hunt-beta-notice {
     display: flex;
