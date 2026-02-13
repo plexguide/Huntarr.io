@@ -1722,3 +1722,193 @@ label .info-icon ~ text {
     .app-sponsor-banner,
     .app-banners-row { display: none !important; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   CRITICAL LAYOUT — bottom gap elimination, content sections, apps
+   (merged from layout-fix.css)
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* FORCE PROPER LAYOUT STRUCTURE */
+html, body {
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+.app-container {
+    display: flex !important;
+    height: 100vh !important;
+    width: 100% !important;
+    overflow: hidden !important;
+}
+
+.sidebar {
+    width: 220px !important;
+    height: 100vh !important;
+    flex-shrink: 0 !important;
+    overflow-y: auto !important;
+}
+
+.main-content {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+    min-width: 0 !important;
+}
+
+.top-bar {
+    height: 44px !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    padding: 0 24px !important;
+    align-items: center !important;
+}
+
+.content-section {
+    display: none !important;
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding: 40px !important;
+    box-sizing: border-box !important;
+    height: 0 !important;
+}
+
+.content-section.active {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        display: none !important;
+    }
+    .main-content {
+        flex: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100vh !important;
+        overflow: hidden !important;
+        width: 100% !important;
+        margin-left: 0 !important;
+    }
+    .top-bar {
+        display: none !important;
+    }
+    .content-section {
+        flex: 1 !important;
+        height: 0 !important;
+        overflow-y: auto !important;
+        padding: 12px !important;
+        box-sizing: border-box !important;
+    }
+    .content-section.active {
+        display: flex !important;
+        flex-direction: column !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .content-section {
+        padding: 8px !important;
+    }
+}
+
+.settings-form,
+.logs,
+.app-settings-panel,
+.section-wrapper {
+    height: auto !important;
+    max-height: none !important;
+    flex: 1 !important;
+    overflow-y: auto !important;
+}
+
+* {
+    box-sizing: border-box !important;
+}
+
+.dashboard-grid,
+.settings-group,
+.instance-panel {
+    overflow: visible !important;
+}
+
+/* APPS SECTION — backgrounds + scroll behavior */
+#appsSection,
+#sonarrSection, #radarrSection, #lidarrSection,
+#readarrSection, #whisparrSection, #erosSection,
+#prowlarrSection, #swaparrSection {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.85) 100%) !important;
+}
+
+body:has(#appsSection.active),
+body:has(#sonarrSection.active),
+body:has(#radarrSection.active),
+body:has(#lidarrSection.active),
+body:has(#readarrSection.active),
+body:has(#whisparrSection.active),
+body:has(#erosSection.active),
+body:has(#prowlarrSection.active),
+body:has(#swaparrSection.active),
+.main-content:has(#appsSection.active),
+.main-content:has(#sonarrSection.active),
+.main-content:has(#radarrSection.active),
+.main-content:has(#lidarrSection.active),
+.main-content:has(#readarrSection.active),
+.main-content:has(#whisparrSection.active),
+.main-content:has(#erosSection.active),
+.main-content:has(#prowlarrSection.active),
+.main-content:has(#swaparrSection.active) {
+    background-color: #0f172a !important;
+}
+
+#appsSection .single-scroll-container,
+#appsSection,
+#appsSection .app-panels-container,
+#appsSection .app-apps-panel,
+#appsSection .app-content-panel,
+#appsContainer,
+#sonarrApps, #radarrApps, #lidarrApps, #readarrApps,
+#whisparrApps, #erosApps, #cleanuperrApps,
+#appsSection .additional-options-section,
+#appsSection .additional-options,
+#appsSection .skip-series-refresh,
+#appsSection table, #appsSection tr, #appsSection td, #appsSection tbody, #appsSection thead {
+    overflow: visible !important;
+    overflow-y: visible !important;
+    overflow-x: visible !important;
+    max-height: none !important;
+    max-width: 100% !important;
+    scrollbar-width: none !important;
+}
+
+#appsSection {
+    padding-bottom: 100px !important;
+}
+
+.app-panels-container {
+    margin-bottom: 50px !important;
+}
+
+#sonarrApps, #radarrApps, #lidarrApps, #readarrApps,
+#whisparrApps, #erosApps, #cleanuperrApps {
+    padding-bottom: 30px !important;
+    margin-bottom: 20px !important;
+}
+
+.additional-options, .skip-series-refresh {
+    margin-bottom: 30px !important;
+    padding-bottom: 20px !important;
+}
+
+#appsSection .section-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
+    background-color: var(--bg-primary, #121926) !important;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+}
