@@ -178,7 +178,7 @@ def process_missing_episodes(
     if stop_check():
         return False
 
-    from ...routes.tv_hunt.discovery import _get_collection_config, perform_tv_hunt_request
+    from ...routes.media_hunt.discovery_tv import _get_collection_config, perform_tv_hunt_request
     from ...routes.media_hunt.storage import get_detected_episodes_from_all_roots
 
     collection = _get_collection_config(instance_id)
@@ -251,7 +251,7 @@ def process_missing_episodes(
 
 
 def _process_season_packs(missing_items, instance_id, instance_name, instance_key, hunt_limit, state_mode, stop_check):
-    from ...routes.tv_hunt.discovery import perform_tv_hunt_request
+    from ...routes.media_hunt.discovery_tv import perform_tv_hunt_request
     season_groups = {}
     for item in missing_items:
         key = (item["series_title"], item["season_number"])
@@ -302,7 +302,7 @@ def _process_season_packs(missing_items, instance_id, instance_name, instance_ke
 
 
 def _process_individual_episodes(missing_items, instance_id, instance_name, instance_key, hunt_limit, state_mode, stop_check):
-    from ...routes.tv_hunt.discovery import perform_tv_hunt_request
+    from ...routes.media_hunt.discovery_tv import perform_tv_hunt_request
     to_process = missing_items[:hunt_limit]
     processed_any = False
     for item in to_process:

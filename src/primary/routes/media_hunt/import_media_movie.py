@@ -18,10 +18,9 @@ from datetime import datetime
 import requests
 from flask import request, jsonify
 
-from . import movie_hunt_bp
-from ._helpers import _get_movie_hunt_instance_id_from_request, movie_hunt_logger
-from ..media_hunt.storage import get_movie_root_folders_config as _get_root_folders_config, _VIDEO_EXTENSIONS
-from ..media_hunt.discovery_movie import (
+from .helpers import _get_movie_hunt_instance_id_from_request, movie_hunt_logger
+from .storage import get_movie_root_folders_config as _get_root_folders_config, _VIDEO_EXTENSIONS
+from .discovery_movie import (
     _get_collection_config,
     _collection_append,
     _get_tmdb_api_key_movie_hunt,
@@ -818,347 +817,348 @@ def run_import_media_background_cycle():
 # API Routes
 # ---------------------------------------------------------------------------
 
-@movie_hunt_bp.route('/api/movie-hunt/import-media', methods=['GET'])
-def api_import_media_list():
-    """List unmapped folders with their match status."""
-    try:
-        instance_id = _get_movie_hunt_instance_id_from_request()
-        config = _get_unmapped_config(instance_id)
-
-        items = config.get('items', [])
-        # Filter by status if requested
-        status_filter = request.args.get('status', '').strip()
-        if status_filter:
-            items = [i for i in items if i.get('status') == status_filter]
-
-        # Prepare items for frontend (strip large data)
-        out = []
-        for item in items:
-            if item.get('status') == 'confirmed':
-                continue  # Don't show already-imported items
-
-            media_info = item.get('media_info', {})
-            main_file = media_info.get('main_file', {})
-
-            entry = {
-                'folder_path': item.get('folder_path', ''),
-                'folder_name': item.get('folder_name', ''),
-                'root_folder': item.get('root_folder', ''),
-                'is_file': item.get('is_file', False),
-                'parsed_title': item.get('parsed', {}).get('title', ''),
-                'parsed_year': item.get('parsed', {}).get('year', ''),
-                'parsed_quality': item.get('parsed', {}).get('quality', ''),
-                'status': item.get('status', 'pending'),
-                'file_size': media_info.get('total_size', 0),
-                'file_count': media_info.get('file_count', 0),
-                'main_file': main_file.get('name', ''),
-                'best_match': item.get('best_match'),
-                'matches': item.get('matches', []),
-                'processed_at': item.get('processed_at'),
-            }
-            out.append(entry)
-
-        return jsonify({
-            'success': True,
-            'items': out,
-            'total': len(out),
-            'last_scan': config.get('last_scan'),
-            'scan_in_progress': config.get('scan_in_progress', False),
-        }), 200
-
-    except Exception as e:
-        logger.exception("Import Media list error")
-        return jsonify({'success': False, 'items': [], 'total': 0, 'error': str(e)}), 200
-
-
-@movie_hunt_bp.route('/api/movie-hunt/import-media/scan', methods=['POST'])
-def api_import_media_scan():
-    """Trigger an on-demand scan for unmapped folders."""
-    try:
-        instance_id = _get_movie_hunt_instance_id_from_request()
-        config = _get_unmapped_config(instance_id)
-
-        if config.get('scan_in_progress'):
-            return jsonify({'success': False, 'message': 'Scan already in progress'}), 200
-
-        # Run scan in background thread so we don't block the request
-        def _scan():
-            run_import_media_scan(instance_id, max_match=None)
-
-        thread = threading.Thread(target=_scan, name="ImportMediaScan", daemon=True)
-        thread.start()
-
-        return jsonify({'success': True, 'message': 'Scan started'}), 200
-
-    except Exception as e:
-        logger.exception("Import Media scan trigger error")
-        return jsonify({'success': False, 'message': str(e)}), 500
-
-
-@movie_hunt_bp.route('/api/movie-hunt/import-media/search', methods=['GET'])
-def api_import_media_search():
-    """Manual TMDB search for a specific unmapped folder (user override)."""
-    try:
-        query = (request.args.get('q') or '').strip()
-        year = (request.args.get('year') or '').strip()
-        if not query:
-            return jsonify({'success': False, 'results': [], 'message': 'Query is required'}), 400
-
-        results = _search_tmdb(query, year=year if year else None)
-        out = []
-        for r in results:
-            release_date = r.get('release_date') or ''
-            m_year = release_date[:4] if len(release_date) >= 4 else ''
-            out.append({
-                'tmdb_id': r.get('id'),
-                'title': r.get('title', ''),
-                'original_title': r.get('original_title', ''),
-                'year': m_year,
-                'poster_path': r.get('poster_path') or '',
-                'overview': (r.get('overview') or '')[:300],
-                'vote_average': r.get('vote_average', 0),
-                'popularity': r.get('popularity', 0),
-            })
-
-        return jsonify({'success': True, 'results': out}), 200
-
-    except Exception as e:
-        logger.exception("Import Media search error")
-        return jsonify({'success': False, 'results': [], 'error': str(e)}), 200
-
-
-@movie_hunt_bp.route('/api/movie-hunt/import-media/confirm', methods=['POST'])
-def api_import_media_confirm():
-    """Confirm and import a matched movie into the Media Collection."""
-    try:
-        data = request.get_json() or {}
-        folder_path = (data.get('folder_path') or '').strip()
-        tmdb_id = data.get('tmdb_id')
-        title = (data.get('title') or '').strip()
-        year = (data.get('year') or '').strip()
-        poster_path = (data.get('poster_path') or '').strip()
-
-        if not folder_path:
-            return jsonify({'success': False, 'message': 'folder_path is required'}), 400
-        if not tmdb_id or not title:
-            return jsonify({'success': False, 'message': 'tmdb_id and title are required'}), 400
-
-        instance_id = _get_movie_hunt_instance_id_from_request()
-
-        # Check if already in collection
-        collection = _get_collection_config(instance_id)
-        for item in collection:
-            if item.get('tmdb_id') == tmdb_id:
-                return jsonify({
-                    'success': False,
-                    'message': f'"{title}" is already in your Media Collection.',
-                    'already_exists': True,
-                }), 200
-
-        # Determine root folder from the path
-        root_folder = data.get('root_folder') or ''
-
-        # Add to collection as "available" (it's already on disk)
-        _collection_append(
-            title=title,
-            year=year,
-            instance_id=instance_id,
-            tmdb_id=tmdb_id,
-            poster_path=poster_path,
-            root_folder=root_folder,
-        )
-
-        # Mark item as confirmed in unmapped config
-        config = _get_unmapped_config(instance_id)
-        items = config.get('items', [])
-        for item in items:
-            if item.get('folder_path') == folder_path:
-                item['status'] = 'confirmed'
-                item['confirmed_tmdb_id'] = tmdb_id
-                item['confirmed_at'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-                break
-        config['items'] = items
-        _save_unmapped_config(config, instance_id)
-
-        # Update the collection item status to available since it's on disk
-        collection = _get_collection_config(instance_id)
-        for item in collection:
-            if item.get('tmdb_id') == tmdb_id and (item.get('status') or '').lower() != 'available':
-                item['status'] = 'available'
-                from ..media_hunt.discovery_movie import _save_collection_config
-                _save_collection_config(collection, instance_id)
-                break
-
-        logger.info("Import Media: confirmed '%s' (%s) [TMDB %s] from %s", title, year, tmdb_id, folder_path)
-
-        return jsonify({
-            'success': True,
-            'message': f'"{title}" ({year}) imported to your Media Collection.',
-        }), 200
-
-    except Exception as e:
-        logger.exception("Import Media confirm error")
-        return jsonify({'success': False, 'message': str(e)}), 500
-
-
-@movie_hunt_bp.route('/api/movie-hunt/import-media/confirm-all', methods=['POST'])
-def api_import_media_confirm_all():
-    """Confirm and import all matched movies at once."""
-    try:
-        instance_id = _get_movie_hunt_instance_id_from_request()
-        config = _get_unmapped_config(instance_id)
-        items = config.get('items', [])
-
-        imported_count = 0
-        skipped_count = 0
-        errors = []
-
-        collection = _get_collection_config(instance_id)
-        known_tmdb_ids = {item.get('tmdb_id') for item in collection if item.get('tmdb_id')}
-
-        for item in items:
-            if item.get('status') != 'matched':
-                continue
-
-            best = item.get('best_match')
-            if not best or not best.get('tmdb_id') or not best.get('title'):
-                continue
-
-            tmdb_id = best['tmdb_id']
-            if tmdb_id in known_tmdb_ids:
-                skipped_count += 1
-                item['status'] = 'confirmed'
-                continue
-
-            try:
-                _collection_append(
-                    title=best['title'],
-                    year=best.get('year', ''),
-                    instance_id=instance_id,
-                    tmdb_id=tmdb_id,
-                    poster_path=best.get('poster_path', ''),
-                    root_folder=item.get('root_folder', ''),
-                )
-                known_tmdb_ids.add(tmdb_id)
-                item['status'] = 'confirmed'
-                item['confirmed_tmdb_id'] = tmdb_id
-                item['confirmed_at'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-                imported_count += 1
-            except Exception as e:
-                errors.append(f"{best['title']}: {str(e)}")
-
-        # Update all imported items to available
-        updated_collection = _get_collection_config(instance_id)
-        collection_updated = False
-        for c_item in updated_collection:
-            if c_item.get('tmdb_id') in known_tmdb_ids and (c_item.get('status') or '').lower() != 'available':
-                c_item['status'] = 'available'
-                collection_updated = True
-        if collection_updated:
-            from ..media_hunt.discovery_movie import _save_collection_config
-            _save_collection_config(updated_collection, instance_id)
-
-        config['items'] = items
-        _save_unmapped_config(config, instance_id)
-
-        msg = f'Imported {imported_count} movie{"s" if imported_count != 1 else ""}.'
-        if skipped_count:
-            msg += f' {skipped_count} already in collection.'
-        if errors:
-            msg += f' {len(errors)} error(s).'
-
-        logger.info("Import Media: bulk confirm — %d imported, %d skipped, %d errors", imported_count, skipped_count, len(errors))
-
-        return jsonify({
-            'success': True,
-            'message': msg,
-            'imported': imported_count,
-            'skipped': skipped_count,
-            'errors': errors,
-        }), 200
-
-    except Exception as e:
-        logger.exception("Import Media confirm-all error")
-        return jsonify({'success': False, 'message': str(e)}), 500
-
-
-@movie_hunt_bp.route('/api/movie-hunt/import-media/skip', methods=['POST'])
-def api_import_media_skip():
-    """Skip/dismiss an unmapped item so it doesn't show again."""
-    try:
-        data = request.get_json() or {}
-        folder_path = (data.get('folder_path') or '').strip()
-        if not folder_path:
-            return jsonify({'success': False, 'message': 'folder_path is required'}), 400
-
-        instance_id = _get_movie_hunt_instance_id_from_request()
-        config = _get_unmapped_config(instance_id)
-        items = config.get('items', [])
-        found = False
-        for item in items:
-            if item.get('folder_path') == folder_path:
-                item['status'] = 'skipped'
-                found = True
-                break
-
-        if not found:
-            return jsonify({'success': False, 'message': 'Item not found'}), 404
-
-        config['items'] = items
-        _save_unmapped_config(config, instance_id)
-
-        return jsonify({'success': True}), 200
-
-    except Exception as e:
-        logger.exception("Import Media skip error")
-        return jsonify({'success': False, 'message': str(e)}), 500
-
-
-@movie_hunt_bp.route('/api/movie-hunt/import-media/rematch', methods=['POST'])
-def api_import_media_rematch():
-    """Re-match a specific item with a user-provided title/year."""
-    try:
-        data = request.get_json() or {}
-        folder_path = (data.get('folder_path') or '').strip()
-        query = (data.get('query') or '').strip()
-        year = (data.get('year') or '').strip()
-
-        if not folder_path:
-            return jsonify({'success': False, 'message': 'folder_path is required'}), 400
-        if not query:
-            return jsonify({'success': False, 'message': 'query is required'}), 400
-
-        instance_id = _get_movie_hunt_instance_id_from_request()
-        config = _get_unmapped_config(instance_id)
-        items = config.get('items', [])
-
-        target = None
-        for item in items:
-            if item.get('folder_path') == folder_path:
-                target = item
-                break
-
-        if not target:
-            return jsonify({'success': False, 'message': 'Item not found'}), 404
-
-        # Search TMDB with user-provided query
-        parsed = {'title': query, 'year': year, 'tmdb_id': None, 'imdb_id': None}
-        matches = _match_folder_to_tmdb(parsed)
-
-        target['matches'] = matches
-        target['best_match'] = matches[0] if matches else None
-        target['status'] = 'matched' if matches else 'no_match'
-        target['processed_at'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-
-        config['items'] = items
-        _save_unmapped_config(config, instance_id)
-
-        return jsonify({
-            'success': True,
-            'matches': matches,
-            'best_match': matches[0] if matches else None,
-        }), 200
-
-    except Exception as e:
-        logger.exception("Import Media rematch error")
-        return jsonify({'success': False, 'message': str(e)}), 500
+def register_movie_import_media_routes(bp):
+    @bp.route('/api/movie-hunt/import-media', methods=['GET'])
+    def api_import_media_list():
+        """List unmapped folders with their match status."""
+        try:
+            instance_id = _get_movie_hunt_instance_id_from_request()
+            config = _get_unmapped_config(instance_id)
+    
+            items = config.get('items', [])
+            # Filter by status if requested
+            status_filter = request.args.get('status', '').strip()
+            if status_filter:
+                items = [i for i in items if i.get('status') == status_filter]
+    
+            # Prepare items for frontend (strip large data)
+            out = []
+            for item in items:
+                if item.get('status') == 'confirmed':
+                    continue  # Don't show already-imported items
+    
+                media_info = item.get('media_info', {})
+                main_file = media_info.get('main_file', {})
+    
+                entry = {
+                    'folder_path': item.get('folder_path', ''),
+                    'folder_name': item.get('folder_name', ''),
+                    'root_folder': item.get('root_folder', ''),
+                    'is_file': item.get('is_file', False),
+                    'parsed_title': item.get('parsed', {}).get('title', ''),
+                    'parsed_year': item.get('parsed', {}).get('year', ''),
+                    'parsed_quality': item.get('parsed', {}).get('quality', ''),
+                    'status': item.get('status', 'pending'),
+                    'file_size': media_info.get('total_size', 0),
+                    'file_count': media_info.get('file_count', 0),
+                    'main_file': main_file.get('name', ''),
+                    'best_match': item.get('best_match'),
+                    'matches': item.get('matches', []),
+                    'processed_at': item.get('processed_at'),
+                }
+                out.append(entry)
+    
+            return jsonify({
+                'success': True,
+                'items': out,
+                'total': len(out),
+                'last_scan': config.get('last_scan'),
+                'scan_in_progress': config.get('scan_in_progress', False),
+            }), 200
+    
+        except Exception as e:
+            logger.exception("Import Media list error")
+            return jsonify({'success': False, 'items': [], 'total': 0, 'error': str(e)}), 200
+    
+    
+    @bp.route('/api/movie-hunt/import-media/scan', methods=['POST'])
+    def api_import_media_scan():
+        """Trigger an on-demand scan for unmapped folders."""
+        try:
+            instance_id = _get_movie_hunt_instance_id_from_request()
+            config = _get_unmapped_config(instance_id)
+    
+            if config.get('scan_in_progress'):
+                return jsonify({'success': False, 'message': 'Scan already in progress'}), 200
+    
+            # Run scan in background thread so we don't block the request
+            def _scan():
+                run_import_media_scan(instance_id, max_match=None)
+    
+            thread = threading.Thread(target=_scan, name="ImportMediaScan", daemon=True)
+            thread.start()
+    
+            return jsonify({'success': True, 'message': 'Scan started'}), 200
+    
+        except Exception as e:
+            logger.exception("Import Media scan trigger error")
+            return jsonify({'success': False, 'message': str(e)}), 500
+    
+    
+    @bp.route('/api/movie-hunt/import-media/search', methods=['GET'])
+    def api_import_media_search():
+        """Manual TMDB search for a specific unmapped folder (user override)."""
+        try:
+            query = (request.args.get('q') or '').strip()
+            year = (request.args.get('year') or '').strip()
+            if not query:
+                return jsonify({'success': False, 'results': [], 'message': 'Query is required'}), 400
+    
+            results = _search_tmdb(query, year=year if year else None)
+            out = []
+            for r in results:
+                release_date = r.get('release_date') or ''
+                m_year = release_date[:4] if len(release_date) >= 4 else ''
+                out.append({
+                    'tmdb_id': r.get('id'),
+                    'title': r.get('title', ''),
+                    'original_title': r.get('original_title', ''),
+                    'year': m_year,
+                    'poster_path': r.get('poster_path') or '',
+                    'overview': (r.get('overview') or '')[:300],
+                    'vote_average': r.get('vote_average', 0),
+                    'popularity': r.get('popularity', 0),
+                })
+    
+            return jsonify({'success': True, 'results': out}), 200
+    
+        except Exception as e:
+            logger.exception("Import Media search error")
+            return jsonify({'success': False, 'results': [], 'error': str(e)}), 200
+    
+    
+    @bp.route('/api/movie-hunt/import-media/confirm', methods=['POST'])
+    def api_import_media_confirm():
+        """Confirm and import a matched movie into the Media Collection."""
+        try:
+            data = request.get_json() or {}
+            folder_path = (data.get('folder_path') or '').strip()
+            tmdb_id = data.get('tmdb_id')
+            title = (data.get('title') or '').strip()
+            year = (data.get('year') or '').strip()
+            poster_path = (data.get('poster_path') or '').strip()
+    
+            if not folder_path:
+                return jsonify({'success': False, 'message': 'folder_path is required'}), 400
+            if not tmdb_id or not title:
+                return jsonify({'success': False, 'message': 'tmdb_id and title are required'}), 400
+    
+            instance_id = _get_movie_hunt_instance_id_from_request()
+    
+            # Check if already in collection
+            collection = _get_collection_config(instance_id)
+            for item in collection:
+                if item.get('tmdb_id') == tmdb_id:
+                    return jsonify({
+                        'success': False,
+                        'message': f'"{title}" is already in your Media Collection.',
+                        'already_exists': True,
+                    }), 200
+    
+            # Determine root folder from the path
+            root_folder = data.get('root_folder') or ''
+    
+            # Add to collection as "available" (it's already on disk)
+            _collection_append(
+                title=title,
+                year=year,
+                instance_id=instance_id,
+                tmdb_id=tmdb_id,
+                poster_path=poster_path,
+                root_folder=root_folder,
+            )
+    
+            # Mark item as confirmed in unmapped config
+            config = _get_unmapped_config(instance_id)
+            items = config.get('items', [])
+            for item in items:
+                if item.get('folder_path') == folder_path:
+                    item['status'] = 'confirmed'
+                    item['confirmed_tmdb_id'] = tmdb_id
+                    item['confirmed_at'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+                    break
+            config['items'] = items
+            _save_unmapped_config(config, instance_id)
+    
+            # Update the collection item status to available since it's on disk
+            collection = _get_collection_config(instance_id)
+            for item in collection:
+                if item.get('tmdb_id') == tmdb_id and (item.get('status') or '').lower() != 'available':
+                    item['status'] = 'available'
+                    from .discovery_movie import _save_collection_config
+                    _save_collection_config(collection, instance_id)
+                    break
+    
+            logger.info("Import Media: confirmed '%s' (%s) [TMDB %s] from %s", title, year, tmdb_id, folder_path)
+    
+            return jsonify({
+                'success': True,
+                'message': f'"{title}" ({year}) imported to your Media Collection.',
+            }), 200
+    
+        except Exception as e:
+            logger.exception("Import Media confirm error")
+            return jsonify({'success': False, 'message': str(e)}), 500
+    
+    
+    @bp.route('/api/movie-hunt/import-media/confirm-all', methods=['POST'])
+    def api_import_media_confirm_all():
+        """Confirm and import all matched movies at once."""
+        try:
+            instance_id = _get_movie_hunt_instance_id_from_request()
+            config = _get_unmapped_config(instance_id)
+            items = config.get('items', [])
+    
+            imported_count = 0
+            skipped_count = 0
+            errors = []
+    
+            collection = _get_collection_config(instance_id)
+            known_tmdb_ids = {item.get('tmdb_id') for item in collection if item.get('tmdb_id')}
+    
+            for item in items:
+                if item.get('status') != 'matched':
+                    continue
+    
+                best = item.get('best_match')
+                if not best or not best.get('tmdb_id') or not best.get('title'):
+                    continue
+    
+                tmdb_id = best['tmdb_id']
+                if tmdb_id in known_tmdb_ids:
+                    skipped_count += 1
+                    item['status'] = 'confirmed'
+                    continue
+    
+                try:
+                    _collection_append(
+                        title=best['title'],
+                        year=best.get('year', ''),
+                        instance_id=instance_id,
+                        tmdb_id=tmdb_id,
+                        poster_path=best.get('poster_path', ''),
+                        root_folder=item.get('root_folder', ''),
+                    )
+                    known_tmdb_ids.add(tmdb_id)
+                    item['status'] = 'confirmed'
+                    item['confirmed_tmdb_id'] = tmdb_id
+                    item['confirmed_at'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+                    imported_count += 1
+                except Exception as e:
+                    errors.append(f"{best['title']}: {str(e)}")
+    
+            # Update all imported items to available
+            updated_collection = _get_collection_config(instance_id)
+            collection_updated = False
+            for c_item in updated_collection:
+                if c_item.get('tmdb_id') in known_tmdb_ids and (c_item.get('status') or '').lower() != 'available':
+                    c_item['status'] = 'available'
+                    collection_updated = True
+            if collection_updated:
+                from .discovery_movie import _save_collection_config
+                _save_collection_config(updated_collection, instance_id)
+    
+            config['items'] = items
+            _save_unmapped_config(config, instance_id)
+    
+            msg = f'Imported {imported_count} movie{"s" if imported_count != 1 else ""}.'
+            if skipped_count:
+                msg += f' {skipped_count} already in collection.'
+            if errors:
+                msg += f' {len(errors)} error(s).'
+    
+            logger.info("Import Media: bulk confirm — %d imported, %d skipped, %d errors", imported_count, skipped_count, len(errors))
+    
+            return jsonify({
+                'success': True,
+                'message': msg,
+                'imported': imported_count,
+                'skipped': skipped_count,
+                'errors': errors,
+            }), 200
+    
+        except Exception as e:
+            logger.exception("Import Media confirm-all error")
+            return jsonify({'success': False, 'message': str(e)}), 500
+    
+    
+    @bp.route('/api/movie-hunt/import-media/skip', methods=['POST'])
+    def api_import_media_skip():
+        """Skip/dismiss an unmapped item so it doesn't show again."""
+        try:
+            data = request.get_json() or {}
+            folder_path = (data.get('folder_path') or '').strip()
+            if not folder_path:
+                return jsonify({'success': False, 'message': 'folder_path is required'}), 400
+    
+            instance_id = _get_movie_hunt_instance_id_from_request()
+            config = _get_unmapped_config(instance_id)
+            items = config.get('items', [])
+            found = False
+            for item in items:
+                if item.get('folder_path') == folder_path:
+                    item['status'] = 'skipped'
+                    found = True
+                    break
+    
+            if not found:
+                return jsonify({'success': False, 'message': 'Item not found'}), 404
+    
+            config['items'] = items
+            _save_unmapped_config(config, instance_id)
+    
+            return jsonify({'success': True}), 200
+    
+        except Exception as e:
+            logger.exception("Import Media skip error")
+            return jsonify({'success': False, 'message': str(e)}), 500
+    
+    
+    @bp.route('/api/movie-hunt/import-media/rematch', methods=['POST'])
+    def api_import_media_rematch():
+        """Re-match a specific item with a user-provided title/year."""
+        try:
+            data = request.get_json() or {}
+            folder_path = (data.get('folder_path') or '').strip()
+            query = (data.get('query') or '').strip()
+            year = (data.get('year') or '').strip()
+    
+            if not folder_path:
+                return jsonify({'success': False, 'message': 'folder_path is required'}), 400
+            if not query:
+                return jsonify({'success': False, 'message': 'query is required'}), 400
+    
+            instance_id = _get_movie_hunt_instance_id_from_request()
+            config = _get_unmapped_config(instance_id)
+            items = config.get('items', [])
+    
+            target = None
+            for item in items:
+                if item.get('folder_path') == folder_path:
+                    target = item
+                    break
+    
+            if not target:
+                return jsonify({'success': False, 'message': 'Item not found'}), 404
+    
+            # Search TMDB with user-provided query
+            parsed = {'title': query, 'year': year, 'tmdb_id': None, 'imdb_id': None}
+            matches = _match_folder_to_tmdb(parsed)
+    
+            target['matches'] = matches
+            target['best_match'] = matches[0] if matches else None
+            target['status'] = 'matched' if matches else 'no_match'
+            target['processed_at'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+    
+            config['items'] = items
+            _save_unmapped_config(config, instance_id)
+    
+            return jsonify({
+                'success': True,
+                'matches': matches,
+                'best_match': matches[0] if matches else None,
+            }), 200
+    
+        except Exception as e:
+            logger.exception("Import Media rematch error")
+            return jsonify({'success': False, 'message': str(e)}), 500

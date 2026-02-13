@@ -18,10 +18,9 @@ from datetime import datetime
 import requests
 from flask import request, jsonify
 
-from . import tv_hunt_bp
-from ._helpers import _get_tv_hunt_instance_id_from_request
-from ..media_hunt.storage import get_tv_root_folders_config as _get_root_folders_config
-from ..media_hunt.discovery_tv import (
+from .helpers import _get_tv_hunt_instance_id_from_request
+from .storage import get_tv_root_folders_config as _get_root_folders_config
+from .discovery_tv import (
     _get_collection_config,
     _save_collection_config,
     TMDB_BASE,
@@ -718,262 +717,263 @@ def run_import_media_background_cycle():
 # HTTP API routes
 # ---------------------------------------------------------------------------
 
-@tv_hunt_bp.route('/api/tv-hunt/import-media', methods=['GET'])
-def api_tv_import_media_list():
-    """List unmapped TV series with match status."""
-    try:
-        instance_id = _get_tv_hunt_instance_id_from_request()
-        if not instance_id:
-            return jsonify({'success': False, 'items': [], 'total': 0}), 200
-        config = _get_unmapped_config(instance_id)
-        items = config.get('items', [])
-        status_filter = (request.args.get('status') or '').strip()
-        if status_filter:
-            items = [i for i in items if i.get('status') == status_filter]
-        out = []
-        for item in items:
-            if item.get('status') == 'confirmed':
-                continue
-            mi = item.get('media_info', {})
-            mf = mi.get('main_file', {})
-            entry = {
-                'folder_path': item.get('folder_path', ''),
-                'folder_name': item.get('folder_name', ''),
-                'root_folder': item.get('root_folder', ''),
-                'parsed_title': item.get('parsed', {}).get('title', ''),
-                'parsed_year': item.get('parsed', {}).get('year', ''),
-                'status': item.get('status', 'pending'),
-                'file_size': mi.get('total_size', 0),
-                'file_count': mi.get('file_count', 0),
-                'main_file': mf.get('name', ''),
-                'best_match': item.get('best_match'),
-                'matches': item.get('matches', []),
-                'processed_at': item.get('processed_at'),
-            }
-            out.append(entry)
-        return jsonify({
-            'success': True,
-            'items': out,
-            'total': len(out),
-            'last_scan': config.get('last_scan'),
-            'scan_in_progress': config.get('scan_in_progress', False),
-        }), 200
-    except Exception as e:
-        logger.exception("TV Import Media list error")
-        return jsonify({'success': False, 'items': [], 'total': 0, 'error': str(e)}), 200
-
-
-@tv_hunt_bp.route('/api/tv-hunt/import-media/scan', methods=['POST'])
-def api_tv_import_media_scan():
-    """Trigger on-demand TV Import Media scan."""
-    try:
-        instance_id = _get_tv_hunt_instance_id_from_request()
-        if not instance_id:
-            return jsonify({'success': False, 'message': 'No instance selected'}), 400
-        config = _get_unmapped_config(instance_id)
-        if config.get('scan_in_progress'):
-            return jsonify({'success': False, 'message': 'Scan already in progress'}), 200
-
-        def _scan():
-            run_import_media_scan(instance_id, max_match=None)
-        threading.Thread(target=_scan, name="TVImportMediaScan", daemon=True).start()
-        return jsonify({'success': True, 'message': 'Scan started'}), 200
-    except Exception as e:
-        logger.exception("TV Import Media scan trigger error")
-        return jsonify({'success': False, 'message': str(e)}), 500
-
-
-@tv_hunt_bp.route('/api/tv-hunt/import-media/search', methods=['GET'])
-def api_tv_import_media_search():
-    """Manual TMDB TV search for rematch."""
-    try:
-        query = (request.args.get('q') or '').strip()
-        year = (request.args.get('year') or '').strip()
-        if not query:
-            return jsonify({'success': False, 'results': [], 'message': 'Query is required'}), 400
-        results = _search_tmdb_tv(query, year=year if year else None)
-        out = []
-        for r in results:
-            first_air = r.get('first_air_date') or ''
-            m_year = first_air[:4] if len(first_air) >= 4 else ''
-            out.append({
-                'tmdb_id': r.get('id'),
-                'title': r.get('name', ''),
-                'original_title': r.get('original_name', ''),
-                'year': m_year,
-                'poster_path': r.get('poster_path') or '',
-                'overview': (r.get('overview') or '')[:300],
-                'vote_average': r.get('vote_average', 0),
-                'popularity': r.get('popularity', 0),
-            })
-        return jsonify({'success': True, 'results': out}), 200
-    except Exception as e:
-        logger.exception("TV Import Media search error")
-        return jsonify({'success': False, 'results': [], 'error': str(e)}), 200
-
-
-@tv_hunt_bp.route('/api/tv-hunt/import-media/confirm', methods=['POST'])
-def api_tv_import_media_confirm():
-    """Confirm and import a matched TV series into the collection."""
-    try:
-        data = request.get_json() or {}
-        folder_path = (data.get('folder_path') or '').strip()
-        tmdb_id = data.get('tmdb_id')
-        title = (data.get('title') or '').strip()
-        year = (data.get('year') or '').strip()
-        poster_path = (data.get('poster_path') or '').strip()
-        root_folder = (data.get('root_folder') or '').strip()
-
-        if not folder_path:
-            return jsonify({'success': False, 'message': 'folder_path is required'}), 400
-        if not tmdb_id or not title:
-            return jsonify({'success': False, 'message': 'tmdb_id and title are required'}), 400
-
-        instance_id = _get_tv_hunt_instance_id_from_request()
-        if not instance_id:
-            return jsonify({'success': False, 'message': 'No instance selected'}), 400
-
-        ok, msg = _add_series_to_collection(
-            instance_id, tmdb_id, title, root_folder, poster_path,
-            first_air_date=year + '-01-01' if year else ''
-        )
-        if not ok:
-            if msg == 'already_exists':
-                return jsonify({
-                    'success': False,
-                    'message': f'"{title}" is already in your TV Collection.',
-                    'already_exists': True,
-                }), 200
-            return jsonify({'success': False, 'message': 'Failed to add to collection'}), 200
-
-        config = _get_unmapped_config(instance_id)
-        for item in config.get('items', []):
-            if item.get('folder_path') == folder_path:
-                item['status'] = 'confirmed'
-                item['confirmed_tmdb_id'] = tmdb_id
-                item['confirmed_at'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-                break
-        config['items'] = config.get('items', [])
-        _save_unmapped_config(config, instance_id)
-
-        logger.info("TV Import Media: confirmed '%s' (%s) [TMDB %s]", title, year, tmdb_id)
-        return jsonify({'success': True, 'message': f'"{title}" imported to your TV Collection.'}), 200
-    except Exception as e:
-        logger.exception("TV Import Media confirm error")
-        return jsonify({'success': False, 'message': str(e)}), 500
-
-
-@tv_hunt_bp.route('/api/tv-hunt/import-media/confirm-all', methods=['POST'])
-def api_tv_import_media_confirm_all():
-    """Confirm and import all matched TV series."""
-    try:
-        instance_id = _get_tv_hunt_instance_id_from_request()
-        if not instance_id:
-            return jsonify({'success': False, 'message': 'No instance selected'}), 400
-        config = _get_unmapped_config(instance_id)
-        items = config.get('items', [])
-        collection = _get_collection_config(instance_id)
-        known_tmdb_ids = {s.get('tmdb_id') for s in collection if s.get('tmdb_id')}
-
-        imported = 0
-        skipped = 0
-        errors = []
-        for item in items:
-            if item.get('status') != 'matched':
-                continue
-            best = item.get('best_match')
-            if not best or not best.get('tmdb_id') or not best.get('title'):
-                continue
-            tmdb_id = best['tmdb_id']
-            if tmdb_id in known_tmdb_ids:
-                skipped += 1
-                item['status'] = 'confirmed'
-                continue
-            y = (best.get('year') or '').strip()
-            first_air = (y + '-01-01') if y else ''
+def register_tv_import_media_routes(bp):
+    @bp.route('/api/tv-hunt/import-media', methods=['GET'])
+    def api_tv_import_media_list():
+        """List unmapped TV series with match status."""
+        try:
+            instance_id = _get_tv_hunt_instance_id_from_request()
+            if not instance_id:
+                return jsonify({'success': False, 'items': [], 'total': 0}), 200
+            config = _get_unmapped_config(instance_id)
+            items = config.get('items', [])
+            status_filter = (request.args.get('status') or '').strip()
+            if status_filter:
+                items = [i for i in items if i.get('status') == status_filter]
+            out = []
+            for item in items:
+                if item.get('status') == 'confirmed':
+                    continue
+                mi = item.get('media_info', {})
+                mf = mi.get('main_file', {})
+                entry = {
+                    'folder_path': item.get('folder_path', ''),
+                    'folder_name': item.get('folder_name', ''),
+                    'root_folder': item.get('root_folder', ''),
+                    'parsed_title': item.get('parsed', {}).get('title', ''),
+                    'parsed_year': item.get('parsed', {}).get('year', ''),
+                    'status': item.get('status', 'pending'),
+                    'file_size': mi.get('total_size', 0),
+                    'file_count': mi.get('file_count', 0),
+                    'main_file': mf.get('name', ''),
+                    'best_match': item.get('best_match'),
+                    'matches': item.get('matches', []),
+                    'processed_at': item.get('processed_at'),
+                }
+                out.append(entry)
+            return jsonify({
+                'success': True,
+                'items': out,
+                'total': len(out),
+                'last_scan': config.get('last_scan'),
+                'scan_in_progress': config.get('scan_in_progress', False),
+            }), 200
+        except Exception as e:
+            logger.exception("TV Import Media list error")
+            return jsonify({'success': False, 'items': [], 'total': 0, 'error': str(e)}), 200
+    
+    
+    @bp.route('/api/tv-hunt/import-media/scan', methods=['POST'])
+    def api_tv_import_media_scan():
+        """Trigger on-demand TV Import Media scan."""
+        try:
+            instance_id = _get_tv_hunt_instance_id_from_request()
+            if not instance_id:
+                return jsonify({'success': False, 'message': 'No instance selected'}), 400
+            config = _get_unmapped_config(instance_id)
+            if config.get('scan_in_progress'):
+                return jsonify({'success': False, 'message': 'Scan already in progress'}), 200
+    
+            def _scan():
+                run_import_media_scan(instance_id, max_match=None)
+            threading.Thread(target=_scan, name="TVImportMediaScan", daemon=True).start()
+            return jsonify({'success': True, 'message': 'Scan started'}), 200
+        except Exception as e:
+            logger.exception("TV Import Media scan trigger error")
+            return jsonify({'success': False, 'message': str(e)}), 500
+    
+    
+    @bp.route('/api/tv-hunt/import-media/search', methods=['GET'])
+    def api_tv_import_media_search():
+        """Manual TMDB TV search for rematch."""
+        try:
+            query = (request.args.get('q') or '').strip()
+            year = (request.args.get('year') or '').strip()
+            if not query:
+                return jsonify({'success': False, 'results': [], 'message': 'Query is required'}), 400
+            results = _search_tmdb_tv(query, year=year if year else None)
+            out = []
+            for r in results:
+                first_air = r.get('first_air_date') or ''
+                m_year = first_air[:4] if len(first_air) >= 4 else ''
+                out.append({
+                    'tmdb_id': r.get('id'),
+                    'title': r.get('name', ''),
+                    'original_title': r.get('original_name', ''),
+                    'year': m_year,
+                    'poster_path': r.get('poster_path') or '',
+                    'overview': (r.get('overview') or '')[:300],
+                    'vote_average': r.get('vote_average', 0),
+                    'popularity': r.get('popularity', 0),
+                })
+            return jsonify({'success': True, 'results': out}), 200
+        except Exception as e:
+            logger.exception("TV Import Media search error")
+            return jsonify({'success': False, 'results': [], 'error': str(e)}), 200
+    
+    
+    @bp.route('/api/tv-hunt/import-media/confirm', methods=['POST'])
+    def api_tv_import_media_confirm():
+        """Confirm and import a matched TV series into the collection."""
+        try:
+            data = request.get_json() or {}
+            folder_path = (data.get('folder_path') or '').strip()
+            tmdb_id = data.get('tmdb_id')
+            title = (data.get('title') or '').strip()
+            year = (data.get('year') or '').strip()
+            poster_path = (data.get('poster_path') or '').strip()
+            root_folder = (data.get('root_folder') or '').strip()
+    
+            if not folder_path:
+                return jsonify({'success': False, 'message': 'folder_path is required'}), 400
+            if not tmdb_id or not title:
+                return jsonify({'success': False, 'message': 'tmdb_id and title are required'}), 400
+    
+            instance_id = _get_tv_hunt_instance_id_from_request()
+            if not instance_id:
+                return jsonify({'success': False, 'message': 'No instance selected'}), 400
+    
             ok, msg = _add_series_to_collection(
-                instance_id, tmdb_id, best['title'],
-                item.get('root_folder', ''),
-                best.get('poster_path', ''),
-                first_air_date=first_air
+                instance_id, tmdb_id, title, root_folder, poster_path,
+                first_air_date=year + '-01-01' if year else ''
             )
-            if ok:
-                known_tmdb_ids.add(tmdb_id)
-                item['status'] = 'confirmed'
-                imported += 1
-            else:
-                errors.append(f"{best['title']}: {msg}")
-
-        config['items'] = items
-        _save_unmapped_config(config, instance_id)
-
-        msg = f'Imported {imported} series.'
-        if skipped:
-            msg += f' {skipped} already in collection.'
-        if errors:
-            msg += f' {len(errors)} error(s).'
-        return jsonify({
-            'success': True,
-            'message': msg,
-            'imported': imported,
-            'skipped': skipped,
-            'errors': errors,
-        }), 200
-    except Exception as e:
-        logger.exception("TV Import Media confirm-all error")
-        return jsonify({'success': False, 'message': str(e)}), 500
-
-
-@tv_hunt_bp.route('/api/tv-hunt/import-media/skip', methods=['POST'])
-def api_tv_import_media_skip():
-    """Skip an unmapped TV series."""
-    try:
-        data = request.get_json() or {}
-        folder_path = (data.get('folder_path') or '').strip()
-        if not folder_path:
-            return jsonify({'success': False, 'message': 'folder_path is required'}), 400
-        instance_id = _get_tv_hunt_instance_id_from_request()
-        if not instance_id:
-            return jsonify({'success': False, 'message': 'No instance selected'}), 400
-        config = _get_unmapped_config(instance_id)
-        for item in config.get('items', []):
-            if item.get('folder_path') == folder_path:
-                item['status'] = 'skipped'
-                config['items'] = config.get('items', [])
-                _save_unmapped_config(config, instance_id)
-                return jsonify({'success': True}), 200
-        return jsonify({'success': False, 'message': 'Item not found'}), 404
-    except Exception as e:
-        logger.exception("TV Import Media skip error")
-        return jsonify({'success': False, 'message': str(e)}), 500
-
-
-@tv_hunt_bp.route('/api/tv-hunt/import-media/rematch', methods=['POST'])
-def api_tv_import_media_rematch():
-    """Re-match with user-provided query/year."""
-    try:
-        data = request.get_json() or {}
-        folder_path = (data.get('folder_path') or '').strip()
-        query = (data.get('query') or '').strip()
-        year = (data.get('year') or '').strip()
-        if not folder_path or not query:
-            return jsonify({'success': False, 'message': 'folder_path and query required'}), 400
-        instance_id = _get_tv_hunt_instance_id_from_request()
-        if not instance_id:
-            return jsonify({'success': False, 'message': 'No instance selected'}), 400
-        config = _get_unmapped_config(instance_id)
-        target = next((i for i in config.get('items', []) if i.get('folder_path') == folder_path), None)
-        if not target:
+            if not ok:
+                if msg == 'already_exists':
+                    return jsonify({
+                        'success': False,
+                        'message': f'"{title}" is already in your TV Collection.',
+                        'already_exists': True,
+                    }), 200
+                return jsonify({'success': False, 'message': 'Failed to add to collection'}), 200
+    
+            config = _get_unmapped_config(instance_id)
+            for item in config.get('items', []):
+                if item.get('folder_path') == folder_path:
+                    item['status'] = 'confirmed'
+                    item['confirmed_tmdb_id'] = tmdb_id
+                    item['confirmed_at'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+                    break
+            config['items'] = config.get('items', [])
+            _save_unmapped_config(config, instance_id)
+    
+            logger.info("TV Import Media: confirmed '%s' (%s) [TMDB %s]", title, year, tmdb_id)
+            return jsonify({'success': True, 'message': f'"{title}" imported to your TV Collection.'}), 200
+        except Exception as e:
+            logger.exception("TV Import Media confirm error")
+            return jsonify({'success': False, 'message': str(e)}), 500
+    
+    
+    @bp.route('/api/tv-hunt/import-media/confirm-all', methods=['POST'])
+    def api_tv_import_media_confirm_all():
+        """Confirm and import all matched TV series."""
+        try:
+            instance_id = _get_tv_hunt_instance_id_from_request()
+            if not instance_id:
+                return jsonify({'success': False, 'message': 'No instance selected'}), 400
+            config = _get_unmapped_config(instance_id)
+            items = config.get('items', [])
+            collection = _get_collection_config(instance_id)
+            known_tmdb_ids = {s.get('tmdb_id') for s in collection if s.get('tmdb_id')}
+    
+            imported = 0
+            skipped = 0
+            errors = []
+            for item in items:
+                if item.get('status') != 'matched':
+                    continue
+                best = item.get('best_match')
+                if not best or not best.get('tmdb_id') or not best.get('title'):
+                    continue
+                tmdb_id = best['tmdb_id']
+                if tmdb_id in known_tmdb_ids:
+                    skipped += 1
+                    item['status'] = 'confirmed'
+                    continue
+                y = (best.get('year') or '').strip()
+                first_air = (y + '-01-01') if y else ''
+                ok, msg = _add_series_to_collection(
+                    instance_id, tmdb_id, best['title'],
+                    item.get('root_folder', ''),
+                    best.get('poster_path', ''),
+                    first_air_date=first_air
+                )
+                if ok:
+                    known_tmdb_ids.add(tmdb_id)
+                    item['status'] = 'confirmed'
+                    imported += 1
+                else:
+                    errors.append(f"{best['title']}: {msg}")
+    
+            config['items'] = items
+            _save_unmapped_config(config, instance_id)
+    
+            msg = f'Imported {imported} series.'
+            if skipped:
+                msg += f' {skipped} already in collection.'
+            if errors:
+                msg += f' {len(errors)} error(s).'
+            return jsonify({
+                'success': True,
+                'message': msg,
+                'imported': imported,
+                'skipped': skipped,
+                'errors': errors,
+            }), 200
+        except Exception as e:
+            logger.exception("TV Import Media confirm-all error")
+            return jsonify({'success': False, 'message': str(e)}), 500
+    
+    
+    @bp.route('/api/tv-hunt/import-media/skip', methods=['POST'])
+    def api_tv_import_media_skip():
+        """Skip an unmapped TV series."""
+        try:
+            data = request.get_json() or {}
+            folder_path = (data.get('folder_path') or '').strip()
+            if not folder_path:
+                return jsonify({'success': False, 'message': 'folder_path is required'}), 400
+            instance_id = _get_tv_hunt_instance_id_from_request()
+            if not instance_id:
+                return jsonify({'success': False, 'message': 'No instance selected'}), 400
+            config = _get_unmapped_config(instance_id)
+            for item in config.get('items', []):
+                if item.get('folder_path') == folder_path:
+                    item['status'] = 'skipped'
+                    config['items'] = config.get('items', [])
+                    _save_unmapped_config(config, instance_id)
+                    return jsonify({'success': True}), 200
             return jsonify({'success': False, 'message': 'Item not found'}), 404
-        parsed = {'title': query, 'year': year, 'tmdb_id': None, 'tvdb_id': None}
-        matches = _match_series_to_tmdb(parsed, target.get('seasons_on_disk'))
-        target['matches'] = matches
-        target['best_match'] = matches[0] if matches else None
-        target['status'] = 'matched' if matches else 'no_match'
-        target['processed_at'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-        config['items'] = config.get('items', [])
-        _save_unmapped_config(config, instance_id)
-        return jsonify({'success': True, 'matches': matches, 'best_match': matches[0] if matches else None}), 200
-    except Exception as e:
-        logger.exception("TV Import Media rematch error")
-        return jsonify({'success': False, 'message': str(e)}), 500
+        except Exception as e:
+            logger.exception("TV Import Media skip error")
+            return jsonify({'success': False, 'message': str(e)}), 500
+    
+    
+    @bp.route('/api/tv-hunt/import-media/rematch', methods=['POST'])
+    def api_tv_import_media_rematch():
+        """Re-match with user-provided query/year."""
+        try:
+            data = request.get_json() or {}
+            folder_path = (data.get('folder_path') or '').strip()
+            query = (data.get('query') or '').strip()
+            year = (data.get('year') or '').strip()
+            if not folder_path or not query:
+                return jsonify({'success': False, 'message': 'folder_path and query required'}), 400
+            instance_id = _get_tv_hunt_instance_id_from_request()
+            if not instance_id:
+                return jsonify({'success': False, 'message': 'No instance selected'}), 400
+            config = _get_unmapped_config(instance_id)
+            target = next((i for i in config.get('items', []) if i.get('folder_path') == folder_path), None)
+            if not target:
+                return jsonify({'success': False, 'message': 'Item not found'}), 404
+            parsed = {'title': query, 'year': year, 'tmdb_id': None, 'tvdb_id': None}
+            matches = _match_series_to_tmdb(parsed, target.get('seasons_on_disk'))
+            target['matches'] = matches
+            target['best_match'] = matches[0] if matches else None
+            target['status'] = 'matched' if matches else 'no_match'
+            target['processed_at'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+            config['items'] = config.get('items', [])
+            _save_unmapped_config(config, instance_id)
+            return jsonify({'success': True, 'matches': matches, 'best_match': matches[0] if matches else None}), 200
+        except Exception as e:
+            logger.exception("TV Import Media rematch error")
+            return jsonify({'success': False, 'message': str(e)}), 500

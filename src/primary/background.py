@@ -1355,7 +1355,7 @@ def _import_list_sync_loop():
     """Background loop: check import lists for sync every 5 minutes."""
     while not stop_event.is_set():
         try:
-            from src.primary.routes.movie_hunt.import_lists import run_import_list_sync_cycle
+            from src.primary.routes.media_hunt.import_lists_movie import run_import_list_sync_cycle
             run_import_list_sync_cycle()
         except Exception as e:
             logger.error(f"Import list sync cycle error: {e}")
@@ -1390,12 +1390,12 @@ def _import_media_scan_loop():
     stop_event.wait(120)
     while not stop_event.is_set():
         try:
-            from src.primary.routes.movie_hunt.import_media import run_import_media_background_cycle
+            from src.primary.routes.media_hunt.import_media_movie import run_import_media_background_cycle
             run_import_media_background_cycle()
         except Exception as e:
             logger.error(f"Import Media scan cycle error: {e}")
         try:
-            from src.primary.routes.tv_hunt.import_media import run_import_media_background_cycle
+            from src.primary.routes.media_hunt.import_media_tv import run_import_media_background_cycle
             run_import_media_background_cycle()
         except Exception as e:
             logger.error(f"TV Import Media scan cycle error: {e}")

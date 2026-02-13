@@ -7,8 +7,7 @@ from datetime import datetime
 
 from flask import request, jsonify
 
-from . import movie_hunt_bp, movie_hunt_logger
-from ._helpers import (
+from .helpers import (
     _get_movie_hunt_instance_id_from_request,
     _download_client_base_url,
     _extract_quality_from_filename,
@@ -22,8 +21,9 @@ from ._helpers import (
     _get_requested_queue_ids,
     _get_requested_display,
     MOVIE_HUNT_DEFAULT_CATEGORY,
+    movie_hunt_logger,
 )
-from ..media_hunt.clients import get_movie_clients_config
+from .clients import get_movie_clients_config
 from ...utils.logger import logger
 
 
@@ -798,143 +798,144 @@ def _clear_activity_queue(instance_id):
 
 # --- Routes ---
 
-@movie_hunt_bp.route('/api/activity/<view>', methods=['GET'])
-def api_activity_get(view):
-    """Get activity items (queue, history, or blocklist)."""
-    if view not in ('queue', 'history', 'blocklist'):
-        return jsonify({'error': 'Invalid view'}), 400
-    page = max(1, request.args.get('page', 1, type=int))
-    page_size = max(1, min(100, request.args.get('page_size', 20, type=int)))
-    search = (request.args.get('search') or '').strip().lower()
-
-    if view == 'queue':
-        instance_id = _get_movie_hunt_instance_id_from_request()
-        all_items, total = _get_activity_queue(instance_id)
-        if search:
-            all_items = [i for i in all_items if search in (i.get('movie') or '').lower() or search in str(i.get('year') or '').lower()]
-            total = len(all_items)
-        else:
-            total = len(all_items)
-        total_pages = max(1, (total + page_size - 1) // page_size)
-        start = (page - 1) * page_size
-        page_items = all_items[start:start + page_size]
-        return jsonify({
-            'items': page_items,
-            'total': total,
-            'page': page,
-            'total_pages': total_pages
-        }), 200
-
-    if view == 'history':
-        try:
-            from src.primary.history_manager import get_history
-            result = get_history('movie_hunt', search_query=search if search else None, page=page, page_size=page_size)
-
-            history_items = []
-            for entry in result.get('entries', []):
-                processed_info = entry.get('processed_info', '')
-                title_part = processed_info.split(' → ')[0] if ' → ' in processed_info else processed_info
-
-                history_items.append({
-                    'id': entry.get('id'),
-                    'movie': title_part,
-                    'title': title_part,
-                    'year': '',
-                    'languages': '-',
-                    'quality': '-',
-                    'formats': '-',
-                    'date': entry.get('date_time_readable', ''),
-                    'instance_name': entry.get('instance_name', 'Download client'),
-                })
-
-            return jsonify({
-                'items': history_items,
-                'total': result.get('total_entries', 0),
-                'page': page,
-                'total_pages': result.get('total_pages', 1)
-            }), 200
-
-        except Exception as e:
-            logger.error(f"Error getting Movie Hunt history: {e}")
-            return jsonify({
-                'items': [],
-                'total': 0,
-                'page': page,
-                'total_pages': 1
-            }), 200
-
-    if view == 'blocklist':
-        instance_id = _get_movie_hunt_instance_id_from_request()
-        all_entries = _get_blocklist_raw(instance_id)
-        if search:
-            q = search
-            all_entries = [
-                e for e in all_entries
-                if q in (e.get('movie_title') or '').lower() or q in (e.get('source_title') or '').lower() or q in (e.get('reason_failed') or '').lower()
-            ]
-        total = len(all_entries)
-        total_pages = max(1, (total + page_size - 1) // page_size)
-        start = (page - 1) * page_size
-        page_entries = all_entries[start:start + page_size]
-        items = []
-        for e in page_entries:
-            ts = e.get('date_added')
-            if isinstance(ts, (int, float)):
-                try:
-                    dt = datetime.utcfromtimestamp(ts)
-                    date_str = dt.strftime('%b %d %Y')
-                except Exception:
-                    date_str = str(ts)
+def register_movie_activity_routes(bp):
+    @bp.route('/api/activity/<view>', methods=['GET'])
+    def api_activity_get(view):
+        """Get activity items (queue, history, or blocklist)."""
+        if view not in ('queue', 'history', 'blocklist'):
+            return jsonify({'error': 'Invalid view'}), 400
+        page = max(1, request.args.get('page', 1, type=int))
+        page_size = max(1, min(100, request.args.get('page_size', 20, type=int)))
+        search = (request.args.get('search') or '').strip().lower()
+    
+        if view == 'queue':
+            instance_id = _get_movie_hunt_instance_id_from_request()
+            all_items, total = _get_activity_queue(instance_id)
+            if search:
+                all_items = [i for i in all_items if search in (i.get('movie') or '').lower() or search in str(i.get('year') or '').lower()]
+                total = len(all_items)
             else:
-                date_str = str(ts) if ts else '-'
-            items.append({
-                'movie': (e.get('movie_title') or '').strip() or '-',
-                'movie_title': (e.get('movie_title') or '').strip(),
-                'source_title': (e.get('source_title') or '').strip(),
-                'reason_failed': (e.get('reason_failed') or '').strip() or 'Download failed',
-                'date': date_str,
-            })
+                total = len(all_items)
+            total_pages = max(1, (total + page_size - 1) // page_size)
+            start = (page - 1) * page_size
+            page_items = all_items[start:start + page_size]
+            return jsonify({
+                'items': page_items,
+                'total': total,
+                'page': page,
+                'total_pages': total_pages
+            }), 200
+    
+        if view == 'history':
+            try:
+                from src.primary.history_manager import get_history
+                result = get_history('movie_hunt', search_query=search if search else None, page=page, page_size=page_size)
+    
+                history_items = []
+                for entry in result.get('entries', []):
+                    processed_info = entry.get('processed_info', '')
+                    title_part = processed_info.split(' → ')[0] if ' → ' in processed_info else processed_info
+    
+                    history_items.append({
+                        'id': entry.get('id'),
+                        'movie': title_part,
+                        'title': title_part,
+                        'year': '',
+                        'languages': '-',
+                        'quality': '-',
+                        'formats': '-',
+                        'date': entry.get('date_time_readable', ''),
+                        'instance_name': entry.get('instance_name', 'Download client'),
+                    })
+    
+                return jsonify({
+                    'items': history_items,
+                    'total': result.get('total_entries', 0),
+                    'page': page,
+                    'total_pages': result.get('total_pages', 1)
+                }), 200
+    
+            except Exception as e:
+                logger.error(f"Error getting Movie Hunt history: {e}")
+                return jsonify({
+                    'items': [],
+                    'total': 0,
+                    'page': page,
+                    'total_pages': 1
+                }), 200
+    
+        if view == 'blocklist':
+            instance_id = _get_movie_hunt_instance_id_from_request()
+            all_entries = _get_blocklist_raw(instance_id)
+            if search:
+                q = search
+                all_entries = [
+                    e for e in all_entries
+                    if q in (e.get('movie_title') or '').lower() or q in (e.get('source_title') or '').lower() or q in (e.get('reason_failed') or '').lower()
+                ]
+            total = len(all_entries)
+            total_pages = max(1, (total + page_size - 1) // page_size)
+            start = (page - 1) * page_size
+            page_entries = all_entries[start:start + page_size]
+            items = []
+            for e in page_entries:
+                ts = e.get('date_added')
+                if isinstance(ts, (int, float)):
+                    try:
+                        dt = datetime.utcfromtimestamp(ts)
+                        date_str = dt.strftime('%b %d %Y')
+                    except Exception:
+                        date_str = str(ts)
+                else:
+                    date_str = str(ts) if ts else '-'
+                items.append({
+                    'movie': (e.get('movie_title') or '').strip() or '-',
+                    'movie_title': (e.get('movie_title') or '').strip(),
+                    'source_title': (e.get('source_title') or '').strip(),
+                    'reason_failed': (e.get('reason_failed') or '').strip() or 'Download failed',
+                    'date': date_str,
+                })
+            return jsonify({
+                'items': items,
+                'total': total,
+                'page': page,
+                'total_pages': total_pages
+            }), 200
+    
         return jsonify({
-            'items': items,
-            'total': total,
+            'items': [],
+            'total': 0,
             'page': page,
-            'total_pages': total_pages
+            'total_pages': 1
         }), 200
-
-    return jsonify({
-        'items': [],
-        'total': 0,
-        'page': page,
-        'total_pages': 1
-    }), 200
-
-
-@movie_hunt_bp.route('/api/activity/<view>', methods=['DELETE'])
-def api_activity_delete(view):
-    """Remove selected queue items or blocklist entries."""
-    if view not in ('queue', 'history', 'blocklist'):
-        return jsonify({'error': 'Invalid view'}), 400
-    if view == 'queue':
-        instance_id = _get_movie_hunt_instance_id_from_request()
-        body = request.get_json(silent=True) or {}
-        items = body.get('items') if isinstance(body, dict) else None
-        if not items or not isinstance(items, list) or len(items) == 0:
-            return jsonify({'success': False, 'error': 'No items selected'}), 200
-        success, err_msg = _remove_activity_queue_items(items, instance_id)
-        if not success and err_msg:
-            return jsonify({'success': False, 'error': err_msg}), 200
+    
+    
+    @bp.route('/api/activity/<view>', methods=['DELETE'])
+    def api_activity_delete(view):
+        """Remove selected queue items or blocklist entries."""
+        if view not in ('queue', 'history', 'blocklist'):
+            return jsonify({'error': 'Invalid view'}), 400
+        if view == 'queue':
+            instance_id = _get_movie_hunt_instance_id_from_request()
+            body = request.get_json(silent=True) or {}
+            items = body.get('items') if isinstance(body, dict) else None
+            if not items or not isinstance(items, list) or len(items) == 0:
+                return jsonify({'success': False, 'error': 'No items selected'}), 200
+            success, err_msg = _remove_activity_queue_items(items, instance_id)
+            if not success and err_msg:
+                return jsonify({'success': False, 'error': err_msg}), 200
+            return jsonify({'success': True}), 200
+        if view == 'blocklist':
+            body = request.get_json(silent=True) or {}
+            source_titles = []
+            if isinstance(body.get('source_title'), str):
+                source_titles.append(body['source_title'].strip())
+            for it in (body.get('items') or []):
+                if isinstance(it, dict) and (it.get('source_title') or '').strip():
+                    source_titles.append(it['source_title'].strip())
+            if not source_titles:
+                return jsonify({'success': False, 'error': 'No blocklist entry specified (source_title)'}), 200
+            instance_id = _get_movie_hunt_instance_id_from_request()
+            _blocklist_remove(source_titles, instance_id)
+            return jsonify({'success': True}), 200
         return jsonify({'success': True}), 200
-    if view == 'blocklist':
-        body = request.get_json(silent=True) or {}
-        source_titles = []
-        if isinstance(body.get('source_title'), str):
-            source_titles.append(body['source_title'].strip())
-        for it in (body.get('items') or []):
-            if isinstance(it, dict) and (it.get('source_title') or '').strip():
-                source_titles.append(it['source_title'].strip())
-        if not source_titles:
-            return jsonify({'success': False, 'error': 'No blocklist entry specified (source_title)'}), 200
-        instance_id = _get_movie_hunt_instance_id_from_request()
-        _blocklist_remove(source_titles, instance_id)
-        return jsonify({'success': True}), 200
-    return jsonify({'success': True}), 200
