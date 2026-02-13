@@ -800,7 +800,7 @@ let huntarrUI = {
         } else if (section === 'indexer-hunt' && document.getElementById('indexer-hunt-section')) {
             document.getElementById('indexer-hunt-section').classList.add('active');
             document.getElementById('indexer-hunt-section').style.display = 'block';
-            newTitle = 'Index Master';
+            newTitle = 'Indexes';
             this.currentSection = 'indexer-hunt';
             this.showMovieHuntSidebar();
             if (window.IndexerHunt && typeof window.IndexerHunt.init === 'function') {
@@ -812,7 +812,7 @@ let huntarrUI = {
         } else if (section === 'indexer-hunt-stats' && document.getElementById('indexer-hunt-stats-section')) {
             document.getElementById('indexer-hunt-stats-section').classList.add('active');
             document.getElementById('indexer-hunt-stats-section').style.display = 'block';
-            newTitle = 'Index Master – Stats';
+            newTitle = 'Indexes – Stats';
             this.currentSection = 'indexer-hunt-stats';
             this.showMovieHuntSidebar();
             if (window.IndexerHuntStats && typeof window.IndexerHuntStats.init === 'function') {
@@ -821,7 +821,7 @@ let huntarrUI = {
         } else if (section === 'indexer-hunt-history' && document.getElementById('indexer-hunt-history-section')) {
             document.getElementById('indexer-hunt-history-section').classList.add('active');
             document.getElementById('indexer-hunt-history-section').style.display = 'block';
-            newTitle = 'Index Master – History';
+            newTitle = 'Indexes – History';
             this.currentSection = 'indexer-hunt-history';
             this.showMovieHuntSidebar();
             if (window.IndexerHuntHistory && typeof window.IndexerHuntHistory.init === 'function') {

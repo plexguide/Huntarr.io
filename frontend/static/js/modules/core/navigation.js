@@ -308,7 +308,7 @@ window.HuntarrNavigation = {
         const collectionSections = ['movie-hunt-home', 'movie-hunt-collection', 'media-hunt-collection', 'settings-import-media', 'movie-hunt-calendar'];
         const activitySections = ['activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'logs-tv-hunt', 'tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist'];
         const settingsSections = ['movie-hunt-settings', 'media-hunt-settings', 'settings-instance-management', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'profile-editor', 'settings-custom-formats', 'settings-import-lists', 'settings-root-folders', 'instance-editor'];
-        const indexMasterSections = ['indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history', 'settings-clients'];
+        const indexMasterSections = ['indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history'];
         const onCollection = collectionSections.indexOf(currentSection) !== -1;
         const onActivity = activitySections.indexOf(sectionForNav) !== -1;
         const onSettings = settingsSections.indexOf(currentSection) !== -1;

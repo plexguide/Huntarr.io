@@ -41,10 +41,6 @@
     };
 
     Forms.refreshClientsList = function() {
-        if (window.MovieHuntInstanceDropdown && document.getElementById('settings-clients-instance-select') && !Forms._clientsInstanceDropdownAttached) {
-            window.MovieHuntInstanceDropdown.attach('settings-clients-instance-select', function() { Forms.refreshClientsList(); });
-            Forms._clientsInstanceDropdownAttached = true;
-        }
         const grid = document.getElementById('client-instances-grid');
         if (!grid) return;
         fetch('./api/clients')
