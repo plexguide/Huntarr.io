@@ -152,7 +152,32 @@ BUNDLES = [
 ]
 
 
-def concat_bundle(output_name: str, files: list[str]) -> bool:
+import re
+
+
+def strip_es_module_syntax(content: str) -> str:
+    """Strip import/export so concatenated bundle works as non-module script."""
+    lines = content.split('\n')
+    out = []
+    for line in lines:
+        stripped = line.strip()
+        # Remove import statements
+        if stripped.startswith('import '):
+            continue
+        # Remove export { X, Y }; or export { X as Y };
+        if re.match(r'^export\s+\{[^}]*\}\s*;?\s*$', stripped):
+            continue
+        # Strip 'export ' prefix from declarations
+        if stripped.startswith('export default '):
+            out.append(re.sub(r'^export\s+default\s+', '', line))
+        elif stripped.startswith('export '):
+            out.append(re.sub(r'^(\s*)export\s+', r'\1', line))
+        else:
+            out.append(line)
+    return '\n'.join(out)
+
+
+def concat_bundle(output_name: str, files: list[str], strip_modules: bool = False) -> bool:
     """Concatenate files into one bundle. Returns True on success."""
     os.makedirs(DIST_DIR, exist_ok=True)
     out_path = os.path.join(DIST_DIR, output_name)
@@ -164,6 +189,8 @@ def concat_bundle(output_name: str, files: list[str]) -> bool:
             continue
         with open(full_path, "r", encoding="utf-8", errors="replace") as f:
             content = f.read()
+        if strip_modules:
+            content = strip_es_module_syntax(content)
         parts.append(f"\n/* === {rel_path} === */\n{content}")
     result = "\n".join(parts)
     with open(out_path, "w", encoding="utf-8") as f:
@@ -176,7 +203,8 @@ def concat_bundle(output_name: str, files: list[str]) -> bool:
 def main():
     print("Building JS bundles...")
     for output_name, files in BUNDLES:
-        concat_bundle(output_name, files)
+        strip_modules = output_name == "requestarr-bundle.js"
+        concat_bundle(output_name, files, strip_modules=strip_modules)
     print("Done. Bundles written to frontend/static/js/dist/")
     return 0
 

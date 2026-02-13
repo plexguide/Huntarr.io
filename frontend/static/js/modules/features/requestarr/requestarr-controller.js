@@ -2,11 +2,16 @@
  * Requestarr Controller - Main entry point and global interface
  */
 // RequestarrDiscover from requestarr-core.js (concatenated)
-// Initialize the Requestarr Discover system
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize the Requestarr Discover system (handle defer + DOMContentLoaded race)
+function initRequestarrDiscover() {
     window.RequestarrDiscover = new RequestarrDiscover();
     console.log('[RequestarrController] Discover modules loaded successfully');
-});
+}
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initRequestarrDiscover);
+} else {
+    initRequestarrDiscover();
+}
 
 /**
  * Global HuntarrRequestarr interface for the main app (app.js)

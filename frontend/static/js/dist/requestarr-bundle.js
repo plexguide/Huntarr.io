@@ -2151,6 +2151,7 @@ class RequestarrSettings {
     }
     
     async loadDefaultInstances() {
+        const { encodeInstanceValue, decodeInstanceValue } = await import('./requestarr-core.js');
         const movieSelect = document.getElementById('default-movie-instance');
         const tvSelect = document.getElementById('default-tv-instance');
         
@@ -2166,14 +2167,8 @@ class RequestarrSettings {
             const radarrResponse = await fetch(`./api/requestarr/instances/radarr?t=${_ts}`, { cache: 'no-store' });
             const radarrData = await radarrResponse.json();
             
-            // Load TV Hunt and Sonarr instances (both for TV dropdown)
-            const [tvHuntResponse, sonarrResponse] = await Promise.all([
-                fetch(`./api/tv-hunt/instances?t=${_ts}`, { cache: 'no-store' }),
-                fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' })
-            ]);
-            let tvHuntData = await tvHuntResponse.json();
-            if (!tvHuntResponse.ok || tvHuntData.error) tvHuntData = { instances: [] };
-            else tvHuntData = { instances: (tvHuntData.instances || []).filter(i => i.enabled !== false) };
+            // Load Sonarr instances
+            const sonarrResponse = await fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' });
             const sonarrData = await sonarrResponse.json();
             
             // Load saved defaults
@@ -2247,53 +2242,27 @@ class RequestarrSettings {
                 movieSelect.innerHTML = '<option value="">No movie instances configured</option>';
             }
             
-            // Populate TV instances: TV Hunt first, then Sonarr (same pattern as movies)
-            const tvHuntInstances = (tvHuntData.instances || []);
-            const tvSonarrInstances = (sonarrData.instances || []);
-            const allTVInstances = [];
-            tvHuntInstances.forEach(inst => {
-                allTVInstances.push({
-                    value: encodeInstanceValue('tv_hunt', inst.name),
-                    label: `TV Hunt - ${inst.name}`,
-                    appType: 'tv_hunt',
-                    name: inst.name
-                });
-            });
-            tvSonarrInstances.forEach(inst => {
-                allTVInstances.push({
-                    value: encodeInstanceValue('sonarr', inst.name),
-                    label: `Sonarr - ${inst.name}`,
-                    appType: 'sonarr',
-                    name: inst.name
-                });
-            });
-            if (allTVInstances.length > 0) {
+            // Populate TV instances (Sonarr only - unchanged)
+            if (sonarrData.instances && sonarrData.instances.length > 0) {
                 tvSelect.innerHTML = '';
-                allTVInstances.forEach(inst => {
+                sonarrData.instances.forEach(instance => {
                     const option = document.createElement('option');
-                    option.value = inst.value;
-                    option.textContent = inst.label;
+                    option.value = instance.name;
+                    option.textContent = `Sonarr - ${instance.name}`;
                     tvSelect.appendChild(option);
                 });
+                
+                // Set selection: saved default or first instance (never leave blank)
                 const savedTV = defaultsData.success && defaultsData.defaults && defaultsData.defaults.tv_instance;
-                let foundMatch = false;
-                if (savedTV && allTVInstances.some(i => i.value === savedTV)) {
-                    tvSelect.value = savedTV;
-                    foundMatch = true;
-                } else if (savedTV) {
-                    const legacyMatch = allTVInstances.find(i => i.appType === 'sonarr' && i.name === savedTV);
-                    if (legacyMatch) {
-                        tvSelect.value = legacyMatch.value;
-                        foundMatch = true;
-                        needsAutoSave = true;
-                    }
-                }
-                if (!foundMatch) {
-                    tvSelect.value = allTVInstances[0].value;
+                const tvExists = savedTV && sonarrData.instances.some(i => i.name === defaultsData.defaults.tv_instance);
+                if (savedTV && tvExists) {
+                    tvSelect.value = defaultsData.defaults.tv_instance;
+                } else {
+                    tvSelect.value = sonarrData.instances[0].name;
                     needsAutoSave = true;
                 }
             } else {
-                tvSelect.innerHTML = '<option value="">No TV instances configured</option>';
+                tvSelect.innerHTML = '<option value="">No Sonarr instances configured</option>';
             }
             
             // Ensure neither dropdown is ever blank when instances exist
@@ -2301,8 +2270,8 @@ class RequestarrSettings {
                 movieSelect.value = allMovieInstances[0].value;
                 needsAutoSave = true;
             }
-            if (allTVInstances.length > 0 && !tvSelect.value) {
-                tvSelect.value = allTVInstances[0].value;
+            if (sonarrData.instances && sonarrData.instances.length > 0 && !tvSelect.value) {
+                tvSelect.value = sonarrData.instances[0].name;
                 needsAutoSave = true;
             }
             
@@ -2367,6 +2336,7 @@ class RequestarrSettings {
 
     /** Default root folders per app (issue #806) */
     async loadDefaultRootFolders() {
+        const { decodeInstanceValue } = await import('./requestarr-core.js');
         const radarrSelect = document.getElementById('default-root-folder-radarr');
         const sonarrSelect = document.getElementById('default-root-folder-sonarr');
         const movieInstanceSelect = document.getElementById('default-movie-instance');
@@ -2499,6 +2469,7 @@ class RequestarrSettings {
     }
 
     async saveDefaultRootFolders() {
+        const { decodeInstanceValue } = await import('./requestarr-core.js');
         const radarrSelect = document.getElementById('default-root-folder-radarr');
         const sonarrSelect = document.getElementById('default-root-folder-sonarr');
         const movieInstanceSelect = document.getElementById('default-movie-instance');
@@ -3269,8 +3240,8 @@ class RequestarrSettings {
 /* === modules/features/requestarr/requestarr-content.js === */
 /**
  * Requestarr Content - Content loading and media card creation
- * encodeInstanceValue, decodeInstanceValue from requestarr-core-utils.js
  */
+
 class RequestarrContent {
     constructor(core) {
         this.core = core;
@@ -3511,12 +3482,10 @@ class RequestarrContent {
         try {
             const _ts = Date.now();
             const [thResponse, sonarrResponse] = await Promise.all([
-                fetch(`./api/tv-hunt/instances?t=${_ts}`, { cache: 'no-store' }),
+                fetch(`./api/requestarr/instances/tv_hunt?t=${_ts}`, { cache: 'no-store' }),
                 fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' })
             ]);
-            let thData = await thResponse.json();
-            if (!thResponse.ok || thData.error) thData = { instances: [] };
-            else thData = { instances: (thData.instances || []).filter(i => i.enabled !== false) };
+            const thData = await thResponse.json();
             const sonarrData = await sonarrResponse.json();
 
             const allInstances = [
@@ -3775,15 +3744,13 @@ class RequestarrContent {
         select.innerHTML = '<option value="">Loading instances...</option>';
 
         try {
-            // Fetch TV Hunt from Media Hunt API (canonical); Sonarr from requestarr
+            // Fetch both TV Hunt and Sonarr instances in parallel (cache-bust for fresh data)
             const _ts = Date.now();
             const [thResponse, sonarrResponse] = await Promise.all([
-                fetch(`./api/tv-hunt/instances?t=${_ts}`, { cache: 'no-store' }),
+                fetch(`./api/requestarr/instances/tv_hunt?t=${_ts}`, { cache: 'no-store' }),
                 fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' })
             ]);
-            let thData = await thResponse.json();
-            if (!thResponse.ok || thData.error) thData = { instances: [] };
-            else thData = { instances: (thData.instances || []).filter(i => i.enabled !== false) };
+            const thData = await thResponse.json();
             const sonarrData = await sonarrResponse.json();
 
             const thInstances = (thData.instances || []).map(inst => ({
@@ -3798,9 +3765,6 @@ class RequestarrContent {
                 _appType: 'sonarr',
                 _label: `Sonarr \u2013 ${String(inst.name).trim()}`
             }));
-
-            // Update core.instances.tv_hunt so request modal has TV Hunt options
-            this.core.instances.tv_hunt = thInstances.map(i => ({ name: i.name, id: i.id }));
 
             // Combine: TV Hunt first, then Sonarr
             const allInstances = [...thInstances, ...sonarrInstances];
@@ -4399,12 +4363,9 @@ class RequestarrContent {
         
         const inLibrary = item.in_library || false;
         const partial = item.partial || false;
-        const hasMovieInstance = ((this.core.instances.radarr || []).length > 0 || (this.core.instances.movie_hunt || []).length > 0)
-            || !!this.selectedMovieInstance;
-        // TV: include tv_hunt; show badge whenever we have Sonarr/TV Hunt instances or a selected TV instance
-        const hasTVInstance = ((this.core.instances.sonarr || []).length > 0 || (this.core.instances.tv_hunt || []).length > 0)
-            || !!this.selectedTVInstance;
-        const hasInstance = item.media_type === 'movie' ? hasMovieInstance : hasTVInstance;
+        const hasInstance = item.media_type === 'movie'
+            ? ((this.core.instances.radarr || []).length > 0 || (this.core.instances.movie_hunt || []).length > 0)
+            : (this.core.instances.sonarr || []).length > 0;
         const metaClassName = hasInstance ? 'media-card-meta' : 'media-card-meta no-hide';
         
         // Determine status badge (shared utility)
@@ -4510,26 +4471,8 @@ class RequestarrContent {
                     this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
                 }
             } else {
-                // For TV shows: open detail page (TV Hunt full / Sonarr limited)
-                if (window.RequestarrTVDetail && window.RequestarrTVDetail.openDetail) {
-                    const seriesData = {
-                        tmdb_id: item.tmdb_id,
-                        id: item.tmdb_id,
-                        title: item.title,
-                        name: item.title,
-                        year: item.year,
-                        poster_path: item.poster_path,
-                        backdrop_path: item.backdrop_path,
-                        overview: item.overview,
-                        vote_average: item.vote_average,
-                        in_library: inLibrary
-                    };
-                    window.RequestarrTVDetail.openDetail(seriesData, {
-                        suggestedInstance: card.suggestedInstance
-                    });
-                } else {
-                    this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
-                }
+                // For TV shows use modal
+                this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
             }
         });
         
@@ -5393,14 +5336,36 @@ class RequestarrModal {
 /**
  * Requestarr Core - Main class, initialization, and view management
  */
+
+
+/**
+ * Encode a compound instance value: "appType:instanceName"
+ */
+function encodeInstanceValue(appType, name) {
+    return `${appType}:${name}`;
+}
+
+/**
+ * Decode a compound instance value back to { appType, name }.
+ * Backward compat: values without ':' use defaultAppType (radarr for movies, sonarr for TV).
+ */
+function decodeInstanceValue(value, defaultAppType = 'radarr') {
+    if (!value) return { appType: defaultAppType, name: '' };
+    const idx = value.indexOf(':');
+    if (idx === -1) return { appType: defaultAppType, name: value };
+    return { appType: value.substring(0, idx), name: value.substring(idx + 1) };
+}
+
 class RequestarrDiscover {
     constructor() {
         this.currentView = 'discover';
         this.instances = { sonarr: [], radarr: [], movie_hunt: [], tv_hunt: [] };
-    this.qualityProfiles = {};
-    this.searchTimeouts = {};
-    this.currentModal = null;
-    this.currentModalData = null;
+        this.qualityProfiles = {};
+        this.searchTimeouts = {};
+        this.currentModal = null;
+        this.currentModalData = null;
+        
+        // Initialize modules
         this.content = new RequestarrContent(this);
         this.search = new RequestarrSearch(this);
         this.modal = new RequestarrModal(this);
@@ -5415,11 +5380,11 @@ class RequestarrDiscover {
     // INITIALIZATION
     // ========================================
 
-    async init() {
-        await this.loadInstances();
+    init() {
+        this.loadInstances();
         this.setupCarouselArrows();
         this.search.setupGlobalSearch();
-        await this.content.loadDiscoverContent();
+        this.content.loadDiscoverContent();
     }
 
     async loadInstances() {
@@ -5427,22 +5392,13 @@ class RequestarrDiscover {
             const _ts = Date.now();
             const response = await fetch(`./api/requestarr/instances?t=${_ts}`, { cache: 'no-store' });
             const data = await response.json();
-            let tvHunt = data.tv_hunt || [];
-            if (tvHunt.length === 0) {
-                try {
-                    const thRes = await fetch(`./api/tv-hunt/instances?t=${_ts}`, { cache: 'no-store' });
-                    if (thRes.ok) {
-                        const th = await thRes.json();
-                        tvHunt = (th.instances || []).filter(i => i.enabled !== false).map(i => ({ name: i.name, id: i.id }));
-                    }
-                } catch (_) {}
-            }
-            if (data.sonarr || data.radarr || data.movie_hunt || tvHunt.length) {
+            
+            if (data.sonarr || data.radarr || data.movie_hunt || data.tv_hunt) {
                 this.instances = {
                     sonarr: data.sonarr || [],
                     radarr: data.radarr || [],
                     movie_hunt: data.movie_hunt || [],
-                    tv_hunt: tvHunt
+                    tv_hunt: data.tv_hunt || []
                 };
                 await this.loadAllQualityProfiles();
             }
@@ -5941,11 +5897,16 @@ window.invalidateSmartHuntCache = invalidateSmartHuntCache;
  * Requestarr Controller - Main entry point and global interface
  */
 // RequestarrDiscover from requestarr-core.js (concatenated)
-// Initialize the Requestarr Discover system
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize the Requestarr Discover system (handle defer + DOMContentLoaded race)
+function initRequestarrDiscover() {
     window.RequestarrDiscover = new RequestarrDiscover();
     console.log('[RequestarrController] Discover modules loaded successfully');
-});
+}
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initRequestarrDiscover);
+} else {
+    initRequestarrDiscover();
+}
 
 /**
  * Global HuntarrRequestarr interface for the main app (app.js)
