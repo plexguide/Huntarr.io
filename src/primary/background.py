@@ -25,7 +25,7 @@ from src.primary.utils.logger import setup_main_logger, get_logger # Import get_
 logger = setup_main_logger()
 
 # Import necessary modules
-from src.primary import config, settings_manager
+from src.primary import settings_manager
 # Removed keys_manager import as settings_manager handles API details
 from src.primary.state import check_state_reset, calculate_reset_time
 from src.primary.stats_manager import check_hourly_cap_exceeded

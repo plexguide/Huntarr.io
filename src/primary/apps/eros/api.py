@@ -326,24 +326,6 @@ def get_quality_upgrades(api_url: str, api_key: str, api_timeout: int, monitored
         eros_logger.error(f"Error retrieving quality upgrade items: {str(e)}")
         return None
 
-def refresh_item(api_url: str, api_key: str, api_timeout: int, item_id: int) -> int:
-    """
-    Refresh functionality has been removed as it was a performance bottleneck.
-    This function now returns a placeholder command ID without making any API calls.
-    
-    Args:
-        api_url: The base URL of the Whisparr V3 API
-        api_key: The API key for authentication
-        api_timeout: Timeout for the API request
-        item_id: The ID of the movie to refresh
-        
-    Returns:
-        A placeholder command ID (123) to simulate success
-    """
-    eros_logger.debug(f"Refresh functionality disabled for movie ID: {item_id}")
-    # Return a placeholder command ID to simulate success without actually refreshing
-    return 123
-
 def item_search(api_url: str, api_key: str, api_timeout: int, item_ids: List[int]) -> int:
     """
     Trigger a search for one or more movies in Whisparr V3.

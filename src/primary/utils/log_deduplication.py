@@ -138,7 +138,3 @@ def format_suppressed_message(original_message: str, suppressed_count: int) -> s
         return f"{original_message} (repeated {suppressed_count} times in last 60s)"
     return original_message
 
-
-def reset_deduplicator():
-    """Reset the global deduplicator (useful for testing)."""
-    _global_deduplicator.reset()

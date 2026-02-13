@@ -21,8 +21,6 @@ import threading
 import importlib
 import requests
 from flask import Flask, render_template, request, jsonify, Response, send_from_directory, redirect, url_for, session, stream_with_context, Blueprint, current_app, g, make_response
-# from src.primary.config import API_URL # No longer needed directly
-# Use only settings_manager
 from src.primary import settings_manager
 from src.primary.utils.logger import setup_main_logger, get_logger, LOG_DIR, update_logging_levels, refresh_log_handlers # Import get_logger, LOG_DIR, update_logging_levels, refresh_log_handlers
 # Clean logging is now database-only
@@ -35,7 +33,7 @@ from src.primary.auth import (
 )
 # Import blueprint for common routes
 from src.primary.routes.common import common_bp
-from src.primary.routes.media_hunt import media_hunt_bp, movie_hunt_bp, tv_hunt_bp
+from src.primary.routes.media_hunt import movie_hunt_bp, tv_hunt_bp
 from src.primary.routes.plex_auth_routes import plex_auth_bp
 # Import blueprints for each app from the centralized blueprints module
 from src.primary.apps.blueprints import sonarr_bp, radarr_bp, lidarr_bp, readarr_bp, whisparr_bp, eros_bp, swaparr_bp, requestarr_bp, prowlarr_bp
@@ -297,7 +295,6 @@ app.secret_key = _get_or_create_secret_key()
 
 # Register blueprints
 app.register_blueprint(common_bp)
-app.register_blueprint(media_hunt_bp)
 app.register_blueprint(movie_hunt_bp)
 app.register_blueprint(tv_hunt_bp)
 app.register_blueprint(plex_auth_bp)

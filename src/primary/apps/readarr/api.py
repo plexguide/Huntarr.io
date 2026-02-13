@@ -500,24 +500,6 @@ def get_wanted_missing_books_random_page(api_url: str, api_key: str, api_timeout
     logger.error("All attempts to get missing books failed")
     return []
 
-def refresh_author(author_id: int, api_url: Optional[str] = None, api_key: Optional[str] = None, api_timeout: Optional[int] = None) -> bool:
-    """
-    Refresh functionality has been removed as it was a performance bottleneck.
-    This function now returns a success value without making any API calls.
-    
-    Args:
-        author_id: The ID of the author to refresh
-        api_url: Optional API URL
-        api_key: Optional API key
-        api_timeout: Optional API timeout
-        
-    Returns:
-        Always returns True to simulate success
-    """
-    logger.debug(f"Refresh functionality disabled for author ID: {author_id}")
-    # Always return success without making any API calls
-    return True
-
 def book_search(book_ids: List[int], api_url: Optional[str] = None, api_key: Optional[str] = None, api_timeout: Optional[int] = None) -> bool:
     """
     Trigger a search for one or more books.

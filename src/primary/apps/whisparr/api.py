@@ -239,24 +239,6 @@ def get_cutoff_unmet_items(api_url: str, api_key: str, api_timeout: int, monitor
         whisparr_logger.error(f"Error retrieving cutoff unmet items: {str(e)}")
         return None
 
-def refresh_item(api_url: str, api_key: str, api_timeout: int, item_id: int) -> int:
-    """
-    Refresh functionality has been removed as it was a performance bottleneck.
-    This function now returns a placeholder command ID without making any API calls.
-    
-    Args:
-        api_url: The base URL of the Whisparr API
-        api_key: The API key for authentication
-        api_timeout: Timeout for the API request
-        item_id: The ID of the item to refresh
-        
-    Returns:
-        A placeholder command ID (123) to simulate success
-    """
-    whisparr_logger.debug(f"Refresh functionality disabled for item ID: {item_id}")
-    # Return a placeholder command ID to simulate success without actually refreshing
-    return 123
-
 def item_search(api_url: str, api_key: str, api_timeout: int, item_ids: List[int]) -> int:
     """
     Trigger a search for one or more items.

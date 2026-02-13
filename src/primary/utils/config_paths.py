@@ -84,10 +84,11 @@ os.environ["HUNTARR_CONFIG_DIR"] = str(CONFIG_PATH)
 os.environ["CONFIG_DIR"] = str(CONFIG_PATH)  # For backward compatibility
 
 
-# Helper functions to get paths
-def get_path(*args):
-    """Get a path relative to the config directory"""
-    return CONFIG_PATH.joinpath(*args)
-
 # Legacy JSON config path functions removed - all settings now stored in database
 # Reset file functions removed - all reset requests now stored in database
+
+
+def ensure_directories() -> None:
+    """Ensure config and logs directories exist. Used by Windows service startup."""
+    CONFIG_PATH.mkdir(parents=True, exist_ok=True)
+    LOG_DIR.mkdir(parents=True, exist_ok=True)

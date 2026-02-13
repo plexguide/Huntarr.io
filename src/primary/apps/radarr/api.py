@@ -415,27 +415,6 @@ def get_cutoff_unmet_movies_random_page(api_url: str, api_key: str, api_timeout:
     radarr_logger.info(f"✅ Returning {len(records)} cutoff unmet movies from random sampling")
     return records
 
-def refresh_movie(api_url: str, api_key: str, api_timeout: int, movie_id: int, 
-                 command_wait_delay: int = 1, command_wait_attempts: int = 600) -> Optional[int]:
-    """
-    Refresh functionality has been removed as it was a performance bottleneck.
-    This function now returns a placeholder success value without making any API calls.
-    
-    Args:
-        api_url: The base URL of the Radarr API
-        api_key: The API key for authentication
-        api_timeout: Timeout for the API request
-        movie_id: The ID of the movie to refresh
-        command_wait_delay: Seconds to wait between command status checks
-        command_wait_attempts: Maximum number of status check attempts
-        
-    Returns:
-        A placeholder command ID (123) to simulate success
-    """
-    radarr_logger.debug(f"Refresh functionality disabled for movie ID: {movie_id}")
-    # Return a placeholder command ID (123) to simulate success without actually refreshing
-    return 123
-
 def movie_search(api_url: str, api_key: str, api_timeout: int, movie_ids: List[int]) -> Optional[int]:
     """
     Trigger a search for one or more movies.

@@ -474,19 +474,6 @@ def search_artist(api_url: str, api_key: str, api_timeout: int, artist_id: int) 
         lidarr_logger.error(f"Failed to trigger Lidarr ArtistSearch for artist ID {artist_id}. Response: {response}")
         return None
 
-def refresh_artist(api_url: str, api_key: str, api_timeout: int, artist_id: int) -> Optional[Dict]:
-    """Refresh functionality has been removed as it was a performance bottleneck.
-    This function now returns a placeholder success value without making any API calls."""
-    lidarr_logger.debug(f"Refresh functionality disabled for artist ID: {artist_id}")
-    # Return a placeholder command object to simulate success
-    return {
-        'id': 123,
-        'name': 'RefreshArtist',
-        'status': 'completed',
-        'artistId': artist_id,
-        'message': 'Refresh functionality disabled for performance reasons'
-    }
-
 def get_command_status(api_url: str, api_key: str, api_timeout: int, command_id: int) -> Optional[Dict[str, Any]]:
     """Get the status of a Lidarr command."""
     response = arr_request(api_url, api_key, api_timeout, f"command/{command_id}")

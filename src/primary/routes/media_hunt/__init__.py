@@ -6,7 +6,6 @@ from flask import Blueprint
 
 from ...utils.logger import get_logger
 
-media_hunt_bp = Blueprint("media_hunt", __name__)
 movie_hunt_bp = Blueprint("movie_hunt", __name__)
 tv_hunt_bp = Blueprint("tv_hunt", __name__)
 

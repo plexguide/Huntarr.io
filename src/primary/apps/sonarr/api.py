@@ -892,14 +892,6 @@ def get_download_queue_size(api_url: str, api_key: str, api_timeout: int) -> int
     sonarr_logger.error(f"All {retries+1} attempts to get download queue size failed")
     return -1
 
-def refresh_series(api_url: str, api_key: str, api_timeout: int, series_id: int) -> Optional[Union[int, str]]:
-    """Refresh functionality has been removed as it was a performance bottleneck.
-    This function now returns a placeholder success value without making any API calls.
-    """
-    sonarr_logger.debug(f"Refresh functionality disabled for series ID: {series_id}")
-    # Return a placeholder command ID (123) to simulate success without actually refreshing
-    return 123
-
 def get_series_by_id(api_url: str, api_key: str, api_timeout: int, series_id: int) -> Optional[Dict[str, Any]]:
     """Get series details by ID from Sonarr."""
     try:
