@@ -1774,11 +1774,20 @@ html, body {
     padding: 40px !important;
     box-sizing: border-box !important;
     height: 0 !important;
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.85) 100%) !important;
 }
 
 .content-section.active {
     display: flex !important;
     flex-direction: column !important;
+}
+
+body:has(.app-container) .main-content,
+.app-container .main-content {
+    background-color: #0f172a !important;
+}
+body:has(.app-container) {
+    background-color: #0f172a !important;
 }
 
 @media (max-width: 768px) {
