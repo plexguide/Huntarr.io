@@ -3,6 +3,36 @@
  * Aggressive fix for double scrollbars in the Apps section
  */
 
+/* ── Match Media Hunt Collection: dark blue background (same as #media-hunt-collection) ─── */
+#appsSection,
+#sonarrSection, #radarrSection, #lidarrSection,
+#readarrSection, #whisparrSection, #erosSection,
+#prowlarrSection, #swaparrSection {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.85) 100%) !important;
+}
+
+/* Apply to body/main-content when app section is visible so entire viewport matches */
+body:has(#appsSection.active),
+body:has(#sonarrSection.active),
+body:has(#radarrSection.active),
+body:has(#lidarrSection.active),
+body:has(#readarrSection.active),
+body:has(#whisparrSection.active),
+body:has(#erosSection.active),
+body:has(#prowlarrSection.active),
+body:has(#swaparrSection.active),
+.main-content:has(#appsSection.active),
+.main-content:has(#sonarrSection.active),
+.main-content:has(#radarrSection.active),
+.main-content:has(#lidarrSection.active),
+.main-content:has(#readarrSection.active),
+.main-content:has(#whisparrSection.active),
+.main-content:has(#erosSection.active),
+.main-content:has(#prowlarrSection.active),
+.main-content:has(#swaparrSection.active) {
+    background-color: #0f172a !important;
+}
+
 /* CRITICAL: Make sure only the main content scrolls */
 html, body {
     overflow: hidden !important;
