@@ -2,7 +2,7 @@
  * Requestarr TV Filters - Filter management for TV shows
  */
 
-export class RequestarrTVFilters {
+class RequestarrTVFilters {
     constructor(core) {
         this.core = core;
         

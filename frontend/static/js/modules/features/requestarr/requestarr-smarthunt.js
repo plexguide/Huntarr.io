@@ -15,7 +15,7 @@
  * @deprecated No-op — localStorage cache has been removed. Server-side only.
  * Kept so existing callers (settings save) don't throw.
  */
-export function invalidateSmartHuntCache() {
+function invalidateSmartHuntCache() {
     // Clean up any legacy localStorage entries from before this change
     try {
         const prefix = 'huntarr-smarthunt-page-';
@@ -29,7 +29,7 @@ export function invalidateSmartHuntCache() {
 // SmartHunt class
 // ---------------------------------------------------------------------------
 
-export class SmartHunt {
+class SmartHunt {
     /**
      * @param {Object} opts
      * @param {string} opts.carouselId — DOM id of the .media-carousel container

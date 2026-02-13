@@ -2,7 +2,7 @@
  * Requestarr Search - Global and per-view search functionality
  */
 
-export class RequestarrSearch {
+class RequestarrSearch {
     constructor(core) {
         this.core = core;
     }

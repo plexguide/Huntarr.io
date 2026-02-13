@@ -2,7 +2,7 @@
  * Requestarr Settings - Settings and history management
  */
 
-export class RequestarrSettings {
+class RequestarrSettings {
     constructor(core) {
         this.core = core;
         this.hiddenMediaControlsInitialized = false;
@@ -668,7 +668,6 @@ export class RequestarrSettings {
     }
     
     async loadDefaultInstances() {
-        const { encodeInstanceValue, decodeInstanceValue } = await import('./requestarr-core.js');
         const movieSelect = document.getElementById('default-movie-instance');
         const tvSelect = document.getElementById('default-tv-instance');
         
@@ -885,7 +884,6 @@ export class RequestarrSettings {
 
     /** Default root folders per app (issue #806) */
     async loadDefaultRootFolders() {
-        const { decodeInstanceValue } = await import('./requestarr-core.js');
         const radarrSelect = document.getElementById('default-root-folder-radarr');
         const sonarrSelect = document.getElementById('default-root-folder-sonarr');
         const movieInstanceSelect = document.getElementById('default-movie-instance');
@@ -1018,7 +1016,6 @@ export class RequestarrSettings {
     }
 
     async saveDefaultRootFolders() {
-        const { decodeInstanceValue } = await import('./requestarr-core.js');
         const radarrSelect = document.getElementById('default-root-folder-radarr');
         const sonarrSelect = document.getElementById('default-root-folder-sonarr');
         const movieInstanceSelect = document.getElementById('default-movie-instance');

@@ -2,7 +2,7 @@
  * Requestarr Filters - Filter management for movies
  */
 
-export class RequestarrFilters {
+class RequestarrFilters {
     constructor(core) {
         this.core = core;
         

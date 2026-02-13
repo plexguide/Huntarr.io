@@ -1,10 +1,7 @@
 /**
  * Requestarr Controller - Main entry point and global interface
- * Coordinates between the main application and the Requestarr ES6 modules.
  */
-
-import { RequestarrDiscover } from './requestarr-core.js';
-
+// RequestarrDiscover from requestarr-core.js (concatenated)
 // Initialize the Requestarr Discover system
 document.addEventListener('DOMContentLoaded', () => {
     window.RequestarrDiscover = new RequestarrDiscover();

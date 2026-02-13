@@ -1,9 +1,8 @@
 /**
  * Requestarr Content - Content loading and media card creation
+ * encodeInstanceValue, decodeInstanceValue from requestarr-core-utils.js
  */
-import { encodeInstanceValue, decodeInstanceValue } from './requestarr-core.js';
-
-export class RequestarrContent {
+class RequestarrContent {
     constructor(core) {
         this.core = core;
         this.moviesPage = 1;

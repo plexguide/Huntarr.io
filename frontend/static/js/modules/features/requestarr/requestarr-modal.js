@@ -2,9 +2,8 @@
  * Requestarr Modal - Two-column poster + form layout (matches Movie Hunt design)
  */
 
-import { encodeInstanceValue, decodeInstanceValue } from './requestarr-core.js';
-
-export class RequestarrModal {
+/* encodeInstanceValue, decodeInstanceValue from requestarr-core-utils.js (loaded first) */
+class RequestarrModal {
     constructor(core) {
         this.core = core;
     }

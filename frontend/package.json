@@ -1,1 +1,0 @@
-{"name":"huntarr","private":true,"scripts":{"build:requestarr":"vite build","build":"npm run build:requestarr"},"devDependencies":{"vite":"^5.4.0"}}

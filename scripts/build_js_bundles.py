@@ -107,6 +107,22 @@ BUNDLES = [
         ],
     ),
     (
+        "requestarr-bundle.js",
+        [
+            "modules/features/requestarr/requestarr-core-utils.js",
+            "modules/features/requestarr/requestarr-filters.js",
+            "modules/features/requestarr/requestarr-tv-filters.js",
+            "modules/features/requestarr/requestarr-search.js",
+            "modules/features/requestarr/requestarr-settings.js",
+            "modules/features/requestarr/requestarr-content.js",
+            "modules/features/requestarr/requestarr-modal.js",
+            "modules/features/requestarr/requestarr-core.js",
+            "modules/features/requestarr/requestarr-smarthunt.js",
+            "modules/features/requestarr/requestarr-controller.js",
+            "modules/features/requestarr/requestarr-home.js",
+        ],
+    ),
+    (
         "bundle-misc.js",
         [
             "modules/features/requestarr/requestarr-detail.js",

@@ -1,42 +1,14 @@
 /**
  * Requestarr Core - Main class, initialization, and view management
  */
-
-import { RequestarrContent } from './requestarr-content.js';
-import { RequestarrSearch } from './requestarr-search.js';
-import { RequestarrModal } from './requestarr-modal.js';
-import { RequestarrSettings } from './requestarr-settings.js';
-import { RequestarrFilters } from './requestarr-filters.js';
-import { RequestarrTVFilters } from './requestarr-tv-filters.js';
-
-/**
- * Encode a compound instance value: "appType:instanceName"
- */
-export function encodeInstanceValue(appType, name) {
-    return `${appType}:${name}`;
-}
-
-/**
- * Decode a compound instance value back to { appType, name }.
- * Backward compat: values without ':' use defaultAppType (radarr for movies, sonarr for TV).
- */
-export function decodeInstanceValue(value, defaultAppType = 'radarr') {
-    if (!value) return { appType: defaultAppType, name: '' };
-    const idx = value.indexOf(':');
-    if (idx === -1) return { appType: defaultAppType, name: value };
-    return { appType: value.substring(0, idx), name: value.substring(idx + 1) };
-}
-
-export class RequestarrDiscover {
+class RequestarrDiscover {
     constructor() {
         this.currentView = 'discover';
         this.instances = { sonarr: [], radarr: [], movie_hunt: [], tv_hunt: [] };
-        this.qualityProfiles = {};
-        this.searchTimeouts = {};
-        this.currentModal = null;
-        this.currentModalData = null;
-        
-        // Initialize modules
+    this.qualityProfiles = {};
+    this.searchTimeouts = {};
+    this.currentModal = null;
+    this.currentModalData = null;
         this.content = new RequestarrContent(this);
         this.search = new RequestarrSearch(this);
         this.modal = new RequestarrModal(this);
