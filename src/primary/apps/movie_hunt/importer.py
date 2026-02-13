@@ -314,6 +314,32 @@ def _auto_probe_file(title: str, year: str, file_path: str, instance_id: int = N
         _mh_log().debug("Import probe: error for '%s' (%s): %s", title, year, e)
 
 
+def _cleanup_source_folder(local_path: str, root_folder: str, title: str, year: str) -> None:
+    """
+    Remove the source download folder after successful import.
+    Prevents leftover folders with samples, .nfo, .par2, etc. from accumulating.
+    """
+    if not local_path or not os.path.isdir(local_path):
+        return
+    # Safety: don't delete root-level or destination paths
+    local_real = os.path.realpath(local_path)
+    root_real = os.path.realpath(root_folder)
+    if local_real == root_real:
+        return
+    if local_real.rstrip(os.sep) == os.path.realpath('/').rstrip(os.sep):
+        return
+    # Require at least 2 path components (e.g. /downloads/foo, not just /downloads)
+    parts = Path(local_path).parts
+    if len(parts) < 2:
+        return
+    try:
+        shutil.rmtree(local_path)
+        _mh_log().info("Import: cleaned up source folder '%s' (%s): %s", title, year, local_path)
+    except OSError as e:
+        # Don't raise - import succeeded, cleanup is best-effort
+        _mh_log().warning("Import: could not remove source folder %s: %s", local_path, e)
+
+
 def import_movie(client: Dict[str, Any], title: str, year: str, download_path: str, instance_id: int = None) -> bool:
     """
     Import a completed movie download to its root folder.
@@ -394,6 +420,11 @@ def import_movie(client: Dict[str, Any], title: str, year: str, download_path: s
             client_name = client.get('name', 'Download client')
             _add_import_history(title, year, client_name, dest_file, success=True)
             _auto_probe_file(title, year, dest_file, instance_id)
+            # Clean up source folder (redundant download + junk)
+            try:
+                _cleanup_source_folder(local_path, root_folder, title, year)
+            except Exception as e:
+                _mh_log().warning("Import: cleanup of source folder failed (non-fatal): %s", e)
             return True
         
         # 7. Move file (use shutil.move which handles cross-filesystem moves)
@@ -417,6 +448,12 @@ def import_movie(client: Dict[str, Any], title: str, year: str, download_path: s
         
         # 10. Auto-probe the imported file (cache media info for detail page)
         _auto_probe_file(title, year, dest_file, instance_id)
+        
+        # 11. Clean up source folder (remove download folder and any leftover trash)
+        try:
+            _cleanup_source_folder(local_path, root_folder, title, year)
+        except Exception as e:
+            _mh_log().warning("Import: cleanup of source folder failed (non-fatal): %s", e)
         
         _mh_log().info("Import: completed '%s' (%s) -> %s", title, year, dest_file)
         return True
