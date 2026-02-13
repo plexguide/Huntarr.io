@@ -824,17 +824,21 @@ window.HuntarrNavigation = {
         }
         const collectionSections = ['movie-hunt-home', 'movie-hunt-collection', 'media-hunt-collection', 'settings-import-media', 'movie-hunt-calendar'];
         const activitySections = ['activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'logs-tv-hunt', 'tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist'];
-        const settingsSections = ['movie-hunt-settings', 'media-hunt-settings', 'settings-instance-management', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'profile-editor', 'settings-custom-formats', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-root-folders', 'instance-editor'];
+        const settingsSections = ['movie-hunt-settings', 'media-hunt-settings', 'settings-instance-management', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'profile-editor', 'settings-custom-formats', 'settings-import-lists', 'settings-root-folders', 'instance-editor'];
+        const indexMasterSections = ['indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history', 'settings-clients'];
         const onCollection = collectionSections.indexOf(currentSection) !== -1;
         const onActivity = activitySections.indexOf(sectionForNav) !== -1;
         const onSettings = settingsSections.indexOf(currentSection) !== -1;
+        const onIndexMaster = indexMasterSections.indexOf(sectionForNav) !== -1;
 
         const colSub = document.getElementById('movie-hunt-collection-sub');
         const actSub = document.getElementById('movie-hunt-activity-sub');
         const setSub = document.getElementById('movie-hunt-settings-sub');
+        const idxMasterSub = document.getElementById('index-master-sub');
         if (colSub) colSub.classList.toggle('expanded', onCollection);
         if (actSub) actSub.classList.toggle('expanded', onActivity);
         if (setSub) setSub.classList.toggle('expanded', onSettings);
+        if (idxMasterSub) idxMasterSub.classList.toggle('expanded', onIndexMaster);
 
         const items = document.querySelectorAll('#movie-hunt-sidebar .nav-item');
         const isActivitySub = activitySections.indexOf(sectionForNav) !== -1;

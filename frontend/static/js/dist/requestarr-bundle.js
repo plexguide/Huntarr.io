@@ -3482,10 +3482,12 @@ class RequestarrContent {
         try {
             const _ts = Date.now();
             const [thResponse, sonarrResponse] = await Promise.all([
-                fetch(`./api/requestarr/instances/tv_hunt?t=${_ts}`, { cache: 'no-store' }),
+                fetch(`./api/tv-hunt/instances?t=${_ts}`, { cache: 'no-store' }),
                 fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' })
             ]);
-            const thData = await thResponse.json();
+            let thData = await thResponse.json();
+            if (!thResponse.ok || thData.error) thData = { instances: [] };
+            else thData = { instances: (thData.instances || []).filter(i => i.enabled !== false) };
             const sonarrData = await sonarrResponse.json();
 
             const allInstances = [
@@ -3744,13 +3746,15 @@ class RequestarrContent {
         select.innerHTML = '<option value="">Loading instances...</option>';
 
         try {
-            // Fetch both TV Hunt and Sonarr instances in parallel (cache-bust for fresh data)
+            // Fetch TV Hunt from Media Hunt API (canonical); Sonarr from requestarr
             const _ts = Date.now();
             const [thResponse, sonarrResponse] = await Promise.all([
-                fetch(`./api/requestarr/instances/tv_hunt?t=${_ts}`, { cache: 'no-store' }),
+                fetch(`./api/tv-hunt/instances?t=${_ts}`, { cache: 'no-store' }),
                 fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' })
             ]);
-            const thData = await thResponse.json();
+            let thData = await thResponse.json();
+            if (!thResponse.ok || thData.error) thData = { instances: [] };
+            else thData = { instances: (thData.instances || []).filter(i => i.enabled !== false) };
             const sonarrData = await sonarrResponse.json();
 
             const thInstances = (thData.instances || []).map(inst => ({
@@ -3765,6 +3769,9 @@ class RequestarrContent {
                 _appType: 'sonarr',
                 _label: `Sonarr \u2013 ${String(inst.name).trim()}`
             }));
+
+            // Update core.instances.tv_hunt so request modal has TV Hunt options
+            this.core.instances.tv_hunt = thInstances.map(i => ({ name: i.name, id: i.id }));
 
             // Combine: TV Hunt first, then Sonarr
             const allInstances = [...thInstances, ...sonarrInstances];

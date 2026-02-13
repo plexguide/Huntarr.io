@@ -154,10 +154,11 @@ def api_ih_sync():
             if mode == 'tv':
                 raw = list(TV_INDEXER_DEFAULT_CATEGORIES)
                 default_cats = _filter_categories_tv(raw) or list(TV_INDEXER_DEFAULT_CATEGORIES)
+                ih_name = ih_idx.get('name') or ih_idx.get('display_name') or 'Unnamed'
                 new_idx = {
                     'id': str(_uuid.uuid4())[:8],
-                    'name': ih_idx.get('name', 'Unnamed'),
-                    'display_name': ih_idx.get('display_name', ''),
+                    'name': ih_name,
+                    'display_name': ih_name,
                     'url': ih_idx.get('url', ''),
                     'api_url': ih_idx.get('url', ''),
                     'api_key': ih_idx.get('api_key', ''),
@@ -173,9 +174,10 @@ def api_ih_sync():
                 else:
                     raw = list(ih_idx.get('categories', INDEXER_DEFAULT_CATEGORIES))
                 default_cats = _filter_categories_movie(raw) or list(INDEXER_DEFAULT_CATEGORIES)
+                ih_name = ih_idx.get('name') or ih_idx.get('display_name') or 'Unnamed'
                 new_idx = {
-                    'name': ih_idx.get('name', 'Unnamed'),
-                    'display_name': ih_idx.get('display_name', ''),
+                    'name': ih_name,
+                    'display_name': ih_name,
                     'preset': preset,
                     'api_key': ih_idx.get('api_key', ''),
                     'enabled': ih_idx.get('enabled', True),

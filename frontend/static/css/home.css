@@ -3,15 +3,6 @@
    All home-section styles in one file.  Loaded only by homeSection.
    ═══════════════════════════════════════════════════════════════════ */
 
-/* ── Match Media Hunt Collection & Apps: dark blue background for consistency ─── */
-body:has(#homeSection.active),
-.main-content:has(#homeSection.active) {
-    background-color: #0f172a !important;
-}
-#homeSection {
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.85) 100%) !important;
-}
-
 /* ═══════════════════════════════════════════════════════════════════
    MODERN REDESIGN OVERRIDES — matches Logs/Hunt Manager design
    ═══════════════════════════════════════════════════════════════════ */

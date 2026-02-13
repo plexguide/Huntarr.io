@@ -11,7 +11,21 @@ PGID=${PGID:-0}
 # If running as root (default / backward compatible)
 if [ "$PUID" -eq 0 ] && [ "$PGID" -eq 0 ]; then
     echo "[entrypoint] Running as root (no PUID/PGID set)"
-    exec python3 main.py
+    echo "[entrypoint] Config dir: ${HUNTARR_CONFIG_DIR:-/config}"
+    if [ -d /config ]; then
+        echo "[entrypoint] /config exists, ensuring writable..."
+        if touch /config/.write_test 2>/dev/null; then
+            rm -f /config/.write_test
+            echo "[entrypoint] /config writable OK"
+            exec python3 main.py 2>&1 | tee -a /config/huntarr_startup.log
+        else
+            echo "[entrypoint] WARNING: /config not writable, starting without startup log"
+            exec python3 main.py
+        fi
+    else
+        echo "[entrypoint] WARNING: /config does not exist"
+        exec python3 main.py
+    fi
 fi
 
 # Running as non-root user

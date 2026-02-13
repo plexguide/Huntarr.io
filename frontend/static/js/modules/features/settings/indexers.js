@@ -20,9 +20,7 @@
         const isDefault = index === 0;
         const isTV = Forms._indexersMode === 'tv';
         const indexerIdAttr = (isTV && indexer.id) ? ' data-indexer-id="' + String(indexer.id).replace(/"/g, '&quot;') + '"' : '';
-        // For IH-synced indexers, show display_name (custom tracking name) in header; fall back to preset name
-        const isIHCard = !!(indexer.indexer_hunt_id);
-        const headerName = isIHCard && indexer.display_name ? indexer.display_name : (indexer.name || 'Unnamed');
+        const headerName = indexer.name || indexer.display_name || 'Unnamed';
         const name = headerName.replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const last4 = indexer.api_key_last4 || (indexer.api_key && indexer.api_key.slice(-4)) || '****';
         const preset = (indexer.preset || 'manual').replace(/"/g, '&quot;');

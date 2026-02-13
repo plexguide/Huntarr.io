@@ -1688,25 +1688,56 @@
             if (!fromHistory) history.back();
         },
 
-        startDownload() {
+        openWatchPlayer() {
             const tmdbId = this.currentMovie && (this.currentMovie.tmdb_id || this.currentMovie.id);
             const instanceId = this.selectedInstanceId;
             const title = (this.currentMovie && this.currentMovie.title) || 'Movie';
             if (!tmdbId || !instanceId) return;
 
-            const downloadUrl = './api/movie-hunt/stream/' + tmdbId + '?instance_id=' + encodeURIComponent(instanceId) + '&download=1';
-            const a = document.createElement('a');
-            a.href = downloadUrl;
-            a.download = (title || 'movie').replace(/[<>:"/\\|?*]/g, '_') + '.mkv';
-            a.rel = 'noopener';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            const streamUrl = './api/movie-hunt/stream/' + tmdbId + '?instance_id=' + encodeURIComponent(instanceId);
 
-            // Show "Download requested" in grey as feedback (resets on page refresh)
-            const actionsContainer = document.getElementById('mh-detail-actions');
-            if (actionsContainer) {
-                actionsContainer.innerHTML = '<span class="mh-btn mh-btn-static" style="color:#94a3b8;background:rgba(148,163,184,0.15);cursor:default;"><i class="fas fa-check"></i> Download requested</span>';
+            let modal = document.getElementById('mh-watch-player-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'mh-watch-player-modal';
+                modal.className = 'mh-watch-modal';
+                modal.innerHTML =
+                    '<div class="mh-watch-modal-backdrop"></div>' +
+                    '<div class="mh-watch-modal-content">' +
+                    '<div class="mh-watch-modal-header">' +
+                    '<h3 class="mh-watch-modal-title"></h3>' +
+                    '<button class="mh-watch-modal-close" id="mh-watch-modal-close" aria-label="Close"><i class="fas fa-times"></i></button>' +
+                    '</div>' +
+                    '<div class="mh-watch-modal-video">' +
+                    '<video id="mh-watch-video" controls playsinline controlsList="nodownload"></video>' +
+                    '</div>' +
+                    '</div>';
+                document.body.appendChild(modal);
+
+                modal.querySelector('.mh-watch-modal-backdrop').onclick = () => this.closeWatchPlayer();
+                modal.querySelector('#mh-watch-modal-close').onclick = () => this.closeWatchPlayer();
+                modal.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') this.closeWatchPlayer();
+                });
+            }
+
+            modal.querySelector('.mh-watch-modal-title').textContent = title;
+            const video = modal.querySelector('#mh-watch-video');
+            video.src = streamUrl;
+            video.load();
+            modal.classList.add('active');
+            video.focus();
+        },
+
+        closeWatchPlayer() {
+            const modal = document.getElementById('mh-watch-player-modal');
+            if (modal) {
+                modal.classList.remove('active');
+                const video = modal.querySelector('#mh-watch-video');
+                if (video) {
+                    video.pause();
+                    video.removeAttribute('src');
+                }
             }
         },
 
@@ -2096,6 +2127,11 @@
             // ESC to close
             const escHandler = (e) => {
                 if (e.key === 'Escape') {
+                    var watchModal = document.getElementById('mh-watch-player-modal');
+                    if (watchModal && watchModal.classList.contains('active')) {
+                        this.closeWatchPlayer();
+                        return;
+                    }
                     if (document.querySelector('.mh-modal-backdrop')) return;
                     this.closeDetail();
                     document.removeEventListener('keydown', escHandler);
@@ -2470,9 +2506,9 @@
                 var isRequested = data && data.found && !isDownloaded;
                 var hasFile = !!(data && data.has_file);
                 if (isDownloaded && hasFile) {
-                    actionsContainer.innerHTML = '<button class="mh-btn mh-btn-watch" id="mh-btn-download"><i class="fas fa-download"></i> Download</button>';
-                    const downloadBtn = document.getElementById('mh-btn-download');
-                    if (downloadBtn) downloadBtn.addEventListener('click', () => this.startDownload());
+                    actionsContainer.innerHTML = '<button class="mh-btn mh-btn-watch" id="mh-btn-watch"><i class="fas fa-play"></i> Watch</button>';
+                    const watchBtn = document.getElementById('mh-btn-watch');
+                    if (watchBtn) watchBtn.addEventListener('click', () => this.openWatchPlayer());
                 } else if (isDownloaded || isRequested) {
                     actionsContainer.innerHTML = '';
                 } else {

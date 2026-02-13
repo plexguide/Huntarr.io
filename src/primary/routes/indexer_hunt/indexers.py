@@ -18,31 +18,25 @@ from ..media_hunt.indexers import (
 )
 
 
-def _dedupe_display_name(display_name, db, exclude_id=None):
-    """Ensure display_name is unique among Indexer Hunt indexers.
-    If a duplicate exists, append -2, -3, etc. until unique.
-    ``exclude_id`` lets us skip the indexer being edited so it doesn't
-    conflict with itself.
-    Compares against each indexer's *effective* display name —
-    i.e. display_name if set, otherwise the preset name."""
-    if not display_name:
-        return display_name
+def _dedupe_name(name, db, exclude_id=None):
+    """Ensure name is unique among Indexer Hunt indexers.
+    If a duplicate exists, append -1, -2, etc. until unique.
+    ``exclude_id`` lets us skip the indexer being edited so it doesn't conflict with itself."""
+    if not name:
+        return name
     all_indexers = db.get_indexer_hunt_indexers()
     existing_names = set()
     for idx in all_indexers:
         if exclude_id and idx['id'] == exclude_id:
             continue
-        # Use display_name if set, otherwise fall back to preset name
-        dn = (idx.get('display_name') or idx.get('name') or '').strip()
-        if dn:
-            existing_names.add(dn.lower())
-    # If not taken, return as-is
-    if display_name.lower() not in existing_names:
-        return display_name
-    # Find next available suffix
-    counter = 2
+        n = (idx.get('name') or idx.get('display_name') or '').strip()
+        if n:
+            existing_names.add(n.lower())
+    if name.strip().lower() not in existing_names:
+        return name.strip()
+    counter = 1
     while True:
-        candidate = f'{display_name}-{counter}'
+        candidate = f'{name.strip()}-{counter}'
         if candidate.lower() not in existing_names:
             return candidate
         counter += 1
@@ -110,7 +104,6 @@ def api_ih_add():
         data = request.get_json() or {}
         preset = (data.get('preset') or 'manual').strip().lower()
         name = (data.get('name') or '').strip()
-        display_name = (data.get('display_name') or '').strip()
         protocol = (data.get('protocol') or 'usenet').strip().lower()
 
         # Resolve URL / api_path from preset if applicable
@@ -138,13 +131,10 @@ def api_ih_add():
 
         from src.primary.utils.database import get_database
         db = get_database()
-        # Default display_name to preset name if not provided, then deduplicate
-        if not display_name:
-            display_name = name or 'Unnamed'
-        display_name = _dedupe_display_name(display_name, db)
+        name = _dedupe_name(name or 'Unnamed', db)
         idx_id = db.add_indexer_hunt_indexer({
-            'name': name or 'Unnamed',
-            'display_name': display_name,
+            'name': name,
+            'display_name': name,
             'preset': preset,
             'protocol': protocol,
             'url': url,
@@ -175,9 +165,13 @@ def api_ih_update(idx_id):
         data = request.get_json() or {}
         updates = {}
 
-        for field in ['name', 'display_name', 'preset', 'protocol', 'url', 'api_path', 'enabled', 'categories']:
+        for field in ['preset', 'protocol', 'url', 'api_path', 'enabled', 'categories']:
             if field in data:
                 updates[field] = data[field]
+        if 'name' in data:
+            raw = (data.get('name') or '').strip()
+            updates['name'] = _dedupe_name(raw or 'Unnamed', db, exclude_id=idx_id)
+            updates['display_name'] = updates['name']
 
         # API key: only update if non-empty (front-end sends empty when unchanged)
         api_key_new = (data.get('api_key') or '').strip()
@@ -190,20 +184,16 @@ def api_ih_update(idx_id):
             except (TypeError, ValueError):
                 pass
 
-        # Auto-deduplicate display_name if it clashes with another indexer
-        if 'display_name' in updates and updates['display_name']:
-            updates['display_name'] = _dedupe_display_name(updates['display_name'], db, exclude_id=idx_id)
-
         db.update_indexer_hunt_indexer(idx_id, updates)
 
-        # Check if API key, enabled, or display_name changed — those propagate to Movie Hunt
+        # Check if API key, enabled, or name changed — those propagate to linked instances
         propagated_fields = {}
         if 'api_key' in updates:
             propagated_fields['api_key'] = updates['api_key']
         if 'enabled' in updates:
             propagated_fields['enabled'] = updates['enabled']
-        if 'display_name' in updates:
-            propagated_fields['display_name'] = updates['display_name']
+        if 'name' in updates:
+            propagated_fields['display_name'] = updates['name']
 
         linked_count = 0
         if propagated_fields:

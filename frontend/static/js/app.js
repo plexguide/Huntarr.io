@@ -1738,7 +1738,7 @@ let huntarrUI = {
         } else if (section === 'settings-clients' && document.getElementById('settingsClientsSection')) {
             document.getElementById('settingsClientsSection').classList.add('active');
             document.getElementById('settingsClientsSection').style.display = 'block';
-            if (document.getElementById('movieHuntSettingsClientsNav')) document.getElementById('movieHuntSettingsClientsNav').classList.add('active');
+            if (document.getElementById('movieHuntIndexMasterClientsNav')) document.getElementById('movieHuntIndexMasterClientsNav').classList.add('active');
             if (document.getElementById('mediaHuntInstanceManagementSection')) {
                 document.getElementById('mediaHuntInstanceManagementSection').classList.remove('active');
                 document.getElementById('mediaHuntInstanceManagementSection').style.display = 'none';
@@ -2072,13 +2072,13 @@ let huntarrUI = {
         // User requested: don't hide icons when selecting menu options
     },
 
-    /** When in instance-editor for indexer/client, keep Indexers or Clients nav item highlighted. */
+    /** When in instance-editor for indexer/client, keep Index Master or Clients nav item highlighted. */
     _highlightMovieHuntNavForEditor: function(appType) {
-        var subGroup = document.getElementById('movie-hunt-settings-sub');
+        var subGroup = document.getElementById('index-master-sub');
         if (subGroup) subGroup.classList.add('expanded');
         var items = document.querySelectorAll('#movie-hunt-sidebar .nav-item');
         for (var i = 0; i < items.length; i++) items[i].classList.remove('active');
-        var nav = appType === 'indexer' ? document.getElementById('movieHuntSettingsIndexersNav') : document.getElementById('movieHuntSettingsClientsNav');
+        var nav = appType === 'indexer' ? document.getElementById('movieHuntIndexMasterNav') : document.getElementById('movieHuntIndexMasterClientsNav');
         if (nav) nav.classList.add('active');
     },
 

@@ -4215,8 +4215,8 @@ window.HuntarrIndexerHuntHome = {
 
         // Sort alphabetically
         indexers.sort(function(a, b) {
-            var na = (a.display_name || a.name || '').toLowerCase();
-            var nb = (b.display_name || b.name || '').toLowerCase();
+            var na = (a.name || a.display_name || '').toLowerCase();
+            var nb = (b.name || b.display_name || '').toLowerCase();
             return na < nb ? -1 : na > nb ? 1 : 0;
         });
 
@@ -4224,7 +4224,7 @@ window.HuntarrIndexerHuntHome = {
             var enabled = idx.enabled !== false;
             var statusClass = enabled ? 'active' : 'failed';
             var statusText  = enabled ? 'Active' : 'Disabled';
-            var displayName = (idx.display_name || idx.name || 'Unnamed').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            var displayName = (idx.name || idx.display_name || 'Unnamed').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
             return '<div class="indexer-item">' +
                 '<span class="indexer-name">' + displayName + '</span>' +
