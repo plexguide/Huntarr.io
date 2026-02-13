@@ -5125,9 +5125,8 @@
 
 /* === modules/features/media-hunt-calendar.js === */
 /**
- * Media Hunt Calendar – single implementation for Movie Hunt and TV Hunt.
- * Mode set by router via window._mediaHuntCalendarMode ('movie' | 'tv').
- * Movie: collection + Discover Upcoming tabs; TV: single episode calendar from collection.
+ * Media Hunt Calendar – Movie Hunt, Radarr, TV Hunt, Sonarr.
+ * Unified dropdown; mode (movie/tv) derived from selected instance.
  */
 (function() {
     'use strict';
@@ -5142,14 +5141,26 @@
     var _collectionLoaded = false;
     var _upcomingLoaded = false;
 
+    function parseInstanceValue(val) {
+        if (!val) return { appType: '', instance: '' };
+        var idx = val.indexOf(':');
+        if (idx === -1) return { appType: '', instance: val };
+        return { appType: val.substring(0, idx), instance: val.substring(idx + 1) };
+    }
+
     function getMode() {
-        var m = (window._mediaHuntCalendarMode || 'movie').toLowerCase();
-        return (m === 'tv') ? 'tv' : 'movie';
+        var val = getInstanceValue();
+        var p = parseInstanceValue(val);
+        return (p.appType === 'tv_hunt' || p.appType === 'sonarr') ? 'tv' : 'movie';
+    }
+
+    function getInstanceValue() {
+        var sel = document.getElementById('media-hunt-calendar-instance-select');
+        return (sel && sel.value) ? sel.value : '';
     }
 
     function getInstanceId() {
-        var sel = document.getElementById('media-hunt-calendar-instance-select');
-        return (sel && sel.value) ? sel.value : '';
+        return getInstanceValue();
     }
 
     function daysPastForCurrentMonth() {
@@ -5273,10 +5284,19 @@
         if (!container) return;
         container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading calendar...</p></div>';
 
-        var instanceId = getInstanceId();
+        var val = getInstanceValue();
+        var p = parseInstanceValue(val);
         var pastDays = daysPastForCurrentMonth();
-        var url = './api/movie-hunt/calendar?days_past=' + pastDays + '&days_future=120';
-        if (instanceId) url += '&instance_id=' + encodeURIComponent(instanceId);
+        var url;
+
+        if (p.appType === 'movie_hunt' && p.instance) {
+            url = './api/movie-hunt/calendar?days_past=' + pastDays + '&days_future=120&instance_id=' + encodeURIComponent(p.instance);
+        } else if (p.appType === 'radarr' && p.instance) {
+            url = './api/calendar?app_type=radarr&instance=' + encodeURIComponent(p.instance) + '&days_past=' + pastDays + '&days_future=120';
+        } else {
+            container.innerHTML = '<div class="mh-cal-empty"><i class="fas fa-calendar-times"></i><p>Select a Movie Hunt or Radarr instance.</p></div>';
+            return;
+        }
 
         fetch(url)
             .then(function(r) { return r.json(); })
@@ -5362,13 +5382,41 @@
         if (!container) return;
         container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading calendar...</p></div>';
 
-        var instanceId = getInstanceId();
-        if (!instanceId) {
-            container.innerHTML = '<div class="mh-cal-empty"><i class="fas fa-calendar-times"></i><p>Select a TV Hunt instance to view the calendar.</p></div>';
+        var val = getInstanceValue();
+        var p = parseInstanceValue(val);
+        if (!p.appType || !p.instance) {
+            container.innerHTML = '<div class="mh-cal-empty"><i class="fas fa-calendar-times"></i><p>Select a TV Hunt or Sonarr instance to view the calendar.</p></div>';
             return;
         }
 
-        fetch('./api/tv-hunt/collection?instance_id=' + instanceId)
+        if (p.appType === 'sonarr') {
+            var pastDays = daysPastForCurrentMonth();
+            fetch('./api/calendar?app_type=sonarr&instance=' + encodeURIComponent(p.instance) + '&days_past=' + pastDays + '&days_future=120')
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    var rawEvents = (data.events || []);
+                    if (rawEvents.length === 0) {
+                        container.innerHTML = '<div class="mh-cal-empty"><i class="fas fa-calendar-times"></i><p>No upcoming episodes in your Sonarr library.<br>Add TV shows to see episode air dates here.</p></div>';
+                        return;
+                    }
+                    var groups = {}, dateOrder = [];
+                    rawEvents.forEach(function(ev) {
+                        var d = ev.date || '';
+                        if (!groups[d]) { groups[d] = []; dateOrder.push(d); }
+                        groups[d].push(ev);
+                    });
+                    dateOrder.sort();
+                    var html = '';
+                    dateOrder.forEach(function(d) { html += renderDateGroup(d, groups[d], false); });
+                    container.innerHTML = html;
+                })
+                .catch(function() {
+                    container.innerHTML = '<div class="mh-cal-empty"><i class="fas fa-exclamation-triangle"></i><p>Failed to load calendar data.</p></div>';
+                });
+            return;
+        }
+
+        fetch('./api/tv-hunt/collection?instance_id=' + p.instance)
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 var series = data.series || [];
@@ -5439,35 +5487,114 @@
         }
     }
 
-    /* ── Init ────────────────────────────────────────────────── */
-
-    function init() {
-        var mode = getMode();
-
+    function updateUIForMode(mode) {
         var titleEl = document.getElementById('media-hunt-calendar-title');
         var tabsWrap = document.getElementById('media-hunt-calendar-tabs-wrap');
         var legendEl = document.getElementById('media-hunt-calendar-legend');
         var upcomingView = document.getElementById('media-hunt-calendar-upcoming-view');
-
         if (titleEl) titleEl.innerHTML = (mode === 'movie' ? '<i class="fas fa-calendar-alt"></i> Upcoming Releases' : '<i class="fas fa-calendar-alt"></i> TV Calendar');
         if (tabsWrap) tabsWrap.style.display = (mode === 'movie') ? 'flex' : 'none';
         if (legendEl) legendEl.style.display = (mode === 'movie') ? 'flex' : 'none';
         if (upcomingView) upcomingView.style.display = 'none';
+    }
 
-        if (mode === 'movie') {
-            if (window.MovieHuntInstanceDropdown) {
-                window.MovieHuntInstanceDropdown.attach('media-hunt-calendar-instance-select', function() {
-                    _collectionLoaded = false;
-                    loadCollectionCalendar();
-                });
+    function populateInstanceDropdown() {
+        var sel = document.getElementById('media-hunt-calendar-instance-select');
+        if (!sel) return;
+        sel.innerHTML = '<option value="">Loading instances...</option>';
+        var ts = Date.now();
+        Promise.all([
+            fetch('./api/requestarr/instances/movie_hunt?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch('./api/requestarr/instances/radarr?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch('./api/requestarr/instances/tv_hunt?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch('./api/requestarr/instances/sonarr?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+        ]).then(function(results) {
+            var mh = results[0].instances || [];
+            var radarr = results[1].instances || [];
+            var tvh = results[2].instances || [];
+            var sonarr = results[3].instances || [];
+            sel.innerHTML = '';
+            var defaultMode = (window._mediaHuntCalendarMode || 'movie').toLowerCase();
+            var preferred = null;
+            mh.forEach(function(inst) {
+                var v = 'movie_hunt:' + (inst.id != null ? inst.id : inst.name);
+                var opt = document.createElement('option');
+                opt.value = v;
+                opt.textContent = 'Movie Hunt \u2013 ' + (inst.name || inst.id);
+                sel.appendChild(opt);
+                if (!preferred && defaultMode === 'movie') preferred = v;
+            });
+            radarr.forEach(function(inst) {
+                var v = 'radarr:' + (inst.name || '');
+                var opt = document.createElement('option');
+                opt.value = v;
+                opt.textContent = 'Radarr \u2013 ' + (inst.name || '');
+                sel.appendChild(opt);
+                if (!preferred && defaultMode === 'movie') preferred = v;
+            });
+            tvh.forEach(function(inst) {
+                var v = 'tv_hunt:' + (inst.id != null ? inst.id : inst.name);
+                var opt = document.createElement('option');
+                opt.value = v;
+                opt.textContent = 'TV Hunt \u2013 ' + (inst.name || inst.id);
+                sel.appendChild(opt);
+                if (!preferred && defaultMode === 'tv') preferred = v;
+            });
+            sonarr.forEach(function(inst) {
+                var v = 'sonarr:' + (inst.name || '');
+                var opt = document.createElement('option');
+                opt.value = v;
+                opt.textContent = 'Sonarr \u2013 ' + (inst.name || '');
+                sel.appendChild(opt);
+                if (!preferred && defaultMode === 'tv') preferred = v;
+            });
+            if (sel.options.length === 0) {
+                var empty = document.createElement('option');
+                empty.value = '';
+                empty.textContent = 'No instances configured';
+                sel.appendChild(empty);
+            } else if (preferred) {
+                sel.value = preferred;
+            } else if (sel.options.length) {
+                sel.selectedIndex = 0;
             }
-        } else {
-            if (window.TVHuntInstanceDropdown) {
-                window.TVHuntInstanceDropdown.attach('media-hunt-calendar-instance-select', function() {
-                    loadTVCalendar();
-                });
+            _collectionLoaded = false;
+            _upcomingLoaded = false;
+            var mode = getMode();
+            updateUIForMode(mode);
+            if (mode === 'movie') {
+                if (_currentTab === 'collection') loadCollectionCalendar();
+                else loadUpcomingCalendar();
+            } else {
+                loadTVCalendar();
             }
-        }
+        }).catch(function() {
+            sel.innerHTML = '<option value="">Failed to load instances</option>';
+        });
+    }
+
+    /* ── Init ────────────────────────────────────────────────── */
+
+    function init() {
+        var sel = document.getElementById('media-hunt-calendar-instance-select');
+        if (!sel) return;
+        populateInstanceDropdown();
+        updateUIForMode(getMode());
+
+        var onSelectChange = function() {
+            _collectionLoaded = false;
+            _upcomingLoaded = false;
+            var mode = getMode();
+            updateUIForMode(mode);
+            if (mode === 'movie') {
+                if (_currentTab === 'collection') loadCollectionCalendar();
+                else loadUpcomingCalendar();
+            } else {
+                loadTVCalendar();
+            }
+        };
+
+        sel.addEventListener('change', onSelectChange);
 
         if (!_initialized) {
             _initialized = true;
@@ -5481,13 +5608,10 @@
 
         _collectionLoaded = false;
         _upcomingLoaded = false;
-
-        if (mode === 'movie') {
-            loadCollectionCalendar();
-        } else {
-            loadTVCalendar();
-        }
     }
+
+    document.addEventListener('huntarr:instances-changed', function() { populateInstanceDropdown(); });
+    document.addEventListener('huntarr:tv-hunt-instances-changed', function() { populateInstanceDropdown(); });
 
     window.MediaHuntCalendar = {
         init: init,

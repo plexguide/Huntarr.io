@@ -1316,5 +1316,8 @@ def setup_status():
         return jsonify({"success": False, "error": "Failed to check setup status"}), 500
 
 
+# Register unified calendar routes (Radarr, Sonarr)
+from .calendar_routes import register_calendar_routes
+register_calendar_routes(common_bp)
 
 
