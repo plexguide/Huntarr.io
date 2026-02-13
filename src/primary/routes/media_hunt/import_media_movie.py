@@ -19,7 +19,15 @@ import requests
 from flask import request, jsonify
 
 from .helpers import _get_movie_hunt_instance_id_from_request, movie_hunt_logger
-from .storage import get_movie_root_folders_config as _get_root_folders_config, _VIDEO_EXTENSIONS
+from .storage import get_movie_root_folders_config as _get_root_folders_config
+from .import_media_shared import (
+    VIDEO_EXTENSIONS,
+    EXTRA_VIDEO_EXTENSIONS,
+    is_video_file,
+    should_skip_folder,
+    year_range_pattern,
+    tmdb_pattern,
+)
 from .discovery_movie import (
     _get_collection_config,
     _collection_append,
@@ -32,10 +40,6 @@ logger = movie_hunt_logger
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-
-# Additional video extensions beyond what storage.py defines
-_EXTRA_VIDEO_EXTENSIONS = frozenset(('.iso', '.vob', '.divx', '.rmvb', '.3gp'))
-_ALL_VIDEO_EXTENSIONS = _VIDEO_EXTENSIONS | _EXTRA_VIDEO_EXTENSIONS
 
 # Sample/extra/junk patterns to skip
 _SKIP_PATTERNS = re.compile(
@@ -72,11 +76,9 @@ _QUALITY_PATTERN = re.compile(
     r'|HDTV|DVDRip|REMUX|Remux)\b'
 )
 
-# Year range
-_YEAR_RANGE = re.compile(r'\b(19\d{2}|20\d{2})\b')
-
-# TMDB ID embedded in folder name (some tools do this)
-_TMDB_PATTERN = re.compile(r'\{tmdb-(\d+)\}|\[tmdb[-=](\d+)\]|tmdbid[-=](\d+)', re.IGNORECASE)
+# Year range and TMDB pattern (from shared)
+_YEAR_RANGE = year_range_pattern()
+_TMDB_PATTERN = tmdb_pattern()
 
 # IMDB ID in folder name
 _IMDB_PATTERN = re.compile(r'\{imdb-(tt\d+)\}|\[imdb[-=](tt\d+)\]|imdbid[-=](tt\d+)', re.IGNORECASE)
@@ -84,20 +86,22 @@ _IMDB_PATTERN = re.compile(r'\{imdb-(tt\d+)\}|\[imdb[-=](tt\d+)\]|imdbid[-=](tt\
 # Scan lock to prevent concurrent scans
 _scan_lock = threading.Lock()
 
-# ---------------------------------------------------------------------------
-# Smart folder/file name parser
-# ---------------------------------------------------------------------------
+_ALL_VIDEO_EXTENSIONS = VIDEO_EXTENSIONS | EXTRA_VIDEO_EXTENSIONS
 
-def _is_video_file(filename):
-    """Check if a file has a video extension."""
-    _, ext = os.path.splitext(filename)
-    return ext.lower() in _ALL_VIDEO_EXTENSIONS
+
+def _is_video_file(name):
+    """Check if file has a video extension (base + movie extras)."""
+    return is_video_file(name, EXTRA_VIDEO_EXTENSIONS)
 
 
 def _should_skip_folder(name):
-    """Check if a folder should be skipped (samples, extras, system folders)."""
-    return bool(_SKIP_PATTERNS.match(name))
+    """Check if folder should be skipped (samples, extras, etc)."""
+    return should_skip_folder(name, _SKIP_PATTERNS)
 
+
+# ---------------------------------------------------------------------------
+# Smart folder/file name parser
+# ---------------------------------------------------------------------------
 
 def _get_folder_media_info(folder_path):
     """Get media file info from a folder: largest video file, total size, file count."""

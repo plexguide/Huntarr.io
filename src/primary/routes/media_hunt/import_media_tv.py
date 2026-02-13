@@ -20,6 +20,13 @@ from flask import request, jsonify
 
 from .helpers import _get_tv_hunt_instance_id_from_request
 from .storage import get_tv_root_folders_config as _get_root_folders_config
+from .import_media_shared import (
+    VIDEO_EXTENSIONS,
+    is_video_file,
+    should_skip_folder,
+    year_range_pattern,
+    tmdb_pattern,
+)
 from .discovery_tv import (
     _get_collection_config,
     _save_collection_config,
@@ -29,9 +36,6 @@ from .discovery_tv import (
 
 from ...utils.logger import get_logger
 logger = get_logger("tv_hunt")
-
-# Video extensions for TV (same as storage)
-_VIDEO_EXTENSIONS = frozenset(('.mkv', '.mp4', '.avi', '.m4v', '.ts', '.wmv', '.flv', '.mov', '.webm'))
 
 # Sample/extra/junk patterns to skip (TV-specific additions)
 _SKIP_PATTERNS = re.compile(
@@ -49,8 +53,8 @@ _RELEASE_TAGS = re.compile(
     r'|x264|x265|h\.?264|h\.?265|AAC|AC3|DTS|NF|AMZN|DSNP|HMAX)\b'
 )
 
-_YEAR_RANGE = re.compile(r'\b(19\d{2}|20\d{2})\b')
-_TMDB_PATTERN = re.compile(r'\{tmdb-(\d+)\}|\[tmdb[-=](\d+)\]', re.IGNORECASE)
+_YEAR_RANGE = year_range_pattern()
+_TMDB_PATTERN = tmdb_pattern()
 _TVDB_PATTERN = re.compile(r'\{tvdb-(\d+)\}|\[tvdb[-=](\d+)\]|tvdbid[-=](\d+)', re.IGNORECASE)
 
 _scan_lock = threading.Lock()
@@ -66,12 +70,11 @@ def _normalize_title_for_key(title):
 
 
 def _is_video_file(filename):
-    _, ext = os.path.splitext(filename)
-    return ext.lower() in _VIDEO_EXTENSIONS
+    return is_video_file(filename)
 
 
 def _should_skip_folder(name):
-    return bool(_SKIP_PATTERNS.match(name))
+    return should_skip_folder(name, _SKIP_PATTERNS)
 
 
 def _has_video_files_recursive(path, max_depth=3, current_depth=0):
@@ -152,7 +155,7 @@ def _parse_series_name(raw_name):
         return {'title': '', 'year': '', 'tmdb_id': None, 'tvdb_id': None}
 
     name = raw_name.strip()
-    for ext in _VIDEO_EXTENSIONS:
+    for ext in VIDEO_EXTENSIONS:
         if name.lower().endswith(ext):
             name = name[:-len(ext)].strip()
             break
@@ -161,7 +164,7 @@ def _parse_series_name(raw_name):
     tvdb_id = None
     m = _TMDB_PATTERN.search(name)
     if m:
-        tmdb_id = int(m.group(1) or m.group(2))
+        tmdb_id = int(m.group(1) or m.group(2) or m.group(3))
     m = _TVDB_PATTERN.search(name)
     if m:
         tvdb_id = int(m.group(1) or m.group(2) or m.group(3))

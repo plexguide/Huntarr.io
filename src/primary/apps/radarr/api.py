@@ -450,35 +450,8 @@ def movie_search(api_url: str, api_key: str, api_timeout: int, movie_ids: List[i
 
 def check_connection(api_url: str, api_key: str, api_timeout: int) -> bool:
     """Check the connection to Radarr API."""
-    try:
-        # Ensure api_url is properly formatted
-        if not api_url:
-            radarr_logger.error("API URL is empty or not set")
-            return False
-            
-        # Make sure api_url has a scheme
-        if not (api_url.startswith('http://') or api_url.startswith('https://')):
-            radarr_logger.error(f"Invalid URL format: {api_url} - URL must start with http:// or https://")
-            return False
-            
-        # Ensure URL doesn't end with a slash before adding the endpoint
-        base_url = api_url.rstrip('/')
-        full_url = f"{base_url}/api/v3/system/status"
-        
-        # Get SSL verification setting
-        from src.primary.settings_manager import get_ssl_verify_setting
-        verify_ssl = get_ssl_verify_setting()
-        
-        response = requests.get(full_url, headers={"X-Api-Key": api_key}, timeout=api_timeout, verify=verify_ssl)
-        response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
-        radarr_logger.debug("Successfully connected to Radarr.")
-        return True
-    except requests.exceptions.RequestException as e:
-        radarr_logger.error(f"Error connecting to Radarr: {e}")
-        return False
-    except Exception as e:
-        radarr_logger.error(f"An unexpected error occurred during Radarr connection check: {e}")
-        return False
+    from src.primary.apps._common.arr_api import check_connection as _check
+    return _check(api_url, api_key, api_timeout, "radarr", radarr_logger)
 
 def wait_for_command(api_url: str, api_key: str, api_timeout: int, command_id: int, 
                     delay_seconds: int = 1, max_attempts: int = 600) -> bool:

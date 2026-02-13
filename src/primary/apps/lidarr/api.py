@@ -172,33 +172,8 @@ def get_system_status(api_url: str, api_key: str, api_timeout: int, verify_ssl: 
 
 def check_connection(api_url: str, api_key: str, api_timeout: int) -> bool:
     """Checks connection by fetching system status."""
-    if not api_url:
-        lidarr_logger.error("API URL is empty or not set")
-        return False
-    if not api_key:
-        lidarr_logger.error("API Key is empty or not set")
-        return False
-
-    try:
-        # Use a shorter timeout for a quick connection check
-        quick_timeout = min(api_timeout, 15) 
-        
-        # Get SSL verification setting
-        verify_ssl = get_ssl_verify_setting()
-        
-        status = get_system_status(api_url, api_key, quick_timeout, verify_ssl)
-        if status and isinstance(status, dict) and 'version' in status:
-             # Log success only if debug is enabled to avoid clutter
-             lidarr_logger.debug(f"Connection check successful for {api_url}. Version: {status.get('version')}")
-             return True
-        else:
-             # Log details if the status response was unexpected
-             lidarr_logger.warning(f"Connection check for {api_url} returned unexpected status: {str(status)[:200]}")
-             return False
-    except Exception as e:
-        # Error should have been logged by arr_request, just indicate failure
-        lidarr_logger.error(f"Connection check failed for {api_url}: {str(e)}")
-        return False
+    from src.primary.apps._common.arr_api import check_connection as _check
+    return _check(api_url, api_key, api_timeout, "lidarr", lidarr_logger, api_version="v1")
 
 def get_artists(api_url: str, api_key: str, api_timeout: int, artist_id: Optional[int] = None) -> Union[List, Dict, None]:
     """Get artist information from Lidarr."""

@@ -27,41 +27,8 @@ API_TIMEOUT = 30
 
 def check_connection(api_url: str, api_key: str, api_timeout: int) -> bool:
     """Check the connection to Readarr API."""
-    try:
-        # Ensure api_url is properly formatted
-        if not api_url:
-            logger.error("API URL is empty or not set")
-            return False
-            
-        # Make sure api_url has a scheme
-        if not (api_url.startswith('http://') or api_url.startswith('https://')):
-            logger.error(f"Invalid URL format: {api_url} - URL must start with http:// or https://")
-            return False
-            
-        # Ensure URL doesn't end with a slash before adding the endpoint
-        base_url = api_url.rstrip('/')
-        full_url = f"{base_url}/api/v1/system/status"
-        
-        # Add User-Agent header to identify Huntarr
-        headers = {
-            "X-Api-Key": api_key,
-            "User-Agent": "Huntarr/1.0 (https://github.com/plexguide/Huntarr.io)"
-        }
-        
-        # Get SSL verification setting
-        from src.primary.settings_manager import get_ssl_verify_setting
-        verify_ssl = get_ssl_verify_setting()
-        
-        response = requests.get(full_url, headers=headers, timeout=api_timeout, verify=verify_ssl)
-        response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
-        logger.debug("Successfully connected to Readarr.")
-        return True
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error connecting to Readarr: {e}")
-        return False
-    except Exception as e:
-        logger.error(f"An unexpected error occurred during Readarr connection check: {e}")
-        return False
+    from src.primary.apps._common.arr_api import check_connection as _check
+    return _check(api_url, api_key, api_timeout, "readarr", logger, api_version="v1")
 
 def get_download_queue_size(api_url: str = None, api_key: str = None, timeout: int = 30) -> int:
     """
