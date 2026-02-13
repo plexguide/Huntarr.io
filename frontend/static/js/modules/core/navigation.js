@@ -118,6 +118,7 @@ window.HuntarrNavigation = {
             'tv-hunt-settings-indexers': 'settings-indexers',
             'tv-hunt-settings-clients': 'settings-clients',
             'tv-hunt-settings-root-folders': 'settings-root-folders',
+            'settings-import-media-tv': 'settings-import-media',
             'tv-hunt-settings-sizes': 'settings-sizes',
             'tv-hunt-settings-tv-management': 'settings-media-management',
             'tv-hunt-settings-import-lists': 'settings-import-lists',

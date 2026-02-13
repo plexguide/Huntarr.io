@@ -3,12 +3,14 @@
    ========================================================================== */
 
 /* Override apps_section global .content-section { overflow: hidden } - Import Media must scroll */
-#settingsImportMediaSection.content-section.active {
+#settingsImportMediaSection.content-section.active,
+#mediaHuntSettingsImportMediaSection.content-section.active {
     overflow-y: auto !important;
     overflow-x: hidden !important;
 }
 
-#settingsImportMediaSection .import-media-settings-group {
+#settingsImportMediaSection .import-media-settings-group,
+#mediaHuntSettingsImportMediaSection .import-media-settings-group {
     padding-bottom: 40px;
 }
 

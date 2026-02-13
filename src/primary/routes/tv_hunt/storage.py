@@ -2,6 +2,7 @@
 
 import os
 import re
+import threading
 
 from flask import request, jsonify
 
@@ -85,6 +86,13 @@ def api_tv_hunt_root_folders_add():
         path = (data.get('path') or '').strip()
         success, result = mh_rf.add_root_folder(instance_id, 'tv_hunt_root_folders', path)
         if success:
+            def _run_import_scan():
+                try:
+                    from src.primary.routes.tv_hunt import import_media as im
+                    im.run_import_media_scan(instance_id, max_match=None, lightweight=True)
+                except Exception as e:
+                    logger.warning("TV Import Media: background scan after root folder add failed: %s", e)
+            threading.Thread(target=_run_import_scan, daemon=True).start()
             return jsonify({'success': True, 'index': result['index']}), 200
         return jsonify({'success': False, 'message': result.get('message', 'Add failed')}), 400
     except Exception as e:

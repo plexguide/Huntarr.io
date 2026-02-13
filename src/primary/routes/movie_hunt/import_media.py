@@ -659,53 +659,41 @@ def _scan_for_unmapped_folders(instance_id):
     return unmapped
 
 
-def _process_unmapped_items(instance_id, items, max_items=10):
-    """Process unmapped items by matching them to TMDB.
-
-    Processes up to max_items at a time to avoid overwhelming TMDB API.
-    Returns count of items processed.
+def _process_one_unmapped_item(item, tmdb_delay=0.2):
+    """Process a single unmapped item through TMDB. Mutates item in place. Returns True if processed.
+    tmdb_delay: seconds between items (0.2=fast for on-demand, 1.0=lightweight for background).
     """
-    processed = 0
-
-    for item in items:
-        if item.get('status') == 'matched' or item.get('status') == 'confirmed':
-            continue  # Already processed
-
-        if processed >= max_items:
-            break
-
-        parsed = item.get('parsed', {})
-        matches = _match_folder_to_tmdb(parsed)
-
-        if matches:
-            item['matches'] = matches
-            item['best_match'] = matches[0]
-            item['status'] = 'matched'
-        else:
-            item['matches'] = []
-            item['best_match'] = None
-            item['status'] = 'no_match'
-
-        item['processed_at'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-        processed += 1
-
-        # Small delay to be nice to TMDB API
-        time.sleep(0.3)
-
-    return processed
+    if item.get('status') in ('matched', 'confirmed'):
+        return False
+    parsed = item.get('parsed', {})
+    matches = _match_folder_to_tmdb(parsed)
+    if matches:
+        item['matches'] = matches
+        item['best_match'] = matches[0]
+        item['status'] = 'matched'
+    else:
+        item['matches'] = []
+        item['best_match'] = None
+        item['status'] = 'no_match'
+    item['processed_at'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+    time.sleep(tmdb_delay)
+    return True
 
 
 # ---------------------------------------------------------------------------
 # Full scan cycle (background or on-demand)
 # ---------------------------------------------------------------------------
 
-def run_import_media_scan(instance_id, max_match=20):
+def run_import_media_scan(instance_id, max_match=None, lightweight=False):
     """Run a full scan cycle for an instance:
     1. Scan root folders for unmapped items
     2. Merge with existing unmapped config (keep user confirmations)
-    3. Process unmatched items through TMDB
+    3. Process unmatched items through TMDB (one at a time, save after each)
     4. Save results
+    max_match: None = process all pending; int = limit (e.g. for background scans).
+    lightweight: if True, use longer delays (1s) between TMDB calls to reduce CPU/network load when running in background.
     """
+    tmdb_delay = 1.0 if lightweight else 0.2
     if not _scan_lock.acquire(blocking=False):
         logger.info("Import Media: scan already in progress, skipping")
         return False
@@ -733,8 +721,8 @@ def run_import_media_scan(instance_id, max_match=20):
 
             if path in existing_by_path:
                 existing = existing_by_path[path]
-                # Keep existing match data if already processed
-                if existing.get('status') in ('matched', 'confirmed', 'skipped'):
+                # Keep existing data if already processed (don't restart/reprocess)
+                if existing.get('status') in ('matched', 'confirmed', 'skipped', 'no_match'):
                     merged.append(existing)
                 else:
                     merged.append(new_item)
@@ -745,18 +733,30 @@ def run_import_media_scan(instance_id, max_match=20):
         # Remove items whose folders no longer exist
         # (they were moved, deleted, or added to collection)
 
-        # Step 3: Process pending/unmatched items
-        pending = [i for i in merged if i.get('status') in ('pending', None)]
-        if pending:
-            logger.info("Import Media: processing %d pending items through TMDB (max %d)", len(pending), max_match)
-            _process_unmapped_items(instance_id, pending, max_items=max_match)
+        # Step 3: Process one item at a time, save after each (avoids stall/timeout)
+        pending_count = len([i for i in merged if i.get('status') in ('pending', None)])
+        if pending_count:
+            logger.info("Import Media: processing %d pending items (one at a time)", pending_count)
+        processed = 0
+        while True:
+            pending = [i for i in merged if i.get('status') in ('pending', None)]
+            if not pending:
+                break
+            if max_match is not None and processed >= max_match:
+                break
+            item = pending[0]
+            if _process_one_unmapped_item(item, tmdb_delay=tmdb_delay):
+                processed += 1
+                config['items'] = merged
+                config['last_scan'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+                _save_unmapped_config(config, instance_id)
 
         config['items'] = merged
         config['last_scan'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
         config['scan_in_progress'] = False
         _save_unmapped_config(config, instance_id)
 
-        logger.info("Import Media: scan complete. %d unmapped items total.", len(merged))
+        logger.info("Import Media: scan complete. %d unmapped items total (%d processed).", len(merged), processed)
         return True
 
     except Exception as e:
@@ -807,8 +807,8 @@ def run_import_media_background_cycle():
             if not folders:
                 continue
 
-            logger.info("Import Media: starting background scan for instance %s", instance_id)
-            run_import_media_scan(instance_id, max_match=50)
+            logger.info("Import Media: starting daily background scan for instance %s", instance_id)
+            run_import_media_scan(instance_id, max_match=None, lightweight=True)
 
     except Exception as e:
         logger.error("Import Media: background cycle error: %s", e)
@@ -883,7 +883,7 @@ def api_import_media_scan():
 
         # Run scan in background thread so we don't block the request
         def _scan():
-            run_import_media_scan(instance_id, max_match=30)
+            run_import_media_scan(instance_id, max_match=None)
 
         thread = threading.Thread(target=_scan, name="ImportMediaScan", daemon=True)
         thread.start()

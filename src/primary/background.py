@@ -1394,6 +1394,11 @@ def _import_media_scan_loop():
             run_import_media_background_cycle()
         except Exception as e:
             logger.error(f"Import Media scan cycle error: {e}")
+        try:
+            from src.primary.routes.tv_hunt.import_media import run_import_media_background_cycle
+            run_import_media_background_cycle()
+        except Exception as e:
+            logger.error(f"TV Import Media scan cycle error: {e}")
         # Wait 1 hour between checks (actual daily logic is inside the cycle)
         stop_event.wait(3600)
 

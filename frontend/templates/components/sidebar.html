@@ -207,34 +207,31 @@
                 </a>
             </div>
             <script>
-            // Media Hunt sidebar: sub-menus always expandable; only Import Media is shown/hidden by root folders
+            // Media Hunt sidebar: sub-menus always expandable; Import Media shown if Movie or TV has root folders
             (function() {
                 function updateMediaHuntSidebarVisibility() {
                     var importMediaItem = document.getElementById('movieHuntImportMediaNav');
-                    fetch('./api/movie-hunt/instances')
-                        .then(function(r) { return r.json(); })
-                        .then(function(data) {
-                            var instances = data.instances || [];
-                            if (instances.length > 0) {
-                                fetch('./api/movie-hunt/root-folders')
-                                    .then(function(r) { return r.json(); })
-                                    .then(function(rfData) {
-                                        var rootFolders = rfData.root_folders || [];
-                                        if (importMediaItem) importMediaItem.style.display = (rootFolders.length > 0) ? 'flex' : 'none';
-                                        if (typeof setActiveNavItem === 'function') setActiveNavItem();
-                                    })
-                                    .catch(function() {
-                                        if (importMediaItem) importMediaItem.style.display = 'none';
-                                    });
-                            } else {
-                                if (importMediaItem) importMediaItem.style.display = 'none';
-                                if (typeof setActiveNavItem === 'function') setActiveNavItem();
-                            }
-                        })
-                        .catch(function() {
-                            if (importMediaItem) importMediaItem.style.display = 'none';
+                    if (!importMediaItem) return;
+                    Promise.all([
+                        fetch('./api/movie-hunt/instances').then(function(r) { return r.json(); }),
+                        fetch('./api/tv-hunt/instances').then(function(r) { return r.json(); })
+                    ]).then(function(results) {
+                        var hasMovie = (results[0].instances || []).length > 0;
+                        var hasTv = (results[1].instances || []).length > 0;
+                        if (!hasMovie && !hasTv) { importMediaItem.style.display = 'none'; if (typeof setActiveNavItem === 'function') setActiveNavItem(); return; }
+                        return Promise.all([
+                            hasMovie ? fetch('./api/movie-hunt/root-folders').then(function(r) { return r.json(); }) : Promise.resolve({ root_folders: [] }),
+                            hasTv ? fetch('./api/tv-hunt/root-folders').then(function(r) { return r.json(); }) : Promise.resolve({ root_folders: [] })
+                        ]).then(function(rf) {
+                            var movieRf = (rf[0].root_folders || []).length > 0;
+                            var tvRf = (rf[1].root_folders || []).length > 0;
+                            importMediaItem.style.display = (movieRf || tvRf) ? 'flex' : 'none';
                             if (typeof setActiveNavItem === 'function') setActiveNavItem();
                         });
+                    }).catch(function() {
+                        importMediaItem.style.display = 'none';
+                        if (typeof setActiveNavItem === 'function') setActiveNavItem();
+                    });
                 }
                 if (document.readyState === 'loading') {
                     document.addEventListener('DOMContentLoaded', updateMediaHuntSidebarVisibility);
