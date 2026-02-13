@@ -75,7 +75,6 @@ def tmdb_image_proxy():
         if tmdb_cache.is_cached(image_url, max_age_days=cache_days):
             cached_path = tmdb_cache.get_cached_path(image_url)
             if cached_path and os.path.exists(cached_path):
-                logger.debug(f"[TMDBCache] Serving cached image: {image_url}")
                 return send_file(cached_path, mimetype='image/jpeg')
         
         # Cache the image
