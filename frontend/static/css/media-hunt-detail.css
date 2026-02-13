@@ -438,6 +438,77 @@
     border: 1px solid rgba(239, 68, 68, 0.3);
 }
 .mh-btn-danger:hover:not(:disabled) { background: rgba(239, 68, 68, 0.25); }
+.mh-btn-watch {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: #fff;
+}
+.mh-btn-watch:hover { filter: brightness(1.1); }
+
+/* ── Watch Player Modal ─────────────────────────────────── */
+.mh-watch-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+}
+.mh-watch-modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+.mh-watch-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.9);
+    cursor: pointer;
+}
+.mh-watch-modal-content {
+    position: relative;
+    width: 90vw;
+    max-width: 1200px;
+    background: #0f1419;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+.mh-watch-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: rgba(15, 23, 42, 0.95);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+}
+.mh-watch-modal-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #e2e8f0;
+    margin: 0;
+}
+.mh-watch-modal-close {
+    padding: 6px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 18px;
+}
+.mh-watch-modal-close:hover { color: #fff; background: rgba(148, 163, 184, 0.1); }
+.mh-watch-modal-video {
+    padding: 0;
+    background: #000;
+}
+.mh-watch-modal-video video {
+    width: 100%;
+    height: auto;
+    max-height: 80vh;
+    display: block;
+}
 
 /* ── Body Sections ─────────────────────────────────────── */
 .mh-detail-body {

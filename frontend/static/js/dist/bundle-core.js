@@ -596,6 +596,12 @@ window.HuntarrNavigation = {
                 window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#media-hunt-collection');
             }
         }
+        // Media Hunt movie detail direct link: #movie/<tmdb_id> — switch to collection, keep hash for MovieHuntDetail.checkUrlForMovieDetail()
+        if (/^movie\/(\d+)$/.test(section)) {
+            if (window.huntarrUI) window.huntarrUI._pendingMediaHuntSidebar = 'movie';
+            section = 'media-hunt-collection';
+            // Do NOT replace the hash; leave #movie/<id> so MovieHuntDetail opens the movie
+        }
         if (section === 'activity') {
             section = 'activity-queue';
             if (window.location.hash !== '#activity-queue') window.location.hash = 'activity-queue';

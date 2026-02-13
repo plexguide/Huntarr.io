@@ -36,6 +36,8 @@ from .import_lists_movie import register_movie_import_lists_routes
 register_movie_import_lists_routes(movie_hunt_bp)  # noqa: E402
 from .import_media_movie import register_movie_import_media_routes
 register_movie_import_media_routes(movie_hunt_bp)  # noqa: E402
+from .stream_routes import register_movie_stream_routes
+register_movie_stream_routes(movie_hunt_bp)  # noqa: E402
 
 # --- TV Hunt routes ---
 from .helpers import _get_tv_hunt_instance_id_from_request  # noqa: E402

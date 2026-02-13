@@ -1545,6 +1545,59 @@
             if (!fromHistory) history.back();
         },
 
+        openWatchPlayer() {
+            const tmdbId = this.currentMovie && (this.currentMovie.tmdb_id || this.currentMovie.id);
+            const instanceId = this.selectedInstanceId;
+            const title = (this.currentMovie && this.currentMovie.title) || 'Movie';
+            if (!tmdbId || !instanceId) return;
+
+            const streamUrl = './api/movie-hunt/stream/' + tmdbId + '?instance_id=' + encodeURIComponent(instanceId);
+
+            let modal = document.getElementById('mh-watch-player-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'mh-watch-player-modal';
+                modal.className = 'mh-watch-modal';
+                modal.innerHTML =
+                    '<div class="mh-watch-modal-backdrop"></div>' +
+                    '<div class="mh-watch-modal-content">' +
+                    '<div class="mh-watch-modal-header">' +
+                    '<h3 class="mh-watch-modal-title"></h3>' +
+                    '<button class="mh-watch-modal-close" id="mh-watch-modal-close" aria-label="Close"><i class="fas fa-times"></i></button>' +
+                    '</div>' +
+                    '<div class="mh-watch-modal-video">' +
+                    '<video id="mh-watch-video" controls playsinline controlsList="nodownload"></video>' +
+                    '</div>' +
+                    '</div>';
+                document.body.appendChild(modal);
+
+                modal.querySelector('.mh-watch-modal-backdrop').onclick = () => this.closeWatchPlayer();
+                modal.querySelector('#mh-watch-modal-close').onclick = () => this.closeWatchPlayer();
+                modal.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') this.closeWatchPlayer();
+                });
+            }
+
+            modal.querySelector('.mh-watch-modal-title').textContent = title;
+            const video = modal.querySelector('#mh-watch-video');
+            video.src = streamUrl;
+            video.load();
+            modal.classList.add('active');
+            video.focus();
+        },
+
+        closeWatchPlayer() {
+            const modal = document.getElementById('mh-watch-player-modal');
+            if (modal) {
+                modal.classList.remove('active');
+                const video = modal.querySelector('#mh-watch-video');
+                if (video) {
+                    video.pause();
+                    video.removeAttribute('src');
+                }
+            }
+        },
+
         /* ── TMDB Fetch ───────────────────────────────────────── */
         async fetchMovieDetails(tmdbId) {
             if (!tmdbId) return null;
@@ -1931,7 +1984,11 @@
             // ESC to close
             const escHandler = (e) => {
                 if (e.key === 'Escape') {
-                    // Don't close if a modal is open
+                    var watchModal = document.getElementById('mh-watch-player-modal');
+                    if (watchModal && watchModal.classList.contains('active')) {
+                        this.closeWatchPlayer();
+                        return;
+                    }
                     if (document.querySelector('.mh-modal-backdrop')) return;
                     this.closeDetail();
                     document.removeEventListener('keydown', escHandler);
@@ -2300,12 +2357,16 @@
             if (searchMovieBtn) searchMovieBtn.style.display = isFound ? 'none' : '';
             if (hideBtn) hideBtn.style.display = isFound ? 'none' : '';
 
-            // Update action button — hide if already downloaded or already requested
+            // Update action button — Watch when downloaded, Add to Library when not
             const actionsContainer = document.getElementById('mh-detail-actions');
             if (actionsContainer) {
                 var isRequested = data && data.found && !isDownloaded;
-                if (isDownloaded || isRequested) {
-                    // Status badge in the info bar already communicates the state
+                var hasFile = !!(data && data.has_file);
+                if (isDownloaded && hasFile) {
+                    actionsContainer.innerHTML = '<button class="mh-btn mh-btn-watch" id="mh-btn-watch"><i class="fas fa-play"></i> Watch</button>';
+                    const watchBtn = document.getElementById('mh-btn-watch');
+                    if (watchBtn) watchBtn.addEventListener('click', () => this.openWatchPlayer());
+                } else if (isDownloaded || isRequested) {
                     actionsContainer.innerHTML = '';
                 } else {
                     actionsContainer.innerHTML = '<button class="mh-btn mh-btn-primary" id="mh-btn-request"><i class="fas fa-plus-circle"></i> Add to Library</button>';
