@@ -3975,7 +3975,7 @@ document.head.appendChild(styleEl);
             var val = (presetSelect.value || '').trim();
             if (!val) return;
 
-            // Handle "Import from Indexer Hunt"
+            // Handle "Import from Index Master"
             if (val === '__import_ih__') {
                 var ihPanel = document.getElementById('editor-ih-import-panel');
                 if (ihPanel) ihPanel.style.display = '';
@@ -4074,7 +4074,7 @@ document.head.appendChild(styleEl);
         });
     };
 
-    // ── Import from Indexer Hunt ─────────────────────────────────────────
+    // ── Import from Index Master ─────────────────────────────────────────
     Forms._loadIndexerHuntAvailable = function() {
         var self = this;
         // Read instance ID synchronously from the instance select dropdown
@@ -4086,7 +4086,7 @@ document.head.appendChild(styleEl);
             .then(function(data) {
                 var sel = document.getElementById('editor-ih-select');
                 if (!sel) return;
-                sel.innerHTML = '<option value="">Select an indexer from Indexer Hunt...</option>';
+                sel.innerHTML = '<option value="">Select an indexer from Index Master...</option>';
                 (data.available || []).forEach(function(idx) {
                     var opt = document.createElement('option');
                     opt.value = idx.id;
@@ -4098,7 +4098,7 @@ document.head.appendChild(styleEl);
                     sel.appendChild(opt);
                 });
                 if ((data.available || []).length === 0) {
-                    sel.innerHTML = '<option value="">No available indexers in Indexer Hunt</option>';
+                    sel.innerHTML = '<option value="">No available indexers in Index Master</option>';
                 }
                 // Wire change handler
                 sel.addEventListener('change', function() {
@@ -4135,7 +4135,7 @@ document.head.appendChild(styleEl);
         .then(function(data) {
             if (data.success && data.added > 0) {
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
-                    window.huntarrUI.showNotification('Imported "' + name + '" from Indexer Hunt.', 'success');
+                    window.huntarrUI.showNotification('Imported "' + name + '" from Index Master.', 'success');
                 }
                 if (window.SettingsForms && window.SettingsForms.refreshIndexersList) {
                     window.SettingsForms.refreshIndexersList();
@@ -4271,7 +4271,7 @@ document.head.appendChild(styleEl);
                 '<label for="editor-preset-select">Indexer Type</label>' +
                 '<select id="editor-preset-select" class="settings-select" style="width: 100%; padding: 10px 12px; background: #1e293b; border: 1px solid #475569; border-radius: 6px; color: #e2e8f0;">' +
                 '<option value="">Select an indexer...</option>' +
-                '<option value="__import_ih__">Import from Indexer Hunt</option>' +
+                '<option value="__import_ih__">Import from Index Master</option>' +
                 '<option disabled>\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500</option>' +
                 '<option value="dognzb">DOGnzb</option>' +
                 '<option value="drunkenslug">DrunkenSlug</option>' +
@@ -4286,14 +4286,14 @@ document.head.appendChild(styleEl);
                 '<option disabled>\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500</option>' +
                 '<option value="manual">Custom (Manual Configuration)</option>' +
                 '</select>' +
-                '<p class="editor-help-text">Choose a preset, import from Indexer Hunt, or configure manually.</p>' +
+                '<p class="editor-help-text">Choose a preset, import from Index Master, or configure manually.</p>' +
                 '</div>' +
                 '<div class="editor-field-group" id="editor-ih-import-panel" style="display: none;">' +
-                    '<label>Available from Indexer Hunt</label>' +
+                    '<label>Available from Index Master</label>' +
                     '<select id="editor-ih-select" class="settings-select" style="width: 100%; padding: 10px 12px; background: #1e293b; border: 1px solid #475569; border-radius: 6px; color: #e2e8f0;">' +
-                        '<option value="">Select an indexer from Indexer Hunt...</option>' +
+                        '<option value="">Select an indexer from Index Master...</option>' +
                     '</select>' +
-                    '<p class="editor-help-text">Select an indexer configured in Indexer Hunt to import it to this instance.</p>' +
+                    '<p class="editor-help-text">Select an indexer configured in Index Master to import it to this instance.</p>' +
                 '</div>';
         } else {
             // Edit mode or Add with preset already selected: locked display
@@ -4700,9 +4700,7 @@ document.head.appendChild(styleEl);
     };
 
     Forms.refreshIndexersList = function() {
-        var stdGrid = document.getElementById('indexer-instances-grid-standard');
-        var ihGrid = document.getElementById('indexer-instances-grid-ih');
-        // Fallback: old single grid
+        var unifiedGrid = document.getElementById('indexer-instances-grid-unified');
         var legacyGrid = document.getElementById('indexer-instances-grid');
 
         var apiBase = Forms.getIndexersApiBase();
@@ -4712,42 +4710,29 @@ document.head.appendChild(styleEl);
                 var list = (data && data.indexers) ? data.indexers : [];
                 window.SettingsForms._indexersList = list;
 
-                // Split into standard and IH-linked
-                var stdHtml = '';
-                var ihHtml = '';
+                // Unified grid: all indexers in one list with same sub-stats (API, key, priority)
+                var allHtml = '';
                 for (var i = 0; i < list.length; i++) {
-                    var card = window.SettingsForms.renderIndexerCard(list[i], i);
-                    if (list[i].indexer_hunt_id) {
-                        ihHtml += card;
-                    } else {
-                        stdHtml += card;
-                    }
+                    allHtml += window.SettingsForms.renderIndexerCard(list[i], i);
+                }
+                allHtml += '<div class="add-instance-card" data-app-type="indexer" data-source="standard"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Indexer</div></div>';
+                allHtml += '<div class="add-instance-card" data-app-type="indexer" data-source="indexer-hunt"><div class="add-icon"><i class="fas fa-download" style="color: #6366f1;"></i></div><div class="add-text">Import from Index Master</div></div>';
+
+                if (unifiedGrid) {
+                    unifiedGrid.innerHTML = allHtml;
                 }
 
-                if (stdGrid) {
-                    stdHtml += '<div class="add-instance-card" data-app-type="indexer" data-source="standard"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Indexer</div></div>';
-                    stdGrid.innerHTML = stdHtml;
-                }
-                if (ihGrid) {
-                    ihHtml += '<div class="add-instance-card" data-app-type="indexer" data-source="indexer-hunt"><div class="add-icon"><i class="fas fa-plus-circle" style="color: #6366f1;"></i></div><div class="add-text">Import from Indexer Hunt</div></div>';
-                    ihGrid.innerHTML = ihHtml;
-                }
-
-                // Fallback for legacy single grid
-                if (legacyGrid && !stdGrid && !ihGrid) {
-                    var allHtml = '';
+                if (legacyGrid && !unifiedGrid) {
+                    var legHtml = '';
                     for (var j = 0; j < list.length; j++) {
-                        allHtml += window.SettingsForms.renderIndexerCard(list[j], j);
+                        legHtml += window.SettingsForms.renderIndexerCard(list[j], j);
                     }
-                    allHtml += '<div class="add-instance-card" data-app-type="indexer"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Indexer</div></div>';
-                    legacyGrid.innerHTML = allHtml;
+                    legHtml += '<div class="add-instance-card" data-app-type="indexer"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Indexer</div></div>';
+                    legacyGrid.innerHTML = legHtml;
                 }
-                var ihSection = document.querySelector('.ih-mgmt-group');
-                if (ihSection) ihSection.style.display = Forms._indexersMode === 'tv' ? 'none' : '';
             })
             .catch(function() {
-                if (stdGrid) stdGrid.innerHTML = '<div class="add-instance-card" data-app-type="indexer" data-source="standard"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Indexer</div></div>';
-                if (ihGrid) ihGrid.innerHTML = '<div class="add-instance-card" data-app-type="indexer" data-source="indexer-hunt"><div class="add-icon"><i class="fas fa-plus-circle" style="color: #6366f1;"></i></div><div class="add-text">Import from Indexer Hunt</div></div>';
+                if (unifiedGrid) unifiedGrid.innerHTML = '<div class="add-instance-card" data-app-type="indexer" data-source="standard"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Indexer</div></div><div class="add-instance-card" data-app-type="indexer" data-source="indexer-hunt"><div class="add-icon"><i class="fas fa-download" style="color: #6366f1;"></i></div><div class="add-text">Import from Index Master</div></div>';
             });
     };
 

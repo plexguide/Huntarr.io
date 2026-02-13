@@ -7,33 +7,25 @@
             </select>
         </div>
 
-        <!-- Standard Indexer Management -->
+        <!-- Unified Index Master: manual indexers + synced from Index Master -->
         <div class="settings-group indexer-settings-group">
-            <h3>Standard Indexer Management</h3>
-            <p class="ih-mgmt-desc">Indexers configured manually for this instance.</p>
-            <div class="instance-card-grid" id="indexer-instances-grid-standard">
+            <h3><i class="fas fa-server" style="margin-right: 8px; font-size: 0.95rem;"></i>Indexers</h3>
+            <p class="ih-mgmt-desc">Add indexers manually or import from Index Master. All indexers show API, key, and priority.</p>
+            <div class="instance-card-grid" id="indexer-instances-grid-unified">
                 <div class="add-instance-card" data-app-type="indexer" data-source="standard">
                     <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
                     <div class="add-text">Add Indexer</div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Indexer Hunt Management -->
-        <div class="settings-group indexer-settings-group ih-mgmt-group">
-            <h3><i class="fas fa-search-plus" style="color: #6366f1; margin-right: 8px; font-size: 0.95rem;"></i>Indexer Hunt Management</h3>
-            <p class="ih-mgmt-desc">Indexers synced from Indexer Hunt. Priority and categories can be customized per-instance.</p>
-            <div class="instance-card-grid" id="indexer-instances-grid-ih">
                 <div class="add-instance-card" data-app-type="indexer" data-source="indexer-hunt">
-                    <div class="add-icon"><i class="fas fa-plus-circle" style="color: #6366f1;"></i></div>
-                    <div class="add-text">Import from Indexer Hunt</div>
+                    <div class="add-icon"><i class="fas fa-download" style="color: #6366f1;"></i></div>
+                    <div class="add-text">Import from Index Master</div>
                 </div>
             </div>
         </div>
 
-        <!-- Import from Indexer Hunt checklist panel (hidden by default) -->
+        <!-- Import from Index Master checklist panel (hidden by default) -->
         <div class="settings-group indexer-settings-group ih-import-panel" id="ih-import-panel" style="display: none;">
-            <h3><i class="fas fa-download" style="color: #6366f1; margin-right: 8px; font-size: 0.95rem;"></i>Import Indexers from Indexer Hunt</h3>
+            <h3><i class="fas fa-download" style="color: #6366f1; margin-right: 8px; font-size: 0.95rem;"></i>Import Indexers from Index Master</h3>
             <p class="ih-mgmt-desc">Select indexers to import to this instance. Imported indexers stay linked for API key and enable/disable sync.</p>
             <div class="ih-import-list" id="ih-import-list">
                 <div style="color: #94a3b8; padding: 20px; text-align: center;">Loading available indexers...</div>
@@ -219,9 +211,7 @@
 <script>
 (function() {
     function initIndexerGrid() {
-        // Standard grid
-        var stdGrid = document.getElementById('indexer-instances-grid-standard');
-        var ihGrid = document.getElementById('indexer-instances-grid-ih');
+        var unifiedGrid = document.getElementById('indexer-instances-grid-unified');
 
         function handleGridClick(e) {
             var editBtn = e.target.closest('.btn-card.edit[data-app-type="indexer"]');
@@ -289,8 +279,7 @@
             }
         }
 
-        if (stdGrid) stdGrid.addEventListener('click', handleGridClick);
-        if (ihGrid) ihGrid.addEventListener('click', handleGridClick);
+        if (unifiedGrid) unifiedGrid.addEventListener('click', handleGridClick);
 
         // Import panel buttons
         var cancelBtn = document.getElementById('ih-import-cancel');
@@ -324,7 +313,7 @@
             .then(function(data) {
                 var available = data.available || [];
                 if (available.length === 0) {
-                    if (list) list.innerHTML = '<div class="ih-import-empty"><i class="fas fa-check-circle" style="color: #10b981; margin-right: 6px;"></i>All Indexer Hunt indexers are already imported to this instance.</div>';
+                    if (list) list.innerHTML = '<div class="ih-import-empty"><i class="fas fa-check-circle" style="color: #10b981; margin-right: 6px;"></i>All Index Master indexers are already imported to this instance.</div>';
                     return;
                 }
 
@@ -396,7 +385,7 @@
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.success) {
-                var msg = 'Imported ' + (data.added || 0) + ' indexer(s) from Indexer Hunt.';
+                var msg = 'Imported ' + (data.added || 0) + ' indexer(s) from Index Master.';
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
                     window.huntarrUI.showNotification(msg, 'success');
                 }

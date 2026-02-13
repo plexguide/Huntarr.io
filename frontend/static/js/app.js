@@ -142,8 +142,8 @@ let huntarrUI = {
             console.log('[huntarrUI] Initialization - showing nzb hunt sidebar');
             this.showNzbHuntSidebar();
         } else if (this.currentSection === 'indexer-hunt' || this.currentSection === 'indexer-hunt-stats' || this.currentSection === 'indexer-hunt-history') {
-            console.log('[huntarrUI] Initialization - showing main sidebar for indexer hunt');
-            this.showMainSidebar();
+            console.log('[huntarrUI] Initialization - showing Media Hunt sidebar for Index Master');
+            this.showMovieHuntSidebar();
         } else if ((this.currentSection && this.currentSection.startsWith('tv-hunt')) || this.currentSection === 'logs-tv-hunt') {
             console.log('[huntarrUI] Initialization - showing media hunt sidebar (tv-hunt redirect)');
             this.showMovieHuntSidebar();
@@ -798,27 +798,27 @@ let huntarrUI = {
         } else if (section === 'indexer-hunt' && document.getElementById('indexer-hunt-section')) {
             document.getElementById('indexer-hunt-section').classList.add('active');
             document.getElementById('indexer-hunt-section').style.display = 'block';
-            newTitle = 'Indexer Hunt';
+            newTitle = 'Index Master';
             this.currentSection = 'indexer-hunt';
-            this.showMainSidebar();
+            this.showMovieHuntSidebar();
             if (window.IndexerHunt && typeof window.IndexerHunt.init === 'function') {
                 window.IndexerHunt.init();
             }
         } else if (section === 'indexer-hunt-stats' && document.getElementById('indexer-hunt-stats-section')) {
             document.getElementById('indexer-hunt-stats-section').classList.add('active');
             document.getElementById('indexer-hunt-stats-section').style.display = 'block';
-            newTitle = 'Indexer Hunt – Stats';
+            newTitle = 'Index Master – Stats';
             this.currentSection = 'indexer-hunt-stats';
-            this.showMainSidebar();
+            this.showMovieHuntSidebar();
             if (window.IndexerHuntStats && typeof window.IndexerHuntStats.init === 'function') {
                 window.IndexerHuntStats.init();
             }
         } else if (section === 'indexer-hunt-history' && document.getElementById('indexer-hunt-history-section')) {
             document.getElementById('indexer-hunt-history-section').classList.add('active');
             document.getElementById('indexer-hunt-history-section').style.display = 'block';
-            newTitle = 'Indexer Hunt – History';
+            newTitle = 'Index Master – History';
             this.currentSection = 'indexer-hunt-history';
-            this.showMainSidebar();
+            this.showMovieHuntSidebar();
             if (window.IndexerHuntHistory && typeof window.IndexerHuntHistory.init === 'function') {
                 window.IndexerHuntHistory.init();
             }

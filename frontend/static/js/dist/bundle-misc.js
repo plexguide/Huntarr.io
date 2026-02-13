@@ -4408,7 +4408,7 @@ window.HuntarrIndexerHuntHome = {
         if (clearBtn) clearBtn.addEventListener('click', function() {
             window.HuntarrConfirm.show({
                 title: 'Clear History',
-                message: 'Are you sure you want to clear all Indexer Hunt history and stats? This cannot be undone.',
+                message: 'Are you sure you want to clear all Index Master history and stats? This cannot be undone.',
                 confirmLabel: 'Clear',
                 onConfirm: function() {
                     fetch('./api/indexer-hunt/history', { method: 'DELETE' })

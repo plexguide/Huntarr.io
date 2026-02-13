@@ -84,20 +84,6 @@
                 <div class="nav-icon-wrapper"><i class="fas fa-download"></i></div>
                 <span>NZB Hunt</span>
             </a>
-            <a href="./#indexer-hunt" class="nav-item" id="indexerHuntNav">
-                <div class="nav-icon-wrapper"><i class="fas fa-search-plus"></i></div>
-                <span>Indexer Hunt</span>
-            </a>
-            <div class="nav-sub-group" id="indexer-hunt-sub">
-                <a href="./#indexer-hunt-stats" class="nav-item nav-item-sub" id="indexerHuntStatsNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-chart-bar"></i></div>
-                    <span>Stats</span>
-                </a>
-                <a href="./#indexer-hunt-history" class="nav-item nav-item-sub" id="indexerHuntHistoryNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-history"></i></div>
-                    <span>History</span>
-                </a>
-            </div>
         </div>
     </nav>
 
@@ -166,6 +152,20 @@
                 <a href="./#logs-movie-hunt" class="nav-item nav-item-sub" id="movieHuntActivityLogsNav">
                     <div class="nav-icon-wrapper"><i class="fas fa-file-alt"></i></div>
                     <span>Logs</span>
+                </a>
+            </div>
+            <a href="./#indexer-hunt" class="nav-item" id="movieHuntIndexMasterNav">
+                <div class="nav-icon-wrapper"><i class="fas fa-search-plus"></i></div>
+                <span>Index Master</span>
+            </a>
+            <div class="nav-sub-group" id="index-master-sub">
+                <a href="./#indexer-hunt-stats" class="nav-item nav-item-sub" id="movieHuntIndexMasterStatsNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-chart-bar"></i></div>
+                    <span>Stats</span>
+                </a>
+                <a href="./#indexer-hunt-history" class="nav-item nav-item-sub" id="movieHuntIndexMasterHistoryNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-history"></i></div>
+                    <span>History</span>
                 </a>
             </div>
             <a href="./#media-hunt-settings" class="nav-item" id="movieHuntSettingsNav">
@@ -618,10 +618,10 @@
         }
         // NZB Hunt
         else if (currentHash.startsWith('#nzb-hunt-settings')) { selector = '#nzbHuntSettingsNav'; expandSub('nzb-hunt-settings-sub'); }
-        // Indexer Hunt
-        else if (currentHash === '#indexer-hunt') { selector = '#indexerHuntNav'; expandSub('indexer-hunt-sub'); }
-        else if (currentHash === '#indexer-hunt-stats') { selector = '#indexerHuntStatsNav'; expandSub('indexer-hunt-sub'); }
-        else if (currentHash === '#indexer-hunt-history') { selector = '#indexerHuntHistoryNav'; expandSub('indexer-hunt-sub'); }
+        // Index Master (own category under Media Hunt)
+        else if (currentHash === '#indexer-hunt') { selector = '#movieHuntIndexMasterNav'; expandSub('movie-hunt-collection-sub'); expandSub('movie-hunt-activity-sub'); expandSub('index-master-sub'); expandSub('movie-hunt-settings-sub'); }
+        else if (currentHash === '#indexer-hunt-stats') { selector = '#movieHuntIndexMasterStatsNav'; expandSub('movie-hunt-collection-sub'); expandSub('movie-hunt-activity-sub'); expandSub('index-master-sub'); expandSub('movie-hunt-settings-sub'); }
+        else if (currentHash === '#indexer-hunt-history') { selector = '#movieHuntIndexMasterHistoryNav'; expandSub('movie-hunt-collection-sub'); expandSub('movie-hunt-activity-sub'); expandSub('index-master-sub'); expandSub('movie-hunt-settings-sub'); }
         // Requestarr
         else if (currentHash === '#requestarr-discover') selector = '#requestarrDiscoverNav';
         else if (currentHash === '#requestarr-tv') selector = '#requestarrTVNav';
@@ -645,15 +645,14 @@
         var mhSettingsHashes = ['#movie-hunt-settings', '#media-hunt-settings', '#settings-instance-management', '#settings-media-management', '#settings-profiles', '#settings-sizes', '#settings-custom-formats', '#settings-indexers', '#settings-clients', '#settings-import-lists', '#settings-root-folders'];
         if (mhSettingsHashes.indexOf(currentHash) === -1) collapseSub('movie-hunt-settings-sub');
 
-        var mhActivityHashes = ['#activity-queue', '#activity-history', '#activity-blocklist', '#activity-logs', '#logs-movie-hunt', '#logs-tv-hunt'];
+        var mhActivityHashes = ['#activity-queue', '#activity-history', '#activity-blocklist', '#activity-logs', '#logs-movie-hunt', '#logs-tv-hunt', '#media-hunt-collection', '#movie-hunt-home', '#movie-hunt-collection', '#movie-hunt-calendar', '#settings-import-media'];
         if (mhActivityHashes.indexOf(currentHash) === -1) collapseSub('movie-hunt-activity-sub');
+
+        var indexMasterHashes = ['#indexer-hunt', '#indexer-hunt-stats', '#indexer-hunt-history', '#media-hunt-collection', '#movie-hunt-home', '#movie-hunt-collection', '#movie-hunt-calendar', '#settings-import-media'];
+        if (indexMasterHashes.indexOf(currentHash) === -1) collapseSub('index-master-sub');
 
         var mhCollectionHashes = ['#movie-hunt-home', '#movie-hunt-collection', '#media-hunt-collection', '#settings-import-media', '#movie-hunt-calendar'];
         if (mhCollectionHashes.indexOf(currentHash) === -1) collapseSub('movie-hunt-collection-sub');
-
-        // Collapse Indexer Hunt sub when not on indexer-hunt pages
-        var ihHashes = ['#indexer-hunt', '#indexer-hunt-stats', '#indexer-hunt-history'];
-        if (ihHashes.indexOf(currentHash) === -1) collapseSub('indexer-hunt-sub');
     }
 
     function expandSub(id) {

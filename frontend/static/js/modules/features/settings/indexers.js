@@ -159,9 +159,7 @@
     };
 
     Forms.refreshIndexersList = function() {
-        var stdGrid = document.getElementById('indexer-instances-grid-standard');
-        var ihGrid = document.getElementById('indexer-instances-grid-ih');
-        // Fallback: old single grid
+        var unifiedGrid = document.getElementById('indexer-instances-grid-unified');
         var legacyGrid = document.getElementById('indexer-instances-grid');
 
         var apiBase = Forms.getIndexersApiBase();
@@ -171,42 +169,29 @@
                 var list = (data && data.indexers) ? data.indexers : [];
                 window.SettingsForms._indexersList = list;
 
-                // Split into standard and IH-linked
-                var stdHtml = '';
-                var ihHtml = '';
+                // Unified grid: all indexers in one list with same sub-stats (API, key, priority)
+                var allHtml = '';
                 for (var i = 0; i < list.length; i++) {
-                    var card = window.SettingsForms.renderIndexerCard(list[i], i);
-                    if (list[i].indexer_hunt_id) {
-                        ihHtml += card;
-                    } else {
-                        stdHtml += card;
-                    }
+                    allHtml += window.SettingsForms.renderIndexerCard(list[i], i);
+                }
+                allHtml += '<div class="add-instance-card" data-app-type="indexer" data-source="standard"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Indexer</div></div>';
+                allHtml += '<div class="add-instance-card" data-app-type="indexer" data-source="indexer-hunt"><div class="add-icon"><i class="fas fa-download" style="color: #6366f1;"></i></div><div class="add-text">Import from Index Master</div></div>';
+
+                if (unifiedGrid) {
+                    unifiedGrid.innerHTML = allHtml;
                 }
 
-                if (stdGrid) {
-                    stdHtml += '<div class="add-instance-card" data-app-type="indexer" data-source="standard"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Indexer</div></div>';
-                    stdGrid.innerHTML = stdHtml;
-                }
-                if (ihGrid) {
-                    ihHtml += '<div class="add-instance-card" data-app-type="indexer" data-source="indexer-hunt"><div class="add-icon"><i class="fas fa-plus-circle" style="color: #6366f1;"></i></div><div class="add-text">Import from Indexer Hunt</div></div>';
-                    ihGrid.innerHTML = ihHtml;
-                }
-
-                // Fallback for legacy single grid
-                if (legacyGrid && !stdGrid && !ihGrid) {
-                    var allHtml = '';
+                if (legacyGrid && !unifiedGrid) {
+                    var legHtml = '';
                     for (var j = 0; j < list.length; j++) {
-                        allHtml += window.SettingsForms.renderIndexerCard(list[j], j);
+                        legHtml += window.SettingsForms.renderIndexerCard(list[j], j);
                     }
-                    allHtml += '<div class="add-instance-card" data-app-type="indexer"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Indexer</div></div>';
-                    legacyGrid.innerHTML = allHtml;
+                    legHtml += '<div class="add-instance-card" data-app-type="indexer"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Indexer</div></div>';
+                    legacyGrid.innerHTML = legHtml;
                 }
-                var ihSection = document.querySelector('.ih-mgmt-group');
-                if (ihSection) ihSection.style.display = Forms._indexersMode === 'tv' ? 'none' : '';
             })
             .catch(function() {
-                if (stdGrid) stdGrid.innerHTML = '<div class="add-instance-card" data-app-type="indexer" data-source="standard"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Indexer</div></div>';
-                if (ihGrid) ihGrid.innerHTML = '<div class="add-instance-card" data-app-type="indexer" data-source="indexer-hunt"><div class="add-icon"><i class="fas fa-plus-circle" style="color: #6366f1;"></i></div><div class="add-text">Import from Indexer Hunt</div></div>';
+                if (unifiedGrid) unifiedGrid.innerHTML = '<div class="add-instance-card" data-app-type="indexer" data-source="standard"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Indexer</div></div><div class="add-instance-card" data-app-type="indexer" data-source="indexer-hunt"><div class="add-icon"><i class="fas fa-download" style="color: #6366f1;"></i></div><div class="add-text">Import from Index Master</div></div>';
             });
     };
 
