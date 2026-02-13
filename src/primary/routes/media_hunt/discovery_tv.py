@@ -347,7 +347,7 @@ def perform_tv_hunt_request(
         category = client.get('category') or TV_HUNT_DEFAULT_CATEGORY
 
         if client_type == 'nzb_hunt':
-            success, queue_id = _send_to_nzb_hunt(nzb_url, nzb_title, category)
+            success, queue_id = _send_to_nzb_hunt(nzb_url, nzb_title, category, instance_id=instance_id)
         elif client_type == 'sabnzbd':
             success, queue_id = _send_to_sabnzbd(client, nzb_url, nzb_title, category)
         elif client_type == 'nzbget':
@@ -369,14 +369,26 @@ def perform_tv_hunt_request(
     return False, "All download clients failed"
 
 
-def _send_to_nzb_hunt(nzb_url, title, category):
+def _send_to_nzb_hunt(nzb_url, title, category, instance_id=None, instance_name=None):
     """Send NZB to NZB Hunt internal client."""
     try:
-        from src.primary.routes.nzb_hunt_routes import add_nzb_from_url
-        result = add_nzb_from_url(nzb_url, title, category)
-        if result and result.get('success'):
-            return True, result.get('queue_id', '')
-        return False, ''
+        from src.primary.apps.nzb_hunt.download_manager import get_manager
+        from .helpers import _get_tv_hunt_instance_display_name
+        mgr = get_manager()
+        src_id = str(instance_id) if instance_id is not None else ""
+        src_name = (instance_name or "").strip() or (_get_tv_hunt_instance_display_name(instance_id) if instance_id is not None else "")
+        success, message, queue_id = mgr.add_nzb(
+            nzb_url=nzb_url,
+            name=title or '',
+            category=category or TV_HUNT_DEFAULT_CATEGORY,
+            priority='normal',
+            added_by='tv_hunt',
+            nzb_name=title or '',
+            indexer='',
+            source_instance_id=src_id,
+            source_instance_name=src_name,
+        )
+        return success, queue_id or ''
     except Exception as e:
         tv_hunt_logger.debug("NZB Hunt send error: %s", e)
         return False, ''

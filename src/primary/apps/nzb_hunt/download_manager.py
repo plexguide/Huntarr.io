@@ -131,7 +131,8 @@ class DownloadItem:
     def __init__(self, nzb_id: str, name: str, category: str = "",
                  nzb_content: str = "", nzb_url: str = "",
                  priority: str = "normal", added_by: str = "",
-                 nzb_name: str = "", indexer: str = ""):
+                 nzb_name: str = "", indexer: str = "",
+                 source_instance_id: str = "", source_instance_name: str = ""):
         self.id = nzb_id
         self.seq_id = 0  # Sequential ID, assigned by DownloadManager
         self.name = name
@@ -141,7 +142,9 @@ class DownloadItem:
         self.nzb_content = nzb_content
         self.nzb_url = nzb_url
         self.priority = priority
-        self.added_by = added_by  # "movie_hunt", "manual", etc.
+        self.added_by = added_by  # "movie_hunt", "tv_hunt", "manual", etc.
+        self.source_instance_id = source_instance_id or ""
+        self.source_instance_name = source_instance_name or ""
         self.state = STATE_QUEUED
         self.added_at = datetime.now(timezone.utc).isoformat()
         self.started_at = None
@@ -190,6 +193,8 @@ class DownloadItem:
             "category": self.category,
             "priority": self.priority,
             "added_by": self.added_by,
+            "source_instance_id": getattr(self, "source_instance_id", "") or "",
+            "source_instance_name": getattr(self, "source_instance_name", "") or "",
             "state": self.state,
             "added_at": self.added_at,
             "started_at": self.started_at,
@@ -224,6 +229,8 @@ class DownloadItem:
             added_by=d.get("added_by", ""),
             nzb_name=d.get("nzb_name", ""),
             indexer=d.get("indexer", ""),
+            source_instance_id=d.get("source_instance_id", ""),
+            source_instance_name=d.get("source_instance_name", ""),
         )
         item.seq_id = d.get("seq_id", 0)
         item.state = d.get("state", STATE_QUEUED)
@@ -656,7 +663,8 @@ class NZBHuntDownloadManager:
     def add_nzb(self, nzb_url: str = "", nzb_content: str = "",
                 name: str = "", category: str = "",
                 priority: str = "normal", added_by: str = "",
-                nzb_name: str = "", indexer: str = "") -> Tuple[bool, str, str]:
+                nzb_name: str = "", indexer: str = "",
+                source_instance_id: str = "", source_instance_name: str = "") -> Tuple[bool, str, str]:
         """Add an NZB to the download queue.
         
         Args:
@@ -665,9 +673,11 @@ class NZBHuntDownloadManager:
             name: Display name for the download
             category: Category for organization
             priority: Priority level
-            added_by: Who added it (e.g., "movie_hunt")
+            added_by: Who added it (e.g., "movie_hunt", "tv_hunt")
             nzb_name: Original NZB filename (for tooltip display)
             indexer: Name of the indexer that provided this NZB
+            source_instance_id: Instance ID of the source (Movie Hunt / TV Hunt)
+            source_instance_name: Display name of the source instance
             
         Returns:
             Tuple of (success, message, queue_id)
@@ -748,6 +758,8 @@ class NZBHuntDownloadManager:
             added_by=added_by,
             nzb_name=nzb_name or name,
             indexer=indexer,
+            source_instance_id=source_instance_id or "",
+            source_instance_name=source_instance_name or "",
         )
         item.total_bytes = nzb.total_bytes
         item.total_segments = nzb.total_segments

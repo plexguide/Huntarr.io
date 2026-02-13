@@ -2948,7 +2948,7 @@ class HuntarrDatabase:
             return entry
     
     def get_hunt_history(self, app_type: str = None, search_query: str = None, 
-                   page: int = 1, page_size: int = 20) -> Dict[str, Any]:
+                   page: int = 1, page_size: int = 20, instance_name: str = None) -> Dict[str, Any]:
         """Get hunt history entries with pagination and filtering"""
         with self.get_connection() as conn:
             conn.row_factory = sqlite3.Row
@@ -2960,6 +2960,10 @@ class HuntarrDatabase:
             if app_type and app_type != "all":
                 where_conditions.append("app_type = ?")
                 params.append(app_type)
+            
+            if instance_name is not None and instance_name != "":
+                where_conditions.append("instance_name = ?")
+                params.append(str(instance_name))
             
             if search_query:
                 where_conditions.append("(processed_info LIKE ? OR media_id LIKE ?)")

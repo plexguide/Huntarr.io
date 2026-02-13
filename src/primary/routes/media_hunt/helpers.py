@@ -21,7 +21,7 @@ def _get_movie_hunt_instance_id_from_request():
     instance_id = request.args.get('instance_id', type=int)
     if instance_id is not None:
         return instance_id
-    if request.method == 'POST' and request.is_json:
+    if request.method in ('POST', 'DELETE', 'PUT') and request.is_json:
         try:
             body = request.get_json(silent=True) or {}
             bid = body.get('instance_id')
@@ -43,6 +43,34 @@ def _movie_profiles_context():
         'use_profile_id': False,
         'get_custom_formats': get_movie_custom_formats_config,
     }
+
+
+def _get_movie_hunt_instance_display_name(instance_id):
+    """Get display name for a Movie Hunt instance."""
+    if instance_id is None:
+        return ""
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        instances = db.get_movie_hunt_instances()
+        one = next((i for i in instances if i.get("id") == instance_id), None)
+        return (one.get("name") or "").strip() if one else str(instance_id)
+    except Exception:
+        return str(instance_id)
+
+
+def _get_tv_hunt_instance_display_name(instance_id):
+    """Get display name for a TV Hunt instance."""
+    if instance_id is None:
+        return ""
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        instances = db.get_tv_hunt_instances()
+        one = next((i for i in instances if i.get("id") == instance_id), None)
+        return (one.get("name") or "").strip() if one else str(instance_id)
+    except Exception:
+        return str(instance_id)
 
 
 # --- TV Hunt instance ID ---

@@ -605,7 +605,7 @@ def nzb_hunt_queue():
 def nzb_hunt_queue_add():
     """Add an NZB to the download queue.
     
-    Body: { nzb_url, nzb_content, name, category, priority, added_by, nzb_name, indexer }
+    Body: { nzb_url, nzb_content, name, category, priority, added_by, nzb_name, indexer, source_instance_id, source_instance_name }
     At least one of nzb_url or nzb_content is required.
     """
     try:
@@ -618,6 +618,8 @@ def nzb_hunt_queue_add():
         added_by = (data.get("added_by") or "manual").strip()
         nzb_name = (data.get("nzb_name") or "").strip()
         indexer = (data.get("indexer") or "").strip()
+        source_instance_id = str(data.get("source_instance_id", "") or "").strip()
+        source_instance_name = (data.get("source_instance_name") or "").strip()
 
         if not nzb_url and not nzb_content:
             return jsonify({"success": False, "error": "nzb_url or nzb_content required"}), 400
@@ -632,6 +634,8 @@ def nzb_hunt_queue_add():
             added_by=added_by,
             nzb_name=nzb_name,
             indexer=indexer,
+            source_instance_id=source_instance_id,
+            source_instance_name=source_instance_name,
         )
         return jsonify({"success": success, "message": message, "queue_id": queue_id})
     except Exception as e:

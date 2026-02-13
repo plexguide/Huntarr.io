@@ -154,8 +154,148 @@
 
     document.addEventListener('huntarr:instances-changed', function() {
         refreshAll('movie');
+        if (window.MediaHuntActivityInstanceDropdown && window.MediaHuntActivityInstanceDropdown.refresh) {
+            window.MediaHuntActivityInstanceDropdown.refresh('activity-combined-instance-select');
+            window.MediaHuntActivityInstanceDropdown.refresh('tv-activity-combined-instance-select');
+        }
     });
     document.addEventListener('huntarr:tv-hunt-instances-changed', function() {
         refreshAll('tv');
+        if (window.MediaHuntActivityInstanceDropdown && window.MediaHuntActivityInstanceDropdown.refresh) {
+            window.MediaHuntActivityInstanceDropdown.refresh('activity-combined-instance-select');
+            window.MediaHuntActivityInstanceDropdown.refresh('tv-activity-combined-instance-select');
+        }
     });
+
+    // --- Combined Activity dropdown (Movie Hunt + TV Hunt instances in one select) ---
+    var _activityCombinedWired = {};  // selectId -> { element, onChanged, preferMode }
+
+    function populateActivityCombined(select, preferMode) {
+        select.innerHTML = '<option value="">Loading...</option>';
+        var ts = Date.now();
+        Promise.all([
+            fetch(api('./api/movie-hunt/instances') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch(api('./api/movie-hunt/current-instance') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch(api('./api/tv-hunt/instances') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch(api('./api/tv-hunt/current-instance') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+        ]).then(function(results) {
+            var movieList = results[0].instances || [];
+            var movieCurrent = results[1].instance_id != null ? Number(results[1].instance_id) : null;
+            var tvList = results[2].instances || [];
+            var tvCurrent = results[3].instance_id != null ? Number(results[3].instance_id) : null;
+
+            select.innerHTML = '';
+
+            if (movieList.length === 0 && tvList.length === 0) {
+                var emptyOpt = document.createElement('option');
+                emptyOpt.value = '';
+                emptyOpt.textContent = 'No Movie Hunt or TV Hunt instances';
+                select.appendChild(emptyOpt);
+                select.value = '';
+                return;
+            }
+
+            if (movieList.length > 0) {
+                var movieGroup = document.createElement('optgroup');
+                movieGroup.label = 'Movie Hunt';
+                movieList.forEach(function(inst) {
+                    var opt = document.createElement('option');
+                    opt.value = 'movie:' + inst.id;
+                    opt.textContent = inst.name || 'Instance ' + inst.id;
+                    movieGroup.appendChild(opt);
+                });
+                select.appendChild(movieGroup);
+            }
+            if (tvList.length > 0) {
+                var tvGroup = document.createElement('optgroup');
+                tvGroup.label = 'TV Hunt';
+                tvList.forEach(function(inst) {
+                    var opt = document.createElement('option');
+                    opt.value = 'tv:' + inst.id;
+                    opt.textContent = inst.name || 'Instance ' + inst.id;
+                    tvGroup.appendChild(opt);
+                });
+                select.appendChild(tvGroup);
+            }
+
+            var targetVal = '';
+            if (preferMode === 'movie' && movieCurrent != null && movieList.some(function(i) { return i.id === movieCurrent; })) {
+                targetVal = 'movie:' + movieCurrent;
+            } else if (preferMode === 'tv' && tvCurrent != null && tvList.some(function(i) { return i.id === tvCurrent; })) {
+                targetVal = 'tv:' + tvCurrent;
+            } else if (movieCurrent != null && movieList.some(function(i) { return i.id === movieCurrent; })) {
+                targetVal = 'movie:' + movieCurrent;
+            } else if (tvCurrent != null && tvList.some(function(i) { return i.id === tvCurrent; })) {
+                targetVal = 'tv:' + tvCurrent;
+            } else if (movieList.length > 0) {
+                targetVal = 'movie:' + movieList[0].id;
+            } else if (tvList.length > 0) {
+                targetVal = 'tv:' + tvList[0].id;
+            }
+            select.value = targetVal;
+        }).catch(function() {
+            select.innerHTML = '<option value="">Unable to load instances</option>';
+        });
+    }
+
+    function attachActivityCombined(selectId, onChanged, preferMode) {
+        var select = document.getElementById(selectId);
+        if (!select) return;
+
+        _activityCombinedWired[selectId] = { element: select, onChanged: onChanged, preferMode: preferMode };
+        populateActivityCombined(select, preferMode);
+
+        select.addEventListener('change', function() {
+            var val = (select.value || '').trim();
+            if (!val) return;
+            var parts = val.split(':');
+            var mode = parts[0];
+            var instanceId = parts[1] ? parseInt(parts[1], 10) : null;
+            if (mode !== 'movie' && mode !== 'tv') return;
+            var wired = _activityCombinedWired[selectId];
+
+            var apiBase = getApiBase(mode);
+            fetch(api(apiBase + '/current-instance'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ instance_id: instanceId })
+            })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.error) {
+                        console.warn('[MediaHuntActivityDropdown] Set current failed:', data.error);
+                        return;
+                    }
+                    var cb = getVisibilityCallback(mode);
+                    if (cb) cb();
+
+                    var hash = window.location.hash || '';
+                    var isMovieActivity = /#(activity-queue|activity-history|activity-blocklist|activity-logs)/.test(hash);
+                    var isTvActivity = /#tv-hunt-activity-(queue|history|blocklist)/.test(hash);
+
+                    if (mode === 'tv' && isMovieActivity) {
+                        window.location.hash = 'tv-hunt-activity-queue';
+                    } else if (mode === 'movie' && isTvActivity) {
+                        window.location.hash = 'activity-queue';
+                    } else {
+                        if (wired && typeof wired.onChanged === 'function') wired.onChanged();
+                    }
+                })
+                .catch(function(err) {
+                    console.warn('[MediaHuntActivityDropdown] Set current error:', err);
+                });
+        });
+    }
+
+    function refreshActivityCombined(selectId) {
+        var select = document.getElementById(selectId);
+        if (!select) return;
+        var entry = _activityCombinedWired[selectId];
+        populateActivityCombined(select, entry ? entry.preferMode : null);
+    }
+
+    window.MediaHuntActivityInstanceDropdown = {
+        attach: attachActivityCombined,
+        refresh: refreshActivityCombined
+    };
 })();

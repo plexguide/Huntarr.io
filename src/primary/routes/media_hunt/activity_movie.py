@@ -829,7 +829,9 @@ def register_movie_activity_routes(bp):
         if view == 'history':
             try:
                 from src.primary.history_manager import get_history
-                result = get_history('movie_hunt', search_query=search if search else None, page=page, page_size=page_size)
+                instance_id = _get_movie_hunt_instance_id_from_request()
+                instance_name = str(instance_id) if instance_id is not None else None
+                result = get_history('movie_hunt', search_query=search if search else None, page=page, page_size=page_size, instance_name=instance_name)
     
                 history_items = []
                 for entry in result.get('entries', []):

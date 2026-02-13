@@ -40,13 +40,13 @@
     }
 
     var MOVIE_DROPDOWN_IDS = [
-        'movie-hunt-instance-select', 'movie-hunt-collection-instance-select', 'activity-instance-select',
+        'movie-hunt-instance-select', 'movie-hunt-collection-instance-select',
         'settings-clients-instance-select',
         'import-media-instance-select'
     ];
 
     var TV_DROPDOWN_IDS = [
-        'tv-hunt-instance-select', 'tv-hunt-collection-instance-select', 'tv-hunt-activity-instance-select',
+        'tv-hunt-instance-select', 'tv-hunt-collection-instance-select',
         'tv-hunt-settings-clients-instance-select'
     ];
 

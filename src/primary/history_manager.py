@@ -82,7 +82,7 @@ def add_history_entry(app_type, entry_data):
             logger.error(f"Database error adding history entry for {app_type}: {e}")
             return None
 
-def get_history(app_type, search_query=None, page=1, page_size=20):
+def get_history(app_type, search_query=None, page=1, page_size=20, instance_name=None):
     """
     Get history entries for an app
     
@@ -91,6 +91,7 @@ def get_history(app_type, search_query=None, page=1, page_size=20):
     - search_query: str - Optional search query to filter results
     - page: int - Page number (1-based)
     - page_size: int - Number of entries per page
+    - instance_name: str - Optional instance name to filter (e.g. instance_id as string for movie_hunt/tv_hunt)
     
     Returns:
     - dict with entries, total_entries, and total_pages
@@ -105,7 +106,8 @@ def get_history(app_type, search_query=None, page=1, page_size=20):
             app_type=app_type,
             search_query=search_query,
             page=page,
-            page_size=page_size
+            page_size=page_size,
+            instance_name=instance_name
         )
         # Convert date_time to user timezone for display (prefer database so in-app choice wins in Docker)
         try:

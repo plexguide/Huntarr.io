@@ -2600,7 +2600,7 @@ class RequestarrAPI:
             client = enabled_clients[0]
             raw_cat = (client.get('category') or '').strip()
             request_category = MOVIE_HUNT_DEFAULT_CATEGORY if raw_cat.lower() in ('default', '*', '') else (raw_cat or MOVIE_HUNT_DEFAULT_CATEGORY)
-            ok, msg, queue_id = _add_nzb_to_download_client(client, nzb_url, nzb_title or f'{title}.nzb', request_category, verify_ssl, indexer=indexer_used or '')
+            ok, msg, queue_id = _add_nzb_to_download_client(client, nzb_url, nzb_title or f'{title}.nzb', request_category, verify_ssl, indexer=indexer_used or '', instance_id=instance_id)
             
             if not ok:
                 return {

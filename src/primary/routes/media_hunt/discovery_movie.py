@@ -157,8 +157,9 @@ def _search_newznab_movie(base_url, api_key, query, categories, timeout=15):
 
 # --- Send NZB to download client ---
 
-def _add_nzb_to_download_client(client, nzb_url, nzb_name, category, verify_ssl, indexer=""):
-    """Send NZB URL to NZB Hunt, SABnzbd, or NZBGet. Returns (success, message, queue_id)."""
+def _add_nzb_to_download_client(client, nzb_url, nzb_name, category, verify_ssl, indexer="", instance_id=None, instance_name=None):
+    """Send NZB URL to NZB Hunt, SABnzbd, or NZBGet. Returns (success, message, queue_id).
+    instance_id and instance_name are used for NZB Hunt to track which Movie Hunt instance sent the request."""
     client_type = (client.get('type') or 'nzbget').strip().lower()
 
     raw = (category or client.get('category') or '').strip()
@@ -170,7 +171,10 @@ def _add_nzb_to_download_client(client, nzb_url, nzb_name, category, verify_ssl,
     try:
         if client_type == 'nzbhunt':
             from src.primary.apps.nzb_hunt.download_manager import get_manager
+            from .helpers import _get_movie_hunt_instance_display_name
             mgr = get_manager()
+            src_id = str(instance_id) if instance_id is not None else ""
+            src_name = (instance_name or "").strip() or (_get_movie_hunt_instance_display_name(instance_id) if instance_id is not None else "")
             success, message, queue_id = mgr.add_nzb(
                 nzb_url=nzb_url,
                 name=nzb_name or '',
@@ -179,6 +183,8 @@ def _add_nzb_to_download_client(client, nzb_url, nzb_name, category, verify_ssl,
                 added_by='movie_hunt',
                 nzb_name=nzb_name or '',
                 indexer=indexer,
+                source_instance_id=src_id,
+                source_instance_name=src_name,
             )
             return success, message, queue_id
 
@@ -676,7 +682,7 @@ def perform_movie_hunt_request(instance_id, title, year='', root_folder=None, qu
     client = enabled_clients[0]
     raw_cat = (client.get('category') or '').strip()
     request_category = MOVIE_HUNT_DEFAULT_CATEGORY if raw_cat.lower() in ('default', '*', '') else (raw_cat or MOVIE_HUNT_DEFAULT_CATEGORY)
-    ok, msg, queue_id = _add_nzb_to_download_client(client, nzb_url, nzb_title or f'{title}.nzb', request_category, verify_ssl, indexer=indexer_used or '')
+    ok, msg, queue_id = _add_nzb_to_download_client(client, nzb_url, nzb_title or f'{title}.nzb', request_category, verify_ssl, indexer=indexer_used or '', instance_id=instance_id)
     if not ok:
         movie_hunt_logger.error("Request: send to download client failed for '%s': %s", title, msg)
         return False, f'Sent to download client but failed: {msg}'
@@ -864,7 +870,7 @@ def register_movie_discovery_routes(bp):
 
             ok, msg, queue_id = _add_nzb_to_download_client(
                 client, nzb_url, nzb_title or f'{title}.nzb', category, verify_ssl,
-                indexer=best_indexer or ''
+                indexer=best_indexer or '', instance_id=instance_id
             )
             if not ok:
                 return jsonify({'success': False, 'message': f'Download client error: {msg}'}), 500

@@ -21,6 +21,15 @@
 
     function el(id) { return document.getElementById(id); }
 
+    function getInstanceId() {
+        var select = el('activity-combined-instance-select');
+        if (!select || !select.value) return null;
+        var val = (select.value || '').trim();
+        if (val.indexOf('movie:') !== 0) return null;
+        var n = parseInt(val.split(':')[1], 10);
+        return isNaN(n) ? null : n;
+    }
+
     function showLoading(show) {
         var loading = el('activityLoading');
         if (loading) loading.style.display = show ? 'block' : 'none';
@@ -144,11 +153,16 @@
 
     function loadData() {
         if (isLoading) return;
+        var instanceId = getInstanceId();
+        if (instanceId == null) {
+            showEmptyState(true, 'Select an instance', 'Choose a Movie Hunt instance to view queue, history, or blocklist.');
+            return;
+        }
         isLoading = true;
         showLoading(true);
         showEmptyState(false);
 
-        var params = new URLSearchParams({ page: currentPage, page_size: pageSize });
+        var params = new URLSearchParams({ page: currentPage, page_size: pageSize, instance_id: String(instanceId) });
         if (searchQuery) params.append('search', searchQuery);
         params.append('_t', Date.now()); // cache-bust so refresh always gets fresh stats
 
@@ -303,12 +317,17 @@
 
     function removeBlocklistEntry(sourceTitle) {
         if (!sourceTitle || !sourceTitle.trim()) return;
+        var instanceId = getInstanceId();
+        if (instanceId == null) {
+            if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Select an instance first.', 'warning');
+            return;
+        }
         var msg = 'Remove this release from the blocklist? It may be selected again when requesting.';
         var doRemove = function() {
             fetch('./api/activity/blocklist', {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ source_title: sourceTitle })
+                body: JSON.stringify({ source_title: sourceTitle, instance_id: instanceId })
             })
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
@@ -358,6 +377,11 @@
             }
             return;
         }
+        var instanceId = getInstanceId();
+        if (instanceId == null) {
+            if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Select an instance first.', 'warning');
+            return;
+        }
         var items = [];
         for (var i = 0; i < checkboxes.length; i++) {
             var cb = checkboxes[i];
@@ -366,7 +390,7 @@
         fetch('./api/activity/queue', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ items: items })
+            body: JSON.stringify({ items: items, instance_id: instanceId })
         })
             .then(function(r) { return r.json(); })
             .then(function(data) {
@@ -407,13 +431,13 @@
 
         switchView(currentView);
 
-        if (window.MovieHuntInstanceDropdown && window.MovieHuntInstanceDropdown.attach) {
-            var activitySelect = el('activity-instance-select');
+        if (window.MediaHuntActivityInstanceDropdown && window.MediaHuntActivityInstanceDropdown.attach) {
+            var activitySelect = el('activity-combined-instance-select');
             if (activitySelect) {
-                window.MovieHuntInstanceDropdown.attach('activity-instance-select', function() {
+                window.MediaHuntActivityInstanceDropdown.attach('activity-combined-instance-select', function() {
                     currentPage = 1;
                     loadData();
-                });
+                }, 'movie');
             }
         }
 
@@ -503,9 +527,11 @@
     function el(id) { return document.getElementById(id); }
 
     function getInstanceId() {
-        var select = el('tv-hunt-activity-instance-select');
+        var select = el('tv-activity-combined-instance-select');
         if (!select || !select.value) return null;
-        var n = parseInt(select.value, 10);
+        var val = (select.value || '').trim();
+        if (val.indexOf('tv:') !== 0) return null;
+        var n = parseInt(val.split(':')[1], 10);
         return isNaN(n) ? null : n;
     }
 
@@ -780,13 +806,13 @@
 
         switchView(currentView);
 
-        if (window.TVHuntInstanceDropdown && window.TVHuntInstanceDropdown.attach) {
-            var activitySelect = el('tv-hunt-activity-instance-select');
+        if (window.MediaHuntActivityInstanceDropdown && window.MediaHuntActivityInstanceDropdown.attach) {
+            var activitySelect = el('tv-activity-combined-instance-select');
             if (activitySelect) {
-                window.TVHuntInstanceDropdown.attach('tv-hunt-activity-instance-select', function() {
+                window.MediaHuntActivityInstanceDropdown.attach('tv-activity-combined-instance-select', function() {
                     currentPage = 1;
                     loadData();
-                });
+                }, 'tv');
             }
         }
 
