@@ -122,7 +122,7 @@ window.HuntarrNavigation = {
         var tvHuntToSettings = {
             'tv-hunt-settings-custom-formats': 'settings-custom-formats',
             'tv-hunt-settings-profiles': 'settings-profiles',
-            'tv-hunt-settings-indexers': 'settings-indexers',
+            'tv-hunt-settings-indexers': 'indexer-hunt',
             'tv-hunt-settings-clients': 'settings-clients',
             'tv-hunt-settings-root-folders': 'settings-root-folders',
             'settings-import-media-tv': 'settings-import-media',
@@ -302,7 +302,7 @@ window.HuntarrNavigation = {
         let sectionForNav = currentSection;
         if (currentSection === 'instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing) {
             const appType = window.SettingsForms._currentEditing.appType;
-            if (appType === 'indexer') sectionForNav = 'settings-indexers';
+            if (appType === 'indexer') sectionForNav = 'indexer-hunt';
             else if (appType === 'client') sectionForNav = 'settings-clients';
         }
         const collectionSections = ['movie-hunt-home', 'movie-hunt-collection', 'media-hunt-collection', 'settings-import-media', 'movie-hunt-calendar'];

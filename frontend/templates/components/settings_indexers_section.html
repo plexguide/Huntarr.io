@@ -1,217 +1,15 @@
-<section id="settingsIndexersSection" class="content-section" style="display: none;">
-    {% with section_id='settings-indexers' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
-    <div id="indexerManagementContainer" class="app-content-panel">
-        <div class="media-hunt-settings-instance-bar" style="margin-bottom: 16px;">
-            <select id="settings-indexers-instance-select" class="control-select" aria-label="Instance">
-                <option value="">Loading...</option>
-            </select>
-        </div>
-
-        <!-- Unified Index Master: manual indexers + synced from Index Master -->
-        <div class="settings-group indexer-settings-group">
-            <h3><i class="fas fa-server" style="margin-right: 8px; font-size: 0.95rem;"></i>Indexers</h3>
-            <p class="ih-mgmt-desc">Add indexers manually or import from Index Master. All indexers show API, key, and priority.</p>
-            <div class="instance-card-grid" id="indexer-instances-grid-unified">
-                <div class="add-instance-card" data-app-type="indexer" data-source="standard">
-                    <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
-                    <div class="add-text">Add Indexer</div>
-                </div>
-                <div class="add-instance-card" data-app-type="indexer" data-source="indexer-hunt">
-                    <div class="add-icon"><i class="fas fa-download" style="color: #6366f1;"></i></div>
-                    <div class="add-text">Import from Index Master</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Import from Index Master checklist panel (hidden by default) -->
-        <div class="settings-group indexer-settings-group ih-import-panel" id="ih-import-panel" style="display: none;">
-            <h3><i class="fas fa-download" style="color: #6366f1; margin-right: 8px; font-size: 0.95rem;"></i>Import Indexers from Index Master</h3>
-            <p class="ih-mgmt-desc">Select indexers to import to this instance. Imported indexers stay linked for API key and enable/disable sync.</p>
-            <div class="ih-import-list" id="ih-import-list">
-                <div style="color: #94a3b8; padding: 20px; text-align: center;">Loading available indexers...</div>
-            </div>
-            <div class="ih-import-actions" id="ih-import-actions" style="display: none;">
-                <button type="button" class="ih-import-cancel-btn" id="ih-import-cancel">Cancel</button>
-                <button type="button" class="ih-import-confirm-btn" id="ih-import-confirm">
-                    <i class="fas fa-download"></i> Import Selected
-                </button>
-            </div>
-        </div>
-    </div>
+<!-- Indexers UI merged into Index Master; this section is a script-only stub. -->
+<section id="settingsIndexersSection" class="content-section" style="display: none; position: absolute; left: -9999px; width: 0; height: 0; overflow: hidden;">
+    <!-- Elements and body moved to indexer_hunt_section; script here finds them by ID. -->
 </section>
-
 <style>
-    #settingsIndexersSection {
-        width: 100%;
-        min-height: 100vh;
-        overflow-y: auto;
-        overflow-x: hidden;
-    }
-    #settingsIndexersSection.active {
-        display: block !important;
-    }
-    #indexerManagementContainer {
-        width: 100%;
-        padding: 20px;
-        margin: 0;
-        background-color: transparent;
-        box-shadow: none;
-        border: none;
-    }
-    .indexer-settings-group {
-        background: rgba(15, 23, 42, 0.4);
-        border: 1px solid rgba(148, 163, 184, 0.08);
-        border-radius: 12px;
-        padding: 24px;
-        margin: 12px 0 20px 0;
-    }
-    .indexer-settings-group h3 {
-        margin: 0 0 8px 0;
-        padding: 0 0 12px 0;
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #f1f5f9;
-        border-bottom: 1px solid rgba(148, 163, 184, 0.12);
-        background: none;
-        box-shadow: none;
-        display: flex;
-        align-items: center;
-    }
-    .ih-mgmt-desc {
-        font-size: 0.85rem;
-        color: #64748b;
-        margin: 0 0 16px 0;
-    }
-    .ih-mgmt-group {
-        border-left: 3px solid #6366f1;
-    }
-
-    /* Import checklist */
-    .ih-import-panel {
-        border-left: 3px solid #6366f1;
-    }
-    .ih-import-list {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        margin-bottom: 16px;
-    }
-    .ih-import-item {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 14px 16px;
-        background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
-        border: 1px solid rgba(148, 163, 184, 0.1);
-        border-radius: 10px;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    .ih-import-item:hover {
-        border-color: rgba(99, 102, 241, 0.3);
-        background: rgba(30, 41, 59, 0.8);
-    }
-    .ih-import-item.selected {
-        border-color: #6366f1;
-        background: rgba(99, 102, 241, 0.08);
-    }
-    .ih-import-checkbox {
-        width: 20px;
-        height: 20px;
-        border: 2px solid rgba(148, 163, 184, 0.3);
-        border-radius: 4px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        transition: all 0.2s;
-    }
-    .ih-import-item.selected .ih-import-checkbox {
-        background: #6366f1;
-        border-color: #6366f1;
-    }
-    .ih-import-checkbox i {
-        color: #fff;
-        font-size: 0.7rem;
-        display: none;
-    }
-    .ih-import-item.selected .ih-import-checkbox i {
-        display: block;
-    }
-    .ih-import-info {
-        flex: 1;
-        min-width: 0;
-    }
-    .ih-import-name {
-        font-weight: 600;
-        color: #f1f5f9;
-        font-size: 0.95rem;
-    }
-    .ih-import-meta {
-        font-size: 0.8rem;
-        color: #64748b;
-        margin-top: 2px;
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-    }
-    .ih-import-meta span {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-    }
-    .ih-import-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 12px;
-        padding-top: 12px;
-        border-top: 1px solid rgba(148, 163, 184, 0.08);
-    }
-    .ih-import-cancel-btn {
-        background: rgba(148, 163, 184, 0.1);
-        color: #cbd5e1;
-        border: 1px solid rgba(148, 163, 184, 0.15);
-        border-radius: 8px;
-        padding: 9px 20px;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    .ih-import-cancel-btn:hover {
-        background: rgba(148, 163, 184, 0.2);
-        color: #fff;
-    }
-    .ih-import-confirm-btn {
-        background: #6366f1;
-        color: #fff;
-        border: none;
-        border-radius: 8px;
-        padding: 9px 20px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        font-weight: 500;
-        transition: background 0.2s;
-    }
-    .ih-import-confirm-btn:hover {
-        background: #4f46e5;
-    }
-    .ih-import-confirm-btn:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-    }
-    .ih-import-empty {
-        text-align: center;
-        padding: 24px;
-        color: #64748b;
-        font-size: 0.9rem;
-    }
+    #settingsIndexersSection { width: 0; height: 0; min-height: 0; overflow: hidden; }
 </style>
-
 <script>
 (function() {
     function initIndexerGrid() {
         var unifiedGrid = document.getElementById('indexer-instances-grid-unified');
+        if (!unifiedGrid) return;
 
         function handleGridClick(e) {
             var editBtn = e.target.closest('.btn-card.edit[data-app-type="indexer"]');
@@ -279,22 +77,21 @@
             }
         }
 
-        if (unifiedGrid) unifiedGrid.addEventListener('click', handleGridClick);
+        unifiedGrid.addEventListener('click', handleGridClick);
 
-        // Import panel buttons
         var cancelBtn = document.getElementById('ih-import-cancel');
         if (cancelBtn) cancelBtn.addEventListener('click', _closeIHImportPanel);
         var confirmBtn = document.getElementById('ih-import-confirm');
         if (confirmBtn) confirmBtn.addEventListener('click', _confirmIHImport);
     }
 
-    // ── Import panel logic ──────────────────────────────────────────
-
     function _getInstanceIdSync() {
-        // Read directly from the instance select dropdown (synchronous, always available)
         var sel = document.getElementById('settings-indexers-instance-select');
-        if (sel && sel.value) return parseInt(sel.value, 10) || 1;
-        return 1;
+        if (!sel || !sel.value) return 1;
+        var val = sel.value.trim();
+        var parts = val.split(':');
+        if (parts.length === 2) return parseInt(parts[1], 10) || 1;
+        return parseInt(val, 10) || 1;
     }
 
     function _openIHImportPanel() {
@@ -302,7 +99,6 @@
         if (panel) panel.style.display = '';
 
         var instanceId = _getInstanceIdSync();
-
         var list = document.getElementById('ih-import-list');
         var actions = document.getElementById('ih-import-actions');
         if (list) list.innerHTML = '<div style="color: #94a3b8; padding: 20px; text-align: center;"><i class="fas fa-spinner fa-spin"></i> Loading available indexers...</div>';
@@ -316,7 +112,6 @@
                     if (list) list.innerHTML = '<div class="ih-import-empty"><i class="fas fa-check-circle" style="color: #10b981; margin-right: 6px;"></i>All Index Master indexers are already imported to this instance.</div>';
                     return;
                 }
-
                 var html = '';
                 available.forEach(function(idx) {
                     var keyDisplay = idx.api_key_last4 ? '\u2022\u2022\u2022\u2022' + idx.api_key_last4 : 'No key';
@@ -334,8 +129,6 @@
                 });
                 if (list) list.innerHTML = html;
                 if (actions) actions.style.display = 'flex';
-
-                // Wire up item clicks
                 var items = list.querySelectorAll('.ih-import-item');
                 items.forEach(function(item) {
                     item.addEventListener('click', function() {
@@ -366,14 +159,9 @@
     function _confirmIHImport() {
         var selected = document.querySelectorAll('#ih-import-list .ih-import-item.selected');
         if (selected.length === 0) return;
-
         var ids = [];
-        selected.forEach(function(item) {
-            ids.push(item.getAttribute('data-ih-id'));
-        });
-
+        selected.forEach(function(item) { ids.push(item.getAttribute('data-ih-id')); });
         var instanceId = _getInstanceIdSync();
-
         var btn = document.getElementById('ih-import-confirm');
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importing...'; }
 
@@ -385,9 +173,8 @@
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.success) {
-                var msg = 'Imported ' + (data.added || 0) + ' indexer(s) from Index Master.';
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
-                    window.huntarrUI.showNotification(msg, 'success');
+                    window.huntarrUI.showNotification('Imported ' + (data.added || 0) + ' indexer(s) from Index Master.', 'success');
                 }
                 _closeIHImportPanel();
                 if (window.SettingsForms && window.SettingsForms.refreshIndexersList) {

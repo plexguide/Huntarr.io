@@ -12,6 +12,43 @@
 }
 #indexer-hunt-section.active { display: block !important; }
 
+/* Instance indexers + Import panel (merged from Settings > Indexers) */
+.ih-instance-indexers-group .instance-card-grid { margin-top: 8px; }
+.ih-mgmt-desc { font-size: 0.85rem; color: #64748b; margin: 0 0 16px 0; }
+.ih-import-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.ih-import-item {
+    display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+    background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+    border: 1px solid rgba(148, 163, 184, 0.1); border-radius: 10px;
+    cursor: pointer; transition: all 0.2s;
+}
+.ih-import-item:hover { border-color: rgba(99, 102, 241, 0.3); background: rgba(30, 41, 59, 0.8); }
+.ih-import-item.selected { border-color: #6366f1; background: rgba(99, 102, 241, 0.08); }
+.ih-import-checkbox {
+    width: 20px; height: 20px; border: 2px solid rgba(148, 163, 184, 0.3); border-radius: 4px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s;
+}
+.ih-import-item.selected .ih-import-checkbox { background: #6366f1; border-color: #6366f1; }
+.ih-import-checkbox i { color: #fff; font-size: 0.7rem; display: none; }
+.ih-import-item.selected .ih-import-checkbox i { display: block; }
+.ih-import-info { flex: 1; min-width: 0; }
+.ih-import-name { font-weight: 600; color: #f1f5f9; font-size: 0.95rem; }
+.ih-import-meta { font-size: 0.8rem; color: #64748b; margin-top: 2px; display: flex; gap: 12px; flex-wrap: wrap; }
+.ih-import-meta span { display: inline-flex; align-items: center; gap: 4px; }
+.ih-import-actions { display: flex; justify-content: flex-end; gap: 12px; padding-top: 12px; border-top: 1px solid rgba(148, 163, 184, 0.08); }
+.ih-import-cancel-btn {
+    background: rgba(148, 163, 184, 0.1); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.15);
+    border-radius: 8px; padding: 9px 20px; cursor: pointer; transition: all 0.2s;
+}
+.ih-import-cancel-btn:hover { background: rgba(148, 163, 184, 0.2); color: #fff; }
+.ih-import-confirm-btn {
+    background: #6366f1; color: #fff; border: none; border-radius: 8px; padding: 9px 20px;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; transition: background 0.2s;
+}
+.ih-import-confirm-btn:hover { background: #4f46e5; }
+.ih-import-confirm-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.ih-import-empty { text-align: center; padding: 24px; color: #64748b; font-size: 0.9rem; }
+
 .ih-page {
     width: 100%;
     padding: 20px;

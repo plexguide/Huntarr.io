@@ -410,7 +410,18 @@ def register_tv_indexers_routes(bp, get_instance_id):
             instance_id = get_instance_id()
             if not instance_id:
                 return jsonify({'error': 'No instance selected'}), 400
-            indexers = [i for i in _get_config(instance_id) if i.get('id') != indexer_id]
+            indexers = _get_config(instance_id)
+            # Support legacy indexers (no id): use array index when indexer_id is numeric
+            try:
+                idx = int(indexer_id)
+                if 0 <= idx < len(indexers):
+                    indexers.pop(idx)
+                    _save(indexers, instance_id)
+                    return jsonify({'success': True}), 200
+            except ValueError:
+                pass
+            # Standard: delete by id
+            indexers = [i for i in indexers if i.get('id') != indexer_id]
             _save(indexers, instance_id)
             return jsonify({'success': True}), 200
         except Exception as e:

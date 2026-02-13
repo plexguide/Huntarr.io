@@ -804,6 +804,9 @@ let huntarrUI = {
             if (window.IndexerHunt && typeof window.IndexerHunt.init === 'function') {
                 window.IndexerHunt.init();
             }
+            if (window.SettingsForms && typeof window.SettingsForms.initOrRefreshIndexers === 'function') {
+                window.SettingsForms.initOrRefreshIndexers();
+            }
         } else if (section === 'indexer-hunt-stats' && document.getElementById('indexer-hunt-stats-section')) {
             document.getElementById('indexer-hunt-stats-section').classList.add('active');
             document.getElementById('indexer-hunt-stats-section').style.display = 'block';
@@ -983,29 +986,10 @@ let huntarrUI = {
             if (window.MediaHuntProfiles && typeof window.MediaHuntProfiles.initOrRefresh === 'function') {
                 window.MediaHuntProfiles.initOrRefresh('tv');
             }
-        } else if (section === 'tv-hunt-settings-indexers' && document.getElementById('settingsIndexersSection')) {
-            if (document.getElementById('tvHuntActivitySection')) { document.getElementById('tvHuntActivitySection').classList.remove('active'); document.getElementById('tvHuntActivitySection').style.display = 'none'; }
-            if (document.getElementById('tvHuntSettingsIndexersSection')) { document.getElementById('tvHuntSettingsIndexersSection').classList.remove('active'); document.getElementById('tvHuntSettingsIndexersSection').style.display = 'none'; }
-            document.getElementById('settingsIndexersSection').classList.add('active');
-            document.getElementById('settingsIndexersSection').style.display = 'block';
-            if (document.getElementById('tvHuntSettingsIndexersNav')) document.getElementById('tvHuntSettingsIndexersNav').classList.add('active');
-            if (document.getElementById('mediaHuntInstanceManagementSection')) { document.getElementById('mediaHuntInstanceManagementSection').classList.remove('active'); document.getElementById('mediaHuntInstanceManagementSection').style.display = 'none'; }
-            if (document.getElementById('mediaHuntInstanceEditorSection')) { document.getElementById('mediaHuntInstanceEditorSection').classList.remove('active'); document.getElementById('mediaHuntInstanceEditorSection').style.display = 'none'; }
-            if (document.getElementById('tvHuntSettingsCustomFormatsSection')) { document.getElementById('tvHuntSettingsCustomFormatsSection').classList.remove('active'); document.getElementById('tvHuntSettingsCustomFormatsSection').style.display = 'none'; }
-            if (document.getElementById('mediaHuntProfilesSection')) { document.getElementById('mediaHuntProfilesSection').classList.remove('active'); document.getElementById('mediaHuntProfilesSection').style.display = 'none'; }
-            if (document.getElementById('tvHuntSettingsClientsSection')) { document.getElementById('tvHuntSettingsClientsSection').classList.remove('active'); document.getElementById('tvHuntSettingsClientsSection').style.display = 'none'; }
-            if (document.getElementById('tvHuntSettingsRootFoldersSection')) { document.getElementById('tvHuntSettingsRootFoldersSection').classList.remove('active'); document.getElementById('tvHuntSettingsRootFoldersSection').style.display = 'none'; }
-            if (document.getElementById('tvHuntSettingsSizesSection')) { document.getElementById('tvHuntSettingsSizesSection').classList.remove('active'); document.getElementById('tvHuntSettingsSizesSection').style.display = 'none'; }
-            if (document.getElementById('tvHuntSettingsTVManagementSection')) { document.getElementById('tvHuntSettingsTVManagementSection').classList.remove('active'); document.getElementById('tvHuntSettingsTVManagementSection').style.display = 'none'; }
-            if (document.getElementById('tvHuntSettingsImportListsSection')) { document.getElementById('tvHuntSettingsImportListsSection').classList.remove('active'); document.getElementById('tvHuntSettingsImportListsSection').style.display = 'none'; }
-            if (document.getElementById('mediaHuntSection')) { document.getElementById('mediaHuntSection').classList.remove('active'); document.getElementById('mediaHuntSection').style.display = 'none'; }
-            if (document.getElementById('mediaHuntCalendarSection')) { document.getElementById('mediaHuntCalendarSection').classList.remove('active'); document.getElementById('mediaHuntCalendarSection').style.display = 'none'; }
-            newTitle = 'Indexers';
-            this.currentSection = 'tv-hunt-settings-indexers';
-            this.showTVHuntSidebar();
-            if (window.SettingsForms && typeof window.SettingsForms.initOrRefreshIndexers === 'function') {
-                window.SettingsForms.initOrRefreshIndexers('tv');
-            }
+        } else if (section === 'tv-hunt-settings-indexers' && document.getElementById('indexer-hunt-section')) {
+            /* TV Hunt Indexers merged into Index Master; redirect to Index Master */
+            this.switchSection('indexer-hunt');
+            return;
         } else if (section === 'tv-hunt-settings-clients' && document.getElementById('tvHuntSettingsClientsSection')) {
             if (document.getElementById('tvHuntActivitySection')) { document.getElementById('tvHuntActivitySection').classList.remove('active'); document.getElementById('tvHuntActivitySection').style.display = 'none'; }
             document.getElementById('tvHuntSettingsClientsSection').classList.add('active');
@@ -1744,29 +1728,13 @@ let huntarrUI = {
                 this.showMovieHuntSidebar();
                 if (document.getElementById('movieHuntSettingsProfilesNav')) document.getElementById('movieHuntSettingsProfilesNav').classList.add('active');
             }
-        } else if (section === 'settings-indexers' && document.getElementById('settingsIndexersSection')) {
-            if (document.getElementById('tvHuntSettingsIndexersSection')) { document.getElementById('tvHuntSettingsIndexersSection').classList.remove('active'); document.getElementById('tvHuntSettingsIndexersSection').style.display = 'none'; }
-            document.getElementById('settingsIndexersSection').classList.add('active');
-            document.getElementById('settingsIndexersSection').style.display = 'block';
-            if (document.getElementById('movieHuntSettingsIndexersNav')) document.getElementById('movieHuntSettingsIndexersNav').classList.add('active');
-            if (document.getElementById('mediaHuntInstanceManagementSection')) {
-                document.getElementById('mediaHuntInstanceManagementSection').classList.remove('active');
-                document.getElementById('mediaHuntInstanceManagementSection').style.display = 'none';
+        } else if (section === 'settings-indexers' && document.getElementById('indexer-hunt-section')) {
+            /* Indexers merged into Index Master; redirect to Index Master */
+            if (window.location.hash !== '#indexer-hunt') {
+                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#indexer-hunt');
             }
-            if (document.getElementById('movieManagementSection')) {
-                document.getElementById('movieManagementSection').classList.remove('active');
-                document.getElementById('movieManagementSection').style.display = 'none';
-            }
-            if (document.getElementById('settingsSizesSection')) {
-                document.getElementById('settingsSizesSection').classList.remove('active');
-                document.getElementById('settingsSizesSection').style.display = 'none';
-            }
-            newTitle = 'Indexers';
-            this.currentSection = 'settings-indexers';
-            this.showMovieHuntSidebar();
-            if (window.SettingsForms && typeof window.SettingsForms.initOrRefreshIndexers === 'function') {
-                window.SettingsForms.initOrRefreshIndexers('movie');
-            }
+            this.switchSection('indexer-hunt');
+            return;
         } else if (section === 'settings-clients' && document.getElementById('settingsClientsSection')) {
             document.getElementById('settingsClientsSection').classList.add('active');
             document.getElementById('settingsClientsSection').style.display = 'block';

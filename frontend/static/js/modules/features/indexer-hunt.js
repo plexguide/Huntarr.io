@@ -64,9 +64,10 @@
         var editor = document.getElementById('ih-editor-view');
         if (list) list.style.display = 'none';
         if (editor) editor.style.display = '';
-        // Scroll to top
-        var section = document.getElementById('indexer-hunt-section');
-        if (section) section.scrollTop = 0;
+        // Anchor editor into view so user doesn't have to scroll down
+        if (editor) {
+            editor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }
 
     // ── Data loading ──────────────────────────────────────────────────

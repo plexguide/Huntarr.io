@@ -174,7 +174,6 @@
                 for (var i = 0; i < list.length; i++) {
                     allHtml += window.SettingsForms.renderIndexerCard(list[i], i);
                 }
-                allHtml += '<div class="add-instance-card" data-app-type="indexer" data-source="standard"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Indexer</div></div>';
                 allHtml += '<div class="add-instance-card" data-app-type="indexer" data-source="indexer-hunt"><div class="add-icon"><i class="fas fa-download" style="color: #6366f1;"></i></div><div class="add-text">Import from Index Master</div></div>';
 
                 if (unifiedGrid) {
@@ -191,18 +190,21 @@
                 }
             })
             .catch(function() {
-                if (unifiedGrid) unifiedGrid.innerHTML = '<div class="add-instance-card" data-app-type="indexer" data-source="standard"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Indexer</div></div><div class="add-instance-card" data-app-type="indexer" data-source="indexer-hunt"><div class="add-icon"><i class="fas fa-download" style="color: #6366f1;"></i></div><div class="add-text">Import from Index Master</div></div>';
+                if (unifiedGrid) unifiedGrid.innerHTML = '<div class="add-instance-card" data-app-type="indexer" data-source="indexer-hunt"><div class="add-icon"><i class="fas fa-download" style="color: #6366f1;"></i></div><div class="add-text">Import from Index Master</div></div>';
             });
     };
 
+    function isIndexersUIVisible() {
+        var settingsSection = document.getElementById('settingsIndexersSection');
+        var indexMasterSection = document.getElementById('indexer-hunt-section');
+        return (settingsSection && settingsSection.classList.contains('active')) ||
+               (indexMasterSection && indexMasterSection.classList.contains('active'));
+    }
+
     document.addEventListener('huntarr:instances-changed', function() {
-        if (document.getElementById('settingsIndexersSection') && document.getElementById('settingsIndexersSection').classList.contains('active')) {
-            Forms.initOrRefreshIndexers();
-        }
+        if (isIndexersUIVisible()) Forms.initOrRefreshIndexers();
     });
     document.addEventListener('huntarr:tv-hunt-instances-changed', function() {
-        if (document.getElementById('settingsIndexersSection') && document.getElementById('settingsIndexersSection').classList.contains('active')) {
-            Forms.initOrRefreshIndexers();
-        }
+        if (isIndexersUIVisible()) Forms.initOrRefreshIndexers();
     });
 })();

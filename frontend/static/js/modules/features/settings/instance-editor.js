@@ -1269,7 +1269,7 @@
         this._currentEditing = null;
         _instanceEditorDirty = false;
         if (appType === 'indexer') {
-            window.huntarrUI.switchSection('settings-indexers');
+            window.huntarrUI.switchSection('indexer-hunt');
         } else if (appType === 'client') {
             window.huntarrUI.switchSection('settings-clients');
         } else {
