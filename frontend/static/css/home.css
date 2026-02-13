@@ -3,6 +3,16 @@
    All home-section styles in one file.  Loaded only by homeSection.
    ═══════════════════════════════════════════════════════════════════ */
 
+/* ── Match Media Hunt Collection: dark blue background (#1D2635) ─── */
+/* Apply to body and main-content when home is visible so entire viewport matches */
+body:has(#homeSection.active),
+.main-content:has(#homeSection.active) {
+    background-color: #1d2635 !important;
+}
+#homeSection {
+    background: #1d2635 !important;
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    MODERN REDESIGN OVERRIDES — matches Logs/Hunt Manager design
    ═══════════════════════════════════════════════════════════════════ */
