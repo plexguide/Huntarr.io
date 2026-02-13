@@ -3,14 +3,13 @@
    All home-section styles in one file.  Loaded only by homeSection.
    ═══════════════════════════════════════════════════════════════════ */
 
-/* ── Match Media Hunt Collection: dark blue background (#1D2635) ─── */
-/* Apply to body and main-content when home is visible so entire viewport matches */
+/* ── Match Media Hunt Collection & Apps: dark blue background for consistency ─── */
 body:has(#homeSection.active),
 .main-content:has(#homeSection.active) {
-    background-color: #1d2635 !important;
+    background-color: #0f172a !important;
 }
 #homeSection {
-    background: #1d2635 !important;
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.85) 100%) !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
