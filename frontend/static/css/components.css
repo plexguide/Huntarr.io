@@ -492,26 +492,8 @@
         grid-template-columns: 1fr;
     }
 
-    .sidebar {
-        width: 60px;
-    }
-    
-    .sidebar h1, .nav-item span, .switch-label {
-        display: none;
-    }
-    
-    .nav-item i {
-        margin-right: 0;
-        font-size: 22px;
-    }
-    
-    .logo-container {
-        justify-content: center;
-    }
-    
-    .logo {
-        margin-right: 0;
-    }
+    /* Sidebar: no legacy icon-only collapse. Mobile uses hamburger → full desktop sidebar
+       slide-out (see mobile.css). Desktop sidebar stays full-width with text. */
 }
 
 @media (max-width: 480px) {

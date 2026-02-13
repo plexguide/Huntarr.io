@@ -1221,7 +1221,6 @@ let huntarrUI = {
                     document.getElementById('mediaHuntInstanceManagementSection').classList.remove('active');
                     document.getElementById('mediaHuntInstanceManagementSection').style.display = 'none';
                 }
-                if (document.getElementById('movieHuntSettingsNav')) document.getElementById('movieHuntSettingsNav').classList.add('active');
                 newTitle = 'Movie Hunt';
                 this.currentSection = 'movie-hunt-instance-editor';
                 this.showMovieHuntSidebar();
@@ -1491,7 +1490,6 @@ let huntarrUI = {
         } else if (section === 'settings-instance-management' && document.getElementById('mediaHuntInstanceManagementSection')) {
             document.getElementById('mediaHuntInstanceManagementSection').classList.add('active');
             document.getElementById('mediaHuntInstanceManagementSection').style.display = 'block';
-            if (document.getElementById('movieHuntSettingsNav')) document.getElementById('movieHuntSettingsNav').classList.add('active');
             if (document.getElementById('media-hunt-settings-default-section')) {
                 document.getElementById('media-hunt-settings-default-section').classList.remove('active');
                 document.getElementById('media-hunt-settings-default-section').style.display = 'none';

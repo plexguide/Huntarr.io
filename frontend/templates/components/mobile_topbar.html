@@ -1,4 +1,4 @@
-<!-- Mobile Navigation — Topbar + Slide-out Drawer -->
+<!-- Mobile: Topbar with hamburger — hamburger toggles the desktop sidebar as slide-out overlay -->
 
 <!-- ===== MOBILE TOPBAR ===== -->
 <div id="mobile-topbar" class="mtb">
@@ -42,172 +42,36 @@
     <div class="mtb-accent"></div>
 </div>
 
-<!-- ===== MOBILE DRAWER (slide-out, content built dynamically) ===== -->
-<div class="mdrawer-backdrop" id="mobileDrawerBackdrop"></div>
-<nav class="mdrawer" id="mobileDrawer" aria-label="Mobile navigation">
-    <div class="mdrawer-header">
-        <img src="./static/logo/32.png" alt="Huntarr" class="mdrawer-logo" width="28" height="28">
-        <span class="mdrawer-brand">Huntarr</span>
-        <button class="mdrawer-close" id="mobileMenuClose" aria-label="Close menu">
-            <i class="fas fa-times"></i>
-        </button>
-    </div>
-    <!-- Dynamic body — populated from the active desktop sidebar -->
-    <div class="mdrawer-body" id="mobileDrawerBody"></div>
-    <div class="mdrawer-footer">
-        <a href="https://plexguide.github.io/Huntarr.io/donate.html" target="_blank" rel="noopener noreferrer" class="mdrawer-donate">
-            <i class="fas fa-heart"></i><span>Become a Sponsor</span>
-        </a>
-        <div class="mdrawer-version-row">
-            <a href="https://github.com/plexguide/Huntarr.io/releases" target="_blank" rel="noopener" class="mdrawer-ver-current" id="mobileDrawerVersion">--</a>
-            <span class="mdrawer-ver-dash">—</span>
-            <span class="mdrawer-dev-info"><i class="fas fa-code"></i> <a href="https://github.com/Admin9705/" target="_blank" rel="noopener">Admin9705</a></span>
-        </div>
-    </div>
-</nav>
+<!-- Backdrop when desktop sidebar is open on mobile -->
+<div class="mobile-sidebar-backdrop" id="mobileSidebarBackdrop" aria-hidden="true"></div>
 
 <script>
 (function() {
-    /* ---- helpers ---- */
-    var SIDEBAR_IDS = ['sidebar', 'movie-hunt-sidebar', 'nzb-hunt-sidebar',
-                       'requestarr-sidebar', 'apps-sidebar', 'settings-sidebar'];
-
-    /** Find which desktop sidebar is currently "active" (display != none). */
-    function getActiveSidebar() {
-        for (var i = 0; i < SIDEBAR_IDS.length; i++) {
-            var el = document.getElementById(SIDEBAR_IDS[i]);
-            if (el) {
-                var d = el.style.display;
-                if (SIDEBAR_IDS[i] === 'sidebar' && (d === '' || d === 'block' || d === 'flex')) return el;
-                if (d === 'block' || d === 'flex') return el;
-            }
-        }
-        return document.getElementById('sidebar');
-    }
-
-    /** Build mobile drawer content from the given desktop sidebar element. */
-    function buildDrawerContent(sidebar) {
-        var body = document.getElementById('mobileDrawerBody');
-        if (!body || !sidebar) return;
-        body.innerHTML = '';
-
-        var groups = sidebar.querySelectorAll('.nav-group');
-        groups.forEach(function(desktopGroup) {
-            if (desktopGroup.style.display === 'none') return;
-
-            var mGroup = document.createElement('div');
-            mGroup.className = 'mdrawer-group';
-
-            var titleEl = desktopGroup.querySelector('.nav-group-title');
-            if (titleEl) {
-                var mTitle = document.createElement('div');
-                mTitle.className = 'mdrawer-group-title';
-                mTitle.textContent = titleEl.textContent;
-                mGroup.appendChild(mTitle);
-            }
-
-            var items = desktopGroup.querySelectorAll(':scope > a.nav-item');
-            items.forEach(function(navItem) {
-                if (navItem.style.display === 'none') return;
-                if (navItem.querySelector('.heart-icon')) return;
-                appendDrawerItem(mGroup, navItem);
-            });
-
-            var subGroups = desktopGroup.querySelectorAll('.nav-sub-group');
-            subGroups.forEach(function(sub) {
-                // Skip sub-groups that are explicitly hidden (e.g., no instances configured)
-                if (sub.style.display === 'none') return;
-                var isExpanded = sub.classList.contains('expanded') || sub.style.display === 'block';
-                if (!isExpanded) return;
-                var subItems = sub.querySelectorAll('a.nav-item');
-                subItems.forEach(function(navItem) {
-                    if (navItem.style.display === 'none') return;
-                    appendDrawerItem(mGroup, navItem, true);
-                });
-            });
-
-            if (mGroup.querySelectorAll('.mdrawer-item').length > 0) {
-                body.appendChild(mGroup);
-            }
-        });
-
-        body.querySelectorAll('.mdrawer-item').forEach(function(item) {
-            item.addEventListener('click', shut);
-        });
-        highlightActiveItem();
-    }
-
-    /** Create a single drawer nav item from a desktop sidebar nav-item <a>. */
-    function appendDrawerItem(parent, navItem, isSub) {
-        var a = document.createElement('a');
-        var href = navItem.getAttribute('href') || '#home';
-        if (href.indexOf('./') === 0) href = href.substring(1);
-        if (href.indexOf('/#') === 0) href = href.substring(1);
-        if (href.indexOf('http') === 0) return;
-        a.href = href;
-        a.className = 'mdrawer-item' + (isSub ? ' mdrawer-item-sub' : '');
-
-        var iconImg = navItem.querySelector('.app-icon-img');
-        var iconI = navItem.querySelector('.nav-icon-wrapper i');
-        if (iconImg) {
-            var img = document.createElement('img');
-            img.src = iconImg.src;
-            img.alt = iconImg.alt || '';
-            img.className = 'mdrawer-app-icon';
-            img.width = 20; img.height = 20;
-            a.appendChild(img);
-        } else if (iconI) {
-            var i = document.createElement('i');
-            i.className = iconI.className;
-            a.appendChild(i);
-        }
-
-        var label = navItem.querySelector('span');
-        if (label) {
-            var s = document.createElement('span');
-            s.textContent = label.textContent;
-            a.appendChild(s);
-        }
-        parent.appendChild(a);
-    }
-
-    /** Highlight the drawer item matching the current hash. */
-    function highlightActiveItem() {
-        var body = document.getElementById('mobileDrawerBody');
-        if (!body) return;
-        var hash = window.location.hash || '#home';
-        body.querySelectorAll('.mdrawer-item').forEach(function(item) {
-            item.classList.toggle('active', item.getAttribute('href') === hash);
-        });
-    }
-
-    /* ---- open / close ---- */
-    var drawer, backdrop;
+    /* ---- Hamburger toggles desktop sidebar as slide-out overlay — no mobile menu, same sidebar ---- */
+    var backdrop;
 
     function open() {
-        if (!drawer) return;
-        buildDrawerContent(getActiveSidebar());
-        drawer.classList.add('open');
-        backdrop.classList.add('open');
-        document.body.classList.add('mdrawer-open');
-    }
-    function shut() {
-        if (!drawer) return;
-        drawer.classList.remove('open');
-        backdrop.classList.remove('open');
-        document.body.classList.remove('mdrawer-open');
+        document.body.classList.add('mobile-sidebar-open');
+        if (backdrop) backdrop.setAttribute('aria-hidden', 'false');
+        var sw = document.getElementById('sidebar-wrapper');
+        if (sw) sw.addEventListener('click', onSidebarClick);
     }
 
-    /* ---- version + stars (topbar chips & drawer footer) ---- */
+    function onSidebarClick(e) {
+        if (e.target.closest('a.nav-item')) shut();
+    }
+
+    function shut() {
+        document.body.classList.remove('mobile-sidebar-open');
+        if (backdrop) backdrop.setAttribute('aria-hidden', 'true');
+        var sw = document.getElementById('sidebar-wrapper');
+        if (sw) sw.removeEventListener('click', onSidebarClick);
+    }
+
     function updateVersionUI() {
         try {
             var info = JSON.parse(localStorage.getItem('huntarr-version-info') || '{}');
             var stars = localStorage.getItem('huntarr-github-stars');
-
-            // Topbar chips
-            var mtbVer = document.getElementById('mtb-version');
-            if (mtbVer && info.currentVersion) mtbVer.textContent = 'v' + info.currentVersion;
-
             var mtbStars = document.getElementById('mtb-stars');
             if (mtbStars && stars) {
                 try {
@@ -215,41 +79,25 @@
                     mtbStars.textContent = (p && p.stars !== undefined) ? Number(p.stars).toLocaleString() : stars;
                 } catch(e) { mtbStars.textContent = stars; }
             }
-
-            // Drawer footer — current version
-            var dvCur = document.getElementById('mobileDrawerVersion');
-            if (dvCur && info.currentVersion) dvCur.textContent = 'v' + info.currentVersion;
-
-            // Mobile footer only shows current version (no update indicator)
         } catch(e) {}
     }
 
-    /* ---- init ---- */
     function initMobileNav() {
-        drawer   = document.getElementById('mobileDrawer');
-        backdrop = document.getElementById('mobileDrawerBackdrop');
+        backdrop = document.getElementById('mobileSidebarBackdrop');
         var toggle = document.getElementById('mobileMenuToggle');
-        var close  = document.getElementById('mobileMenuClose');
-        if (!toggle || !drawer) return;
-
-        toggle.addEventListener('click', open);
-        close.addEventListener('click', shut);
-        backdrop.addEventListener('click', shut);
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && drawer.classList.contains('open')) shut();
+        if (!toggle) return;
+        toggle.addEventListener('click', function() {
+            if (document.body.classList.contains('mobile-sidebar-open')) shut();
+            else open();
         });
-
-        // Version row click closes drawer and navigates to updates
-        var versionRow = document.getElementById('mobileDrawerVersionRow');
-        if (versionRow) {
-            versionRow.addEventListener('click', shut);
-        }
-
+        if (backdrop) backdrop.addEventListener('click', shut);
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && document.body.classList.contains('mobile-sidebar-open')) shut();
+        });
         updateVersionUI();
         window.addEventListener('storage', function(e) {
             if (e.key === 'huntarr-version-info' || e.key === 'huntarr-github-stars') updateVersionUI();
         });
-        // Also poll once after a delay (version info may load asynchronously)
         setTimeout(updateVersionUI, 3000);
     }
 

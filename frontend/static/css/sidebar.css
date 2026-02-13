@@ -3,6 +3,12 @@
    All sidebar styling lives here. No inline styles in sidebar.html.
    ========================================================================== */
 
+/* Wrapper for all sidebars — desktop: layout flow; mobile: moved into drawer */
+.sidebar-wrapper {
+    display: flex;
+    flex-shrink: 0;
+}
+
 /* ===== SIDEBAR CORE ===== */
 .sidebar {
     width: 220px;

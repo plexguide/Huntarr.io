@@ -152,252 +152,54 @@
 }
 
 /* ===============================================================
-   MOBILE DRAWER (.mdrawer)
+   MOBILE: hamburger opens desktop sidebar (no separate mobile menu)
    =============================================================== */
-.mdrawer,
-.mdrawer-backdrop { display: none; }
+.mobile-sidebar-backdrop { display: none; }
 
 @media (max-width: 768px) {
-    /* Backdrop */
-    .mdrawer-backdrop {
+    /* Backdrop when desktop sidebar is open */
+    .mobile-sidebar-backdrop {
         display: block;
         position: fixed;
         inset: 0;
-        z-index: 299;
+        z-index: 998;
         background: rgba(0,0,0,.55);
         opacity: 0;
         pointer-events: none;
         transition: opacity .25s ease;
-        -webkit-tap-highlight-color: transparent;
     }
-    .mdrawer-backdrop.open {
+    body.mobile-sidebar-open .mobile-sidebar-backdrop {
         opacity: 1;
         pointer-events: auto;
     }
 
-    /* Drawer panel */
-    .mdrawer {
-        display: flex;
-        flex-direction: column;
-        position: fixed;
+    /* Desktop sidebar slides in from left — same menu as desktop */
+    .app-container > .sidebar-wrapper {
+        position: fixed !important;
         top: 0;
         left: 0;
         bottom: 0;
-        width: 270px;
-        max-width: 80vw;
-        z-index: 300;
-        background: linear-gradient(180deg, #161e2c 0%, #0f1623 100%);
+        width: 260px;
+        max-width: 85vw;
+        z-index: 999;
         transform: translateX(-100%);
         transition: transform .28s cubic-bezier(.4,0,.2,1);
-        overflow: hidden;
-        box-shadow: 4px 0 24px rgba(0,0,0,.4);
+        box-shadow: 4px 0 24px rgba(0,0,0,.5);
     }
-    .mdrawer.open {
+    body.mobile-sidebar-open .app-container > .sidebar-wrapper {
         transform: translateX(0);
     }
+    body.mobile-sidebar-open { overflow: hidden; }
 
-    /* Prevent body scroll when drawer is open */
-    body.mdrawer-open {
-        overflow: hidden;
+    /* Full desktop-style sidebar when open — text labels visible, not icon-only */
+    body.mobile-sidebar-open .app-container > .sidebar-wrapper .sidebar {
+        width: 100% !important;
+        min-width: 0;
     }
-
-    /* Header */
-    .mdrawer-header {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 14px 16px;
-        border-bottom: 1px solid rgba(255,255,255,.06);
-        flex-shrink: 0;
-    }
-    .mdrawer-logo { border-radius: 6px; }
-    .mdrawer-brand {
-        font-size: 17px;
-        font-weight: 800;
-        color: #e8ecf2;
-        flex: 1;
-        letter-spacing: .5px;
-    }
-    .mdrawer-close {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        border: none;
-        background: rgba(255,255,255,.05);
-        color: #8892a4;
-        border-radius: 8px;
-        font-size: 14px;
-        cursor: pointer;
-        transition: background .15s, color .15s;
-        -webkit-tap-highlight-color: transparent;
-    }
-    .mdrawer-close:hover { background: rgba(255,255,255,.1); color: #e8ecf2; }
-
-    /* Body / scrollable */
-    .mdrawer-body {
-        flex: 1;
-        overflow-y: auto;
-        padding: 8px 0;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    /* Groups */
-    .mdrawer-group {
-        padding: 0 12px;
-        margin-bottom: 4px;
-    }
-    .mdrawer-group-title {
-        font-size: 10px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 1.2px;
-        color: #556070;
-        padding: 10px 8px 4px;
-    }
-
-    /* Nav items */
-    .mdrawer-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 10px 12px;
-        border-radius: 8px;
-        color: #b0b8c8;
-        text-decoration: none;
-        font-size: 13px;
-        font-weight: 500;
-        transition: background .12s, color .12s;
-        -webkit-tap-highlight-color: transparent;
-    }
-    .mdrawer-item:hover,
-    .mdrawer-item:active {
-        background: rgba(65,105,225,.12);
-        color: #e8ecf2;
-        text-decoration: none;
-    }
-    .mdrawer-item.active {
-        background: rgba(65,105,225,.18);
-        color: #7cb8e4;
-    }
-    .mdrawer-item i {
-        width: 18px;
-        text-align: center;
-        font-size: 14px;
-        opacity: .7;
-        flex-shrink: 0;
-    }
-    .mdrawer-item:hover i,
-    .mdrawer-item.active i {
-        opacity: 1;
-    }
-    /* Sub-items (indented) */
-    .mdrawer-item-sub {
-        padding-left: 28px;
-        font-size: 12.5px;
-    }
-    .mdrawer-item-sub i { font-size: 12px; }
-    /* App icons (Sonarr, Radarr, etc.) */
-    .mdrawer-app-icon {
-        width: 20px;
-        height: 20px;
-        border-radius: 4px;
-        flex-shrink: 0;
-    }
-
-    /* Donate link at bottom */
-    .mdrawer-footer {
-        flex-shrink: 0;
-        padding: 12px 16px;
-        border-top: 1px solid rgba(255,255,255,.06);
-    }
-    .mdrawer-donate {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        padding: 2px 12px;
-        border-radius: 8px;
-        background: rgba(231,76,60,.08);
-        color: #e74c3c;
-        text-decoration: none;
-        font-size: 13px;
-        font-weight: 600;
-        transition: background .15s;
-    }
-    .mdrawer-donate:hover { background: rgba(231,76,60,.16); text-decoration: none; }
-    .mdrawer-donate i { font-size: 14px; }
-
-    /* Version row in footer - aligned left */
-    .mdrawer-version-row {
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 6px;
-        margin-top: 10px;
-        font-size: 11px;
-        font-weight: 600;
-        text-decoration: none;
-        cursor: pointer;
-        transition: opacity .15s;
-    }
-    .mdrawer-version-row:hover { opacity: 0.8; text-decoration: none; }
-    .mdrawer-ver-current {
-        color: #7cb8e4;
-        text-decoration: none;
-    }
-    .mdrawer-ver-current:hover {
-        color: #9dcbf0;
-        text-decoration: none;
-    }
-    .mdrawer-ver-dash {
-        color: rgba(255,255,255,.4);
-    }
-    .mdrawer-dev-info {
-        color: #64748b;
-        font-size: 11px;
-    }
-    .mdrawer-dev-info i {
-        color: #3498db;
-        opacity: 0.6;
-        margin-right: 4px;
-    }
-    .mdrawer-dev-info a {
-        color: #64748b;
-        text-decoration: none;
-    }
-    .mdrawer-dev-info a:hover {
-        color: #94a3b8;
-    }
-    .mdrawer-ver-latest {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-    }
-    .mdrawer-ver-latest i { font-size: 11px; }
-    .mdrawer-update-available {
-        color: #f59e0b;
-        background: rgba(245,158,11,.1);
-        padding: 2px 8px;
-        border-radius: 10px;
-        font-size: 10px;
-        font-weight: 700;
-    }
-    .mdrawer-up-to-date {
-        color: #2ecc71;
-        font-size: 10px;
-    }
-
-    /* ===== HIDE ALL DESKTOP SIDEBARS ON MOBILE ===== */
-    .sidebar,
-    #sidebar,
-    #movie-hunt-sidebar,
-    #nzb-hunt-sidebar,
-    #requestarr-sidebar,
-    #apps-sidebar,
-    #settings-sidebar {
-        display: none !important;
+    body.mobile-sidebar-open .app-container > .sidebar-wrapper .sidebar h1,
+    body.mobile-sidebar-open .app-container > .sidebar-wrapper .nav-item span,
+    body.mobile-sidebar-open .app-container > .sidebar-wrapper .switch-label {
+        display: block !important;
     }
 
     /* ===== FULL-WIDTH CONTENT ===== */
@@ -440,7 +242,7 @@
     .mtb-chip { padding: 0 5px; font-size: 10px; height: 22px; }
     .mtb-chip i { font-size: 8px; }
     .mtb-icon-btn { width: 26px; height: 26px; font-size: 12px; }
-    .mdrawer { width: 260px; }
+    .app-container > .sidebar-wrapper { width: 240px; }
 }
 @media (max-width: 380px) {
     /* Very small: hide stars + social icons to save space */
