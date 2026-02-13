@@ -132,6 +132,8 @@
             if (empty) empty.style.display = '';
             var instanceArea = document.getElementById('ih-instance-area');
             if (instanceArea) instanceArea.style.display = 'none';
+            var groupBox = document.getElementById('ih-group-box');
+            if (groupBox) groupBox.style.display = 'none';
             return;
         }
 
@@ -139,6 +141,8 @@
         if (empty) empty.style.display = 'none';
         var instanceArea = document.getElementById('ih-instance-area');
         if (instanceArea) instanceArea.style.display = '';
+        var groupBox = document.getElementById('ih-group-box');
+        if (groupBox) groupBox.style.display = '';
 
         var html = '';
         filtered.forEach(function(idx) {

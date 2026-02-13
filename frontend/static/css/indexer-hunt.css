@@ -422,6 +422,10 @@
     text-align: center;
     padding: 64px 24px;
     color: #94a3b8;
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(148, 163, 184, 0.08);
+    border-radius: 12px;
+    margin: 0 0 20px 0;
 }
 
 .ih-empty-icon {
