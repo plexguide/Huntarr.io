@@ -269,14 +269,17 @@
                     var cb = getVisibilityCallback(mode);
                     if (cb) cb();
 
-                    var hash = window.location.hash || '';
-                    var isMovieActivity = /#(activity-queue|activity-history|activity-blocklist|activity-logs)/.test(hash);
-                    var isTvActivity = /#tv-hunt-activity-(queue|history|blocklist)/.test(hash);
+                    var hash = (window.location.hash || '').replace(/^#/, '');
+                    var isMovieActivity = /^(activity-queue|activity-history|activity-blocklist|activity-logs)$/.test(hash);
+                    var isTvActivity = /^tv-hunt-activity-(queue|history|blocklist)$/.test(hash);
 
                     if (mode === 'tv' && isMovieActivity) {
-                        window.location.hash = 'tv-hunt-activity-queue';
+                        var tab = (hash === 'activity-logs') ? 'queue' : hash.replace('activity-', '');
+                        window.location.hash = 'tv-hunt-activity-' + tab;
                     } else if (mode === 'movie' && isTvActivity) {
-                        window.location.hash = 'activity-queue';
+                        var match = hash.match(/^tv-hunt-activity-(queue|history|blocklist)$/);
+                        var tab = match ? match[1] : 'queue';
+                        window.location.hash = 'activity-' + tab;
                     } else {
                         if (wired && typeof wired.onChanged === 'function') wired.onChanged();
                     }
