@@ -752,7 +752,7 @@ class RequestarrAPI:
                 }
             
             # Check Movie Hunt's collection for this movie
-            from src.primary.routes.movie_hunt.discovery import _get_collection_config
+            from src.primary.routes.media_hunt.discovery_movie import _get_collection_config
             items = _get_collection_config(instance_id)
             
             movie = None
@@ -764,8 +764,8 @@ class RequestarrAPI:
             if not movie:
                 # Also check detected movies from root folders
                 try:
-                    from src.primary.routes.movie_hunt.storage import _get_detected_movies_from_all_roots
-                    detected = _get_detected_movies_from_all_roots(instance_id)
+                    from src.primary.routes.media_hunt.storage import get_detected_movies_from_all_roots
+                    detected = get_detected_movies_from_all_roots(instance_id)
                     for d in detected:
                         if d.get('tmdb_id') == tmdb_id:
                             movie = d
@@ -875,7 +875,7 @@ class RequestarrAPI:
                             mh_instance_id = self._resolve_movie_hunt_instance_id(mh_inst['name'])
                         if mh_instance_id is None:
                             continue
-                        from src.primary.routes.movie_hunt.discovery import _get_collection_config
+                        from src.primary.routes.media_hunt.discovery_movie import _get_collection_config
                         collection_items = _get_collection_config(mh_instance_id)
                         for ci in collection_items:
                             tmdb_id = ci.get('tmdb_id')
@@ -892,8 +892,8 @@ class RequestarrAPI:
                                 movie_hunt_tmdb_ids.add(tmdb_id)
                         # Also check detected movies from root folders
                         try:
-                            from src.primary.routes.movie_hunt.storage import _get_detected_movies_from_all_roots
-                            detected = _get_detected_movies_from_all_roots(mh_instance_id)
+                            from src.primary.routes.media_hunt.storage import get_detected_movies_from_all_roots
+                            detected = get_detected_movies_from_all_roots(mh_instance_id)
                             for d in detected:
                                 dtmdb = d.get('tmdb_id')
                                 if dtmdb:
@@ -1167,7 +1167,7 @@ class RequestarrAPI:
                 logger.warning(f"Movie Hunt instance '{instance_name}' not found")
                 return []
             
-            from src.primary.routes.movie_hunt._helpers import _movie_profiles_context
+            from src.primary.routes.media_hunt.helpers import _movie_profiles_context
             from src.primary.routes.media_hunt.profiles import get_profiles_config
             profiles = get_profiles_config(instance_id, _movie_profiles_context())
             
@@ -1486,8 +1486,8 @@ class RequestarrAPI:
                 logger.warning(f"Movie Hunt instance '{instance_name}' not found")
                 return []
             
-            from src.primary.routes.movie_hunt.storage import _get_root_folders_config
-            folders = _get_root_folders_config(instance_id)
+            from src.primary.routes.media_hunt.storage import get_movie_root_folders_config
+            folders = get_movie_root_folders_config(instance_id)
             
             # Convert to same format as Radarr/Sonarr root folders
             import os
@@ -1520,8 +1520,8 @@ class RequestarrAPI:
     def get_root_folders_by_id(self, instance_id: int) -> List[Dict[str, Any]]:
         """Get root folders from a Movie Hunt instance by ID (for modal when instance_id is known)."""
         try:
-            from src.primary.routes.movie_hunt.storage import _get_root_folders_config
-            folders = _get_root_folders_config(instance_id)
+            from src.primary.routes.media_hunt.storage import get_movie_root_folders_config
+            folders = get_movie_root_folders_config(instance_id)
             import os
             result = []
             for folder in folders:
@@ -2236,7 +2236,7 @@ class RequestarrAPI:
             
             # Add to library only (no search): append to collection and return
             if not start_search:
-                from src.primary.routes.movie_hunt.discovery import _collection_append
+                from src.primary.routes.media_hunt.discovery_movie import _collection_append
                 _collection_append(
                     title=title, year=year_str, instance_id=instance_id,
                     tmdb_id=tmdb_id, poster_path=poster_path_str, root_folder=root_folder,
@@ -2272,22 +2272,22 @@ class RequestarrAPI:
             
             # Build request data for Movie Hunt's internal search+download pipeline
             # We call the discovery module's internal functions directly
-            from src.primary.routes.movie_hunt.discovery import _get_collection_config
-            from src.primary.routes.movie_hunt.indexers import _get_indexers_config, _resolve_indexer_api_url
-            from src.primary.routes.movie_hunt._helpers import _movie_profiles_context
+            from src.primary.routes.media_hunt.discovery_movie import _get_collection_config
+            from src.primary.routes.media_hunt.indexers import _get_indexers_config, _resolve_indexer_api_url
+            from src.primary.routes.media_hunt.helpers import _movie_profiles_context
             from src.primary.routes.media_hunt.profiles import get_profile_by_name_or_default, best_result_matching_profile
-            from src.primary.routes.movie_hunt.clients import _get_clients_config
-            from src.primary.routes.movie_hunt._helpers import (
+            from src.primary.routes.media_hunt.clients import get_movie_clients_config
+            from src.primary.routes.media_hunt.helpers import (
                 _get_blocklist_source_titles, _blocklist_normalize_source_title,
                 _add_requested_queue_id, MOVIE_HUNT_DEFAULT_CATEGORY
             )
-            from src.primary.routes.movie_hunt.discovery import (
+            from src.primary.routes.media_hunt.discovery_movie import (
                 _search_newznab_movie, _add_nzb_to_download_client, _collection_append
             )
             from src.primary.settings_manager import get_ssl_verify_setting
             
             indexers = _get_indexers_config(instance_id)
-            clients = _get_clients_config(instance_id)
+            clients = get_movie_clients_config(instance_id)
             enabled_indexers = [i for i in indexers if i.get('enabled', True)]
             enabled_clients = [c for c in clients if c.get('enabled', True)]
             

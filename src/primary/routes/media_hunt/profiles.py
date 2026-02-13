@@ -425,9 +425,9 @@ def register_movie_profiles_routes(bp, get_instance_id):
     context = {'profiles_config_key': 'movie_hunt_profiles', 'sizes_config_key': 'movie_hunt_sizes', 'use_profile_id': False, 'get_custom_formats': None}
 
     def _ctx():
-        from src.primary.routes.movie_hunt.custom_formats import _get_custom_formats_config
+        from ..media_hunt.custom_formats import get_movie_custom_formats_config
         c = dict(context)
-        c['get_custom_formats'] = _get_custom_formats_config
+        c['get_custom_formats'] = get_movie_custom_formats_config
         return c
 
     @bp.route('/api/profiles', methods=['GET'])
@@ -572,9 +572,9 @@ def register_tv_profiles_routes(bp, get_instance_id):
     context = {'profiles_config_key': 'tv_hunt_profiles', 'sizes_config_key': 'tv_hunt_sizes', 'use_profile_id': True, 'get_custom_formats': None}
 
     def _ctx():
-        from src.primary.routes.tv_hunt.custom_formats import _get_custom_formats_config
+        from ..media_hunt.custom_formats import get_tv_custom_formats_config
         c = dict(context)
-        c['get_custom_formats'] = _get_custom_formats_config
+        c['get_custom_formats'] = get_tv_custom_formats_config
         return c
 
     @bp.route('/api/tv-hunt/profiles', methods=['GET'])

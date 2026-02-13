@@ -12,7 +12,7 @@ from . import indexer_hunt_bp
 from ...utils.logger import logger
 
 # Re-use the same presets from Movie Hunt so they stay in sync
-from ..movie_hunt.indexers import (
+from ..media_hunt.indexers import (
     INDEXER_PRESETS, INDEXER_CATEGORIES, INDEXER_DEFAULT_CATEGORIES,
     _validate_newznab_api_key, _resolve_indexer_api_url,
 )

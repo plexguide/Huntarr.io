@@ -21,13 +21,13 @@ def _get_all_movie_hunt_instance_ids():
 
 def _get_indexers_for_instance(instance_id):
     """Get Movie Hunt indexer list for an instance."""
-    from src.primary.routes.movie_hunt.indexers import _get_indexers_config
+    from src.primary.routes.media_hunt.indexers import _get_indexers_config
     return _get_indexers_config(instance_id)
 
 
 def _save_indexers_for_instance(indexers_list, instance_id):
     """Save Movie Hunt indexer list for an instance."""
-    from src.primary.routes.movie_hunt.indexers import _save_indexers_list
+    from src.primary.routes.media_hunt.indexers import _save_indexers_list
     _save_indexers_list(indexers_list, instance_id)
 
 
@@ -111,7 +111,7 @@ def api_ih_sync():
         instance_id = int(instance_id)
 
         from src.primary.utils.database import get_database
-        from src.primary.routes.movie_hunt.indexers import INDEXER_PRESETS, INDEXER_DEFAULT_CATEGORIES
+        from src.primary.routes.media_hunt.indexers import INDEXER_PRESETS, INDEXER_DEFAULT_CATEGORIES
         db = get_database()
 
         existing = _get_indexers_for_instance(instance_id)

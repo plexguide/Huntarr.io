@@ -205,7 +205,7 @@ def _apply_to_movie_hunt(instance_id: Optional[str], action_fn, action_label: st
     """
     try:
         db = get_database()
-        from src.primary.routes.movie_hunt.instances import _get_movie_hunt_instance_settings
+        from src.primary.routes.media_hunt.instances import _get_movie_hunt_instance_settings
         SETTINGS_KEY = "movie_hunt_hunt_settings"
 
         all_instances = db.get_movie_hunt_instances()
@@ -249,7 +249,7 @@ def _apply_to_tv_hunt(instance_id: Optional[str], action_fn, action_label: str) 
     """
     try:
         db = get_database()
-        from src.primary.routes.tv_hunt.instances import _get_tv_hunt_instance_settings
+        from src.primary.routes.media_hunt.instances import _get_tv_hunt_instance_settings
         SETTINGS_KEY = "tv_hunt_hunt_settings"
 
         all_instances = db.get_tv_hunt_instances()

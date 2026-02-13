@@ -8,7 +8,7 @@ from flask import request, jsonify
 
 from . import movie_hunt_bp
 from ._helpers import _get_movie_hunt_instance_id_from_request, movie_hunt_logger
-from .discovery import (
+from ..media_hunt.discovery_movie import (
     _get_collection_config, _save_collection_config, _collection_append,
     _get_tmdb_api_key_movie_hunt
 )
@@ -575,7 +575,7 @@ def run_import_list_sync_cycle():
     """Check all instances for import lists due for sync. Called periodically from background.
     Skips disabled Movie Hunt instances (same as main hunt cycle)."""
     from src.primary.utils.database import get_database
-    from .instances import _get_movie_hunt_instance_settings
+    from ..media_hunt.instances import _get_movie_hunt_instance_settings
     db = get_database()
 
     try:

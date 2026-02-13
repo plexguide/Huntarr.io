@@ -31,10 +31,6 @@ def get_tv_root_folders_config(instance_id):
     return get_root_folders_config(instance_id, 'tv_hunt_root_folders')
 
 
-def get_detected_episodes_from_all_roots(instance_id):
-    """Scan TV Hunt root folders for detected episodes."""
-
-
 def _parse_title_year_from_name(name):
     """Extract (title, year) from a folder or file name."""
     if not name:

@@ -358,7 +358,7 @@ def get_configured_apps() -> List[str]:
         if app_name == 'movie_hunt':
             try:
                 from src.primary.utils.database import get_database
-                from src.primary.routes.movie_hunt.instances import _get_movie_hunt_instance_settings
+                from src.primary.routes.media_hunt.instances import _get_movie_hunt_instance_settings
                 db = get_database()
                 instances = db.get_movie_hunt_instances()
                 for inst in instances:
@@ -372,7 +372,7 @@ def get_configured_apps() -> List[str]:
         if app_name == 'tv_hunt':
             try:
                 from src.primary.utils.database import get_database
-                from src.primary.routes.tv_hunt.instances import _get_tv_hunt_instance_settings
+                from src.primary.routes.media_hunt.instances import _get_tv_hunt_instance_settings
                 db = get_database()
                 instances = db.get_tv_hunt_instances()
                 for inst in instances:

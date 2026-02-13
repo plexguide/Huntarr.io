@@ -1436,7 +1436,7 @@ def _media_probe_sweep():
 
         # Check universal video settings
         try:
-            from src.primary.routes.movie_hunt.instances import get_universal_video_settings
+            from src.primary.routes.media_hunt.instances import get_universal_video_settings
             uvs = get_universal_video_settings()
             if not uvs.get('analyze_video_files', True):
                 return  # Analysis disabled

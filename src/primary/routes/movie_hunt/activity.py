@@ -23,7 +23,7 @@ from ._helpers import (
     _get_requested_display,
     MOVIE_HUNT_DEFAULT_CATEGORY,
 )
-from .clients import _get_clients_config
+from ..media_hunt.clients import get_movie_clients_config
 from ...utils.logger import logger
 
 
@@ -170,7 +170,7 @@ def _get_nzb_hunt_completed_path(queue_id, title, year, instance_id):
 def _check_and_import_completed(client_name, queue_item, instance_id):
     """Check if a removed queue item completed successfully and trigger import."""
     try:
-        clients = _get_clients_config(instance_id)
+        clients = get_movie_clients_config(instance_id)
         client = next((c for c in clients if (c.get('name') or '').strip() == client_name), None)
 
         if not client:
@@ -728,7 +728,7 @@ def _get_activity_queue(instance_id):
     if not instance_id:
         return [], 0
     _ensure_movie_hunt_poller_started()
-    clients = _get_clients_config(instance_id)
+    clients = get_movie_clients_config(instance_id)
     enabled = [c for c in clients if c.get('enabled', True)]
     if not enabled:
         movie_hunt_logger.debug("Queue: no download clients configured or enabled. Add SABnzbd/NZBGet/NZB Hunt in Settings -> Movie Hunt -> Clients (total in config: %s).", len(clients))
@@ -749,7 +749,7 @@ def _remove_activity_queue_items(items, instance_id):
     """Remove selected items from Movie Hunt download client queue."""
     if not items or not isinstance(items, list):
         return False, 'No items selected'
-    clients = _get_clients_config(instance_id)
+    clients = get_movie_clients_config(instance_id)
     enabled = [c for c in clients if c.get('enabled', True)]
     if not enabled:
         return False, 'No download clients configured or enabled'

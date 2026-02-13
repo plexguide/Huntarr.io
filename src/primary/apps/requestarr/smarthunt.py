@@ -518,7 +518,7 @@ class SmartHuntEngine:
                 mh_id = inst.get("id")
                 if mh_id is None:
                     continue
-                from src.primary.routes.movie_hunt.discovery import _get_collection_config
+                from src.primary.routes.media_hunt.discovery_movie import _get_collection_config
                 collection = _get_collection_config(mh_id)
                 for ci in collection:
                     tmdb_id = ci.get("tmdb_id")

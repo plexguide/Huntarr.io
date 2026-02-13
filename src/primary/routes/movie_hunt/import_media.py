@@ -20,8 +20,8 @@ from flask import request, jsonify
 
 from . import movie_hunt_bp
 from ._helpers import _get_movie_hunt_instance_id_from_request, movie_hunt_logger
-from .storage import _get_root_folders_config, _VIDEO_EXTENSIONS
-from .discovery import (
+from ..media_hunt.storage import get_movie_root_folders_config as _get_root_folders_config, _VIDEO_EXTENSIONS
+from ..media_hunt.discovery_movie import (
     _get_collection_config,
     _collection_append,
     _get_tmdb_api_key_movie_hunt,
@@ -985,7 +985,7 @@ def api_import_media_confirm():
         for item in collection:
             if item.get('tmdb_id') == tmdb_id and (item.get('status') or '').lower() != 'available':
                 item['status'] = 'available'
-                from .discovery import _save_collection_config
+                from ..media_hunt.discovery_movie import _save_collection_config
                 _save_collection_config(collection, instance_id)
                 break
 
@@ -1055,7 +1055,7 @@ def api_import_media_confirm_all():
                 c_item['status'] = 'available'
                 collection_updated = True
         if collection_updated:
-            from .discovery import _save_collection_config
+            from ..media_hunt.discovery_movie import _save_collection_config
             _save_collection_config(updated_collection, instance_id)
 
         config['items'] = items

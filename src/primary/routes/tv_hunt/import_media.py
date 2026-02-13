@@ -20,20 +20,16 @@ from flask import request, jsonify
 
 from . import tv_hunt_bp
 from ._helpers import _get_tv_hunt_instance_id_from_request
-from .storage import _get_root_folders_config
-from .discovery import (
+from ..media_hunt.storage import get_tv_root_folders_config as _get_root_folders_config
+from ..media_hunt.discovery_tv import (
     _get_collection_config,
     _save_collection_config,
     TMDB_BASE,
     TMDB_API_KEY,
 )
 
-logger = None
-try:
-    from . import tv_hunt_logger
-    logger = tv_hunt_logger
-except Exception:
-    from ...utils.logger import logger
+from ...utils.logger import get_logger
+logger = get_logger("tv_hunt")
 
 # Video extensions for TV (same as storage)
 _VIDEO_EXTENSIONS = frozenset(('.mkv', '.mp4', '.avi', '.m4v', '.ts', '.wmv', '.flv', '.mov', '.webm'))
