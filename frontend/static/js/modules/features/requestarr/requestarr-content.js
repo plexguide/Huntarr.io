@@ -1130,9 +1130,12 @@ class RequestarrContent {
         
         const inLibrary = item.in_library || false;
         const partial = item.partial || false;
-        const hasInstance = item.media_type === 'movie'
-            ? ((this.core.instances.radarr || []).length > 0 || (this.core.instances.movie_hunt || []).length > 0)
-            : (this.core.instances.sonarr || []).length > 0;
+        const hasMovieInstance = ((this.core.instances.radarr || []).length > 0 || (this.core.instances.movie_hunt || []).length > 0)
+            || !!this.selectedMovieInstance;
+        // TV: include tv_hunt; show badge whenever we have Sonarr/TV Hunt instances or a selected TV instance
+        const hasTVInstance = ((this.core.instances.sonarr || []).length > 0 || (this.core.instances.tv_hunt || []).length > 0)
+            || !!this.selectedTVInstance;
+        const hasInstance = item.media_type === 'movie' ? hasMovieInstance : hasTVInstance;
         const metaClassName = hasInstance ? 'media-card-meta' : 'media-card-meta no-hide';
         
         // Determine status badge (shared utility)

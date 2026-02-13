@@ -23,11 +23,11 @@ class RequestarrDiscover {
     // INITIALIZATION
     // ========================================
 
-    init() {
-        this.loadInstances();
+    async init() {
+        await this.loadInstances();
         this.setupCarouselArrows();
         this.search.setupGlobalSearch();
-        this.content.loadDiscoverContent();
+        await this.content.loadDiscoverContent();
     }
 
     async loadInstances() {
