@@ -3933,10 +3933,14 @@ class LogsDatabase:
                 params = []
                 
                 if app_type and app_type != "all":
-                    # For cyclical apps, include per-instance logs (e.g. Sonarr-test, Sonarr-beta9)
                     base_apps = ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "swaparr"]
                     app_lower = (app_type or "").lower()
-                    if app_lower in base_apps:
+                    # media_hunt = Movie Hunt + TV Hunt combined (default for Media Hunt Logs)
+                    if app_lower == "media_hunt":
+                        where_conditions.append("(app_type IN (?, ?))")
+                        params.extend(["movie_hunt", "tv_hunt"])
+                    # For cyclical apps, include per-instance logs (e.g. Sonarr-test, Sonarr-beta9)
+                    elif app_lower in base_apps:
                         app_prefix = app_type.strip()[0:1].upper() + (app_type.strip()[1:].lower() if len(app_type) > 1 else "")
                         where_conditions.append("(app_type = ? OR app_type LIKE ?)")
                         params.extend([app_type, app_prefix + "-%"])
@@ -3984,10 +3988,14 @@ class LogsDatabase:
                 params = []
                 
                 if app_type and app_type != "all":
-                    # For cyclical apps, include per-instance logs (e.g. Sonarr-test, Sonarr-beta9)
                     base_apps = ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "swaparr"]
                     app_lower = (app_type or "").lower()
-                    if app_lower in base_apps:
+                    # media_hunt = Movie Hunt + TV Hunt combined (default for Media Hunt Logs)
+                    if app_lower == "media_hunt":
+                        where_conditions.append("(app_type IN (?, ?))")
+                        params.extend(["movie_hunt", "tv_hunt"])
+                    # For cyclical apps, include per-instance logs (e.g. Sonarr-test, Sonarr-beta9)
+                    elif app_lower in base_apps:
                         app_prefix = app_type.strip()[0:1].upper() + (app_type.strip()[1:].lower() if len(app_type) > 1 else "")
                         where_conditions.append("(app_type = ? OR app_type LIKE ?)")
                         params.extend([app_type, app_prefix + "-%"])
@@ -4110,7 +4118,9 @@ class LogsDatabase:
                 if app_type:
                     base_apps = ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "swaparr"]
                     app_lower = (app_type or "").lower()
-                    if app_lower in base_apps:
+                    if app_lower == "media_hunt":
+                        cursor = conn.execute("DELETE FROM logs WHERE app_type IN (?, ?)", ("movie_hunt", "tv_hunt"))
+                    elif app_lower in base_apps:
                         app_prefix = app_type.strip()[0:1].upper() + (app_type.strip()[1:].lower() if len(app_type) > 1 else "")
                         cursor = conn.execute("DELETE FROM logs WHERE app_type = ? OR app_type LIKE ?", (app_type, app_prefix + "-%"))
                     else:

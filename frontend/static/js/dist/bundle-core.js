@@ -635,6 +635,7 @@ window.HuntarrNavigation = {
             }
         }
         // Legacy: TV Hunt settings → unified Media Hunt settings (sidebar was removed)
+        // NOTE: tv-hunt-activity-* are NOT redirected - they show TV Hunt Activity (Queue/History/Blocklist)
         var tvHuntToSettings = {
             'tv-hunt-settings-custom-formats': 'settings-custom-formats',
             'tv-hunt-settings-profiles': 'settings-profiles',
@@ -645,10 +646,6 @@ window.HuntarrNavigation = {
             'tv-hunt-settings-sizes': 'settings-sizes',
             'tv-hunt-settings-tv-management': 'settings-media-management',
             'tv-hunt-settings-import-lists': 'settings-import-lists',
-            'tv-hunt-activity-queue': 'activity-queue',
-            'tv-hunt-activity-history': 'activity-history',
-            'tv-hunt-activity-blocklist': 'activity-blocklist',
-            'logs-tv-hunt': 'activity-logs'
         };
         if (tvHuntToSettings[section]) {
             var target = tvHuntToSettings[section];
@@ -826,7 +823,7 @@ window.HuntarrNavigation = {
             else if (appType === 'client') sectionForNav = 'settings-clients';
         }
         const collectionSections = ['movie-hunt-home', 'movie-hunt-collection', 'media-hunt-collection', 'settings-import-media', 'movie-hunt-calendar'];
-        const activitySections = ['activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt'];
+        const activitySections = ['activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'logs-tv-hunt', 'tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist'];
         const settingsSections = ['movie-hunt-settings', 'media-hunt-settings', 'settings-instance-management', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'profile-editor', 'settings-custom-formats', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-root-folders', 'instance-editor'];
         const onCollection = collectionSections.indexOf(currentSection) !== -1;
         const onActivity = activitySections.indexOf(sectionForNav) !== -1;
@@ -841,11 +838,14 @@ window.HuntarrNavigation = {
 
         const items = document.querySelectorAll('#movie-hunt-sidebar .nav-item');
         const isActivitySub = activitySections.indexOf(sectionForNav) !== -1;
+        var tvToMovieNav = { 'tv-hunt-activity-queue': 'activity-queue', 'tv-hunt-activity-history': 'activity-history', 'tv-hunt-activity-blocklist': 'activity-blocklist', 'logs-tv-hunt': 'logs-movie-hunt' };
+        var navTarget = tvToMovieNav[sectionForNav] || sectionForNav;
         items.forEach(item => {
             item.classList.remove('active');
             if (isActivitySub && item.id === 'movieHuntActivityNav') return;
             const href = item.getAttribute && item.getAttribute('href') || (item.querySelector('a') && item.querySelector('a').getAttribute('href'));
-            if (href && (href === '#' + sectionForNav || href.endsWith('#' + sectionForNav))) {
+            var targetHash = (href || '').replace(/^[^#]*#/, '');
+            if (targetHash && (targetHash === navTarget || targetHash === sectionForNav)) {
                 item.classList.add('active');
             }
         });

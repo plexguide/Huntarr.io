@@ -33,6 +33,7 @@ APP_LOG_FILES = {
     "eros": LOG_DIR / "eros.log",
     "swaparr": LOG_DIR / "swaparr.log",
     "movie_hunt": LOG_DIR / "movie_hunt.log",
+    "tv_hunt": LOG_DIR / "tv_hunt.log",
 }
 
 # Global logger instances

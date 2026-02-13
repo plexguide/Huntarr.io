@@ -894,6 +894,7 @@ window.LogsModule = {
         let displayName = app.charAt(0).toUpperCase() + app.slice(1).replace(/_/g, ' ');
         if (app === 'whisparr') displayName = 'Whisparr V2';
         else if (app === 'eros') displayName = 'Whisparr V3';
+        else if (app === 'media_hunt') displayName = 'Media Hunt (All)';
         else if (app === 'movie_hunt') displayName = 'Movie Hunt';
         else if (app === 'tv_hunt') displayName = 'TV Hunt';
 
@@ -922,6 +923,7 @@ window.LogsModule = {
         let displayName = app.charAt(0).toUpperCase() + app.slice(1).replace(/_/g, ' ');
         if (app === 'whisparr') displayName = 'Whisparr V2';
         else if (app === 'eros') displayName = 'Whisparr V3';
+        else if (app === 'media_hunt') displayName = 'Media Hunt (All)';
         else if (app === 'movie_hunt') displayName = 'Movie Hunt';
         else if (app === 'tv_hunt') displayName = 'TV Hunt';
 
@@ -1270,7 +1272,7 @@ window.LogsModule = {
         // Get current app filter - use logAppSelect when available, fallback to currentLogApp
         const logAppSelect = document.getElementById('logAppSelect');
         const currentApp = logAppSelect ? logAppSelect.value : (this.currentLogApp || 'all');
-        const appDisplayNames = { movie_hunt: 'Movie Hunt', tv_hunt: 'TV Hunt', swaparr: 'Swaparr', sonarr: 'Sonarr', radarr: 'Radarr', lidarr: 'Lidarr', readarr: 'Readarr', whisparr: 'Whisparr V2', eros: 'Whisparr V3', system: 'System' };
+        const appDisplayNames = { media_hunt: 'Media Hunt (All)', movie_hunt: 'Movie Hunt', tv_hunt: 'TV Hunt', swaparr: 'Swaparr', sonarr: 'Sonarr', radarr: 'Radarr', lidarr: 'Lidarr', readarr: 'Readarr', whisparr: 'Whisparr V2', eros: 'Whisparr V3', system: 'System' };
         const appLabel = currentApp === 'all' ? 'all logs' : (appDisplayNames[currentApp] ? appDisplayNames[currentApp] + ' logs' : currentApp + ' logs');
         const msg = `Are you sure you want to clear ${appLabel}? This action cannot be undone.`;
         const self = this;

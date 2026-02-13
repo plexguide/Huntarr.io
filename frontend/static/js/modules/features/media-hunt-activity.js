@@ -155,7 +155,7 @@
         if (isLoading) return;
         var instanceId = getInstanceId();
         if (instanceId == null) {
-            showEmptyState(true, 'Select an instance', 'Choose a Movie Hunt instance to view queue, history, or blocklist.');
+            showEmptyState(true, 'Select an instance', 'Choose a Movie Hunt or TV Hunt instance to view queue, history, or blocklist.');
             return;
         }
         isLoading = true;
@@ -590,7 +590,7 @@
         if (isLoading) return;
         var instanceId = getInstanceId();
         if (instanceId == null) {
-            showEmptyState(true, 'Select an instance', 'Choose a TV Hunt instance to view queue, history, or blocklist.');
+            showEmptyState(true, 'Select an instance', 'Choose a Movie Hunt or TV Hunt instance to view queue, history, or blocklist.');
             return;
         }
         isLoading = true;

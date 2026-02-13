@@ -589,7 +589,7 @@
             expandSub('movie-hunt-activity-sub');
             expandSub('movie-hunt-settings-sub');
         }
-        else if (currentHash === '#activity-logs' || currentHash === '#logs-movie-hunt') {
+        else if (currentHash === '#activity-logs' || currentHash === '#logs-movie-hunt' || currentHash === '#logs-tv-hunt') {
             selector = '#movieHuntActivityLogsNav';
             expandSub('movie-hunt-collection-sub');
             expandSub('movie-hunt-activity-sub');
@@ -645,7 +645,7 @@
         var mhSettingsHashes = ['#movie-hunt-settings', '#media-hunt-settings', '#settings-instance-management', '#settings-media-management', '#settings-profiles', '#settings-sizes', '#settings-custom-formats', '#settings-indexers', '#settings-clients', '#settings-import-lists', '#settings-root-folders'];
         if (mhSettingsHashes.indexOf(currentHash) === -1) collapseSub('movie-hunt-settings-sub');
 
-        var mhActivityHashes = ['#activity-queue', '#activity-history', '#activity-blocklist', '#activity-logs', '#logs-movie-hunt'];
+        var mhActivityHashes = ['#activity-queue', '#activity-history', '#activity-blocklist', '#activity-logs', '#logs-movie-hunt', '#logs-tv-hunt'];
         if (mhActivityHashes.indexOf(currentHash) === -1) collapseSub('movie-hunt-activity-sub');
 
         var mhCollectionHashes = ['#movie-hunt-home', '#movie-hunt-collection', '#media-hunt-collection', '#settings-import-media', '#movie-hunt-calendar'];

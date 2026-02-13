@@ -672,8 +672,8 @@ let huntarrUI = {
             this.currentSection = section;
             this.showMovieHuntSidebar();
             var logAppSelect = document.getElementById('logAppSelect');
-            if (logAppSelect) logAppSelect.value = 'movie_hunt';
-            if (window.LogsModule) window.LogsModule.currentLogApp = 'movie_hunt';
+            if (logAppSelect) logAppSelect.value = 'media_hunt';
+            if (window.LogsModule) window.LogsModule.currentLogApp = 'media_hunt';
             if (window.LogsModule && typeof window.LogsModule.updateDebugLevelVisibility === 'function') {
                 window.LogsModule.updateDebugLevelVisibility();
             }
@@ -807,28 +807,30 @@ let huntarrUI = {
                 window.IndexerHuntHistory.init();
             }
         } else if (section === 'logs-tv-hunt' && this.elements.logsSection) {
-            // TV Hunt logs - show logsSection under TV Hunt sidebar
+            // TV Hunt logs - show logsSection under TV Hunt sidebar (same as logs-movie-hunt, different sidebar)
+            var activitySection = document.getElementById('activitySection');
+            if (activitySection) { activitySection.classList.remove('active'); activitySection.style.display = 'none'; }
             if (document.getElementById('tvHuntActivitySection')) {
                 document.getElementById('tvHuntActivitySection').classList.remove('active');
                 document.getElementById('tvHuntActivitySection').style.display = 'none';
             }
-            ['mediaHuntSection', 'mediaHuntInstanceManagementSection', 'mediaHuntInstanceEditorSection', 'tvHuntSettingsCustomFormatsSection', 'mediaHuntProfilesSection', 'tvHuntSettingsIndexersSection', 'tvHuntSettingsClientsSection', 'tvHuntSettingsRootFoldersSection', 'mediaHuntSettingsImportMediaSection', 'tvHuntSettingsSizesSection', 'tvHuntSettingsTVManagementSection', 'tvHuntSettingsImportListsSection'].forEach(function(id) {
-                var el = document.getElementById(id);
-                if (el) { el.classList.remove('active'); el.style.display = 'none'; }
-            });
-            this.elements.logsSection.classList.add('active');
-            this.elements.logsSection.style.display = 'block';
-            newTitle = 'TV Hunt Logs';
-            this.currentSection = 'logs-tv-hunt';
+            var systemSection = document.getElementById('systemSection');
+            if (systemSection) { systemSection.classList.add('active'); systemSection.style.display = 'block'; }
+            if (window.HuntarrNavigation) window.HuntarrNavigation.switchSystemTab('logs');
+            newTitle = 'Logs';
+            this.currentSection = section;
             this.showTVHuntSidebar();
             var logAppSelect2 = document.getElementById('logAppSelect');
-            if (logAppSelect2) logAppSelect2.value = 'tv_hunt';
-            if (window.LogsModule) window.LogsModule.currentLogApp = 'tv_hunt';
+            if (logAppSelect2) logAppSelect2.value = 'media_hunt';
+            if (window.LogsModule) window.LogsModule.currentLogApp = 'media_hunt';
             if (window.LogsModule && typeof window.LogsModule.updateDebugLevelVisibility === 'function') {
                 window.LogsModule.updateDebugLevelVisibility();
             }
-            if (window.LogsModule && typeof window.LogsModule.loadLogs === 'function') {
-                window.LogsModule.loadLogs();
+            if (window.LogsModule) {
+                try {
+                    if (window.LogsModule.initialized) { window.LogsModule.connectToLogs(); }
+                    else { window.LogsModule.init(); }
+                } catch (error) { console.error('[huntarrUI] Error during LogsModule calls:', error); }
             }
         } else if (section === 'media-hunt-collection' && document.getElementById('mediaHuntSection')) {
             if (document.getElementById('tvHuntActivitySection')) {
@@ -1120,6 +1122,13 @@ let huntarrUI = {
             }
             document.getElementById('tvHuntActivitySection').classList.add('active');
             document.getElementById('tvHuntActivitySection').style.display = 'block';
+            // Update sidebar nav links so Queue/History/Blocklist stay in TV Hunt Activity
+            var qNav = document.getElementById('movieHuntActivityQueueNav');
+            var hNav = document.getElementById('movieHuntActivityHistoryNav');
+            var bNav = document.getElementById('movieHuntActivityBlocklistNav');
+            if (qNav) qNav.setAttribute('href', './#tv-hunt-activity-queue');
+            if (hNav) hNav.setAttribute('href', './#tv-hunt-activity-history');
+            if (bNav) bNav.setAttribute('href', './#tv-hunt-activity-blocklist');
             // Hide all TV Hunt settings/main sections
             ['mediaHuntSection', 'mediaHuntInstanceManagementSection', 'mediaHuntInstanceEditorSection', 'tvHuntSettingsCustomFormatsSection', 'mediaHuntProfilesSection', 'tvHuntSettingsIndexersSection', 'tvHuntSettingsClientsSection', 'tvHuntSettingsRootFoldersSection', 'mediaHuntSettingsImportMediaSection', 'tvHuntSettingsSizesSection', 'tvHuntSettingsTVManagementSection', 'tvHuntSettingsImportListsSection'].forEach(function(id) {
                 var el = document.getElementById(id);
@@ -1158,6 +1167,13 @@ let huntarrUI = {
             }
             document.getElementById('activitySection').classList.add('active');
             document.getElementById('activitySection').style.display = 'block';
+            // Restore sidebar nav links to Movie Hunt Activity
+            var qNav = document.getElementById('movieHuntActivityQueueNav');
+            var hNav = document.getElementById('movieHuntActivityHistoryNav');
+            var bNav = document.getElementById('movieHuntActivityBlocklistNav');
+            if (qNav) qNav.setAttribute('href', './#activity-queue');
+            if (hNav) hNav.setAttribute('href', './#activity-history');
+            if (bNav) bNav.setAttribute('href', './#activity-blocklist');
             if (document.getElementById('mediaHuntSection')) {
                 document.getElementById('mediaHuntSection').classList.remove('active');
                 document.getElementById('mediaHuntSection').style.display = 'none';
