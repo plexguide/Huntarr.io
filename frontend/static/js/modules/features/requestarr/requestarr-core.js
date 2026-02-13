@@ -1,14 +1,42 @@
 /**
  * Requestarr Core - Main class, initialization, and view management
  */
-class RequestarrDiscover {
+
+import { RequestarrContent } from './requestarr-content.js';
+import { RequestarrSearch } from './requestarr-search.js';
+import { RequestarrModal } from './requestarr-modal.js';
+import { RequestarrSettings } from './requestarr-settings.js';
+import { RequestarrFilters } from './requestarr-filters.js';
+import { RequestarrTVFilters } from './requestarr-tv-filters.js';
+
+/**
+ * Encode a compound instance value: "appType:instanceName"
+ */
+export function encodeInstanceValue(appType, name) {
+    return `${appType}:${name}`;
+}
+
+/**
+ * Decode a compound instance value back to { appType, name }.
+ * Backward compat: values without ':' use defaultAppType (radarr for movies, sonarr for TV).
+ */
+export function decodeInstanceValue(value, defaultAppType = 'radarr') {
+    if (!value) return { appType: defaultAppType, name: '' };
+    const idx = value.indexOf(':');
+    if (idx === -1) return { appType: defaultAppType, name: value };
+    return { appType: value.substring(0, idx), name: value.substring(idx + 1) };
+}
+
+export class RequestarrDiscover {
     constructor() {
         this.currentView = 'discover';
         this.instances = { sonarr: [], radarr: [], movie_hunt: [], tv_hunt: [] };
-    this.qualityProfiles = {};
-    this.searchTimeouts = {};
-    this.currentModal = null;
-    this.currentModalData = null;
+        this.qualityProfiles = {};
+        this.searchTimeouts = {};
+        this.currentModal = null;
+        this.currentModalData = null;
+        
+        // Initialize modules
         this.content = new RequestarrContent(this);
         this.search = new RequestarrSearch(this);
         this.modal = new RequestarrModal(this);
@@ -23,11 +51,11 @@ class RequestarrDiscover {
     // INITIALIZATION
     // ========================================
 
-    async init() {
-        await this.loadInstances();
+    init() {
+        this.loadInstances();
         this.setupCarouselArrows();
         this.search.setupGlobalSearch();
-        await this.content.loadDiscoverContent();
+        this.content.loadDiscoverContent();
     }
 
     async loadInstances() {
@@ -35,22 +63,13 @@ class RequestarrDiscover {
             const _ts = Date.now();
             const response = await fetch(`./api/requestarr/instances?t=${_ts}`, { cache: 'no-store' });
             const data = await response.json();
-            let tvHunt = data.tv_hunt || [];
-            if (tvHunt.length === 0) {
-                try {
-                    const thRes = await fetch(`./api/tv-hunt/instances?t=${_ts}`, { cache: 'no-store' });
-                    if (thRes.ok) {
-                        const th = await thRes.json();
-                        tvHunt = (th.instances || []).filter(i => i.enabled !== false).map(i => ({ name: i.name, id: i.id }));
-                    }
-                } catch (_) {}
-            }
-            if (data.sonarr || data.radarr || data.movie_hunt || tvHunt.length) {
+            
+            if (data.sonarr || data.radarr || data.movie_hunt || data.tv_hunt) {
                 this.instances = {
                     sonarr: data.sonarr || [],
                     radarr: data.radarr || [],
                     movie_hunt: data.movie_hunt || [],
-                    tv_hunt: tvHunt
+                    tv_hunt: data.tv_hunt || []
                 };
                 await this.loadAllQualityProfiles();
             }

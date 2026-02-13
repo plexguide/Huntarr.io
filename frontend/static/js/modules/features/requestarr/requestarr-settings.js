@@ -2,7 +2,7 @@
  * Requestarr Settings - Settings and history management
  */
 
-class RequestarrSettings {
+export class RequestarrSettings {
     constructor(core) {
         this.core = core;
         this.hiddenMediaControlsInitialized = false;
@@ -668,6 +668,7 @@ class RequestarrSettings {
     }
     
     async loadDefaultInstances() {
+        const { encodeInstanceValue, decodeInstanceValue } = await import('./requestarr-core.js');
         const movieSelect = document.getElementById('default-movie-instance');
         const tvSelect = document.getElementById('default-tv-instance');
         
@@ -683,14 +684,8 @@ class RequestarrSettings {
             const radarrResponse = await fetch(`./api/requestarr/instances/radarr?t=${_ts}`, { cache: 'no-store' });
             const radarrData = await radarrResponse.json();
             
-            // Load TV Hunt and Sonarr instances (both for TV dropdown)
-            const [tvHuntResponse, sonarrResponse] = await Promise.all([
-                fetch(`./api/tv-hunt/instances?t=${_ts}`, { cache: 'no-store' }),
-                fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' })
-            ]);
-            let tvHuntData = await tvHuntResponse.json();
-            if (!tvHuntResponse.ok || tvHuntData.error) tvHuntData = { instances: [] };
-            else tvHuntData = { instances: (tvHuntData.instances || []).filter(i => i.enabled !== false) };
+            // Load Sonarr instances
+            const sonarrResponse = await fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' });
             const sonarrData = await sonarrResponse.json();
             
             // Load saved defaults
@@ -764,53 +759,27 @@ class RequestarrSettings {
                 movieSelect.innerHTML = '<option value="">No movie instances configured</option>';
             }
             
-            // Populate TV instances: TV Hunt first, then Sonarr (same pattern as movies)
-            const tvHuntInstances = (tvHuntData.instances || []);
-            const tvSonarrInstances = (sonarrData.instances || []);
-            const allTVInstances = [];
-            tvHuntInstances.forEach(inst => {
-                allTVInstances.push({
-                    value: encodeInstanceValue('tv_hunt', inst.name),
-                    label: `TV Hunt - ${inst.name}`,
-                    appType: 'tv_hunt',
-                    name: inst.name
-                });
-            });
-            tvSonarrInstances.forEach(inst => {
-                allTVInstances.push({
-                    value: encodeInstanceValue('sonarr', inst.name),
-                    label: `Sonarr - ${inst.name}`,
-                    appType: 'sonarr',
-                    name: inst.name
-                });
-            });
-            if (allTVInstances.length > 0) {
+            // Populate TV instances (Sonarr only - unchanged)
+            if (sonarrData.instances && sonarrData.instances.length > 0) {
                 tvSelect.innerHTML = '';
-                allTVInstances.forEach(inst => {
+                sonarrData.instances.forEach(instance => {
                     const option = document.createElement('option');
-                    option.value = inst.value;
-                    option.textContent = inst.label;
+                    option.value = instance.name;
+                    option.textContent = `Sonarr - ${instance.name}`;
                     tvSelect.appendChild(option);
                 });
+                
+                // Set selection: saved default or first instance (never leave blank)
                 const savedTV = defaultsData.success && defaultsData.defaults && defaultsData.defaults.tv_instance;
-                let foundMatch = false;
-                if (savedTV && allTVInstances.some(i => i.value === savedTV)) {
-                    tvSelect.value = savedTV;
-                    foundMatch = true;
-                } else if (savedTV) {
-                    const legacyMatch = allTVInstances.find(i => i.appType === 'sonarr' && i.name === savedTV);
-                    if (legacyMatch) {
-                        tvSelect.value = legacyMatch.value;
-                        foundMatch = true;
-                        needsAutoSave = true;
-                    }
-                }
-                if (!foundMatch) {
-                    tvSelect.value = allTVInstances[0].value;
+                const tvExists = savedTV && sonarrData.instances.some(i => i.name === defaultsData.defaults.tv_instance);
+                if (savedTV && tvExists) {
+                    tvSelect.value = defaultsData.defaults.tv_instance;
+                } else {
+                    tvSelect.value = sonarrData.instances[0].name;
                     needsAutoSave = true;
                 }
             } else {
-                tvSelect.innerHTML = '<option value="">No TV instances configured</option>';
+                tvSelect.innerHTML = '<option value="">No Sonarr instances configured</option>';
             }
             
             // Ensure neither dropdown is ever blank when instances exist
@@ -818,8 +787,8 @@ class RequestarrSettings {
                 movieSelect.value = allMovieInstances[0].value;
                 needsAutoSave = true;
             }
-            if (allTVInstances.length > 0 && !tvSelect.value) {
-                tvSelect.value = allTVInstances[0].value;
+            if (sonarrData.instances && sonarrData.instances.length > 0 && !tvSelect.value) {
+                tvSelect.value = sonarrData.instances[0].name;
                 needsAutoSave = true;
             }
             
@@ -884,6 +853,7 @@ class RequestarrSettings {
 
     /** Default root folders per app (issue #806) */
     async loadDefaultRootFolders() {
+        const { decodeInstanceValue } = await import('./requestarr-core.js');
         const radarrSelect = document.getElementById('default-root-folder-radarr');
         const sonarrSelect = document.getElementById('default-root-folder-sonarr');
         const movieInstanceSelect = document.getElementById('default-movie-instance');
@@ -1016,6 +986,7 @@ class RequestarrSettings {
     }
 
     async saveDefaultRootFolders() {
+        const { decodeInstanceValue } = await import('./requestarr-core.js');
         const radarrSelect = document.getElementById('default-root-folder-radarr');
         const sonarrSelect = document.getElementById('default-root-folder-sonarr');
         const movieInstanceSelect = document.getElementById('default-movie-instance');

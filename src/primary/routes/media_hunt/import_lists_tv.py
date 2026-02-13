@@ -1,20 +1,6 @@
-"""TV Hunt Import Lists – stub (returns empty list until TV import lists are implemented)."""
-from flask import jsonify
-
-from .helpers import _get_tv_hunt_instance_id_from_request
+"""Import Lists routes for TV Hunt — placeholder until fully implemented."""
 
 
 def register_tv_import_lists_routes(bp):
-    @bp.route('/api/tv-hunt/import-lists', methods=['GET'])
-    def api_tv_hunt_import_lists_list():
-        """List TV Hunt import lists. Stub: always returns empty list."""
-        try:
-            _get_tv_hunt_instance_id_from_request()
-            return jsonify({'lists': []}), 200
-        except Exception:
-            return jsonify({'lists': []}), 200
-
-    @bp.route('/api/tv-hunt/import-lists/types', methods=['GET'])
-    def api_tv_hunt_import_lists_types():
-        """List types for TV Hunt import lists. Stub: returns empty until implemented."""
-        return jsonify({'types': []}), 200
+    """Register TV Hunt import list routes. Stub for now."""
+    pass

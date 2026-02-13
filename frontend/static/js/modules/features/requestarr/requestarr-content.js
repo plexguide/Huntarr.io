@@ -1,8 +1,9 @@
 /**
  * Requestarr Content - Content loading and media card creation
- * encodeInstanceValue, decodeInstanceValue from requestarr-core-utils.js
  */
-class RequestarrContent {
+import { encodeInstanceValue, decodeInstanceValue } from './requestarr-core.js';
+
+export class RequestarrContent {
     constructor(core) {
         this.core = core;
         this.moviesPage = 1;
@@ -242,12 +243,10 @@ class RequestarrContent {
         try {
             const _ts = Date.now();
             const [thResponse, sonarrResponse] = await Promise.all([
-                fetch(`./api/tv-hunt/instances?t=${_ts}`, { cache: 'no-store' }),
+                fetch(`./api/requestarr/instances/tv_hunt?t=${_ts}`, { cache: 'no-store' }),
                 fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' })
             ]);
-            let thData = await thResponse.json();
-            if (!thResponse.ok || thData.error) thData = { instances: [] };
-            else thData = { instances: (thData.instances || []).filter(i => i.enabled !== false) };
+            const thData = await thResponse.json();
             const sonarrData = await sonarrResponse.json();
 
             const allInstances = [
@@ -506,15 +505,13 @@ class RequestarrContent {
         select.innerHTML = '<option value="">Loading instances...</option>';
 
         try {
-            // Fetch TV Hunt from Media Hunt API (canonical); Sonarr from requestarr
+            // Fetch both TV Hunt and Sonarr instances in parallel (cache-bust for fresh data)
             const _ts = Date.now();
             const [thResponse, sonarrResponse] = await Promise.all([
-                fetch(`./api/tv-hunt/instances?t=${_ts}`, { cache: 'no-store' }),
+                fetch(`./api/requestarr/instances/tv_hunt?t=${_ts}`, { cache: 'no-store' }),
                 fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' })
             ]);
-            let thData = await thResponse.json();
-            if (!thResponse.ok || thData.error) thData = { instances: [] };
-            else thData = { instances: (thData.instances || []).filter(i => i.enabled !== false) };
+            const thData = await thResponse.json();
             const sonarrData = await sonarrResponse.json();
 
             const thInstances = (thData.instances || []).map(inst => ({
@@ -529,9 +526,6 @@ class RequestarrContent {
                 _appType: 'sonarr',
                 _label: `Sonarr \u2013 ${String(inst.name).trim()}`
             }));
-
-            // Update core.instances.tv_hunt so request modal has TV Hunt options
-            this.core.instances.tv_hunt = thInstances.map(i => ({ name: i.name, id: i.id }));
 
             // Combine: TV Hunt first, then Sonarr
             const allInstances = [...thInstances, ...sonarrInstances];
@@ -1130,12 +1124,9 @@ class RequestarrContent {
         
         const inLibrary = item.in_library || false;
         const partial = item.partial || false;
-        const hasMovieInstance = ((this.core.instances.radarr || []).length > 0 || (this.core.instances.movie_hunt || []).length > 0)
-            || !!this.selectedMovieInstance;
-        // TV: include tv_hunt; show badge whenever we have Sonarr/TV Hunt instances or a selected TV instance
-        const hasTVInstance = ((this.core.instances.sonarr || []).length > 0 || (this.core.instances.tv_hunt || []).length > 0)
-            || !!this.selectedTVInstance;
-        const hasInstance = item.media_type === 'movie' ? hasMovieInstance : hasTVInstance;
+        const hasInstance = item.media_type === 'movie'
+            ? ((this.core.instances.radarr || []).length > 0 || (this.core.instances.movie_hunt || []).length > 0)
+            : (this.core.instances.sonarr || []).length > 0;
         const metaClassName = hasInstance ? 'media-card-meta' : 'media-card-meta no-hide';
         
         // Determine status badge (shared utility)
@@ -1241,26 +1232,8 @@ class RequestarrContent {
                     this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
                 }
             } else {
-                // For TV shows: open detail page (TV Hunt full / Sonarr limited)
-                if (window.RequestarrTVDetail && window.RequestarrTVDetail.openDetail) {
-                    const seriesData = {
-                        tmdb_id: item.tmdb_id,
-                        id: item.tmdb_id,
-                        title: item.title,
-                        name: item.title,
-                        year: item.year,
-                        poster_path: item.poster_path,
-                        backdrop_path: item.backdrop_path,
-                        overview: item.overview,
-                        vote_average: item.vote_average,
-                        in_library: inLibrary
-                    };
-                    window.RequestarrTVDetail.openDetail(seriesData, {
-                        suggestedInstance: card.suggestedInstance
-                    });
-                } else {
-                    this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
-                }
+                // For TV shows use modal
+                this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
             }
         });
         
