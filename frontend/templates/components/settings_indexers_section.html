@@ -97,6 +97,8 @@
     function _openIHImportPanel() {
         var panel = document.getElementById('ih-import-panel');
         if (panel) panel.style.display = '';
+        var listView = document.getElementById('ih-list-view');
+        if (listView) listView.style.display = 'none';
 
         var instanceId = _getInstanceIdSync();
         var list = document.getElementById('ih-import-list');
@@ -145,6 +147,11 @@
     function _closeIHImportPanel() {
         var panel = document.getElementById('ih-import-panel');
         if (panel) panel.style.display = 'none';
+        var listView = document.getElementById('ih-list-view');
+        var editorView = document.getElementById('ih-editor-view');
+        if (listView && (!editorView || editorView.style.display === 'none')) {
+            listView.style.display = '';
+        }
     }
 
     function _updateImportButton() {
