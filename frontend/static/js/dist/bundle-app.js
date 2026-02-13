@@ -596,6 +596,16 @@ let huntarrUI = {
         // Stop stats polling when leaving home section
         if (window.HuntarrStats) window.HuntarrStats.stopPolling();
 
+        // Stop NZB Hunt queue/history polling when leaving NZB Hunt home
+        if (this.currentSection === 'nzb-hunt-home' && window.NzbHunt && typeof window.NzbHunt.stopPolling === 'function') {
+            window.NzbHunt.stopPolling();
+        }
+
+        // Clean up cycle countdown when leaving home (stops timer intervals and API polling)
+        if (this.currentSection === 'home' && window.CycleCountdown && typeof window.CycleCountdown.cleanup === 'function') {
+            window.CycleCountdown.cleanup();
+        }
+
         // Update active section
         this.elements.sections.forEach(s => {
             s.classList.remove('active');
@@ -642,6 +652,10 @@ let huntarrUI = {
             if (window.HuntarrStats) {
                 window.HuntarrStats.initViewToggle();
                 window.HuntarrStats.startPolling();
+            }
+            // Re-initialize cycle countdown when returning to home (cleanup stops it when leaving)
+            if (window.CycleCountdown && typeof window.CycleCountdown.initialize === 'function') {
+                window.CycleCountdown.initialize();
             }
             // Refresh home page content (re-check all settings, visibility, Smart Hunt)
             if (window.HomeRequestarr) {

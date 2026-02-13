@@ -994,6 +994,10 @@
                 clearInterval(this._pollTimer);
                 this._pollTimer = null;
             }
+            if (this._histPollTimer) {
+                clearInterval(this._histPollTimer);
+                this._histPollTimer = null;
+            }
         },
 
         initSettings: function () {

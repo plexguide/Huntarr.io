@@ -2015,6 +2015,10 @@
                 clearInterval(this._pollTimer);
                 this._pollTimer = null;
             }
+            if (this._histPollTimer) {
+                clearInterval(this._histPollTimer);
+                this._histPollTimer = null;
+            }
         },
 
         initSettings: function () {
@@ -6653,17 +6657,15 @@ window.CycleCountdown = (function() {
                 displayWaitingForCycle();
             });
         
-        // Simple refresh every 10 seconds with fixed interval
-        let refreshInterval = null;
-        
         function startRefreshInterval() {
             // Clear any existing interval
-            if (refreshInterval) {
-                clearInterval(refreshInterval);
+            if (dataRefreshIntervalId) {
+                clearInterval(dataRefreshIntervalId);
+                dataRefreshIntervalId = null;
             }
             
             // Set up API sync every 15 seconds so countdown appears soon after cycle ends (when backend sets next_cycle)
-            refreshInterval = setInterval(() => {
+            dataRefreshIntervalId = setInterval(() => {
                 // Only refresh if not already fetching
                 if (!isFetchingData) {
                     fetchAllCycleData()
@@ -6680,6 +6682,8 @@ window.CycleCountdown = (function() {
     
     // Simple lock to prevent concurrent fetches
     let isFetchingData = false;
+    // 15-second API refresh interval (stored so cleanup can clear it)
+    let dataRefreshIntervalId = null;
     // Poll when "Starting Cycle" is shown so countdown appears soon after sleep starts
     let startingCyclePollTimeout = null;
     let startingCyclePollAttempts = 0;
@@ -7208,12 +7212,20 @@ window.CycleCountdown = (function() {
         });
     }
     
-    // Clean up timers when page changes
+    // Clean up timers when leaving home (stops all intervals and polling)
     function cleanup() {
         Object.keys(timerIntervals).forEach(app => {
             clearInterval(timerIntervals[app]);
             delete timerIntervals[app];
         });
+        if (dataRefreshIntervalId) {
+            clearInterval(dataRefreshIntervalId);
+            dataRefreshIntervalId = null;
+        }
+        if (startingCyclePollTimeout) {
+            clearTimeout(startingCyclePollTimeout);
+            startingCyclePollTimeout = null;
+        }
     }
     
     // Initialize on page load - with proper binding for setTimeout
