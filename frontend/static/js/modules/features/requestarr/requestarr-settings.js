@@ -684,8 +684,14 @@ export class RequestarrSettings {
             const radarrResponse = await fetch(`./api/requestarr/instances/radarr?t=${_ts}`, { cache: 'no-store' });
             const radarrData = await radarrResponse.json();
             
-            // Load Sonarr instances
-            const sonarrResponse = await fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' });
+            // Load TV Hunt and Sonarr instances (both for TV dropdown)
+            const [tvHuntResponse, sonarrResponse] = await Promise.all([
+                fetch(`./api/tv-hunt/instances?t=${_ts}`, { cache: 'no-store' }),
+                fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' })
+            ]);
+            let tvHuntData = await tvHuntResponse.json();
+            if (!tvHuntResponse.ok || tvHuntData.error) tvHuntData = { instances: [] };
+            else tvHuntData = { instances: (tvHuntData.instances || []).filter(i => i.enabled !== false) };
             const sonarrData = await sonarrResponse.json();
             
             // Load saved defaults
@@ -759,27 +765,53 @@ export class RequestarrSettings {
                 movieSelect.innerHTML = '<option value="">No movie instances configured</option>';
             }
             
-            // Populate TV instances (Sonarr only - unchanged)
-            if (sonarrData.instances && sonarrData.instances.length > 0) {
+            // Populate TV instances: TV Hunt first, then Sonarr (same pattern as movies)
+            const tvHuntInstances = (tvHuntData.instances || []);
+            const tvSonarrInstances = (sonarrData.instances || []);
+            const allTVInstances = [];
+            tvHuntInstances.forEach(inst => {
+                allTVInstances.push({
+                    value: encodeInstanceValue('tv_hunt', inst.name),
+                    label: `TV Hunt - ${inst.name}`,
+                    appType: 'tv_hunt',
+                    name: inst.name
+                });
+            });
+            tvSonarrInstances.forEach(inst => {
+                allTVInstances.push({
+                    value: encodeInstanceValue('sonarr', inst.name),
+                    label: `Sonarr - ${inst.name}`,
+                    appType: 'sonarr',
+                    name: inst.name
+                });
+            });
+            if (allTVInstances.length > 0) {
                 tvSelect.innerHTML = '';
-                sonarrData.instances.forEach(instance => {
+                allTVInstances.forEach(inst => {
                     const option = document.createElement('option');
-                    option.value = instance.name;
-                    option.textContent = `Sonarr - ${instance.name}`;
+                    option.value = inst.value;
+                    option.textContent = inst.label;
                     tvSelect.appendChild(option);
                 });
-                
-                // Set selection: saved default or first instance (never leave blank)
                 const savedTV = defaultsData.success && defaultsData.defaults && defaultsData.defaults.tv_instance;
-                const tvExists = savedTV && sonarrData.instances.some(i => i.name === defaultsData.defaults.tv_instance);
-                if (savedTV && tvExists) {
-                    tvSelect.value = defaultsData.defaults.tv_instance;
-                } else {
-                    tvSelect.value = sonarrData.instances[0].name;
+                let foundMatch = false;
+                if (savedTV && allTVInstances.some(i => i.value === savedTV)) {
+                    tvSelect.value = savedTV;
+                    foundMatch = true;
+                } else if (savedTV) {
+                    const legacyMatch = allTVInstances.find(i => i.appType === 'sonarr' && i.name === savedTV);
+                    if (legacyMatch) {
+                        tvSelect.value = legacyMatch.value;
+                        foundMatch = true;
+                        needsAutoSave = true;
+                    }
+                }
+                if (!foundMatch) {
+                    tvSelect.value = allTVInstances[0].value;
                     needsAutoSave = true;
                 }
             } else {
-                tvSelect.innerHTML = '<option value="">No Sonarr instances configured</option>';
+                tvSelect.innerHTML = '<option value="">No TV instances configured</option>';
             }
             
             // Ensure neither dropdown is ever blank when instances exist
@@ -787,8 +819,8 @@ export class RequestarrSettings {
                 movieSelect.value = allMovieInstances[0].value;
                 needsAutoSave = true;
             }
-            if (sonarrData.instances && sonarrData.instances.length > 0 && !tvSelect.value) {
-                tvSelect.value = sonarrData.instances[0].name;
+            if (allTVInstances.length > 0 && !tvSelect.value) {
+                tvSelect.value = allTVInstances[0].value;
                 needsAutoSave = true;
             }
             

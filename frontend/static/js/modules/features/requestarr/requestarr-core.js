@@ -63,13 +63,22 @@ export class RequestarrDiscover {
             const _ts = Date.now();
             const response = await fetch(`./api/requestarr/instances?t=${_ts}`, { cache: 'no-store' });
             const data = await response.json();
-            
-            if (data.sonarr || data.radarr || data.movie_hunt || data.tv_hunt) {
+            let tvHunt = data.tv_hunt || [];
+            if (tvHunt.length === 0) {
+                try {
+                    const thRes = await fetch(`./api/tv-hunt/instances?t=${_ts}`, { cache: 'no-store' });
+                    if (thRes.ok) {
+                        const th = await thRes.json();
+                        tvHunt = (th.instances || []).filter(i => i.enabled !== false).map(i => ({ name: i.name, id: i.id }));
+                    }
+                } catch (_) {}
+            }
+            if (data.sonarr || data.radarr || data.movie_hunt || tvHunt.length) {
                 this.instances = {
                     sonarr: data.sonarr || [],
                     radarr: data.radarr || [],
                     movie_hunt: data.movie_hunt || [],
-                    tv_hunt: data.tv_hunt || []
+                    tv_hunt: tvHunt
                 };
                 await this.loadAllQualityProfiles();
             }
