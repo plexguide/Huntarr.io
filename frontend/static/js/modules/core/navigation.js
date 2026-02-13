@@ -111,6 +111,28 @@ window.HuntarrNavigation = {
                 window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#settings-media-management');
             }
         }
+        // Legacy: TV Hunt settings → unified Media Hunt settings (sidebar was removed)
+        var tvHuntToSettings = {
+            'tv-hunt-settings-custom-formats': 'settings-custom-formats',
+            'tv-hunt-settings-profiles': 'settings-profiles',
+            'tv-hunt-settings-indexers': 'settings-indexers',
+            'tv-hunt-settings-clients': 'settings-clients',
+            'tv-hunt-settings-root-folders': 'settings-root-folders',
+            'tv-hunt-settings-sizes': 'settings-sizes',
+            'tv-hunt-settings-tv-management': 'settings-media-management',
+            'tv-hunt-settings-import-lists': 'settings-import-lists',
+            'tv-hunt-activity-queue': 'activity-queue',
+            'tv-hunt-activity-history': 'activity-history',
+            'tv-hunt-activity-blocklist': 'activity-blocklist',
+            'logs-tv-hunt': 'activity-logs'
+        };
+        if (tvHuntToSettings[section]) {
+            var target = tvHuntToSettings[section];
+            section = target;
+            if (window.location.hash !== '#' + target) {
+                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#' + target);
+            }
+        }
         if (window.huntarrUI) {
             window.huntarrUI.switchSection(section);
         }
