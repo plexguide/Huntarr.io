@@ -624,15 +624,15 @@
                         opt.textContent = inst.name;
                         select.appendChild(opt);
                     });
-                    fetch('./api/tv-hunt/current-instance')
+                    fetch('./api/tv-hunt/instances/current')
                         .then(function(r) { return r.json(); })
                         .then(function(d) {
-                            if (d.instance_id) select.value = d.instance_id;
+                            if (d.current_instance_id) select.value = d.current_instance_id;
                             self.loadCollection();
                         });
                     select.addEventListener('change', function() {
-                        fetch('./api/tv-hunt/current-instance', {
-                            method: 'POST',
+                        fetch('./api/tv-hunt/instances/current', {
+                            method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ instance_id: parseInt(select.value) })
                         }).then(function() { self.loadCollection(); });
@@ -1369,8 +1369,8 @@
                     if (!val) return;
                     if (val.indexOf('tv:') === 0) {
                         window._mediaHuntSectionMode = 'tv';
-                        fetch('./api/tv-hunt/current-instance', {
-                            method: 'POST',
+                        fetch('./api/tv-hunt/instances/current', {
+                            method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ instance_id: parseInt(val.slice(3), 10) })
                         }).then(function() {});
@@ -1381,8 +1381,8 @@
                     } else if (val.indexOf('movie:') === 0) {
                         window._mediaHuntSectionMode = 'movie';
                         var id = val.slice(6);
-                        fetch('./api/movie-hunt/current-instance', {
-                            method: 'POST',
+                        fetch('./api/movie-hunt/instances/current', {
+                            method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ instance_id: parseInt(id, 10) })
                         }).then(function() {});

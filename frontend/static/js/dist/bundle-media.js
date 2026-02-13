@@ -312,7 +312,7 @@
 /**
  * Media Hunt instance dropdown – server-stored current instance for movie or TV.
  * Attach to a <select>; on change POSTs current instance then calls onChanged.
- * Uses ./api/movie-hunt/ or ./api/tv-hunt/ (instances, current-instance) based on mode.
+ * Uses ./api/movie-hunt/ or ./api/tv-hunt/ (instances, instances/current) based on mode.
  * Exposes MovieHuntInstanceDropdown and TVHuntInstanceDropdown as wrappers for compatibility.
  */
 (function() {
@@ -345,10 +345,10 @@
         var ts = Date.now();
         Promise.all([
             fetch(api(apiBase + '/instances') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch(api(apiBase + '/current-instance') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+            fetch(api(apiBase + '/instances/current') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
         ]).then(function(results) {
             var list = (results[0].instances || []);
-            var current = results[1].instance_id != null ? Number(results[1].instance_id) : 0;
+            var current = results[1].current_instance_id != null ? Number(results[1].current_instance_id) : 0;
             select.innerHTML = '';
             if (list.length === 0) {
                 var emptyOpt = document.createElement('option');
@@ -394,8 +394,8 @@
             var m = entry && entry.mode ? entry.mode : 'movie';
             var apiBase = getApiBase(m);
 
-            fetch(api(apiBase + '/current-instance'), {
-                method: 'POST',
+            fetch(api(apiBase + '/instances/current'), {
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ instance_id: parseInt(val, 10) })
             })
@@ -417,9 +417,9 @@
 
     function getCurrentInstanceId(mode) {
         var apiBase = getApiBase(mode || 'movie');
-        return fetch(api(apiBase + '/current-instance') + '?t=' + Date.now(), { cache: 'no-store' })
+        return fetch(api(apiBase + '/instances/current') + '?t=' + Date.now(), { cache: 'no-store' })
             .then(function(r) { return r.json(); })
-            .then(function(data) { return data.instance_id != null ? Number(data.instance_id) : 0; })
+            .then(function(data) { return data.current_instance_id != null ? Number(data.current_instance_id) : 0; })
             .catch(function() { return 0; });
     }
 
@@ -486,14 +486,14 @@
         var ts = Date.now();
         Promise.all([
             fetch(api('./api/movie-hunt/instances') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch(api('./api/movie-hunt/current-instance') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch(api('./api/movie-hunt/instances/current') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
             fetch(api('./api/tv-hunt/instances') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch(api('./api/tv-hunt/current-instance') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+            fetch(api('./api/tv-hunt/instances/current') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
         ]).then(function(results) {
             var movieList = results[0].instances || [];
-            var movieCurrent = results[1].instance_id != null ? Number(results[1].instance_id) : null;
+            var movieCurrent = results[1].current_instance_id != null ? Number(results[1].current_instance_id) : null;
             var tvList = results[2].instances || [];
-            var tvCurrent = results[3].instance_id != null ? Number(results[3].instance_id) : null;
+            var tvCurrent = results[3].current_instance_id != null ? Number(results[3].current_instance_id) : null;
 
             select.innerHTML = '';
 
@@ -566,8 +566,8 @@
             var wired = _activityCombinedWired[selectId];
 
             var apiBase = getApiBase(mode);
-            fetch(api(apiBase + '/current-instance'), {
-                method: 'POST',
+            fetch(api(apiBase + '/instances/current'), {
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ instance_id: instanceId })
             })
@@ -2065,8 +2065,8 @@
                         if (!instanceId) return;
                         this.selectedInstanceId = instanceId;
                         try {
-                            await fetch('./api/movie-hunt/current-instance', {
-                                method: 'POST',
+                            await fetch('./api/movie-hunt/instances/current', {
+                                method: 'PUT',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ instance_id: instanceId })
                             });
@@ -2410,9 +2410,9 @@
                 if (data.instances && data.instances.length > 0) {
                     this.movieHuntInstances = data.instances;
                     if (!this.selectedInstanceId) {
-                        const cur = await fetch('./api/movie-hunt/current-instance');
+                        const cur = await fetch('./api/movie-hunt/instances/current');
                         const curData = await cur.json();
-                        this.selectedInstanceId = curData.instance_id || this.movieHuntInstances[0].id;
+                        this.selectedInstanceId = curData.current_instance_id || this.movieHuntInstances[0].id;
                     }
                 } else {
                     this.movieHuntInstances = [];
@@ -4556,15 +4556,15 @@
                         opt.textContent = inst.name;
                         select.appendChild(opt);
                     });
-                    fetch('./api/tv-hunt/current-instance')
+                    fetch('./api/tv-hunt/instances/current')
                         .then(function(r) { return r.json(); })
                         .then(function(d) {
-                            if (d.instance_id) select.value = d.instance_id;
+                            if (d.current_instance_id) select.value = d.current_instance_id;
                             self.loadCollection();
                         });
                     select.addEventListener('change', function() {
-                        fetch('./api/tv-hunt/current-instance', {
-                            method: 'POST',
+                        fetch('./api/tv-hunt/instances/current', {
+                            method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ instance_id: parseInt(select.value) })
                         }).then(function() { self.loadCollection(); });
@@ -5301,8 +5301,8 @@
                     if (!val) return;
                     if (val.indexOf('tv:') === 0) {
                         window._mediaHuntSectionMode = 'tv';
-                        fetch('./api/tv-hunt/current-instance', {
-                            method: 'POST',
+                        fetch('./api/tv-hunt/instances/current', {
+                            method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ instance_id: parseInt(val.slice(3), 10) })
                         }).then(function() {});
@@ -5313,8 +5313,8 @@
                     } else if (val.indexOf('movie:') === 0) {
                         window._mediaHuntSectionMode = 'movie';
                         var id = val.slice(6);
-                        fetch('./api/movie-hunt/current-instance', {
-                            method: 'POST',
+                        fetch('./api/movie-hunt/instances/current', {
+                            method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ instance_id: parseInt(id, 10) })
                         }).then(function() {});

@@ -39,13 +39,13 @@
             Promise.all([
                 fetch('./api/movie-hunt/instances').then(function(r) { return r.json(); }),
                 fetch('./api/tv-hunt/instances').then(function(r) { return r.json(); }),
-                fetch('./api/movie-hunt/current-instance').then(function(r) { return r.json(); }),
-                fetch('./api/tv-hunt/current-instance').then(function(r) { return r.json(); })
+                fetch('./api/movie-hunt/instances/current').then(function(r) { return r.json(); }),
+                fetch('./api/tv-hunt/instances/current').then(function(r) { return r.json(); })
             ]).then(function(results) {
                 var movieList = results[0].instances || [];
                 var tvList = results[1].instances || [];
-                var movieCurrent = results[2].instance_id != null ? Number(results[2].instance_id) : null;
-                var tvCurrent = results[3].instance_id != null ? Number(results[3].instance_id) : null;
+                var movieCurrent = results[2].current_instance_id != null ? Number(results[2].current_instance_id) : null;
+                var tvCurrent = results[3].current_instance_id != null ? Number(results[3].current_instance_id) : null;
 
                 select.innerHTML = '';
                 var opts = [];
@@ -99,8 +99,8 @@
             this.updateModeLabels();
 
             var apiBase = mode === 'tv' ? './api/tv-hunt' : './api/movie-hunt';
-            fetch(apiBase + '/current-instance', {
-                method: 'POST',
+            fetch(apiBase + '/instances/current', {
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ instance_id: instanceId })
             }).then(function(r) { return r.json(); }).catch(function() {});

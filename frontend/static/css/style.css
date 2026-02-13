@@ -128,11 +128,21 @@ button {
     padding: 20px;
     box-sizing: border-box;
     height: 0; /* Force flex to calculate height */
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.85) 100%) !important;
 }
 
 .content-section.active {
     display: flex;
     flex-direction: column;
+}
+
+/* Blue slate background for main content area (Home, Media Hunt, etc.) */
+body:has(.app-container) .main-content,
+.app-container .main-content {
+    background-color: #0f172a !important;
+}
+body:has(.app-container) {
+    background-color: #0f172a !important;
 }
 
 /* REMOVED DUPLICATE - Using flex-based approach above */

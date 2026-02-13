@@ -8,6 +8,8 @@
 
 /* Instance Card */
 .instance-card {
+    display: flex;
+    flex-direction: column;
     background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
     border: 1px solid rgba(148, 163, 184, 0.1);
     border-radius: 12px;
@@ -93,6 +95,36 @@
     margin-bottom: 20px;
 }
 
+/* Profile card quality tags (Settings > Profiles) */
+.profile-card-quality-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.profile-quality-tag {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: rgba(30, 41, 59, 0.8);
+    color: #e2e8f0;
+    font-size: 0.85rem;
+    font-weight: 500;
+    white-space: nowrap;
+    border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.profile-quality-tag-highest {
+    background: rgba(251, 146, 60, 0.35);
+    color: #fff;
+    border-color: rgba(251, 146, 60, 0.5);
+}
+
+.profile-quality-tag-empty {
+    color: #64748b;
+    font-style: italic;
+}
+
 .instance-detail {
     display: flex;
     align-items: center;
@@ -110,12 +142,15 @@
 /* Card Footer */
 .instance-card-footer {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     margin-top: auto;
+    width: 100%;
 }
 
 .btn-card {
-    flex: 1;
+    flex: 1 1 0;
+    min-width: 80px;
     padding: 8px;
     border-radius: 6px;
     border: 1px solid rgba(148, 163, 184, 0.2);
@@ -143,6 +178,11 @@
 .btn-card.delete:hover {
     border-color: #ef4444;
     color: #f87171;
+}
+
+.btn-card.set-default:hover {
+    border-color: #6366f1;
+    color: #818cf8;
 }
 
 /* Add New Card */

@@ -35,8 +35,8 @@
             Promise.all([
                 fetch('./api/movie-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
                 fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/movie-hunt/current-instance?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/tv-hunt/current-instance?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+                fetch('./api/movie-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
             ]).then(function(results) {
                 var movieList = (results[0].instances || []).map(function(inst) {
                     return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
@@ -46,8 +46,8 @@
                 });
                 var combined = movieList.concat(tvList);
                 combined.sort(function(a, b) { return (a.label || '').localeCompare(b.label || '', undefined, { sensitivity: 'base' }); });
-                var currentMovie = results[2].instance_id != null ? Number(results[2].instance_id) : null;
-                var currentTv = results[3].instance_id != null ? Number(results[3].instance_id) : null;
+                var currentMovie = results[2].current_instance_id != null ? Number(results[2].current_instance_id) : null;
+                var currentTv = results[3].current_instance_id != null ? Number(results[3].current_instance_id) : null;
                 selectEl.innerHTML = '';
                 if (combined.length === 0) {
                     var emptyOpt = document.createElement('option');

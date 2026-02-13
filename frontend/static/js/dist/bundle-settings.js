@@ -4615,8 +4615,8 @@ document.head.appendChild(styleEl);
     Forms.setCurrentInstanceAndRefreshIndexers = function(mode, instanceId) {
         Forms._indexersMode = mode;
         var apiBase = Forms.getIndexersInstanceApiBase(mode);
-        fetch(apiBase + '/current-instance', {
-            method: 'POST',
+        fetch(apiBase + '/instances/current', {
+            method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ instance_id: parseInt(instanceId, 10) })
         }).then(function(r) { return r.json(); }).then(function() {
@@ -4634,8 +4634,8 @@ document.head.appendChild(styleEl);
         Promise.all([
             fetch('./api/movie-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
             fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/movie-hunt/current-instance?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/tv-hunt/current-instance?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+            fetch('./api/movie-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
         ]).then(function(results) {
             var movieList = (results[0].instances || []).map(function(inst) {
                 return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
@@ -4645,8 +4645,8 @@ document.head.appendChild(styleEl);
             });
             var combined = movieList.concat(tvList);
             combined.sort(function(a, b) { return (a.label || '').localeCompare(b.label || '', undefined, { sensitivity: 'base' }); });
-            var currentMovie = results[2].instance_id != null ? Number(results[2].instance_id) : null;
-            var currentTv = results[3].instance_id != null ? Number(results[3].instance_id) : null;
+            var currentMovie = results[2].current_instance_id != null ? Number(results[2].current_instance_id) : null;
+            var currentTv = results[3].current_instance_id != null ? Number(results[3].current_instance_id) : null;
             selectEl.innerHTML = '';
             if (combined.length === 0) {
                 var emptyOpt = document.createElement('option');
@@ -4831,8 +4831,8 @@ document.head.appendChild(styleEl);
     function setCurrentInstanceAndRefresh(mode, instanceId) {
         var apiBase = getInstanceApiBase(mode);
         window._mediaHuntProfilesMode = mode;
-        fetch(apiBase + '/current-instance', {
-            method: 'POST',
+        fetch(apiBase + '/instances/current', {
+            method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ instance_id: parseInt(instanceId, 10) })
         }).then(function(r) { return r.json(); }).then(function() {
@@ -4850,8 +4850,8 @@ document.head.appendChild(styleEl);
         Promise.all([
             fetch('./api/movie-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
             fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/movie-hunt/current-instance?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/tv-hunt/current-instance?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+            fetch('./api/movie-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
         ]).then(function(results) {
             var movieList = (results[0].instances || []).map(function(inst) {
                 return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
@@ -4861,8 +4861,8 @@ document.head.appendChild(styleEl);
             });
             var combined = movieList.concat(tvList);
             combined.sort(function(a, b) { return (a.label || '').localeCompare(b.label || '', undefined, { sensitivity: 'base' }); });
-            var currentMovie = results[2].instance_id != null ? Number(results[2].instance_id) : null;
-            var currentTv = results[3].instance_id != null ? Number(results[3].instance_id) : null;
+            var currentMovie = results[2].current_instance_id != null ? Number(results[2].current_instance_id) : null;
+            var currentTv = results[3].current_instance_id != null ? Number(results[3].current_instance_id) : null;
             selectEl.innerHTML = '';
             if (combined.length === 0) {
                 var emptyOpt = document.createElement('option');
@@ -6065,8 +6065,8 @@ document.head.appendChild(styleEl);
         Promise.all([
             fetch('./api/movie-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
             fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/movie-hunt/current-instance?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/tv-hunt/current-instance?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+            fetch('./api/movie-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
         ]).then(function(results) {
             var movieList = (results[0].instances || []).map(function(inst) {
                 return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
@@ -6076,8 +6076,8 @@ document.head.appendChild(styleEl);
             });
             var combined = movieList.concat(tvList);
             combined.sort(function(a, b) { return (a.label || '').localeCompare(b.label || '', undefined, { sensitivity: 'base' }); });
-            var currentMovie = results[2].instance_id != null ? Number(results[2].instance_id) : null;
-            var currentTv = results[3].instance_id != null ? Number(results[3].instance_id) : null;
+            var currentMovie = results[2].current_instance_id != null ? Number(results[2].current_instance_id) : null;
+            var currentTv = results[3].current_instance_id != null ? Number(results[3].current_instance_id) : null;
             selectEl.innerHTML = '';
             if (combined.length === 0) {
                 var emptyOpt = document.createElement('option');
@@ -6680,8 +6680,8 @@ document.head.appendChild(styleEl);
             Promise.all([
                 fetch('./api/movie-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
                 fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/movie-hunt/current-instance?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/tv-hunt/current-instance?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+                fetch('./api/movie-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
             ]).then(function(results) {
                 var movieList = (results[0].instances || []).map(function(inst) {
                     return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
@@ -6691,8 +6691,8 @@ document.head.appendChild(styleEl);
                 });
                 var combined = movieList.concat(tvList);
                 combined.sort(function(a, b) { return (a.label || '').localeCompare(b.label || '', undefined, { sensitivity: 'base' }); });
-                var currentMovie = results[2].instance_id != null ? Number(results[2].instance_id) : null;
-                var currentTv = results[3].instance_id != null ? Number(results[3].instance_id) : null;
+                var currentMovie = results[2].current_instance_id != null ? Number(results[2].current_instance_id) : null;
+                var currentTv = results[3].current_instance_id != null ? Number(results[3].current_instance_id) : null;
                 selectEl.innerHTML = '';
                 if (combined.length === 0) {
                     var emptyOpt = document.createElement('option');
@@ -7670,13 +7670,13 @@ document.head.appendChild(styleEl);
             Promise.all([
                 fetch('./api/movie-hunt/instances').then(function(r) { return r.json(); }),
                 fetch('./api/tv-hunt/instances').then(function(r) { return r.json(); }),
-                fetch('./api/movie-hunt/current-instance').then(function(r) { return r.json(); }),
-                fetch('./api/tv-hunt/current-instance').then(function(r) { return r.json(); })
+                fetch('./api/movie-hunt/instances/current').then(function(r) { return r.json(); }),
+                fetch('./api/tv-hunt/instances/current').then(function(r) { return r.json(); })
             ]).then(function(results) {
                 var movieList = results[0].instances || [];
                 var tvList = results[1].instances || [];
-                var movieCurrent = results[2].instance_id != null ? Number(results[2].instance_id) : null;
-                var tvCurrent = results[3].instance_id != null ? Number(results[3].instance_id) : null;
+                var movieCurrent = results[2].current_instance_id != null ? Number(results[2].current_instance_id) : null;
+                var tvCurrent = results[3].current_instance_id != null ? Number(results[3].current_instance_id) : null;
 
                 select.innerHTML = '';
                 var opts = [];
@@ -7730,8 +7730,8 @@ document.head.appendChild(styleEl);
             this.updateModeLabels();
 
             var apiBase = mode === 'tv' ? './api/tv-hunt' : './api/movie-hunt';
-            fetch(apiBase + '/current-instance', {
-                method: 'POST',
+            fetch(apiBase + '/instances/current', {
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ instance_id: instanceId })
             }).then(function(r) { return r.json(); }).catch(function() {});
@@ -8287,8 +8287,8 @@ document.head.appendChild(styleEl);
             Promise.all([
                 fetch('./api/movie-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
                 fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/movie-hunt/current-instance?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/tv-hunt/current-instance?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+                fetch('./api/movie-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
             ]).then(function(results) {
                 var movieList = (results[0].instances || []).map(function(inst) {
                     return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
@@ -8298,8 +8298,8 @@ document.head.appendChild(styleEl);
                 });
                 var combined = movieList.concat(tvList);
                 combined.sort(function(a, b) { return (a.label || '').localeCompare(b.label || '', undefined, { sensitivity: 'base' }); });
-                var currentMovie = results[2].instance_id != null ? Number(results[2].instance_id) : null;
-                var currentTv = results[3].instance_id != null ? Number(results[3].instance_id) : null;
+                var currentMovie = results[2].current_instance_id != null ? Number(results[2].current_instance_id) : null;
+                var currentTv = results[3].current_instance_id != null ? Number(results[3].current_instance_id) : null;
                 selectEl.innerHTML = '';
                 if (combined.length === 0) {
                     var emptyOpt = document.createElement('option');
@@ -9321,8 +9321,8 @@ document.head.appendChild(styleEl);
             var self = window.CustomFormats;
             self._mode = mode;
             var apiBase = self.getInstanceApiBase(mode);
-            fetch(apiBase + '/current-instance', {
-                method: 'POST',
+            fetch(apiBase + '/instances/current', {
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ instance_id: parseInt(instanceId, 10) })
             }).then(function(r) { return r.json(); }).then(function() {
@@ -9340,8 +9340,8 @@ document.head.appendChild(styleEl);
             Promise.all([
                 fetch('./api/movie-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
                 fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/movie-hunt/current-instance?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/tv-hunt/current-instance?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+                fetch('./api/movie-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
             ]).then(function(results) {
                 var movieList = (results[0].instances || []).map(function(inst) {
                     return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
@@ -9351,8 +9351,8 @@ document.head.appendChild(styleEl);
                 });
                 var combined = movieList.concat(tvList);
                 combined.sort(function(a, b) { return (a.label || '').localeCompare(b.label || '', undefined, { sensitivity: 'base' }); });
-                var currentMovie = results[2].instance_id != null ? Number(results[2].instance_id) : null;
-                var currentTv = results[3].instance_id != null ? Number(results[3].instance_id) : null;
+                var currentMovie = results[2].current_instance_id != null ? Number(results[2].current_instance_id) : null;
+                var currentTv = results[3].current_instance_id != null ? Number(results[3].current_instance_id) : null;
                 selectEl.innerHTML = '';
                 if (combined.length === 0) {
                     var emptyOpt = document.createElement('option');

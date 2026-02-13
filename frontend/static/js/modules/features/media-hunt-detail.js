@@ -494,8 +494,8 @@
                         if (!instanceId) return;
                         this.selectedInstanceId = instanceId;
                         try {
-                            await fetch('./api/movie-hunt/current-instance', {
-                                method: 'POST',
+                            await fetch('./api/movie-hunt/instances/current', {
+                                method: 'PUT',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ instance_id: instanceId })
                             });
@@ -839,9 +839,9 @@
                 if (data.instances && data.instances.length > 0) {
                     this.movieHuntInstances = data.instances;
                     if (!this.selectedInstanceId) {
-                        const cur = await fetch('./api/movie-hunt/current-instance');
+                        const cur = await fetch('./api/movie-hunt/instances/current');
                         const curData = await cur.json();
-                        this.selectedInstanceId = curData.instance_id || this.movieHuntInstances[0].id;
+                        this.selectedInstanceId = curData.current_instance_id || this.movieHuntInstances[0].id;
                     }
                 } else {
                     this.movieHuntInstances = [];
