@@ -5938,7 +5938,7 @@ document.head.appendChild(styleEl);
             if (backBtn) {
                 backBtn.onclick = function() {
                     if (window.huntarrUI && window.huntarrUI.switchSection) {
-                        window.huntarrUI.switchSection('media-hunt-settings');
+                        window.huntarrUI.switchSection('media-hunt-instances');
                     }
                 };
             }
@@ -5963,8 +5963,8 @@ document.head.appendChild(styleEl);
                 if (backBtn) {
                     backBtn.onclick = function() {
                         confirmLeaveMovieManagement(function(result) {
-                            if (result === 'save') window.MovieManagement.save('media-hunt-settings');
-                            else if (result === 'discard') window.MovieManagement.cancel('media-hunt-settings');
+                            if (result === 'save') window.MovieManagement.save('media-hunt-instances');
+                            else if (result === 'discard') window.MovieManagement.cancel('media-hunt-instances');
                         });
                     };
                 }
@@ -5976,8 +5976,8 @@ document.head.appendChild(styleEl);
                 if (saveBtn) saveBtn.onclick = function() { window.MovieManagement.save(); };
                 if (backBtn) backBtn.onclick = function() {
                     confirmLeaveMovieManagement(function(result) {
-                        if (result === 'save') window.MovieManagement.save('media-hunt-settings');
-                        else if (result === 'discard') window.MovieManagement.cancel('media-hunt-settings');
+                        if (result === 'save') window.MovieManagement.save('media-hunt-instances');
+                        else if (result === 'discard') window.MovieManagement.cancel('media-hunt-instances');
                     });
                 };
             });
@@ -5985,7 +5985,7 @@ document.head.appendChild(styleEl);
 
     function save(optionalNextSection) {
         if (_mgmtMode === 'tv') return;
-        var nextSection = optionalNextSection || 'media-hunt-settings';
+        var nextSection = optionalNextSection || 'media-hunt-instances';
         var body = collectFormData();
         var instId = getInstanceId();
         if (instId) body.instance_id = parseInt(instId, 10);
@@ -6027,7 +6027,7 @@ document.head.appendChild(styleEl);
         _movieManagementDirty = false;
         _movieManagementData = null;
         if (window.huntarrUI && window.huntarrUI.switchSection) {
-            window.huntarrUI.switchSection(optionalNextSection || 'media-hunt-settings');
+            window.huntarrUI.switchSection(optionalNextSection || 'media-hunt-instances');
         }
     }
 
@@ -10048,20 +10048,187 @@ document.head.appendChild(styleEl);
 
 /* === modules/features/settings/media-hunt-instance-management.js === */
 /**
- * Media Hunt Instance Management – shows Movie/TV instance list.
- * Delegates to MovieHuntInstanceEditor or TVHuntInstanceEditor based on mode.
+ * Media Hunt Instance Management – shows Movie and TV instance lists in separate sections.
+ * Loads both, wires Add Instance modals, and delegates click handlers.
  */
 (function() {
     'use strict';
 
+    var baseUrl = (typeof window !== 'undefined' && window.HUNTARR_BASE_URL) ? window.HUNTARR_BASE_URL.replace(/\/$/, '') : '';
+    function api(path) {
+        return (baseUrl || '') + (path.indexOf('./') === 0 ? path : './' + path);
+    }
+
     window.MediaHuntInstanceManagement = window.MediaHuntInstanceManagement || {};
 
+    function openAddMovieModal() {
+        var modal = document.getElementById('media-hunt-instance-add-movie-modal');
+        var input = document.getElementById('media-hunt-instance-add-movie-name');
+        if (modal && modal.parentNode !== document.body) document.body.appendChild(modal);
+        if (modal) modal.style.display = 'flex';
+        if (input) { input.value = ''; setTimeout(function() { input.focus(); }, 100); }
+        document.body.classList.add('media-hunt-instance-add-modal-open');
+    }
+
+    function closeAddMovieModal() {
+        var modal = document.getElementById('media-hunt-instance-add-movie-modal');
+        if (modal) modal.style.display = 'none';
+        document.body.classList.remove('media-hunt-instance-add-modal-open');
+    }
+
+    function openAddTVModal() {
+        var modal = document.getElementById('media-hunt-instance-add-tv-modal');
+        var input = document.getElementById('media-hunt-instance-add-tv-name');
+        if (modal && modal.parentNode !== document.body) document.body.appendChild(modal);
+        if (modal) modal.style.display = 'flex';
+        if (input) { input.value = ''; setTimeout(function() { input.focus(); }, 100); }
+        document.body.classList.add('media-hunt-instance-add-modal-open');
+    }
+
+    function closeAddTVModal() {
+        var modal = document.getElementById('media-hunt-instance-add-tv-modal');
+        if (modal) modal.style.display = 'none';
+        document.body.classList.remove('media-hunt-instance-add-modal-open');
+    }
+
+    var _modalsInited = false;
+    function initModals() {
+        if (_modalsInited) return;
+        _modalsInited = true;
+        var movieBackdrop = document.getElementById('media-hunt-instance-add-movie-modal-backdrop');
+        var movieClose = document.getElementById('media-hunt-instance-add-movie-modal-close');
+        var movieCancel = document.getElementById('media-hunt-instance-add-movie-modal-cancel');
+        var movieSave = document.getElementById('media-hunt-instance-add-movie-modal-save');
+        var movieInput = document.getElementById('media-hunt-instance-add-movie-name');
+        if (movieBackdrop) movieBackdrop.onclick = closeAddMovieModal;
+        if (movieClose) movieClose.onclick = closeAddMovieModal;
+        if (movieCancel) movieCancel.onclick = closeAddMovieModal;
+        if (movieSave && movieInput) {
+            movieSave.onclick = function() {
+                var name = (movieInput.value || '').trim() || 'Unnamed';
+                movieSave.disabled = true;
+                fetch(api('./api/movie-hunt/instances'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name })
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        if (typeof document.dispatchEvent === 'function') {
+                            document.dispatchEvent(new CustomEvent('huntarr:instances-changed'));
+                        }
+                        if (window.MovieHuntInstanceEditor && window.MovieHuntInstanceEditor.loadInstanceList) {
+                            window.MovieHuntInstanceEditor.loadInstanceList();
+                        }
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification('Movie instance added.', 'success');
+                        }
+                        closeAddMovieModal();
+                    } else {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification(data.error || 'Failed to add instance.', 'error');
+                        }
+                    }
+                })
+                .catch(function() {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Failed to add instance.', 'error');
+                    }
+                })
+                .finally(function() { movieSave.disabled = false; });
+            };
+        }
+
+        var tvBackdrop = document.getElementById('media-hunt-instance-add-tv-modal-backdrop');
+        var tvClose = document.getElementById('media-hunt-instance-add-tv-modal-close');
+        var tvCancel = document.getElementById('media-hunt-instance-add-tv-modal-cancel');
+        var tvSave = document.getElementById('media-hunt-instance-add-tv-modal-save');
+        var tvInput = document.getElementById('media-hunt-instance-add-tv-name');
+        if (tvBackdrop) tvBackdrop.onclick = closeAddTVModal;
+        if (tvClose) tvClose.onclick = closeAddTVModal;
+        if (tvCancel) tvCancel.onclick = closeAddTVModal;
+        if (tvSave && tvInput) {
+            tvSave.onclick = function() {
+                var name = (tvInput.value || '').trim() || 'Unnamed';
+                tvSave.disabled = true;
+                fetch(api('./api/tv-hunt/instances'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name })
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        if (typeof document.dispatchEvent === 'function') {
+                            document.dispatchEvent(new CustomEvent('huntarr:tv-hunt-instances-changed'));
+                        }
+                        if (window.TVHuntInstanceEditor && window.TVHuntInstanceEditor.loadInstanceList) {
+                            window.TVHuntInstanceEditor.loadInstanceList();
+                        }
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification('TV instance added.', 'success');
+                        }
+                        closeAddTVModal();
+                    } else {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification(data.error || 'Failed to add instance.', 'error');
+                        }
+                    }
+                })
+                .catch(function() {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Failed to add instance.', 'error');
+                    }
+                })
+                .finally(function() { tvSave.disabled = false; });
+            };
+        }
+
+        document.addEventListener('keydown', function modalKeydown(e) {
+            if (e.key !== 'Escape') return;
+            var movieModal = document.getElementById('media-hunt-instance-add-movie-modal');
+            var tvModal = document.getElementById('media-hunt-instance-add-tv-modal');
+            if (movieModal && movieModal.style.display === 'flex') { closeAddMovieModal(); return; }
+            if (tvModal && tvModal.style.display === 'flex') { closeAddTVModal(); return; }
+        });
+    }
+
+    function initGridListeners() {
+        var movieGrid = document.getElementById('movie-hunt-settings-instances-grid');
+        var tvGrid = document.getElementById('tv-hunt-settings-instances-grid');
+        if (movieGrid && !movieGrid._instanceMgmtBound) {
+            movieGrid._instanceMgmtBound = true;
+            movieGrid.addEventListener('click', function(e) {
+                var addCard = e.target.closest('.add-instance-card[data-app-type="media-hunt-instance-movie"]');
+                if (addCard) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openAddMovieModal();
+                }
+            });
+        }
+        if (tvGrid && !tvGrid._instanceMgmtBound) {
+            tvGrid._instanceMgmtBound = true;
+            tvGrid.addEventListener('click', function(e) {
+                var addCard = e.target.closest('.add-instance-card[data-app-type="media-hunt-instance-tv"]');
+                if (addCard) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openAddTVModal();
+                }
+            });
+        }
+    }
+
     window.MediaHuntInstanceManagement.init = function() {
-        var mode = window._mediaHuntInstanceManagementMode || 'movie';
-        if (mode === 'tv' && window.TVHuntInstanceEditor && typeof window.TVHuntInstanceEditor.loadInstanceList === 'function') {
-            window.TVHuntInstanceEditor.loadInstanceList();
-        } else if (window.MovieHuntInstanceEditor && typeof window.MovieHuntInstanceEditor.loadInstanceList === 'function') {
+        initModals();
+        initGridListeners();
+        if (window.MovieHuntInstanceEditor && typeof window.MovieHuntInstanceEditor.loadInstanceList === 'function') {
             window.MovieHuntInstanceEditor.loadInstanceList();
+        }
+        if (window.TVHuntInstanceEditor && typeof window.TVHuntInstanceEditor.loadInstanceList === 'function') {
+            window.TVHuntInstanceEditor.loadInstanceList();
         }
     };
 })();
@@ -10388,6 +10555,10 @@ document.head.appendChild(styleEl);
             });
     }
 
+    var addInstanceCardHtml = function(appType, iconClass, label) {
+        return '<div class="add-instance-card" data-app-type="' + appType + '"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">' + (label || 'Add Instance') + '</div></div>';
+    };
+
     window.MovieHuntInstanceEditor = {
         loadInstanceList: function() {
             var grid = document.getElementById('movie-hunt-settings-instances-grid');
@@ -10398,10 +10569,6 @@ document.head.appendChild(styleEl);
                 .then(function(data) {
                     var list = data.instances || [];
                     grid.innerHTML = '';
-                    if (list.length === 0) {
-                        grid.innerHTML = '<p class="editor-help-text">No instances yet. Add one using the <strong>Adding Instance</strong> card below.</p>';
-                        return;
-                    }
                     list.forEach(function(inst) {
                         var enabled = inst.enabled !== false;
                         var statusClass = enabled ? 'status-connected' : 'status-disabled';
@@ -10417,6 +10584,9 @@ document.head.appendChild(styleEl);
                             '<div class="instance-card-footer"><button type="button" class="btn-card edit" data-id="' + escapeAttr(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '"><i class="fas fa-edit"></i> Edit</button></div>';
                         grid.appendChild(card);
                     });
+                    var addCard = document.createElement('div');
+                    addCard.innerHTML = addInstanceCardHtml('media-hunt-instance-movie', 'fa-film', 'Add Movie Instance');
+                    grid.appendChild(addCard.firstElementChild);
                     grid.querySelectorAll('.btn-card.edit').forEach(function(btn) {
                         btn.addEventListener('click', function(e) {
                             e.stopPropagation();
@@ -10468,7 +10638,7 @@ document.head.appendChild(styleEl);
                     var saveBtn = document.getElementById('media-hunt-instance-editor-save');
                     if (backBtn) backBtn.onclick = function() {
                         if (!_editorDirty) {
-                            window.huntarrUI.switchSection('media-hunt-settings');
+                            window.huntarrUI.switchSection('media-hunt-instances');
                             return;
                         }
                         if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
@@ -10480,11 +10650,11 @@ document.head.appendChild(styleEl);
                                 onConfirm: function() {
                                     // Stay on the editor — modal just closes, user can save manually
                                 },
-                                onCancel: function() { window.huntarrUI.switchSection('media-hunt-settings'); }
+                                onCancel: function() { window.huntarrUI.switchSection('media-hunt-instances'); }
                             });
                         } else {
                             if (confirm('You have unsaved changes that will be lost. Leave anyway?')) {
-                                window.huntarrUI.switchSection('media-hunt-settings');
+                                window.huntarrUI.switchSection('media-hunt-instances');
                             }
                         }
                     };
@@ -10865,7 +11035,70 @@ document.head.appendChild(styleEl);
         }
     }
 
+    function addInstanceCardHtml(appType, iconClass, label) {
+        return '<div class="add-instance-card" data-app-type="' + appType + '"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">' + (label || 'Add Instance') + '</div></div>';
+    }
+
+    function renderTVInstanceCards(grid, list) {
+        grid.innerHTML = '';
+        (list || []).forEach(function(inst) {
+            var enabled = inst.enabled !== false;
+            var statusClass = enabled ? 'status-connected' : 'status-disabled';
+            var statusIcon = enabled ? 'fa-check-circle' : 'fa-minus-circle';
+            var card = document.createElement('div');
+            card.className = 'instance-card';
+            card.innerHTML =
+                '<div class="instance-card-header">' +
+                '<span class="instance-name"><i class="fas fa-tv" style="margin-right: 8px;"></i>' + escapeHtml(inst.name || 'Instance ' + inst.id) + '</span>' +
+                '<div class="instance-status-icon ' + statusClass + '" title="' + (enabled ? 'Enabled' : 'Disabled') + '"><i class="fas ' + statusIcon + '"></i></div>' +
+                '</div>' +
+                '<div class="instance-card-body"><div class="instance-detail"><i class="fas fa-hashtag"></i><span>ID ' + escapeHtml(inst.id) + '</span></div></div>' +
+                '<div class="instance-card-footer"><button type="button" class="btn-card edit" data-id="' + escapeAttr(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '"><i class="fas fa-edit"></i> Edit</button></div>';
+            grid.appendChild(card);
+        });
+        var addCard = document.createElement('div');
+        addCard.innerHTML = addInstanceCardHtml('media-hunt-instance-tv', 'fa-tv', 'Add TV Instance');
+        grid.appendChild(addCard.firstElementChild);
+        grid.querySelectorAll('.btn-card.edit').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                window.TVHuntInstanceEditor.openEditor(
+                    btn.getAttribute('data-id'),
+                    btn.getAttribute('data-name') || ('Instance ' + btn.getAttribute('data-id'))
+                );
+            });
+        });
+    }
+
     window.TVHuntInstanceEditor = {
+        loadInstanceList: function() {
+            var grid = document.getElementById('tv-hunt-settings-instances-grid');
+            if (!grid) return;
+            grid.innerHTML = '<div style="color: #94a3b8;">Loading...</div>';
+            var url = api('./api/tv-hunt/instances') + '?t=' + (Date.now ? Date.now() : new Date().getTime());
+            fetch(url, { cache: 'no-store', credentials: 'same-origin' })
+                .then(function(r) {
+                    if (!r.ok) return r.json().then(function(data) { return { instances: data.instances || [], error: data.error }; });
+                    return r.json();
+                })
+                .then(function(data) {
+                    var list = (data && data.instances) ? data.instances : [];
+                    var err = data && data.error;
+                    renderTVInstanceCards(grid, list);
+                    if (err && window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification(err, 'error');
+                    }
+                })
+                .catch(function() {
+                    var errDiv = document.createElement('div');
+                    errDiv.style.cssText = 'color: #f87171; margin-bottom: 12px;';
+                    errDiv.textContent = 'Failed to load instances. You can still add a new TV instance below.';
+                    grid.innerHTML = '';
+                    grid.appendChild(errDiv);
+                    renderTVInstanceCards(grid, []);
+                });
+        },
+
         openEditor: function(instanceId, instanceName) {
             _currentInstanceId = instanceId;
             _currentInstanceName = instanceName || ('Instance ' + instanceId);
@@ -10894,14 +11127,14 @@ document.head.appendChild(styleEl);
                 var backBtn = document.getElementById('media-hunt-instance-editor-back');
                 var saveBtn = document.getElementById('media-hunt-instance-editor-save');
                 if (backBtn) backBtn.onclick = function() {
-                    if (!_editorDirty) { window.huntarrUI.switchSection('media-hunt-settings'); return; }
+                    if (!_editorDirty) { window.huntarrUI.switchSection('media-hunt-instances'); return; }
                     window.HuntarrConfirm.show({
                         title: 'Unsaved Changes',
                         message: 'You have unsaved changes that will be lost if you leave.',
                         confirmLabel: 'Go Back',
                         cancelLabel: 'Leave',
                         onConfirm: function() {},
-                        onCancel: function() { window.huntarrUI.switchSection('media-hunt-settings'); }
+                        onCancel: function() { window.huntarrUI.switchSection('media-hunt-instances'); }
                     });
                 };
                 if (saveBtn) saveBtn.onclick = function() { self.saveEditor(); };

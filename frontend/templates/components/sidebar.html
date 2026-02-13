@@ -123,6 +123,10 @@
                 <span>Collection</span>
             </a>
             <div class="nav-sub-group" id="movie-hunt-collection-sub">
+                <a href="./#media-hunt-instances" class="nav-item nav-item-sub" id="movieHuntInstancesNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-layer-group"></i></div>
+                    <span>Instances</span>
+                </a>
                 <a href="./#movie-hunt-calendar" class="nav-item nav-item-sub" id="movieHuntCalendarNav">
                     <div class="nav-icon-wrapper"><i class="fas fa-calendar-alt"></i></div>
                     <span>Calendar</span>
@@ -156,7 +160,7 @@
             </div>
             <a href="./#indexer-hunt" class="nav-item" id="movieHuntIndexMasterNav">
                 <div class="nav-icon-wrapper"><i class="fas fa-search-plus"></i></div>
-                <span>Indexes</span>
+                <span>Indexers</span>
             </a>
             <div class="nav-sub-group" id="index-master-sub">
                 <a href="./#indexer-hunt-stats" class="nav-item nav-item-sub" id="movieHuntIndexMasterStatsNav">
@@ -172,7 +176,7 @@
                 <div class="nav-icon-wrapper"><i class="fas fa-cloud-download-alt"></i></div>
                 <span>Clients</span>
             </a>
-            <a href="./#media-hunt-settings" class="nav-item" id="movieHuntSettingsNav">
+            <a href="./#settings-media-management" class="nav-item" id="movieHuntSettingsNav">
                 <div class="nav-icon-wrapper"><i class="fas fa-cog"></i></div>
                 <span>Settings</span>
             </a>
@@ -532,6 +536,10 @@
             expandSub('movie-hunt-settings-sub');
             selector = '#movieHuntSettingsNav';
         }
+        else if (currentHash === '#media-hunt-instances') {
+            selector = '#movieHuntInstancesNav';
+            expandSub('movie-hunt-collection-sub');
+        }
         else if (currentHash === '#settings-media-management') {
             selector = '#movieHuntSettingsMovieManagementNav';
             expandSub('movie-hunt-settings-sub');
@@ -551,6 +559,10 @@
         else if (currentHash === '#media-hunt-collection') {
             expandSub('movie-hunt-collection-sub');
             selector = '#movieHuntCollectionNav';
+        }
+        else if (currentHash === '#media-hunt-instances') {
+            selector = '#movieHuntInstancesNav';
+            expandSub('movie-hunt-collection-sub');
         }
         else if (currentHash === '#movie-hunt-calendar') {
             selector = '#movieHuntCalendarNav';
@@ -623,7 +635,7 @@
         var indexMasterHashes = ['#indexer-hunt', '#indexer-hunt-stats', '#indexer-hunt-history'];
         if (indexMasterHashes.indexOf(currentHash) === -1) collapseSub('index-master-sub');
 
-        var mhCollectionHashes = ['#movie-hunt-home', '#movie-hunt-collection', '#media-hunt-collection', '#settings-import-media', '#movie-hunt-calendar'];
+        var mhCollectionHashes = ['#movie-hunt-home', '#movie-hunt-collection', '#media-hunt-collection', '#settings-import-media', '#movie-hunt-calendar', '#media-hunt-instances'];
         if (mhCollectionHashes.indexOf(currentHash) === -1) collapseSub('movie-hunt-collection-sub');
     }
 

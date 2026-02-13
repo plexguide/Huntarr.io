@@ -318,6 +318,10 @@
             });
     }
 
+    var addInstanceCardHtml = function(appType, iconClass, label) {
+        return '<div class="add-instance-card" data-app-type="' + appType + '"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">' + (label || 'Add Instance') + '</div></div>';
+    };
+
     window.MovieHuntInstanceEditor = {
         loadInstanceList: function() {
             var grid = document.getElementById('movie-hunt-settings-instances-grid');
@@ -328,10 +332,6 @@
                 .then(function(data) {
                     var list = data.instances || [];
                     grid.innerHTML = '';
-                    if (list.length === 0) {
-                        grid.innerHTML = '<p class="editor-help-text">No instances yet. Add one using the <strong>Adding Instance</strong> card below.</p>';
-                        return;
-                    }
                     list.forEach(function(inst) {
                         var enabled = inst.enabled !== false;
                         var statusClass = enabled ? 'status-connected' : 'status-disabled';
@@ -347,6 +347,9 @@
                             '<div class="instance-card-footer"><button type="button" class="btn-card edit" data-id="' + escapeAttr(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '"><i class="fas fa-edit"></i> Edit</button></div>';
                         grid.appendChild(card);
                     });
+                    var addCard = document.createElement('div');
+                    addCard.innerHTML = addInstanceCardHtml('media-hunt-instance-movie', 'fa-film', 'Add Movie Instance');
+                    grid.appendChild(addCard.firstElementChild);
                     grid.querySelectorAll('.btn-card.edit').forEach(function(btn) {
                         btn.addEventListener('click', function(e) {
                             e.stopPropagation();
@@ -398,7 +401,7 @@
                     var saveBtn = document.getElementById('media-hunt-instance-editor-save');
                     if (backBtn) backBtn.onclick = function() {
                         if (!_editorDirty) {
-                            window.huntarrUI.switchSection('media-hunt-settings');
+                            window.huntarrUI.switchSection('media-hunt-instances');
                             return;
                         }
                         if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
@@ -410,11 +413,11 @@
                                 onConfirm: function() {
                                     // Stay on the editor — modal just closes, user can save manually
                                 },
-                                onCancel: function() { window.huntarrUI.switchSection('media-hunt-settings'); }
+                                onCancel: function() { window.huntarrUI.switchSection('media-hunt-instances'); }
                             });
                         } else {
                             if (confirm('You have unsaved changes that will be lost. Leave anyway?')) {
-                                window.huntarrUI.switchSection('media-hunt-settings');
+                                window.huntarrUI.switchSection('media-hunt-instances');
                             }
                         }
                     };
@@ -795,7 +798,70 @@
         }
     }
 
+    function addInstanceCardHtml(appType, iconClass, label) {
+        return '<div class="add-instance-card" data-app-type="' + appType + '"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">' + (label || 'Add Instance') + '</div></div>';
+    }
+
+    function renderTVInstanceCards(grid, list) {
+        grid.innerHTML = '';
+        (list || []).forEach(function(inst) {
+            var enabled = inst.enabled !== false;
+            var statusClass = enabled ? 'status-connected' : 'status-disabled';
+            var statusIcon = enabled ? 'fa-check-circle' : 'fa-minus-circle';
+            var card = document.createElement('div');
+            card.className = 'instance-card';
+            card.innerHTML =
+                '<div class="instance-card-header">' +
+                '<span class="instance-name"><i class="fas fa-tv" style="margin-right: 8px;"></i>' + escapeHtml(inst.name || 'Instance ' + inst.id) + '</span>' +
+                '<div class="instance-status-icon ' + statusClass + '" title="' + (enabled ? 'Enabled' : 'Disabled') + '"><i class="fas ' + statusIcon + '"></i></div>' +
+                '</div>' +
+                '<div class="instance-card-body"><div class="instance-detail"><i class="fas fa-hashtag"></i><span>ID ' + escapeHtml(inst.id) + '</span></div></div>' +
+                '<div class="instance-card-footer"><button type="button" class="btn-card edit" data-id="' + escapeAttr(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '"><i class="fas fa-edit"></i> Edit</button></div>';
+            grid.appendChild(card);
+        });
+        var addCard = document.createElement('div');
+        addCard.innerHTML = addInstanceCardHtml('media-hunt-instance-tv', 'fa-tv', 'Add TV Instance');
+        grid.appendChild(addCard.firstElementChild);
+        grid.querySelectorAll('.btn-card.edit').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                window.TVHuntInstanceEditor.openEditor(
+                    btn.getAttribute('data-id'),
+                    btn.getAttribute('data-name') || ('Instance ' + btn.getAttribute('data-id'))
+                );
+            });
+        });
+    }
+
     window.TVHuntInstanceEditor = {
+        loadInstanceList: function() {
+            var grid = document.getElementById('tv-hunt-settings-instances-grid');
+            if (!grid) return;
+            grid.innerHTML = '<div style="color: #94a3b8;">Loading...</div>';
+            var url = api('./api/tv-hunt/instances') + '?t=' + (Date.now ? Date.now() : new Date().getTime());
+            fetch(url, { cache: 'no-store', credentials: 'same-origin' })
+                .then(function(r) {
+                    if (!r.ok) return r.json().then(function(data) { return { instances: data.instances || [], error: data.error }; });
+                    return r.json();
+                })
+                .then(function(data) {
+                    var list = (data && data.instances) ? data.instances : [];
+                    var err = data && data.error;
+                    renderTVInstanceCards(grid, list);
+                    if (err && window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification(err, 'error');
+                    }
+                })
+                .catch(function() {
+                    var errDiv = document.createElement('div');
+                    errDiv.style.cssText = 'color: #f87171; margin-bottom: 12px;';
+                    errDiv.textContent = 'Failed to load instances. You can still add a new TV instance below.';
+                    grid.innerHTML = '';
+                    grid.appendChild(errDiv);
+                    renderTVInstanceCards(grid, []);
+                });
+        },
+
         openEditor: function(instanceId, instanceName) {
             _currentInstanceId = instanceId;
             _currentInstanceName = instanceName || ('Instance ' + instanceId);
@@ -824,14 +890,14 @@
                 var backBtn = document.getElementById('media-hunt-instance-editor-back');
                 var saveBtn = document.getElementById('media-hunt-instance-editor-save');
                 if (backBtn) backBtn.onclick = function() {
-                    if (!_editorDirty) { window.huntarrUI.switchSection('media-hunt-settings'); return; }
+                    if (!_editorDirty) { window.huntarrUI.switchSection('media-hunt-instances'); return; }
                     window.HuntarrConfirm.show({
                         title: 'Unsaved Changes',
                         message: 'You have unsaved changes that will be lost if you leave.',
                         confirmLabel: 'Go Back',
                         cancelLabel: 'Leave',
                         onConfirm: function() {},
-                        onCancel: function() { window.huntarrUI.switchSection('media-hunt-settings'); }
+                        onCancel: function() { window.huntarrUI.switchSection('media-hunt-instances'); }
                     });
                 };
                 if (saveBtn) saveBtn.onclick = function() { self.saveEditor(); };

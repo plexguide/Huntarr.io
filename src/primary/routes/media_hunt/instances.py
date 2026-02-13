@@ -4,7 +4,10 @@ from flask import request, jsonify
 
 from ...utils.database import get_database
 from ...utils.logger import get_logger
-from ...default_settings import get_movie_hunt_instance_settings_defaults
+from ...default_settings import (
+    get_movie_hunt_instance_settings_defaults,
+    get_tv_hunt_instance_settings_defaults,
+)
 
 movie_hunt_logger = get_logger("movie_hunt")
 tv_hunt_logger = get_logger("tv_hunt")
@@ -162,6 +165,93 @@ def register_movie_instances_routes(bp):
             movie_hunt_logger.exception('Movie Hunt set current instance error')
             return jsonify({'success': False, 'error': str(e)}), 500
 
+    @bp.route('/api/movie-hunt/instances/<int:instance_id>/settings', methods=['GET'])
+    def get_instance_settings(instance_id):
+        try:
+            db = get_database()
+            instances = db.get_movie_hunt_instances()
+            inst = next((i for i in instances if i['id'] == instance_id), None)
+            if not inst:
+                return jsonify({'error': 'Instance not found'}), 404
+            settings = _get_movie_hunt_instance_settings(instance_id)
+            settings['instance_id'] = instance_id
+            settings['name'] = (inst.get('name') or '').strip() or f'Instance {instance_id}'
+            return jsonify(settings), 200
+        except Exception as e:
+            movie_hunt_logger.exception('Movie Hunt get instance settings error')
+            return jsonify({'error': str(e)}), 500
+
+    @bp.route('/api/movie-hunt/instances/<int:instance_id>/settings', methods=['PUT'])
+    def put_instance_settings(instance_id):
+        try:
+            db = get_database()
+            instances = db.get_movie_hunt_instances()
+            inst = next((i for i in instances if i['id'] == instance_id), None)
+            if not inst:
+                return jsonify({'error': 'Instance not found'}), 404
+            data = request.get_json() or {}
+            defaults = get_movie_hunt_instance_settings_defaults()
+            allowed = set(defaults.keys()) | {'name'}
+            out = {}
+            for k, v in data.items():
+                if k not in allowed:
+                    continue
+                if k == 'name':
+                    name = (v or '').strip() or 'Unnamed'
+                    db.update_movie_hunt_instance(instance_id, name)
+                    continue
+                if k in defaults and type(v) == type(defaults[k]):
+                    out[k] = v
+                elif k == 'exempt_tags' and isinstance(v, list):
+                    out[k] = [str(x) for x in v if (x or '').strip()]
+                elif k == 'custom_tags' and isinstance(v, dict):
+                    out[k] = dict(v)
+            if out:
+                saved = db.get_app_config_for_instance(MOVIE_HUNT_HUNT_SETTINGS_KEY, instance_id) or {}
+                if not isinstance(saved, dict):
+                    saved = {}
+                saved.update(out)
+                db.save_app_config_for_instance(MOVIE_HUNT_HUNT_SETTINGS_KEY, instance_id, saved)
+            result = _get_movie_hunt_instance_settings(instance_id)
+            result['instance_id'] = instance_id
+            insts = db.get_movie_hunt_instances()
+            cur = next((i for i in insts if i['id'] == instance_id), None)
+            result['name'] = (cur.get('name') or '').strip() if cur else f'Instance {instance_id}'
+            return jsonify(result), 200
+        except Exception as e:
+            movie_hunt_logger.exception('Movie Hunt put instance settings error')
+            return jsonify({'error': str(e)}), 500
+
+    @bp.route('/api/movie-hunt/instances/<int:instance_id>/reset-state', methods=['POST'])
+    def reset_instance_state(instance_id):
+        try:
+            db = get_database()
+            instances = db.get_movie_hunt_instances()
+            inst = next((i for i in instances if i['id'] == instance_id), None)
+            if not inst:
+                return jsonify({'error': 'Instance not found'}), 404
+            settings = _get_movie_hunt_instance_settings(instance_id)
+            hours = int(settings.get('state_management_hours', 72))
+            db.reset_instance_state_management('movie_hunt', str(instance_id), hours)
+            return jsonify({'success': True, 'message': 'State reset successfully'}), 200
+        except Exception as e:
+            movie_hunt_logger.exception('Movie Hunt reset state error')
+            return jsonify({'error': str(e)}), 500
+
+    @bp.route('/api/movie-hunt/instances/<int:instance_id>/reset-collection', methods=['DELETE'])
+    def reset_instance_collection(instance_id):
+        try:
+            db = get_database()
+            instances = db.get_movie_hunt_instances()
+            inst = next((i for i in instances if i['id'] == instance_id), None)
+            if not inst:
+                return jsonify({'success': False, 'error': 'Instance not found'}), 404
+            db.save_app_config_for_instance('movie_hunt_collection', instance_id, {'items': []})
+            return jsonify({'success': True, 'message': 'Movie collection has been reset.'}), 200
+        except Exception as e:
+            movie_hunt_logger.exception('Movie Hunt reset collection error')
+            return jsonify({'success': False, 'error': str(e)}), 500
+
 
 def register_tv_instances_routes(bp):
     """Register TV Hunt instance routes: list, create, update, delete, current."""
@@ -170,7 +260,11 @@ def register_tv_instances_routes(bp):
     def list_instances():
         try:
             db = get_database()
-            instances = db.get_tv_hunt_instances()
+            rows = db.get_tv_hunt_instances()
+            instances = [
+                {'id': int(r.get('id', 0)), 'name': str(r.get('name', '')).strip() or f"Instance {r.get('id')}", 'enabled': True}
+                for r in (rows or [])
+            ]
             current_id = db.get_current_tv_hunt_instance_id()
             return jsonify({
                 'instances': instances,
@@ -255,4 +349,91 @@ def register_tv_instances_routes(bp):
             return jsonify({'success': False, 'error': str(e)}), 400
         except Exception as e:
             tv_hunt_logger.exception('TV Hunt set current instance error')
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @bp.route('/api/tv-hunt/instances/<int:instance_id>/settings', methods=['GET'])
+    def get_instance_settings(instance_id):
+        try:
+            db = get_database()
+            instances = db.get_tv_hunt_instances()
+            inst = next((i for i in instances if i['id'] == instance_id), None)
+            if not inst:
+                return jsonify({'error': 'Instance not found'}), 404
+            settings = _get_tv_hunt_instance_settings(instance_id)
+            settings['instance_id'] = instance_id
+            settings['name'] = (inst.get('name') or '').strip() or f'Instance {instance_id}'
+            return jsonify(settings), 200
+        except Exception as e:
+            tv_hunt_logger.exception('TV Hunt get instance settings error')
+            return jsonify({'error': str(e)}), 500
+
+    @bp.route('/api/tv-hunt/instances/<int:instance_id>/settings', methods=['PUT'])
+    def put_instance_settings(instance_id):
+        try:
+            db = get_database()
+            instances = db.get_tv_hunt_instances()
+            inst = next((i for i in instances if i['id'] == instance_id), None)
+            if not inst:
+                return jsonify({'error': 'Instance not found'}), 404
+            data = request.get_json() or {}
+            defaults = get_tv_hunt_instance_settings_defaults()
+            allowed = set(defaults.keys()) | {'name'}
+            out = {}
+            for k, v in data.items():
+                if k not in allowed:
+                    continue
+                if k == 'name':
+                    name = (v or '').strip() or 'Unnamed'
+                    db.update_tv_hunt_instance(instance_id, name)
+                    continue
+                if k in defaults and type(v) == type(defaults[k]):
+                    out[k] = v
+                elif k == 'exempt_tags' and isinstance(v, list):
+                    out[k] = [str(x) for x in v if (x or '').strip()]
+                elif k == 'custom_tags' and isinstance(v, dict):
+                    out[k] = dict(v)
+            if out:
+                saved = db.get_app_config_for_instance(TV_HUNT_HUNT_SETTINGS_KEY, instance_id) or {}
+                if not isinstance(saved, dict):
+                    saved = {}
+                saved.update(out)
+                db.save_app_config_for_instance(TV_HUNT_HUNT_SETTINGS_KEY, instance_id, saved)
+            result = _get_tv_hunt_instance_settings(instance_id)
+            result['instance_id'] = instance_id
+            insts = db.get_tv_hunt_instances()
+            cur = next((i for i in insts if i['id'] == instance_id), None)
+            result['name'] = (cur.get('name') or '').strip() if cur else f'Instance {instance_id}'
+            return jsonify(result), 200
+        except Exception as e:
+            tv_hunt_logger.exception('TV Hunt put instance settings error')
+            return jsonify({'error': str(e)}), 500
+
+    @bp.route('/api/tv-hunt/instances/<int:instance_id>/reset-state', methods=['POST'])
+    def reset_instance_state(instance_id):
+        try:
+            db = get_database()
+            instances = db.get_tv_hunt_instances()
+            inst = next((i for i in instances if i['id'] == instance_id), None)
+            if not inst:
+                return jsonify({'error': 'Instance not found'}), 404
+            settings = _get_tv_hunt_instance_settings(instance_id)
+            hours = int(settings.get('state_management_hours', 72))
+            db.reset_instance_state_management('tv_hunt', str(instance_id), hours)
+            return jsonify({'success': True, 'message': 'State reset successfully'}), 200
+        except Exception as e:
+            tv_hunt_logger.exception('TV Hunt reset state error')
+            return jsonify({'error': str(e)}), 500
+
+    @bp.route('/api/tv-hunt/instances/<int:instance_id>/reset-collection', methods=['DELETE'])
+    def reset_instance_collection(instance_id):
+        try:
+            db = get_database()
+            instances = db.get_tv_hunt_instances()
+            inst = next((i for i in instances if i['id'] == instance_id), None)
+            if not inst:
+                return jsonify({'success': False, 'error': 'Instance not found'}), 404
+            db.save_app_config_for_instance('tv_hunt_collection', instance_id, {'series': []})
+            return jsonify({'success': True, 'message': 'TV collection has been reset.'}), 200
+        except Exception as e:
+            tv_hunt_logger.exception('TV Hunt reset collection error')
             return jsonify({'success': False, 'error': str(e)}), 500

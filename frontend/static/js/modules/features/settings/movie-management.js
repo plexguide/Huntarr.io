@@ -185,7 +185,7 @@
             if (backBtn) {
                 backBtn.onclick = function() {
                     if (window.huntarrUI && window.huntarrUI.switchSection) {
-                        window.huntarrUI.switchSection('media-hunt-settings');
+                        window.huntarrUI.switchSection('media-hunt-instances');
                     }
                 };
             }
@@ -210,8 +210,8 @@
                 if (backBtn) {
                     backBtn.onclick = function() {
                         confirmLeaveMovieManagement(function(result) {
-                            if (result === 'save') window.MovieManagement.save('media-hunt-settings');
-                            else if (result === 'discard') window.MovieManagement.cancel('media-hunt-settings');
+                            if (result === 'save') window.MovieManagement.save('media-hunt-instances');
+                            else if (result === 'discard') window.MovieManagement.cancel('media-hunt-instances');
                         });
                     };
                 }
@@ -223,8 +223,8 @@
                 if (saveBtn) saveBtn.onclick = function() { window.MovieManagement.save(); };
                 if (backBtn) backBtn.onclick = function() {
                     confirmLeaveMovieManagement(function(result) {
-                        if (result === 'save') window.MovieManagement.save('media-hunt-settings');
-                        else if (result === 'discard') window.MovieManagement.cancel('media-hunt-settings');
+                        if (result === 'save') window.MovieManagement.save('media-hunt-instances');
+                        else if (result === 'discard') window.MovieManagement.cancel('media-hunt-instances');
                     });
                 };
             });
@@ -232,7 +232,7 @@
 
     function save(optionalNextSection) {
         if (_mgmtMode === 'tv') return;
-        var nextSection = optionalNextSection || 'media-hunt-settings';
+        var nextSection = optionalNextSection || 'media-hunt-instances';
         var body = collectFormData();
         var instId = getInstanceId();
         if (instId) body.instance_id = parseInt(instId, 10);
@@ -274,7 +274,7 @@
         _movieManagementDirty = false;
         _movieManagementData = null;
         if (window.huntarrUI && window.huntarrUI.switchSection) {
-            window.huntarrUI.switchSection(optionalNextSection || 'media-hunt-settings');
+            window.huntarrUI.switchSection(optionalNextSection || 'media-hunt-instances');
         }
     }
 

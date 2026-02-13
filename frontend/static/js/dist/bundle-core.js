@@ -620,11 +620,18 @@ window.HuntarrNavigation = {
                 window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#nzb-hunt-settings-advanced');
             }
         }
-        // Instances merged into Settings: old bookmark redirects to Media Hunt Settings
+        // Instances moved to Collection: settings-instance-management redirects to media-hunt-instances
         if (section === 'settings-instance-management') {
-            section = 'media-hunt-settings';
-            if (window.location.hash !== '#media-hunt-settings') {
-                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#media-hunt-settings');
+            section = 'media-hunt-instances';
+            if (window.location.hash !== '#media-hunt-instances') {
+                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#media-hunt-instances');
+            }
+        }
+        // Legacy media-hunt-settings (was Settings default): now Instances lives under Collection
+        if (section === 'media-hunt-settings') {
+            section = 'media-hunt-instances';
+            if (window.location.hash !== '#media-hunt-instances') {
+                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#media-hunt-instances');
             }
         }
         // Legacy: Movie Management → Media Management
