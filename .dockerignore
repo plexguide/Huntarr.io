@@ -34,6 +34,9 @@ __pycache__
 *.egg-info
 .pytest_cache
 
+# Node (Dockerfile runs npm install fresh)
+node_modules
+
 # OS files
 .DS_Store
 Thumbs.db

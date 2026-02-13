@@ -70,6 +70,8 @@ packages/react-devtools-timeline/dist
 build/
 develop-eggs/
 dist/
+# Allow frontend JS bundles (scripts/build_js_bundles.py output)
+!frontend/static/js/dist/
 downloads/
 eggs/
 .eggs/

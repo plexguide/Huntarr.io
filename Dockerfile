@@ -40,6 +40,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy application code
 COPY . /app/
 
+# Build JS bundles: Python concat + Vite for Requestarr ES modules
+RUN python3 scripts/build_js_bundles.py
+RUN apt-get update && apt-get install -y --no-install-recommends nodejs npm && \
+    cd frontend && npm install && npm run build && \
+    rm -rf node_modules && cd /app && apt-get purge -y nodejs npm && apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/* /root/.npm
+
 # Create necessary directories (config for app data; /media and /downloads for Docker mounts)
 RUN mkdir -p /config /media /downloads && chmod -R 755 /config /media /downloads
 
