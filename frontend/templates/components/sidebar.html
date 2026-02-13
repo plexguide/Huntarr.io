@@ -120,7 +120,7 @@
             <div class="nav-group-title">Media Hunt</div>
             <a href="./#media-hunt-collection" class="nav-item" id="movieHuntCollectionNav">
                 <div class="nav-icon-wrapper"><i class="fas fa-folder-open"></i></div>
-                <span>Collection</span>
+                <span>Collections</span>
             </a>
             <div class="nav-sub-group" id="movie-hunt-collection-sub">
                 <a href="./#media-hunt-instances" class="nav-item nav-item-sub" id="movieHuntInstancesNav">
@@ -497,6 +497,13 @@
 </div>
 
 <script>
+    // All sub-group IDs – collapse all first, then expand only the active section's sub
+    var ALL_SUB_GROUP_IDS = ['system-sub', 'settings-sub', 'movie-hunt-collection-sub', 'movie-hunt-activity-sub', 'index-master-sub', 'movie-hunt-settings-sub', 'nzb-hunt-settings-sub'];
+
+    function collapseAllSubs() {
+        ALL_SUB_GROUP_IDS.forEach(function(id) { collapseSub(id); });
+    }
+
     // Function to set active nav item based on the current hash
     function setActiveNavItem() {
         const navItems = document.querySelectorAll('.nav-item');
@@ -505,6 +512,7 @@
         let currentHash = window.location.hash;
         if (!currentHash) currentHash = '#home';
 
+        collapseAllSubs();
         let selector = null;
 
         // Main sidebar items
@@ -617,26 +625,6 @@
 
         const activeItem = document.querySelector(selector);
         if (activeItem) activeItem.classList.add('active');
-
-        // Collapse settings sub when not on settings
-        var settingsHashes = ['#settings', '#scheduling', '#notifications', '#backup-restore', '#settings-logs', '#user'];
-        if (settingsHashes.indexOf(currentHash) === -1) collapseSub('settings-sub');
-        // Collapse system sub when not on system
-        var systemHashes = ['#system', '#hunt-manager', '#logs', '#about'];
-        if (systemHashes.indexOf(currentHash) === -1) collapseSub('system-sub');
-
-        // Collapse Movie Hunt subs
-        var mhSettingsHashes = ['#movie-hunt-settings', '#media-hunt-settings', '#settings-instance-management', '#settings-media-management', '#settings-profiles', '#settings-sizes', '#settings-custom-formats', '#settings-import-lists', '#settings-root-folders'];
-        if (mhSettingsHashes.indexOf(currentHash) === -1) collapseSub('movie-hunt-settings-sub');
-
-        var mhActivityHashes = ['#activity-queue', '#activity-history', '#activity-blocklist', '#activity-logs', '#logs-movie-hunt', '#logs-tv-hunt'];
-        if (mhActivityHashes.indexOf(currentHash) === -1) collapseSub('movie-hunt-activity-sub');
-
-        var indexMasterHashes = ['#indexer-hunt', '#indexer-hunt-stats', '#indexer-hunt-history'];
-        if (indexMasterHashes.indexOf(currentHash) === -1) collapseSub('index-master-sub');
-
-        var mhCollectionHashes = ['#movie-hunt-home', '#movie-hunt-collection', '#media-hunt-collection', '#settings-import-media', '#movie-hunt-calendar', '#media-hunt-instances'];
-        if (mhCollectionHashes.indexOf(currentHash) === -1) collapseSub('movie-hunt-collection-sub');
     }
 
     function expandSub(id) {
