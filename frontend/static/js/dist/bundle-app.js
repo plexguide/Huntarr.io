@@ -674,6 +674,9 @@ let huntarrUI = {
             var logAppSelect = document.getElementById('logAppSelect');
             if (logAppSelect) logAppSelect.value = 'media_hunt';
             if (window.LogsModule) window.LogsModule.currentLogApp = 'media_hunt';
+            if (window.LogsModule && typeof window.LogsModule.setAppFilterContext === 'function') {
+                window.LogsModule.setAppFilterContext('media-hunt');
+            }
             if (window.LogsModule && typeof window.LogsModule.updateDebugLevelVisibility === 'function') {
                 window.LogsModule.updateDebugLevelVisibility();
             }
@@ -723,6 +726,9 @@ let huntarrUI = {
             if (activeTab === 'hunt-manager') {
                 if (typeof huntManagerModule !== 'undefined') huntManagerModule.refresh();
             } else if (activeTab === 'logs') {
+                if (window.LogsModule && typeof window.LogsModule.setAppFilterContext === 'function') {
+                    window.LogsModule.setAppFilterContext('system');
+                }
                 if (window.LogsModule && typeof window.LogsModule.updateDebugLevelVisibility === 'function') {
                     window.LogsModule.updateDebugLevelVisibility();
                 }
@@ -823,6 +829,9 @@ let huntarrUI = {
             var logAppSelect2 = document.getElementById('logAppSelect');
             if (logAppSelect2) logAppSelect2.value = 'media_hunt';
             if (window.LogsModule) window.LogsModule.currentLogApp = 'media_hunt';
+            if (window.LogsModule && typeof window.LogsModule.setAppFilterContext === 'function') {
+                window.LogsModule.setAppFilterContext('media-hunt');
+            }
             if (window.LogsModule && typeof window.LogsModule.updateDebugLevelVisibility === 'function') {
                 window.LogsModule.updateDebugLevelVisibility();
             }

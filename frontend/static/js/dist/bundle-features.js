@@ -636,6 +636,29 @@ window.LogsModule = {
         console.log('[LogsModule] Initialization complete');
     },
 
+    // Filter log app dropdown by context: 'media-hunt' = only Media Hunt (All), Movie Hunt, TV Hunt; 'system' = all options
+    setAppFilterContext: function(context) {
+        const logAppSelect = document.getElementById('logAppSelect');
+        if (!logAppSelect) return;
+        const opts = logAppSelect.querySelectorAll('option');
+        opts.forEach(function(opt) {
+            const ctx = opt.getAttribute('data-context');
+            if (context === 'media-hunt') {
+                opt.hidden = (ctx === 'system');
+            } else {
+                opt.hidden = false;
+            }
+        });
+        // Ensure selection is valid for current context
+        if (context === 'media-hunt') {
+            const valid = ['media_hunt', 'movie_hunt', 'tv_hunt'];
+            if (valid.indexOf(logAppSelect.value) === -1) {
+                logAppSelect.value = 'media_hunt';
+                this.currentLogApp = 'media_hunt';
+            }
+        }
+    },
+
     // Show or hide DEBUG option in level dropdown based on enable_debug_logs setting (GitHub #756)
     updateDebugLevelVisibility: function() {
         const option = document.getElementById('logLevelOptionDebug');

@@ -91,6 +91,141 @@ def _default_settings_for_type(list_type):
 
 
 # ---------------------------------------------------------------------------
+# Sync engine (module-level for background.py import)
+# ---------------------------------------------------------------------------
+
+def _run_sync(list_config, instance_id):
+    """Fetch movies from a list and add new ones to the collection. Returns result dict."""
+    from src.primary.apps.movie_hunt.list_fetchers import fetch_list
+
+    list_type = list_config.get('type', '')
+    list_name = list_config.get('name', list_type)
+    settings = list_config.get('settings') or {}
+
+    logger.info("Syncing import list: %s (%s)", list_name, list_type)
+
+    try:
+        movies = fetch_list(list_type, settings)
+    except Exception as e:
+        logger.error("Failed to fetch list %s: %s", list_name, e)
+        return {'added': 0, 'skipped': 0, 'total': 0, 'error': str(e)}
+
+    if not movies:
+        logger.info("No movies returned from list: %s", list_name)
+        return {'added': 0, 'skipped': 0, 'total': len(movies) if movies else 0, 'error': None}
+
+    # Get existing collection to check for dupes
+    collection = _get_collection_config(instance_id)
+    existing_tmdb_ids = set()
+    existing_title_years = set()
+    for item in collection:
+        if not isinstance(item, dict):
+            continue
+        tmdb_id = item.get('tmdb_id')
+        if tmdb_id:
+            try:
+                existing_tmdb_ids.add(int(tmdb_id))
+            except (TypeError, ValueError):
+                pass
+        title = (item.get('title') or '').strip().lower()
+        year = str(item.get('year') or '').strip()
+        if title:
+            existing_title_years.add((title, year))
+
+    added = 0
+    skipped = 0
+    for movie in movies:
+        tmdb_id = movie.get('tmdb_id')
+        title = (movie.get('title') or '').strip()
+        year = str(movie.get('year') or '').strip()
+
+        # Skip if already in collection
+        if tmdb_id and int(tmdb_id) in existing_tmdb_ids:
+            skipped += 1
+            continue
+        if title and (title.lower(), year) in existing_title_years:
+            skipped += 1
+            continue
+
+        # Get default root folder for this instance (Media Hunt)
+        from src.primary.routes.media_hunt import root_folders as mh_rf
+        root_folders = mh_rf.get_root_folders_config(instance_id, 'movie_hunt_root_folders')
+        default_rf = ''
+        for rf in root_folders:
+            if rf.get('is_default'):
+                default_rf = rf.get('path', '')
+                break
+        if not default_rf and root_folders:
+            default_rf = root_folders[0].get('path', '')
+
+        _collection_append(
+            title=title,
+            year=year,
+            instance_id=instance_id,
+            tmdb_id=tmdb_id,
+            poster_path=movie.get('poster_path', ''),
+            root_folder=default_rf,
+        )
+
+        # Track to avoid dupes within same sync
+        if tmdb_id:
+            existing_tmdb_ids.add(int(tmdb_id))
+        if title:
+            existing_title_years.add((title.lower(), year))
+
+        added += 1
+
+    logger.info("Import list %s sync complete: %d added, %d skipped, %d total",
+                list_name, added, skipped, len(movies))
+
+    return {'added': added, 'skipped': skipped, 'total': len(movies), 'error': None}
+
+
+def run_import_list_sync_cycle():
+    """Check all instances for import lists due for sync. Called periodically from background.
+    Skips disabled Movie Hunt instances (same as main hunt cycle)."""
+    from src.primary.utils.database import get_database
+    from .instances import _get_movie_hunt_instance_settings
+    db = get_database()
+
+    try:
+        instance_list = db.get_movie_hunt_instances()
+    except Exception:
+        instance_list = []
+
+    now = time.time()
+
+    for inst in instance_list:
+        inst_id = inst.get('id', 0)
+        settings = _get_movie_hunt_instance_settings(inst_id)
+        if not settings.get("enabled", True):
+            continue
+        lists = _get_import_lists(inst_id)
+        changed = False
+
+        for i, lst in enumerate(lists):
+            if not lst.get('enabled', True):
+                continue
+
+            interval_sec = lst.get('sync_interval_hours', 12) * 3600
+            last_sync = lst.get('last_sync') or 0
+
+            if now - last_sync < interval_sec:
+                continue
+
+            logger.info("Auto-sync import list: %s (instance %s)", lst.get('name', '?'), inst_id)
+            result = _run_sync(lst, inst_id)
+            lst['last_sync'] = now
+            lst['last_sync_count'] = result.get('added', 0)
+            lst['last_error'] = result.get('error')
+            lists[i] = lst
+            changed = True
+
+        if changed:
+            _save_import_lists(lists, inst_id)
+
+
+# ---------------------------------------------------------------------------
 # CRUD routes
 # ---------------------------------------------------------------------------
 
@@ -477,139 +612,5 @@ def register_movie_import_lists_routes(bp):
     
     
     # ---------------------------------------------------------------------------
-    # Sync engine
+    # Sync engine (uses module-level _run_sync)
     # ---------------------------------------------------------------------------
-    
-    def _run_sync(list_config, instance_id):
-        """Fetch movies from a list and add new ones to the collection. Returns result dict."""
-        from src.primary.apps.movie_hunt.list_fetchers import fetch_list
-    
-        list_type = list_config.get('type', '')
-        list_name = list_config.get('name', list_type)
-        settings = list_config.get('settings') or {}
-    
-        logger.info("Syncing import list: %s (%s)", list_name, list_type)
-    
-        try:
-            movies = fetch_list(list_type, settings)
-        except Exception as e:
-            logger.error("Failed to fetch list %s: %s", list_name, e)
-            return {'added': 0, 'skipped': 0, 'total': 0, 'error': str(e)}
-    
-        if not movies:
-            logger.info("No movies returned from list: %s", list_name)
-            return {'added': 0, 'skipped': 0, 'total': len(movies) if movies else 0, 'error': None}
-    
-        # Get existing collection to check for dupes
-        collection = _get_collection_config(instance_id)
-        existing_tmdb_ids = set()
-        existing_title_years = set()
-        for item in collection:
-            if not isinstance(item, dict):
-                continue
-            tmdb_id = item.get('tmdb_id')
-            if tmdb_id:
-                try:
-                    existing_tmdb_ids.add(int(tmdb_id))
-                except (TypeError, ValueError):
-                    pass
-            title = (item.get('title') or '').strip().lower()
-            year = str(item.get('year') or '').strip()
-            if title:
-                existing_title_years.add((title, year))
-    
-        added = 0
-        skipped = 0
-        for movie in movies:
-            tmdb_id = movie.get('tmdb_id')
-            title = (movie.get('title') or '').strip()
-            year = str(movie.get('year') or '').strip()
-    
-            # Skip if already in collection
-            if tmdb_id and int(tmdb_id) in existing_tmdb_ids:
-                skipped += 1
-                continue
-            if title and (title.lower(), year) in existing_title_years:
-                skipped += 1
-                continue
-    
-            # Get default root folder for this instance (Media Hunt)
-            from src.primary.routes.media_hunt import root_folders as mh_rf
-            root_folders = mh_rf.get_root_folders_config(instance_id, 'movie_hunt_root_folders')
-            default_rf = ''
-            for rf in root_folders:
-                if rf.get('is_default'):
-                    default_rf = rf.get('path', '')
-                    break
-            if not default_rf and root_folders:
-                default_rf = root_folders[0].get('path', '')
-    
-            _collection_append(
-                title=title,
-                year=year,
-                instance_id=instance_id,
-                tmdb_id=tmdb_id,
-                poster_path=movie.get('poster_path', ''),
-                root_folder=default_rf,
-            )
-    
-            # Track to avoid dupes within same sync
-            if tmdb_id:
-                existing_tmdb_ids.add(int(tmdb_id))
-            if title:
-                existing_title_years.add((title.lower(), year))
-    
-            added += 1
-    
-        logger.info("Import list %s sync complete: %d added, %d skipped, %d total",
-                    list_name, added, skipped, len(movies))
-    
-        return {'added': added, 'skipped': skipped, 'total': len(movies), 'error': None}
-    
-    
-    # ---------------------------------------------------------------------------
-    # Background sync (called from background.py)
-    # ---------------------------------------------------------------------------
-    
-    def run_import_list_sync_cycle():
-        """Check all instances for import lists due for sync. Called periodically from background.
-        Skips disabled Movie Hunt instances (same as main hunt cycle)."""
-        from src.primary.utils.database import get_database
-        from .instances import _get_movie_hunt_instance_settings
-        db = get_database()
-    
-        try:
-            instance_list = db.get_movie_hunt_instances()
-        except Exception:
-            instance_list = []
-    
-        now = time.time()
-    
-        for inst in instance_list:
-            inst_id = inst.get('id', 0)
-            settings = _get_movie_hunt_instance_settings(inst_id)
-            if not settings.get("enabled", True):
-                continue
-            lists = _get_import_lists(inst_id)
-            changed = False
-    
-            for i, lst in enumerate(lists):
-                if not lst.get('enabled', True):
-                    continue
-    
-                interval_sec = lst.get('sync_interval_hours', 12) * 3600
-                last_sync = lst.get('last_sync') or 0
-    
-                if now - last_sync < interval_sec:
-                    continue
-    
-                logger.info("Auto-sync import list: %s (instance %s)", lst.get('name', '?'), inst_id)
-                result = _run_sync(lst, inst_id)
-                lst['last_sync'] = now
-                lst['last_sync_count'] = result.get('added', 0)
-                lst['last_error'] = result.get('error')
-                lists[i] = lst
-                changed = True
-    
-            if changed:
-                _save_import_lists(lists, inst_id)
