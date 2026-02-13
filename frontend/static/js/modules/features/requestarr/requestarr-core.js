@@ -18,19 +18,19 @@ export function encodeInstanceValue(appType, name) {
 
 /**
  * Decode a compound instance value back to { appType, name }.
- * Backward compat: values without ':' are assumed 'radarr'.
+ * Backward compat: values without ':' use defaultAppType (radarr for movies, sonarr for TV).
  */
-export function decodeInstanceValue(value) {
-    if (!value) return { appType: 'radarr', name: '' };
+export function decodeInstanceValue(value, defaultAppType = 'radarr') {
+    if (!value) return { appType: defaultAppType, name: '' };
     const idx = value.indexOf(':');
-    if (idx === -1) return { appType: 'radarr', name: value };
+    if (idx === -1) return { appType: defaultAppType, name: value };
     return { appType: value.substring(0, idx), name: value.substring(idx + 1) };
 }
 
 export class RequestarrDiscover {
     constructor() {
         this.currentView = 'discover';
-        this.instances = { sonarr: [], radarr: [], movie_hunt: [] };
+        this.instances = { sonarr: [], radarr: [], movie_hunt: [], tv_hunt: [] };
         this.qualityProfiles = {};
         this.searchTimeouts = {};
         this.currentModal = null;
@@ -64,11 +64,12 @@ export class RequestarrDiscover {
             const response = await fetch(`./api/requestarr/instances?t=${_ts}`, { cache: 'no-store' });
             const data = await response.json();
             
-            if (data.sonarr || data.radarr || data.movie_hunt) {
+            if (data.sonarr || data.radarr || data.movie_hunt || data.tv_hunt) {
                 this.instances = {
                     sonarr: data.sonarr || [],
                     radarr: data.radarr || [],
-                    movie_hunt: data.movie_hunt || []
+                    movie_hunt: data.movie_hunt || [],
+                    tv_hunt: data.tv_hunt || []
                 };
                 await this.loadAllQualityProfiles();
             }
@@ -91,6 +92,11 @@ export class RequestarrDiscover {
         // Load Movie Hunt quality profiles
         for (const instance of this.instances.movie_hunt) {
             await this.loadQualityProfilesForInstance('movie_hunt', instance.name);
+        }
+        
+        // Load TV Hunt quality profiles
+        for (const instance of this.instances.tv_hunt) {
+            await this.loadQualityProfilesForInstance('tv_hunt', instance.name);
         }
     }
 

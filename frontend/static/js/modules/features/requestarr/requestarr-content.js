@@ -241,24 +241,40 @@ export class RequestarrContent {
         if (!select) return;
 
         try {
-            const response = await fetch(`./api/requestarr/instances/sonarr?t=${Date.now()}`, { cache: 'no-store' });
-            const data = await response.json();
-            const instances = (data.instances || []).map(inst => ({ name: String(inst.name).trim() }));
+            const _ts = Date.now();
+            const [thResponse, sonarrResponse] = await Promise.all([
+                fetch(`./api/requestarr/instances/tv_hunt?t=${_ts}`, { cache: 'no-store' }),
+                fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' })
+            ]);
+            const thData = await thResponse.json();
+            const sonarrData = await sonarrResponse.json();
+
+            const allInstances = [
+                ...(thData.instances || []).map(inst => ({
+                    name: String(inst.name).trim(), _appType: 'tv_hunt',
+                    _label: `TV Hunt \u2013 ${String(inst.name).trim()}`
+                })),
+                ...(sonarrData.instances || []).map(inst => ({
+                    name: String(inst.name).trim(), _appType: 'sonarr',
+                    _label: `Sonarr \u2013 ${String(inst.name).trim()}`
+                }))
+            ];
 
             // Preserve current selection before clearing
             const previousValue = this.selectedTVInstance || select.value || '';
 
             select.innerHTML = '';
-            if (instances.length === 0) {
+            if (allInstances.length === 0) {
                 select.innerHTML = '<option value="">No TV instances</option>';
                 return;
             }
 
-            instances.forEach((inst) => {
+            allInstances.forEach((inst) => {
+                const cv = encodeInstanceValue(inst._appType, inst.name);
                 const opt = document.createElement('option');
-                opt.value = inst.name;
-                opt.textContent = `Sonarr \u2013 ${inst.name}`;
-                if (previousValue && inst.name === previousValue) opt.selected = true;
+                opt.value = cv;
+                opt.textContent = inst._label;
+                if (previousValue && (cv === previousValue || inst.name === previousValue)) opt.selected = true;
                 select.appendChild(opt);
             });
 
@@ -313,7 +329,10 @@ export class RequestarrContent {
         carousel.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading TV shows...</p></div>';
         try {
             let url = './api/requestarr/discover/tv?page=1';
-            if (this.selectedTVInstance) url += `&app_type=sonarr&instance_name=${encodeURIComponent(this.selectedTVInstance)}`;
+            if (this.selectedTVInstance) {
+                const decoded = decodeInstanceValue(this.selectedTVInstance, 'sonarr');
+                url += `&app_type=${encodeURIComponent(decoded.appType || 'sonarr')}&instance_name=${encodeURIComponent(decoded.name || '')}`;
+            }
             const response = await fetch(url);
             const data = await response.json();
             const results = (data.results && data.results.length > 0) ? data.results : [];
@@ -486,62 +505,78 @@ export class RequestarrContent {
         select.innerHTML = '<option value="">Loading instances...</option>';
 
         try {
-            const response = await fetch(`./api/requestarr/instances/sonarr?t=${Date.now()}`, { cache: 'no-store' });
-            const data = await response.json();
-            console.log('[RequestarrContent] Sonarr API returned', data.instances?.length || 0, 'instances');
-            
-            if (data.instances && data.instances.length > 0) {
+            // Fetch both TV Hunt and Sonarr instances in parallel (cache-bust for fresh data)
+            const _ts = Date.now();
+            const [thResponse, sonarrResponse] = await Promise.all([
+                fetch(`./api/requestarr/instances/tv_hunt?t=${_ts}`, { cache: 'no-store' }),
+                fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' })
+            ]);
+            const thData = await thResponse.json();
+            const sonarrData = await sonarrResponse.json();
+
+            const thInstances = (thData.instances || []).map(inst => ({
+                ...inst,
+                name: String(inst.name).trim(),
+                _appType: 'tv_hunt',
+                _label: `TV Hunt \u2013 ${String(inst.name).trim()}`
+            }));
+            const sonarrInstances = (sonarrData.instances || []).map(inst => ({
+                ...inst,
+                name: String(inst.name).trim(),
+                _appType: 'sonarr',
+                _label: `Sonarr \u2013 ${String(inst.name).trim()}`
+            }));
+
+            // Combine: TV Hunt first, then Sonarr
+            const allInstances = [...thInstances, ...sonarrInstances];
+            console.log('[RequestarrContent] TV Hunt instances:', thInstances.length, 'Sonarr instances:', sonarrInstances.length);
+
+            if (allInstances.length > 0) {
                 // Clear again before adding real instances
                 select.innerHTML = '';
-                
+
                 // Server-side is the single source of truth (loaded in _loadServerDefaults)
-                const defaultInstanceName = this.selectedTVInstance;
-                
+                const savedValue = this.selectedTVInstance;
+
+                // Deduplicate by compound key
                 const uniqueInstances = [];
-                const seenNames = new Set();
-                data.instances.forEach((instance) => {
-                    if (!instance || !instance.name) {
-                        return;
-                    }
-                    const normalizedName = String(instance.name).trim();
-                    if (!normalizedName) {
-                        return;
-                    }
-                    const seenKey = normalizedName.toLowerCase();
-                    if (seenNames.has(seenKey)) {
-                        return;
-                    }
-                    uniqueInstances.push({ ...instance, name: normalizedName });
-                    seenNames.add(seenKey);
+                const seenKeys = new Set();
+                allInstances.forEach((instance) => {
+                    if (!instance.name) return;
+                    const compoundVal = encodeInstanceValue(instance._appType, instance.name);
+                    const seenKey = compoundVal.toLowerCase();
+                    if (seenKeys.has(seenKey)) return;
+                    uniqueInstances.push({ ...instance, _compoundValue: compoundVal });
+                    seenKeys.add(seenKey);
                 });
-                console.log('[RequestarrContent] After deduplication:', uniqueInstances.length, 'unique Sonarr instances');
-                
+                console.log('[RequestarrContent] After deduplication:', uniqueInstances.length, 'unique TV instances');
+
                 if (uniqueInstances.length === 0) {
-                    select.innerHTML = '<option value="">No Sonarr instances configured</option>';
+                    select.innerHTML = '<option value="">No TV instances configured</option>';
                     this.selectedTVInstance = null;
                     return;
                 }
 
                 let selectedIndex = 0;
-                
+
                 uniqueInstances.forEach((instance, index) => {
                     const option = document.createElement('option');
-                    option.value = instance.name;
-                    option.textContent = `Sonarr - ${instance.name}`;
-                    
-                    // Select the instance based on priority
-                    if (defaultInstanceName && instance.name === defaultInstanceName) {
+                    option.value = instance._compoundValue;
+                    option.textContent = instance._label;
+
+                    // Select based on saved server-side value
+                    if (savedValue && (instance._compoundValue === savedValue || instance.name === savedValue)) {
                         option.selected = true;
                         selectedIndex = index;
-                    } else if (!defaultInstanceName && index === 0) {
+                    } else if (!savedValue && index === 0) {
                         option.selected = true;
                     }
-                    
+
                     select.appendChild(option);
                 });
-                
+
                 // Set initial selected instance and persist to server
-                this._setTVInstance(uniqueInstances[selectedIndex].name);
+                this._setTVInstance(uniqueInstances[selectedIndex]._compoundValue);
                 console.log(`[RequestarrContent] Using TV instance: ${this.selectedTVInstance}`);
                 
                 // Setup change handler (remove old listener if any)
@@ -590,7 +625,7 @@ export class RequestarrContent {
                     this.setupTVInfiniteScroll();
                 });
             } else {
-                select.innerHTML = '<option value="">No Sonarr instances configured</option>';
+                select.innerHTML = '<option value="">No TV instances configured</option>';
                 this.selectedTVInstance = null;
             }
         } catch (error) {
@@ -682,8 +717,9 @@ export class RequestarrContent {
                     appType = decoded.appType;
                     instanceName = decoded.name;
                 } else {
-                    appType = 'sonarr';
-                    instanceName = this.selectedTVInstance;
+                    const decoded = decodeInstanceValue(this.selectedTVInstance, 'sonarr');
+                    appType = decoded.appType;
+                    instanceName = decoded.name;
                 }
                 const tmdbId = item.tmdb_id || item.id;
                 if (tmdbId && instanceName && this.isMediaHidden(tmdbId, item.media_type, appType, instanceName)) return;
@@ -707,7 +743,9 @@ export class RequestarrContent {
             if (decoded.name) params.push(`movie_instance_name=${encodeURIComponent(decoded.name)}`);
         }
         if (this.selectedTVInstance) {
-            params.push(`tv_instance_name=${encodeURIComponent(this.selectedTVInstance)}`);
+            const decoded = decodeInstanceValue(this.selectedTVInstance, 'sonarr');
+            if (decoded.appType) params.push(`tv_app_type=${encodeURIComponent(decoded.appType)}`);
+            if (decoded.name) params.push(`tv_instance_name=${encodeURIComponent(decoded.name)}`);
         }
         if (params.length > 0) url += '?' + params.join('&');
         return url;
@@ -762,12 +800,12 @@ export class RequestarrContent {
 
     renderPopularTVResults(carousel, results) {
         if (!carousel) return;
-        const instanceName = this.selectedTVInstance;
+        const decoded = decodeInstanceValue(this.selectedTVInstance, 'sonarr');
         if (results && results.length > 0) {
             carousel.innerHTML = '';
             results.forEach(item => {
                 const tmdbId = item.tmdb_id || item.id;
-                if (tmdbId && instanceName && this.isMediaHidden(tmdbId, 'tv', 'sonarr', instanceName)) return;
+                if (tmdbId && decoded.name && this.isMediaHidden(tmdbId, 'tv', decoded.appType, decoded.name)) return;
                 carousel.appendChild(this.createMediaCard(item, this.selectedTVInstance || null));
             });
         } else {
@@ -779,9 +817,9 @@ export class RequestarrContent {
         const carousel = document.getElementById('popular-tv-carousel');
         if (!carousel) return;
         try {
-            const instanceName = this.selectedTVInstance;
+            const decoded = decodeInstanceValue(this.selectedTVInstance, 'sonarr');
             let url = './api/requestarr/discover/tv?page=1';
-            if (instanceName) url += `&app_type=sonarr&instance_name=${encodeURIComponent(instanceName)}`;
+            if (decoded.name) url += `&app_type=${encodeURIComponent(decoded.appType || 'sonarr')}&instance_name=${encodeURIComponent(decoded.name)}`;
             const response = await fetch(url);
             const data = await response.json();
             const results = (data.results && data.results.length > 0) ? data.results : [];
@@ -954,7 +992,8 @@ export class RequestarrContent {
             
             // Add instance info for library status checking
             if (this.selectedTVInstance) {
-                url += `&app_type=sonarr&instance_name=${encodeURIComponent(this.selectedTVInstance)}`;
+                const decoded = decodeInstanceValue(this.selectedTVInstance, 'sonarr');
+                url += `&app_type=${encodeURIComponent(decoded.appType || 'sonarr')}&instance_name=${encodeURIComponent(decoded.name || '')}`;
             }
             
             // Add filter parameters
@@ -985,10 +1024,11 @@ export class RequestarrContent {
             }
             
             if (data.results && data.results.length > 0) {
+                const tvDecoded = this.selectedTVInstance ? decodeInstanceValue(this.selectedTVInstance, 'sonarr') : null;
                 data.results.forEach((item) => {
                     // Filter out hidden media
                     const tmdbId = item.tmdb_id || item.id;
-                    if (tmdbId && this.selectedTVInstance && this.isMediaHidden(tmdbId, 'tv', 'sonarr', this.selectedTVInstance)) {
+                    if (tmdbId && tvDecoded && tvDecoded.name && this.isMediaHidden(tmdbId, 'tv', tvDecoded.appType, tvDecoded.name)) {
                         return; // Skip hidden items
                     }
                     grid.appendChild(this.createMediaCard(item));

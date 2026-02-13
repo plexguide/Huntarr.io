@@ -143,16 +143,30 @@ export class RequestarrModal {
     renderModal(data) {
         const isTVShow = data.media_type === 'tv';
         
-        // For movies, combine Movie Hunt + Radarr instances; for TV, Sonarr only
+        // For movies, combine Movie Hunt + Radarr; for TV, combine TV Hunt + Sonarr
         let uniqueInstances = [];
         if (isTVShow) {
-            const instances = this.core.instances.sonarr;
-            uniqueInstances = instances.reduce((acc, instance) => {
-                if (!acc.find(i => i.name === instance.name)) {
-                    acc.push({ ...instance, appType: 'sonarr', compoundValue: instance.name });
+            const thInstances = (this.core.instances.tv_hunt || []).map(inst => ({
+                ...inst, appType: 'tv_hunt', compoundValue: encodeInstanceValue('tv_hunt', inst.name),
+                label: `TV Hunt \u2013 ${inst.name}`
+            }));
+            const sonarrInstances = (this.core.instances.sonarr || []).map(inst => ({
+                ...inst, appType: 'sonarr', compoundValue: encodeInstanceValue('sonarr', inst.name),
+                label: `Sonarr \u2013 ${inst.name}`
+            }));
+            const seen = new Set();
+            thInstances.forEach(inst => {
+                if (!seen.has(inst.compoundValue)) {
+                    seen.add(inst.compoundValue);
+                    uniqueInstances.push(inst);
                 }
-                return acc;
-            }, []);
+            });
+            sonarrInstances.forEach(inst => {
+                if (!seen.has(inst.compoundValue)) {
+                    seen.add(inst.compoundValue);
+                    uniqueInstances.push(inst);
+                }
+            });
         } else {
             // Movie Hunt instances first
             const mhInstances = this.core.instances.movie_hunt || [];
@@ -197,8 +211,9 @@ export class RequestarrModal {
                 isMovieHunt = matched.appType === 'movie_hunt';
             }
         } else if (isTVShow && rawDefault) {
-            const matched = uniqueInstances.find(inst => inst.name === rawDefault);
+            const matched = uniqueInstances.find(inst => (inst.compoundValue || inst.name) === rawDefault || inst.name === rawDefault);
             if (matched) {
+                defaultInstance = matched.compoundValue || matched.name;
                 isMovieHunt = matched.appType === 'movie_hunt';
             }
         }
@@ -243,9 +258,8 @@ export class RequestarrModal {
             } else {
                 uniqueInstances.forEach(instance => {
                     const opt = document.createElement('option');
-                    // For movies, use compound values; for TV, plain name
                     opt.value = instance.compoundValue || instance.name;
-                    opt.textContent = instance.label || `${isTVShow ? 'Sonarr' : 'Radarr'} \u2013 ${instance.name}`;
+                    opt.textContent = instance.label || `${isTVShow ? (instance.appType === 'tv_hunt' ? 'TV Hunt' : 'Sonarr') : (instance.appType === 'movie_hunt' ? 'Movie Hunt' : 'Radarr')} \u2013 ${instance.name}`;
                     if ((instance.compoundValue || instance.name) === defaultInstance) opt.selected = true;
                     instanceSelect.appendChild(opt);
                 });
@@ -257,19 +271,14 @@ export class RequestarrModal {
         // Populate quality profile dropdown
         const qualitySelect = document.getElementById('modal-quality-profile');
         if (qualitySelect) {
-            let profileKey;
-            if (isTVShow) {
-                profileKey = `sonarr-${defaultInstance}`;
-            } else {
-                const decoded = decodeInstanceValue(defaultInstance);
-                profileKey = `${decoded.appType}-${decoded.name}`;
-            }
+            const defaultDecoded = decodeInstanceValue(defaultInstance, isTVShow ? 'sonarr' : 'radarr');
+            const profileKey = `${defaultDecoded.appType}-${defaultDecoded.name}`;
             const profiles = this.core.qualityProfiles[profileKey] || [];
             
             if (profiles.length === 0 && defaultInstance) {
                 // If profiles are missing from cache, show loading and try to fetch them now
                 qualitySelect.innerHTML = '<option value="">Loading profiles...</option>';
-                const decoded = isTVShow ? { appType: 'sonarr', name: defaultInstance } : decodeInstanceValue(defaultInstance);
+                const decoded = decodeInstanceValue(defaultInstance, isTVShow ? 'sonarr' : 'radarr');
                 this.core.loadQualityProfilesForInstance(decoded.appType, decoded.name).then(newProfiles => {
                     if (newProfiles && newProfiles.length > 0) {
                         this._populateQualityProfiles(qualitySelect, newProfiles, isMovieHunt);
@@ -326,16 +335,10 @@ export class RequestarrModal {
         if (this._loadingModalRootFolders) return;
         this._loadingModalRootFolders = true;
 
-        // For movies, decode compound value to get app type and actual name
-        let appType, actualInstanceName;
-        if (isTVShow) {
-            appType = 'sonarr';
-            actualInstanceName = instanceName;
-        } else {
-            const decoded = decodeInstanceValue(instanceName);
-            appType = decoded.appType;
-            actualInstanceName = decoded.name;
-        }
+        // Decode compound value to get app type and actual name (both movies and TV support compound)
+        const decoded = decodeInstanceValue(instanceName, isTVShow ? 'sonarr' : 'radarr');
+        const appType = decoded.appType;
+        const actualInstanceName = decoded.name;
         rootSelect.innerHTML = '<option value="">Loading...</option>';
 
         try {
@@ -398,8 +401,10 @@ export class RequestarrModal {
 
         container.innerHTML = '<span class="mh-req-badge mh-req-badge-loading"><i class="fas fa-spinner fa-spin"></i> Checking...</span>';
 
+        const decoded = decodeInstanceValue(instanceName, 'sonarr');
+
         try {
-            const response = await fetch(`./api/requestarr/series-status?tmdb_id=${this.core.currentModalData.tmdb_id}&instance=${encodeURIComponent(instanceName)}`);
+            const response = await fetch(`./api/requestarr/series-status?tmdb_id=${this.core.currentModalData.tmdb_id}&instance=${encodeURIComponent(decoded.name)}&app_type=${encodeURIComponent(decoded.appType || 'sonarr')}`);
             const status = await response.json();
             const requestBtn = document.getElementById('modal-request-btn');
 
@@ -616,16 +621,10 @@ export class RequestarrModal {
         const isTVShow = this.core.currentModalData.media_type === 'tv';
 
         try {
-            // Decode compound instance value for movies
-            let instanceName, appType;
-            if (isTVShow) {
-                instanceName = instanceSelect.value;
-                appType = 'sonarr';
-            } else {
-                const decoded = decodeInstanceValue(instanceSelect.value);
-                instanceName = decoded.name;
-                appType = decoded.appType;
-            }
+            // Decode compound instance value for both movies and TV
+            const decoded = decodeInstanceValue(instanceSelect.value, isTVShow ? 'sonarr' : 'radarr');
+            const instanceName = decoded.name;
+            const appType = decoded.appType;
 
             requestBtn.disabled = true;
             requestBtn.textContent = appType === 'movie_hunt' ? 'Adding...' : 'Requesting...';

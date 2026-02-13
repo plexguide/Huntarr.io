@@ -144,6 +144,99 @@ def _save_collection_config(series_list, instance_id):
     db.save_app_config_for_instance('tv_hunt_collection', instance_id, {'series': series_list})
 
 
+# --- Add series to collection (used by Requestarr) ---
+
+def add_series_to_tv_hunt_collection(
+    instance_id, tmdb_id, title, overview='', poster_path='', backdrop_path='',
+    root_folder=None, quality_profile=None
+):
+    """
+    Add a TV series to the TV Hunt collection.
+    Fetches full series data from TMDB if needed.
+    Returns (success: bool, message: str).
+    """
+    try:
+        instance_id = int(instance_id)
+    except (TypeError, ValueError):
+        return False, "Invalid instance_id"
+    collection = _get_collection_config(instance_id)
+    for s in collection:
+        if s.get('tmdb_id') == tmdb_id:
+            return False, "Series already in collection"
+    try:
+        from src.primary.settings_manager import get_ssl_verify_setting
+        verify_ssl = get_ssl_verify_setting()
+        r = requests.get(f'{TMDB_BASE}/tv/{tmdb_id}', params={
+            'api_key': TMDB_API_KEY, 'language': 'en-US'
+        }, timeout=15, verify=verify_ssl)
+        if r.status_code != 200:
+            return False, f"Failed to fetch series from TMDB: {r.status_code}"
+        tmdb_data = r.json()
+        seasons_data = tmdb_data.get('seasons', [])
+        normalized_seasons = []
+        for s in seasons_data:
+            season_num = s.get('season_number')
+            if season_num is None:
+                continue
+            episodes = s.get('episodes') or []
+            if not episodes:
+                try:
+                    sr = requests.get(f'{TMDB_BASE}/tv/{tmdb_id}/season/{season_num}', params={
+                        'api_key': TMDB_API_KEY, 'language': 'en-US'
+                    }, timeout=15, verify=verify_ssl)
+                    if sr.status_code == 200:
+                        episodes = sr.json().get('episodes', [])
+                except Exception:
+                    pass
+            normalized_episodes = []
+            for ep in episodes:
+                normalized_episodes.append({
+                    'episode_number': ep.get('episode_number'),
+                    'title': ep.get('name') or ep.get('title') or '',
+                    'air_date': ep.get('air_date') or '',
+                    'overview': ep.get('overview') or '',
+                    'still_path': ep.get('still_path') or '',
+                    'monitored': True,
+                })
+            normalized_seasons.append({
+                'season_number': season_num,
+                'episode_count': s.get('episode_count') or len(normalized_episodes),
+                'air_date': s.get('air_date') or '',
+                'name': s.get('name') or f'Season {season_num}',
+                'poster_path': s.get('poster_path') or '',
+                'monitored': True if season_num > 0 else False,
+                'episodes': normalized_episodes,
+            })
+        root_folders = get_tv_root_folders_config(instance_id)
+        default_root = root_folders[0]['path'] if root_folders else ''
+        use_root = (root_folder or '').strip() or default_root
+        series_entry = {
+            'tmdb_id': tmdb_id,
+            'title': title or tmdb_data.get('name', ''),
+            'overview': overview or tmdb_data.get('overview', ''),
+            'poster_path': poster_path or tmdb_data.get('poster_path', ''),
+            'backdrop_path': backdrop_path or tmdb_data.get('backdrop_path', ''),
+            'first_air_date': tmdb_data.get('first_air_date', ''),
+            'vote_average': tmdb_data.get('vote_average', 0),
+            'genres': tmdb_data.get('genres', []),
+            'status': tmdb_data.get('status', ''),
+            'number_of_seasons': tmdb_data.get('number_of_seasons') or len(normalized_seasons),
+            'number_of_episodes': tmdb_data.get('number_of_episodes', 0),
+            'networks': tmdb_data.get('networks', []),
+            'root_folder': use_root,
+            'quality_profile': (quality_profile or '').strip() or '',
+            'monitored': True,
+            'added_at': datetime.now().isoformat(),
+            'seasons': normalized_seasons,
+        }
+        collection.append(series_entry)
+        _save_collection_config(collection, instance_id)
+        return True, "Series added to collection"
+    except Exception as e:
+        logger.exception("TV Hunt add series error")
+        return False, str(e)
+
+
 # --- Core request function ---
 
 def perform_tv_hunt_request(

@@ -21,7 +21,7 @@ class RequestarrAPI:
         """Get hardcoded TMDB API key"""
         return "9265b0bd0cd1962f7f3225989fcd7192"
     
-    def get_trending(self, time_window: str = 'week', movie_instance: str = '', tv_instance: str = '', movie_app_type: str = 'radarr') -> List[Dict[str, Any]]:
+    def get_trending(self, time_window: str = 'week', movie_instance: str = '', tv_instance: str = '', movie_app_type: str = 'radarr', tv_app_type: str = 'sonarr') -> List[Dict[str, Any]]:
         """Get trending movies and TV shows sorted by popularity"""
         api_key = self.get_tmdb_api_key()
         filters = self.get_discover_filters()
@@ -121,10 +121,10 @@ class RequestarrAPI:
                 movie_results = self.check_library_status_batch(movie_results)
             
             if tv_results and tv_instance:
-                logger.info(f"[get_trending] Checking {len(tv_results)} TV shows against Sonarr instance: {tv_instance}")
-                tv_results = self.check_library_status_batch(tv_results, app_type='sonarr', instance_name=tv_instance)
+                logger.info(f"[get_trending] Checking {len(tv_results)} TV shows against {tv_app_type} instance: {tv_instance}")
+                tv_results = self.check_library_status_batch(tv_results, app_type=tv_app_type, instance_name=tv_instance)
             elif tv_results:
-                logger.info(f"[get_trending] Checking {len(tv_results)} TV shows against all Sonarr instances")
+                logger.info(f"[get_trending] Checking {len(tv_results)} TV shows against all TV instances")
                 tv_results = self.check_library_status_batch(tv_results)
             
             # Combine and sort by popularity
@@ -562,6 +562,7 @@ class RequestarrAPI:
                     }
             
             logger.info(f"Series with TMDB ID {tmdb_id} not found in Sonarr")
+            logger.info(f"Series with TMDB ID {tmdb_id} not found in Sonarr")
             return {
                 'exists': False,
                 'previously_requested': already_requested_in_db,
@@ -580,6 +581,48 @@ class RequestarrAPI:
                 'cooldown_status': cooldown_status
             }
     
+    def get_series_status_from_tv_hunt(self, tmdb_id: int, instance_name: str) -> Dict[str, Any]:
+        """Get series status from TV Hunt collection - exists, missing episodes, etc."""
+        try:
+            cooldown_hours = self.get_cooldown_hours()
+            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'tv', 'tv_hunt', instance_name, cooldown_hours)
+            already_requested_in_db = cooldown_status['last_requested_at'] is not None
+
+            instance_id = self._resolve_tv_hunt_instance_id(instance_name)
+            if instance_id is None:
+                return {'exists': False, 'previously_requested': already_requested_in_db, 'cooldown_status': cooldown_status}
+
+            from src.primary.routes.media_hunt.discovery_tv import _get_collection_config
+            collection = _get_collection_config(instance_id)
+            for s in collection:
+                if s.get('tmdb_id') == tmdb_id:
+                    seasons = s.get('seasons') or []
+                    total_eps = 0
+                    available_eps = 0
+                    for sec in seasons:
+                        eps = sec.get('episodes') or []
+                        total_eps += len(eps)
+                        for ep in eps:
+                            if (ep.get('status') or '').lower() == 'available' or ep.get('file_path'):
+                                available_eps += 1
+                    missing_eps = total_eps - available_eps
+                    previously_requested = already_requested_in_db or (total_eps > 0 and available_eps == 0)
+                    return {
+                        'exists': True,
+                        'total_episodes': total_eps,
+                        'available_episodes': available_eps,
+                        'missing_episodes': missing_eps,
+                        'previously_requested': previously_requested,
+                        'cooldown_status': cooldown_status,
+                        'seasons': seasons
+                    }
+            return {'exists': False, 'previously_requested': already_requested_in_db, 'cooldown_status': cooldown_status}
+        except Exception as e:
+            logger.error(f"Error getting series status from TV Hunt: {e}")
+            cooldown_hours = self.get_cooldown_hours()
+            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'tv', 'tv_hunt', instance_name, cooldown_hours)
+            return {'exists': False, 'previously_requested': False, 'cooldown_status': cooldown_status}
+
     def check_seasons_in_sonarr(self, tmdb_id: int, instance_name: str) -> List[int]:
         """Check which seasons of a TV show are already in Sonarr"""
         status = self.get_series_status_from_sonarr(tmdb_id, instance_name)
@@ -826,7 +869,7 @@ class RequestarrAPI:
             # Get enabled instances
             instances = self.get_enabled_instances()
             
-            if not instances['radarr'] and not instances['sonarr'] and not instances.get('movie_hunt'):
+            if not instances['radarr'] and not instances['sonarr'] and not instances.get('movie_hunt') and not instances.get('tv_hunt'):
                 # No instances configured, mark all as not in library
                 for item in items:
                     item['in_library'] = False
@@ -838,31 +881,44 @@ class RequestarrAPI:
             radarr_instances = instances['radarr']
             sonarr_instances = instances['sonarr']
             movie_hunt_instances = instances.get('movie_hunt', [])
+            tv_hunt_instances = instances.get('tv_hunt', [])
             use_movie_hunt = False
+            use_tv_hunt = False
             
             if app_type and instance_name:
                 logger.info(f"Filtering instances - app_type: {app_type}, instance_name: {instance_name}")
                 if app_type == 'movie_hunt':
-                    # Movie Hunt handles movies — skip Radarr and Sonarr entirely
+                    # Movie Hunt handles movies — skip Radarr, Sonarr, TV Hunt
                     movie_hunt_instances = [inst for inst in movie_hunt_instances if inst['name'] == instance_name]
                     radarr_instances = []
                     sonarr_instances = []
+                    tv_hunt_instances = []
                     use_movie_hunt = True
                     logger.info(f"Using Movie Hunt instance: {[inst['name'] for inst in movie_hunt_instances]}")
+                elif app_type == 'tv_hunt':
+                    # TV Hunt handles TV — skip Sonarr, Radarr
+                    tv_hunt_instances = [inst for inst in tv_hunt_instances if inst['name'] == instance_name]
+                    sonarr_instances = []
+                    radarr_instances = []
+                    movie_hunt_instances = []
+                    use_tv_hunt = True
+                    logger.info(f"Using TV Hunt instance: {[inst['name'] for inst in tv_hunt_instances]}")
                 elif app_type == 'radarr':
                     original_count = len(radarr_instances)
                     radarr_instances = [inst for inst in radarr_instances if inst['name'] == instance_name]
-                    sonarr_instances = []  # Don't check Sonarr if Radarr is specified
+                    sonarr_instances = []
+                    tv_hunt_instances = []
                     movie_hunt_instances = []
                     logger.info(f"Filtered Radarr instances from {original_count} to {len(radarr_instances)}: {[inst['name'] for inst in radarr_instances]}")
                 elif app_type == 'sonarr':
                     original_count = len(sonarr_instances)
                     sonarr_instances = [inst for inst in sonarr_instances if inst['name'] == instance_name]
-                    radarr_instances = []  # Don't check Radarr if Sonarr is specified
+                    radarr_instances = []
+                    tv_hunt_instances = []
                     movie_hunt_instances = []
                     logger.info(f"Filtered Sonarr instances from {original_count} to {len(sonarr_instances)}: {[inst['name'] for inst in sonarr_instances]}")
             else:
-                logger.info(f"No instance filtering - checking all instances (Radarr: {len(radarr_instances)}, Sonarr: {len(sonarr_instances)}, Movie Hunt: {len(movie_hunt_instances)})")
+                logger.info(f"No instance filtering - checking all instances (Radarr: {len(radarr_instances)}, Sonarr: {len(sonarr_instances)}, Movie Hunt: {len(movie_hunt_instances)}, TV Hunt: {len(tv_hunt_instances)})")
             
             # Get all movies from Movie Hunt instances (batch check)
             movie_hunt_tmdb_ids = set()
@@ -922,6 +978,43 @@ class RequestarrAPI:
                         logger.info(f"Found {len(radarr_tmdb_ids)} movies with files in Radarr instance {instance['name']}")
                 except Exception as e:
                     logger.error(f"Error checking Radarr instance {instance['name']}: {e}")
+            
+            # Get all series from filtered TV Hunt instances
+            tv_hunt_tmdb_ids = set()
+            tv_hunt_partial_tmdb_ids = set()
+            if use_tv_hunt or (not app_type and tv_hunt_instances):
+                for th_inst in tv_hunt_instances:
+                    try:
+                        th_instance_id = th_inst.get('id')
+                        if th_instance_id is None:
+                            th_instance_id = self._resolve_tv_hunt_instance_id(th_inst['name'])
+                        if th_instance_id is None:
+                            continue
+                        from src.primary.routes.media_hunt.discovery_tv import _get_collection_config
+                        collection = _get_collection_config(th_instance_id)
+                        for s in collection:
+                            tmdb_id = s.get('tmdb_id')
+                            if not tmdb_id:
+                                continue
+                            # Check if complete (all episodes available) or partial
+                            seasons = s.get('seasons') or []
+                            total_eps = 0
+                            available_eps = 0
+                            for sec in seasons:
+                                eps = (sec.get('episodes') or [])
+                                total_eps += len(eps)
+                                for ep in eps:
+                                    if (ep.get('status') or '').lower() == 'available' or ep.get('file_path'):
+                                        available_eps += 1
+                            if total_eps > 0 and available_eps == total_eps:
+                                tv_hunt_tmdb_ids.add(tmdb_id)
+                            elif available_eps > 0:
+                                tv_hunt_partial_tmdb_ids.add(tmdb_id)
+                            else:
+                                tv_hunt_tmdb_ids.add(tmdb_id)  # In collection = in library
+                        logger.info(f"Found {len(tv_hunt_tmdb_ids)} series in TV Hunt instance {th_inst['name']}")
+                    except Exception as e:
+                        logger.error(f"Error checking TV Hunt instance {th_inst.get('name', '?')}: {e}")
             
             # Get all series from filtered Sonarr instances
             sonarr_tmdb_ids = set()
@@ -983,13 +1076,19 @@ class RequestarrAPI:
                                 if cooldown_status['in_cooldown']:
                                     item['in_cooldown'] = True
                                     break
-                    elif media_type == 'tv' and instances['sonarr']:
-                        for instance in instances['sonarr']:
+                    elif media_type == 'tv':
+                        for instance in instances.get('sonarr', []):
                             instance_name_check = instance['name']
                             cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, 'sonarr', instance_name_check, cooldown_hours)
                             if cooldown_status['in_cooldown']:
                                 item['in_cooldown'] = True
                                 break
+                        if not item['in_cooldown']:
+                            for th_inst in instances.get('tv_hunt', []):
+                                cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, 'tv_hunt', th_inst['name'], cooldown_hours)
+                                if cooldown_status['in_cooldown']:
+                                    item['in_cooldown'] = True
+                                    break
                 
                 # Set library status
                 if media_type == 'movie':
@@ -997,8 +1096,8 @@ class RequestarrAPI:
                     item['in_library'] = tmdb_id in movie_hunt_tmdb_ids or tmdb_id in radarr_tmdb_ids
                     item['partial'] = False
                 elif media_type == 'tv':
-                    item['in_library'] = tmdb_id in sonarr_tmdb_ids
-                    item['partial'] = tmdb_id in sonarr_partial_tmdb_ids
+                    item['in_library'] = tmdb_id in sonarr_tmdb_ids or tmdb_id in tv_hunt_tmdb_ids
+                    item['partial'] = tmdb_id in sonarr_partial_tmdb_ids or tmdb_id in tv_hunt_partial_tmdb_ids
                 else:
                     item['in_library'] = False
                     item['partial'] = False
@@ -1076,6 +1175,9 @@ class RequestarrAPI:
             # Movie Hunt profiles come from internal database, not external API
             if app_type == 'movie_hunt':
                 return self._get_movie_hunt_quality_profiles(instance_name)
+            # TV Hunt profiles come from internal database
+            if app_type == 'tv_hunt':
+                return self._get_tv_hunt_quality_profiles(instance_name)
             
             # Get instance config
             app_config = self.db.get_app_config(app_type)
@@ -1188,6 +1290,30 @@ class RequestarrAPI:
             logger.error(f"Error getting Movie Hunt quality profiles for '{instance_name}': {e}")
             return []
     
+    def _get_tv_hunt_quality_profiles(self, instance_name: str) -> List[Dict[str, Any]]:
+        """Get quality profiles from a TV Hunt instance (internal database)"""
+        try:
+            instance_id = self._resolve_tv_hunt_instance_id(instance_name)
+            if instance_id is None:
+                logger.warning(f"TV Hunt instance '{instance_name}' not found")
+                return []
+            from src.primary.routes.media_hunt.helpers import _tv_profiles_context
+            from src.primary.routes.media_hunt.profiles import get_profiles_config
+            profiles = get_profiles_config(instance_id, _tv_profiles_context())
+            result = []
+            for profile in profiles:
+                profile_name = (profile.get('name') or '').strip()
+                if profile_name:
+                    result.append({
+                        'id': profile_name,
+                        'name': profile_name,
+                        'is_default': bool(profile.get('is_default', False))
+                    })
+            return result
+        except Exception as e:
+            logger.error(f"Error getting TV Hunt quality profiles for '{instance_name}': {e}")
+            return []
+    
     def _resolve_movie_hunt_instance_id(self, instance_name: str) -> Optional[int]:
         """Resolve a Movie Hunt instance name to its database ID"""
         try:
@@ -1201,6 +1327,21 @@ class RequestarrAPI:
             return None
         except Exception as e:
             logger.error(f"Error resolving Movie Hunt instance '{instance_name}': {e}")
+            return None
+    
+    def _resolve_tv_hunt_instance_id(self, instance_name: str) -> Optional[int]:
+        """Resolve a TV Hunt instance name to its database ID"""
+        try:
+            name = (instance_name or '').strip()
+            if not name:
+                return None
+            th_instances = self.db.get_tv_hunt_instances()
+            for inst in th_instances:
+                if (inst.get('name') or '').strip() == name:
+                    return inst.get('id')
+            return None
+        except Exception as e:
+            logger.error(f"Error resolving TV Hunt instance '{instance_name}': {e}")
             return None
     
     def get_cooldown_hours(self) -> int:
@@ -1377,9 +1518,11 @@ class RequestarrAPI:
             raise
 
     def get_root_folders(self, app_type: str, instance_name: str) -> List[Dict[str, Any]]:
-        """Fetch root folders from *arr or Movie Hunt instance (for settings UI, issue #806). Deduped by ID and path."""
+        """Fetch root folders from *arr or Movie/TV Hunt instance (for settings UI, issue #806). Deduped by ID and path."""
         if app_type == 'movie_hunt':
             return self._get_movie_hunt_root_folders(instance_name)
+        if app_type == 'tv_hunt':
+            return self._get_tv_hunt_root_folders(instance_name)
         if app_type not in ('radarr', 'sonarr'):
             return []
         try:
@@ -1515,6 +1658,38 @@ class RequestarrAPI:
             return result
         except Exception as e:
             logger.error(f"Error getting Movie Hunt root folders for '{instance_name}': {e}")
+            return []
+
+    def _get_tv_hunt_root_folders(self, instance_name: str) -> List[Dict[str, Any]]:
+        """Get root folders from a TV Hunt instance (internal database)"""
+        try:
+            instance_id = self._resolve_tv_hunt_instance_id(instance_name)
+            if instance_id is None:
+                logger.warning(f"TV Hunt instance '{instance_name}' not found")
+                return []
+            from src.primary.routes.media_hunt.storage import get_tv_root_folders_config
+            folders = get_tv_root_folders_config(instance_id)
+            import os
+            result = []
+            for folder in folders:
+                path = (folder.get('path') or '').strip()
+                if not path:
+                    continue
+                free_space = None
+                try:
+                    if os.path.isdir(path):
+                        stat = os.statvfs(path)
+                        free_space = stat.f_bavail * stat.f_frsize
+                except (OSError, AttributeError):
+                    pass
+                result.append({
+                    'path': path,
+                    'freeSpace': free_space,
+                    'is_default': folder.get('is_default', False)
+                })
+            return result
+        except Exception as e:
+            logger.error(f"Error getting TV Hunt root folders for '{instance_name}': {e}")
             return []
 
     def get_root_folders_by_id(self, instance_id: int) -> List[Dict[str, Any]]:
@@ -1929,9 +2104,9 @@ class RequestarrAPI:
             }
     
     def get_enabled_instances(self) -> Dict[str, List[Dict[str, str]]]:
-        """Get enabled and properly configured Sonarr, Radarr, and Movie Hunt instances"""
-        instances = {'sonarr': [], 'radarr': [], 'movie_hunt': []}
-        seen_names = {'sonarr': set(), 'radarr': set(), 'movie_hunt': set()}
+        """Get enabled and properly configured Sonarr, Radarr, Movie Hunt, and TV Hunt instances"""
+        instances = {'sonarr': [], 'radarr': [], 'movie_hunt': [], 'tv_hunt': []}
+        seen_names = {'sonarr': set(), 'radarr': set(), 'movie_hunt': set(), 'tv_hunt': set()}
         
         try:
             # Get Sonarr instances
@@ -1998,11 +2173,29 @@ class RequestarrAPI:
             except Exception as e:
                 logger.warning(f"Error loading Movie Hunt instances: {e}")
             
+            # Get TV Hunt instances (from dedicated database table)
+            try:
+                th_instances = self.db.get_tv_hunt_instances()
+                for inst in th_instances:
+                    name = (inst.get('name') or '').strip()
+                    if not name:
+                        continue
+                    name_lower = name.lower()
+                    if name_lower not in seen_names['tv_hunt']:
+                        instances['tv_hunt'].append({
+                            'name': name,
+                            'id': inst.get('id'),
+                            'url': 'internal'
+                        })
+                        seen_names['tv_hunt'].add(name_lower)
+            except Exception as e:
+                logger.warning(f"Error loading TV Hunt instances: {e}")
+            
             return instances
             
         except Exception as e:
             logger.error(f"Error getting enabled instances: {e}")
-            return {'sonarr': [], 'radarr': [], 'movie_hunt': []}
+            return {'sonarr': [], 'radarr': [], 'movie_hunt': [], 'tv_hunt': []}
     
     def request_media(self, tmdb_id: int, media_type: str, title: str, year: int,
                      overview: str, poster_path: str, backdrop_path: str,
@@ -2020,6 +2213,17 @@ class RequestarrAPI:
                     quality_profile_name=quality_profile_name,
                     root_folder_path=root_folder_path, media_type=media_type,
                     start_search=start_search, minimum_availability=minimum_availability or 'released'
+                )
+            
+            # TV Hunt has its own request pipeline (add to collection, optionally start search)
+            if app_type == 'tv_hunt':
+                return self._request_media_via_tv_hunt(
+                    tmdb_id=tmdb_id, title=title,
+                    overview=overview, poster_path=poster_path,
+                    backdrop_path=backdrop_path, instance_name=instance_name,
+                    quality_profile_name=quality_profile_name,
+                    root_folder_path=root_folder_path,
+                    start_search=start_search
                 )
             
             # Get instance configuration first
@@ -2436,6 +2640,54 @@ class RequestarrAPI:
                 'message': f'Error requesting {title} via Movie Hunt: {str(e)}',
                 'status': 'error'
             }
+    
+    def _request_media_via_tv_hunt(self, tmdb_id: int, title: str, overview: str = '',
+                                  poster_path: str = '', backdrop_path: str = '',
+                                  instance_name: str = '', quality_profile_name: str = None,
+                                  root_folder_path: str = None, start_search: bool = True) -> Dict[str, Any]:
+        """Add TV series to TV Hunt collection; optionally start search for season 1."""
+        try:
+            instance_id = self._resolve_tv_hunt_instance_id(instance_name)
+            if instance_id is None:
+                return {
+                    'success': False,
+                    'message': f'TV Hunt instance "{instance_name}" not found',
+                    'status': 'instance_not_found'
+                }
+            status = self.get_series_status_from_tv_hunt(tmdb_id, instance_name)
+            if status.get('exists'):
+                return {
+                    'success': False,
+                    'message': f'{title} is already in your TV Hunt collection.',
+                    'status': 'already_exists'
+                }
+            from src.primary.routes.media_hunt.discovery_tv import add_series_to_tv_hunt_collection, perform_tv_hunt_request
+            root_folder = (root_folder_path or '').strip() or None
+            quality_profile = (quality_profile_name or '').strip() or None
+            success, msg = add_series_to_tv_hunt_collection(
+                instance_id, tmdb_id, title, overview=overview or '',
+                poster_path=(poster_path or '').strip() or '', backdrop_path=(backdrop_path or '').strip() or '',
+                root_folder=root_folder, quality_profile=quality_profile
+            )
+            if not success:
+                return {'success': False, 'message': msg, 'status': 'add_failed'}
+            self.db.add_request(
+                tmdb_id, 'tv', title, None, overview,
+                (poster_path or '').strip(), (backdrop_path or '').strip(),
+                'tv_hunt', instance_name
+            )
+            if start_search:
+                search_success, search_msg = perform_tv_hunt_request(
+                    instance_id, title, season_number=1,
+                    root_folder=root_folder, quality_profile=quality_profile,
+                    search_type='season'
+                )
+                if search_success:
+                    return {'success': True, 'message': f'{title} added and search initiated for season 1.', 'status': 'requested'}
+            return {'success': True, 'message': f'"{title}" added to TV Hunt \u2013 {instance_name}.', 'status': 'added'}
+        except Exception as e:
+            logger.error(f"Error requesting TV via TV Hunt: {e}", exc_info=True)
+            return {'success': False, 'message': str(e), 'status': 'error'}
     
     def _check_media_exists(self, tmdb_id: int, media_type: str, instance: Dict[str, str], app_type: str) -> Dict[str, Any]:
         """Check if media already exists in the app instance"""

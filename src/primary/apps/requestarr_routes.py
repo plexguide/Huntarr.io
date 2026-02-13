@@ -195,14 +195,15 @@ def get_trending():
         # Prefer explicit query params (sent by frontend) to avoid race conditions with DB save
         movie_app_type = request.args.get('movie_app_type', '')
         movie_instance_name = request.args.get('movie_instance_name', '')
+        tv_app_type = request.args.get('tv_app_type', '')
         tv_instance_name = request.args.get('tv_instance_name', '')
         
         # Fallback to DB defaults if query params not provided
+        default_instances = requestarr_api.get_default_instances()
+        raw_movie = default_instances.get('movie_instance', '')
+        raw_tv = default_instances.get('tv_instance', '')
+        
         if not movie_instance_name or not movie_app_type:
-            default_instances = requestarr_api.get_default_instances()
-            raw_movie = default_instances.get('movie_instance', '')
-            tv_instance_name = tv_instance_name or default_instances.get('tv_instance', '')
-            
             # Parse compound movie instance value (e.g. "movie_hunt:First" or "radarr:Radarr Test")
             if raw_movie and ':' in raw_movie:
                 parts = raw_movie.split(':', 1)
@@ -213,13 +214,25 @@ def get_trending():
                 movie_app_type = movie_app_type or 'radarr'
                 movie_instance_name = movie_instance_name or raw_movie
         
-        logger.info(f"[get_trending] Using instances - movie: {movie_app_type}:{movie_instance_name}, tv: sonarr:{tv_instance_name}")
+        if not tv_instance_name or not tv_app_type:
+            # Parse compound TV instance value (e.g. "tv_hunt:Main" or "sonarr:Prime")
+            tv_instance_name = tv_instance_name or raw_tv
+            if raw_tv and ':' in raw_tv:
+                parts = raw_tv.split(':', 1)
+                tv_app_type = tv_app_type or parts[0]
+                tv_instance_name = tv_instance_name or parts[1]
+            else:
+                tv_app_type = tv_app_type or 'sonarr'
+                tv_instance_name = tv_instance_name or raw_tv
+        
+        logger.info(f"[get_trending] Using instances - movie: {movie_app_type}:{movie_instance_name}, tv: {tv_app_type}:{tv_instance_name}")
         
         results = requestarr_api.get_trending(
             time_window,
             movie_instance=movie_instance_name,
             tv_instance=tv_instance_name,
-            movie_app_type=movie_app_type or 'radarr'
+            movie_app_type=movie_app_type or 'radarr',
+            tv_app_type=tv_app_type or 'sonarr'
         )
         return jsonify({'results': results})
     except Exception as e:
@@ -384,16 +397,19 @@ def get_media_details(media_type, tmdb_id):
 
 @requestarr_bp.route('/series-status', methods=['GET'])
 def get_series_status():
-    """Get series status from Sonarr - exists, missing episodes, etc."""
+    """Get series status from Sonarr or TV Hunt - exists, missing episodes, etc."""
     try:
         tmdb_id = request.args.get('tmdb_id', type=int)
         instance_name = request.args.get('instance')
+        app_type = (request.args.get('app_type') or 'sonarr').strip().lower()
         
         if not tmdb_id or not instance_name:
             return jsonify({'error': 'Missing parameters'}), 400
         
-        # Get series status from Sonarr
-        status = requestarr_api.get_series_status_from_sonarr(tmdb_id, instance_name)
+        if app_type == 'tv_hunt':
+            status = requestarr_api.get_series_status_from_tv_hunt(tmdb_id, instance_name)
+        else:
+            status = requestarr_api.get_series_status_from_sonarr(tmdb_id, instance_name)
         return jsonify(status)
         
     except Exception as e:
@@ -568,8 +584,8 @@ def get_root_folders():
         app_type = request.args.get('app_type', '').strip().lower()
         instance_name = request.args.get('instance_name', '').strip()
         instance_id = request.args.get('instance_id', type=int)
-        if app_type not in ('radarr', 'sonarr', 'movie_hunt'):
-            return jsonify({'success': False, 'error': 'app_type (radarr/sonarr/movie_hunt) required'}), 400
+        if app_type not in ('radarr', 'sonarr', 'movie_hunt', 'tv_hunt'):
+            return jsonify({'success': False, 'error': 'app_type (radarr/sonarr/movie_hunt/tv_hunt) required'}), 400
         if app_type == 'movie_hunt' and instance_id is not None:
             folders = requestarr_api.get_root_folders_by_id(instance_id)
         elif instance_name:
@@ -756,6 +772,28 @@ def get_instances(app_type):
                     'url': 'internal'  # Movie Hunt is internal, no external URL
                 })
             return jsonify({'instances': instances, 'app_type': 'movie_hunt'})
+        
+        # TV Hunt instances come from the dedicated database table
+        if app_type == 'tv_hunt':
+            from src.primary.utils.database import get_database
+            db = get_database()
+            th_instances = db.get_tv_hunt_instances()
+            instances = []
+            seen_names = set()
+            for inst in th_instances:
+                name = (inst.get('name') or '').strip()
+                if not name:
+                    continue
+                normalized_name = name.lower()
+                if normalized_name in seen_names:
+                    continue
+                seen_names.add(normalized_name)
+                instances.append({
+                    'name': name,
+                    'id': inst.get('id'),
+                    'url': 'internal'  # TV Hunt is internal, no external URL
+                })
+            return jsonify({'instances': instances, 'app_type': 'tv_hunt'})
         
         from src.primary.settings_manager import get_setting
         
