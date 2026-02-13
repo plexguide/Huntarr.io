@@ -5,7 +5,7 @@ Sonarr cutoff upgrade processing module for Huntarr
 
 import time
 import random
-from typing import List, Dict, Any, Set, Callable, Union, Optional, Optional
+from typing import List, Dict, Any, Set, Callable, Union, Optional
 from src.primary.utils.logger import get_logger
 from src.primary.apps.sonarr import api as sonarr_api
 from src.primary.apps.sonarr.missing import _normalize_exempt_tags

@@ -3196,7 +3196,7 @@ class HuntarrDatabase:
                 requestarr_config = self.get_app_config('requestarr')
                 if requestarr_config and 'cooldown_hours' in requestarr_config:
                     cooldown_hours = int(requestarr_config['cooldown_hours'])
-            except:
+            except Exception:
                 pass
             
             with self.get_connection() as conn:

@@ -8,9 +8,9 @@ import os
 import datetime
 import time
 from threading import Lock
-from primary.utils.logger import LOG_DIR, APP_LOG_FILES, MAIN_LOG_FILE # Import log constants
-from primary import settings_manager # Import settings_manager
-from src.primary.stateful_manager import update_lock_expiration # Import stateful update function
+from primary.utils.logger import LOG_DIR, APP_LOG_FILES, MAIN_LOG_FILE
+from primary import settings_manager
+from src.primary.stateful_manager import update_lock_expiration
 
 import json
 import sys
@@ -21,7 +21,6 @@ import threading
 import importlib
 import requests
 from flask import Flask, render_template, request, jsonify, Response, send_from_directory, redirect, url_for, session, stream_with_context, Blueprint, current_app, g, make_response
-from src.primary import settings_manager
 from src.primary.utils.logger import setup_main_logger, get_logger, LOG_DIR, update_logging_levels, refresh_log_handlers # Import get_logger, LOG_DIR, update_logging_levels, refresh_log_handlers
 # Clean logging is now database-only
 from src.primary.auth import (
