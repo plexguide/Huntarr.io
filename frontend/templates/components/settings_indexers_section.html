@@ -85,13 +85,18 @@
         if (confirmBtn) confirmBtn.addEventListener('click', _confirmIHImport);
     }
 
-    function _getInstanceIdSync() {
+    function _getInstanceModeAndIdSync() {
         var sel = document.getElementById('settings-indexers-instance-select');
-        if (!sel || !sel.value) return 1;
+        if (!sel || !sel.value) return { mode: 'movie', instanceId: 1 };
         var val = sel.value.trim();
         var parts = val.split(':');
-        if (parts.length === 2) return parseInt(parts[1], 10) || 1;
-        return parseInt(val, 10) || 1;
+        if (parts.length === 2) {
+            return {
+                mode: parts[0] === 'tv' ? 'tv' : 'movie',
+                instanceId: parseInt(parts[1], 10) || 1
+            };
+        }
+        return { mode: 'movie', instanceId: parseInt(val, 10) || 1 };
     }
 
     function _openIHImportPanel() {
@@ -100,13 +105,13 @@
         var listView = document.getElementById('ih-list-view');
         if (listView) listView.style.display = 'none';
 
-        var instanceId = _getInstanceIdSync();
+        var ctx = _getInstanceModeAndIdSync();
         var list = document.getElementById('ih-import-list');
         var actions = document.getElementById('ih-import-actions');
         if (list) list.innerHTML = '<div style="color: #94a3b8; padding: 20px; text-align: center;"><i class="fas fa-spinner fa-spin"></i> Loading available indexers...</div>';
         if (actions) actions.style.display = 'none';
 
-        fetch('./api/indexer-hunt/available/' + instanceId)
+        fetch('./api/indexer-hunt/available/' + ctx.instanceId + '?mode=' + encodeURIComponent(ctx.mode))
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 var available = data.available || [];
@@ -168,14 +173,18 @@
         if (selected.length === 0) return;
         var ids = [];
         selected.forEach(function(item) { ids.push(item.getAttribute('data-ih-id')); });
-        var instanceId = _getInstanceIdSync();
+        var ctx = _getInstanceModeAndIdSync();
         var btn = document.getElementById('ih-import-confirm');
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importing...'; }
 
         fetch('./api/indexer-hunt/sync', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ instance_id: instanceId, indexer_ids: ids }),
+            body: JSON.stringify({
+                instance_id: ctx.instanceId,
+                mode: ctx.mode,
+                indexer_ids: ids
+            }),
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {

@@ -260,7 +260,6 @@
                 if (apiPathEl) apiPathEl.value = p.api_path || '/api';
             }
         }
-
         if (urlEl) urlEl.readOnly = !isManual;
         if (apiPathEl) apiPathEl.readOnly = !isManual;
     }

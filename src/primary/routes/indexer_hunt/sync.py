@@ -92,15 +92,35 @@ def _read_instance_priorities(indexer_hunt_id):
 
 # ── API Routes ───────────────────────────────────────────────────────
 
+def _get_indexers_for_instance_by_mode(mode, instance_id):
+    """Get indexers for the given mode and instance. mode is 'movie' or 'tv'."""
+    if mode == 'tv':
+        from src.primary.routes.media_hunt.indexers import get_tv_indexers_config
+        return get_tv_indexers_config(instance_id)
+    return _get_indexers_for_instance(instance_id)
+
+
+def _save_indexers_for_instance_by_mode(mode, indexers_list, instance_id):
+    """Save indexers for the given mode and instance."""
+    if mode == 'tv':
+        from src.primary.routes.media_hunt.indexers import save_tv_indexers_list
+        save_tv_indexers_list(indexers_list, instance_id)
+    else:
+        _save_indexers_for_instance(indexers_list, instance_id)  # (list, instance_id)
+
+
 @indexer_hunt_bp.route('/api/indexer-hunt/sync', methods=['POST'])
 def api_ih_sync():
-    """Sync selected Indexer Hunt indexers to a Movie Hunt instance.
-    Body: { instance_id: int, indexer_ids: [str, ...] }
-    Copies: priority, default categories, API key, name, URL, api_path, enabled.
+    """Sync selected Indexer Hunt indexers to a Movie or TV Hunt instance.
+    Body: { instance_id: int, mode: 'movie'|'tv', indexer_ids: [str, ...] }
+    Each instance imports independently; pool is shared, instances do not collide.
     """
     try:
         data = request.get_json() or {}
         instance_id = data.get('instance_id')
+        mode = (data.get('mode') or 'movie').strip().lower()
+        if mode not in ('movie', 'tv'):
+            mode = 'movie'
         indexer_ids = data.get('indexer_ids', [])
 
         if instance_id is None:
@@ -111,43 +131,62 @@ def api_ih_sync():
         instance_id = int(instance_id)
 
         from src.primary.utils.database import get_database
-        from src.primary.routes.media_hunt.indexers import INDEXER_PRESETS, INDEXER_DEFAULT_CATEGORIES
+        from src.primary.routes.media_hunt.indexers import (
+            INDEXER_PRESETS, INDEXER_DEFAULT_CATEGORIES,
+            TV_INDEXER_DEFAULT_CATEGORIES,
+        )
+        import uuid as _uuid
         db = get_database()
 
-        existing = _get_indexers_for_instance(instance_id)
+        existing = _get_indexers_for_instance_by_mode(mode, instance_id)
         existing_ih_ids = {idx.get('indexer_hunt_id') for idx in existing if idx.get('indexer_hunt_id')}
 
         added = 0
         for ih_id in indexer_ids:
             if ih_id in existing_ih_ids:
-                continue  # already synced
+                continue  # already synced to this instance
             ih_idx = db.get_indexer_hunt_indexer(ih_id)
             if not ih_idx:
                 continue
 
-            # Determine default categories from preset
             preset = ih_idx.get('preset', 'manual')
-            if preset in INDEXER_PRESETS:
-                default_cats = list(INDEXER_PRESETS[preset].get('categories', INDEXER_DEFAULT_CATEGORIES))
+            if mode == 'tv':
+                default_cats = list(TV_INDEXER_DEFAULT_CATEGORIES)
+                new_idx = {
+                    'id': str(_uuid.uuid4())[:8],
+                    'name': ih_idx.get('name', 'Unnamed'),
+                    'display_name': ih_idx.get('display_name', ''),
+                    'url': ih_idx.get('url', ''),
+                    'api_url': ih_idx.get('url', ''),
+                    'api_key': ih_idx.get('api_key', ''),
+                    'protocol': ih_idx.get('protocol', 'usenet'),
+                    'categories': default_cats,
+                    'priority': int(ih_idx.get('priority', 50)),
+                    'enabled': ih_idx.get('enabled', True),
+                    'indexer_hunt_id': ih_id,
+                }
             else:
-                default_cats = list(ih_idx.get('categories', INDEXER_DEFAULT_CATEGORIES))
-
-            existing.append({
-                'name': ih_idx.get('name', 'Unnamed'),
-                'display_name': ih_idx.get('display_name', ''),
-                'preset': preset,
-                'api_key': ih_idx.get('api_key', ''),
-                'enabled': ih_idx.get('enabled', True),
-                'categories': default_cats,
-                'url': ih_idx.get('url', ''),
-                'api_path': ih_idx.get('api_path', '/api'),
-                'priority': ih_idx.get('priority', 50),
-                'indexer_hunt_id': ih_id,
-            })
+                if preset in INDEXER_PRESETS:
+                    default_cats = list(INDEXER_PRESETS[preset].get('categories', INDEXER_DEFAULT_CATEGORIES))
+                else:
+                    default_cats = list(ih_idx.get('categories', INDEXER_DEFAULT_CATEGORIES))
+                new_idx = {
+                    'name': ih_idx.get('name', 'Unnamed'),
+                    'display_name': ih_idx.get('display_name', ''),
+                    'preset': preset,
+                    'api_key': ih_idx.get('api_key', ''),
+                    'enabled': ih_idx.get('enabled', True),
+                    'categories': default_cats,
+                    'url': ih_idx.get('url', ''),
+                    'api_path': ih_idx.get('api_path', '/api'),
+                    'priority': ih_idx.get('priority', 50),
+                    'indexer_hunt_id': ih_id,
+                }
+            existing.append(new_idx)
             added += 1
 
         if added > 0:
-            _save_indexers_for_instance(existing, instance_id)
+            _save_indexers_for_instance_by_mode(mode, existing, instance_id)
 
         return jsonify({'success': True, 'added': added}), 200
     except Exception as e:
@@ -168,12 +207,17 @@ def api_ih_linked(idx_id):
 
 @indexer_hunt_bp.route('/api/indexer-hunt/available/<int:instance_id>', methods=['GET'])
 def api_ih_available(instance_id):
-    """Return Indexer Hunt indexers not yet synced to this Movie Hunt instance."""
+    """Return Indexer Hunt indexers not yet synced to this instance.
+    Query param: mode=movie|tv (default movie). Each instance has its own imports."""
     try:
+        mode = (request.args.get('mode') or 'movie').strip().lower()
+        if mode not in ('movie', 'tv'):
+            mode = 'movie'
+
         from src.primary.utils.database import get_database
         db = get_database()
         all_ih = db.get_indexer_hunt_indexers()
-        existing = _get_indexers_for_instance(instance_id)
+        existing = _get_indexers_for_instance_by_mode(mode, instance_id)
         existing_ih_ids = {idx.get('indexer_hunt_id') for idx in existing if idx.get('indexer_hunt_id')}
 
         available = []

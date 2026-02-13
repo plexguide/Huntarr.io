@@ -91,6 +91,13 @@ def get_tv_indexers_config(instance_id):
     return []
 
 
+def save_tv_indexers_list(indexers_list, instance_id):
+    """Save TV indexers list. Used by indexer_hunt sync for TV instances."""
+    from src.primary.utils.database import get_database
+    db = get_database()
+    db.save_app_config_for_instance('tv_hunt_indexers', instance_id, {'indexers': indexers_list})
+
+
 def _resolve_indexer_api_url(indexer_dict):
     """Resolve full API URL for movie indexer (preset or manual). Used by requestarr."""
     preset = (indexer_dict.get('preset') or 'manual').strip().lower()
