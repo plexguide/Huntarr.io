@@ -61,6 +61,20 @@ INDEXER_DEFAULT_CATEGORIES = MOVIE_INDEXER_DEFAULT_CATEGORIES
 INDEXER_CATEGORIES = MOVIE_INDEXER_CATEGORIES
 
 
+def _filter_categories_movie(ids):
+    """Keep only 2000-series (Movies). No cross-ref with TV 5000 series."""
+    if not isinstance(ids, (list, tuple)):
+        return list(MOVIE_INDEXER_CATEGORIES_DEFAULT_IDS)
+    return [int(x) for x in ids if isinstance(x, (int, str)) and 2000 <= int(x) <= 2999]
+
+
+def _filter_categories_tv(ids):
+    """Keep only 5000-series (TV). No cross-ref with Movie 2000 series."""
+    if not isinstance(ids, (list, tuple)):
+        return list(TV_INDEXER_DEFAULT_CATEGORIES)
+    return [int(x) for x in ids if isinstance(x, (int, str)) and 5000 <= int(x) <= 5999]
+
+
 def _get_indexers_config(instance_id):
     """Get movie indexers list. Used by requestarr, indexer_hunt."""
     from src.primary.utils.database import get_database
@@ -252,6 +266,8 @@ def register_movie_indexers_routes(bp, get_instance_id):
             categories = data.get('categories')
             if not isinstance(categories, list):
                 categories = list(MOVIE_INDEXER_CATEGORIES_DEFAULT_IDS)
+            else:
+                categories = _filter_categories_movie(categories) or list(MOVIE_INDEXER_CATEGORIES_DEFAULT_IDS)
             url = (data.get('url') or '').strip()
             api_path = (data.get('api_path') or '/api').strip()
             if preset != 'manual' and preset in MOVIE_INDEXER_PRESETS:
@@ -294,6 +310,8 @@ def register_movie_indexers_routes(bp, get_instance_id):
             if not isinstance(categories, list):
                 existing_cats = indexers[index].get('categories')
                 categories = list(existing_cats) if isinstance(existing_cats, list) else list(MOVIE_INDEXER_CATEGORIES_DEFAULT_IDS)
+            else:
+                categories = _filter_categories_movie(categories) or list(MOVIE_INDEXER_CATEGORIES_DEFAULT_IDS)
             existing = indexers[index]
             api_key = api_key_new if api_key_new else (existing.get('api_key') or '')
             url = (data.get('url') or '').strip() or existing.get('url', '')
@@ -371,6 +389,11 @@ def register_tv_indexers_routes(bp, get_instance_id):
             if not instance_id:
                 return jsonify({'error': 'No instance selected'}), 400
             data = request.get_json() or {}
+            cats = data.get('categories')
+            if isinstance(cats, list):
+                cats = _filter_categories_tv(cats) or TV_INDEXER_DEFAULT_CATEGORIES
+            else:
+                cats = TV_INDEXER_DEFAULT_CATEGORIES
             new_indexer = {
                 'id': str(_uuid.uuid4())[:8],
                 'name': (data.get('name') or 'Unnamed').strip(),
@@ -379,7 +402,7 @@ def register_tv_indexers_routes(bp, get_instance_id):
                 'api_url': (data.get('api_url') or data.get('url') or '').strip(),
                 'api_key': (data.get('api_key') or '').strip(),
                 'protocol': (data.get('protocol') or 'usenet').strip().lower(),
-                'categories': data.get('categories') or TV_INDEXER_DEFAULT_CATEGORIES,
+                'categories': cats,
                 'priority': int(data.get('priority', 25)),
                 'enabled': data.get('enabled', True),
             }
@@ -401,9 +424,12 @@ def register_tv_indexers_routes(bp, get_instance_id):
             indexers = _get_config(instance_id)
             for idx in indexers:
                 if idx.get('id') == indexer_id:
-                    for key in ('name', 'display_name', 'url', 'api_url', 'api_key', 'protocol', 'categories', 'priority', 'enabled'):
+                    for key in ('name', 'display_name', 'url', 'api_url', 'api_key', 'protocol', 'priority', 'enabled'):
                         if key in data:
                             idx[key] = data[key]
+                    if 'categories' in data:
+                        cats = _filter_categories_tv(data['categories'])
+                        idx['categories'] = cats if cats else TV_INDEXER_DEFAULT_CATEGORIES
                     _save(indexers, instance_id)
                     return jsonify({'indexer': idx}), 200
             return jsonify({'error': 'Indexer not found'}), 404

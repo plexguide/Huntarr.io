@@ -134,6 +134,7 @@ def api_ih_sync():
         from src.primary.routes.media_hunt.indexers import (
             INDEXER_PRESETS, INDEXER_DEFAULT_CATEGORIES,
             TV_INDEXER_DEFAULT_CATEGORIES,
+            _filter_categories_movie, _filter_categories_tv,
         )
         import uuid as _uuid
         db = get_database()
@@ -151,7 +152,8 @@ def api_ih_sync():
 
             preset = ih_idx.get('preset', 'manual')
             if mode == 'tv':
-                default_cats = list(TV_INDEXER_DEFAULT_CATEGORIES)
+                raw = list(TV_INDEXER_DEFAULT_CATEGORIES)
+                default_cats = _filter_categories_tv(raw) or list(TV_INDEXER_DEFAULT_CATEGORIES)
                 new_idx = {
                     'id': str(_uuid.uuid4())[:8],
                     'name': ih_idx.get('name', 'Unnamed'),
@@ -167,9 +169,10 @@ def api_ih_sync():
                 }
             else:
                 if preset in INDEXER_PRESETS:
-                    default_cats = list(INDEXER_PRESETS[preset].get('categories', INDEXER_DEFAULT_CATEGORIES))
+                    raw = list(INDEXER_PRESETS[preset].get('categories', INDEXER_DEFAULT_CATEGORIES))
                 else:
-                    default_cats = list(ih_idx.get('categories', INDEXER_DEFAULT_CATEGORIES))
+                    raw = list(ih_idx.get('categories', INDEXER_DEFAULT_CATEGORIES))
+                default_cats = _filter_categories_movie(raw) or list(INDEXER_DEFAULT_CATEGORIES)
                 new_idx = {
                     'name': ih_idx.get('name', 'Unnamed'),
                     'display_name': ih_idx.get('display_name', ''),

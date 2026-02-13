@@ -130,11 +130,15 @@
         if (filtered.length === 0 && _indexers.length === 0) {
             grid.style.display = 'none';
             if (empty) empty.style.display = '';
+            var instanceArea = document.getElementById('ih-instance-area');
+            if (instanceArea) instanceArea.style.display = 'none';
             return;
         }
 
         grid.style.display = '';
         if (empty) empty.style.display = 'none';
+        var instanceArea = document.getElementById('ih-instance-area');
+        if (instanceArea) instanceArea.style.display = '';
 
         var html = '';
         filtered.forEach(function(idx) {

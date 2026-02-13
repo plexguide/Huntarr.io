@@ -2210,7 +2210,7 @@ document.head.appendChild(styleEl);
         this._currentEditing = null;
         _instanceEditorDirty = false;
         if (appType === 'indexer') {
-            window.huntarrUI.switchSection('settings-indexers');
+            window.huntarrUI.switchSection('indexer-hunt');
         } else if (appType === 'client') {
             window.huntarrUI.switchSection('settings-clients');
         } else {
@@ -3884,6 +3884,14 @@ document.head.appendChild(styleEl);
     ];
     var DEFAULT_CATEGORIES = [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2060];
 
+    // ── TV categories (5000 series only; never mix with 2000 movie series) ───
+    var ALL_TV_CATEGORIES = [
+        { id: 5000, name: 'TV' }, { id: 5010, name: 'TV/Foreign' }, { id: 5020, name: 'TV/Other' },
+        { id: 5030, name: 'TV/SD' }, { id: 5040, name: 'TV/HD' }, { id: 5045, name: 'TV/UHD' },
+        { id: 5050, name: 'TV/BluRay' }, { id: 5060, name: 'TV/3D' }, { id: 5070, name: 'TV/DVD' }
+    ];
+    var DEFAULT_TV_CATEGORIES = [5000, 5010, 5020, 5030, 5040, 5045, 5050, 5060, 5070];
+
     // ── Helpers ────────────────────────────────────────────────────────
     Forms.getIndexerPresetLabel = function(preset) {
         var p = (preset || 'manual').toLowerCase().trim();
@@ -3892,6 +3900,8 @@ document.head.appendChild(styleEl);
         return p;
     };
     Forms.getIndexerCategoriesForPreset = function(preset) {
+        var isTV = (Forms._indexersMode === 'tv');
+        if (isTV) return ALL_TV_CATEGORIES;  // TV: 5000 series only
         var p = (preset || '').toLowerCase().trim();
         if (p === 'dognzb') return DOGNZB_CATEGORIES;
         if (p === 'drunkenslug') return DRUNKENSLUG_CATEGORIES;
@@ -3902,14 +3912,16 @@ document.head.appendChild(styleEl);
         if (p === 'simplynzbs') return SIMPLYNZBS_CATEGORIES;
         if (p === 'tabularasa') return TABULARASA_CATEGORIES;
         if (p === 'usenetcrawler') return USENETCRAWLER_CATEGORIES;
-        return ALL_MOVIE_CATEGORIES;
+        return ALL_MOVIE_CATEGORIES;  // Movie: 2000 series only
     };
     Forms.getIndexerDefaultIdsForPreset = function(preset) {
+        var isTV = (Forms._indexersMode === 'tv');
+        if (isTV) return DEFAULT_TV_CATEGORIES.slice();  // TV: 5000 series only
         var p = (preset || 'manual').toLowerCase().trim();
         if (PRESET_META[p] && Array.isArray(PRESET_META[p].categories)) {
             return PRESET_META[p].categories.slice();
         }
-        return DEFAULT_CATEGORIES.slice();
+        return DEFAULT_CATEGORIES.slice();  // Movie: 2000 series only
     };
 
     // ── Open editor ────────────────────────────────────────────────────
@@ -4252,10 +4264,12 @@ document.head.appendChild(styleEl);
         var apiPath = (instance.api_path || meta.api_path || '/api').replace(/"/g, '&quot;');
         var urlReadonly = hasPreset && !isManual;
 
-        // Categories
+        // Categories: Movie = 2000 series only, TV = 5000 series only (no cross-ref)
         var allCats = Forms.getIndexerCategoriesForPreset(preset);
         var defaultIds = hasPreset ? Forms.getIndexerDefaultIdsForPreset(preset) : [];
         var categoryIds = Array.isArray(instance.categories) ? instance.categories : defaultIds;
+        var validIds = allCats.map(function(x) { return x.id; });
+        categoryIds = categoryIds.filter(function(id) { return validIds.indexOf(id) !== -1; });
         if (categoryIds.length === 0) categoryIds = defaultIds;
         var categoryChipsHtml = categoryIds.map(function(id) {
             var c = allCats.find(function(x) { return x.id === id; });
@@ -4715,7 +4729,6 @@ document.head.appendChild(styleEl);
                 for (var i = 0; i < list.length; i++) {
                     allHtml += window.SettingsForms.renderIndexerCard(list[i], i);
                 }
-                allHtml += '<div class="add-instance-card" data-app-type="indexer" data-source="standard"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Indexer</div></div>';
                 allHtml += '<div class="add-instance-card" data-app-type="indexer" data-source="indexer-hunt"><div class="add-icon"><i class="fas fa-download" style="color: #6366f1;"></i></div><div class="add-text">Import from Index Master</div></div>';
 
                 if (unifiedGrid) {
@@ -4732,19 +4745,22 @@ document.head.appendChild(styleEl);
                 }
             })
             .catch(function() {
-                if (unifiedGrid) unifiedGrid.innerHTML = '<div class="add-instance-card" data-app-type="indexer" data-source="standard"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Indexer</div></div><div class="add-instance-card" data-app-type="indexer" data-source="indexer-hunt"><div class="add-icon"><i class="fas fa-download" style="color: #6366f1;"></i></div><div class="add-text">Import from Index Master</div></div>';
+                if (unifiedGrid) unifiedGrid.innerHTML = '<div class="add-instance-card" data-app-type="indexer" data-source="indexer-hunt"><div class="add-icon"><i class="fas fa-download" style="color: #6366f1;"></i></div><div class="add-text">Import from Index Master</div></div>';
             });
     };
 
+    function isIndexersUIVisible() {
+        var settingsSection = document.getElementById('settingsIndexersSection');
+        var indexMasterSection = document.getElementById('indexer-hunt-section');
+        return (settingsSection && settingsSection.classList.contains('active')) ||
+               (indexMasterSection && indexMasterSection.classList.contains('active'));
+    }
+
     document.addEventListener('huntarr:instances-changed', function() {
-        if (document.getElementById('settingsIndexersSection') && document.getElementById('settingsIndexersSection').classList.contains('active')) {
-            Forms.initOrRefreshIndexers();
-        }
+        if (isIndexersUIVisible()) Forms.initOrRefreshIndexers();
     });
     document.addEventListener('huntarr:tv-hunt-instances-changed', function() {
-        if (document.getElementById('settingsIndexersSection') && document.getElementById('settingsIndexersSection').classList.contains('active')) {
-            Forms.initOrRefreshIndexers();
-        }
+        if (isIndexersUIVisible()) Forms.initOrRefreshIndexers();
     });
 })();
 

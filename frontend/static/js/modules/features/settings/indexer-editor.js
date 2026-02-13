@@ -90,6 +90,14 @@
     ];
     var DEFAULT_CATEGORIES = [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2060];
 
+    // ── TV categories (5000 series only; never mix with 2000 movie series) ───
+    var ALL_TV_CATEGORIES = [
+        { id: 5000, name: 'TV' }, { id: 5010, name: 'TV/Foreign' }, { id: 5020, name: 'TV/Other' },
+        { id: 5030, name: 'TV/SD' }, { id: 5040, name: 'TV/HD' }, { id: 5045, name: 'TV/UHD' },
+        { id: 5050, name: 'TV/BluRay' }, { id: 5060, name: 'TV/3D' }, { id: 5070, name: 'TV/DVD' }
+    ];
+    var DEFAULT_TV_CATEGORIES = [5000, 5010, 5020, 5030, 5040, 5045, 5050, 5060, 5070];
+
     // ── Helpers ────────────────────────────────────────────────────────
     Forms.getIndexerPresetLabel = function(preset) {
         var p = (preset || 'manual').toLowerCase().trim();
@@ -98,6 +106,8 @@
         return p;
     };
     Forms.getIndexerCategoriesForPreset = function(preset) {
+        var isTV = (Forms._indexersMode === 'tv');
+        if (isTV) return ALL_TV_CATEGORIES;  // TV: 5000 series only
         var p = (preset || '').toLowerCase().trim();
         if (p === 'dognzb') return DOGNZB_CATEGORIES;
         if (p === 'drunkenslug') return DRUNKENSLUG_CATEGORIES;
@@ -108,14 +118,16 @@
         if (p === 'simplynzbs') return SIMPLYNZBS_CATEGORIES;
         if (p === 'tabularasa') return TABULARASA_CATEGORIES;
         if (p === 'usenetcrawler') return USENETCRAWLER_CATEGORIES;
-        return ALL_MOVIE_CATEGORIES;
+        return ALL_MOVIE_CATEGORIES;  // Movie: 2000 series only
     };
     Forms.getIndexerDefaultIdsForPreset = function(preset) {
+        var isTV = (Forms._indexersMode === 'tv');
+        if (isTV) return DEFAULT_TV_CATEGORIES.slice();  // TV: 5000 series only
         var p = (preset || 'manual').toLowerCase().trim();
         if (PRESET_META[p] && Array.isArray(PRESET_META[p].categories)) {
             return PRESET_META[p].categories.slice();
         }
-        return DEFAULT_CATEGORIES.slice();
+        return DEFAULT_CATEGORIES.slice();  // Movie: 2000 series only
     };
 
     // ── Open editor ────────────────────────────────────────────────────
@@ -458,10 +470,12 @@
         var apiPath = (instance.api_path || meta.api_path || '/api').replace(/"/g, '&quot;');
         var urlReadonly = hasPreset && !isManual;
 
-        // Categories
+        // Categories: Movie = 2000 series only, TV = 5000 series only (no cross-ref)
         var allCats = Forms.getIndexerCategoriesForPreset(preset);
         var defaultIds = hasPreset ? Forms.getIndexerDefaultIdsForPreset(preset) : [];
         var categoryIds = Array.isArray(instance.categories) ? instance.categories : defaultIds;
+        var validIds = allCats.map(function(x) { return x.id; });
+        categoryIds = categoryIds.filter(function(id) { return validIds.indexOf(id) !== -1; });
         if (categoryIds.length === 0) categoryIds = defaultIds;
         var categoryChipsHtml = categoryIds.map(function(id) {
             var c = allCats.find(function(x) { return x.id === id; });

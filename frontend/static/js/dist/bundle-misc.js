@@ -3765,9 +3765,10 @@
         var editor = document.getElementById('ih-editor-view');
         if (list) list.style.display = 'none';
         if (editor) editor.style.display = '';
-        // Scroll to top
-        var section = document.getElementById('indexer-hunt-section');
-        if (section) section.scrollTop = 0;
+        // Anchor editor into view so user doesn't have to scroll down
+        if (editor) {
+            editor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }
 
     // ── Data loading ──────────────────────────────────────────────────
@@ -3830,11 +3831,15 @@
         if (filtered.length === 0 && _indexers.length === 0) {
             grid.style.display = 'none';
             if (empty) empty.style.display = '';
+            var instanceArea = document.getElementById('ih-instance-area');
+            if (instanceArea) instanceArea.style.display = 'none';
             return;
         }
 
         grid.style.display = '';
         if (empty) empty.style.display = 'none';
+        var instanceArea = document.getElementById('ih-instance-area');
+        if (instanceArea) instanceArea.style.display = '';
 
         var html = '';
         filtered.forEach(function(idx) {
@@ -3960,7 +3965,6 @@
                 if (apiPathEl) apiPathEl.value = p.api_path || '/api';
             }
         }
-
         if (urlEl) urlEl.readOnly = !isManual;
         if (apiPathEl) apiPathEl.readOnly = !isManual;
     }

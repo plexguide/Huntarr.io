@@ -3,43 +3,7 @@
     <link rel="stylesheet" href="./static/css/indexer-hunt.css">
     {% with section_id='indexer-hunt' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
 
-    <div class="app-content-panel ih-page-wrapper" style="width:100%;padding:20px;margin:0;background:transparent;box-shadow:none;border:none;">
-        <!-- Instance selector: TV/Movie instances -->
-        <div class="media-hunt-settings-instance-bar" style="margin-bottom: 16px;">
-            <select id="settings-indexers-instance-select" class="control-select" aria-label="Instance">
-                <option value="">Loading...</option>
-            </select>
-        </div>
-
-        <!-- Per-instance indexers (Import from Index Master only; pool is the single source) -->
-        <div class="settings-group indexer-settings-group ih-instance-indexers-group" style="background:rgba(15,23,42,0.4);border:1px solid rgba(148,163,184,0.08);border-radius:12px;padding:24px;margin:12px 0 20px 0;">
-            <h3 style="margin:0 0 8px 0;padding:0 0 12px 0;font-size:1.1rem;font-weight:600;color:#f1f5f9;border-bottom:1px solid rgba(148,163,184,0.12);background:none;box-shadow:none;"><i class="fas fa-server" style="margin-right: 8px; font-size: 0.95rem;"></i>Instance Indexers</h3>
-            <p style="font-size:0.85rem;color:#64748b;margin:0 0 16px 0;">Indexers for the selected TV or Movie Hunt instance. Import from the Index Master pool below.</p>
-            <div class="instance-card-grid" id="indexer-instances-grid-unified">
-                <div class="add-instance-card" data-app-type="indexer" data-source="indexer-hunt">
-                    <div class="add-icon"><i class="fas fa-download" style="color: #6366f1;"></i></div>
-                    <div class="add-text">Import from Index Master</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Import from Index Master checklist panel (hidden by default) -->
-        <div class="settings-group indexer-settings-group ih-import-panel" id="ih-import-panel" style="display: none; border-left: 3px solid #6366f1;">
-            <h3><i class="fas fa-download" style="color: #6366f1; margin-right: 8px; font-size: 0.95rem;"></i>Import Indexers from Index Master</h3>
-            <p class="ih-mgmt-desc">Select indexers to import to this instance. Imported indexers stay linked for API key and enable/disable sync.</p>
-            <div class="ih-import-list" id="ih-import-list">
-                <div style="color: #94a3b8; padding: 20px; text-align: center;">Loading available indexers...</div>
-            </div>
-            <div class="ih-import-actions" id="ih-import-actions" style="display: none;">
-                <button type="button" class="ih-import-cancel-btn" id="ih-import-cancel">Cancel</button>
-                <button type="button" class="ih-import-confirm-btn" id="ih-import-confirm">
-                    <i class="fas fa-download"></i> Import Selected
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ── Index Master Pool (central management) ──────────────────────── -->
+    <!-- ── Index Master Pool (central management) — shown first, up top ─────────── -->
     <div class="ih-page" id="ih-list-view">
         <div class="ih-page-header">
             <div class="ih-page-title">
@@ -144,6 +108,38 @@
                     </button>
                     <div class="ih-test-result" id="ih-test-result"></div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Instance Indexers (only when pool has indexers) ───────────────────────── -->
+    <div class="app-content-panel ih-page-wrapper ih-instance-area" id="ih-instance-area" style="width:100%;padding:20px;margin:0;background:transparent;box-shadow:none;border:none;display:none;">
+        <div class="media-hunt-settings-instance-bar" style="margin-bottom: 16px;">
+            <select id="settings-indexers-instance-select" class="control-select" aria-label="Instance">
+                <option value="">Loading...</option>
+            </select>
+        </div>
+        <div class="settings-group indexer-settings-group ih-instance-indexers-group" style="background:rgba(15,23,42,0.4);border:1px solid rgba(148,163,184,0.08);border-radius:12px;padding:24px;margin:12px 0 20px 0;">
+            <h3 style="margin:0 0 8px 0;padding:0 0 12px 0;font-size:1.1rem;font-weight:600;color:#f1f5f9;border-bottom:1px solid rgba(148,163,184,0.12);background:none;box-shadow:none;"><i class="fas fa-server" style="margin-right: 8px; font-size: 0.95rem;"></i>Instance Indexers</h3>
+            <p style="font-size:0.85rem;color:#64748b;margin:0 0 16px 0;">Indexers for the selected TV or Movie Hunt instance. Import from the Index Master pool above.</p>
+            <div class="instance-card-grid" id="indexer-instances-grid-unified">
+                <div class="add-instance-card" data-app-type="indexer" data-source="indexer-hunt">
+                    <div class="add-icon"><i class="fas fa-download" style="color: #6366f1;"></i></div>
+                    <div class="add-text">Import from Index Master</div>
+                </div>
+            </div>
+        </div>
+        <div class="settings-group indexer-settings-group ih-import-panel" id="ih-import-panel" style="display: none; border-left: 3px solid #6366f1;">
+            <h3><i class="fas fa-download" style="color: #6366f1; margin-right: 8px; font-size: 0.95rem;"></i>Import Indexers from Index Master</h3>
+            <p class="ih-mgmt-desc">Select indexers to import to this instance. Imported indexers stay linked for API key and enable/disable sync.</p>
+            <div class="ih-import-list" id="ih-import-list">
+                <div style="color: #94a3b8; padding: 20px; text-align: center;">Loading available indexers...</div>
+            </div>
+            <div class="ih-import-actions" id="ih-import-actions" style="display: none;">
+                <button type="button" class="ih-import-cancel-btn" id="ih-import-cancel">Cancel</button>
+                <button type="button" class="ih-import-confirm-btn" id="ih-import-confirm">
+                    <i class="fas fa-download"></i> Import Selected
+                </button>
             </div>
         </div>
     </div>
