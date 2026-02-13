@@ -253,7 +253,7 @@
                     saveBtn.classList.remove('enabled');
                 }
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
-                    window.huntarrUI.showNotification('Movie Management saved.', 'success');
+                    window.huntarrUI.showNotification('Media Management saved.', 'success');
                 }
                 if (window.huntarrUI && window.huntarrUI.switchSection) {
                     window.huntarrUI.switchSection(nextSection);
@@ -261,7 +261,7 @@
             })
             .catch(function() {
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
-                    window.huntarrUI.showNotification('Failed to save Movie Management.', 'error');
+                    window.huntarrUI.showNotification('Failed to save Media Management.', 'error');
                 }
                 if (saveBtn) {
                     saveBtn.disabled = false;

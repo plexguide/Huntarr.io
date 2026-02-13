@@ -104,6 +104,13 @@ window.HuntarrNavigation = {
                 window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#media-hunt-settings');
             }
         }
+        // Legacy: Movie Management → Media Management
+        if (section === 'settings-movie-management') {
+            section = 'settings-media-management';
+            if (window.location.hash !== '#settings-media-management') {
+                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#settings-media-management');
+            }
+        }
         if (window.huntarrUI) {
             window.huntarrUI.switchSection(section);
         }
@@ -274,7 +281,7 @@ window.HuntarrNavigation = {
         }
         const collectionSections = ['movie-hunt-home', 'movie-hunt-collection', 'media-hunt-collection', 'settings-import-media', 'movie-hunt-calendar'];
         const activitySections = ['activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt'];
-        const settingsSections = ['movie-hunt-settings', 'media-hunt-settings', 'settings-instance-management', 'settings-movie-management', 'settings-profiles', 'settings-sizes', 'profile-editor', 'settings-custom-formats', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-root-folders', 'instance-editor'];
+        const settingsSections = ['movie-hunt-settings', 'media-hunt-settings', 'settings-instance-management', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'profile-editor', 'settings-custom-formats', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-root-folders', 'instance-editor'];
         const onCollection = collectionSections.indexOf(currentSection) !== -1;
         const onActivity = activitySections.indexOf(sectionForNav) !== -1;
         const onSettings = settingsSections.indexOf(currentSection) !== -1;

@@ -173,9 +173,9 @@
                 <span>Settings</span>
             </a>
             <div class="nav-sub-group" id="movie-hunt-settings-sub">
-                <a href="./#settings-movie-management" class="nav-item nav-item-sub" id="movieHuntSettingsMovieManagementNav">
+                <a href="./#settings-media-management" class="nav-item nav-item-sub" id="movieHuntSettingsMovieManagementNav">
                     <div class="nav-icon-wrapper"><i class="fas fa-film"></i></div>
-                    <span>Movie Management</span>
+                    <span>Media Management</span>
                 </a>
                 <a href="./#settings-profiles" class="nav-item nav-item-sub" id="movieHuntSettingsProfilesNav">
                     <div class="nav-icon-wrapper"><i class="fas fa-id-card"></i></div>
@@ -549,7 +549,12 @@
             expandSub('movie-hunt-settings-sub');
             selector = '#movieHuntSettingsNav';
         }
-        else if (currentHash === '#settings-movie-management') { selector = '#movieHuntSettingsMovieManagementNav'; expandSub('movie-hunt-settings-sub'); }
+        else if (currentHash === '#settings-media-management') {
+            selector = '#movieHuntSettingsMovieManagementNav';
+            expandSub('movie-hunt-collection-sub');
+            expandSub('movie-hunt-activity-sub');
+            expandSub('movie-hunt-settings-sub');
+        }
         else if (currentHash === '#settings-profiles') { selector = '#movieHuntSettingsProfilesNav'; expandSub('movie-hunt-settings-sub'); }
         else if (currentHash === '#settings-sizes') { selector = '#movieHuntSettingsSizesNav'; expandSub('movie-hunt-settings-sub'); }
         else if (currentHash === '#settings-custom-formats') { selector = '#movieHuntSettingsCustomFormatsNav'; expandSub('movie-hunt-settings-sub'); }
@@ -601,9 +606,9 @@
             expandSub('movie-hunt-activity-sub');
             expandSub('movie-hunt-settings-sub');
         }
-        else if (currentHash === '#media-hunt-settings' || currentHash === '#settings-instance-management' || currentHash === '#settings-movie-management' || currentHash === '#settings-profiles' || currentHash === '#settings-sizes' || currentHash === '#settings-custom-formats' || currentHash === '#settings-indexers' || currentHash === '#settings-clients' || currentHash === '#settings-import-lists' || currentHash === '#settings-root-folders') {
+        else if (currentHash === '#media-hunt-settings' || currentHash === '#settings-instance-management' || currentHash === '#settings-media-management' || currentHash === '#settings-profiles' || currentHash === '#settings-sizes' || currentHash === '#settings-custom-formats' || currentHash === '#settings-indexers' || currentHash === '#settings-clients' || currentHash === '#settings-import-lists' || currentHash === '#settings-root-folders') {
             if (currentHash === '#media-hunt-settings') { selector = '#movieHuntSettingsNav'; }
-            else if (currentHash === '#settings-movie-management') { selector = '#movieHuntSettingsMovieManagementNav'; }
+            else if (currentHash === '#settings-media-management') { selector = '#movieHuntSettingsMovieManagementNav'; }
             else if (currentHash === '#settings-profiles') { selector = '#movieHuntSettingsProfilesNav'; }
             else if (currentHash === '#settings-sizes') { selector = '#movieHuntSettingsSizesNav'; }
             else if (currentHash === '#settings-custom-formats') { selector = '#movieHuntSettingsCustomFormatsNav'; }
@@ -648,7 +653,7 @@
         if (systemHashes.indexOf(currentHash) === -1) collapseSub('system-sub');
 
         // Collapse Movie Hunt subs
-        var mhSettingsHashes = ['#movie-hunt-settings', '#media-hunt-settings', '#settings-instance-management', '#settings-movie-management', '#settings-profiles', '#settings-sizes', '#settings-custom-formats', '#settings-indexers', '#settings-clients', '#settings-import-lists', '#settings-root-folders'];
+        var mhSettingsHashes = ['#movie-hunt-settings', '#media-hunt-settings', '#settings-instance-management', '#settings-media-management', '#settings-profiles', '#settings-sizes', '#settings-custom-formats', '#settings-indexers', '#settings-clients', '#settings-import-lists', '#settings-root-folders'];
         if (mhSettingsHashes.indexOf(currentHash) === -1) collapseSub('movie-hunt-settings-sub');
 
         var mhActivityHashes = ['#activity-queue', '#activity-history', '#activity-blocklist', '#activity-logs', '#logs-movie-hunt'];
