@@ -110,11 +110,11 @@ window.HuntarrNavigation = {
                 window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#media-hunt-instances');
             }
         }
-        // Legacy media-hunt-settings (was Settings default): now Instances lives under Collection
+        // Legacy media-hunt-settings: go to Media Management so Settings sub-menu expands and shows sub-items
         if (section === 'media-hunt-settings') {
-            section = 'media-hunt-instances';
-            if (window.location.hash !== '#media-hunt-instances') {
-                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#media-hunt-instances');
+            section = 'settings-media-management';
+            if (window.location.hash !== '#settings-media-management') {
+                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#settings-media-management');
             }
         }
         // Legacy: Movie Management → Media Management
