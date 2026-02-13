@@ -10568,20 +10568,24 @@ document.head.appendChild(styleEl);
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     var list = data.instances || [];
+                    var currentId = (data.current_instance_id != null) ? parseInt(data.current_instance_id, 10) : (list[0] ? list[0].id : null);
                     grid.innerHTML = '';
                     list.forEach(function(inst) {
                         var enabled = inst.enabled !== false;
                         var statusClass = enabled ? 'status-connected' : 'status-disabled';
                         var statusIcon = enabled ? 'fa-check-circle' : 'fa-minus-circle';
+                        var isDefault = currentId != null && inst.id === currentId;
+                        var defaultBtn = isDefault ? '' : '<button type="button" class="btn-card set-default" data-id="' + escapeAttr(String(inst.id)) + '"><i class="fas fa-star"></i> Default</button>';
+                        var deleteBtn = list.length > 1 ? '<button type="button" class="btn-card delete" data-id="' + escapeAttr(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '"><i class="fas fa-trash"></i> Delete</button>' : '';
                         var card = document.createElement('div');
-                        card.className = 'instance-card';
+                        card.className = 'instance-card' + (isDefault ? ' default-instance' : '');
                         card.innerHTML =
                             '<div class="instance-card-header">' +
-                            '<span class="instance-name"><i class="fas fa-film" style="margin-right: 8px;"></i>' + escapeHtml(inst.name || 'Instance ' + inst.id) + '</span>' +
+                            '<span class="instance-name"><i class="fas fa-film" style="margin-right: 8px;"></i>' + escapeHtml(inst.name || 'Instance ' + inst.id) + (isDefault ? ' <span class="default-badge">Default</span>' : '') + '</span>' +
                             '<div class="instance-status-icon ' + statusClass + '" title="' + (enabled ? 'Enabled' : 'Disabled') + '"><i class="fas ' + statusIcon + '"></i></div>' +
                             '</div>' +
                             '<div class="instance-card-body"><div class="instance-detail"><i class="fas fa-hashtag"></i><span>ID ' + escapeHtml(inst.id) + '</span></div></div>' +
-                            '<div class="instance-card-footer"><button type="button" class="btn-card edit" data-id="' + escapeAttr(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '"><i class="fas fa-edit"></i> Edit</button></div>';
+                            '<div class="instance-card-footer"><button type="button" class="btn-card edit" data-id="' + escapeAttr(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '"><i class="fas fa-edit"></i> Edit</button>' + defaultBtn + deleteBtn + '</div>';
                         grid.appendChild(card);
                     });
                     var addCard = document.createElement('div');
@@ -10596,9 +10600,65 @@ document.head.appendChild(styleEl);
                             );
                         });
                     });
+                    grid.querySelectorAll('.btn-card.set-default').forEach(function(btn) {
+                        btn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            window.MovieHuntInstanceEditor.setDefault(btn.getAttribute('data-id'));
+                        });
+                    });
+                    grid.querySelectorAll('.btn-card.delete').forEach(function(btn) {
+                        btn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            var name = btn.getAttribute('data-name') || ('Instance ' + btn.getAttribute('data-id'));
+                            var doDelete = function() { window.MovieHuntInstanceEditor.deleteInstance(btn.getAttribute('data-id')); };
+                            if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                                window.HuntarrConfirm.show({ title: 'Delete Instance', message: 'Delete Movie Hunt instance "' + (name || '') + '"? All settings and collection data for this instance will be permanently removed.', confirmLabel: 'Delete', onConfirm: doDelete });
+                            } else if (confirm('Delete "' + name + '"? This cannot be undone.')) { doDelete(); }
+                        });
+                    });
                 })
                 .catch(function() {
                     grid.innerHTML = '<div style="color: #f87171;">Failed to load instances.</div>';
+                });
+        },
+
+        setDefault: function(instanceId) {
+            if (!instanceId) return;
+            var self = this;
+            fetch(api('./api/movie-hunt/instances/current'), {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ instance_id: parseInt(instanceId, 10) })
+            })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Default instance updated', 'success');
+                        self.loadInstanceList();
+                    } else if (data.error && window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification(data.error, 'error');
+                    }
+                })
+                .catch(function() {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Failed to set default instance', 'error');
+                });
+        },
+
+        deleteInstance: function(instanceId) {
+            if (!instanceId) return;
+            var self = this;
+            fetch(api('./api/movie-hunt/instances/' + instanceId), { method: 'DELETE' })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Instance deleted', 'success');
+                        self.loadInstanceList();
+                    } else if (data.error && window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification(data.error || 'Failed to delete', 'error');
+                    }
+                })
+                .catch(function() {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Failed to delete instance', 'error');
                 });
         },
 
@@ -11039,21 +11099,25 @@ document.head.appendChild(styleEl);
         return '<div class="add-instance-card" data-app-type="' + appType + '"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">' + (label || 'Add Instance') + '</div></div>';
     }
 
-    function renderTVInstanceCards(grid, list) {
+    function renderTVInstanceCards(grid, list, currentId) {
         grid.innerHTML = '';
+        currentId = (currentId != null) ? parseInt(currentId, 10) : (list && list[0] ? list[0].id : null);
         (list || []).forEach(function(inst) {
             var enabled = inst.enabled !== false;
             var statusClass = enabled ? 'status-connected' : 'status-disabled';
             var statusIcon = enabled ? 'fa-check-circle' : 'fa-minus-circle';
+            var isDefault = currentId != null && inst.id === currentId;
+            var defaultBtn = isDefault ? '' : '<button type="button" class="btn-card set-default" data-id="' + escapeAttr(String(inst.id)) + '"><i class="fas fa-star"></i> Default</button>';
+            var deleteBtn = list.length > 1 ? '<button type="button" class="btn-card delete" data-id="' + escapeAttr(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '"><i class="fas fa-trash"></i> Delete</button>' : '';
             var card = document.createElement('div');
-            card.className = 'instance-card';
+            card.className = 'instance-card' + (isDefault ? ' default-instance' : '');
             card.innerHTML =
                 '<div class="instance-card-header">' +
-                '<span class="instance-name"><i class="fas fa-tv" style="margin-right: 8px;"></i>' + escapeHtml(inst.name || 'Instance ' + inst.id) + '</span>' +
+                '<span class="instance-name"><i class="fas fa-tv" style="margin-right: 8px;"></i>' + escapeHtml(inst.name || 'Instance ' + inst.id) + (isDefault ? ' <span class="default-badge">Default</span>' : '') + '</span>' +
                 '<div class="instance-status-icon ' + statusClass + '" title="' + (enabled ? 'Enabled' : 'Disabled') + '"><i class="fas ' + statusIcon + '"></i></div>' +
                 '</div>' +
                 '<div class="instance-card-body"><div class="instance-detail"><i class="fas fa-hashtag"></i><span>ID ' + escapeHtml(inst.id) + '</span></div></div>' +
-                '<div class="instance-card-footer"><button type="button" class="btn-card edit" data-id="' + escapeAttr(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '"><i class="fas fa-edit"></i> Edit</button></div>';
+                '<div class="instance-card-footer"><button type="button" class="btn-card edit" data-id="' + escapeAttr(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '"><i class="fas fa-edit"></i> Edit</button>' + defaultBtn + deleteBtn + '</div>';
             grid.appendChild(card);
         });
         var addCard = document.createElement('div');
@@ -11066,6 +11130,22 @@ document.head.appendChild(styleEl);
                     btn.getAttribute('data-id'),
                     btn.getAttribute('data-name') || ('Instance ' + btn.getAttribute('data-id'))
                 );
+            });
+        });
+        grid.querySelectorAll('.btn-card.set-default').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                window.TVHuntInstanceEditor.setDefault(btn.getAttribute('data-id'));
+            });
+        });
+        grid.querySelectorAll('.btn-card.delete').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var name = btn.getAttribute('data-name') || ('Instance ' + btn.getAttribute('data-id'));
+                var doDelete = function() { window.TVHuntInstanceEditor.deleteInstance(btn.getAttribute('data-id')); };
+                if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                    window.HuntarrConfirm.show({ title: 'Delete Instance', message: 'Delete TV Hunt instance "' + (name || '') + '"? All settings and collection data for this instance will be permanently removed.', confirmLabel: 'Delete', onConfirm: doDelete });
+                } else if (confirm('Delete "' + name + '"? This cannot be undone.')) { doDelete(); }
             });
         });
     }
@@ -11083,8 +11163,9 @@ document.head.appendChild(styleEl);
                 })
                 .then(function(data) {
                     var list = (data && data.instances) ? data.instances : [];
+                    var currentId = (data && data.current_instance_id != null) ? data.current_instance_id : null;
                     var err = data && data.error;
-                    renderTVInstanceCards(grid, list);
+                    renderTVInstanceCards(grid, list, currentId);
                     if (err && window.huntarrUI && window.huntarrUI.showNotification) {
                         window.huntarrUI.showNotification(err, 'error');
                     }
@@ -11095,7 +11176,47 @@ document.head.appendChild(styleEl);
                     errDiv.textContent = 'Failed to load instances. You can still add a new TV instance below.';
                     grid.innerHTML = '';
                     grid.appendChild(errDiv);
-                    renderTVInstanceCards(grid, []);
+                    renderTVInstanceCards(grid, [], null);
+                });
+        },
+
+        setDefault: function(instanceId) {
+            if (!instanceId) return;
+            var self = this;
+            fetch(api('./api/tv-hunt/instances/current'), {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ instance_id: parseInt(instanceId, 10) })
+            })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Default instance updated', 'success');
+                        self.loadInstanceList();
+                    } else if (data.error && window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification(data.error, 'error');
+                    }
+                })
+                .catch(function() {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Failed to set default instance', 'error');
+                });
+        },
+
+        deleteInstance: function(instanceId) {
+            if (!instanceId) return;
+            var self = this;
+            fetch(api('./api/tv-hunt/instances/' + instanceId), { method: 'DELETE' })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Instance deleted', 'success');
+                        self.loadInstanceList();
+                    } else if (data.error && window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification(data.error || 'Failed to delete', 'error');
+                    }
+                })
+                .catch(function() {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Failed to delete instance', 'error');
                 });
         },
 
