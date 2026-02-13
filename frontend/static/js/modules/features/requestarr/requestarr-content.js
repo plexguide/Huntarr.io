@@ -1241,8 +1241,26 @@ class RequestarrContent {
                     this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
                 }
             } else {
-                // For TV shows use modal
-                this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
+                // For TV shows: open detail page (TV Hunt full / Sonarr limited)
+                if (window.RequestarrTVDetail && window.RequestarrTVDetail.openDetail) {
+                    const seriesData = {
+                        tmdb_id: item.tmdb_id,
+                        id: item.tmdb_id,
+                        title: item.title,
+                        name: item.title,
+                        year: item.year,
+                        poster_path: item.poster_path,
+                        backdrop_path: item.backdrop_path,
+                        overview: item.overview,
+                        vote_average: item.vote_average,
+                        in_library: inLibrary
+                    };
+                    window.RequestarrTVDetail.openDetail(seriesData, {
+                        suggestedInstance: card.suggestedInstance
+                    });
+                } else {
+                    this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
+                }
             }
         });
         

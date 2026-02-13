@@ -4399,9 +4399,12 @@ class RequestarrContent {
         
         const inLibrary = item.in_library || false;
         const partial = item.partial || false;
-        const hasInstance = item.media_type === 'movie'
-            ? ((this.core.instances.radarr || []).length > 0 || (this.core.instances.movie_hunt || []).length > 0)
-            : (this.core.instances.sonarr || []).length > 0;
+        const hasMovieInstance = ((this.core.instances.radarr || []).length > 0 || (this.core.instances.movie_hunt || []).length > 0)
+            || !!this.selectedMovieInstance;
+        // TV: include tv_hunt; show badge whenever we have Sonarr/TV Hunt instances or a selected TV instance
+        const hasTVInstance = ((this.core.instances.sonarr || []).length > 0 || (this.core.instances.tv_hunt || []).length > 0)
+            || !!this.selectedTVInstance;
+        const hasInstance = item.media_type === 'movie' ? hasMovieInstance : hasTVInstance;
         const metaClassName = hasInstance ? 'media-card-meta' : 'media-card-meta no-hide';
         
         // Determine status badge (shared utility)
@@ -4507,8 +4510,26 @@ class RequestarrContent {
                     this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
                 }
             } else {
-                // For TV shows use modal
-                this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
+                // For TV shows: open detail page (TV Hunt full / Sonarr limited)
+                if (window.RequestarrTVDetail && window.RequestarrTVDetail.openDetail) {
+                    const seriesData = {
+                        tmdb_id: item.tmdb_id,
+                        id: item.tmdb_id,
+                        title: item.title,
+                        name: item.title,
+                        year: item.year,
+                        poster_path: item.poster_path,
+                        backdrop_path: item.backdrop_path,
+                        overview: item.overview,
+                        vote_average: item.vote_average,
+                        in_library: inLibrary
+                    };
+                    window.RequestarrTVDetail.openDetail(seriesData, {
+                        suggestedInstance: card.suggestedInstance
+                    });
+                } else {
+                    this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
+                }
             }
         });
         
@@ -5394,11 +5415,11 @@ class RequestarrDiscover {
     // INITIALIZATION
     // ========================================
 
-    init() {
-        this.loadInstances();
+    async init() {
+        await this.loadInstances();
         this.setupCarouselArrows();
         this.search.setupGlobalSearch();
-        this.content.loadDiscoverContent();
+        await this.content.loadDiscoverContent();
     }
 
     async loadInstances() {
