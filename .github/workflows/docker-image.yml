@@ -58,11 +58,19 @@ jobs:
         id: meta
         run: |
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+            VERSION="${GITHUB_REF#refs/tags/}"
+            echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
             echo "IS_TAG=true" >> $GITHUB_OUTPUT
+            # Beta tags (B-xxx, b-xxx) must NOT overwrite latest - only production releases do
+            if [[ "$VERSION" =~ ^[Bb]- ]]; then
+              echo "IS_BETA=true" >> $GITHUB_OUTPUT
+            else
+              echo "IS_BETA=false" >> $GITHUB_OUTPUT
+            fi
           else
             echo "BRANCH=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
             echo "IS_TAG=false" >> $GITHUB_OUTPUT
+            echo "IS_BETA=false" >> $GITHUB_OUTPUT
           fi
       
       # 7a) Build & Push if on 'main' branch (only SHA tags, no latest tag)
@@ -91,9 +99,9 @@ jobs:
             ghcr.io/plexguide/huntarr:dev
             ghcr.io/plexguide/huntarr:${{ github.sha }}
       
-      # 7c) Build & Push if it's a tag/release
-      - name: Build and Push (release)
-        if: steps.meta.outputs.IS_TAG == 'true' && github.event_name != 'pull_request'
+      # 7c) Build & Push - production release tag (v* etc.) → gets VERSION + latest
+      - name: Build and Push (release - production)
+        if: steps.meta.outputs.IS_TAG == 'true' && steps.meta.outputs.IS_BETA != 'true' && github.event_name != 'pull_request'
         uses: docker/build-push-action@v3
         with:
           context: .
@@ -104,6 +112,18 @@ jobs:
             huntarr/huntarr:latest
             ghcr.io/plexguide/huntarr:${{ steps.meta.outputs.VERSION }}
             ghcr.io/plexguide/huntarr:latest
+
+      # 7c-beta) Build & Push - beta tag (B-xxx, b-xxx) → VERSION only, NEVER latest
+      - name: Build and Push (release - beta)
+        if: steps.meta.outputs.IS_TAG == 'true' && steps.meta.outputs.IS_BETA == 'true' && github.event_name != 'pull_request'
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            huntarr/huntarr:${{ steps.meta.outputs.VERSION }}
+            ghcr.io/plexguide/huntarr:${{ steps.meta.outputs.VERSION }}
       
       # 7d) Build & Push for any other branch
       - name: Build and Push (feature branch)
