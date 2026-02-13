@@ -323,7 +323,8 @@ window.LogsModule = {
         
         // Update the current log app text with proper capitalization
         let displayName = app.charAt(0).toUpperCase() + app.slice(1).replace(/_/g, ' ');
-        if (app === 'whisparr') displayName = 'Whisparr V2';
+        if (app === 'all') displayName = 'Everywhere';
+        else if (app === 'whisparr') displayName = 'Whisparr V2';
         else if (app === 'eros') displayName = 'Whisparr V3';
         else if (app === 'media_hunt') displayName = 'Media Hunt (All)';
         else if (app === 'movie_hunt') displayName = 'Movie Hunt';
@@ -352,7 +353,8 @@ window.LogsModule = {
         
         // Update the current log app text with proper capitalization
         let displayName = app.charAt(0).toUpperCase() + app.slice(1).replace(/_/g, ' ');
-        if (app === 'whisparr') displayName = 'Whisparr V2';
+        if (app === 'all') displayName = 'Everywhere';
+        else if (app === 'whisparr') displayName = 'Whisparr V2';
         else if (app === 'eros') displayName = 'Whisparr V3';
         else if (app === 'media_hunt') displayName = 'Media Hunt (All)';
         else if (app === 'movie_hunt') displayName = 'Movie Hunt';
@@ -703,8 +705,8 @@ window.LogsModule = {
         // Get current app filter - use logAppSelect when available, fallback to currentLogApp
         const logAppSelect = document.getElementById('logAppSelect');
         const currentApp = logAppSelect ? logAppSelect.value : (this.currentLogApp || 'all');
-        const appDisplayNames = { media_hunt: 'Media Hunt (All)', movie_hunt: 'Movie Hunt', tv_hunt: 'TV Hunt', swaparr: 'Swaparr', sonarr: 'Sonarr', radarr: 'Radarr', lidarr: 'Lidarr', readarr: 'Readarr', whisparr: 'Whisparr V2', eros: 'Whisparr V3', system: 'System' };
-        const appLabel = currentApp === 'all' ? 'all logs' : (appDisplayNames[currentApp] ? appDisplayNames[currentApp] + ' logs' : currentApp + ' logs');
+        const appDisplayNames = { all: 'Everywhere', media_hunt: 'Media Hunt (All)', movie_hunt: 'Movie Hunt', tv_hunt: 'TV Hunt', swaparr: 'Swaparr', sonarr: 'Sonarr', radarr: 'Radarr', lidarr: 'Lidarr', readarr: 'Readarr', whisparr: 'Whisparr V2', eros: 'Whisparr V3', system: 'System' };
+        const appLabel = appDisplayNames[currentApp] ? appDisplayNames[currentApp] + ' logs' : currentApp + ' logs';
         const msg = `Are you sure you want to clear ${appLabel}? This action cannot be undone.`;
         const self = this;
         const doClear = function() {
@@ -1128,9 +1130,9 @@ window.LogsModule = {
         }
         
         const logLevelSelect = document.getElementById('logLevelSelect');
-        if (logLevelSelect && logLevelSelect.value !== 'info') {
-            logLevelSelect.value = 'info';
-            this.filterLogsByLevel('info');
+        if (logLevelSelect && logLevelSelect.value !== 'all') {
+            logLevelSelect.value = 'all';
+            this.filterLogsByLevel('all');
         }
         
         const logSearchInput = document.getElementById('logSearchInput');
@@ -1139,7 +1141,7 @@ window.LogsModule = {
             this.clearLogSearch();
         }
         
-        console.log('[LogsModule] Reset logs to defaults: All apps, INFO level, cleared search');
+        console.log('[LogsModule] Reset logs to defaults: Everywhere, All levels, cleared search');
     }
 };
 
