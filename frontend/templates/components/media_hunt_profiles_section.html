@@ -7,9 +7,16 @@
                 <option value="">Loading...</option>
             </select>
         </div>
-        <p id="media-hunt-profiles-subtitle" class="editor-help-text" style="margin-bottom: 16px;">Quality profiles for the selected instance.</p>
-        <div class="instance-card-grid" id="media-hunt-profiles-grid">
-            <!-- Populated by JS: profile cards + Add Profile card -->
+        <div class="settings-group profiles-settings-group">
+            <div class="profiles-header">
+                <div>
+                    <h3>Profiles</h3>
+                    <p id="media-hunt-profiles-subtitle" class="profiles-help">Quality profiles for the selected instance.</p>
+                </div>
+            </div>
+            <div class="instance-card-grid" id="media-hunt-profiles-grid">
+                <!-- Populated by JS: profile cards + Add Profile card -->
+            </div>
         </div>
     </div>
 
@@ -37,4 +44,146 @@
     #mediaHuntProfilesSection { width: 100%; min-height: 60vh; overflow-y: auto; }
     #mediaHuntProfilesSection.active { display: block !important; }
     body.profile-add-modal-open { overflow: hidden; }
+
+    /* Profiles header — matches Import Lists (box, title, line under it) */
+    .profiles-settings-group {
+        background: rgba(15, 23, 42, 0.4);
+        border: 1px solid rgba(148, 163, 184, 0.08);
+        border-radius: 12px;
+        padding: 24px;
+        margin: 12px 0 20px 0;
+    }
+    .profiles-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 4px;
+    }
+    .profiles-header h3 {
+        margin: 0;
+        padding: 0 0 12px 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #f1f5f9;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+    }
+    .profiles-help {
+        color: rgba(255, 255, 255, 0.55);
+        font-size: 13px;
+        margin: 12px 0 0;
+    }
+
+    /* Profile cards: B-930-01 design — compact cards, quality tags, button layout */
+    #media-hunt-profiles-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 14px;
+        margin-top: 16px;
+        margin-bottom: 20px;
+    }
+    #media-hunt-profiles-grid .instance-card {
+        padding: 12px 14px;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+    #media-hunt-profiles-grid .instance-card-header {
+        margin-bottom: 10px;
+    }
+    #media-hunt-profiles-grid .instance-name {
+        font-size: 0.95rem;
+        gap: 6px;
+    }
+    #media-hunt-profiles-grid .instance-name i {
+        font-size: 0.85rem;
+    }
+    #media-hunt-profiles-grid .default-badge {
+        font-size: 0.6rem;
+        padding: 2px 6px;
+        background: #7b4eae;
+    }
+    #media-hunt-profiles-grid .instance-card-body {
+        margin-bottom: 12px;
+        flex: 1;
+        min-height: 0;
+    }
+    #media-hunt-profiles-grid .instance-card-footer {
+        gap: 6px;
+        margin-top: 0;
+    }
+    #media-hunt-profiles-grid .btn-card {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+        flex: 1 1 0;
+        min-width: 70px;
+    }
+    #media-hunt-profiles-grid .btn-card i {
+        font-size: 0.75rem;
+    }
+    #media-hunt-profiles-grid .btn-card.set-default {
+        background: rgba(74, 106, 255, 0.25);
+        border-color: rgba(74, 106, 255, 0.4);
+        color: #93a8ff;
+    }
+    #media-hunt-profiles-grid .btn-card.set-default:hover {
+        background: rgba(74, 106, 255, 0.4);
+        border-color: #4a6aff;
+        color: #fff;
+    }
+    #media-hunt-profiles-grid .profile-card-quality-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        align-items: center;
+    }
+    #media-hunt-profiles-grid .profile-quality-tag {
+        display: inline-block;
+        padding: 2px 6px;
+        font-size: 0.68rem;
+        border-radius: 4px;
+        background: rgba(71, 85, 105, 0.5);
+        color: #cbd5e1;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        white-space: nowrap;
+    }
+    #media-hunt-profiles-grid .profile-quality-tag-highest {
+        background: linear-gradient(135deg, rgba(202, 138, 4, 0.35) 0%, rgba(180, 83, 9, 0.35) 100%);
+        color: #fcd34d;
+        border-color: rgba(202, 138, 4, 0.5);
+        font-weight: 600;
+    }
+    #media-hunt-profiles-grid .profile-quality-tag-empty {
+        color: #64748b;
+        font-style: italic;
+        font-size: 0.7rem;
+    }
+    #media-hunt-profiles-grid .add-instance-card {
+        min-height: 100px;
+    }
+    #media-hunt-profiles-grid .add-instance-card .add-icon {
+        font-size: 1.5rem;
+    }
+    #media-hunt-profiles-grid .add-instance-card .add-text {
+        font-size: 0.85rem;
+    }
+    #media-hunt-profiles-grid .instance-card-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: 8px;
+    }
+    #media-hunt-profiles-grid .btn-clone-profile {
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        padding: 2px 4px;
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 0.8rem;
+    }
+    #media-hunt-profiles-grid .btn-clone-profile:hover {
+        color: #6366f1;
+        background: rgba(99, 102, 241, 0.15);
+    }
 </style>
