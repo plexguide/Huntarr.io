@@ -207,7 +207,7 @@
                 </a>
             </div>
             <script>
-            // Media Hunt sidebar: sub-menus always expandable; Import Media shown if Movie or TV has root folders
+            // Media Hunt sidebar: sub-menus always expandable; Import Media shown when Movie or TV instance exists
             (function() {
                 function updateMediaHuntSidebarVisibility() {
                     var importMediaItem = document.getElementById('movieHuntImportMediaNav');
@@ -218,18 +218,10 @@
                     ]).then(function(results) {
                         var hasMovie = (results[0].instances || []).length > 0;
                         var hasTv = (results[1].instances || []).length > 0;
-                        if (!hasMovie && !hasTv) { importMediaItem.style.display = 'none'; if (typeof setActiveNavItem === 'function') setActiveNavItem(); return; }
-                        return Promise.all([
-                            hasMovie ? fetch('./api/movie-hunt/root-folders').then(function(r) { return r.json(); }) : Promise.resolve({ root_folders: [] }),
-                            hasTv ? fetch('./api/tv-hunt/root-folders').then(function(r) { return r.json(); }) : Promise.resolve({ root_folders: [] })
-                        ]).then(function(rf) {
-                            var movieRf = (rf[0].root_folders || []).length > 0;
-                            var tvRf = (rf[1].root_folders || []).length > 0;
-                            importMediaItem.style.display = (movieRf || tvRf) ? 'flex' : 'none';
-                            if (typeof setActiveNavItem === 'function') setActiveNavItem();
-                        });
+                        importMediaItem.style.display = (hasMovie || hasTv) ? 'flex' : 'none';
+                        if (typeof setActiveNavItem === 'function') setActiveNavItem();
                     }).catch(function() {
-                        importMediaItem.style.display = 'none';
+                        importMediaItem.style.display = 'flex';
                         if (typeof setActiveNavItem === 'function') setActiveNavItem();
                     });
                 }

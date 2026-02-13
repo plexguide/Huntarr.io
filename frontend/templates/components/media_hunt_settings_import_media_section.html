@@ -3,14 +3,6 @@
     <link rel="stylesheet" href="./static/css/import-media.css?v=1.0.8">
     <div id="mediaHuntImportMediaContainer" class="app-content-panel">
         <div class="media-hunt-settings-instance-bar" style="margin-bottom: 16px;">
-            <div class="media-hunt-import-media-mode-toggle">
-                <button type="button" class="import-media-mode-btn active" data-mode="movie" id="import-media-mode-movie">
-                    <i class="fas fa-film"></i> Movies
-                </button>
-                <button type="button" class="import-media-mode-btn" data-mode="tv" id="import-media-mode-tv">
-                    <i class="fas fa-tv"></i> TV
-                </button>
-            </div>
             <select id="media-hunt-import-media-instance-select" class="control-select" aria-label="Instance">
                 <option value="">Loading...</option>
             </select>
@@ -101,32 +93,10 @@
 </section>
 
 <style>
-.media-hunt-import-media-mode-toggle {
-    display: flex;
-    gap: 4px;
-    margin-right: 12px;
-}
-.import-media-mode-btn {
-    padding: 8px 14px;
-    border: 1px solid rgba(148, 163, 184, 0.3);
-    background: rgba(148, 163, 184, 0.1);
-    color: #94a3b8;
-    border-radius: 8px;
-    font-weight: 500;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-.import-media-mode-btn:hover { background: rgba(148, 163, 184, 0.2); color: #e2e8f0; }
-.import-media-mode-btn.active {
-    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-    border-color: rgba(99, 102, 241, 0.5);
-    color: #fff;
-}
 #mediaHuntSettingsImportMediaSection .media-hunt-settings-instance-bar {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
 }
+#media-hunt-import-media-instance-select { min-width: 200px; }
 </style>

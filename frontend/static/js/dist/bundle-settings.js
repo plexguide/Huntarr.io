@@ -7657,8 +7657,7 @@ document.head.appendChild(styleEl);
             var self = this;
             if (!document.getElementById(PREFIX + '-instance-select')) return;
 
-            this.setupModeToggle();
-            this.setupInstanceSelect();
+            this.setupCombinedInstanceSelect();
             this.setupScanButton();
             this.setupImportAllButton();
             this.setupSearchModal();
@@ -7666,33 +7665,85 @@ document.head.appendChild(styleEl);
             this.loadItems();
         },
 
-        setupModeToggle: function() {
+        setupCombinedInstanceSelect: function() {
             var self = this;
-            var movieBtn = document.getElementById('import-media-mode-movie');
-            var tvBtn = document.getElementById('import-media-mode-tv');
-            if (movieBtn) {
-                movieBtn.onclick = function() {
-                    self.setMode('movie');
-                };
-            }
-            if (tvBtn) {
-                tvBtn.onclick = function() {
-                    self.setMode('tv');
-                };
-            }
+            var select = document.getElementById(PREFIX + '-instance-select');
+            if (!select) return;
+
+            select.innerHTML = '<option value="">Loading...</option>';
+
+            Promise.all([
+                fetch('./api/movie-hunt/instances').then(function(r) { return r.json(); }),
+                fetch('./api/tv-hunt/instances').then(function(r) { return r.json(); }),
+                fetch('./api/movie-hunt/current-instance').then(function(r) { return r.json(); }),
+                fetch('./api/tv-hunt/current-instance').then(function(r) { return r.json(); })
+            ]).then(function(results) {
+                var movieList = results[0].instances || [];
+                var tvList = results[1].instances || [];
+                var movieCurrent = results[2].instance_id != null ? Number(results[2].instance_id) : null;
+                var tvCurrent = results[3].instance_id != null ? Number(results[3].instance_id) : null;
+
+                select.innerHTML = '';
+                var opts = [];
+                movieList.forEach(function(inst) {
+                    opts.push({ value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id), mode: 'movie' });
+                });
+                tvList.forEach(function(inst) {
+                    opts.push({ value: 'tv:' + inst.id, label: 'TV - ' + (inst.name || 'Instance ' + inst.id), mode: 'tv' });
+                });
+
+                if (opts.length === 0) {
+                    var o = document.createElement('option');
+                    o.value = '';
+                    o.textContent = 'No instances';
+                    select.appendChild(o);
+                    return;
+                }
+
+                opts.forEach(function(opt) {
+                    var o = document.createElement('option');
+                    o.value = opt.value;
+                    o.textContent = opt.label;
+                    select.appendChild(o);
+                });
+
+                var pref = (movieCurrent != null && movieList.length) ? 'movie:' + movieCurrent : (tvCurrent != null && tvList.length) ? 'tv:' + tvCurrent : opts[0].value;
+                if (select.querySelector('option[value="' + pref + '"]')) {
+                    select.value = pref;
+                } else if (opts.length) {
+                    select.value = opts[0].value;
+                }
+                self.applySelectedInstance();
+            }).catch(function() {
+                select.innerHTML = '<option value="">Failed to load</option>';
+            });
+
+            select.addEventListener('change', function() {
+                self.applySelectedInstance();
+            });
         },
 
-        setMode: function(mode) {
-            if (this.mode === mode) return;
+        applySelectedInstance: function() {
+            var select = document.getElementById(PREFIX + '-instance-select');
+            if (!select || !select.value) return;
+            var parts = (select.value || '').split(':');
+            var mode = parts[0] || 'movie';
+            var instanceId = parts[1] ? parseInt(parts[1], 10) : null;
+            if (!instanceId) return;
+
             this.mode = mode;
-
-            var movieBtn = document.getElementById('import-media-mode-movie');
-            var tvBtn = document.getElementById('import-media-mode-tv');
-            if (movieBtn) movieBtn.classList.toggle('active', mode === 'movie');
-            if (tvBtn) tvBtn.classList.toggle('active', mode === 'tv');
-
             this.updateModeLabels();
-            this.setupInstanceSelect();
+
+            var apiBase = mode === 'tv' ? './api/tv-hunt' : './api/movie-hunt';
+            fetch(apiBase + '/current-instance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ instance_id: instanceId })
+            }).then(function(r) { return r.json(); }).catch(function() {});
+
+            if (typeof window.updateMovieHuntSettingsVisibility === 'function') window.updateMovieHuntSettingsVisibility();
+            if (typeof window.updateTVHuntSettingsVisibility === 'function') window.updateTVHuntSettingsVisibility();
+
             this.loadItems();
         },
 
@@ -7718,20 +7769,6 @@ document.head.appendChild(styleEl);
             }
         },
 
-        setupInstanceSelect: function() {
-            var select = document.getElementById(PREFIX + '-instance-select');
-            if (!select) return;
-
-            var Dropdown = this.mode === 'tv' ? window.TVHuntInstanceDropdown : window.MovieHuntInstanceDropdown;
-            if (Dropdown && Dropdown.attach) {
-                Dropdown.attach(PREFIX + '-instance-select', (function(self) {
-                    return function() { self.loadItems(); };
-                })(this));
-            } else {
-                var emptyLabel = this.mode === 'tv' ? 'No TV Hunt instances' : 'No Movie Hunt instances';
-                select.innerHTML = '<option value="">' + emptyLabel + '</option>';
-            }
-        },
 
         setupScanButton: function() {
             var btn = document.getElementById(PREFIX + '-scan-btn');
@@ -7764,7 +7801,10 @@ document.head.appendChild(styleEl);
 
         getInstanceParam: function() {
             var select = document.getElementById(PREFIX + '-instance-select');
-            return select && select.value ? '&instance_id=' + encodeURIComponent(select.value) : '';
+            if (!select || !select.value) return '';
+            var parts = (select.value || '').split(':');
+            var instanceId = parts[1];
+            return instanceId ? '&instance_id=' + encodeURIComponent(instanceId) : '';
         },
 
         loadItems: function() {
