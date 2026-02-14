@@ -26,15 +26,25 @@
                 <option value="">Loading...</option>
             </select>
         </div>
-        <div class="movie-management-header" style="margin-bottom: 25px; display: flex; align-items: center; justify-content: space-between;">
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <button type="button" id="movie-management-back" class="btn-card" style="width: auto; padding: 8px 15px; background: rgba(148, 163, 184, 0.1); height: 38px; display: flex; align-items: center; justify-content: center;">
-                    <i class="fas fa-arrow-left" style="margin-right: 8px;"></i> Back
+        <div class="instance-editor-header">
+            <div class="instance-editor-nav">
+                <button type="button" id="movie-management-back" class="ie-btn ie-btn-ghost">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back</span>
                 </button>
-                <button type="button" id="movie-management-save" class="btn-card movie-management-save-btn" disabled style="width: auto; padding: 8px 20px; height: 38px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <i class="fas fa-save"></i> Save
-                </button>
+                <div class="instance-editor-breadcrumb">
+                    <span class="ie-breadcrumb-app">
+                        <i class="fas fa-film"></i>
+                        <span>Movie Hunt</span>
+                    </span>
+                    <i class="fas fa-chevron-right"></i>
+                    <span class="ie-breadcrumb-name" id="movie-management-breadcrumb">Movie Management</span>
+                </div>
             </div>
+            <button type="button" id="movie-management-save" class="ie-btn movie-management-save-btn" disabled>
+                <i class="fas fa-save"></i>
+                <span>Save</span>
+            </button>
         </div>
 
         <div id="movie-management-content">
@@ -65,13 +75,6 @@
         background: #b91c1c !important;
         transform: translateY(-1px) !important;
         box-shadow: 0 6px 15px rgba(220, 38, 38, 0.45) !important;
-    }
-    #movie-management-back {
-        transition: all 0.3s ease;
-    }
-    #movie-management-back:hover {
-        background: rgba(148, 163, 184, 0.2) !important;
-        transform: translateX(-2px);
     }
     #movieManagementSection {
         display: none;

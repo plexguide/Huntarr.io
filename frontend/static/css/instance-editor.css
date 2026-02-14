@@ -41,7 +41,9 @@
    ============================================================ */
 #instanceEditorSection .instance-editor-header,
 #movieHuntInstanceEditorSection .instance-editor-header,
-#mediaHuntInstanceEditorSection .instance-editor-header {
+#mediaHuntInstanceEditorSection .instance-editor-header,
+#movieManagementSection .instance-editor-header,
+#mediaHuntProfilesSection .instance-editor-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -103,7 +105,9 @@
 /* ---- Buttons ---- */
 #instanceEditorSection .ie-btn,
 #movieHuntInstanceEditorSection .ie-btn,
-#mediaHuntInstanceEditorSection .ie-btn {
+#mediaHuntInstanceEditorSection .ie-btn,
+#movieManagementSection .ie-btn,
+#mediaHuntProfilesSection .ie-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -122,7 +126,9 @@
 /* Ghost back button */
 #instanceEditorSection .ie-btn-ghost,
 #movieHuntInstanceEditorSection .ie-btn-ghost,
-#mediaHuntInstanceEditorSection .ie-btn-ghost {
+#mediaHuntInstanceEditorSection .ie-btn-ghost,
+#movieManagementSection .ie-btn-ghost,
+#mediaHuntProfilesSection .ie-btn-ghost {
     background: rgba(148, 163, 184, 0.08);
     border: 1px solid rgba(148, 163, 184, 0.12);
     color: #94a3b8;
@@ -130,7 +136,9 @@
 
 #instanceEditorSection .ie-btn-ghost:hover,
 #movieHuntInstanceEditorSection .ie-btn-ghost:hover,
-#mediaHuntInstanceEditorSection .ie-btn-ghost:hover {
+#mediaHuntInstanceEditorSection .ie-btn-ghost:hover,
+#movieManagementSection .ie-btn-ghost:hover,
+#mediaHuntProfilesSection .ie-btn-ghost:hover {
     background: rgba(148, 163, 184, 0.15);
     border-color: rgba(148, 163, 184, 0.22);
     color: #e2e8f0;
@@ -764,7 +772,9 @@
 
     #instanceEditorSection .instance-editor-header,
     #movieHuntInstanceEditorSection .instance-editor-header,
-    #mediaHuntInstanceEditorSection .instance-editor-header {
+    #mediaHuntInstanceEditorSection .instance-editor-header,
+    #movieManagementSection .instance-editor-header,
+    #mediaHuntProfilesSection .instance-editor-header {
         flex-direction: row !important;
         justify-content: space-between !important;
         gap: 12px;
@@ -804,7 +814,9 @@
 
     #instanceEditorSection .ie-btn,
     #movieHuntInstanceEditorSection .ie-btn,
-    #mediaHuntInstanceEditorSection .ie-btn {
+    #mediaHuntInstanceEditorSection .ie-btn,
+    #movieManagementSection .ie-btn,
+    #mediaHuntProfilesSection .ie-btn {
         padding: 8px 14px;
         font-size: 0.82rem;
     }

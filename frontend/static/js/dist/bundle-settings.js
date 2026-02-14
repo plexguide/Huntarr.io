@@ -5023,6 +5023,15 @@ document.head.appendChild(styleEl);
             selectEl.addEventListener('change', onCombinedInstanceChange);
             selectEl._mediaHuntProfilesChangeBound = true;
         }
+        var backBtn = document.getElementById('media-hunt-profiles-back');
+        if (backBtn && !backBtn._mediaHuntProfilesBackBound) {
+            backBtn.onclick = function() {
+                if (window.huntarrUI && window.huntarrUI.switchSection) {
+                    window.huntarrUI.switchSection('media-hunt-instances');
+                }
+            };
+            backBtn._mediaHuntProfilesBackBound = true;
+        }
         populateCombinedInstanceDropdown(preferMode);
     };
 
