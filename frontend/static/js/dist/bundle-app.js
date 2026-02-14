@@ -88,10 +88,8 @@ let huntarrUI = {
                     var onSettings = ['settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user'].indexOf(this.currentSection) !== -1;
                     nav.style.display = (onSystem || onSettings) ? 'none' : '';
                 }
-                // NZB Hunt: always visible (desktop and mobile), no dev key required
+                // NZB Hunt: always visible, no dev key required (accessed via Media Hunt sidebar)
                 this._enableNzbHunt = true;
-                var nzbNav = document.getElementById('nzbHuntSupportNav');
-                if (nzbNav) nzbNav.style.display = '';
                 
                 // Initialize originalSettings early
                 this.originalSettings = all || {};

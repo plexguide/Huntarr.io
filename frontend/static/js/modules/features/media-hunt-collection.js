@@ -1407,10 +1407,14 @@
                     tvSelect.appendChild(opt);
                 });
 
+                // Auto-select first instance when available (fixes "No instances selected" when instances exist)
+                if ((movieInstances || []).length > 0) movieSelect.value = String(movieInstances[0].id);
+                if ((tvInstances || []).length > 0) tvSelect.value = String(tvInstances[0].id);
+
                 self.setupSort();
                 self.setupViewMode();
                 self.setupSearch();
-                self.loadHiddenMediaIds().then(function() { self.loadCombinedCollection(); });
+                self.loadHiddenMediaIds().then(function() { onInstanceChange(); });
             });
 
             var onInstanceChange = function() {
