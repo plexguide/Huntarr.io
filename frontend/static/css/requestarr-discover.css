@@ -1021,6 +1021,39 @@
     font-size: 0.85em;
     color: #888;
 }
+
+/* Season count badge: X / Y with color-coded status */
+.season-count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 56px;
+    padding: 5px 10px;
+    font-size: 0.8em;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    border-radius: 6px;
+    transition: color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+.season-count-badge-unknown {
+    color: #64748b;
+    background: rgba(100, 116, 139, 0.15);
+}
+.season-count-badge-empty {
+    color: #f87171;
+    background: rgba(239, 68, 68, 0.2);
+    box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.25);
+}
+.season-count-badge-partial {
+    color: #facc15;
+    background: rgba(234, 179, 8, 0.2);
+    box-shadow: 0 0 0 1px rgba(234, 179, 8, 0.25);
+}
+.season-count-badge-complete {
+    color: #4ade80;
+    background: rgba(34, 197, 94, 0.2);
+    box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.25);
+}
 .requestarr-tv-season-item .season-actions {
     margin-left: auto;
 }
@@ -1061,6 +1094,10 @@
 .mh-ep-status-warn {
     color: #60a5fa;
     background: rgba(59, 130, 246, 0.15);
+}
+.mh-ep-status-notreleased {
+    color: #facc15;
+    background: rgba(234, 179, 8, 0.15);
 }
 .requestarr-tv-season-episodes {
     display: none;

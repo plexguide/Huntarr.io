@@ -1321,19 +1321,40 @@
             let html = '<div class="mh-section"><h2 class="mh-section-title"><i class="fas fa-layer-group"></i> Seasons</h2><div class="requestarr-tv-seasons-list">';
             sorted.forEach(season => {
                 const name = season.name || ('Season ' + season.season_number);
-                const epCount = season.episode_count != null ? season.episode_count : '?';
+                const total = season.episode_count != null ? season.episode_count : 0;
                 const requestSeasonBtn = '<div class="season-actions"><button class="season-action-btn request-season-btn" title="Request entire season"><i class="fas fa-hand-paper"></i> Request Season</button></div>';
+                const badgeSpan = '<span class="season-count-badge season-count-badge-unknown" data-season="' + season.season_number + '" data-total="' + total + '">– / ' + total + '</span>';
                 html += `
                     <div class="requestarr-tv-season-item" data-season="${season.season_number}" data-tmdb-id="${details.id}">
                         <span class="season-chevron"><i class="fas fa-chevron-right"></i></span>
                         <span class="season-name">${this.escapeHtml(name)}</span>
-                        <span class="season-ep-count">${epCount} episodes</span>
+                        ${badgeSpan}
                         ${requestSeasonBtn}
                     </div>
                 `;
             });
             html += '</div></div>';
             return html;
+        },
+
+        updateSeasonCountBadges() {
+            document.querySelectorAll('.season-count-badge').forEach(el => {
+                const seasonNum = parseInt(el.dataset.season, 10);
+                const total = parseInt(el.dataset.total, 10) || 0;
+                const epMap = this.buildEpisodeStatusMap(seasonNum);
+                const available = Object.keys(epMap).length;
+                el.textContent = `${available} / ${total}`;
+                el.classList.remove('season-count-badge-unknown', 'season-count-badge-empty', 'season-count-badge-partial', 'season-count-badge-complete');
+                if (total === 0) {
+                    el.classList.add('season-count-badge-unknown');
+                } else if (available === 0) {
+                    el.classList.add('season-count-badge-empty');
+                } else if (available < total) {
+                    el.classList.add('season-count-badge-partial');
+                } else {
+                    el.classList.add('season-count-badge-complete');
+                }
+            });
         },
 
         async setupDetailInteractions() {
@@ -1408,11 +1429,18 @@
                             const ad = ep.air_date || ep.airDate || '';
                             const epInfo = epStatusMap[epNum];
                             const available = !!epInfo;
+                            const airDateObj = ad ? new Date(ad) : null;
+                            const isFutureAirDate = airDateObj && !isNaN(airDateObj.getTime()) && airDateObj > new Date();
                             // TV Hunt can provide resolution; Sonarr shows "In Library" when detected
                             const quality = (epInfo && typeof epInfo === 'object' && epInfo.quality) ? epInfo.quality : null;
-                            const statusBadge = available
-                                ? '<span class="mh-ep-status mh-ep-status-ok">' + (quality ? this.escapeHtml(quality) : '<i class="fas fa-check-circle"></i> In Library') + '</span>'
-                                : '<span class="mh-ep-status mh-ep-status-warn">Missing</span>';
+                            let statusBadge;
+                            if (available) {
+                                statusBadge = '<span class="mh-ep-status mh-ep-status-ok">' + (quality ? this.escapeHtml(quality) : '<i class="fas fa-check-circle"></i> In Library') + '</span>';
+                            } else if (isFutureAirDate) {
+                                statusBadge = '<span class="mh-ep-status mh-ep-status-notreleased">Not Released</span>';
+                            } else {
+                                statusBadge = '<span class="mh-ep-status mh-ep-status-warn">Missing</span>';
+                            }
                             const requestBtn = !available ? `<button class="ep-request-btn" data-season="${seasonNum}" data-episode="${epNum}" title="Request episode"><i class="fas fa-hand-paper"></i></button>` : '';
                             tbl += `<tr><td>${epNum || ''}</td><td>${this.escapeHtml(title)}</td><td>${ad}</td><td>${statusBadge}</td><td>${requestBtn}</td></tr>`;
                         });
@@ -1470,6 +1498,7 @@
                 pathEl.textContent = '-';
                 statusEl.innerHTML = '<span class="mh-badge mh-badge-warn">Not in Collection</span>';
                 if (episodesEl) episodesEl.textContent = '-';
+                this.updateSeasonCountBadges();
                 return;
             }
 
@@ -1495,15 +1524,18 @@
                     }
                     statusEl.innerHTML = `<span class="mh-badge ${statusClass}"><i class="fas ${statusIcon}"></i> ${statusLabel}</span>`;
                     if (episodesEl) episodesEl.textContent = `${avail} / ${total}`;
+                    this.updateSeasonCountBadges();
                 } else {
                     pathEl.textContent = '-';
                     statusEl.innerHTML = '<span class="mh-badge mh-badge-warn">Not in Collection</span>';
                     if (episodesEl) episodesEl.textContent = '-';
+                    this.updateSeasonCountBadges();
                 }
             } catch (e) {
                 pathEl.textContent = '-';
                 statusEl.innerHTML = '<span class="mh-badge mh-badge-warn">Error</span>';
                 if (episodesEl) episodesEl.textContent = '-';
+                this.updateSeasonCountBadges();
             }
         },
 
