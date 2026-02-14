@@ -146,9 +146,100 @@ def _save_collection_config(series_list, instance_id):
 
 # --- Add series to collection (used by Requestarr) ---
 
+def _apply_monitor_option(normalized_seasons, monitor_option):
+    """
+    Apply monitor option to seasons/episodes. Mutates in place.
+    At add time there are no files; 'has_file' is always False.
+    """
+    if not monitor_option:
+        monitor_option = 'all_episodes'
+    monitor_option = (monitor_option or '').strip().lower() or 'all_episodes'
+
+    now = datetime.now()
+    ninety_days_ago = now - timedelta(days=90)
+
+    # Last season = highest season_number excluding specials
+    regular_seasons = [s for s in normalized_seasons if s.get('season_number', 0) > 0]
+    last_season_num = max((s['season_number'] for s in regular_seasons), default=1) if regular_seasons else 1
+
+    def is_future_air_date(ad):
+        if not ad:
+            return False
+        try:
+            d = datetime.strptime(ad[:10], '%Y-%m-%d')
+            if now.tzinfo and d.tzinfo is None:
+                d = d.replace(tzinfo=now.tzinfo)
+            return d > now
+        except (ValueError, TypeError):
+            return False
+
+    def is_recent_or_future(ad):
+        if not ad:
+            return False
+        try:
+            d = datetime.strptime(ad[:10], '%Y-%m-%d')
+            if now.tzinfo and d.tzinfo is None:
+                d = d.replace(tzinfo=now.tzinfo)
+            return d >= ninety_days_ago or d > now
+        except (ValueError, TypeError):
+            return False
+
+    # First pass: set monitored per episode based on option
+    for season in normalized_seasons:
+        season_num = season.get('season_number', 0)
+        is_specials = season_num == 0
+        episodes = season.get('episodes') or []
+
+        for ep in episodes:
+            ep_num = ep.get('episode_number')
+            air_date = ep.get('air_date') or ''
+            # At add time no files
+            has_file = False
+            is_future = is_future_air_date(air_date)
+
+            if monitor_option == 'none':
+                ep['monitored'] = False
+            elif monitor_option == 'all_episodes':
+                ep['monitored'] = not is_specials
+            elif monitor_option == 'future_episodes':
+                ep['monitored'] = is_future
+            elif monitor_option == 'missing_episodes':
+                ep['monitored'] = not has_file or is_future
+            elif monitor_option == 'existing_episodes':
+                ep['monitored'] = has_file or is_future
+            elif monitor_option == 'recent_episodes':
+                ep['monitored'] = is_recent_or_future(air_date)
+            elif monitor_option == 'pilot_episode':
+                ep['monitored'] = (season_num == 1 and ep_num == 1)
+            elif monitor_option == 'first_season':
+                ep['monitored'] = (season_num == 1 and not is_specials)
+            elif monitor_option == 'last_season':
+                ep['monitored'] = (season_num == last_season_num and not is_specials)
+            elif monitor_option == 'monitor_specials':
+                ep['monitored'] = is_specials
+            elif monitor_option == 'unmonitor_specials':
+                ep['monitored'] = False if is_specials else True  # base: all regular, unmonitor specials
+            else:
+                ep['monitored'] = not is_specials
+
+    # monitor_specials: only specials monitored, regular unmonitored
+    if monitor_option == 'monitor_specials':
+        for season in normalized_seasons:
+            if season.get('season_number') != 0:
+                for ep in (season.get('episodes') or []):
+                    ep['monitored'] = False
+
+    # Aggregate season.monitored = any episode monitored in that season
+    for season in normalized_seasons:
+        eps = season.get('episodes') or []
+        season['monitored'] = any(ep.get('monitored', False) for ep in eps)
+
+
+
+
 def add_series_to_tv_hunt_collection(
     instance_id, tmdb_id, title, overview='', poster_path='', backdrop_path='',
-    root_folder=None, quality_profile=None
+    root_folder=None, quality_profile=None, monitor=None
 ):
     """
     Add a TV series to the TV Hunt collection.
@@ -207,6 +298,9 @@ def add_series_to_tv_hunt_collection(
                 'monitored': True if season_num > 0 else False,
                 'episodes': normalized_episodes,
             })
+
+        _apply_monitor_option(normalized_seasons, monitor)
+        any_monitored = any(s.get('monitored', False) for s in normalized_seasons)
         root_folders = get_tv_root_folders_config(instance_id)
         default_root = root_folders[0]['path'] if root_folders else ''
         use_root = (root_folder or '').strip() or default_root
@@ -225,7 +319,7 @@ def add_series_to_tv_hunt_collection(
             'networks': tmdb_data.get('networks', []),
             'root_folder': use_root,
             'quality_profile': (quality_profile or '').strip() or '',
-            'monitored': True,
+            'monitored': any_monitored,
             'added_at': datetime.now().isoformat(),
             'seasons': normalized_seasons,
         }

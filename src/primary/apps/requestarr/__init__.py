@@ -831,7 +831,8 @@ class RequestarrAPI:
                         'missing_episodes': missing_eps,
                         'previously_requested': previously_requested,
                         'cooldown_status': cooldown_status,
-                        'seasons': seasons
+                        'seasons': seasons,
+                        'monitored': s.get('monitored', True)
                     }
             return {'exists': False, 'previously_requested': already_requested_in_db, 'cooldown_status': cooldown_status}
         except Exception as e:
@@ -2418,7 +2419,8 @@ class RequestarrAPI:
                      overview: str, poster_path: str, backdrop_path: str,
                      app_type: str, instance_name: str, quality_profile_id: int = None,
                      root_folder_path: str = None, quality_profile_name: str = None,
-                     start_search: bool = True, minimum_availability: str = 'released') -> Dict[str, Any]:
+                     start_search: bool = True, minimum_availability: str = 'released',
+                     monitor: str = None) -> Dict[str, Any]:
         """Request media through the specified app instance"""
         try:
             # Movie Hunt has its own request pipeline (add to library, optionally start search)
@@ -2440,7 +2442,8 @@ class RequestarrAPI:
                     backdrop_path=backdrop_path, instance_name=instance_name,
                     quality_profile_name=quality_profile_name,
                     root_folder_path=root_folder_path,
-                    start_search=start_search
+                    start_search=start_search,
+                    monitor=monitor
                 )
             
             # Get instance configuration first
@@ -2861,7 +2864,8 @@ class RequestarrAPI:
     def _request_media_via_tv_hunt(self, tmdb_id: int, title: str, overview: str = '',
                                   poster_path: str = '', backdrop_path: str = '',
                                   instance_name: str = '', quality_profile_name: str = None,
-                                  root_folder_path: str = None, start_search: bool = True) -> Dict[str, Any]:
+                                  root_folder_path: str = None, start_search: bool = True,
+                                  monitor: str = None) -> Dict[str, Any]:
         """Add TV series to TV Hunt collection; optionally start search for season 1."""
         try:
             instance_id = self._resolve_tv_hunt_instance_id(instance_name)
@@ -2884,7 +2888,8 @@ class RequestarrAPI:
             success, msg = add_series_to_tv_hunt_collection(
                 instance_id, tmdb_id, title, overview=overview or '',
                 poster_path=(poster_path or '').strip() or '', backdrop_path=(backdrop_path or '').strip() or '',
-                root_folder=root_folder, quality_profile=quality_profile
+                root_folder=root_folder, quality_profile=quality_profile,
+                monitor=monitor
             )
             if not success:
                 return {'success': False, 'message': msg, 'status': 'add_failed'}

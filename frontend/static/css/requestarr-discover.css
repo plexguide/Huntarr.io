@@ -1017,6 +1017,26 @@
 .requestarr-tv-season-item .season-name {
     flex: 1;
 }
+/* TV Hunt monitor bookmark buttons */
+.mh-monitor-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 6px;
+    color: #60a5fa;
+    opacity: 0.9;
+}
+.mh-monitor-btn:hover {
+    opacity: 1;
+    color: #93c5fd;
+}
+.mh-monitor-btn .far.fa-bookmark {
+    color: #6b7280;
+}
+#requestarr-tv-detail-view .mh-ib-monitor {
+    display: flex;
+    align-items: center;
+}
 .requestarr-tv-season-item .season-ep-count {
     font-size: 0.85em;
     color: #888;

@@ -142,6 +142,7 @@ def request_media():
             quality_profile_id = int(quality_profile) if quality_profile and quality_profile != '' else None
             quality_profile_name = None
         
+        monitor = (data.get('monitor') or '').strip() or None
         result = requestarr_api.request_media(
             tmdb_id=data['tmdb_id'],
             media_type=media_type,
@@ -156,7 +157,8 @@ def request_media():
             root_folder_path=root_folder_path,
             quality_profile_name=quality_profile_name,
             start_search=start_search,
-            minimum_availability=minimum_availability
+            minimum_availability=minimum_availability,
+            monitor=monitor
         )
         
         logger.info(f"[Requestarr] Request result: {result}")

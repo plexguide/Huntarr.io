@@ -1338,6 +1338,11 @@
             window.TVHuntCollection._prefix = 'media-hunt-collection';
             window.MovieHuntCollection._prefix = 'media-hunt-collection';
 
+            // Ensure main collection grid is shown (not stale TV series detail with "Back to Collection")
+            if (window.TVHuntCollection && typeof window.TVHuntCollection.showMainView === 'function') {
+                window.TVHuntCollection.showMainView();
+            }
+
             var self = this;
             var movieSelect = document.getElementById(movieSelectId);
             var tvSelect = document.getElementById(tvSelectId);
