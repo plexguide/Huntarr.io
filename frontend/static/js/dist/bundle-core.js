@@ -611,6 +611,13 @@ window.HuntarrNavigation = {
             section = 'activity-queue';
             if (window.location.hash !== '#activity-queue') window.location.hash = 'activity-queue';
         }
+        // Legacy: logs-movie-hunt → logs-media-hunt
+        if (section === 'logs-movie-hunt') {
+            section = 'logs-media-hunt';
+            if (window.location.hash !== '#logs-media-hunt') {
+                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#logs-media-hunt');
+            }
+        }
         // NZB Hunt Settings → go directly to Folders
         if (section === 'nzb-hunt-settings') {
             section = 'nzb-hunt-settings-folders';
@@ -835,7 +842,7 @@ window.HuntarrNavigation = {
             else if (appType === 'client') sectionForNav = 'settings-clients';
         }
         const collectionSections = ['movie-hunt-home', 'movie-hunt-collection', 'media-hunt-collection', 'settings-import-media', 'movie-hunt-calendar'];
-        const activitySections = ['activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'logs-tv-hunt', 'tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist'];
+        const activitySections = ['activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-media-hunt', 'logs-tv-hunt', 'tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist'];
         const settingsSections = ['movie-hunt-settings', 'media-hunt-settings', 'settings-instance-management', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'profile-editor', 'settings-custom-formats', 'settings-import-lists', 'settings-root-folders', 'instance-editor'];
         const indexMasterSections = ['indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history'];
         const onCollection = collectionSections.indexOf(currentSection) !== -1;
@@ -854,7 +861,7 @@ window.HuntarrNavigation = {
 
         const items = document.querySelectorAll('#movie-hunt-sidebar .nav-item');
         const isActivitySub = activitySections.indexOf(sectionForNav) !== -1;
-        var tvToMovieNav = { 'tv-hunt-activity-queue': 'activity-queue', 'tv-hunt-activity-history': 'activity-history', 'tv-hunt-activity-blocklist': 'activity-blocklist', 'logs-tv-hunt': 'logs-movie-hunt' };
+        var tvToMovieNav = { 'tv-hunt-activity-queue': 'activity-queue', 'tv-hunt-activity-history': 'activity-history', 'tv-hunt-activity-blocklist': 'activity-blocklist', 'logs-tv-hunt': 'logs-media-hunt' };
         var navTarget = tvToMovieNav[sectionForNav] || sectionForNav;
         items.forEach(item => {
             item.classList.remove('active');

@@ -17,14 +17,37 @@
     IH.init = function() {
         var searchInput = document.getElementById('ih-search-input');
         if (searchInput) searchInput.value = '';
-        _showListView();
-        _loadPresets(function() {
-            _loadIndexers();
-        });
         if (!_initialized) {
             _bindEvents();
             _initialized = true;
         }
+        var noInstEl = document.getElementById('indexer-hunt-no-instances');
+        var wrapperEl = document.getElementById('indexer-hunt-content-wrapper');
+        Promise.all([
+            fetch('./api/movie-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch('./api/tv-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); })
+        ]).then(function(results) {
+            var movieCount = (results[0].instances || []).length;
+            var tvCount = (results[1].instances || []).length;
+            if (movieCount === 0 && tvCount === 0) {
+                if (noInstEl) noInstEl.style.display = '';
+                if (wrapperEl) wrapperEl.style.display = 'none';
+                return;
+            }
+            if (noInstEl) noInstEl.style.display = 'none';
+            if (wrapperEl) wrapperEl.style.display = '';
+            _showListView();
+            _loadPresets(function() {
+                _loadIndexers();
+            });
+        }).catch(function() {
+            if (noInstEl) noInstEl.style.display = 'none';
+            if (wrapperEl) wrapperEl.style.display = '';
+            _showListView();
+            _loadPresets(function() {
+                _loadIndexers();
+            });
+        });
     };
 
     function _bindEvents() {
@@ -435,5 +458,16 @@
         d.appendChild(document.createTextNode(s));
         return d.innerHTML;
     }
+
+    document.addEventListener('huntarr:instances-changed', function() {
+        if (document.getElementById('indexer-hunt-content-wrapper') && window.huntarrUI && window.huntarrUI.currentSection === 'indexer-hunt') {
+            IH.init();
+        }
+    });
+    document.addEventListener('huntarr:tv-hunt-instances-changed', function() {
+        if (document.getElementById('indexer-hunt-content-wrapper') && window.huntarrUI && window.huntarrUI.currentSection === 'indexer-hunt') {
+            IH.init();
+        }
+    });
 
 })();

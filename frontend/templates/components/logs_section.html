@@ -1,4 +1,12 @@
 <div id="logsSection" class="system-tab-panel" data-system-panel="logs" style="display: none;">
+    <!-- No-instances warning (shown when viewing Media Hunt logs and no instances) -->
+    <div id="logs-media-hunt-no-instances" class="logs-no-instances" style="display: none;">
+        <i class="fas fa-cube" aria-hidden="true"></i>
+        <p class="no-instances-title">No instances configured</p>
+        <p class="no-instances-desc">Configure a Movie Hunt or TV Hunt instance to view Media Hunt logs.</p>
+        <a href="./#media-hunt-instances" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure instances</a>
+    </div>
+    <div id="logs-media-hunt-content-wrapper">
     <!-- Unified Toolbar -->
     <div class="logs-toolbar">
         <div class="logs-toolbar-row">
@@ -81,5 +89,6 @@
                 <!-- Log entries will be loaded here -->
             </tbody>
         </table>
+    </div>
     </div>
 </div>

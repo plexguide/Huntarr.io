@@ -192,8 +192,10 @@
                 emptyOpt.textContent = 'No Movie Hunt or TV Hunt instances';
                 select.appendChild(emptyOpt);
                 select.value = '';
+                _updateActivityNoInstancesVisibility(select.id, true);
                 return;
             }
+            _updateActivityNoInstancesVisibility(select.id, false);
 
             if (movieList.length > 0) {
                 var movieGroup = document.createElement('optgroup');
@@ -235,7 +237,23 @@
             select.value = targetVal;
         }).catch(function() {
             select.innerHTML = '<option value="">Unable to load instances</option>';
+            _updateActivityNoInstancesVisibility(select.id, false);
         });
+    }
+
+    function _updateActivityNoInstancesVisibility(selectId, isEmpty) {
+        var noInstEl, wrapperEl;
+        if (selectId === 'activity-combined-instance-select') {
+            noInstEl = document.getElementById('activity-no-instances');
+            wrapperEl = document.getElementById('activity-content-wrapper');
+        } else if (selectId === 'tv-activity-combined-instance-select') {
+            noInstEl = document.getElementById('tv-activity-no-instances');
+            wrapperEl = document.getElementById('tv-activity-content-wrapper');
+        } else {
+            return;
+        }
+        if (noInstEl) noInstEl.style.display = isEmpty ? '' : 'none';
+        if (wrapperEl) wrapperEl.style.display = isEmpty ? 'none' : '';
     }
 
     function attachActivityCombined(selectId, onChanged, preferMode) {

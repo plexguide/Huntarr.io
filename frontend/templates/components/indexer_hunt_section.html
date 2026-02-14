@@ -3,6 +3,14 @@
     <link rel="stylesheet" href="./static/css/indexer-hunt.css">
     {% with section_id='indexer-hunt' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
 
+    <!-- No-instances warning box (same style as Media Management) -->
+    <div id="indexer-hunt-no-instances" class="ih-no-instances" style="display: none;">
+        <i class="fas fa-cube" aria-hidden="true"></i>
+        <p class="no-instances-title">No instances configured</p>
+        <p class="no-instances-desc">Configure a Movie Hunt or TV Hunt instance to manage indexers.</p>
+        <a href="./#media-hunt-instances" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure instances</a>
+    </div>
+    <div id="indexer-hunt-content-wrapper">
     <!-- ── Index Master Pool (central management) — shown first, up top ─────────── -->
     <div class="ih-page" id="ih-list-view">
         <div class="ih-page-header">
@@ -142,5 +150,6 @@
                 </button>
             </div>
         </div>
+    </div>
     </div>
 </section>

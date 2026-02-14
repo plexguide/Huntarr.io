@@ -2,6 +2,25 @@
    Indexer Hunt — Styles (matches Huntarr design language)
    ═══════════════════════════════════════════════════════════════════ */
 
+/* ── No-instances warning (same style as Media Management) ─────── */
+
+#indexer-hunt-section .ih-no-instances {
+    text-align: center; padding: 64px 24px; width: 100%; box-sizing: border-box;
+    margin: 20px; background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(148, 163, 184, 0.08);
+    border-radius: 12px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+#indexer-hunt-section .ih-no-instances i.fa-cube { font-size: 3rem; color: #334155; margin-bottom: 16px; display: block; }
+#indexer-hunt-section .ih-no-instances .no-instances-title { font-size: 1.2rem; font-weight: 600; color: #f1f5f9; margin: 0 0 8px 0; }
+#indexer-hunt-section .ih-no-instances .no-instances-desc { font-size: 0.95rem; color: #94a3b8; line-height: 1.6; margin: 0 auto 24px auto; max-width: 400px; }
+#indexer-hunt-section .ih-no-instances .no-instances-action-btn {
+    display: inline-flex; align-items: center; gap: 8px; background: rgba(99, 102, 241, 0.2);
+    border: 1px solid rgba(99, 102, 241, 0.4); color: #818cf8; padding: 10px 20px; border-radius: 8px;
+    text-decoration: none; font-weight: 500; transition: background 0.2s, border-color 0.2s;
+}
+#indexer-hunt-section .ih-no-instances .no-instances-action-btn:hover {
+    background: rgba(99, 102, 241, 0.3); border-color: rgba(99, 102, 241, 0.5);
+}
+
 /* ── Page layout ────────────────────────────────────────────────── */
 
 #indexer-hunt-section {

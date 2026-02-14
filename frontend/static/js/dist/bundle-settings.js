@@ -6620,7 +6620,31 @@ document.head.appendChild(styleEl);
 
     Forms.refreshClientsList = function() {
         const grid = document.getElementById('client-instances-grid');
+        const noInstEl = document.getElementById('settings-clients-no-instances');
+        const wrapperEl = document.getElementById('settings-clients-content-wrapper');
         if (!grid) return;
+        Promise.all([
+            fetch('./api/movie-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch('./api/tv-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); })
+        ]).then(function(results) {
+            var movieCount = (results[0].instances || []).length;
+            var tvCount = (results[1].instances || []).length;
+            if (movieCount === 0 && tvCount === 0) {
+                if (noInstEl) noInstEl.style.display = '';
+                if (wrapperEl) wrapperEl.style.display = 'none';
+                return;
+            }
+            if (noInstEl) noInstEl.style.display = 'none';
+            if (wrapperEl) wrapperEl.style.display = '';
+            _doRefreshClientsList(grid);
+        }).catch(function() {
+            if (noInstEl) noInstEl.style.display = 'none';
+            if (wrapperEl) wrapperEl.style.display = '';
+            _doRefreshClientsList(grid);
+        });
+    };
+
+    function _doRefreshClientsList(grid) {
         fetch('./api/clients')
             .then(function(r) { return r.json(); })
             .then(function(data) {
@@ -6650,7 +6674,18 @@ document.head.appendChild(styleEl);
             .catch(function() {
                 grid.innerHTML = '<div class="add-instance-card" data-app-type="client"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Adding Client</div></div>';
             });
-    };
+    }
+
+    document.addEventListener('huntarr:instances-changed', function() {
+        if (document.getElementById('settings-clients-content-wrapper') && window.huntarrUI && window.huntarrUI.currentSection === 'settings-clients') {
+            Forms.refreshClientsList();
+        }
+    });
+    document.addEventListener('huntarr:tv-hunt-instances-changed', function() {
+        if (document.getElementById('settings-clients-content-wrapper') && window.huntarrUI && window.huntarrUI.currentSection === 'settings-clients') {
+            Forms.refreshClientsList();
+        }
+    });
 })();
 
 

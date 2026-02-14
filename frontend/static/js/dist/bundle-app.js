@@ -6,6 +6,17 @@
  * Coordinates between modular components and handles global application state.
  */
 
+function _checkLogsMediaHuntInstances(cb) {
+    Promise.all([
+        fetch('./api/movie-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); }),
+        fetch('./api/tv-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); })
+    ]).then(function(results) {
+        var movieCount = (results[0].instances || []).length;
+        var tvCount = (results[1].instances || []).length;
+        cb(movieCount > 0 || tvCount > 0);
+    }).catch(function() { cb(false); });
+}
+
 let huntarrUI = {
     // Current state
     currentSection: 'home', // Default section
@@ -149,7 +160,7 @@ let huntarrUI = {
         } else if ((this.currentSection && this.currentSection.startsWith('tv-hunt')) || this.currentSection === 'logs-tv-hunt') {
             console.log('[huntarrUI] Initialization - showing media hunt sidebar (tv-hunt redirect)');
             this.showMovieHuntSidebar();
-        } else if (this.currentSection === 'movie-hunt-home' || this.currentSection === 'movie-hunt-collection' || this.currentSection === 'media-hunt-collection' || this.currentSection === 'activity-queue' || this.currentSection === 'activity-history' || this.currentSection === 'activity-blocklist' || this.currentSection === 'activity-logs' || this.currentSection === 'logs-movie-hunt' || this.currentSection === 'movie-hunt-settings' || this.currentSection === 'media-hunt-settings' || this.currentSection === 'media-hunt-instances' || this.currentSection === 'movie-hunt-instance-editor' || this.currentSection === 'settings-instance-management' || this.currentSection === 'settings-media-management' || this.currentSection === 'settings-profiles' || this.currentSection === 'settings-sizes' || this.currentSection === 'profile-editor' || this.currentSection === 'settings-custom-formats' || this.currentSection === 'settings-indexers' || this.currentSection === 'settings-clients' || this.currentSection === 'settings-import-lists' || this.currentSection === 'settings-import-media' || this.currentSection === 'settings-root-folders') {
+        } else if (this.currentSection === 'movie-hunt-home' || this.currentSection === 'movie-hunt-collection' || this.currentSection === 'media-hunt-collection' || this.currentSection === 'activity-queue' || this.currentSection === 'activity-history' || this.currentSection === 'activity-blocklist' || this.currentSection === 'activity-logs' || this.currentSection === 'logs-media-hunt' || this.currentSection === 'movie-hunt-settings' || this.currentSection === 'media-hunt-settings' || this.currentSection === 'media-hunt-instances' || this.currentSection === 'movie-hunt-instance-editor' || this.currentSection === 'settings-instance-management' || this.currentSection === 'settings-media-management' || this.currentSection === 'settings-profiles' || this.currentSection === 'settings-sizes' || this.currentSection === 'profile-editor' || this.currentSection === 'settings-custom-formats' || this.currentSection === 'settings-indexers' || this.currentSection === 'settings-clients' || this.currentSection === 'settings-import-lists' || this.currentSection === 'settings-import-media' || this.currentSection === 'settings-root-folders') {
             console.log('[huntarrUI] Initialization - showing movie hunt sidebar');
             this.showMovieHuntSidebar();
         } else if (this.currentSection === 'requestarr' || this.currentSection === 'requestarr-discover' || this.currentSection === 'requestarr-movies' || this.currentSection === 'requestarr-tv' || this.currentSection === 'requestarr-hidden' || this.currentSection === 'requestarr-settings' || this.currentSection === 'requestarr-smarthunt-settings') {
@@ -591,7 +602,7 @@ let huntarrUI = {
             }
             
             // Don't refresh page when navigating to/from instance editor or between app sections
-            const noRefreshSections = ['home', 'instance-editor', 'profile-editor', 'movie-hunt-instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'media-hunt-collection', 'movie-hunt-calendar', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-movie-hunt', 'movie-hunt-settings', 'media-hunt-settings', 'media-hunt-instances', 'settings-instance-management', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-import-media', 'settings-custom-formats', 'settings-root-folders', 'tv-hunt-collection', 'media-hunt-collection', 'tv-hunt-calendar', 'tv-hunt-settings', 'media-hunt-settings', 'tv-hunt-settings-profiles', 'tv-hunt-settings-sizes', 'tv-hunt-settings-custom-formats', 'tv-hunt-settings-indexers', 'tv-hunt-settings-clients', 'tv-hunt-settings-import-lists', 'tv-hunt-settings-root-folders', 'tv-hunt-settings-tv-management', 'tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist', 'tv-hunt-instance-editor', 'logs-tv-hunt', 'system', 'hunt-manager', 'logs', 'about', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-settings', 'nzb-hunt-settings-folders', 'nzb-hunt-settings-servers', 'nzb-hunt-settings-processing', 'nzb-hunt-settings-advanced', 'nzb-hunt-server-editor', 'requestarr', 'requestarr-discover', 'requestarr-movies', 'requestarr-tv', 'requestarr-hidden', 'requestarr-settings', 'requestarr-smarthunt-settings', 'indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history'];
+            const noRefreshSections = ['home', 'instance-editor', 'profile-editor', 'movie-hunt-instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'media-hunt-collection', 'movie-hunt-calendar', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-media-hunt', 'movie-hunt-settings', 'media-hunt-settings', 'media-hunt-instances', 'settings-instance-management', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-import-media', 'settings-custom-formats', 'settings-root-folders', 'tv-hunt-collection', 'media-hunt-collection', 'tv-hunt-calendar', 'tv-hunt-settings', 'media-hunt-settings', 'tv-hunt-settings-profiles', 'tv-hunt-settings-sizes', 'tv-hunt-settings-custom-formats', 'tv-hunt-settings-indexers', 'tv-hunt-settings-clients', 'tv-hunt-settings-import-lists', 'tv-hunt-settings-root-folders', 'tv-hunt-settings-tv-management', 'tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist', 'tv-hunt-instance-editor', 'logs-tv-hunt', 'system', 'hunt-manager', 'logs', 'about', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-settings', 'nzb-hunt-settings-folders', 'nzb-hunt-settings-servers', 'nzb-hunt-settings-processing', 'nzb-hunt-settings-advanced', 'nzb-hunt-server-editor', 'requestarr', 'requestarr-discover', 'requestarr-movies', 'requestarr-tv', 'requestarr-hidden', 'requestarr-settings', 'requestarr-smarthunt-settings', 'indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history'];
             const skipRefresh = noRefreshSections.includes(section) || noRefreshSections.includes(this.currentSection);
             
             if (!skipRefresh) {
@@ -673,8 +684,8 @@ let huntarrUI = {
             if (window.HomeRequestarr) {
                 window.HomeRequestarr.refresh();
             }
-        } else if (section === 'logs-movie-hunt' && this.elements.logsSection) {
-            // Movie Hunt logs - show logsSection under Movie Hunt sidebar (hide tab bar)
+        } else if (section === 'logs-media-hunt' && this.elements.logsSection) {
+            // Media Hunt logs - show logsSection under Movie Hunt sidebar (hide tab bar)
             var activitySection = document.getElementById('activitySection');
             if (activitySection) { activitySection.classList.remove('active'); activitySection.style.display = 'none'; }
             var systemSection = document.getElementById('systemSection');
@@ -683,6 +694,12 @@ let huntarrUI = {
             newTitle = 'Logs';
             this.currentSection = section;
             this.showMovieHuntSidebar();
+            _checkLogsMediaHuntInstances(function(hasInstances) {
+                var noInst = document.getElementById('logs-media-hunt-no-instances');
+                var wrapper = document.getElementById('logs-media-hunt-content-wrapper');
+                if (noInst) noInst.style.display = hasInstances ? 'none' : '';
+                if (wrapper) wrapper.style.display = hasInstances ? '' : 'none';
+            });
             var logAppSelect = document.getElementById('logAppSelect');
             if (logAppSelect) logAppSelect.value = 'media_hunt';
             if (window.LogsModule) window.LogsModule.currentLogApp = 'media_hunt';
@@ -738,6 +755,10 @@ let huntarrUI = {
             if (activeTab === 'hunt-manager') {
                 if (typeof huntManagerModule !== 'undefined') huntManagerModule.refresh();
             } else if (activeTab === 'logs') {
+                var noInstLogs = document.getElementById('logs-media-hunt-no-instances');
+                var wrapperLogs = document.getElementById('logs-media-hunt-content-wrapper');
+                if (noInstLogs) noInstLogs.style.display = 'none';
+                if (wrapperLogs) wrapperLogs.style.display = '';
                 if (window.LogsModule && typeof window.LogsModule.setAppFilterContext === 'function') {
                     window.LogsModule.setAppFilterContext('system');
                 }
@@ -828,7 +849,7 @@ let huntarrUI = {
                 window.IndexerHuntHistory.init();
             }
         } else if (section === 'logs-tv-hunt' && this.elements.logsSection) {
-            // TV Hunt logs - show logsSection under TV Hunt sidebar (same as logs-movie-hunt, different sidebar)
+            // TV Hunt logs - show logsSection under TV Hunt sidebar (same as logs-media-hunt, different sidebar)
             var activitySection = document.getElementById('activitySection');
             if (activitySection) { activitySection.classList.remove('active'); activitySection.style.display = 'none'; }
             if (document.getElementById('tvHuntActivitySection')) {
@@ -841,6 +862,12 @@ let huntarrUI = {
             newTitle = 'Logs';
             this.currentSection = section;
             this.showTVHuntSidebar();
+            _checkLogsMediaHuntInstances(function(hasInstances) {
+                var noInst = document.getElementById('logs-media-hunt-no-instances');
+                var wrapper = document.getElementById('logs-media-hunt-content-wrapper');
+                if (noInst) noInst.style.display = hasInstances ? 'none' : '';
+                if (wrapper) wrapper.style.display = hasInstances ? '' : 'none';
+            });
             var logAppSelect2 = document.getElementById('logAppSelect');
             if (logAppSelect2) logAppSelect2.value = 'media_hunt';
             if (window.LogsModule) window.LogsModule.currentLogApp = 'media_hunt';
