@@ -2251,6 +2251,37 @@
     padding: 7px 10px;
 }
 
+/* Read-only category cards (auto-generated, no Edit/Delete) */
+.nzb-cat-card-readonly {
+    cursor: default;
+}
+.nzb-cat-card-readonly:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: rgba(148, 163, 184, 0.1);
+}
+.nzb-cat-path-readonly span {
+    color: #64748b;
+    opacity: 0.9;
+}
+.nzb-cat-status {
+    display: inline-flex;
+    align-items: center;
+}
+.nzb-cat-status-ok {
+    color: #22c55e;
+    font-size: 1rem;
+}
+.nzb-cat-status-error {
+    color: #ef4444;
+    font-size: 1rem;
+}
+.nzb-cat-error-msg {
+    font-size: 0.8rem;
+    color: #f87171;
+    margin-top: 4px;
+}
+
 /* ── Add category card ───────────────────────────────────────── */
 .nzb-cat-add-card {
     min-height: 160px;

@@ -339,15 +339,19 @@ def perform_tv_hunt_request(
     if not nzb_url:
         return False, "Best result has no NZB URL"
 
+    # Use instance-based category (TV-InstanceName) for NZB Hunt, SABnzbd, NZBGet
+    from .helpers import _get_tv_hunt_instance_display_name, _instance_name_to_category
+    inst_name = _get_tv_hunt_instance_display_name(instance_id)
+    category = _instance_name_to_category(inst_name, "TV") if inst_name else (TV_HUNT_DEFAULT_CATEGORY or "tv")
+
     # Try each enabled client
     for client in clients:
         if not client.get('enabled', True):
             continue
-        client_type = (client.get('type') or '').strip().lower()
-        category = client.get('category') or TV_HUNT_DEFAULT_CATEGORY
+        client_type = (client.get('type') or 'nzb_hunt').strip().lower()
 
-        if client_type == 'nzb_hunt':
-            success, queue_id = _send_to_nzb_hunt(nzb_url, nzb_title, category, instance_id=instance_id)
+        if client_type in ('nzbhunt', 'nzb_hunt'):
+            success, queue_id = _send_to_nzb_hunt(nzb_url, nzb_title, category, instance_id=instance_id, instance_name=inst_name)
         elif client_type == 'sabnzbd':
             success, queue_id = _send_to_sabnzbd(client, nzb_url, nzb_title, category)
         elif client_type == 'nzbget':

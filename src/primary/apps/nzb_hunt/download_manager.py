@@ -62,6 +62,33 @@ def _has_proper_real_repack(name: str) -> bool:
     return "PROPER" in n or "REAL" in n or "REPACK" in n
 
 
+def _folder_ensure_loop(manager: "NZBHuntDownloadManager"):
+    """Every 15 min, when NZB Hunt has servers, ensure category folders exist and are writeable."""
+    while True:
+        try:
+            time.sleep(900)  # 15 minutes
+            if len(manager._get_servers()) == 0:
+                continue
+            try:
+                from src.primary.routes.nzb_hunt_routes import (
+                    _get_categories_from_instances,
+                    _ensure_category_folders_and_status,
+                    _load_config,
+                )
+                cfg = _load_config()
+                folders = cfg.get("folders", {})
+                temp_folder = folders.get("temp_folder", "/downloads/incomplete")
+                category_names = _get_categories_from_instances()
+                if category_names:
+                    for s in _ensure_category_folders_and_status(temp_folder, category_names):
+                        if not s.get("ok") and s.get("error"):
+                            logger.warning("Category folder %r not writeable: %s", s.get("folder"), s.get("error"))
+            except Exception as e:
+                logger.warning("Category folder ensure failed: %s", e)
+        except Exception as e:
+            logger.warning("Folder ensure loop error: %s", e)
+
+
 class _RateLimiter:
     """Thread-safe token-bucket rate limiter for download speed control."""
     
@@ -309,6 +336,15 @@ class NZBHuntDownloadManager:
         
         # Auto-start worker if there are queued items (e.g., after restart)
         self._ensure_worker_running()
+
+        # Background: ensure category folders every 15 min when NZB Hunt has servers
+        self._folder_ensure_thread = threading.Thread(
+            target=_folder_ensure_loop,
+            args=(self,),
+            name="NZBHuntFolderEnsure",
+            daemon=True,
+        )
+        self._folder_ensure_thread.start()
     
     def _state_path(self) -> str:
         return os.path.join(self._config_dir, "nzb_hunt_queue.json")
@@ -376,7 +412,8 @@ class NZBHuntDownloadManager:
                             logger.warning(f"[{item.id}] Marked as FAILED on load (hopeless: {fail_pct:.1f}% missing)")
                             try:
                                 folders = self._get_folders()
-                                temp_dir = folders.get("temp_folder", "/downloads/incomplete")
+                                temp_base = folders.get("temp_folder", "/downloads/incomplete")
+                                temp_dir = self._get_category_temp_folder(item.category) if item.category else temp_base
                                 safe_name = "".join(c for c in (item.name or "") if c.isalnum() or c in " ._-")[:100].strip() or item.id
                                 temp_path = os.path.join(temp_dir, safe_name)
                                 if os.path.isdir(temp_path):
@@ -448,7 +485,8 @@ class NZBHuntDownloadManager:
         """Remove temp directory for a download item (partial/incomplete files)."""
         try:
             folders = self._get_folders()
-            temp_dir = folders.get("temp_folder", "/downloads/incomplete")
+            temp_base = folders.get("temp_folder", "/downloads/incomplete")
+            temp_dir = self._get_category_temp_folder(item.category) if item.category else temp_base
             safe_name = "".join(c for c in (item.name or "") if c.isalnum() or c in " ._-")[:100].strip() or item.id
             temp_path = os.path.join(temp_dir, safe_name)
             if os.path.isdir(temp_path):
@@ -536,20 +574,31 @@ class NZBHuntDownloadManager:
             pass
         return defaults
 
+    def _temp_to_complete_base(self, temp_folder: str) -> str:
+        """Derive complete base from temp: /downloads/incomplete -> /downloads/complete."""
+        if not temp_folder or temp_folder.rstrip("/") == "":
+            return "/downloads/complete"
+        parent = os.path.dirname(temp_folder.rstrip(os.sep))
+        if not parent or parent == temp_folder:
+            return "/downloads/complete"
+        return os.path.join(parent, "complete")
+
     def _get_category_folder(self, category: str) -> Optional[str]:
-        """Get the download folder for a specific category."""
-        try:
-            config_path = os.path.join(self._config_dir, "nzb_hunt_config.json")
-            if os.path.exists(config_path):
-                with open(config_path, "r") as f:
-                    cfg = json.load(f)
-                categories = cfg.get("categories", [])
-                for cat in categories:
-                    if cat.get("name", "").lower() == category.lower():
-                        return cat.get("folder", "")
-        except Exception:
-            pass
-        return None
+        """Get the completed download folder for a category. Auto-derived from temp_folder + category name."""
+        if not category:
+            return None
+        folders = self._get_folders()
+        temp_folder = folders.get("temp_folder", "/downloads/incomplete")
+        complete_base = self._temp_to_complete_base(temp_folder)
+        return os.path.join(complete_base, category)
+
+    def _get_category_temp_folder(self, category: str) -> Optional[str]:
+        """Get the incomplete (temp) folder for a category: temp_base/category_name."""
+        if not category:
+            return None
+        folders = self._get_folders()
+        temp_folder = folders.get("temp_folder", "/downloads/incomplete")
+        return os.path.join(temp_folder, category)
     
     # ── Speed Limit ──────────────────────────────────────────────
     
@@ -925,10 +974,11 @@ class NZBHuntDownloadManager:
             else:
                 self._remove_warning(wid)
         
-        # 3. Disk space warning
+        # 3. Disk space warning (use complete base derived from temp)
         try:
             folders = self._get_folders()
-            dl_folder = folders.get("download_folder", "/downloads")
+            temp_folder = folders.get("temp_folder", "/downloads/incomplete")
+            dl_folder = self._temp_to_complete_base(temp_folder)
             if os.path.isdir(dl_folder):
                 usage = shutil.disk_usage(dl_folder)
                 free_gb = usage.free / (1024 ** 3)
@@ -988,12 +1038,13 @@ class NZBHuntDownloadManager:
         
         eta_seconds = int(total_remaining / total_speed) if total_speed > 0 else 0
         
-        # Free disk space
+        # Free disk space (use complete base derived from temp)
         free_space = 0
         free_space_human = "--"
         try:
             folders = self._get_folders()
-            dl_folder = folders.get("download_folder", "/downloads")
+            temp_folder = folders.get("temp_folder", "/downloads/incomplete")
+            dl_folder = self._temp_to_complete_base(temp_folder)
             if os.path.isdir(dl_folder):
                 usage = shutil.disk_usage(dl_folder)
                 free_space = usage.free
@@ -1261,16 +1312,15 @@ class NZBHuntDownloadManager:
             # Parse the NZB
             nzb = parse_nzb(item.nzb_content)
             
-            # Determine output directory
+            # Determine output directory — category subfolders under both incomplete and complete
             folders = self._get_folders()
-            temp_dir = folders.get("temp_folder", "/downloads/incomplete")
-            download_dir = folders.get("download_folder", "/downloads")
-            
-            # Check if there's a category-specific folder
+            temp_base = folders.get("temp_folder", "/downloads/incomplete")
             if item.category:
-                cat_folder = self._get_category_folder(item.category)
-                if cat_folder:
-                    download_dir = cat_folder
+                temp_dir = self._get_category_temp_folder(item.category) or temp_base
+                download_dir = self._get_category_folder(item.category) or os.path.join(self._temp_to_complete_base(temp_base), "misc")
+            else:
+                temp_dir = temp_base
+                download_dir = folders.get("download_folder", self._temp_to_complete_base(temp_base))
             
             # Create a directory for this download
             safe_name = "".join(c for c in item.name if c.isalnum() or c in " ._-")[:100].strip()

@@ -89,6 +89,9 @@
             '<div class="editor-field-group"><div class="editor-setting-item"><label>Instance Identifier</label>' +
             '<input type="text" id="mh-editor-instance-id" value="' + escapeAttr(safe.instance_id) + '" readonly disabled style="opacity: 0.8; cursor: not-allowed;"></div>' +
             '<p class="editor-help-text">Stable identifier for this instance (assigned automatically; cannot be changed)</p></div>' +
+            '<div class="editor-field-group"><div class="editor-setting-item"><label>Category Name</label>' +
+            '<input type="text" id="mh-editor-category-name" value="' + escapeAttr('Movies-' + ((safe.name || '').trim() || 'Unnamed').replace(/ /g, '_')) + '" readonly disabled style="opacity: 0.8; cursor: not-allowed; background: rgba(148,163,184,0.1);"></div>' +
+            '<p class="editor-help-text">For NZB Hunt this is automatic. SABNZBD and NZBGet require this exact category to be configured.</p></div>' +
             '</div>' +
             '<div class="editor-section">' +
             '<div class="editor-section-title"><div class="section-title-text"><span class="section-title-icon accent-search"><i class="fas fa-search"></i></span>SEARCH SETTINGS</div></div>' +
@@ -286,6 +289,16 @@
             var upgradeItemsSection = container.querySelector('.mh-editor-upgrade-items-tag-section');
             if (upgradeItemsSection) upgradeItemsSection.style.display = upgradeMethod.value === 'tags' ? 'none' : 'block';
         });
+        var nameInput = document.getElementById('mh-editor-name');
+        var categoryNameEl = document.getElementById('mh-editor-category-name');
+        if (nameInput && categoryNameEl) {
+            function updateMhCategoryName() {
+                var n = ((nameInput.value || '').trim() || 'Unnamed').replace(/ /g, '_');
+                categoryNameEl.value = 'Movies-' + n;
+            }
+            nameInput.addEventListener('input', updateMhCategoryName);
+            nameInput.addEventListener('change', updateMhCategoryName);
+        }
         var enabledSelect = document.getElementById('mh-editor-enabled');
         var statusPill = container ? container.querySelector('.mh-info-status-pill') : null;
         var enabledIconEl = document.getElementById('mh-editor-enabled-icon');
@@ -722,6 +735,7 @@
             '<div class="editor-field-group"><div class="editor-setting-item"><label>Enable Status</label><select id="th-editor-enabled"><option value="true"' + (safe.enabled ? ' selected' : '') + '>Enabled</option><option value="false"' + (!safe.enabled ? ' selected' : '') + '>Disabled</option></select></div><p class="editor-help-text">Enable or disable this instance</p></div>' +
             '<div class="editor-field-group"><div class="editor-setting-item"><label>Name</label><input type="text" id="th-editor-name" value="' + escapeAttr(safe.name) + '" placeholder="e.g. Main TV" maxlength="64"></div><p class="editor-help-text">A friendly name to identify this instance</p></div>' +
             '<div class="editor-field-group"><div class="editor-setting-item"><label>Instance ID</label><input type="text" id="th-editor-instance-id" value="' + escapeAttr(safe.instance_id) + '" readonly disabled style="opacity:0.8;cursor:not-allowed;"></div><p class="editor-help-text">Stable identifier (auto-assigned, cannot change)</p></div>' +
+            '<div class="editor-field-group"><div class="editor-setting-item"><label>Category Name</label><input type="text" id="th-editor-category-name" value="' + escapeAttr('TV-' + ((safe.name || '').trim() || 'Unnamed').replace(/ /g, '_')) + '" readonly disabled style="opacity:0.8;cursor:not-allowed;background:rgba(148,163,184,0.1);"></div><p class="editor-help-text">For NZB Hunt this is automatic. SABNZBD and NZBGet require this exact category to be configured.</p></div>' +
             '</div>' +
             // SEARCH SETTINGS
             '<div class="editor-section"><div class="editor-section-title"><div class="section-title-text"><span class="section-title-icon accent-search"><i class="fas fa-search"></i></span>SEARCH SETTINGS</div></div>' +
@@ -847,6 +861,16 @@
             var group = container.querySelector('.editor-upgrade-tag-group');
             if (group) group.style.display = upgradeMethod.value === 'tags' ? 'flex' : 'none';
         });
+        var nameInput = document.getElementById('th-editor-name');
+        var categoryNameEl = document.getElementById('th-editor-category-name');
+        if (nameInput && categoryNameEl) {
+            function updateThCategoryName() {
+                var n = ((nameInput.value || '').trim() || 'Unnamed').replace(/ /g, '_');
+                categoryNameEl.value = 'TV-' + n;
+            }
+            nameInput.addEventListener('input', updateThCategoryName);
+            nameInput.addEventListener('change', updateThCategoryName);
+        }
         var enabledSelect = document.getElementById('th-editor-enabled');
         var statusPill = container ? container.querySelector('.th-info-status-pill') : null;
         if (enabledSelect && statusPill) {

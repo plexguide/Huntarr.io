@@ -94,7 +94,7 @@ def _register_clients_routes(bp, get_instance_id, config_key, route_prefix, use_
             data = request.get_json() or {}
             name = (data.get('name') or '').strip() or 'Unnamed'
             client_type = (data.get('type') or ('nzbget' if not route_prefix else 'nzb_hunt')).strip().lower()
-            host = 'internal' if client_type == 'nzbhunt' and not route_prefix else (data.get('host') or '').strip()
+            host = 'internal' if client_type in ('nzbhunt', 'nzb_hunt') and not route_prefix else (data.get('host') or '').strip()
             raw_port = data.get('port')
             if raw_port is None or (isinstance(raw_port, str) and str(raw_port).strip() == ''):
                 port = 8080

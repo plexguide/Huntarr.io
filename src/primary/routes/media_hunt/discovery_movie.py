@@ -159,22 +159,26 @@ def _search_newznab_movie(base_url, api_key, query, categories, timeout=15):
 
 def _add_nzb_to_download_client(client, nzb_url, nzb_name, category, verify_ssl, indexer="", instance_id=None, instance_name=None):
     """Send NZB URL to NZB Hunt, SABnzbd, or NZBGet. Returns (success, message, queue_id).
-    instance_id and instance_name are used for NZB Hunt to track which Movie Hunt instance sent the request."""
-    client_type = (client.get('type') or 'nzbget').strip().lower()
+    Uses instance-based category (Movies-InstanceName) for NZB Hunt, SABnzbd, NZBGet - users must configure same in SABNZBD/NZBGet."""
+    from .helpers import _get_movie_hunt_instance_display_name, _instance_name_to_category
 
-    raw = (category or client.get('category') or '').strip()
-    if raw.lower() in ('default', '*', ''):
-        cat = MOVIE_HUNT_DEFAULT_CATEGORY
+    client_type = (client.get('type') or 'nzbget').strip().lower()
+    inst_name = (instance_name or "").strip() or (_get_movie_hunt_instance_display_name(instance_id) if instance_id is not None else "")
+    if inst_name:
+        cat = _instance_name_to_category(inst_name, "Movies")
     else:
-        cat = raw or MOVIE_HUNT_DEFAULT_CATEGORY
+        raw = (category or client.get('category') or '').strip()
+        if raw.lower() in ('default', '*', ''):
+            cat = MOVIE_HUNT_DEFAULT_CATEGORY
+        else:
+            cat = raw or MOVIE_HUNT_DEFAULT_CATEGORY
 
     try:
-        if client_type == 'nzbhunt':
+        if client_type in ('nzbhunt', 'nzb_hunt'):
             from src.primary.apps.nzb_hunt.download_manager import get_manager
-            from .helpers import _get_movie_hunt_instance_display_name
             mgr = get_manager()
             src_id = str(instance_id) if instance_id is not None else ""
-            src_name = (instance_name or "").strip() or (_get_movie_hunt_instance_display_name(instance_id) if instance_id is not None else "")
+            src_name = inst_name
             success, message, queue_id = mgr.add_nzb(
                 nzb_url=nzb_url,
                 name=nzb_name or '',

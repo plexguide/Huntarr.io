@@ -81,11 +81,12 @@ def get_nzb_folders():
 def save_nzb_folders():
     data = request.get_json(silent=True) or {}
     cfg = _load_config()
-    # Preserve existing download_folder (derived from categories base)
-    existing_folders = cfg.get("folders", {})
+    temp_folder = data.get("temp_folder", "/downloads/incomplete")
+    # Derive complete base from temp so download_folder stays in sync
+    complete_base = _temp_to_complete_base(temp_folder)
     cfg["folders"] = {
-        "download_folder": existing_folders.get("download_folder", "/downloads/complete"),
-        "temp_folder": data.get("temp_folder", "/downloads/incomplete"),
+        "download_folder": complete_base,
+        "temp_folder": temp_folder,
     }
     _save_config(cfg)
     return jsonify({"success": True})
@@ -407,125 +408,124 @@ def delete_nzb_server(index):
 
 
 # ──────────────────────────────────────────────────────────────────
-# Category CRUD
+# Auto-generated categories from Movie Hunt + TV Hunt instances
 # ──────────────────────────────────────────────────────────────────
 
-@nzb_hunt_bp.route("/api/nzb-hunt/settings/categories-base", methods=["POST"])
-def save_nzb_categories_base():
-    data = request.get_json(silent=True) or {}
+def _instance_name_to_category(name: str, prefix: str) -> str:
+    """Convert instance name to category: Movies-Instance_Name or TV-Instance_Name (spaces -> _)."""
+    safe = (name or "").strip() or "Unnamed"
+    safe = safe.replace(" ", "_")
+    return f"{prefix}-{safe}"
+
+
+def _get_categories_from_instances():
+    """Build category list from Movie Hunt and TV Hunt instances. Merge with persisted known (never remove)."""
+    from src.primary.utils.database import get_database
     cfg = _load_config()
-    cfg["categories_base_folder"] = data.get("base_folder", "/downloads/complete")
+    known = set(cfg.get("known_category_names", []))
+
+    try:
+        db = get_database()
+        mh = db.get_movie_hunt_instances() or []
+        th = db.get_tv_hunt_instances() or []
+    except Exception:
+        mh, th = [], []
+
+    for inst in mh:
+        name = inst.get("name") or "Unnamed"
+        known.add(_instance_name_to_category(name, "Movies"))
+    for inst in th:
+        name = inst.get("name") or "Unnamed"
+        known.add(_instance_name_to_category(name, "TV"))
+
+    # Persist known (grows over time, never shrinks on instance delete/rename)
+    cfg["known_category_names"] = sorted(known)
     _save_config(cfg)
-    return jsonify({"success": True})
+
+    return sorted(known)
 
 
-_DEFAULT_CATEGORIES = [
-    {
-        "name": "movies",
-        "folder": "/downloads/complete/movies",
-        "priority": "normal",
-        "processing": "default",
-        "indexer_cats": "movies, movies.hd, movies.uhd",
-    },
-    {
-        "name": "tv",
-        "folder": "/downloads/complete/tv",
-        "priority": "normal",
-        "processing": "default",
-        "indexer_cats": "tv, tv.hd, tv.uhd",
-    },
-]
+def _temp_to_complete_base(temp_folder: str) -> str:
+    """Derive complete base from temp folder: /downloads/incomplete -> /downloads/complete."""
+    if not temp_folder or temp_folder == "/":
+        return "/downloads/complete"
+    parent = os.path.dirname(temp_folder.rstrip("/"))
+    if not parent:
+        parent = "/"
+    return os.path.join(parent, "complete")
+
+
+def _ensure_category_folders_and_status(temp_folder: str, category_names: list) -> list:
+    """Create incomplete + complete subfolders for each category. Return status per category."""
+    complete_base = _temp_to_complete_base(temp_folder)
+    results = []
+
+    for cat_name in category_names:
+        inc_path = os.path.join(temp_folder, cat_name)
+        com_path = os.path.join(complete_base, cat_name)
+        status = {"name": cat_name, "folder": com_path, "incomplete_folder": inc_path, "ok": False, "error": None}
+
+        try:
+            os.makedirs(inc_path, exist_ok=True)
+            os.makedirs(com_path, exist_ok=True)
+            # Quick write check: create a temp file and remove it
+            test = os.path.join(com_path, ".nzbhunt_write_test")
+            with open(test, "w") as f:
+                f.write("")
+            os.remove(test)
+            status["ok"] = True
+        except PermissionError as e:
+            status["error"] = "Not writeable"
+            logger.warning("Category folder %r not writeable: %s", com_path, e)
+        except OSError as e:
+            status["error"] = str(e) or "Cannot create"
+            logger.warning("Could not create category folder %r: %s", com_path, e)
+
+        results.append(status)
+
+    return results
 
 
 @nzb_hunt_bp.route("/api/nzb-hunt/categories", methods=["GET"])
 def list_nzb_categories():
+    """Return auto-generated categories from instances. No manual add/edit/delete."""
     cfg = _load_config()
-    cats = cfg.get("categories", None)
-    base = cfg.get("categories_base_folder", "/downloads/complete")
+    folders = cfg.get("folders", {})
+    temp_folder = folders.get("temp_folder", "/downloads/incomplete")
+    complete_base = _temp_to_complete_base(temp_folder)
 
-    # Seed default categories on first access
-    if cats is None:
-        cats = _DEFAULT_CATEGORIES
-        cfg["categories"] = cats
-        _save_config(cfg)
+    category_names = _get_categories_from_instances()
+    categories = []
+    for name in category_names:
+        inc_path = os.path.join(temp_folder, name)
+        com_path = os.path.join(complete_base, name)
+        categories.append({
+            "name": name,
+            "folder": com_path,
+            "incomplete_folder": inc_path,
+            "priority": "normal",
+        })
 
     return jsonify({
-        "categories": cats,
-        "base_folder": base,
+        "categories": categories,
+        "base_folder": complete_base,
+        "temp_folder": temp_folder,
     })
 
 
-@nzb_hunt_bp.route("/api/nzb-hunt/categories", methods=["POST"])
-def add_nzb_category():
-    data = request.get_json(silent=True) or {}
+@nzb_hunt_bp.route("/api/nzb-hunt/categories/ensure-folders", methods=["POST"])
+def ensure_category_folders():
+    """Create category folders (incomplete + complete). Call on page load + every 15 min when NZB Hunt runs."""
     cfg = _load_config()
-    cats = cfg.get("categories", [])
-    base = cfg.get("categories_base_folder", "/downloads/complete")
-    name = data.get("name", "").strip()
-    if not name:
-        return jsonify({"success": False, "error": "Name required"}), 400
+    folders = cfg.get("folders", {})
+    temp_folder = folders.get("temp_folder", "/downloads/incomplete")
+    category_names = _get_categories_from_instances()
 
-    folder = data.get("folder", "").strip()
-    if not folder:
-        safe_name = "".join(c for c in name.lower() if c.isalnum() or c in "_-")
-        folder = os.path.join(base, safe_name)
+    if not category_names:
+        return jsonify({"success": True, "status": []})
 
-    cat = {
-        "name": name,
-        "folder": folder,
-        "priority": data.get("priority", "normal"),
-        "processing": data.get("processing", "default"),
-        "indexer_groups": data.get("indexer_groups", ""),
-    }
-    cats.append(cat)
-    cfg["categories"] = cats
-    _save_config(cfg)
-
-    # Try to create the folder if it doesn't exist
-    try:
-        os.makedirs(folder, exist_ok=True)
-    except Exception as e:
-        logger.warning(f"Could not create category folder {folder}: {e}")
-
-    return jsonify({"success": True, "index": len(cats) - 1})
-
-
-@nzb_hunt_bp.route("/api/nzb-hunt/categories/<int:index>", methods=["PUT"])
-def update_nzb_category(index):
-    data = request.get_json(silent=True) or {}
-    cfg = _load_config()
-    cats = cfg.get("categories", [])
-    if index < 0 or index >= len(cats):
-        return jsonify({"success": False, "error": "Invalid index"}), 400
-
-    cat = cats[index]
-    cat["name"] = data.get("name", cat.get("name", ""))
-    cat["folder"] = data.get("folder", cat.get("folder", ""))
-    cat["priority"] = data.get("priority", cat.get("priority", "normal"))
-    cat["processing"] = data.get("processing", cat.get("processing", "default"))
-    cat["indexer_groups"] = data.get("indexer_groups", cat.get("indexer_groups", ""))
-    cfg["categories"] = cats
-    _save_config(cfg)
-
-    # Try to create the folder if it doesn't exist
-    try:
-        os.makedirs(cat["folder"], exist_ok=True)
-    except Exception as e:
-        logger.warning(f"Could not create category folder {cat['folder']}: {e}")
-
-    return jsonify({"success": True})
-
-
-@nzb_hunt_bp.route("/api/nzb-hunt/categories/<int:index>", methods=["DELETE"])
-def delete_nzb_category(index):
-    cfg = _load_config()
-    cats = cfg.get("categories", [])
-    if index < 0 or index >= len(cats):
-        return jsonify({"success": False, "error": "Invalid index"}), 400
-    cats.pop(index)
-    cfg["categories"] = cats
-    _save_config(cfg)
-    return jsonify({"success": True})
+    status_list = _ensure_category_folders_and_status(temp_folder, category_names)
+    return jsonify({"success": True, "status": status_list})
 
 
 # ──────────────────────────────────────────────────────────────────
@@ -883,11 +883,11 @@ def get_nzb_universal_settings():
         cfg = _load_config()
         universal = cfg.get("universal", {})
         folders = cfg.get("folders", {})
-        categories = cfg.get("categories", [])
+        category_names = _get_categories_from_instances()
         return jsonify({
             "show_on_home": universal.get("show_on_home", True),
             "temp_folder": folders.get("temp_folder", "/downloads/incomplete"),
-            "category_count": len(categories),
+            "category_count": len(category_names),
         })
     except Exception as e:
         logger.exception("NZB Hunt universal settings GET error")

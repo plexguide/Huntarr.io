@@ -2588,7 +2588,7 @@
                     if (folderLabel) folderLabel.textContent = tempFolder;
 
                     var catLabel = document.getElementById('nzb-universal-cat-count-label');
-                    if (catLabel) catLabel.textContent = catCount + ' configured';
+                    if (catLabel) catLabel.textContent = catCount + ' auto-generated';
 
                     // Update status icon
                     var statusIcon = document.getElementById('nzb-universal-status-icon');
@@ -2677,8 +2677,14 @@
             })
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
-                    if (data.success && window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification('Temporary folder saved.', 'success');
+                    if (data.success) {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification('Temporary folder saved.', 'success');
+                        }
+                        if (window.NzbHunt) {
+                            window.NzbHunt._loadCategories();
+                            window.NzbHunt._loadUniversalCard();
+                        }
                     }
                 })
                 .catch(function () {
@@ -2994,9 +3000,7 @@
             document.addEventListener('keydown', function (e) {
                 if (e.key === 'Escape') {
                     var bm = document.getElementById('nzb-browse-modal');
-                    var cm = document.getElementById('nzb-cat-modal');
                     if (bm && bm.style.display === 'flex') { self._closeBrowseModal(); return; }
-                    if (cm && cm.style.display === 'flex') { self._closeCategoryModal(); return; }
                     if (window.huntarrUI && window.huntarrUI.currentSection === 'nzb-hunt-server-editor') {
                         self._navigateBackFromServerEditor();
                     }
@@ -3295,29 +3299,7 @@
         },
 
         _setupCategoryGrid: function () {
-            var self = this;
-            var addCard = document.getElementById('nzb-add-cat-card');
-            if (addCard) {
-                addCard.addEventListener('click', function () {
-                    self._catEditIndex = null;
-                    self._openCategoryModal(null);
-                });
-            }
-
-            // Auto-generate folder path when category name changes
-            var catName = document.getElementById('nzb-cat-name');
-            if (catName) {
-                catName.addEventListener('input', function () {
-                    if (self._catEditIndex !== null) return; // Don't auto-fill when editing
-                    var folder = document.getElementById('nzb-cat-folder');
-                    var name = (catName.value || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
-                    if (folder && name) {
-                        folder.value = self._getBaseFolder().replace(/\/+$/, '') + '/' + name;
-                    } else if (folder) {
-                        folder.value = '';
-                    }
-                });
-            }
+            // Categories are auto-generated from instances — no Add/Edit/Delete
         },
 
         _loadCategories: function () {
@@ -3326,199 +3308,59 @@
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
                     self._categories = data.categories || [];
-                    // Store base folder internally for auto-generating new category paths
                     if (data.base_folder) self._categoriesBaseFolder = data.base_folder;
-                    self._renderCategoryCards();
+                    // Ensure folder creation and get status (success/error per category)
+                    return fetch('./api/nzb-hunt/categories/ensure-folders', { method: 'POST' })
+                        .then(function (r2) { return r2.json(); })
+                        .then(function (ensureData) {
+                            var statusMap = {};
+                            (ensureData.status || []).forEach(function (s) {
+                                statusMap[s.name] = { ok: s.ok, error: s.error };
+                            });
+                            self._categories.forEach(function (c) {
+                                var st = statusMap[c.name] || {};
+                                c._folderOk = st.ok;
+                                c._folderError = st.error;
+                            });
+                        })
+                        .catch(function () { /* keep categories, render without status */ });
                 })
+                .then(function () { self._renderCategoryCards(); })
                 .catch(function () { self._categories = []; self._renderCategoryCards(); });
         },
 
         _renderCategoryCards: function () {
             var grid = document.getElementById('nzb-cat-grid');
             if (!grid) return;
-
-            var addCard = document.getElementById('nzb-add-cat-card');
             grid.innerHTML = '';
 
             var self = this;
-            this._categories.forEach(function (cat, idx) {
+            this._categories.forEach(function (cat) {
                 var card = document.createElement('div');
-                card.className = 'nzb-cat-card';
-
-                var indexerTags = '';
-                if (cat.indexer_groups) {
-                    var groups = cat.indexer_groups.split(',').map(function (g) { return g.trim(); }).filter(Boolean);
-                    if (groups.length > 0) {
-                        indexerTags = '<div class="nzb-cat-card-indexer"><i class="fas fa-search"></i><div class="nzb-cat-card-indexer-tags">' +
-                            groups.map(function (g) { return '<span class="nzb-cat-indexer-tag">' + _esc(g) + '</span>'; }).join('') +
-                            '</div></div>';
-                    }
-                }
-
+                card.className = 'nzb-cat-card nzb-cat-card-readonly';
+                var statusIcon = cat._folderOk ? '<i class="fas fa-check-circle nzb-cat-status-ok" title="Folder created and writeable"></i>' :
+                    (cat._folderError ? '<i class="fas fa-exclamation-circle nzb-cat-status-error" title="' + _esc(cat._folderError || 'Error') + '"></i>' : '');
                 card.innerHTML =
                     '<div class="nzb-cat-card-header">' +
                         '<div class="nzb-cat-card-name"><i class="fas fa-tag"></i> <span>' + _esc(cat.name || 'Category') + '</span></div>' +
                         '<div class="nzb-cat-card-badges">' +
                             '<span class="nzb-badge nzb-badge-priority-cat">' + _esc(_capFirst(cat.priority || 'normal')) + '</span>' +
-                            '<span class="nzb-badge nzb-badge-processing">' + _esc(cat.processing || 'Default') + '</span>' +
+                            (statusIcon ? '<span class="nzb-cat-status">' + statusIcon + '</span>' : '') +
                         '</div>' +
                     '</div>' +
                     '<div class="nzb-cat-card-body">' +
-                        '<div class="nzb-cat-card-path"><i class="fas fa-folder"></i> <span>' + _esc(cat.folder || '') + '</span></div>' +
-                        indexerTags +
-                    '</div>' +
-                    '<div class="nzb-cat-card-footer">' +
-                        '<button class="nzb-btn" data-action="edit-cat" data-idx="' + idx + '"><i class="fas fa-pen"></i> Edit</button>' +
-                        '<button class="nzb-btn nzb-btn-danger" data-action="delete-cat" data-idx="' + idx + '"><i class="fas fa-trash"></i> Delete</button>' +
+                        '<div class="nzb-cat-card-path nzb-cat-path-readonly"><i class="fas fa-folder"></i> <span>' + _esc(cat.folder || '') + '</span></div>' +
+                        (cat._folderError ? '<div class="nzb-cat-error-msg">' + _esc(cat._folderError) + '</div>' : '') +
                     '</div>';
-
-                card.addEventListener('click', function (e) {
-                    var btn = e.target.closest('[data-action]');
-                    if (!btn) return;
-                    var action = btn.getAttribute('data-action');
-                    var i = parseInt(btn.getAttribute('data-idx'), 10);
-                    if (action === 'edit-cat') {
-                        self._catEditIndex = i;
-                        self._openCategoryModal(self._categories[i]);
-                    } else if (action === 'delete-cat') {
-                        var name = (self._categories[i] || {}).name || 'this category';
-                        var idx = i;
-                        var doDelete = function() {
-                            fetch('./api/nzb-hunt/categories/' + idx, { method: 'DELETE' })
-                                .then(function (r) { return r.json(); })
-                                .then(function (data) {
-                                    if (data.success) self._loadCategories();
-                                    if (window.huntarrUI && window.huntarrUI.showNotification) {
-                                        window.huntarrUI.showNotification('Category deleted.', 'success');
-                                    }
-                                })
-                                .catch(function () {
-                                    if (window.huntarrUI && window.huntarrUI.showNotification) {
-                                        window.huntarrUI.showNotification('Delete failed.', 'error');
-                                    }
-                                });
-                        };
-                        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
-                            window.HuntarrConfirm.show({ title: 'Delete Category', message: 'Delete "' + name + '"?', confirmLabel: 'Delete', onConfirm: doDelete });
-                        } else {
-                            if (!confirm('Delete "' + name + '"?')) return;
-                            doDelete();
-                        }
-                    }
-                });
-
                 grid.appendChild(card);
             });
-
-            if (addCard) grid.appendChild(addCard);
         },
 
         /* ──────────────────────────────────────────────
            Category Add/Edit Modal
         ────────────────────────────────────────────── */
         _setupCategoryModal: function () {
-            var self = this;
-            var backdrop = document.getElementById('nzb-cat-modal-backdrop');
-            var closeBtn = document.getElementById('nzb-cat-modal-close');
-            var cancelBtn = document.getElementById('nzb-cat-modal-cancel');
-            var saveBtn = document.getElementById('nzb-cat-modal-save');
-            var browseBtn = document.getElementById('nzb-cat-browse-folder');
-
-            if (backdrop) backdrop.addEventListener('click', function () { self._closeCategoryModal(); });
-            if (closeBtn) closeBtn.addEventListener('click', function () { self._closeCategoryModal(); });
-            if (cancelBtn) cancelBtn.addEventListener('click', function () { self._closeCategoryModal(); });
-            if (saveBtn) saveBtn.addEventListener('click', function () { self._saveCategory(); });
-            if (browseBtn) browseBtn.addEventListener('click', function () {
-                var folderInput = document.getElementById('nzb-cat-folder');
-                if (folderInput) folderInput.removeAttribute('readonly');
-                self._openBrowseModal(folderInput);
-            });
-        },
-
-        _openCategoryModal: function (cat) {
-            var modal = document.getElementById('nzb-cat-modal');
-            if (!modal) return;
-            if (modal.parentElement !== document.body) document.body.appendChild(modal);
-
-            var title = document.getElementById('nzb-cat-modal-title');
-            if (title) title.textContent = cat ? 'Edit Category' : 'Add Category';
-
-            var f = function (id, val) { var el = document.getElementById(id); if (el) el.value = val; };
-            f('nzb-cat-name', cat ? cat.name : '');
-            f('nzb-cat-folder', cat ? cat.folder : '');
-            f('nzb-cat-priority', cat ? (cat.priority || 'normal') : 'normal');
-            f('nzb-cat-processing', cat ? (cat.processing || 'default') : 'default');
-            f('nzb-cat-indexer', cat ? (cat.indexer_groups || '') : '');
-
-            // Set readonly on folder for new categories (auto-generated from name)
-            var folderInput = document.getElementById('nzb-cat-folder');
-            if (folderInput) {
-                if (cat) {
-                    folderInput.removeAttribute('readonly');
-                } else {
-                    folderInput.setAttribute('readonly', 'readonly');
-                }
-            }
-
-            modal.style.display = 'flex';
-        },
-
-        _closeCategoryModal: function () {
-            var modal = document.getElementById('nzb-cat-modal');
-            if (modal) modal.style.display = 'none';
-        },
-
-        _saveCategory: function () {
-            var g = function (id) { var el = document.getElementById(id); return el ? el.value : ''; };
-            var name = g('nzb-cat-name').trim();
-            if (!name) {
-                if (window.huntarrUI && window.huntarrUI.showNotification) {
-                    window.huntarrUI.showNotification('Category name is required.', 'error');
-                }
-                return;
-            }
-            var folder = g('nzb-cat-folder').trim();
-            if (!folder) {
-                folder = this._getBaseFolder().replace(/\/+$/, '') + '/' + name.toLowerCase().replace(/[^a-z0-9_-]/g, '');
-            }
-            var payload = {
-                name: name,
-                folder: folder,
-                priority: g('nzb-cat-priority') || 'normal',
-                processing: g('nzb-cat-processing') || 'default',
-                indexer_groups: g('nzb-cat-indexer') || ''
-            };
-
-            var self = this;
-            var url, method;
-            if (this._catEditIndex !== null) {
-                url = './api/nzb-hunt/categories/' + this._catEditIndex;
-                method = 'PUT';
-            } else {
-                url = './api/nzb-hunt/categories';
-                method = 'POST';
-            }
-
-            fetch(url, {
-                method: method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            })
-                .then(function (r) { return r.json(); })
-                .then(function (data) {
-                    if (data.success) {
-                        self._closeCategoryModal();
-                        self._loadCategories();
-                        if (window.huntarrUI && window.huntarrUI.showNotification) {
-                            window.huntarrUI.showNotification('Category saved.', 'success');
-                        }
-                    }
-                })
-                .catch(function () {
-                    if (window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification('Failed to save category.', 'error');
-                    }
-                });
+            // Categories are auto-generated — no Add/Edit modal
         },
 
         /* ──────────────────────────────────────────────

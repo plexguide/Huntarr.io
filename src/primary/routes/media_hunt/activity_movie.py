@@ -187,7 +187,7 @@ def _check_and_import_completed(client_name, queue_item, instance_id):
             return
 
         # ── NZB Hunt (built-in) ──
-        if client_type == 'nzbhunt':
+        if client_type in ('nzbhunt', 'nzb_hunt'):
             movie_hunt_logger.info(
                 "Import: item left NZB Hunt queue (id=%s, title='%s'). Checking NZB Hunt history.",
                 queue_id, title
@@ -419,7 +419,7 @@ def _get_download_client_queue(client, instance_id):
     client_type = (client.get('type') or 'nzbget').strip().lower()
     name = (client.get('name') or 'Download client').strip() or 'Download client'
 
-    if client_type == 'nzbhunt':
+    if client_type in ('nzbhunt', 'nzb_hunt'):
         return _get_nzb_hunt_queue(client, name, instance_id)
 
     base_url = _download_client_base_url(client)

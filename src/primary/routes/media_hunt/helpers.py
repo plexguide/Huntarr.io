@@ -73,6 +73,13 @@ def _get_tv_hunt_instance_display_name(instance_id):
         return str(instance_id)
 
 
+def _instance_name_to_category(name: str, prefix: str) -> str:
+    """Convert instance name to NZB category: Movies-Instance_Name or TV-Instance_Name (spaces -> _)."""
+    safe = (name or "").strip() or "Unnamed"
+    safe = safe.replace(" ", "_")
+    return f"{prefix}-{safe}"
+
+
 # --- TV Hunt instance ID ---
 def _get_tv_hunt_instance_id_from_request():
     """Resolve TV Hunt instance_id from query or JSON body."""

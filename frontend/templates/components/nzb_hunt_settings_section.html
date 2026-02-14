@@ -4,29 +4,6 @@
     {% with section_id='nzb-hunt-settings' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <div class="nzb-hunt-container">
 
-        <!-- ═══════ Universal Settings ═══════ -->
-        <div class="nzb-settings-group" id="nzb-universal-settings-group" style="margin-bottom: 24px;">
-            <h3><i class="fas fa-sliders-h" style="color: #6366f1; margin-right: 8px;"></i>Universal Settings</h3>
-            <div class="instance-card-grid">
-                <div class="instance-card" id="nzb-universal-card">
-                    <div class="instance-card-header">
-                        <span class="instance-name"><i class="fas fa-download" style="margin-right: 8px;"></i>NZB Hunt</span>
-                        <div class="instance-status-icon" id="nzb-universal-status-icon" title="Enabled">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                    </div>
-                    <div class="instance-card-body">
-                        <div class="instance-detail"><i class="fas fa-home"></i><span>Show on Home: <strong id="nzb-universal-show-home-label">Enabled</strong></span></div>
-                        <div class="instance-detail"><i class="fas fa-folder-open"></i><span>Temp Folder: <strong id="nzb-universal-temp-folder-label">/downloads/incomplete</strong></span></div>
-                        <div class="instance-detail"><i class="fas fa-tags"></i><span>Categories: <strong id="nzb-universal-cat-count-label">0 configured</strong></span></div>
-                    </div>
-                    <div class="instance-card-footer">
-                        <button type="button" class="btn-card edit" id="nzb-universal-edit-btn"><i class="fas fa-cog"></i> Edit</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- ═══════ Folders Panel (temp folder + completed categories) ═══════ -->
         <div class="nzb-settings-panel" data-settings-panel="folders" style="display: block;">
 
@@ -44,20 +21,39 @@
                 </div>
             </div>
 
-            <!-- Completed Categories -->
+            <!-- Completed Categories (auto-generated from Movie Hunt + TV Hunt instances) -->
             <div class="nzb-settings-group" style="margin-top: 20px; margin-bottom: 24px;">
                 <h3><i class="fas fa-tags" style="color: #a78bfa; margin-right: 8px;"></i>Completed Categories</h3>
-                <p class="nzb-settings-help">Each category defines a completed download folder. Downloads are moved here after post-processing.</p>
+                <p class="nzb-settings-help">Categories are auto-generated from Movie Hunt and TV Hunt instances (e.g. Movies-Movie_Star, TV-Movie_Star). Required for NZB Hunt, SABnzbd, and NZBGet. Folders are created automatically.</p>
 
-                <!-- Category cards -->
+                <!-- Category cards (read-only, no Add/Edit/Delete) -->
                 <div class="nzb-cat-grid" id="nzb-cat-grid">
                     <!-- Category cards rendered dynamically -->
-                    <div class="nzb-cat-add-card" id="nzb-add-cat-card">
-                        <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
-                        <div class="add-text">Add Category</div>
+                </div>
+            </div>
+
+        <!-- ═══════ Universal Settings (below Completed Categories) ═══════ -->
+        <div class="nzb-settings-group" id="nzb-universal-settings-group" style="margin-bottom: 24px;">
+            <h3><i class="fas fa-sliders-h" style="color: #6366f1; margin-right: 8px;"></i>Universal Settings</h3>
+            <div class="instance-card-grid">
+                <div class="instance-card" id="nzb-universal-card">
+                    <div class="instance-card-header">
+                        <span class="instance-name"><i class="fas fa-download" style="margin-right: 8px;"></i>NZB Hunt</span>
+                        <div class="instance-status-icon" id="nzb-universal-status-icon" title="Enabled">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                    <div class="instance-card-body">
+                        <div class="instance-detail"><i class="fas fa-home"></i><span>Show on Home: <strong id="nzb-universal-show-home-label">Enabled</strong></span></div>
+                        <div class="instance-detail"><i class="fas fa-folder-open"></i><span>Temp Folder: <strong id="nzb-universal-temp-folder-label">/downloads/incomplete</strong></span></div>
+                        <div class="instance-detail"><i class="fas fa-tags"></i><span>Categories: <strong id="nzb-universal-cat-count-label">0 auto-generated</strong></span></div>
+                    </div>
+                    <div class="instance-card-footer">
+                        <button type="button" class="btn-card edit" id="nzb-universal-edit-btn"><i class="fas fa-cog"></i> Edit</button>
                     </div>
                 </div>
             </div>
+        </div>
         </div>
 
         <!-- ═══════ Servers Panel ═══════ -->
@@ -278,66 +274,6 @@
             </div>
         </div>
 
-    </div>
-
-    <!-- ═══════ Add/Edit Category Modal ═══════ -->
-    <div id="nzb-cat-modal" class="nzb-server-modal" style="display: none;">
-        <div class="nzb-server-modal-backdrop" id="nzb-cat-modal-backdrop"></div>
-        <div class="nzb-server-modal-content">
-            <div class="nzb-server-modal-header" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e293b 100%);">
-                <button type="button" class="nzb-server-modal-close" id="nzb-cat-modal-close" aria-label="Close"><i class="fas fa-times"></i></button>
-                <div class="nzb-server-modal-header-overlay">
-                    <h2 id="nzb-cat-modal-title">Add Category</h2>
-                    <p class="nzb-server-modal-subtitle">Configure a download category with its own folder and rules.</p>
-                </div>
-            </div>
-            <div class="nzb-server-modal-body">
-                <div class="nzb-form-group">
-                    <label for="nzb-cat-name">Category Name</label>
-                    <input type="text" id="nzb-cat-name" placeholder="e.g. movies, tv, music" autocomplete="off" />
-                    <span class="nzb-form-hint">Used as the subfolder name under the completed folder.</span>
-                </div>
-                <div class="nzb-form-group">
-                    <label for="nzb-cat-folder">Folder Path</label>
-                    <div class="nzb-folder-input-group">
-                        <input type="text" id="nzb-cat-folder" class="nzb-folder-input" placeholder="Auto-generated from name" autocomplete="off" readonly />
-                        <button type="button" class="nzb-btn-browse" id="nzb-cat-browse-folder"><i class="fas fa-folder-open"></i> Browse</button>
-                    </div>
-                    <span class="nzb-form-hint">Auto-filled from category name. Override with Browse if needed.</span>
-                </div>
-                <div class="nzb-form-row">
-                    <div class="nzb-form-group" style="flex: 1;">
-                        <label for="nzb-cat-priority">Priority</label>
-                        <select id="nzb-cat-priority" class="nzb-form-select">
-                            <option value="default">Default</option>
-                            <option value="force">Force</option>
-                            <option value="high">High</option>
-                            <option value="normal" selected>Normal</option>
-                            <option value="low">Low</option>
-                            <option value="paused">Paused</option>
-                        </select>
-                    </div>
-                    <div class="nzb-form-group" style="flex: 1;">
-                        <label for="nzb-cat-processing">Processing</label>
-                        <select id="nzb-cat-processing" class="nzb-form-select">
-                            <option value="default" selected>Default</option>
-                            <option value="+repair">+Repair</option>
-                            <option value="+unpack">+Unpack</option>
-                            <option value="+delete">+Delete</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="nzb-form-group">
-                    <label for="nzb-cat-indexer">Indexer Categories / Groups</label>
-                    <input type="text" id="nzb-cat-indexer" placeholder="e.g. movies, movies.hd, movies.uhd" autocomplete="off" />
-                    <span class="nzb-form-hint">Comma-separated list of Newznab categories or group patterns the indexer sends.</span>
-                </div>
-            </div>
-            <div class="nzb-server-modal-footer">
-                <button type="button" class="nzb-btn" id="nzb-cat-modal-cancel">Cancel</button>
-                <button type="button" class="nzb-btn nzb-btn-primary" id="nzb-cat-modal-save"><i class="fas fa-save"></i> Save</button>
-            </div>
-        </div>
     </div>
 
     <!-- ═══════ File Browser Modal (standalone for NZB Hunt) ═══════ -->
