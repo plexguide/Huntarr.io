@@ -82,9 +82,25 @@ a.reqset-back-btn {
     text-decoration: none;
 }
 
-a.reqset-back-btn:hover {
+a.reqset-back-btn:hover,
+button.reqset-back-btn:hover {
     background: rgba(255, 255, 255, 0.1);
     color: var(--text-primary, #e2e8f0);
+}
+
+button.reqset-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 11px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-muted, #94a3b8);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
 }
 
 .page-header-bar .reqset-breadcrumb {

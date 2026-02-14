@@ -2,25 +2,23 @@
     <link rel="stylesheet" href="./static/css/instance-editor.css?v=1.0.2">
     {% with section_id='media-hunt-instance-editor' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <div id="mediaHuntInstanceEditorContainer" class="app-content-panel">
-        <div class="instance-editor-header">
-            <div class="instance-editor-nav">
-                <button type="button" id="media-hunt-instance-editor-back" class="ie-btn ie-btn-ghost">
-                    <i class="fas fa-arrow-left"></i>
-                    <span>Back</span>
+        <div class="reqset-toolbar page-header-bar">
+            <div class="reqset-toolbar-left">
+                <button type="button" id="media-hunt-instance-editor-back" class="reqset-back-btn">
+                    <i class="fas fa-arrow-left"></i> Back
                 </button>
-                <div class="instance-editor-breadcrumb" id="media-hunt-instance-editor-breadcrumb">
-                    <span class="ie-breadcrumb-app">
-                        <i class="fas fa-film" id="media-hunt-instance-editor-app-icon"></i>
-                        <span id="media-hunt-instance-editor-app-name">Media Hunt</span>
-                    </span>
-                    <i class="fas fa-chevron-right"></i>
-                    <span class="ie-breadcrumb-name" id="media-hunt-instance-editor-instance-name">—</span>
+                <div class="reqset-breadcrumb">
+                    <i class="fas fa-film" id="media-hunt-instance-editor-app-icon"></i>
+                    <span id="media-hunt-instance-editor-app-name">Media Hunt</span>
+                    <i class="fas fa-chevron-right reqset-breadcrumb-sep"></i>
+                    <span id="media-hunt-instance-editor-instance-name">—</span>
                 </div>
             </div>
-            <button type="button" id="media-hunt-instance-editor-save" class="ie-btn save-btn-dynamic" disabled>
-                <i class="fas fa-save"></i>
-                <span>Save</span>
-            </button>
+            <div class="reqset-toolbar-right">
+                <button type="button" id="media-hunt-instance-editor-save" class="reqset-save-btn page-header-save" disabled>
+                    <i class="fas fa-save"></i> Save
+                </button>
+            </div>
         </div>
         <div id="media-hunt-instance-editor-content">
             <!-- Filled by Movie or TV instance editor (Search, Stateful, Additional) -->

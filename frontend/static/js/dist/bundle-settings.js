@@ -1081,7 +1081,7 @@ document.head.appendChild(styleEl);
         // Update breadcrumb in the header
         const bcAppName = document.getElementById('ie-breadcrumb-app-name');
         const bcInstanceName = document.getElementById('ie-breadcrumb-instance-name');
-        const bcAppIcon = document.querySelector('.ie-breadcrumb-app i');
+        const bcAppIcon = document.getElementById('ie-breadcrumb-app-icon');
         if (bcAppName) bcAppName.textContent = appType.charAt(0).toUpperCase() + appType.slice(1);
         if (bcInstanceName) bcInstanceName.textContent = instance.name || (isEdit ? 'Edit Instance' : 'New Instance');
         if (bcAppIcon) {
@@ -1153,7 +1153,13 @@ document.head.appendChild(styleEl);
         console.log('[SettingsForms] Switching to instance-editor section');
         if (window.huntarrUI && window.huntarrUI.switchSection) {
             window.huntarrUI.switchSection('instance-editor');
-            
+            // Update URL hash for app instance editors (radarr, sonarr, etc.)
+            const appInstanceEditors = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr'];
+            if (appInstanceEditors.includes(appType)) {
+                const hashPart = (index !== null && index !== undefined) ? appType + '-settings/' + index : appType + '-settings';
+                const newUrl = (window.location.pathname || '') + (window.location.search || '') + '#' + hashPart;
+                try { window.history.replaceState(null, '', newUrl); } catch (e) { /* ignore */ }
+            }
             // Add change detection after a short delay to let values settle
             setTimeout(() => {
                 this.setupEditorChangeDetection();
@@ -2197,6 +2203,7 @@ document.head.appendChild(styleEl);
             window.huntarrUI.switchSection(optionalNextSection);
             this._currentEditing = null;
             _instanceEditorDirty = false;
+            this._updateHashForSection(optionalNextSection);
             return;
         }
 
@@ -2204,6 +2211,7 @@ document.head.appendChild(styleEl);
             window.huntarrUI.switchSection('sonarr');
             this._currentEditing = null;
             _instanceEditorDirty = false;
+            this._updateHashForSection('sonarr');
             return;
         }
         const appType = this._currentEditing.appType;
@@ -2211,11 +2219,21 @@ document.head.appendChild(styleEl);
         _instanceEditorDirty = false;
         if (appType === 'indexer') {
             window.huntarrUI.switchSection('indexer-hunt');
+            this._updateHashForSection('indexer-hunt');
         } else if (appType === 'client') {
             window.huntarrUI.switchSection('settings-clients');
+            this._updateHashForSection('settings-clients');
         } else {
             window.huntarrUI.switchSection(appType);
+            this._updateHashForSection(appType);
         }
+    },
+
+    _updateHashForSection: function(section) {
+        try {
+            const newUrl = (window.location.pathname || '') + (window.location.search || '') + '#' + section;
+            window.history.replaceState(null, '', newUrl);
+        } catch (e) { /* ignore */ }
     },
 
     // Open the modal for adding/editing an instance

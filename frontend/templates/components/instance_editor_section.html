@@ -1,25 +1,23 @@
 <section id="instanceEditorSection" class="content-section">
     {% with section_id='instance-editor' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
-    <div id="instanceEditorContainer" class="app-content-panel">
-        <div class="instance-editor-header">
-            <div class="instance-editor-nav">
-                <button type="button" id="instance-editor-back" class="ie-btn ie-btn-ghost">
-                    <i class="fas fa-arrow-left"></i>
-                    <span>Back</span>
+    <div id="instanceEditorContainer" class="app-content-panel content-boundary-inner">
+        <div class="reqset-toolbar page-header-bar">
+            <div class="reqset-toolbar-left">
+                <button type="button" id="instance-editor-back" class="reqset-back-btn">
+                    <i class="fas fa-arrow-left"></i> Back
                 </button>
-                <div class="instance-editor-breadcrumb" id="instance-editor-breadcrumb">
-                    <span class="ie-breadcrumb-app">
-                        <i class="fas fa-server"></i>
-                        <span id="ie-breadcrumb-app-name">Instance</span>
-                    </span>
-                    <i class="fas fa-chevron-right"></i>
-                    <span class="ie-breadcrumb-name" id="ie-breadcrumb-instance-name">Editor</span>
+                <div class="reqset-breadcrumb">
+                    <i class="fas fa-server" id="ie-breadcrumb-app-icon"></i>
+                    <span id="ie-breadcrumb-app-name">Instance</span>
+                    <i class="fas fa-chevron-right reqset-breadcrumb-sep"></i>
+                    <span id="ie-breadcrumb-instance-name">Editor</span>
                 </div>
             </div>
-            <button type="button" id="instance-editor-save" class="ie-btn save-btn-dynamic" disabled>
-                <i class="fas fa-save"></i>
-                <span>Save</span>
-            </button>
+            <div class="reqset-toolbar-right">
+                <button type="button" id="instance-editor-save" class="reqset-save-btn page-header-save" disabled>
+                    <i class="fas fa-save"></i> Save
+                </button>
+            </div>
         </div>
         
         <div id="instance-editor-content">

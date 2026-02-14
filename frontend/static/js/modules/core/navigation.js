@@ -151,6 +151,21 @@ window.HuntarrNavigation = {
                 window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#' + target);
             }
         }
+        // App instance editor URLs: #radarr-settings, #radarr-settings/0, #sonarr-settings, etc.
+        var appSettingsMatch = section.match(/^(sonarr|radarr|lidarr|readarr|whisparr|eros|prowlarr)-settings(?:\/(\d+))?$/);
+        if (appSettingsMatch) {
+            var appType = appSettingsMatch[1];
+            var idx = appSettingsMatch[2] != null ? parseInt(appSettingsMatch[2], 10) : null;
+            if (window.SettingsForms && typeof window.SettingsForms.navigateToInstanceEditor === 'function') {
+                var hasSettings = window.huntarrUI && window.huntarrUI.originalSettings && window.huntarrUI.originalSettings[appType];
+                if (hasSettings) {
+                    window.SettingsForms.navigateToInstanceEditor(appType, idx);
+                    return;
+                }
+            }
+            section = appType;
+            window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#' + appType);
+        }
         if (window.huntarrUI) {
             window.huntarrUI.switchSection(section);
         }
