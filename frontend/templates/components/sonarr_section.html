@@ -1,9 +1,11 @@
 <section id="sonarrSection" class="content-section">
     <link rel="stylesheet" href="./static/css/instance-editor.css?v=1.0.2">
-    {% with section_id='sonarr' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
-    {% from 'components/page_header_partial.html' import page_header %}
+    <div class="content-boundary-inner">
+        {% with section_id='sonarr' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
+        {% from 'components/page_header_partial.html' import page_header %}
 {{ page_header(back_href='./#apps', parent_icon='fas fa-th-large', parent_name='Apps', current_name='Sonarr') }}
-    <div id="sonarrApps" class="app-content-panel"></div>
+        <div id="sonarrApps" class="app-content-panel"></div>
+    </div>
 </section>
 
 <style>
@@ -14,7 +16,7 @@
         height: 100vh;
         overflow-y: auto;
         overflow-x: hidden;
-        padding: 0;
+        padding: 0 20px 20px 20px;
         margin: 0;
     }
     

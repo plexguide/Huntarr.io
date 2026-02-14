@@ -110,10 +110,11 @@
 </style>
 <section id="appsSection" class="content-section">
     <link rel="stylesheet" href="./static/css/instance-editor.css?v=1.0.2">
-    {% with section_id='apps' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
-    {% from 'components/page_header_partial.html' import page_header %}
-    {{ page_header(back_href='./#home', parent_icon='fas fa-th-large', parent_name='Apps', current_name='Dashboard') }}
-    <div class="apps-dashboard">
+    <div class="content-boundary-inner">
+        {% with section_id='apps' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
+        {% from 'components/page_header_partial.html' import page_header %}
+        {{ page_header(back_href='./#home', parent_icon='fas fa-th-large', parent_name='Apps', current_name='Dashboard') }}
+        <div class="apps-dashboard">
         <div class="dashboard-header">
             <div class="header-icon">
                 <i class="fas fa-tools"></i>
@@ -268,6 +269,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
 </section>
 
