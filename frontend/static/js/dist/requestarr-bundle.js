@@ -4478,8 +4478,14 @@ class RequestarrContent {
                     this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
                 }
             } else {
-                // For TV shows: open detail page (like movies)
-                if (window.RequestarrTVDetail && window.RequestarrTVDetail.openDetail) {
+                // For TV shows: TV Hunt = popup unless in library; Sonarr = always detail page
+                const tvInstance = card.suggestedInstance || this.selectedTVInstance;
+                const tvDecoded = tvInstance ? decodeInstanceValue(tvInstance, 'sonarr') : { appType: 'sonarr' };
+                const isTVHunt = tvDecoded.appType === 'tv_hunt';
+                const shouldOpenModal = isTVHunt && !inLibrary;
+                if (shouldOpenModal) {
+                    this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
+                } else if (window.RequestarrTVDetail && window.RequestarrTVDetail.openDetail) {
                     const seriesData = {
                         tmdb_id: item.tmdb_id,
                         id: item.tmdb_id,
