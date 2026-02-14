@@ -1133,7 +1133,7 @@ export class RequestarrContent {
         const partial = item.partial || false;
         const hasInstance = item.media_type === 'movie'
             ? ((this.core.instances.radarr || []).length > 0 || (this.core.instances.movie_hunt || []).length > 0)
-            : (this.core.instances.sonarr || []).length > 0;
+            : ((this.core.instances.sonarr || []).length > 0 || (this.core.instances.tv_hunt || []).length > 0);
         const metaClassName = hasInstance ? 'media-card-meta' : 'media-card-meta no-hide';
         
         // Determine status badge (shared utility)
