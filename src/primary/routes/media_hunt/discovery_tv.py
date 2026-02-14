@@ -830,12 +830,23 @@ def register_tv_discovery_routes(bp):
             collection = _get_collection_config(instance_id)
             
             for series in collection:
-                if series.get('tmdb_id') != tmdb_id:
+                try:
+                    s_tmdb_id = int(series.get('tmdb_id'))
+                except (TypeError, ValueError):
                     continue
                 
-                # Monitor whole series
+                if s_tmdb_id != tmdb_id:
+                    continue
+                
+                # Monitor whole series: cascade to all seasons and episodes
                 if 'monitored' in data and 'season_number' not in data:
-                    series['monitored'] = bool(data['monitored'])
+                    monitored = bool(data['monitored'])
+                    logger.info(f"Toggling series monitor for TMDB {tmdb_id} to {monitored}")
+                    series['monitored'] = monitored
+                    for season in (series.get('seasons') or []):
+                        season['monitored'] = monitored
+                        for ep in (season.get('episodes') or []):
+                            ep['monitored'] = monitored
                     _save_collection_config(collection, instance_id)
                     return jsonify({'success': True}), 200
                 
@@ -888,9 +899,81 @@ def register_tv_discovery_routes(bp):
             quality_profile = data.get('quality_profile')
             search_type = data.get('search_type', 'episode')
             
-            if not series_title:
-                return jsonify({'success': False, 'message': 'Series title required'}), 400
-            
+            if search_type == 'monitored':
+                collection = _get_collection_config(instance_id)
+                
+                # Robust ID and title matching
+                series = None
+                search_tmdb_id = None
+                try:
+                    if tvdb_id is not None:
+                        search_tmdb_id = int(tvdb_id)
+                except (TypeError, ValueError):
+                    pass
+                
+                for s in collection:
+                    s_tmdb_id = s.get('tmdb_id')
+                    try:
+                        if s_tmdb_id is not None:
+                            s_tmdb_id = int(s_tmdb_id)
+                    except (TypeError, ValueError):
+                        pass
+                    
+                    if search_tmdb_id is not None and s_tmdb_id == search_tmdb_id:
+                        series = s
+                        break
+                    if series_title and s.get('title') == series_title:
+                        series = s
+                        break
+                
+                if not series:
+                    logger.warning(f"Search monitored: Series not found for TMDB {search_tmdb_id} or title '{series_title}'")
+                    return jsonify({'success': False, 'message': 'Series not found in collection'}), 404
+                
+                # Use title from collection if missing from request
+                if not series_title:
+                    series_title = series.get('title', '').strip()
+                
+                if not series_title:
+                    return jsonify({'success': False, 'message': 'Series title required for search'}), 400
+                
+                missing_monitored = []
+                for season in (series.get('seasons') or []):
+                    for ep in (season.get('episodes') or []):
+                        monitored = ep.get('monitored', True)
+                        status = (ep.get('status') or '').lower()
+                        has_file = status == 'available' or ep.get('file_path')
+                        
+                        if monitored and not has_file:
+                            missing_monitored.append({
+                                'season': season.get('season_number'),
+                                'episode': ep.get('episode_number')
+                            })
+                
+                if not missing_monitored:
+                    return jsonify({'success': True, 'message': 'No monitored missing episodes found.'}), 200
+                
+                # Limit to first 20 missing to avoid extreme timeouts
+                to_search = missing_monitored[:20]
+                success_count = 0
+                for item in to_search:
+                    s, m = perform_tv_hunt_request(
+                        instance_id, series_title,
+                        season_number=item['season'],
+                        episode_number=item['episode'],
+                        tvdb_id=tvdb_id,
+                        root_folder=root_folder,
+                        quality_profile=quality_profile,
+                        search_type='episode'
+                    )
+                    if s:
+                        success_count += 1
+                
+                msg = f"Requested {success_count} of {len(to_search)} monitored missing episodes."
+                if len(missing_monitored) > 20:
+                    msg += f" (Total missing: {len(missing_monitored)})"
+                return jsonify({'success': success_count > 0, 'message': msg}), 200
+
             success, msg = perform_tv_hunt_request(
                 instance_id, series_title,
                 season_number=season_number,

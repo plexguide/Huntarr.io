@@ -1103,6 +1103,7 @@
             try {
                 const details = await this.fetchSeriesDetails(tmdbId);
                 if (details) {
+                    this.currentSeries = details; // Update to full TMDB details
                     detailView.innerHTML = this.renderTVDetail(details, series);
                     await this.setupDetailInteractions();
                 } else {
@@ -1192,7 +1193,7 @@
             try {
                 const decoded = _decodeInstanceValue(instanceValue);
                 const appType = decoded.appType || 'sonarr';
-                const response = await fetch(`./api/requestarr/series-status?tmdb_id=${tmdbId}&instance=${encodeURIComponent(decoded.name)}&app_type=${encodeURIComponent(appType)}`);
+                const response = await fetch(`./api/requestarr/series-status?tmdb_id=${tmdbId}&instance=${encodeURIComponent(decoded.name)}&app_type=${encodeURIComponent(appType)}&_=${Date.now()}`);
                 return await response.json();
             } catch (e) {
                 return { exists: false, previously_requested: false };
@@ -1209,6 +1210,10 @@
         renderTVDetail(details, originalSeries) {
             const decoded = _decodeInstanceValue(this.selectedInstanceName || '');
             const isTVHunt = decoded.appType === 'tv_hunt';
+            const hasTVHuntInstances = this.tvInstances.some(inst => {
+                const d = _decodeInstanceValue(inst.compoundValue);
+                return d.appType === 'tv_hunt';
+            });
 
             const backdropUrl = details.backdrop_path
                 ? `https://image.tmdb.org/t/p/original${details.backdrop_path}`
@@ -1252,18 +1257,14 @@
                 `;
             }
 
-            const toolbarHTML = isTVHunt
-                ? `<div class="mh-toolbar" id="requestarr-tv-detail-toolbar">
+            const toolbarHTML = `
+                <div class="mh-toolbar" id="requestarr-tv-detail-toolbar">
                     <div class="mh-toolbar-left">
                         <button class="mh-tb" id="requestarr-tv-detail-back"><i class="fas fa-arrow-left"></i> <span>Back</span></button>
                     </div>
-                    <div class="mh-toolbar-right"></div>
-                </div>`
-                : `<div class="mh-toolbar" id="requestarr-tv-detail-toolbar">
-                    <div class="mh-toolbar-left">
-                        <button class="mh-tb" id="requestarr-tv-detail-back"><i class="fas fa-arrow-left"></i> <span>Back</span></button>
+                    <div class="mh-toolbar-right">
+                        ${isTVHunt ? '<button class="mh-tb" id="requestarr-tv-search-monitored"><i class="fas fa-search"></i> <span>Search Monitored</span></button>' : ''}
                     </div>
-                    <div class="mh-toolbar-right"></div>
                 </div>`;
 
             const seasonsHTML = this.renderSeasonsSection(details);
@@ -1279,7 +1280,7 @@
                             <div class="mh-hero-info">
                                 <div class="mh-hero-title-row">
                                     <h1 class="mh-hero-title">${this.escapeHtml(title)}</h1>
-                                    ${isTVHunt ? '<div class="mh-hero-series-monitor" id="requestarr-tv-series-monitor-wrap" style="display:none;"><button type="button" class="mh-monitor-btn" id="requestarr-tv-series-monitor-btn" title="Toggle monitor series"><i class="fas fa-bookmark"></i></button></div>' : ''}
+                                    ${hasTVHuntInstances ? '<div class="mh-hero-series-monitor" id="requestarr-tv-series-monitor-wrap" style="display:none;"><button type="button" class="mh-monitor-btn" id="requestarr-tv-series-monitor-btn" title="Toggle monitor series"><i class="fas fa-bookmark"></i></button></div>' : ''}
                                 </div>
                                 <div class="mh-hero-meta">
                                     <span><i class="fas fa-calendar-alt"></i> ${year}</span>
@@ -1302,7 +1303,7 @@
                                     </div>
                                 </div>
                                 <p class="mh-hero-overview">${this.escapeHtml(overview)}</p>
-                                <div class="mh-hero-actions">${actionButton}</div>
+                                <div class="mh-hero-actions" id="requestarr-tv-detail-actions" style="${isTVHunt ? 'display:none' : ''}">${actionButton}</div>
                             </div>
                         </div>
                     </div>
@@ -1447,11 +1448,18 @@
             }
 
             const seriesMonitorBtn = document.getElementById('requestarr-tv-series-monitor-btn');
-            if (seriesMonitorBtn && this.currentSeries) {
-                seriesMonitorBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.toggleMonitor(this.currentSeries.tmdb_id || this.currentSeries.id, null, null);
-                });
+            if (seriesMonitorBtn) {
+                const tmdbId = this.currentSeries.tmdb_id || this.currentSeries.id;
+                seriesMonitorBtn.onclick = async () => {
+                    await this.toggleMonitor(tmdbId, null, null);
+                };
+            }
+
+            const searchMonitoredBtn = document.getElementById('requestarr-tv-search-monitored');
+            if (searchMonitoredBtn) {
+                searchMonitoredBtn.onclick = async () => {
+                    await this.searchMonitoredEpisodes();
+                };
             }
 
             // Must load series status first so buildEpisodeStatusMap has Sonarr/TV Hunt data for episode status and resolution
@@ -1569,6 +1577,62 @@
             document.addEventListener('keydown', this._escHandler);
         },
 
+        async searchMonitoredEpisodes() {
+            if (!this.currentSeries) {
+                console.error('[RequestarrTVDetail] No currentSeries for searchMonitored');
+                return;
+            }
+            const tmdbId = this.currentSeries.id || this.currentSeries.tmdb_id;
+            const title = this.currentSeries.name || this.currentSeries.title;
+            const instanceId = this.getTVHuntInstanceId();
+            
+            console.log('[RequestarrTVDetail] searchMonitored:', { title, tmdbId, instanceId });
+
+            if (!instanceId) {
+                if (window.huntarrUI?.showNotification) window.huntarrUI.showNotification('Select a TV Hunt instance.', 'error');
+                return;
+            }
+
+            if (!title) {
+                if (window.huntarrUI?.showNotification) window.huntarrUI.showNotification('Series title not found.', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('requestarr-tv-search-monitored');
+            if (btn) {
+                btn.disabled = true;
+                btn.dataset.oldHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Searching...</span>';
+            }
+
+            try {
+                const r = await fetch(`./api/tv-hunt/request?instance_id=${instanceId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        series_title: title,
+                        tmdb_id: parseInt(tmdbId, 10),
+                        search_type: 'monitored',
+                        instance_id: instanceId,
+                    }),
+                });
+                const data = await r.json();
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification(data.message || (data.success ? 'Search completed' : 'Search failed'), data.success ? 'success' : 'error');
+                }
+            } catch (e) {
+                console.error('[RequestarrTVDetail] searchMonitored error:', e);
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('Search failed.', 'error');
+                }
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = btn.dataset.oldHtml || '<i class="fas fa-search"></i> <span>Search Monitored</span>';
+                }
+            }
+        },
+
         async updateDetailInfoBar() {
             const pathEl = document.getElementById('requestarr-tv-ib-path');
             const statusEl = document.getElementById('requestarr-tv-ib-status');
@@ -1597,7 +1661,12 @@
                 const data = await this.checkSeriesStatus(tmdbId, this.selectedInstanceName);
                 this.seriesStatus = data;
 
+                const actionsEl = document.getElementById('requestarr-tv-detail-actions');
+
                 if (data.exists) {
+                    if (actionsEl && decoded.appType !== 'tv_hunt') {
+                        actionsEl.style.display = 'none';
+                    }
                     const seriesMonitorWrap = document.getElementById('requestarr-tv-series-monitor-wrap');
                     const seriesMonitorBtn = document.getElementById('requestarr-tv-series-monitor-btn');
                     if (decoded.appType === 'tv_hunt' && seriesMonitorWrap && seriesMonitorBtn) {
@@ -1627,6 +1696,7 @@
                     this.updateSeasonCountBadges();
                     this.updateEpisodeMonitorIcons();
                 } else {
+                    if (actionsEl && decoded.appType !== 'tv_hunt') actionsEl.style.display = '';
                     if (seriesMonitorWrap) seriesMonitorWrap.style.display = 'none';
                     pathEl.textContent = '-';
                     statusEl.innerHTML = '<span class="mh-badge mh-badge-warn">Not in Collection</span>';
@@ -1635,6 +1705,8 @@
                     this.updateEpisodeMonitorIcons();
                 }
             } catch (e) {
+                const actionsEl = document.getElementById('requestarr-tv-detail-actions');
+                if (actionsEl && decoded.appType !== 'tv_hunt') actionsEl.style.display = '';
                 pathEl.textContent = '-';
                 statusEl.innerHTML = '<span class="mh-badge mh-badge-warn">Error</span>';
                 if (episodesEl) episodesEl.textContent = '-';
@@ -1753,39 +1825,88 @@
         },
 
         async toggleMonitor(tmdbId, seasonNum, episodeNum) {
+            console.log('toggleMonitor called:', { tmdbId, seasonNum, episodeNum });
             const instanceId = this.getTVHuntInstanceId();
-            if (!instanceId) return;
+            if (!instanceId) {
+                if (window.huntarrUI?.showNotification) {
+                    window.huntarrUI.showNotification('Select a TV Hunt instance to toggle monitor.', 'error');
+                }
+                return;
+            }
+
+            // Ensure we have current status
+            if (!this.seriesStatus) {
+                console.log('No seriesStatus, fetching...');
+                await this.updateDetailInfoBar();
+            }
+            if (!this.seriesStatus) {
+                console.error('Failed to get seriesStatus for toggleMonitor');
+                return;
+            }
+
             const currentMonitored = (() => {
                 if (seasonNum != null && episodeNum != null) {
                     const map = this.buildEpisodeMonitoredMap(seasonNum);
                     return !!map[episodeNum];
                 }
                 if (seasonNum != null) {
-                    const season = this.seriesStatus && this.seriesStatus.seasons
+                    const season = this.seriesStatus.seasons
                         ? this.seriesStatus.seasons.find(s => (s.season_number ?? s.seasonNumber) === seasonNum)
                         : null;
                     return season ? !!season.monitored : false;
                 }
+                // Series level
+                console.log('Series-level toggle, current monitored:', this.seriesStatus.monitored);
                 return !!this.seriesStatus.monitored;
             })();
+
             const newMonitored = !currentMonitored;
+            console.log('New monitored state will be:', newMonitored);
+            
+            // Optimistic UI update for the series button if it's a series-level toggle
+            if (seasonNum == null && episodeNum == null) {
+                const btn = document.getElementById('requestarr-tv-series-monitor-btn');
+                if (btn) {
+                    const icon = btn.querySelector('i');
+                    if (icon) icon.className = newMonitored ? 'fas fa-bookmark' : 'far fa-bookmark';
+                }
+            }
+
             const body = { monitored: newMonitored, instance_id: instanceId };
             if (seasonNum !== undefined && seasonNum !== null) body.season_number = seasonNum;
             if (episodeNum !== undefined && episodeNum !== null) body.episode_number = episodeNum;
+
             try {
                 const r = await fetch(`./api/tv-hunt/collection/${tmdbId}/monitor?instance_id=${instanceId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
                 });
-                if (!r.ok) throw new Error('Update failed');
+                
+                if (!r.ok) {
+                    const errData = await r.json().catch(() => ({}));
+                    throw new Error(errData.error || 'Update failed');
+                }
+                
+                console.log('Monitor toggle success, refreshing info bar...');
+                // Full refresh from server
                 await this.updateDetailInfoBar();
+                
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
                     window.huntarrUI.showNotification(newMonitored ? 'Monitor on' : 'Monitor off', 'success');
                 }
             } catch (e) {
+                console.error('toggleMonitor error:', e);
+                // Revert optimistic update on failure
+                if (seasonNum == null && episodeNum == null) {
+                    const btn = document.getElementById('requestarr-tv-series-monitor-btn');
+                    if (btn) {
+                        const icon = btn.querySelector('i');
+                        if (icon) icon.className = currentMonitored ? 'fas fa-bookmark' : 'far fa-bookmark';
+                    }
+                }
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
-                    window.huntarrUI.showNotification('Failed to update monitor', 'error');
+                    window.huntarrUI.showNotification('Failed to update monitor: ' + e.message, 'error');
                 }
             }
         },

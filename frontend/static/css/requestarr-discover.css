@@ -998,6 +998,25 @@
 .mh-hero-series-monitor {
     flex-shrink: 0;
 }
+/* Series monitor button: larger icon, opaque background, right of title */
+.mh-hero-title-row .mh-monitor-btn {
+    padding: 8px 12px;
+    font-size: 1.3em;
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    border-radius: 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+    color: #60a5fa;
+}
+.mh-hero-title-row .mh-monitor-btn:hover {
+    background: rgba(30, 41, 59, 0.95);
+    border-color: rgba(148, 163, 184, 0.5);
+    color: #93c5fd;
+}
+.mh-hero-title-row .mh-monitor-btn .far.fa-bookmark {
+    color: #94a3b8;
+}
 
 /* Requestarr TV Detail - Season accordion */
 .requestarr-tv-seasons-list {
