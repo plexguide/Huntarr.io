@@ -348,6 +348,10 @@ def _set_response_headers(response):
     path = request.path or ''
     if path.startswith('/static/') and (path.endswith('.js') or path.endswith('.css')):
         response.headers['Cache-Control'] = 'no-cache, must-revalidate'
+    # Prevent API response caching — always fetch fresh when navigating between sections
+    if path.startswith('/api/'):
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
     return response
 
 # WSGI Middleware to handle BASE_URL stripping

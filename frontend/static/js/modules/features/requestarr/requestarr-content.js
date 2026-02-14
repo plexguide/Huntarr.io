@@ -762,8 +762,9 @@ export class RequestarrContent {
         const carousel = document.getElementById('trending-carousel');
         if (!carousel) return;
         try {
-            const url = this._buildTrendingUrl();
-            const response = await fetch(url);
+            const baseUrl = this._buildTrendingUrl();
+            const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `_=${Date.now()}`;
+            const response = await fetch(url, { cache: 'no-store' });
             const data = await response.json();
             const results = (data.results && data.results.length > 0) ? data.results : [];
             this.renderTrendingResults(carousel, results);
@@ -795,7 +796,8 @@ export class RequestarrContent {
             const decoded = decodeInstanceValue(this.selectedMovieInstance);
             let url = './api/requestarr/discover/movies?page=1';
             if (decoded.name) url += `&app_type=${decoded.appType}&instance_name=${encodeURIComponent(decoded.name)}`;
-            const response = await fetch(url);
+            url += `&_=${Date.now()}`;
+            const response = await fetch(url, { cache: 'no-store' });
             const data = await response.json();
             const results = (data.results && data.results.length > 0) ? data.results : [];
             this.renderPopularMoviesResults(carousel, results);
@@ -827,7 +829,8 @@ export class RequestarrContent {
             const decoded = decodeInstanceValue(this.selectedTVInstance, 'sonarr');
             let url = './api/requestarr/discover/tv?page=1';
             if (decoded.name) url += `&app_type=${encodeURIComponent(decoded.appType || 'sonarr')}&instance_name=${encodeURIComponent(decoded.name)}`;
-            const response = await fetch(url);
+            url += `&_=${Date.now()}`;
+            const response = await fetch(url, { cache: 'no-store' });
             const data = await response.json();
             const results = (data.results && data.results.length > 0) ? data.results : [];
             this.renderPopularTVResults(carousel, results);
@@ -899,8 +902,8 @@ export class RequestarrContent {
                 }
             }
             
-            const response = await fetch(url);
-            
+            const response = await fetch(url, { cache: 'no-store' });
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -1011,7 +1014,7 @@ export class RequestarrContent {
                 }
             }
             
-            const response = await fetch(url);
+            const response = await fetch(url, { cache: 'no-store' });
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);

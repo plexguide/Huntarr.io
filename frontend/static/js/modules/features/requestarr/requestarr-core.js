@@ -182,12 +182,10 @@ export class RequestarrDiscover {
 
         this.currentView = view;
 
-        // Load content for view if not already loaded
+        // Load content for view — always refresh on navigate to avoid stale cache
         switch (view) {
             case 'discover':
-                if (!document.getElementById('trending-carousel').children.length) {
-                    this.content.loadDiscoverContent();
-                }
+                this.content.loadDiscoverContent();
                 break;
             case 'movies':
                 // Setup instance selector if not done yet

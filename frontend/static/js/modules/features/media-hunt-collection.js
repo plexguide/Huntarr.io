@@ -1359,11 +1359,12 @@
             var tvSelect = document.getElementById(tvSelectId);
             if (!movieSelect || !tvSelect) return;
 
-            // Populate dropdowns from Movie Hunt, TV Hunt, and indexers (for step-2 warning)
-            var moviePromise = fetch('./api/movie-hunt/instances').then(function(r) { return r.json(); }).then(function(d) { return d.instances || []; }).catch(function() { return []; });
-            var tvPromise = fetch('./api/tv-hunt/instances').then(function(r) { return r.json(); }).then(function(d) { return d.instances || []; }).catch(function() { return []; });
-            var indexerPromise = fetch('./api/indexer-hunt/indexers').then(function(r) { return r.json(); }).then(function(d) { return d.indexers || []; }).catch(function() { return []; });
-            var hasClientsPromise = fetch('./api/movie-hunt/has-clients').then(function(r) { return r.json(); }).then(function(d) { return d.has_clients === true; }).catch(function() { return false; });
+            // Populate dropdowns from Movie Hunt, TV Hunt, and indexers (for step-2 warning) — cache-bust for fresh data on navigate
+            var ts = '?_=' + Date.now();
+            var moviePromise = fetch('./api/movie-hunt/instances' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }).then(function(d) { return d.instances || []; }).catch(function() { return []; });
+            var tvPromise = fetch('./api/tv-hunt/instances' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }).then(function(d) { return d.instances || []; }).catch(function() { return []; });
+            var indexerPromise = fetch('./api/indexer-hunt/indexers' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }).then(function(d) { return d.indexers || []; }).catch(function() { return []; });
+            var hasClientsPromise = fetch('./api/movie-hunt/has-clients' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }).then(function(d) { return d.has_clients === true; }).catch(function() { return false; });
 
             Promise.all([moviePromise, tvPromise, indexerPromise, hasClientsPromise]).then(function(results) {
                 var movieInstances = results[0];

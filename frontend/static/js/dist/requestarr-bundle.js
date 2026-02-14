@@ -4001,8 +4001,9 @@ class RequestarrContent {
         const carousel = document.getElementById('trending-carousel');
         if (!carousel) return;
         try {
-            const url = this._buildTrendingUrl();
-            const response = await fetch(url);
+            const baseUrl = this._buildTrendingUrl();
+            const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `_=${Date.now()}`;
+            const response = await fetch(url, { cache: 'no-store' });
             const data = await response.json();
             const results = (data.results && data.results.length > 0) ? data.results : [];
             this.renderTrendingResults(carousel, results);
@@ -4034,7 +4035,8 @@ class RequestarrContent {
             const decoded = decodeInstanceValue(this.selectedMovieInstance);
             let url = './api/requestarr/discover/movies?page=1';
             if (decoded.name) url += `&app_type=${decoded.appType}&instance_name=${encodeURIComponent(decoded.name)}`;
-            const response = await fetch(url);
+            url += `&_=${Date.now()}`;
+            const response = await fetch(url, { cache: 'no-store' });
             const data = await response.json();
             const results = (data.results && data.results.length > 0) ? data.results : [];
             this.renderPopularMoviesResults(carousel, results);
@@ -4066,7 +4068,8 @@ class RequestarrContent {
             const decoded = decodeInstanceValue(this.selectedTVInstance, 'sonarr');
             let url = './api/requestarr/discover/tv?page=1';
             if (decoded.name) url += `&app_type=${encodeURIComponent(decoded.appType || 'sonarr')}&instance_name=${encodeURIComponent(decoded.name)}`;
-            const response = await fetch(url);
+            url += `&_=${Date.now()}`;
+            const response = await fetch(url, { cache: 'no-store' });
             const data = await response.json();
             const results = (data.results && data.results.length > 0) ? data.results : [];
             this.renderPopularTVResults(carousel, results);
@@ -4138,8 +4141,8 @@ class RequestarrContent {
                 }
             }
             
-            const response = await fetch(url);
-            
+            const response = await fetch(url, { cache: 'no-store' });
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -4250,7 +4253,7 @@ class RequestarrContent {
                 }
             }
             
-            const response = await fetch(url);
+            const response = await fetch(url, { cache: 'no-store' });
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -5649,12 +5652,10 @@ class RequestarrDiscover {
 
         this.currentView = view;
 
-        // Load content for view if not already loaded
+        // Load content for view — always refresh on navigate to avoid stale cache
         switch (view) {
             case 'discover':
-                if (!document.getElementById('trending-carousel').children.length) {
-                    this.content.loadDiscoverContent();
-                }
+                this.content.loadDiscoverContent();
                 break;
             case 'movies':
                 // Setup instance selector if not done yet
