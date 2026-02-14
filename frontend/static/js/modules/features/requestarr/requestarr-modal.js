@@ -81,6 +81,10 @@ class RequestarrModal {
                 this.saveModalPreferences({ minimum_availability: minSelect.value });
             };
         }
+        const rootSelectEl = document.getElementById('modal-root-folder');
+        if (rootSelectEl) {
+            rootSelectEl.onchange = () => this._updateRequestButtonFromRootFolder();
+        }
 
         this.suggestedInstance = suggestedInstance;
 
@@ -218,8 +222,10 @@ class RequestarrModal {
                 isMovieHunt = matched.appType === 'movie_hunt';
             }
         }
+        const defaultDecoded = defaultInstance ? decodeInstanceValue(defaultInstance, isTVShow ? 'sonarr' : 'radarr') : {};
+        const isTVHunt = isTVShow && defaultDecoded.appType === 'tv_hunt';
 
-        console.log('[RequestarrModal] Resolved instance:', defaultInstance, 'isMovieHunt:', isMovieHunt);
+        console.log('[RequestarrModal] Resolved instance:', defaultInstance, 'isMovieHunt:', isMovieHunt, 'isTVHunt:', isTVHunt);
 
         // Populate poster
         const posterImg = document.getElementById('requestarr-modal-poster-img');
@@ -274,26 +280,26 @@ class RequestarrModal {
             instanceSelect.onchange = () => this.instanceChanged(instanceSelect.value);
         }
 
-        // Populate quality profile dropdown
+        // Populate quality profile dropdown (TV Hunt + Movie Hunt: real profiles only, select default; Sonarr/Radarr: Any + profiles)
         const qualitySelect = document.getElementById('modal-quality-profile');
+        const effectiveInstance = (instanceSelect && instanceSelect.value) ? instanceSelect.value : defaultInstance;
         if (qualitySelect) {
-            const defaultDecoded = decodeInstanceValue(defaultInstance, isTVShow ? 'sonarr' : 'radarr');
-            const profileKey = `${defaultDecoded.appType}-${defaultDecoded.name}`;
+            const profDecoded = effectiveInstance ? decodeInstanceValue(effectiveInstance, isTVShow ? 'sonarr' : 'radarr') : {};
+            const profileKey = `${profDecoded.appType || ''}-${profDecoded.name || ''}`;
             const profiles = this.core.qualityProfiles[profileKey] || [];
-            
-            if (profiles.length === 0 && defaultInstance) {
-                // If profiles are missing from cache, show loading and try to fetch them now
+            const useHuntProfiles = isMovieHunt || isTVHunt;
+
+            if (profiles.length === 0 && effectiveInstance) {
                 qualitySelect.innerHTML = '<option value="">Loading profiles...</option>';
-                const decoded = decodeInstanceValue(defaultInstance, isTVShow ? 'sonarr' : 'radarr');
-                this.core.loadQualityProfilesForInstance(decoded.appType, decoded.name).then(newProfiles => {
+                this.core.loadQualityProfilesForInstance(profDecoded.appType, profDecoded.name).then(newProfiles => {
                     if (newProfiles && newProfiles.length > 0) {
-                        this._populateQualityProfiles(qualitySelect, newProfiles, isMovieHunt);
+                        this._populateQualityProfiles(qualitySelect, newProfiles, useHuntProfiles);
                     } else {
-                        this._populateQualityProfiles(qualitySelect, [], isMovieHunt);
+                        this._populateQualityProfiles(qualitySelect, [], useHuntProfiles);
                     }
                 });
             } else {
-                this._populateQualityProfiles(qualitySelect, profiles, isMovieHunt);
+                this._populateQualityProfiles(qualitySelect, profiles, useHuntProfiles);
             }
         }
 
@@ -305,8 +311,6 @@ class RequestarrModal {
             requestBtn.classList.remove('disabled', 'success');
             requestBtn.textContent = 'Request';
         }
-        // Use actual dropdown selection so TV Hunt Monitor field shows when first option is TV Hunt (defaultInstance may be '')
-        const effectiveInstance = (instanceSelect && instanceSelect.value) ? instanceSelect.value : defaultInstance;
         this._applyMovieHuntModalMode(effectiveInstance, isTVShow, labelEl, requestBtn);
 
         if (defaultInstance) {
@@ -398,6 +402,25 @@ class RequestarrModal {
             rootSelect.innerHTML = '<option value="">Use default (first root folder)</option>';
         } finally {
             this._loadingModalRootFolders = false;
+            this._updateRequestButtonFromRootFolder();
+        }
+    }
+
+    /**
+     * Disable Request button when no root folder is selected (user must pick a folder to request).
+     */
+    _updateRequestButtonFromRootFolder() {
+        const requestBtn = document.getElementById('modal-request-btn');
+        const rootSelect = document.getElementById('modal-root-folder');
+        if (!requestBtn || !rootSelect) return;
+        const noRootFolder = !rootSelect.value || rootSelect.value.trim() === '';
+        const isCompleteOrInLibrary = requestBtn.textContent === 'Complete' || requestBtn.textContent === 'In Library' || requestBtn.textContent === 'Already in library';
+        if (noRootFolder && !isCompleteOrInLibrary) {
+            requestBtn.disabled = true;
+            requestBtn.classList.add('disabled');
+        } else if (!noRootFolder && (requestBtn.textContent === 'Request' || requestBtn.textContent === 'Add to Library')) {
+            requestBtn.disabled = false;
+            requestBtn.classList.remove('disabled');
         }
     }
 
@@ -423,6 +446,7 @@ class RequestarrModal {
                 } else if (status.missing_episodes > 0) {
                     container.innerHTML = `<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-tv"></i> ${status.missing_episodes} missing episodes (${status.available_episodes}/${status.total_episodes})</span>`;
                     if (requestBtn) { requestBtn.disabled = false; requestBtn.classList.remove('disabled'); requestBtn.textContent = 'Request'; }
+                    this._updateRequestButtonFromRootFolder();
                 } else {
                     container.innerHTML = '<span class="mh-req-badge mh-req-badge-lib"><i class="fas fa-check-circle"></i> In Library</span>';
                     if (requestBtn) { requestBtn.disabled = true; requestBtn.classList.add('disabled'); requestBtn.textContent = 'In Library'; }
@@ -430,6 +454,7 @@ class RequestarrModal {
             } else {
                 container.innerHTML = '<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-check-circle"></i> Available to request</span>';
                 if (requestBtn) { requestBtn.disabled = false; requestBtn.classList.remove('disabled'); requestBtn.textContent = 'Request'; }
+                this._updateRequestButtonFromRootFolder();
             }
         } catch (error) {
             console.error('[RequestarrModal] Error loading series status:', error);
@@ -467,6 +492,7 @@ class RequestarrModal {
                     requestBtn.classList.remove('disabled');
                     requestBtn.textContent = isMovieHunt ? 'Add to Library' : 'Request';
                 }
+                this._updateRequestButtonFromRootFolder();
                 // Sync Discover card badge to "requested" state
                 this._syncCardBadge(this.core.currentModalData.tmdb_id, false, true);
             } else {
@@ -478,6 +504,7 @@ class RequestarrModal {
                     requestBtn.classList.remove('disabled');
                     requestBtn.textContent = isMovieHunt ? 'Add to Library' : 'Request';
                 }
+                this._updateRequestButtonFromRootFolder();
             }
         } catch (error) {
             console.error('[RequestarrModal] Error loading movie status:', error);
@@ -541,28 +568,22 @@ class RequestarrModal {
         // Update quality profile dropdown
         const qualitySelect = document.getElementById('modal-quality-profile');
         if (qualitySelect) {
-            let profileKey, isMovieHunt = false;
-            if (isTVShow) {
-                profileKey = `sonarr-${instanceName}`;
-            } else {
-                const decoded = decodeInstanceValue(instanceName);
-                profileKey = `${decoded.appType}-${decoded.name}`;
-                isMovieHunt = decoded.appType === 'movie_hunt';
-            }
+            const decoded = decodeInstanceValue(instanceName, isTVShow ? 'sonarr' : 'radarr');
+            const profileKey = `${decoded.appType}-${decoded.name}`;
+            const useHuntProfiles = decoded.appType === 'movie_hunt' || decoded.appType === 'tv_hunt';
             const profiles = this.core.qualityProfiles[profileKey] || [];
 
             if (profiles.length === 0 && instanceName) {
                 qualitySelect.innerHTML = '<option value="">Loading profiles...</option>';
-                const decoded = isTVShow ? { appType: 'sonarr', name: instanceName } : decodeInstanceValue(instanceName);
                 this.core.loadQualityProfilesForInstance(decoded.appType, decoded.name).then(newProfiles => {
                     if (newProfiles && newProfiles.length > 0) {
-                        this._populateQualityProfiles(qualitySelect, newProfiles, isMovieHunt);
+                        this._populateQualityProfiles(qualitySelect, newProfiles, useHuntProfiles);
                     } else {
-                        this._populateQualityProfiles(qualitySelect, [], isMovieHunt);
+                        this._populateQualityProfiles(qualitySelect, [], useHuntProfiles);
                     }
                 });
             } else {
-                this._populateQualityProfiles(qualitySelect, profiles, isMovieHunt);
+                this._populateQualityProfiles(qualitySelect, profiles, useHuntProfiles);
             }
         }
 

@@ -257,9 +257,9 @@ def request_media():
         if media_type != 'tv':
             minimum_availability = (data.get('minimum_availability') or '').strip() or 'released'
         
-        # For Movie Hunt, quality_profile is a name string, not an integer ID
-        if app_type == 'movie_hunt':
-            quality_profile_id = None  # Not used for Movie Hunt
+        # For Movie Hunt and TV Hunt, quality_profile is a name string, not an integer ID
+        if app_type in ('movie_hunt', 'tv_hunt'):
+            quality_profile_id = None
             quality_profile_name = quality_profile if quality_profile and quality_profile != '' else None
         else:
             quality_profile_id = int(quality_profile) if quality_profile and quality_profile != '' else None
