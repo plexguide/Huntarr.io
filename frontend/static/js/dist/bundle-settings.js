@@ -7903,6 +7903,10 @@ document.head.appendChild(styleEl);
             this.loadItems();
         },
 
+        _safeJsonFetch: function(url, fallback) {
+            return fetch(url, { cache: 'no-store' }).then(function(r) { return r.json(); }).catch(function() { return fallback || {}; });
+        },
+
         setupCombinedInstanceSelect: function() {
             var self = this;
             var select = document.getElementById(PREFIX + '-instance-select');
@@ -7911,13 +7915,14 @@ document.head.appendChild(styleEl);
             select.innerHTML = '<option value="">Loading...</option>';
 
             var ts = Date.now();
+            var sf = self._safeJsonFetch.bind(self);
             Promise.all([
-                fetch('./api/movie-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/movie-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/indexer-hunt/indexers?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/movie-hunt/has-clients?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+                sf('./api/movie-hunt/instances?t=' + ts, { instances: [] }),
+                sf('./api/tv-hunt/instances?t=' + ts, { instances: [] }),
+                sf('./api/movie-hunt/instances/current?t=' + ts, { current_instance_id: null }),
+                sf('./api/tv-hunt/instances/current?t=' + ts, { current_instance_id: null }),
+                sf('./api/indexer-hunt/indexers?t=' + ts, { indexers: [] }),
+                sf('./api/movie-hunt/has-clients?t=' + ts, { has_clients: false })
             ]).then(function(results) {
                 var movieList = results[0].instances || [];
                 var tvList = results[1].instances || [];
@@ -7989,6 +7994,14 @@ document.head.appendChild(styleEl);
                 self.applySelectedInstance();
             }).catch(function() {
                 select.innerHTML = '<option value="">Failed to load</option>';
+                var noInstEl = document.getElementById(PREFIX + '-no-instances');
+                var noIdxEl = document.getElementById(PREFIX + '-no-indexers');
+                var noCliEl = document.getElementById(PREFIX + '-no-clients');
+                var wrapperEl = document.getElementById(PREFIX + '-content-wrapper');
+                if (noInstEl) noInstEl.style.display = 'none';
+                if (noIdxEl) noIdxEl.style.display = 'none';
+                if (noCliEl) noCliEl.style.display = '';
+                if (wrapperEl) wrapperEl.style.display = 'none';
             });
 
             select.addEventListener('change', function() {
