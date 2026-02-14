@@ -85,7 +85,7 @@
         ────────────────────────────────────────────── */
         _fetchQueueAndStatus: function () {
             var self = this;
-            // Fetch both queue and status in parallel
+            // Fetch queue and status (status includes nzb_hunt_configured_as_client)
             Promise.all([
                 fetch('./api/nzb-hunt/queue?t=' + Date.now()).then(function (r) {
                     return r.ok ? r.json() : Promise.resolve({ queue: [] });
@@ -144,11 +144,11 @@
                 }
             }
 
-            // Show warning when no servers or no successful connection (same servers as Movie Hunt / TV Hunt)
-            var warnEl = document.getElementById('nzb-server-warning');
+            // Show warning when NZB Hunt is not configured as a download client (hide when it is)
+            var warnEl = document.getElementById('nzb-client-warning');
             if (warnEl) {
-                var show = !status.servers_configured || !status.connection_ok;
-                warnEl.style.display = show ? 'flex' : 'none';
+                var hasNzbHunt = status.nzb_hunt_configured_as_client === true;
+                warnEl.style.display = hasNzbHunt ? 'none' : 'flex';
             }
 
             // Update Active Connections (number + hover tooltip with per-server breakdown)

@@ -586,6 +586,30 @@ def _get_download_manager():
     return get_manager()
 
 
+def _nzb_hunt_configured_as_client() -> bool:
+    """Check if NZB Hunt is configured as a download client in any Movie Hunt or TV Hunt instance."""
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        for inst in db.get_movie_hunt_instances():
+            config = db.get_app_config_for_instance('clients', inst['id'])
+            if config and isinstance(config.get('clients'), list):
+                if any((c.get('type') or '').lower() == 'nzbhunt' for c in config['clients']):
+                    return True
+        for inst in db.get_tv_hunt_instances():
+            config = db.get_app_config_for_instance('tv_hunt_clients', inst['id'])
+            if config and isinstance(config.get('clients'), list):
+                if any((c.get('type') or '').lower() == 'nzbhunt' for c in config['clients']):
+                    return True
+            config = db.get_app_config_for_instance('clients', inst['id'])
+            if config and isinstance(config.get('clients'), list):
+                if any((c.get('type') or '').lower() == 'nzbhunt' for c in config['clients']):
+                    return True
+        return False
+    except Exception:
+        return False
+
+
 @nzb_hunt_bp.route("/api/nzb-hunt/status", methods=["GET"])
 def nzb_hunt_status():
     """Get overall NZB Hunt download status."""
@@ -599,6 +623,7 @@ def nzb_hunt_status():
                 get_bandwidth_history(_config_dir()).flush(bandwidth)
             except Exception:
                 pass
+        status["nzb_hunt_configured_as_client"] = _nzb_hunt_configured_as_client()
         return jsonify(status)
     except Exception as e:
         logger.exception("NZB Hunt status error")

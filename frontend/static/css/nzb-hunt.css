@@ -303,31 +303,43 @@
     justify-content: center;
 }
 
-/* ── No server connected warning (same servers as Movie Hunt / TV Hunt) ─── */
-.nzb-server-warning {
+/* ── NZB Hunt not configured as client (link to Media Hunt → Clients) ─── */
+.nzb-client-warning {
     display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 20px;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 20px;
     margin-bottom: 20px;
-    background: linear-gradient(135deg, rgba(180, 83, 9, 0.15) 0%, rgba(146, 64, 14, 0.2) 100%);
-    border: 1px solid rgba(245, 158, 11, 0.4);
-    border-radius: 10px;
-    color: #fcd34d;
-    font-size: 0.9rem;
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px solid rgba(59, 130, 246, 0.35);
+    border-radius: 12px;
+    color: #94a3b8;
+    font-size: 0.95rem;
+    line-height: 1.5;
 }
-.nzb-server-warning i {
+.nzb-client-warning i {
     flex-shrink: 0;
-    font-size: 1.2rem;
-    color: #f59e0b;
+    font-size: 1.25rem;
+    color: #60a5fa;
+    margin-top: 2px;
 }
-.nzb-server-warning-link {
-    color: #fde047;
+.nzb-client-warning-content {
+    flex: 1;
+}
+.nzb-client-warning-content strong {
+    color: #e2e8f0;
     font-weight: 600;
-    text-decoration: underline;
 }
-.nzb-server-warning-link:hover {
-    color: #fef08a;
+.nzb-client-warning-link {
+    color: #60a5fa;
+    font-weight: 500;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(96, 165, 250, 0.5);
+    transition: color 0.15s, border-color 0.15s;
+}
+.nzb-client-warning-link:hover {
+    color: #93c5fd;
+    border-bottom-color: #60a5fa;
 }
 
 /* ── Speed limit control ─────────────────────────────────────────── */

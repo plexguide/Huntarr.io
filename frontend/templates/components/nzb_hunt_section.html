@@ -62,10 +62,12 @@
             </div>
         </div>
 
-        <!-- Warning when no server connected (same servers used by Movie Hunt / TV Hunt) -->
-        <div class="nzb-server-warning" id="nzb-server-warning" style="display: none;">
-            <i class="fas fa-exclamation-triangle"></i>
-            <span>No Usenet server connected. Add and connect a server in <a href="./#nzb-hunt-settings-servers" class="nzb-server-warning-link" id="nzb-server-warning-settings-link">Settings</a> to start downloads. Items will stay queued until then.</span>
+        <!-- Warning when NZB Hunt is not configured as a download client -->
+        <div class="nzb-client-warning" id="nzb-client-warning" style="display: none;">
+            <i class="fas fa-info-circle" aria-hidden="true"></i>
+            <div class="nzb-client-warning-content">
+                <strong>NZB Hunt is not set up as a download client.</strong> Add it in <a href="./#settings-clients" class="nzb-client-warning-link">Media Hunt → Clients</a> to enable downloads. Queued items will wait until then.
+            </div>
         </div>
 
         <!-- Tabs -->

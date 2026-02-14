@@ -699,7 +699,24 @@
             ensureClientTypeModalInBody();
             var selectEl = document.getElementById('client-type-select');
             var continueBtn = document.getElementById('client-type-modal-continue');
-            if (selectEl) selectEl.value = '';
+            if (selectEl) {
+                var clients = (window.SettingsForms && window.SettingsForms._clientsList) ? window.SettingsForms._clientsList : [];
+                var hasNzbHunt = clients.some(function(c) { return (c.type || '').toLowerCase() === 'nzbhunt'; });
+                selectEl.innerHTML = '<option value="">Select a client...</option>';
+                if (!hasNzbHunt) {
+                    var opt = document.createElement('option');
+                    opt.value = 'nzbhunt';
+                    opt.textContent = 'NZB Hunt (Built-in)';
+                    selectEl.appendChild(opt);
+                }
+                ['sabnzbd', 'nzbget'].forEach(function(t) {
+                    var opt = document.createElement('option');
+                    opt.value = t;
+                    opt.textContent = t === 'sabnzbd' ? 'SABnzbd' : 'NZBGet';
+                    selectEl.appendChild(opt);
+                });
+                selectEl.value = '';
+            }
             if (continueBtn) continueBtn.disabled = true;
             modal.style.display = 'flex';
             document.body.classList.add('client-type-modal-open');
