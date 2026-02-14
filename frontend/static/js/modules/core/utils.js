@@ -31,19 +31,24 @@ const HuntarrUtils = {
         }
         
         // Process URL to handle base URL for reverse proxy subpaths
+        // Always use absolute same-origin URL to avoid "Failed to fetch" on localhost/venv
         let processedUrl = url;
         
         // Only process internal API requests (not external URLs)
         if (url && typeof url === 'string' && !url.startsWith('http') && !url.startsWith('//')) {
-            // Handle base URL from window.HUNTARR_BASE_URL if available
             const baseUrl = window.HUNTARR_BASE_URL || '';
+            let pathPart;
             if (baseUrl && !url.startsWith(baseUrl)) {
-                // Strip leading ./ prefix before normalizing (./api/stats → api/stats)
                 let cleanPath = url.replace(/^\.\//, '');
-                // Ensure path starts with a slash
-                const normalizedPath = cleanPath.startsWith('/') ? cleanPath : '/' + cleanPath;
-                processedUrl = baseUrl + normalizedPath;
+                pathPart = cleanPath.startsWith('/') ? cleanPath : '/' + cleanPath;
+                pathPart = baseUrl + pathPart;
+            } else {
+                pathPart = url;
             }
+            // Build absolute URL using current origin (fixes localhost fetch failures)
+            processedUrl = (typeof window !== 'undefined' && window.location && window.location.origin)
+                ? (window.location.origin + (pathPart.startsWith('/') ? pathPart : '/' + pathPart))
+                : pathPart;
         }
         
         return fetch(processedUrl, fetchOptions)
