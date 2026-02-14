@@ -3,10 +3,9 @@
     <link rel="stylesheet" href="./static/css/media-hunt.css?v=1.3.0">
     <link rel="stylesheet" href="./static/css/media-hunt-detail.css?v=1.5.0">
     <link rel="stylesheet" href="./static/css/media-hunt-tv.css?v=1.0.0">
-    {% with section_id='media-hunt' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <div class="requestarr-content media-hunt-content">
         {% from 'components/page_header_partial.html' import page_header %}
-        {{ page_header(back_href='./#home', parent_icon='fas fa-film', parent_name='Media Hunt', current_name='Discover') }}
+        {{ page_header(back_href='./#home', parent_icon='fas fa-film', parent_name='Media Hunt', current_name='Discover', sponsor_section_id='media-hunt') }}
         <div id="media-hunt-beta-notice" class="media-hunt-beta-notice" role="status">
             <i class="fas fa-flask" aria-hidden="true"></i>
             <span id="media-hunt-beta-text"><strong>Beta feature:</strong> Media Hunt is in active development.</span>
@@ -52,7 +51,7 @@
     <div id="media-hunt-collection-view" class="media-hunt-collection-view" style="display: none;">
         <div style="padding: 0 0 20px 0;">
         {% from 'components/page_header_partial.html' import page_header %}
-        {{ page_header(back_href='./#home', parent_icon='fas fa-folder-open', parent_name='Media Hunt', current_name='Collections') }}
+        {{ page_header(back_href='./#home', parent_icon='fas fa-folder-open', parent_name='Media Hunt', current_name='Collections', sponsor_section_id='media-hunt') }}
 
         <div id="media-hunt-collection-no-instances" class="media-hunt-collection-no-instances" style="display: none;">
             <i class="fas fa-cube" aria-hidden="true"></i>

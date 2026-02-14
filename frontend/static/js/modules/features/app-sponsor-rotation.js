@@ -1,13 +1,12 @@
 /**
  * App Sponsor Banner Rotation
- * Shows rotating sponsors on all app pages (Sonarr, Radarr, etc.)
+ * Shows rotating Daughter's Sponsor on all app pages (Sonarr, Radarr, etc.)
  * Same functionality as home page sponsor banner.
- * Also runs Partner Projects rotation (Cleanuparr, SeekandWatch) for home + all app pages.
  */
 
 (function() {
     const APP_SPONSOR_CACHE_KEY = 'app_sponsor_cache';
-    const CACHE_DURATION = 60 * 1000; // 1 minute - sponsor/partner stay the same across pages
+    const CACHE_DURATION = 60 * 1000; // 1 minute - sponsor stays the same across pages
     const ROTATION_INTERVAL = 60 * 1000; // 1 minute rotation
 
     const PARTNER_PROJECTS_CACHE_KEY = 'home_partner_projects_cache';
@@ -97,7 +96,7 @@
         });
     }
 
-    // --- Partner Projects (Cleanuparr, SeekandWatch) - home + all app pages ---
+    // --- Partner Projects (sidebar nav, under Beta) - same 1-min rotation as sponsors ---
     function getCachedPartner() {
         try {
             const cached = localStorage.getItem(PARTNER_PROJECTS_CACHE_KEY);
@@ -122,60 +121,45 @@
         return PARTNER_PROJECTS[Math.floor(Math.random() * PARTNER_PROJECTS.length)];
     }
 
-    function updateAllPartnerBanners(project) {
-        // Home page
-        const homeName = document.getElementById('partner-projects-name');
-        const homeBanner = document.getElementById('partner-projects-banner');
-        if (homeName) homeName.textContent = project.name;
-        if (homeBanner && project.url) {
-            homeBanner.href = project.url;
-            homeBanner.setAttribute('data-partner-url', project.url);
+    let partnerCurrentIndex = 0;
+
+    function updateSidebarPartnerNav(project) {
+        const nameEl = document.getElementById('sidebar-partner-projects-name');
+        const navEl = document.getElementById('sidebar-partner-projects-nav');
+        if (nameEl) nameEl.textContent = project ? project.name : 'Loading...';
+        if (navEl && project && project.url) {
+            navEl.href = project.url;
         }
-        // App pages
-        APP_TYPES.forEach(appType => {
-            const nameEl = document.getElementById(`${appType}-partner-projects-name`);
-            const bannerEl = document.getElementById(`${appType}-partner-projects-banner`);
-            if (nameEl) nameEl.textContent = project.name;
-            if (bannerEl && project.url) {
-                bannerEl.href = project.url;
-                bannerEl.setAttribute('data-partner-url', project.url);
-            }
-        });
-        // Smart Hunt page (has its own banner row)
-        const shName = document.getElementById(`${SMARTHUNT_APP_TYPE}-partner-projects-name`);
-        const shBanner = document.getElementById(`${SMARTHUNT_APP_TYPE}-partner-projects-banner`);
-        if (shName) shName.textContent = project.name;
-        if (shBanner && project.url) {
-            shBanner.href = project.url;
-            shBanner.setAttribute('data-partner-url', project.url);
+    }
+
+    function doOnePartnerRotation() {
+        const project = PARTNER_PROJECTS[partnerCurrentIndex];
+        partnerCurrentIndex = (partnerCurrentIndex + 1) % PARTNER_PROJECTS.length;
+        if (project) {
+            updateSidebarPartnerNav(project);
+            cachePartner(project);
         }
-        // Extra banner sections
-        EXTRA_BANNER_SECTIONS.forEach(section => {
-            const nameEl = document.getElementById(`${section}-partner-projects-name`);
-            const bannerEl = document.getElementById(`${section}-partner-projects-banner`);
-            if (nameEl) nameEl.textContent = project.name;
-            if (bannerEl && project.url) {
-                bannerEl.href = project.url;
-                bannerEl.setAttribute('data-partner-url', project.url);
-            }
-        });
     }
 
     function loadPartnerProjects() {
         const cached = getCachedPartner();
         if (cached) {
-            updateAllPartnerBanners(cached);
-            return;
-        }
-        const project = getRandomPartner();
-        if (project) {
-            updateAllPartnerBanners(project);
-            cachePartner(project);
+            updateSidebarPartnerNav(cached);
+            const idx = PARTNER_PROJECTS.findIndex(p => p.name === cached.name && p.url === cached.url);
+            partnerCurrentIndex = idx >= 0 ? (idx + 1) % PARTNER_PROJECTS.length : 0;
         } else {
-            updateAllPartnerBanners({ name: '—', url: '#' });
+            const project = getRandomPartner();
+            if (project) {
+                updateSidebarPartnerNav(project);
+                cachePartner(project);
+                partnerCurrentIndex = (PARTNER_PROJECTS.findIndex(p => p.name === project.name) + 1) % PARTNER_PROJECTS.length;
+            } else {
+                updateSidebarPartnerNav({ name: '—', url: '#' });
+            }
         }
+        setInterval(doOnePartnerRotation, ROTATION_INTERVAL);
     }
-    
+
     function doOneRotation() {
         const sponsor = getNextSponsor();
         if (sponsor) {

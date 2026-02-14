@@ -2036,12 +2036,14 @@ let huntarrUI = {
         this._updateMainSidebarBetaVisibility();
     },
 
-    /** When on Settings (main, scheduling, notifications, backup-restore, logs, user) or System (hunt-manager, logs, about), hide Beta and Movie Hunt in main sidebar. */
+    /** When on Settings (main, scheduling, notifications, backup-restore, logs, user) or System (hunt-manager, logs, about), hide Beta, Partner Projects, and Movie Hunt in main sidebar. */
     _updateMainSidebarBetaVisibility: function() {
         var hideBetaSections = ['settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'system', 'hunt-manager', 'logs', 'about'];
         var hide = hideBetaSections.indexOf(this.currentSection) !== -1;
         var betaGroup = document.getElementById('main-sidebar-beta-group');
         if (betaGroup) betaGroup.style.display = hide ? 'none' : '';
+        var partnerGroup = document.getElementById('main-sidebar-partner-projects-group');
+        if (partnerGroup) partnerGroup.style.display = hide ? 'none' : '';
     },
     
     showAppsSidebar: function() {

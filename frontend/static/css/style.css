@@ -1684,49 +1684,76 @@ label .info-icon ~ text {
     cursor: not-allowed !important;
 }
 
-/* App Sponsor Banner - Compact, dynamic width, fits content exactly */
-/* ── App page sponsor / partner banner row ──────────────────────── */
+/* Daughter's Sponsor — slick badge design */
 .app-banners-row {
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    gap: 6px;
-    margin: 0 0 8px 0;
+    gap: 10px;
+    margin: 0 0 12px 0;
     flex-wrap: wrap;
 }
 
 .app-sponsor-banner {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 3px 10px;
-    background: rgba(30, 41, 59, 0.45);
-    border: 1px solid rgba(148, 163, 184, 0.08);
-    border-radius: 6px;
-    font-size: 11px;
+    gap: 8px;
+    padding: 8px 14px;
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 10px;
+    font-size: 12px;
     text-decoration: none;
-    transition: all 0.2s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     white-space: nowrap;
-    line-height: 1.4;
+    line-height: 1.3;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    position: relative;
+    overflow: hidden;
+}
+
+.app-sponsor-banner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+    opacity: 0.6;
 }
 
 .app-sponsor-banner .sponsor-label {
-    color: rgba(148, 163, 184, 0.6);
+    color: rgba(148, 163, 184, 0.75);
     font-weight: 500;
+    font-size: 11px;
+    letter-spacing: 0.3px;
 }
 
 .app-sponsor-banner .sponsor-name {
     font-weight: 600;
     color: #60a5fa;
+    font-size: 12px;
 }
 
 .app-sponsor-banner:hover {
-    background: rgba(30, 41, 59, 0.7);
-    border-color: rgba(96, 165, 250, 0.2);
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%);
+    border-color: rgba(96, 165, 250, 0.25);
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.12);
+    transform: translateY(-1px);
 }
 
 .app-sponsor-banner:hover .sponsor-name {
     color: #93c5fd;
+}
+
+/* Daughter's Sponsor — warm gold accent */
+.app-sponsor-banner {
+    border-left: 3px solid rgba(251, 191, 36, 0.5);
+}
+
+.app-sponsor-banner:hover {
+    border-left-color: rgba(251, 191, 36, 0.8);
 }
 
 /* Hide on mobile */

@@ -1,11 +1,10 @@
 {# Media Hunt Calendar – single section for Movie Hunt and TV Hunt. Mode set by router. #}
 <section id="mediaHuntCalendarSection" class="content-section" style="display: none;">
-    {% with section_id='media-hunt-calendar' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <link rel="stylesheet" href="./static/css/media-hunt-calendar.css">
     <link rel="stylesheet" href="./static/css/instance-editor.css?v=1.0.2">
     <div class="app-content-panel" style="padding: 20px;">
     {% from 'components/page_header_partial.html' import page_header %}
-    {{ page_header(back_href='./#media-hunt-collection', parent_icon='fas fa-folder-open', parent_name='Media Hunt', current_name='Calendar') }}
+    {{ page_header(back_href='./#media-hunt-collection', parent_icon='fas fa-folder-open', parent_name='Media Hunt', current_name='Calendar', sponsor_section_id='media-hunt-calendar') }}
     <!-- No-instances warning box (same style as Media Management) -->
     <div id="media-hunt-calendar-no-instances" class="mh-calendar-no-instances" style="display: none;">
         <i class="fas fa-cube" aria-hidden="true"></i>

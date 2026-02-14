@@ -1,10 +1,9 @@
 <!-- Media Hunt Instance Management – Movie and TV instances in separate Profiles-style sections -->
 <section id="mediaHuntInstanceManagementSection" class="content-section" style="display: none;">
     <link rel="stylesheet" href="./static/css/instance-editor.css?v=1.0.2">
-    {% with section_id='media-hunt-settings' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <div class="app-content-panel" style="width:100%;padding:20px;margin:0;background:transparent;box-shadow:none;border:none;">
         {% from 'components/page_header_partial.html' import page_header %}
-        {{ page_header(back_href='./#media-hunt-collection', parent_icon='fas fa-folder-open', parent_name='Media Hunt', current_name='Instances') }}
+        {{ page_header(back_href='./#media-hunt-collection', parent_icon='fas fa-folder-open', parent_name='Media Hunt', current_name='Instances', sponsor_section_id='media-hunt-settings') }}
 
         <!-- Movie Instances – Profiles-style box -->
         <div class="settings-group instances-settings-group">

@@ -1,6 +1,5 @@
 <!-- Media Hunt Profiles – quality profiles for Movie Hunt and TV Hunt instances -->
 <section id="mediaHuntProfilesSection" class="content-section" style="display: none;">
-    {% with section_id='settings-profiles' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <div class="app-content-panel" style="width:100%;padding:20px;margin:0;background:transparent;box-shadow:none;border:none;">
         <!-- No-instances warning box (same style as Media Management) -->
         <div id="media-hunt-profiles-no-instances" class="media-hunt-profiles-no-instances" style="display: none;">
@@ -23,7 +22,7 @@
         </div>
         <div id="media-hunt-profiles-content-wrapper" style="display: none;">
         {% from 'components/page_header_partial.html' import page_header %}
-        {{ page_header(back_href='./#media-hunt-settings', parent_icon='fas fa-cog', parent_name='Media Hunt', current_name='Profiles') }}
+        {{ page_header(back_href='./#media-hunt-settings', parent_icon='fas fa-cog', parent_name='Media Hunt', current_name='Profiles', sponsor_section_id='settings-profiles') }}
         <div class="media-hunt-settings-instance-bar" style="margin-bottom: 16px;">
             <select id="media-hunt-profiles-instance-select" class="control-select" aria-label="Instance">
                 <option value="">Loading...</option>

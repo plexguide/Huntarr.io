@@ -67,6 +67,11 @@
     gap: 8px;
 }
 
+/* Sponsor inside header bar — no extra margin */
+.page-header-bar .app-banners-row {
+    margin: 0;
+}
+
 a.reqset-back-btn {
     display: inline-flex;
     align-items: center;

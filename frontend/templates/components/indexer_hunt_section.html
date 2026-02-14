@@ -2,10 +2,9 @@
 <section id="indexer-hunt-section" class="content-section" style="display: none;">
     <link rel="stylesheet" href="./static/css/indexer-hunt.css">
     <link rel="stylesheet" href="./static/css/instance-editor.css?v=1.0.2">
-    {% with section_id='indexer-hunt' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <div class="app-content-panel" style="padding: 20px;">
     {% from 'components/page_header_partial.html' import page_header %}
-{{ page_header(back_href='./#media-hunt-collection', parent_icon='fas fa-search-plus', parent_name='Media Hunt', current_name='Index Master') }}
+    {{ page_header(back_href='./#media-hunt-collection', parent_icon='fas fa-search-plus', parent_name='Media Hunt', current_name='Index Master', sponsor_section_id='indexer-hunt') }}
     <!-- No-instances warning box (same style as Media Management) -->
     <div id="indexer-hunt-no-instances" class="ih-no-instances" style="display: none;">
         <i class="fas fa-cube" aria-hidden="true"></i>

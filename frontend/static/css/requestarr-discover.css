@@ -13,8 +13,12 @@
     box-sizing: border-box;
 }
 
-/* Requestarr banner row spacing */
-/* app-banners-row margin now global in style.css */
+/* requestarr-view-header layout */
+.requestarr-view-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 
 /* Smart Hunt: sponsor banners above toolbar */
 .reqset-banners-row {

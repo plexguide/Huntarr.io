@@ -1,9 +1,8 @@
 <section id="mediaHuntSettingsImportMediaSection" class="content-section" style="display: none;">
-    {% with section_id='media-hunt-import-media' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <link rel="stylesheet" href="./static/css/import-media.css?v=1.0.8">
     <div id="mediaHuntImportMediaContainer" class="app-content-panel" style="padding: 20px;">
         {% from 'components/page_header_partial.html' import page_header %}
-        {{ page_header(back_href='./#media-hunt-settings', parent_icon='fas fa-film', parent_name='Media Hunt', current_name='Import Media') }}
+        {{ page_header(back_href='./#media-hunt-settings', parent_icon='fas fa-film', parent_name='Media Hunt', current_name='Import Media', sponsor_section_id='media-hunt-import-media') }}
         <div id="media-hunt-import-media-no-instances" class="settings-no-instances" style="display: none;">
             <i class="fas fa-cube" aria-hidden="true"></i>
             <p class="no-instances-title">No instances configured</p>

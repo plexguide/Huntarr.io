@@ -1,8 +1,7 @@
 <section id="userSection" class="content-section">
-    {% with section_id='user' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <div class="app-content-panel" style="padding: 20px;">
         {% from 'components/page_header_partial.html' import page_header %}
-        {{ page_header(back_href='./#settings', parent_icon='fas fa-user-cog', parent_name='Settings', current_name='Account') }}
+        {{ page_header(back_href='./#settings', parent_icon='fas fa-user-cog', parent_name='Settings', current_name='Account', sponsor_section_id='user') }}
         <div class="uset-container">
 
         <!-- Card grid — top row: 3 columns, bottom row: 2 columns -->

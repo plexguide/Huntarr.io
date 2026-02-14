@@ -1,32 +1,38 @@
 <!-- Requestarr Section - Discover Style -->
 <div id="requestarr-section" class="content-section" style="display: none;">
-    <link rel="stylesheet" href="./static/css/requestarr-discover.css?v=1.3.0">
+    <link rel="stylesheet" href="./static/css/requestarr-discover.css?v=1.3.2">
     <link rel="stylesheet" href="./static/css/instance-editor.css?v=1.0.2">
-    {% with section_id='requestarr' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <link rel="stylesheet" href="./static/css/media-hunt-detail.css?v=1.5.0">
     <link rel="stylesheet" href="./static/css/media-hunt-tv.css?v=1.0.0">
     
     <div class="requestarr-content">
-        <!-- Page headers (one shown per view) — always below sponsor, above search bar -->
-        <div id="requestarr-header-discover" class="requestarr-view-header" style="display: block;">
-            {% from 'components/page_header_partial.html' import page_header %}
-            {{ page_header(back_href='./#home', parent_icon='fas fa-plus-circle', parent_name='Requests', current_name='Discover') }}
-        </div>
-        <div id="requestarr-header-search" class="requestarr-view-header" style="display: none;">
-            {% from 'components/page_header_partial.html' import page_header %}
-            {{ page_header(back_href='./#requestarr', parent_icon='fas fa-search', parent_name='Requests', current_name='Search Results') }}
-        </div>
-        <div id="requestarr-header-movies" class="requestarr-view-header" style="display: none;">
-            {% from 'components/page_header_partial.html' import page_header %}
-            {{ page_header(back_href='./#requestarr', parent_icon='fas fa-film', parent_name='Requests', current_name='Movies') }}
-        </div>
-        <div id="requestarr-header-tv" class="requestarr-view-header" style="display: none;">
-            {% from 'components/page_header_partial.html' import page_header %}
-            {{ page_header(back_href='./#requestarr', parent_icon='fas fa-tv', parent_name='Requests', current_name='TV Shows') }}
-        </div>
-        <div id="requestarr-header-hidden" class="requestarr-view-header" style="display: none;">
-            {% from 'components/page_header_partial.html' import page_header %}
-            {{ page_header(back_href='./#requestarr', parent_icon='fas fa-eye-slash', parent_name='Requests', current_name='Hidden Media') }}
+        <!-- Single header bar: back+breadcrumb (left) + sponsor/partner (right) — all inside the bordered toolbar -->
+        <div class="reqset-toolbar page-header-bar requestarr-header-bar">
+            <div class="reqset-toolbar-left">
+                <div id="requestarr-header-discover" class="requestarr-view-header" style="display: flex;">
+                    <a href="./#home" class="reqset-back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+                    <div class="reqset-breadcrumb"><i class="fas fa-plus-circle"></i><span>Requests</span><i class="fas fa-chevron-right reqset-breadcrumb-sep"></i><span>Discover</span></div>
+                </div>
+                <div id="requestarr-header-search" class="requestarr-view-header" style="display: none;">
+                    <a href="./#requestarr" class="reqset-back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+                    <div class="reqset-breadcrumb"><i class="fas fa-search"></i><span>Requests</span><i class="fas fa-chevron-right reqset-breadcrumb-sep"></i><span>Search Results</span></div>
+                </div>
+                <div id="requestarr-header-movies" class="requestarr-view-header" style="display: none;">
+                    <a href="./#requestarr" class="reqset-back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+                    <div class="reqset-breadcrumb"><i class="fas fa-film"></i><span>Requests</span><i class="fas fa-chevron-right reqset-breadcrumb-sep"></i><span>Movies</span></div>
+                </div>
+                <div id="requestarr-header-tv" class="requestarr-view-header" style="display: none;">
+                    <a href="./#requestarr" class="reqset-back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+                    <div class="reqset-breadcrumb"><i class="fas fa-tv"></i><span>Requests</span><i class="fas fa-chevron-right reqset-breadcrumb-sep"></i><span>TV Shows</span></div>
+                </div>
+                <div id="requestarr-header-hidden" class="requestarr-view-header" style="display: none;">
+                    <a href="./#requestarr" class="reqset-back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+                    <div class="reqset-breadcrumb"><i class="fas fa-eye-slash"></i><span>Requests</span><i class="fas fa-chevron-right reqset-breadcrumb-sep"></i><span>Hidden Media</span></div>
+                </div>
+            </div>
+            <div class="reqset-toolbar-right">
+                {% with section_id='requestarr' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
+            </div>
         </div>
 
         <!-- Global Search Bar — below header, above content -->

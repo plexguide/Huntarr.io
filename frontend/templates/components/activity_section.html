@@ -1,9 +1,8 @@
 <section id="activitySection" class="content-section" style="display: none;">
-    {% with section_id='activity' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <link rel="stylesheet" href="./static/css/instance-editor.css?v=1.0.2">
     <div class="app-content-panel" style="padding: 20px;">
     {% from 'components/page_header_partial.html' import page_header %}
-    {{ page_header(back_href='./#media-hunt-collection', parent_icon='fas fa-clock', parent_name='Activity', current_name='Queue') }}
+    {{ page_header(back_href='./#media-hunt-collection', parent_icon='fas fa-clock', parent_name='Activity', current_name='Queue', sponsor_section_id='activity') }}
     <!-- No-instances warning box (same style as Media Management) -->
     <div id="activity-no-instances" class="activity-no-instances" style="display: none;">
         <i class="fas fa-cube" aria-hidden="true"></i>

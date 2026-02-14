@@ -1,9 +1,8 @@
 <section id="lidarrSection" class="content-section">
     <link rel="stylesheet" href="./static/css/instance-editor.css?v=1.0.2">
     <div class="content-boundary-inner">
-        {% with section_id='lidarr' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
         {% from 'components/page_header_partial.html' import page_header %}
-{{ page_header(back_href='./#apps', parent_icon='fas fa-th-large', parent_name='Apps', current_name='Lidarr') }}
+        {{ page_header(back_href='./#apps', parent_icon='fas fa-th-large', parent_name='Apps', current_name='Lidarr', sponsor_section_id='lidarr') }}
         <div id="lidarrApps" class="app-content-panel"></div>
     </div>
 </section>

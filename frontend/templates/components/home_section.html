@@ -3,15 +3,11 @@
     
     <!-- Add initially hidden class to prevent flickering before JS initializes -->  
     <div class="dashboard-grid stack-layout mobile-scrollable" style="opacity: 0; transition: opacity 0.15s ease;">
-        <!-- College Sponsor + Partner Projects - Compact inline chips -->
+        <!-- Daughter's Sponsor - Compact inline chip -->
         <div class="home-banners-row">
             <a href="#" target="_blank" rel="noopener noreferrer" class="home-sponsor-banner" id="home-sponsor-banner" data-sponsor-url="">
-                <span class="sponsor-label">Daughter's College Sponsor:</span>
+                <span class="sponsor-label">Daughter's Sponsor:</span>
                 <span class="sponsor-name" id="home-sponsor-name">Loading...</span>
-            </a>
-            <a href="#" target="_blank" rel="noopener noreferrer" class="home-sponsor-banner" id="partner-projects-banner" data-partner-url="">
-                <span class="sponsor-label">Partner Projects:</span>
-                <span class="sponsor-name" id="partner-projects-name">Loading...</span>
             </a>
         </div>
         
@@ -592,7 +588,7 @@
                             <!-- Initially hidden until content is loaded -->
                         </div>
                         <div class="link-details">
-                            <a href="https://plexguide.github.io/Huntarr.io/donate.html" target="_blank" class="sponsor-title-link full-title">Daughter's College Sponsors</a>
+                            <a href="https://plexguide.github.io/Huntarr.io/donate.html" target="_blank" class="sponsor-title-link full-title">Daughter's Sponsor</a>
                             <span id="rotating-sponsor-content" class="link-description" style="visibility: hidden;">
                                 <!-- JavaScript will inject sponsor name here -->
                                 <!-- Initially hidden until content is loaded -->
@@ -2452,69 +2448,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize sponsors on page load
     fetchSponsors();
     
-    // Home college sponsor banner is driven by app-sponsor-rotation.js (same rotation as app pages)
-
-    // Partner Projects Banner - 1 minute cache, same as college sponsor (Cleanuparr, SeekandWatch)
-    (function() {
-        const CACHE_KEY = 'home_partner_projects_cache';
-        const CACHE_DURATION = 60 * 1000; // 1 minute - stays same across page changes
-        const PARTNER_PROJECTS = [
-            { name: 'Cleanuparr', url: 'https://github.com/Cleanuparr/Cleanuparr' },
-            { name: 'SeekandWatch', url: 'https://github.com/softerfish/seekandwatch' }
-        ];
-
-        function updatePartnerBanner(project) {
-            const nameEl = document.getElementById('partner-projects-name');
-            const bannerEl = document.getElementById('partner-projects-banner');
-            if (nameEl) nameEl.textContent = project.name;
-            if (bannerEl && project.url) {
-                bannerEl.href = project.url;
-                bannerEl.setAttribute('data-partner-url', project.url);
-            }
-        }
-
-        function getRandomPartner() {
-            if (!PARTNER_PROJECTS.length) return null;
-            const i = Math.floor(Math.random() * PARTNER_PROJECTS.length);
-            return PARTNER_PROJECTS[i];
-        }
-
-        function getCachedPartner() {
-            try {
-                const cached = localStorage.getItem(CACHE_KEY);
-                if (!cached) return null;
-                const { project, timestamp } = JSON.parse(cached);
-                if (Date.now() - timestamp < CACHE_DURATION) return project;
-                localStorage.removeItem(CACHE_KEY);
-                return null;
-            } catch (e) {
-                return null;
-            }
-        }
-
-        function cachePartner(project) {
-            try {
-                localStorage.setItem(CACHE_KEY, JSON.stringify({ project, timestamp: Date.now() }));
-            } catch (e) {}
-        }
-
-        function loadPartnerProject() {
-            const cached = getCachedPartner();
-            if (cached) {
-                updatePartnerBanner(cached);
-                return;
-            }
-            const project = getRandomPartner();
-            if (project) {
-                updatePartnerBanner(project);
-                cachePartner(project);
-            } else {
-                updatePartnerBanner({ name: '—', url: '#' });
-            }
-        }
-
-        loadPartnerProject();
-    })();
+    // Home sponsor banner is driven by app-sponsor-rotation.js (same rotation as app pages)
 });
 </script>
 </section>

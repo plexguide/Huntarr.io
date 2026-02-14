@@ -1,8 +1,9 @@
-{# Page header: Back + breadcrumb (icon left of parent name), optional Save on right.
+{# Page header: Back + breadcrumb (icon left of parent name), optional Save or sponsor on right.
    Matches Smart Hunt toolbar: reqset-toolbar layout, purple icon, reqset-save-btn style.
    Usage: {{ page_header(back_href='...', parent_icon='fas fa-fire', parent_name='Requestarr', current_name='Smart Hunt') }}
-   With Save: {{ page_header(..., save_button_id='sizes-save-btn') }} #}
-{% macro page_header(back_href, parent_icon, parent_name, current_name, save_button_id=None, save_button_class=None) %}
+   With Save: {{ page_header(..., save_button_id='sizes-save-btn') }} — sponsor not shown when Save is present.
+   With sponsor (no Save): {{ page_header(..., sponsor_section_id='apps') }} — sponsor/partner inside header bar. #}
+{% macro page_header(back_href, parent_icon, parent_name, current_name, save_button_id=None, save_button_class=None, sponsor_section_id=None) %}
 <div class="reqset-toolbar page-header-bar">
     <div class="reqset-toolbar-left">
         <a href="{{ back_href }}" class="reqset-back-btn">
@@ -20,6 +21,8 @@
         <button type="button" id="{{ save_button_id }}" class="reqset-save-btn page-header-save {% if save_button_class %}{{ save_button_class }}{% endif %}" disabled>
             <i class="fas fa-save"></i> Save
         </button>
+        {% elif sponsor_section_id %}
+        {% with section_id=sponsor_section_id %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
         {% endif %}
     </div>
 </div>
