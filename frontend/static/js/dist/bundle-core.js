@@ -590,6 +590,16 @@ window.HuntarrNavigation = {
                 window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#media-hunt-collection');
             }
         }
+        // Media Hunt Collection TV detail: #media-hunt-collection/tv/12345 — redirect to Requestarr TV detail (which has full UI)
+        if (/^media-hunt-collection\/tv\/(\d+)$/.test(section)) {
+            var tmdbMatch = section.match(/media-hunt-collection\/tv\/(\d+)/);
+            if (tmdbMatch) {
+                section = 'requestarr-tv/' + tmdbMatch[1];
+                if (window.location.hash !== '#requestarr-tv/' + tmdbMatch[1]) {
+                    window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#requestarr-tv/' + tmdbMatch[1]);
+                }
+            }
+        }
         // TV/Movie Collection → unified Media Hunt Collection
         if (section === 'tv-hunt-collection' || section === 'movie-hunt-collection') {
             if (window.huntarrUI) window.huntarrUI._pendingMediaHuntSidebar = 'movie';

@@ -363,7 +363,8 @@
 
 #media-hunt-collection-view .media-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    /* auto-fit + capped max: empty columns collapse; columns don't stretch past 200px */
+    grid-template-columns: repeat(auto-fit, minmax(160px, 200px));
     gap: 20px;
     justify-items: start;
 }

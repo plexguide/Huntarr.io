@@ -277,22 +277,31 @@ let huntarrUI = {
         // Navigation
         document.addEventListener('click', (e) => {
             // Main sidebar: hash links use client-side navigation so Media Hunt etc. switch correctly
-            const sidebarNavItem = e.target.closest('#sidebar .nav-item');
+            const sidebarNavItem = e.target.closest('#sidebar .nav-item, #movie-hunt-sidebar .nav-item, #nzb-hunt-sidebar .nav-item');
             if (sidebarNavItem) {
                 const link = sidebarNavItem.tagName === 'A' ? sidebarNavItem : sidebarNavItem.querySelector('a');
                 const href = link && link.getAttribute('href');
                 if (href && href.indexOf('#') >= 0) {
                     e.preventDefault();
                     const hash = href.substring(href.indexOf('#'));
-                    if (window.location.hash !== hash) window.location.hash = hash;
-                    const mainSidebarNavItems = document.querySelectorAll('#sidebar .nav-item');
-                    mainSidebarNavItems.forEach(item => item.classList.remove('active'));
-                    sidebarNavItem.classList.add('active');
+                    const normalizedHash = (hash || '').replace(/^#+/, '');
+                    if (window.location.hash !== hash) {
+                        window.location.hash = hash;
+                    } else if (normalizedHash === 'media-hunt-collection' && window.TVHuntCollection && typeof window.TVHuntCollection.showMainView === 'function') {
+                        window.TVHuntCollection.showMainView();
+                    }
+                    const parentSidebar = sidebarNavItem.closest('.sidebar');
+                    if (parentSidebar) {
+                        parentSidebar.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+                        sidebarNavItem.classList.add('active');
+                    }
                     return;
                 }
-                const mainSidebarNavItems = document.querySelectorAll('#sidebar .nav-item');
-                mainSidebarNavItems.forEach(item => item.classList.remove('active'));
-                sidebarNavItem.classList.add('active');
+                const parentSidebar = sidebarNavItem.closest('.sidebar');
+                if (parentSidebar) {
+                    parentSidebar.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+                    sidebarNavItem.classList.add('active');
+                }
             }
 
             // Navigation link handling (other nav areas)
@@ -927,6 +936,12 @@ let huntarrUI = {
             if (collectionView) collectionView.style.display = 'block';
             newTitle = 'Media Hunt Collection';
             this.currentSection = 'media-hunt-collection';
+            var hash = window.location.hash || '';
+            if (!/\/tv\/\d+$/.test(hash)) {
+                if (window.TVHuntCollection && typeof window.TVHuntCollection.showMainView === 'function') {
+                    window.TVHuntCollection.showMainView();
+                }
+            }
             if (this._pendingMediaHuntSidebar === 'tv') { this.showTVHuntSidebar(); }
             else if (this._pendingMediaHuntSidebar === 'movie') { this.showMovieHuntSidebar(); }
             else { this.showMovieHuntSidebar(); }

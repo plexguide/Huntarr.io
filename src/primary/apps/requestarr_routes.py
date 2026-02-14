@@ -91,6 +91,129 @@ def get_enabled_instances():
         logger.error(f"Error getting instances: {e}")
         return jsonify({'error': 'Failed to get instances'}), 500
 
+
+@requestarr_bp.route('/collection', methods=['GET'])
+def get_unified_collection():
+    """Unified collection endpoint: merges Movie Hunt + TV Hunt collections into a single response.
+    Params: movie_instance_id, tv_instance_id (optional), sort (default title.asc), page, page_size, q (search).
+    Returns: { items: [...], total, page, page_size } with media_type on each item.
+    """
+    from flask import current_app
+    from urllib.parse import urlencode
+
+    try:
+        movie_instance_id = request.args.get('movie_instance_id', '').strip()
+        tv_instance_id = request.args.get('tv_instance_id', '').strip()
+        if not movie_instance_id and not tv_instance_id:
+            return jsonify({'items': [], 'total': 0, 'page': 1, 'page_size': 20}), 200
+
+        sort = request.args.get('sort', 'title.asc').strip()
+        try:
+            page = max(1, int(request.args.get('page', 1)))
+        except (TypeError, ValueError):
+            page = 1
+        try:
+            page_size = max(1, min(100, int(request.args.get('page_size', 20))))
+        except (TypeError, ValueError):
+            page_size = 20
+        q = request.args.get('q', '').strip()
+
+        movie_items = []
+        tv_items = []
+
+        # Fetch movie collection
+        if movie_instance_id:
+            try:
+                params = {
+                    'instance_id': movie_instance_id,
+                    'page': 1,
+                    'page_size': 9999,
+                    'sort': sort,
+                }
+                if q:
+                    params['q'] = q
+                path = '/api/movie-hunt/collection?' + urlencode(params)
+                with current_app.test_client() as client:
+                    r = client.get(path)
+                    if r.status_code == 200:
+                        data = r.get_json()
+                        for m in (data.get('items') or []):
+                            m['media_type'] = 'movie'
+                            m['_sortTitle'] = (m.get('title') or '').lower()
+                            m['_year'] = str(m.get('year') or '')
+                            movie_items.append(m)
+            except Exception as e:
+                logger.warning(f"[Requestarr] Movie collection fetch error: {e}")
+
+        # Fetch TV collection
+        if tv_instance_id:
+            try:
+                path = f'/api/tv-hunt/collection?instance_id={tv_instance_id}'
+                with current_app.test_client() as client:
+                    r = client.get(path)
+                    if r.status_code == 200:
+                        data = r.get_json()
+                        for s in (data.get('series') or []):
+                            title = s.get('title') or s.get('name') or ''
+                            year = (s.get('first_air_date') or '')[:4]
+                            tv_items.append({
+                                'media_type': 'tv',
+                                'tmdb_id': s.get('tmdb_id'),
+                                'title': title,
+                                'name': title,
+                                'year': year,
+                                'first_air_date': s.get('first_air_date'),
+                                'poster_path': s.get('poster_path'),
+                                'status': s.get('status'),
+                                'seasons': s.get('seasons'),
+                                'overview': s.get('overview'),
+                                'vote_average': s.get('vote_average'),
+                                '_sortTitle': title.lower(),
+                                '_year': year,
+                                '_raw': s,
+                            })
+            except Exception as e:
+                logger.warning(f"[Requestarr] TV collection fetch error: {e}")
+
+        combined = movie_items + tv_items
+
+        # Apply search filter for TV (movie API applies q server-side; TV has no q param)
+        if q:
+            ql = q.lower()
+            combined = [
+                x for x in combined
+                if ql in ((x.get('title') or '') + ' ' + str(x.get('year') or '')).lower()
+            ]
+
+        # Sort (title.asc, title.desc, year.desc, year.asc)
+        def sort_key(item):
+            st = item.get('_sortTitle') or ''
+            yr = item.get('_year') or ''
+            return (st, yr)
+
+        combined.sort(key=sort_key)
+        if sort == 'title.desc':
+            combined.reverse()
+        elif sort == 'year.desc':
+            combined.sort(key=lambda x: (x.get('_year') or '', x.get('_sortTitle') or ''), reverse=True)
+        elif sort == 'year.asc':
+            combined.sort(key=lambda x: (x.get('_year') or '', x.get('_sortTitle') or ''))
+
+        total = len(combined)
+        start = (page - 1) * page_size
+        page_items = combined[start : start + page_size]
+
+        return jsonify({
+            'items': page_items,
+            'total': total,
+            'page': page,
+            'page_size': page_size,
+        }), 200
+    except Exception as e:
+        logger.exception("[Requestarr] Unified collection error")
+        return jsonify({'items': [], 'total': 0, 'page': 1, 'page_size': 20, 'error': str(e)}), 200
+
+
 @requestarr_bp.route('/request', methods=['POST'])
 def request_media():
     """Request media through app instance"""

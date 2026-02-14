@@ -4648,12 +4648,14 @@ class RequestarrModal {
         if (rootSelect) rootSelect.innerHTML = '<option value="">Loading...</option>';
         if (qualitySelect) qualitySelect.innerHTML = '<option value="">Loading...</option>';
 
-        // Always hide Movie-Hunt-only fields first; renderModal will show them if needed
+        // Always hide Movie-Hunt-only and TV-Hunt-only fields first; renderModal will show them if needed
         // Uses class toggle because .mh-req-field has display:grid!important which overrides inline styles
         const wrapMinInit = document.getElementById('requestarr-modal-min-availability-wrap');
         const wrapStartInit = document.getElementById('requestarr-modal-start-search-wrap');
+        const wrapMonitorInit = document.getElementById('requestarr-modal-monitor-wrap');
         if (wrapMinInit) wrapMinInit.classList.add('mh-hidden');
         if (wrapStartInit) wrapStartInit.classList.add('mh-hidden');
+        if (wrapMonitorInit) wrapMonitorInit.classList.add('mh-hidden');
 
         // Attach close handlers (use .onclick to avoid stacking)
         const self = this;
@@ -5092,12 +5094,16 @@ class RequestarrModal {
     _applyMovieHuntModalMode(instanceValue, isTVShow, labelEl, requestBtn) {
         const wrapMin = document.getElementById('requestarr-modal-min-availability-wrap');
         const wrapStart = document.getElementById('requestarr-modal-start-search-wrap');
+        const wrapMonitor = document.getElementById('requestarr-modal-monitor-wrap');
         const minSelect = document.getElementById('modal-minimum-availability');
         const startCb = document.getElementById('modal-start-search');
-        const isMovieHunt = !isTVShow && instanceValue && decodeInstanceValue(instanceValue).appType === 'movie_hunt';
+        const decoded = instanceValue ? decodeInstanceValue(instanceValue, isTVShow ? 'sonarr' : 'radarr') : {};
+        const isMovieHunt = !isTVShow && decoded.appType === 'movie_hunt';
+        const isTVHunt = isTVShow && decoded.appType === 'tv_hunt';
         // Use class toggle — .mh-req-field has display:grid!important which overrides inline styles
         if (wrapMin) wrapMin.classList.toggle('mh-hidden', !isMovieHunt);
         if (wrapStart) wrapStart.classList.toggle('mh-hidden', !isMovieHunt);
+        if (wrapMonitor) wrapMonitor.classList.toggle('mh-hidden', !isTVHunt);
         
         // Use loaded preferences or defaults
         if (minSelect) minSelect.value = this.preferences?.minimum_availability || 'released';
@@ -5246,6 +5252,10 @@ class RequestarrModal {
                 const minSelect = document.getElementById('modal-minimum-availability');
                 requestData.start_search = startCb ? startCb.checked : true;
                 requestData.minimum_availability = (minSelect && minSelect.value) ? minSelect.value : 'released';
+            }
+            if (appType === 'tv_hunt') {
+                const monitorSelect = document.getElementById('modal-monitor');
+                requestData.monitor = (monitorSelect && monitorSelect.value) ? monitorSelect.value : 'all_episodes';
             }
 
             const response = await fetch('./api/requestarr/request', {

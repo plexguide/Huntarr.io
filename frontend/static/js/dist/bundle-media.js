@@ -4702,6 +4702,9 @@
             if (mainView) mainView.style.display = 'block';
             if (detailView) detailView.style.display = 'none';
             if (searchView) searchView.style.display = 'none';
+            if (window._mediaHuntCollectionUnified && /\/tv\/\d+$/.test(window.location.hash || '')) {
+                window.history.replaceState(null, document.title, (window.location.pathname || '') + (window.location.search || '') + '#media-hunt-collection');
+            }
         },
 
         performCollectionSearch: function(query) {
@@ -4984,6 +4987,13 @@
             if (searchView) searchView.style.display = 'none';
             if (detailView) detailView.style.display = 'block';
             if (content) content.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading series...</p></div>';
+            if (window._mediaHuntCollectionUnified && tmdbId) {
+                var newHash = '#requestarr-tv/' + tmdbId;
+                if (window.location.hash !== newHash) {
+                    window.location.hash = newHash;
+                    return;
+                }
+            }
 
             // Use local collection data if available
             if (seriesData) {
@@ -5323,6 +5333,12 @@
         hiddenMediaSet: new Set(),
 
         init: function() {
+            var hash = window.location.hash || '';
+            var tvMatch = hash.match(/media-hunt-collection\/tv\/(\d+)/);
+            var pendingTmdbId = tvMatch ? parseInt(tvMatch[1], 10) : null;
+            if (!pendingTmdbId && window.TVHuntCollection && typeof window.TVHuntCollection.showMainView === 'function') {
+                window.TVHuntCollection.showMainView();
+            }
             if (!hasDualDropdowns()) return;
             window._mediaHuntCollectionUnified = true;
             window.TVHuntCollection._prefix = 'media-hunt-collection';
@@ -5378,6 +5394,11 @@
                 if (noIdxEl) noIdxEl.style.display = 'none';
                 if (noCliEl) noCliEl.style.display = 'none';
                 if (contentWrapper) contentWrapper.style.display = '';
+
+                if (pendingTmdbId && window.TVHuntCollection && window.TVHuntCollection.openSeriesDetail) {
+                    window.TVHuntCollection._prefix = 'media-hunt-collection';
+                    window.TVHuntCollection.openSeriesDetail(pendingTmdbId, null);
+                }
 
                 movieSelect.innerHTML = '';
                 movieSelect.appendChild(document.createElement('option')).value = ''; movieSelect.options[0].textContent = 'No Movie Hunt instance';
@@ -5469,57 +5490,7 @@
                 return;
             }
 
-            var promises = [];
-            if (self._movieInstanceId) {
-                promises.push(fetch('./api/movie-hunt/collection?instance_id=' + self._movieInstanceId + '&page=1&page_size=9999&sort=' + encodeURIComponent(self.sortBy || 'title.asc'))
-                    .then(function(r) { return r.json(); })
-                    .then(function(d) {
-                        var items = (d.items || []).map(function(m) {
-                            m.media_type = 'movie';
-                            m._sortTitle = (m.title || '').toLowerCase();
-                            m._year = m.year || '';
-                            return m;
-                        });
-                        return items;
-                    })
-                    .catch(function() { return []; }));
-            } else {
-                promises.push(Promise.resolve([]));
-            }
-            if (self._tvInstanceId) {
-                promises.push(fetch('./api/tv-hunt/collection?instance_id=' + self._tvInstanceId)
-                    .then(function(r) { return r.json(); })
-                    .then(function(d) {
-                        var series = d.series || [];
-                        return series.map(function(s) {
-                            var title = s.title || s.name || '';
-                            var year = (s.first_air_date || '').substring(0, 4);
-                            return {
-                                media_type: 'tv',
-                                tmdb_id: s.tmdb_id,
-                                title: title,
-                                name: title,
-                                year: year,
-                                first_air_date: s.first_air_date,
-                                poster_path: s.poster_path,
-                                status: s.status,
-                                seasons: s.seasons,
-                                overview: s.overview,
-                                vote_average: s.vote_average,
-                                _sortTitle: title.toLowerCase(),
-                                _year: year,
-                                _raw: s
-                            };
-                        });
-                    })
-                    .catch(function() { return []; }));
-            } else {
-                promises.push(Promise.resolve([]));
-            }
-
-            Promise.all(promises).then(function(results) {
-                var combined = (results[0] || []).concat(results[1] || []);
-                // Filter hidden items (format: tmdb_id:media_type:app_type:instance_name)
+            function processAndRender(combined) {
                 combined = combined.filter(function(item) {
                     if (!item.tmdb_id || !self.hiddenMediaSet || self.hiddenMediaSet.size === 0) return true;
                     var mt = item.media_type || 'movie';
@@ -5535,7 +5506,80 @@
                 });
                 self._combinedItems = combined;
                 self.renderCombined();
-            });
+            }
+
+            function fallbackToLegacyApis() {
+                var promises = [];
+                if (self._movieInstanceId) {
+                    promises.push(fetch('./api/movie-hunt/collection?instance_id=' + self._movieInstanceId + '&page=1&page_size=9999&sort=' + encodeURIComponent(self.sortBy || 'title.asc'))
+                        .then(function(r) { return r.json(); })
+                        .then(function(d) {
+                            return (d.items || []).map(function(m) {
+                                m.media_type = 'movie';
+                                m._sortTitle = (m.title || '').toLowerCase();
+                                m._year = m.year || '';
+                                return m;
+                            });
+                        })
+                        .catch(function() { return []; }));
+                } else {
+                    promises.push(Promise.resolve([]));
+                }
+                if (self._tvInstanceId) {
+                    promises.push(fetch('./api/tv-hunt/collection?instance_id=' + self._tvInstanceId)
+                        .then(function(r) { return r.json(); })
+                        .then(function(d) {
+                            var series = d.series || [];
+                            return series.map(function(s) {
+                                var title = s.title || s.name || '';
+                                var year = (s.first_air_date || '').substring(0, 4);
+                                return {
+                                    media_type: 'tv',
+                                    tmdb_id: s.tmdb_id,
+                                    title: title,
+                                    name: title,
+                                    year: year,
+                                    first_air_date: s.first_air_date,
+                                    poster_path: s.poster_path,
+                                    status: s.status,
+                                    seasons: s.seasons,
+                                    overview: s.overview,
+                                    vote_average: s.vote_average,
+                                    _sortTitle: title.toLowerCase(),
+                                    _year: year,
+                                    _raw: s
+                                };
+                            });
+                        })
+                        .catch(function() { return []; }));
+                } else {
+                    promises.push(Promise.resolve([]));
+                }
+                Promise.all(promises).then(function(results) {
+                    var combined = (results[0] || []).concat(results[1] || []);
+                    processAndRender(combined);
+                });
+            }
+
+            var params = new URLSearchParams();
+            if (self._movieInstanceId) params.set('movie_instance_id', self._movieInstanceId);
+            if (self._tvInstanceId) params.set('tv_instance_id', self._tvInstanceId);
+            params.set('page', '1');
+            params.set('page_size', '9999');
+            params.set('sort', self.sortBy || 'title.asc');
+
+            fetch('./api/requestarr/collection?' + params.toString())
+                .then(function(r) {
+                    if (r.ok) return r.json().then(function(data) { return data.items || []; });
+                    if (r.status === 404) { fallbackToLegacyApis(); return null; }
+                    throw new Error('Failed to load');
+                })
+                .then(function(combined) {
+                    if (combined !== null) processAndRender(combined);
+                })
+                .catch(function() {
+                    grid.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 60px;">Failed to load collection.</p>';
+                });
         },
 
         setupSort: function() {
@@ -5725,7 +5769,9 @@
         showMainView: function() {
             var r = document.getElementById('media-hunt-collection-search-results-view');
             var m = document.getElementById('media-hunt-collection-main-content');
+            var d = document.getElementById('media-hunt-collection-series-detail-view');
             if (r) r.style.display = 'none';
+            if (d) d.style.display = 'none';
             if (m) m.style.display = 'block';
         },
         openSeriesDetail: function(tmdbId, seriesData) {

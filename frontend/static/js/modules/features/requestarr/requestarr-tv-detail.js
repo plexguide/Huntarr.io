@@ -28,7 +28,12 @@
             });
 
             window.addEventListener('hashchange', () => {
-                if (!/^#requestarr-tv\//.test(window.location.hash || '')) {
+                const hash = window.location.hash || '';
+                const m = hash.match(/^#requestarr-tv\/(\d+)$/);
+                if (m) {
+                    const tmdbId = parseInt(m[1], 10);
+                    this.openDetail({ id: tmdbId, tmdb_id: tmdbId }, {}, true);
+                } else {
                     this.closeDetail(true);
                 }
             });
@@ -325,6 +330,7 @@
             const isTVHunt = decoded.appType === 'tv_hunt';
             const seasonIcon = isTVHunt ? 'fa-plus' : 'fa-download';
             document.querySelectorAll('.season-count-badge').forEach(el => {
+                const seasonItem = el.closest('.requestarr-tv-season-item');
                 const seasonNum = parseInt(el.dataset.season, 10);
                 const total = parseInt(el.dataset.total, 10) || 0;
                 const epMap = this.buildEpisodeStatusMap(seasonNum);
@@ -341,8 +347,8 @@
                     el.classList.add('season-count-badge-complete');
                 }
                 // Update season monitor bookmark (TV Hunt only)
-                if (isTVHunt && item) {
-                    const monBtn = item.querySelector('.mh-monitor-season');
+                if (isTVHunt && seasonItem) {
+                    const monBtn = seasonItem.querySelector('.mh-monitor-season');
                     if (monBtn) {
                         const seasonData = this.seriesStatus && this.seriesStatus.seasons
                             ? this.seriesStatus.seasons.find(s => (s.season_number ?? s.seasonNumber) === seasonNum)
@@ -352,7 +358,7 @@
                     }
                 }
                 // Update Request Season button: icon, color state, disabled when full
-                const btn = item && item.querySelector('.request-season-btn');
+                const btn = seasonItem && seasonItem.querySelector('.request-season-btn');
                 if (btn) {
                     btn.querySelector('i').className = 'fas ' + seasonIcon;
                     btn.classList.remove('request-season-btn-unknown', 'request-season-btn-empty', 'request-season-btn-partial', 'request-season-btn-complete');
