@@ -1,16 +1,11 @@
 <section id="homeSection" class="content-section">
     <link rel="stylesheet" href="./static/css/home.css">
     
+    <!-- Daughter's Sponsor — upper right only, no toolbar -->
+    {% with section_id='home' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
+    
     <!-- Add initially hidden class to prevent flickering before JS initializes -->  
     <div class="dashboard-grid stack-layout mobile-scrollable" style="opacity: 0; transition: opacity 0.15s ease;">
-        <!-- Daughter's Sponsor - Compact inline chip -->
-        <div class="home-banners-row">
-            <a href="#" target="_blank" rel="noopener noreferrer" class="home-sponsor-banner" id="home-sponsor-banner" data-sponsor-url="">
-                <span class="sponsor-label">Daughter's Sponsor:</span>
-                <span class="sponsor-name" id="home-sponsor-name">Loading...</span>
-            </a>
-        </div>
-
         <div class="card requestarr-home-card">
             <div class="requestarr-home-content">
                 <div class="global-search-bar">
