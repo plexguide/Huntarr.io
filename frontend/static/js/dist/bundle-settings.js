@@ -7799,18 +7799,20 @@ document.head.appendChild(styleEl);
 
             select.innerHTML = '<option value="">Loading...</option>';
 
+            var ts = Date.now();
             Promise.all([
-                fetch('./api/movie-hunt/instances').then(function(r) { return r.json(); }),
-                fetch('./api/tv-hunt/instances').then(function(r) { return r.json(); }),
-                fetch('./api/movie-hunt/instances/current').then(function(r) { return r.json(); }),
-                fetch('./api/tv-hunt/instances/current').then(function(r) { return r.json(); })
+                fetch('./api/movie-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                fetch('./api/movie-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                fetch('./api/indexer-hunt/indexers?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
             ]).then(function(results) {
                 var movieList = results[0].instances || [];
                 var tvList = results[1].instances || [];
                 var movieCurrent = results[2].current_instance_id != null ? Number(results[2].current_instance_id) : null;
                 var tvCurrent = results[3].current_instance_id != null ? Number(results[3].current_instance_id) : null;
+                var indexerCount = (results[4].indexers || []).length;
 
-                select.innerHTML = '';
                 var opts = [];
                 movieList.forEach(function(inst) {
                     opts.push({ value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id), mode: 'movie' });
@@ -7819,14 +7821,32 @@ document.head.appendChild(styleEl);
                     opts.push({ value: 'tv:' + inst.id, label: 'TV - ' + (inst.name || 'Instance ' + inst.id), mode: 'tv' });
                 });
 
+                var noInstEl = document.getElementById(PREFIX + '-no-instances');
+                var noIdxEl = document.getElementById(PREFIX + '-no-indexers');
+                var wrapperEl = document.getElementById(PREFIX + '-content-wrapper');
+
                 if (opts.length === 0) {
-                    var o = document.createElement('option');
-                    o.value = '';
-                    o.textContent = 'No instances';
-                    select.appendChild(o);
+                    select.innerHTML = '';
+                    select.appendChild(document.createElement('option')).value = ''; select.options[0].textContent = 'No instances';
+                    if (noInstEl) noInstEl.style.display = '';
+                    if (noIdxEl) noIdxEl.style.display = 'none';
+                    if (wrapperEl) wrapperEl.style.display = 'none';
+                    return;
+                }
+                if (indexerCount === 0) {
+                    select.innerHTML = '';
+                    select.appendChild(document.createElement('option')).value = ''; select.options[0].textContent = 'No indexers configured';
+                    if (noInstEl) noInstEl.style.display = 'none';
+                    if (noIdxEl) noIdxEl.style.display = '';
+                    if (wrapperEl) wrapperEl.style.display = 'none';
                     return;
                 }
 
+                if (noInstEl) noInstEl.style.display = 'none';
+                if (noIdxEl) noIdxEl.style.display = 'none';
+                if (wrapperEl) wrapperEl.style.display = '';
+
+                select.innerHTML = '';
                 opts.forEach(function(opt) {
                     var o = document.createElement('option');
                     o.value = opt.value;

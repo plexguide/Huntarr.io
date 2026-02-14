@@ -51,6 +51,19 @@
         <h2 class="content-section-title" style="margin-bottom: 12px;">Media Hunt Collection</h2>
         <p class="instance-management-description" style="margin-bottom: 24px;">View and manage your TV and Movie collections. Select Movie Hunt and TV Hunt instances below to see a combined library.</p>
 
+        <div id="media-hunt-collection-no-instances" class="media-hunt-collection-no-instances" style="display: none;">
+            <i class="fas fa-cube" aria-hidden="true"></i>
+            <p class="no-instances-title">No instances configured</p>
+            <p class="no-instances-desc">Configure a Movie Hunt or TV Hunt instance to view your collection.</p>
+            <a href="./#media-hunt-instances" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure instances</a>
+        </div>
+        <div id="media-hunt-collection-no-indexers" class="media-hunt-collection-no-indexers" style="display: none;">
+            <i class="fas fa-satellite-dish" aria-hidden="true"></i>
+            <p class="no-instances-title">No indexers configured</p>
+            <p class="no-instances-desc">Configure at least one indexer in the Index Master Pool to use this section.</p>
+            <a href="./#indexer-hunt" class="no-instances-action-btn"><i class="fas fa-plus"></i> Add Indexer</a>
+        </div>
+        <div id="media-hunt-collection-content-wrapper" style="display: none;">
         <div class="global-search-bar" style="margin-bottom: 12px;">
             <i class="fas fa-search"></i>
             <input type="text" id="media-hunt-collection-search-input" placeholder="Search" aria-label="Search collection">
@@ -105,6 +118,7 @@
                 <button type="button" class="back-btn" id="media-hunt-collection-series-back-btn"><i class="fas fa-arrow-left"></i> Back to Collection</button>
             </div>
             <div id="media-hunt-collection-series-detail-content"></div>
+        </div>
         </div>
     </div>
 

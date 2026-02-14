@@ -4,6 +4,7 @@
 #settingsSizesSection .settings-no-indexers,
 #settingsRootFoldersSection .settings-no-indexers,
 #settingsImportListsSection .settings-no-indexers,
+#mediaHuntSettingsImportMediaSection .settings-no-indexers,
 #settingsCustomFormatsSection .settings-no-indexers,
 #movieManagementSection .movie-management-no-indexers,
 #mediaHuntProfilesSection .media-hunt-profiles-no-indexers,
@@ -12,7 +13,9 @@
 #indexer-hunt-history-section .ih-no-indexers,
 #indexer-hunt-stats-section .ih-no-indexers,
 #mediaHuntCalendarSection .mh-calendar-no-indexers,
-#logsSection .logs-no-indexers {
+#logsSection .logs-no-indexers,
+#media-hunt-collection-view .media-hunt-collection-no-indexers,
+#media-hunt-collection-view .media-hunt-collection-no-instances {
     text-align: center;
     padding: 64px 24px;
     width: 100%;
@@ -27,6 +30,7 @@
 #settingsSizesSection .settings-no-indexers i.fa-satellite-dish,
 #settingsRootFoldersSection .settings-no-indexers i.fa-satellite-dish,
 #settingsImportListsSection .settings-no-indexers i.fa-satellite-dish,
+#mediaHuntSettingsImportMediaSection .settings-no-indexers i.fa-satellite-dish,
 #settingsCustomFormatsSection .settings-no-indexers i.fa-satellite-dish,
 #movieManagementSection .movie-management-no-indexers i.fa-satellite-dish,
 #mediaHuntProfilesSection .media-hunt-profiles-no-indexers i.fa-satellite-dish,
@@ -35,7 +39,8 @@
 #indexer-hunt-history-section .ih-no-indexers i.fa-satellite-dish,
 #indexer-hunt-stats-section .ih-no-indexers i.fa-satellite-dish,
 #mediaHuntCalendarSection .mh-calendar-no-indexers i.fa-satellite-dish,
-#logsSection .logs-no-indexers i.fa-satellite-dish {
+#logsSection .logs-no-indexers i.fa-satellite-dish,
+#media-hunt-collection-view .media-hunt-collection-no-indexers i.fa-satellite-dish {
     font-size: 3rem;
     color: #334155;
     margin-bottom: 16px;
@@ -45,6 +50,7 @@
 #settingsSizesSection .settings-no-indexers .no-instances-title,
 #settingsRootFoldersSection .settings-no-indexers .no-instances-title,
 #settingsImportListsSection .settings-no-indexers .no-instances-title,
+#mediaHuntSettingsImportMediaSection .settings-no-indexers .no-instances-title,
 #settingsCustomFormatsSection .settings-no-indexers .no-instances-title,
 #movieManagementSection .movie-management-no-indexers .no-instances-title,
 #mediaHuntProfilesSection .media-hunt-profiles-no-indexers .no-instances-title,
@@ -53,7 +59,8 @@
 #indexer-hunt-history-section .ih-no-indexers .no-instances-title,
 #indexer-hunt-stats-section .ih-no-indexers .no-instances-title,
 #mediaHuntCalendarSection .mh-calendar-no-indexers .no-instances-title,
-#logsSection .logs-no-indexers .no-instances-title {
+#logsSection .logs-no-indexers .no-instances-title,
+#media-hunt-collection-view .media-hunt-collection-no-indexers .no-instances-title {
     font-size: 1.2rem;
     font-weight: 600;
     color: #f1f5f9;
@@ -63,6 +70,7 @@
 #settingsSizesSection .settings-no-indexers .no-instances-desc,
 #settingsRootFoldersSection .settings-no-indexers .no-instances-desc,
 #settingsImportListsSection .settings-no-indexers .no-instances-desc,
+#mediaHuntSettingsImportMediaSection .settings-no-indexers .no-instances-desc,
 #settingsCustomFormatsSection .settings-no-indexers .no-instances-desc,
 #movieManagementSection .movie-management-no-indexers .no-instances-desc,
 #mediaHuntProfilesSection .media-hunt-profiles-no-indexers .no-instances-desc,
@@ -71,7 +79,8 @@
 #indexer-hunt-history-section .ih-no-indexers .no-instances-desc,
 #indexer-hunt-stats-section .ih-no-indexers .no-instances-desc,
 #mediaHuntCalendarSection .mh-calendar-no-indexers .no-instances-desc,
-#logsSection .logs-no-indexers .no-instances-desc {
+#logsSection .logs-no-indexers .no-instances-desc,
+#media-hunt-collection-view .media-hunt-collection-no-indexers .no-instances-desc {
     font-size: 0.95rem;
     color: #94a3b8;
     line-height: 1.6;
@@ -82,6 +91,7 @@
 #settingsSizesSection .settings-no-indexers .no-instances-action-btn,
 #settingsRootFoldersSection .settings-no-indexers .no-instances-action-btn,
 #settingsImportListsSection .settings-no-indexers .no-instances-action-btn,
+#mediaHuntSettingsImportMediaSection .settings-no-indexers .no-instances-action-btn,
 #settingsCustomFormatsSection .settings-no-indexers .no-instances-action-btn,
 #movieManagementSection .movie-management-no-indexers .no-instances-action-btn,
 #mediaHuntProfilesSection .media-hunt-profiles-no-indexers .no-instances-action-btn,
@@ -90,7 +100,8 @@
 #indexer-hunt-history-section .ih-no-indexers .no-instances-action-btn,
 #indexer-hunt-stats-section .ih-no-indexers .no-instances-action-btn,
 #mediaHuntCalendarSection .mh-calendar-no-indexers .no-instances-action-btn,
-#logsSection .logs-no-indexers .no-instances-action-btn {
+#logsSection .logs-no-indexers .no-instances-action-btn,
+#media-hunt-collection-view .media-hunt-collection-no-indexers .no-instances-action-btn {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -107,6 +118,7 @@
 #settingsSizesSection .settings-no-indexers .no-instances-action-btn:hover,
 #settingsRootFoldersSection .settings-no-indexers .no-instances-action-btn:hover,
 #settingsImportListsSection .settings-no-indexers .no-instances-action-btn:hover,
+#mediaHuntSettingsImportMediaSection .settings-no-indexers .no-instances-action-btn:hover,
 #settingsCustomFormatsSection .settings-no-indexers .no-instances-action-btn:hover,
 #movieManagementSection .movie-management-no-indexers .no-instances-action-btn:hover,
 #mediaHuntProfilesSection .media-hunt-profiles-no-indexers .no-instances-action-btn:hover,
@@ -115,7 +127,8 @@
 #indexer-hunt-history-section .ih-no-indexers .no-instances-action-btn:hover,
 #indexer-hunt-stats-section .ih-no-indexers .no-instances-action-btn:hover,
 #mediaHuntCalendarSection .mh-calendar-no-indexers .no-instances-action-btn:hover,
-#logsSection .logs-no-indexers .no-instances-action-btn:hover {
+#logsSection .logs-no-indexers .no-instances-action-btn:hover,
+#media-hunt-collection-view .media-hunt-collection-no-indexers .no-instances-action-btn:hover {
     background: rgba(99, 102, 241, 0.3);
     border-color: rgba(99, 102, 241, 0.5);
 }
