@@ -4376,6 +4376,16 @@ document.head.appendChild(styleEl);
                         '<input type="text" id="editor-name" value="' + name + '" placeholder="e.g. My Indexer">' +
                         '<p class="editor-help-text">A friendly name to identify this indexer.</p>' +
                     '</div>' +
+                    '<div class="editor-field-group" id="editor-key-group"' + hideStyle + '>' +
+                        '<label for="editor-key">API Key</label>' +
+                        '<input type="text" id="editor-key" placeholder="' + keyPlaceholder.replace(/"/g, '&quot;') + '">' +
+                        '<p class="editor-help-text">Only the last 4 characters will be shown on the card after saving.</p>' +
+                    '</div>' +
+                    '<div class="editor-field-group" id="editor-priority-group"' + hideStyle + '>' +
+                        '<label for="editor-priority">Indexer Priority</label>' +
+                        '<input type="number" id="editor-priority" value="' + priority + '" min="1" max="99" style="width: 100%; padding: 10px 12px; background: #1e293b; border: 1px solid #475569; border-radius: 6px; color: #e2e8f0;">' +
+                        '<p class="editor-help-text">Lower number = higher priority (1-99, default 50). When multiple indexers find a match, results from higher-priority indexers are preferred.</p>' +
+                    '</div>' +
                     '<div class="editor-field-group" id="editor-url-group"' + hideStyle + '>' +
                         '<label for="editor-url">URL</label>' +
                         '<input type="text" id="editor-url" value="' + url + '" placeholder="https://my-indexer.com"' + (urlReadonly ? ' readonly class="editor-readonly"' : '') + '>' +
@@ -4386,19 +4396,9 @@ document.head.appendChild(styleEl);
                         '<input type="text" id="editor-api-path" value="' + apiPath + '" placeholder="/api"' + (urlReadonly ? ' readonly class="editor-readonly"' : '') + '>' +
                         '<p class="editor-help-text" id="editor-api-path-help">Path to the API, usually /api</p>' +
                     '</div>' +
-                    '<div class="editor-field-group" id="editor-key-group"' + hideStyle + '>' +
-                        '<label for="editor-key">API Key</label>' +
-                        '<input type="text" id="editor-key" placeholder="' + keyPlaceholder.replace(/"/g, '&quot;') + '">' +
-                        '<p class="editor-help-text">Only the last 4 characters will be shown on the card after saving.</p>' +
-                    '</div>' +
                 '</div>' +
                 '<div class="editor-section" id="editor-categories-section"' + hideStyle + '>' +
                     '<div class="editor-section-title">Additional Configurations</div>' +
-                    '<div class="editor-field-group">' +
-                        '<label for="editor-priority">Indexer Priority</label>' +
-                        '<input type="number" id="editor-priority" value="' + priority + '" min="1" max="99" style="width: 100%; padding: 10px 12px; background: #1e293b; border: 1px solid #475569; border-radius: 6px; color: #e2e8f0;">' +
-                        '<p class="editor-help-text">Lower number = higher priority (1-99, default 50). When multiple indexers find a match, results from higher-priority indexers are preferred.</p>' +
-                    '</div>' +
                     '<div class="editor-field-group">' +
                         '<label for="editor-categories-select">Categories</label>' +
                         '<select id="editor-categories-select" class="settings-select" style="width: 100%; padding: 10px 12px; background: #1e293b; border: 1px solid #475569; border-radius: 6px; color: #e2e8f0;">' +

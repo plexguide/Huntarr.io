@@ -58,13 +58,6 @@
         _on('ih-search-input', 'input', function() { _renderCards(); });
         _on('ih-form-preset', 'change', _onPresetChange);
 
-        var toggleEl = document.getElementById('ih-form-enabled');
-        if (toggleEl) toggleEl.addEventListener('click', function() {
-            this.classList.toggle('active');
-            var label = document.getElementById('ih-form-enabled-label');
-            if (label) label.textContent = this.classList.contains('active') ? 'Enabled' : 'Disabled';
-        });
-
         // "Import from Index Master" card: show select list (ih-import-panel)
         var wrapper = document.getElementById('indexer-hunt-content-wrapper');
         if (wrapper) {
@@ -469,7 +462,6 @@
         var apiPathEl = document.getElementById('ih-form-api-path');
         var apiKeyEl = document.getElementById('ih-form-api-key');
         var priorityEl = document.getElementById('ih-form-priority');
-        var enabledEl = document.getElementById('ih-form-enabled');
         var protocolEl = document.getElementById('ih-form-protocol');
 
         if (existingIdx) {
@@ -480,10 +472,6 @@
             if (apiKeyEl) apiKeyEl.value = '';
             if (apiKeyEl) apiKeyEl.placeholder = existingIdx.api_key_last4 ? 'Leave blank to keep (\u2022\u2022\u2022\u2022' + existingIdx.api_key_last4 + ')' : 'Enter API key';
             if (priorityEl) priorityEl.value = existingIdx.priority || 50;
-            if (enabledEl) {
-                if (existingIdx.enabled !== false) enabledEl.classList.add('active');
-                else enabledEl.classList.remove('active');
-            }
             if (protocolEl) protocolEl.value = existingIdx.protocol || 'usenet';
         } else {
             if (presetSel) { presetSel.value = 'manual'; presetSel.disabled = false; }
@@ -492,12 +480,8 @@
             if (apiPathEl) { apiPathEl.value = '/api'; apiPathEl.readOnly = false; }
             if (apiKeyEl) { apiKeyEl.value = ''; apiKeyEl.placeholder = 'Enter API key'; }
             if (priorityEl) priorityEl.value = 50;
-            if (enabledEl) enabledEl.classList.add('active');
             if (protocolEl) protocolEl.value = 'usenet';
         }
-
-        var enabledLabel = document.getElementById('ih-form-enabled-label');
-        if (enabledLabel && enabledEl) enabledLabel.textContent = enabledEl.classList.contains('active') ? 'Enabled' : 'Disabled';
 
         _showEditorView();
 
@@ -605,7 +589,6 @@
         var apiPathEl = document.getElementById('ih-form-api-path');
         var apiKeyEl = document.getElementById('ih-form-api-key');
         var priorityEl = document.getElementById('ih-form-priority');
-        var enabledEl = document.getElementById('ih-form-enabled');
         var protocolEl = document.getElementById('ih-form-protocol');
 
         var body = {
@@ -615,7 +598,7 @@
             api_path: (apiPathEl ? apiPathEl.value : '/api').trim(),
             api_key: (apiKeyEl ? apiKeyEl.value : '').trim(),
             priority: parseInt(priorityEl ? priorityEl.value : '50', 10) || 50,
-            enabled: enabledEl ? enabledEl.classList.contains('active') : true,
+            enabled: true,
             protocol: protocolEl ? protocolEl.value : 'usenet',
         };
 
