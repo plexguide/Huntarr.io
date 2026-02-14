@@ -1099,7 +1099,7 @@
                 const details = await this.fetchSeriesDetails(tmdbId);
                 if (details) {
                     detailView.innerHTML = this.renderTVDetail(details, series);
-                    this.setupDetailInteractions();
+                    await this.setupDetailInteractions();
                 } else {
                     detailView.innerHTML = this.getErrorHTML('Failed to load series details');
                     this.setupErrorBackButton();
@@ -1261,7 +1261,7 @@
                     <div class="mh-toolbar-right"></div>
                 </div>`;
 
-            const seasonsHTML = isTVHunt ? this.renderSeasonsSection(details) : '';
+            const seasonsHTML = this.renderSeasonsSection(details);
 
             return `
                 ${toolbarHTML}
@@ -1306,6 +1306,8 @@
         },
 
         renderSeasonsSection(details) {
+            const decoded = _decodeInstanceValue(this.selectedInstanceName || '');
+            const isTVHunt = decoded.appType === 'tv_hunt';
             const seasons = details.seasons || [];
             // Sort newest first (by season number; specials last)
             const sorted = [...seasons].sort((a, b) => {
@@ -1320,14 +1322,15 @@
             sorted.forEach(season => {
                 const name = season.name || ('Season ' + season.season_number);
                 const epCount = season.episode_count != null ? season.episode_count : '?';
+                const requestSeasonBtn = isTVHunt
+                    ? '<div class="season-actions"><button class="season-action-btn request-season-btn" title="Request entire season"><i class="fas fa-download"></i> Request Season</button></div>'
+                    : '';
                 html += `
                     <div class="requestarr-tv-season-item" data-season="${season.season_number}" data-tmdb-id="${details.id}">
                         <span class="season-chevron"><i class="fas fa-chevron-right"></i></span>
                         <span class="season-name">${this.escapeHtml(name)}</span>
                         <span class="season-ep-count">${epCount} episodes</span>
-                        <div class="season-actions">
-                            <button class="season-action-btn request-season-btn" title="Request entire season"><i class="fas fa-download"></i> Request Season</button>
-                        </div>
+                        ${requestSeasonBtn}
                     </div>
                 `;
             });
@@ -1335,16 +1338,17 @@
             return html;
         },
 
-        setupDetailInteractions() {
+        async setupDetailInteractions() {
             const self = this;
             const backBtn = document.getElementById('requestarr-tv-detail-back');
             if (backBtn) backBtn.addEventListener('click', () => this.closeDetail());
 
             const instanceSelect = document.getElementById('requestarr-tv-detail-instance-select');
             if (instanceSelect) {
-                instanceSelect.addEventListener('change', () => {
+                instanceSelect.addEventListener('change', async () => {
                     this.selectedInstanceName = instanceSelect.value;
-                    this.updateDetailInfoBar();
+                    this.collapseExpandedSeasons();
+                    await this.updateDetailInfoBar();
                 });
             }
 
@@ -1361,7 +1365,8 @@
                 });
             }
 
-            this.updateDetailInfoBar();
+            // Must load series status first so buildEpisodeStatusMap has Sonarr/TV Hunt data for episode status and resolution
+            await this.updateDetailInfoBar();
 
             const seasonItems = document.querySelectorAll('.requestarr-tv-season-item');
             seasonItems.forEach(item => {
@@ -1390,41 +1395,55 @@
                     item.after(episodesEl);
                     item.classList.add('expanded');
 
-                    const epStatusMap = this.buildEpisodeStatusMap(seasonNum);
+                    const decoded = _decodeInstanceValue(this.selectedInstanceName || '');
+                    const isTVHunt = decoded.appType === 'tv_hunt';
 
-                    fetch(`./api/tv-hunt/series/${tmdbId}/season/${seasonNum}`)
-                        .then(r => r.json())
-                        .then(seasonData => {
-                            const eps = (seasonData.episodes || []).sort((a, b) => (b.episode_number || 0) - (a.episode_number || 0));
-                            let tbl = '<table class="episode-table"><thead><tr><th>#</th><th>Title</th><th>Air Date</th><th>Status</th><th></th></tr></thead><tbody>';
-                            eps.forEach(ep => {
-                                const epNum = ep.episode_number;
-                                const ad = ep.air_date || '';
-                                const epInfo = epStatusMap[epNum];
-                                const available = !!epInfo;
-                                const quality = epInfo && typeof epInfo === 'object' && epInfo.quality ? epInfo.quality : null;
-                                const statusBadge = available
-                                    ? '<span class="mh-ep-status mh-ep-status-ok">' + (quality ? this.escapeHtml(quality) : '<i class="fas fa-check-circle"></i> In Collection') + '</span>'
-                                    : '<span class="mh-ep-status mh-ep-status-warn">Missing</span>';
-                                const requestBtn = available
-                                    ? ''
-                                    : `<button class="ep-request-btn" data-season="${seasonNum}" data-episode="${epNum}" title="Request episode"><i class="fas fa-download"></i></button>`;
-                                tbl += `<tr><td>${epNum || ''}</td><td>${this.escapeHtml(ep.name || '')}</td><td>${ad}</td><td>${statusBadge}</td><td>${requestBtn}</td></tr>`;
-                            });
-                            tbl += '</tbody></table>';
-                            episodesEl.innerHTML = tbl;
-                            episodesEl.classList.add('expanded');
-
-                            episodesEl.querySelectorAll('.ep-request-btn').forEach(btn => {
-                                btn.addEventListener('click', (e) => {
-                                    e.stopPropagation();
-                                    this.requestEpisode(item.dataset.tmdbId, parseInt(btn.dataset.season, 10), parseInt(btn.dataset.episode, 10));
-                                });
-                            });
-                        })
-                        .catch(() => {
-                            episodesEl.innerHTML = '<span style="color:#f87171;">Failed to load episodes</span>';
+                    const runExpand = async () => {
+                    const renderEpisodes = (eps) => {
+                        // Status overlay: TV Hunt uses TV Hunt seriesStatus; Sonarr uses Sonarr seriesStatus
+                        const epStatusMap = this.buildEpisodeStatusMap(seasonNum);
+                        const sorted = [...eps].sort((a, b) => (b.episode_number ?? b.episodeNumber ?? 0) - (a.episode_number ?? a.episodeNumber ?? 0));
+                        let tbl = '<table class="episode-table"><thead><tr><th>#</th><th>Title</th><th>Air Date</th><th>Status</th><th></th></tr></thead><tbody>';
+                        sorted.forEach(ep => {
+                            const epNum = ep.episode_number ?? ep.episodeNumber;
+                            const title = ep.title || ep.name || '';
+                            const ad = ep.air_date || ep.airDate || '';
+                            const epInfo = epStatusMap[epNum];
+                            const available = !!epInfo;
+                            const quality = (epInfo && typeof epInfo === 'object' && epInfo.quality) ? epInfo.quality : null;
+                            const statusBadge = available
+                                ? '<span class="mh-ep-status mh-ep-status-ok">' + (quality ? this.escapeHtml(quality) : '<i class="fas fa-check-circle"></i> In Collection') + '</span>'
+                                : '<span class="mh-ep-status mh-ep-status-warn">Missing</span>';
+                            const requestBtn = (isTVHunt && !available) ? `<button class="ep-request-btn" data-season="${seasonNum}" data-episode="${epNum}" title="Request episode"><i class="fas fa-download"></i></button>` : '';
+                            tbl += `<tr><td>${epNum || ''}</td><td>${this.escapeHtml(title)}</td><td>${ad}</td><td>${statusBadge}</td><td>${requestBtn}</td></tr>`;
                         });
+                        tbl += '</tbody></table>';
+                        episodesEl.innerHTML = tbl;
+                        episodesEl.classList.add('expanded');
+                        episodesEl.querySelectorAll('.ep-request-btn').forEach(btn => {
+                            btn.addEventListener('click', (ev) => {
+                                ev.stopPropagation();
+                                this.requestEpisode(item.dataset.tmdbId, parseInt(btn.dataset.season, 10), parseInt(btn.dataset.episode, 10));
+                            });
+                        });
+                    };
+
+                    // Ensure Sonarr status is loaded before rendering (needed for episode status/resolution)
+                    if (!isTVHunt && (!this.seriesStatus || !this.seriesStatus.seasons)) {
+                        await this.updateDetailInfoBar();
+                    }
+
+                    // Always use TMDB (tv-hunt API) for episode list; status comes from Sonarr or TV Hunt via buildEpisodeStatusMap
+                    try {
+                        const seasonRes = await fetch(`./api/tv-hunt/series/${tmdbId}/season/${seasonNum}`);
+                        const seasonData = await seasonRes.json();
+                        const eps = seasonData.episodes || [];
+                        renderEpisodes(eps);
+                    } catch {
+                        episodesEl.innerHTML = '<span style="color:#f87171;">Failed to load episodes</span>';
+                    }
+                    };
+                    runExpand();
                 });
             });
 
@@ -1487,6 +1506,17 @@
                 statusEl.innerHTML = '<span class="mh-badge mh-badge-warn">Error</span>';
                 if (episodesEl) episodesEl.textContent = '-';
             }
+        },
+
+        collapseExpandedSeasons() {
+            const items = document.querySelectorAll('.requestarr-tv-season-item.expanded');
+            items.forEach(item => {
+                item.classList.remove('expanded');
+                const body = item.nextElementSibling;
+                if (body && body.classList.contains('requestarr-tv-season-episodes')) {
+                    body.remove();
+                }
+            });
         },
 
         getTVHuntInstanceId() {

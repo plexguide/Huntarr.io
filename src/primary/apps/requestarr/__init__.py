@@ -557,25 +557,30 @@ class RequestarrAPI:
                                     by_season[sn] = []
                                 ef = ep.get('episodeFile') or {}
                                 qobj = (ef.get('quality') or {}).get('quality') or {}
-                                qname = qobj.get('name') or ''
+                                qname = (qobj.get('name') or (ef.get('quality') or {}).get('name') or '').strip()
                                 by_season[sn].append({
                                     'season_number': sn,
                                     'seasonNumber': sn,
                                     'episode_number': ep.get('episodeNumber'),
                                     'episodeNumber': ep.get('episodeNumber'),
+                                    'title': ep.get('title') or ep.get('name') or '',
+                                    'name': ep.get('title') or ep.get('name') or '',
+                                    'air_date': ep.get('airDate') or '',
+                                    'airDate': ep.get('airDate') or '',
                                     'status': 'available' if ep.get('hasFile') else 'missing',
                                     'episodeFile': ef if ep.get('hasFile') else None,
                                     'quality': qname if qname else None,
                                 })
                             for sn in sorted(by_season.keys()):
+                                eps_sorted = sorted(by_season[sn], key=lambda e: (e.get('episode_number') or 0), reverse=True)
                                 seasons_with_episodes.append({
                                     'season_number': sn,
                                     'seasonNumber': sn,
-                                    'episodes': by_season[sn],
+                                    'episodes': eps_sorted,
                                 })
                     except Exception as ep_err:
-                        logger.debug(f"Sonarr episode fetch for series {series_id}: {ep_err}")
-                        seasons_with_episodes = series.get('seasons', [])
+                        logger.warning(f"Sonarr episode fetch for series {series_id} failed (no per-episode status): {ep_err}")
+                        seasons_with_episodes = []  # Avoid series.get('seasons') - lacks episode-level status/quality
 
                     # Determine "previously_requested" status intelligently:
                     # - Only mark as "previously requested" if series was requested but has NO episodes yet
@@ -602,9 +607,12 @@ class RequestarrAPI:
                     
                     logger.info(f"Found series in Sonarr: {series.get('title')} - {available_episodes}/{total_episodes} episodes, missing: {missing_episodes}, previously_requested: {previously_requested}, cooldown: {cooldown_status['in_cooldown']}")
                     
+                    path_val = (series.get('path') or series.get('Path') or series.get('rootFolderPath') or series.get('RootFolderPath') or '').strip()
                     return {
                         'exists': True,
                         'monitored': series.get('monitored', False),
+                        'path': path_val,
+                        'root_folder_path': path_val,
                         'total_episodes': total_episodes,
                         'available_episodes': available_episodes,
                         'missing_episodes': missing_episodes,
