@@ -112,6 +112,30 @@ button {
     height: 100vh;
     overflow: hidden;
     min-width: 0;
+    position: relative;
+}
+
+/* Match sidebar blue edge line on right for design consistency */
+.main-content::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(180deg,
+        #1a5276 0%,
+        #2980b9 20%,
+        #3498db 40%,
+        #5dade2 50%,
+        #3498db 60%,
+        #2980b9 80%,
+        #1a5276 100%
+    );
+    background-size: 100% 100%;
+    z-index: 1000;
+    opacity: 0.85;
+    pointer-events: none;
 }
 
 /* Top Bar - base structure (main styling in topbar.html component) */
