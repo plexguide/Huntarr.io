@@ -962,6 +962,29 @@
     color: #fff;
 }
 
+/* Requestarr TV Detail - Huntarr blue (replace gold) */
+#requestarr-tv-detail-view .mh-section-title,
+#requestarr-tv-detail-view .mh-section-title i {
+    color: #60a5fa;
+}
+#requestarr-tv-detail-view .mh-btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    border: 1px solid rgba(59, 130, 246, 0.5);
+    color: #fff;
+}
+#requestarr-tv-detail-view .mh-btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    filter: brightness(1.1);
+}
+#requestarr-tv-detail-view .mh-badge-warn {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+#requestarr-tv-detail-view .mh-info-bar .mh-badge i {
+    color: inherit;
+}
+
 /* Requestarr TV Detail - Season accordion */
 .requestarr-tv-seasons-list {
     display: flex;
@@ -997,6 +1020,47 @@
 .requestarr-tv-season-item .season-ep-count {
     font-size: 0.85em;
     color: #888;
+}
+.requestarr-tv-season-item .season-actions {
+    margin-left: auto;
+}
+.requestarr-tv-season-item .season-action-btn.request-season-btn {
+    padding: 6px 12px;
+    font-size: 0.85em;
+    background: rgba(59, 130, 246, 0.25);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.requestarr-tv-season-item .season-action-btn.request-season-btn:hover {
+    background: rgba(59, 130, 246, 0.4);
+}
+.requestarr-tv-season-episodes .episode-table .ep-request-btn {
+    padding: 6px 10px;
+    background: rgba(59, 130, 246, 0.25);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.requestarr-tv-season-episodes .episode-table .ep-request-btn:hover {
+    background: rgba(59, 130, 246, 0.4);
+}
+.mh-ep-status {
+    font-size: 0.85em;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+.mh-ep-status-ok {
+    color: #60a5fa;
+    background: rgba(59, 130, 246, 0.15);
+}
+.mh-ep-status-warn {
+    color: #60a5fa;
+    background: rgba(59, 130, 246, 0.15);
 }
 .requestarr-tv-season-episodes {
     display: none;

@@ -579,6 +579,10 @@ window.HuntarrNavigation = {
                 window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#requestarr-discover');
             }
         }
+        // Requestarr TV detail (#requestarr-tv/ID) - keep hash so RequestarrTVDetail can restore on refresh
+        if (/^requestarr-tv\/(\d+)$/.test(section)) {
+            section = 'requestarr-tv';
+        }
         // Legacy Movie Hunt home → Media Hunt Collection
         if (section === 'movie-hunt-home') {
             section = 'media-hunt-collection';

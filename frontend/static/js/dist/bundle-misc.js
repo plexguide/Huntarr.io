@@ -1037,6 +1037,7 @@
         currentSeries: null,
         tvInstances: [],  // TV Hunt + Sonarr
         selectedInstanceName: null,
+        seriesStatus: null,  // { exists, seasons: [{ season_number, episodes: [{ episode_number, status }] }] }
 
         init() {
             window.addEventListener('popstate', (e) => {
@@ -1052,6 +1053,14 @@
                     this.closeDetail(true);
                 }
             });
+
+            // Restore detail on refresh when URL has #requestarr-tv/ID
+            const hash = window.location.hash || '';
+            const m = hash.match(/^#requestarr-tv\/(\d+)$/);
+            if (m) {
+                const tmdbId = parseInt(m[1], 10);
+                this.openDetail({ id: tmdbId, tmdb_id: tmdbId }, {}, true);
+            }
         },
 
         async openDetail(series, options = {}, fromHistory = false) {
@@ -1298,6 +1307,7 @@
 
         renderSeasonsSection(details) {
             const seasons = details.seasons || [];
+            // Sort newest first (by season number; specials last)
             const sorted = [...seasons].sort((a, b) => {
                 if (a.season_number === 0) return 1;
                 if (b.season_number === 0) return -1;
@@ -1315,6 +1325,9 @@
                         <span class="season-chevron"><i class="fas fa-chevron-right"></i></span>
                         <span class="season-name">${this.escapeHtml(name)}</span>
                         <span class="season-ep-count">${epCount} episodes</span>
+                        <div class="season-actions">
+                            <button class="season-action-btn request-season-btn" title="Request entire season"><i class="fas fa-download"></i> Request Season</button>
+                        </div>
                     </div>
                 `;
             });
@@ -1352,7 +1365,17 @@
 
             const seasonItems = document.querySelectorAll('.requestarr-tv-season-item');
             seasonItems.forEach(item => {
-                item.addEventListener('click', () => {
+                // Prevent expand when clicking Request Season button
+                const requestSeasonBtn = item.querySelector('.request-season-btn');
+                if (requestSeasonBtn) {
+                    requestSeasonBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.requestSeason(item.dataset.tmdbId, parseInt(item.dataset.season, 10));
+                    });
+                }
+
+                item.addEventListener('click', (e) => {
+                    if (e.target.closest('.season-actions')) return;
                     const seasonNum = parseInt(item.dataset.season, 10);
                     const tmdbId = item.dataset.tmdbId;
                     const body = item.nextElementSibling;
@@ -1367,18 +1390,37 @@
                     item.after(episodesEl);
                     item.classList.add('expanded');
 
+                    const epStatusMap = this.buildEpisodeStatusMap(seasonNum);
+
                     fetch(`./api/tv-hunt/series/${tmdbId}/season/${seasonNum}`)
                         .then(r => r.json())
                         .then(seasonData => {
-                            const eps = seasonData.episodes || [];
-                            let tbl = '<table class="episode-table"><thead><tr><th>#</th><th>Title</th><th>Air Date</th></tr></thead><tbody>';
+                            const eps = (seasonData.episodes || []).sort((a, b) => (b.episode_number || 0) - (a.episode_number || 0));
+                            let tbl = '<table class="episode-table"><thead><tr><th>#</th><th>Title</th><th>Air Date</th><th>Status</th><th></th></tr></thead><tbody>';
                             eps.forEach(ep => {
+                                const epNum = ep.episode_number;
                                 const ad = ep.air_date || '';
-                                tbl += `<tr><td>${ep.episode_number || ''}</td><td>${this.escapeHtml(ep.name || '')}</td><td>${ad}</td></tr>`;
+                                const epInfo = epStatusMap[epNum];
+                                const available = !!epInfo;
+                                const quality = epInfo && typeof epInfo === 'object' && epInfo.quality ? epInfo.quality : null;
+                                const statusBadge = available
+                                    ? '<span class="mh-ep-status mh-ep-status-ok">' + (quality ? this.escapeHtml(quality) : '<i class="fas fa-check-circle"></i> In Collection') + '</span>'
+                                    : '<span class="mh-ep-status mh-ep-status-warn">Missing</span>';
+                                const requestBtn = available
+                                    ? ''
+                                    : `<button class="ep-request-btn" data-season="${seasonNum}" data-episode="${epNum}" title="Request episode"><i class="fas fa-download"></i></button>`;
+                                tbl += `<tr><td>${epNum || ''}</td><td>${this.escapeHtml(ep.name || '')}</td><td>${ad}</td><td>${statusBadge}</td><td>${requestBtn}</td></tr>`;
                             });
                             tbl += '</tbody></table>';
                             episodesEl.innerHTML = tbl;
                             episodesEl.classList.add('expanded');
+
+                            episodesEl.querySelectorAll('.ep-request-btn').forEach(btn => {
+                                btn.addEventListener('click', (e) => {
+                                    e.stopPropagation();
+                                    this.requestEpisode(item.dataset.tmdbId, parseInt(btn.dataset.season, 10), parseInt(btn.dataset.episode, 10));
+                                });
+                            });
                         })
                         .catch(() => {
                             episodesEl.innerHTML = '<span style="color:#f87171;">Failed to load episodes</span>';
@@ -1406,6 +1448,7 @@
 
             const decoded = _decodeInstanceValue(this.selectedInstanceName || '');
             if (!decoded.name) {
+                this.seriesStatus = null;
                 pathEl.textContent = '-';
                 statusEl.innerHTML = '<span class="mh-badge mh-badge-warn">Not in Collection</span>';
                 if (episodesEl) episodesEl.textContent = '-';
@@ -1414,6 +1457,7 @@
 
             try {
                 const data = await this.checkSeriesStatus(tmdbId, this.selectedInstanceName);
+                this.seriesStatus = data;
 
                 if (data.exists) {
                     pathEl.textContent = data.path || data.root_folder_path || '-';
@@ -1442,6 +1486,99 @@
                 pathEl.textContent = '-';
                 statusEl.innerHTML = '<span class="mh-badge mh-badge-warn">Error</span>';
                 if (episodesEl) episodesEl.textContent = '-';
+            }
+        },
+
+        getTVHuntInstanceId() {
+            const decoded = _decodeInstanceValue(this.selectedInstanceName || '');
+            if (decoded.appType !== 'tv_hunt') return null;
+            const inst = this.tvInstances.find(i => i.compoundValue === this.selectedInstanceName);
+            return inst && inst.id ? String(inst.id) : null;
+        },
+
+        buildEpisodeStatusMap(seasonNum) {
+            const map = {};
+            if (!this.seriesStatus || !this.seriesStatus.exists || !this.seriesStatus.seasons) return map;
+            const season = this.seriesStatus.seasons.find(s =>
+                (s.season_number ?? s.seasonNumber) === seasonNum
+            );
+            if (!season) return map;
+            const eps = season.episodes || [];
+            eps.forEach(ep => {
+                const epNum = ep.episode_number ?? ep.episodeNumber;
+                const avail = (ep.status || '').toLowerCase() === 'available' || !!ep.file_path || !!ep.episodeFile;
+                const quality = ep.quality || ep.file_quality || (ep.episodeFile && ep.episodeFile.quality && ep.episodeFile.quality.quality && ep.episodeFile.quality.quality.name);
+                if (epNum != null && avail) map[epNum] = quality ? { quality } : true;
+            });
+            return map;
+        },
+
+        async requestSeason(tmdbId, seasonNum) {
+            const instanceId = this.getTVHuntInstanceId();
+            if (!instanceId) {
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('No TV Hunt instance selected.', 'error');
+                }
+                return;
+            }
+            const title = (this.currentSeries && (this.currentSeries.title || this.currentSeries.name)) || '';
+            if (!title) return;
+            try {
+                const r = await fetch(`./api/tv-hunt/request?instance_id=${instanceId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        series_title: title,
+                        season_number: seasonNum,
+                        tmdb_id: tmdbId,
+                        search_type: 'season',
+                        instance_id: instanceId,
+                    }),
+                });
+                const data = await r.json();
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification(data.success ? (data.message || 'Season search sent!') : (data.message || 'Request failed'), data.success ? 'success' : 'error');
+                }
+                if (data.success) this.updateDetailInfoBar();
+            } catch (e) {
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('Request failed.', 'error');
+                }
+            }
+        },
+
+        async requestEpisode(tmdbId, seasonNum, episodeNum) {
+            const instanceId = this.getTVHuntInstanceId();
+            if (!instanceId) {
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('No TV Hunt instance selected.', 'error');
+                }
+                return;
+            }
+            const title = (this.currentSeries && (this.currentSeries.title || this.currentSeries.name)) || '';
+            if (!title) return;
+            try {
+                const r = await fetch(`./api/tv-hunt/request?instance_id=${instanceId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        series_title: title,
+                        season_number: seasonNum,
+                        episode_number: episodeNum,
+                        tmdb_id: tmdbId,
+                        search_type: 'episode',
+                        instance_id: instanceId,
+                    }),
+                });
+                const data = await r.json();
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification(data.success ? (data.message || 'Episode search sent!') : (data.message || 'Request failed'), data.success ? 'success' : 'error');
+                }
+                if (data.success) this.updateDetailInfoBar();
+            } catch (e) {
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('Request failed.', 'error');
+                }
             }
         },
 

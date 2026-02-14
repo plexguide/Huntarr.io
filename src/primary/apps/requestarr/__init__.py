@@ -532,11 +532,51 @@ class RequestarrAPI:
                 if series_tmdb == tmdb_id:
                     # Series exists in Sonarr
                     statistics = series.get('statistics', {})
-                    
                     total_episodes = statistics.get('episodeCount', 0)
                     available_episodes = statistics.get('episodeFileCount', 0)
                     missing_episodes = total_episodes - available_episodes
-                    
+                    series_id = series.get('id')
+
+                    # Fetch episode-level details (status, quality) for per-episode display
+                    seasons_with_episodes = []
+                    try:
+                        ep_resp = requests.get(
+                            f"{sonarr_url}/api/v3/episode",
+                            params={"seriesId": series_id},
+                            headers=headers,
+                            timeout=15
+                        )
+                        if ep_resp.status_code == 200:
+                            all_episodes = ep_resp.json()
+                            by_season = {}
+                            for ep in all_episodes:
+                                sn = ep.get('seasonNumber')
+                                if sn is None:
+                                    continue
+                                if sn not in by_season:
+                                    by_season[sn] = []
+                                ef = ep.get('episodeFile') or {}
+                                qobj = (ef.get('quality') or {}).get('quality') or {}
+                                qname = qobj.get('name') or ''
+                                by_season[sn].append({
+                                    'season_number': sn,
+                                    'seasonNumber': sn,
+                                    'episode_number': ep.get('episodeNumber'),
+                                    'episodeNumber': ep.get('episodeNumber'),
+                                    'status': 'available' if ep.get('hasFile') else 'missing',
+                                    'episodeFile': ef if ep.get('hasFile') else None,
+                                    'quality': qname if qname else None,
+                                })
+                            for sn in sorted(by_season.keys()):
+                                seasons_with_episodes.append({
+                                    'season_number': sn,
+                                    'seasonNumber': sn,
+                                    'episodes': by_season[sn],
+                                })
+                    except Exception as ep_err:
+                        logger.debug(f"Sonarr episode fetch for series {series_id}: {ep_err}")
+                        seasons_with_episodes = series.get('seasons', [])
+
                     # Determine "previously_requested" status intelligently:
                     # - Only mark as "previously requested" if series was requested but has NO episodes yet
                     # - If there are missing episodes, DON'T mark as previously requested (could be new episodes)
@@ -570,7 +610,7 @@ class RequestarrAPI:
                         'missing_episodes': missing_episodes,
                         'previously_requested': previously_requested,
                         'cooldown_status': cooldown_status,
-                        'seasons': series.get('seasons', [])
+                        'seasons': seasons_with_episodes,
                     }
             
             logger.info(f"Series with TMDB ID {tmdb_id} not found in Sonarr")
@@ -605,18 +645,32 @@ class RequestarrAPI:
                 return {'exists': False, 'previously_requested': already_requested_in_db, 'cooldown_status': cooldown_status}
 
             from src.primary.routes.media_hunt.discovery_tv import _get_collection_config
+            from src.primary.routes.media_hunt.helpers import _extract_quality_from_filename
             collection = _get_collection_config(instance_id)
             for s in collection:
                 if s.get('tmdb_id') == tmdb_id:
-                    seasons = s.get('seasons') or []
+                    seasons_raw = s.get('seasons') or []
                     total_eps = 0
                     available_eps = 0
-                    for sec in seasons:
+                    seasons = []
+                    for sec in seasons_raw:
                         eps = sec.get('episodes') or []
                         total_eps += len(eps)
+                        eps_enriched = []
                         for ep in eps:
-                            if (ep.get('status') or '').lower() == 'available' or ep.get('file_path'):
+                            has_file = (ep.get('status') or '').lower() == 'available' or ep.get('file_path')
+                            if has_file:
                                 available_eps += 1
+                            ep_copy = dict(ep)
+                            file_path = ep.get('file_path')
+                            if file_path:
+                                import os
+                                fname = os.path.basename(file_path)
+                                q = _extract_quality_from_filename(fname)
+                                if q and q != '-':
+                                    ep_copy['quality'] = q
+                            eps_enriched.append(ep_copy)
+                        seasons.append(dict(sec, episodes=eps_enriched))
                     missing_eps = total_eps - available_eps
                     previously_requested = already_requested_in_db or (total_eps > 0 and available_eps == 0)
                     return {
