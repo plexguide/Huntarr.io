@@ -985,6 +985,20 @@
     color: inherit;
 }
 
+/* Show-level monitor: right of title */
+.mh-hero-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.mh-hero-title-row .mh-hero-title {
+    margin-bottom: 0;
+}
+.mh-hero-series-monitor {
+    flex-shrink: 0;
+}
+
 /* Requestarr TV Detail - Season accordion */
 .requestarr-tv-seasons-list {
     display: flex;
@@ -1077,7 +1091,7 @@
 .requestarr-tv-season-item .season-actions {
     margin-left: auto;
 }
-/* Request Season: icon only. Sonarr=download, TV Hunt=plus. Red=empty, yellow=partial, grey=full/disabled */
+/* Request Season: download icon. Red=empty, yellow=partial, grey=full/disabled */
 .requestarr-tv-season-item .season-action-btn.request-season-btn {
     padding: 6px 10px;
     font-size: 0.9em;
