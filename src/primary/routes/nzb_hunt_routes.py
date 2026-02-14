@@ -325,6 +325,16 @@ def list_nzb_servers():
     return jsonify({"servers": result})
 
 
+def _parse_int(val, default):
+    """Safely parse int from JSON value."""
+    if val is None:
+        return default
+    try:
+        return int(val)
+    except (TypeError, ValueError):
+        return default
+
+
 @nzb_hunt_bp.route("/api/nzb-hunt/servers", methods=["POST"])
 def add_nzb_server():
     data = request.get_json(silent=True) or {}
@@ -336,12 +346,12 @@ def add_nzb_server():
     server = {
         "name": (data.get("name") or "Server").strip() or "Server",
         "host": host,
-        "port": int(data.get("port", 563)),
+        "port": _parse_int(data.get("port"), 563),
         "ssl": bool(data.get("ssl", True)),
         "username": (data.get("username") or "").strip(),
         "password": data.get("password", ""),
-        "connections": int(data.get("connections", 8)),
-        "priority": int(data.get("priority", 0)),
+        "connections": _parse_int(data.get("connections"), 8),
+        "priority": _parse_int(data.get("priority"), 0),
         "enabled": bool(data.get("enabled", True)),
         "bandwidth_used": 0,
         "bandwidth_pct": 0,
@@ -370,15 +380,15 @@ def update_nzb_server(index):
     srv = servers[index]
     srv["name"] = (data.get("name", srv.get("name", "Server")) or "Server").strip() or "Server"
     srv["host"] = host
-    srv["port"] = int(data.get("port", srv.get("port", 563)))
+    srv["port"] = _parse_int(data.get("port"), srv.get("port", 563))
     srv["ssl"] = bool(data.get("ssl", srv.get("ssl", True)))
     srv["username"] = data.get("username", srv.get("username", ""))
     # Only update password if a non-empty value is provided
     pw = data.get("password", "")
     if pw:
         srv["password"] = pw
-    srv["connections"] = int(data.get("connections", srv.get("connections", 8)))
-    srv["priority"] = int(data.get("priority", srv.get("priority", 0)))
+    srv["connections"] = _parse_int(data.get("connections"), srv.get("connections", 8))
+    srv["priority"] = _parse_int(data.get("priority"), srv.get("priority", 0))
     srv["enabled"] = bool(data.get("enabled", srv.get("enabled", True)))
     cfg["servers"] = servers
     _save_config(cfg)
@@ -738,7 +748,7 @@ def nzb_hunt_set_speed_limit():
     """
     try:
         data = request.get_json(silent=True) or {}
-        bps = int(data.get("speed_limit_bps", 0))
+        bps = _parse_int(data.get("speed_limit_bps"), 0)
         mgr = _get_download_manager()
         mgr.set_speed_limit(bps)
         return jsonify({
@@ -832,7 +842,7 @@ def nzb_hunt_test_single_server():
         if not host:
             return jsonify({"success": False, "message": "Host is required"}), 200
 
-        port = int(data.get("port", 563))
+        port = _parse_int(data.get("port"), 563)
         use_ssl = bool(data.get("ssl", True))
         username = (data.get("username") or "").strip()
         password = (data.get("password") or "").strip()

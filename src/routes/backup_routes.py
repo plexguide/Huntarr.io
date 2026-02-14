@@ -589,8 +589,11 @@ def backup_settings():
             data = request.get_json() or {}
             
             # Validate settings
-            frequency = int(data.get('frequency', 3))
-            retention = int(data.get('retention', 3))
+            try:
+                frequency = int(data.get('frequency', 3))
+                retention = int(data.get('retention', 3))
+            except (TypeError, ValueError):
+                return jsonify({"success": False, "error": "Frequency and retention must be valid integers"}), 400
             
             if frequency < 1 or frequency > 30:
                 return jsonify({"success": False, "error": "Frequency must be between 1 and 30 days"}), 400

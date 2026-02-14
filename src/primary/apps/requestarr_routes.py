@@ -496,7 +496,7 @@ def get_cooldown_settings():
 def set_cooldown_settings():
     """Set cooldown period setting"""
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
         cooldown_hours = data.get('cooldown_hours', 24)
         
         requestarr_api.set_cooldown_hours(cooldown_hours)
@@ -519,7 +519,7 @@ def get_discover_filters():
 def set_discover_filters():
     """Set discover filter settings"""
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
         region = data.get('region', '')
         languages = data.get('languages', [])
         providers = data.get('providers', [])
@@ -545,7 +545,7 @@ def get_default_instances():
 def set_default_instances():
     """Set default instance settings for discovery"""
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
         movie_instance = data.get('movie_instance', '')
         tv_instance = data.get('tv_instance', '')
         
@@ -570,7 +570,7 @@ def get_modal_preferences():
 def set_modal_preferences():
     """Set modal preferences"""
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
         requestarr_api.set_modal_preferences(data)
         return jsonify({'success': True})
     except Exception as e:
@@ -653,7 +653,7 @@ def get_blacklisted_genres():
 def set_blacklisted_genres():
     """Set blacklisted TV and movie genre IDs"""
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
         blacklisted_tv = data.get('blacklisted_tv_genres', [])
         blacklisted_movie = data.get('blacklisted_movie_genres', [])
         requestarr_api.set_blacklisted_genres(blacklisted_tv, blacklisted_movie)
@@ -690,7 +690,7 @@ def get_genres(media_type):
 def add_hidden_media():
     """Add media to hidden list"""
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
         tmdb_id = data.get('tmdb_id')
         media_type = data.get('media_type')
         title = data.get('title')

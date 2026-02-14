@@ -159,7 +159,7 @@ def _validate_newznab_api_key(base_url, api_key, timeout=10):
                 if 'channel' in data or 'item' in data or 'items' in data:
                     return True, None
                 return False, 'Invalid API key or unexpected response'
-            except (ValueError, TypeError):
+            except (ValueError, TypeError, json.JSONDecodeError):
                 pass
         root = ET.fromstring(text)
         err = root.find('.//{http://www.newznab.com/DTD/2010/feeds/attributes/}error')

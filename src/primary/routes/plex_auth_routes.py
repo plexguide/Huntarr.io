@@ -93,7 +93,7 @@ def check_pin(pin_id):
 def handle_oauth():
     """Handle Plex OAuth callback with authorization code"""
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
         auth_code = data.get('code')
         state = data.get('state')  # This should contain our PIN ID
         
@@ -151,7 +151,7 @@ def handle_oauth():
 def handle_oauth_callback():
     """Handle Plex OAuth callback for login flow"""
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
         auth_code = data.get('code')
         state = data.get('state')
         
