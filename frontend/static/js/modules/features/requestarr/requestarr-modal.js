@@ -261,9 +261,14 @@ class RequestarrModal {
                     const opt = document.createElement('option');
                     opt.value = instance.compoundValue || instance.name;
                     opt.textContent = instance.label || `${isTVShow ? (instance.appType === 'tv_hunt' ? 'TV Hunt' : 'Sonarr') : (instance.appType === 'movie_hunt' ? 'Movie Hunt' : 'Radarr')} \u2013 ${instance.name}`;
-                    if ((instance.compoundValue || instance.name) === defaultInstance) opt.selected = true;
+                    const isSelected = (instance.compoundValue || instance.name) === defaultInstance;
+                    if (isSelected) opt.selected = true;
                     instanceSelect.appendChild(opt);
                 });
+                // When no default was set, select first option so Monitor/min-availability reflect the visible selection
+                if (!defaultInstance && uniqueInstances.length > 0) {
+                    instanceSelect.selectedIndex = 0;
+                }
             }
             // Attach change handler
             instanceSelect.onchange = () => this.instanceChanged(instanceSelect.value);
@@ -300,7 +305,9 @@ class RequestarrModal {
             requestBtn.classList.remove('disabled', 'success');
             requestBtn.textContent = 'Request';
         }
-        this._applyMovieHuntModalMode(defaultInstance, isTVShow, labelEl, requestBtn);
+        // Use actual dropdown selection so TV Hunt Monitor field shows when first option is TV Hunt (defaultInstance may be '')
+        const effectiveInstance = (instanceSelect && instanceSelect.value) ? instanceSelect.value : defaultInstance;
+        this._applyMovieHuntModalMode(effectiveInstance, isTVShow, labelEl, requestBtn);
 
         if (defaultInstance) {
             // Instance exists — show checking status and load data
