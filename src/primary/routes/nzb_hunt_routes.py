@@ -50,6 +50,11 @@ def _load_config():
     return {}
 
 
+def has_nzb_servers() -> bool:
+    """Check if any usenet servers are configured. Uses same config path as server add/edit."""
+    return len(_load_config().get("servers", [])) > 0
+
+
 def _save_config(cfg):
     path = _nzb_config_path()
     try:

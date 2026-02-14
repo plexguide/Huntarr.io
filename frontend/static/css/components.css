@@ -304,6 +304,17 @@
     color: var(--accent-color);
 }
 
+.connection-status .client-status-link {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+
+.connection-status .client-status-link:hover {
+    opacity: 0.9;
+}
+
 /* Footer */
 .footer {
     text-align: center;

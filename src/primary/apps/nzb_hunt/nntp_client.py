@@ -4,9 +4,15 @@ NNTP Client - Connect to Usenet servers and download articles.
 Uses Python's built-in nntplib with connection pooling and retry logic.
 Supports SSL/TLS connections, multiple server priorities, parallel
 downloading via thread-safe connection pools, and per-server bandwidth tracking.
+
+nntplib was removed from the stdlib in Python 3.13; we use a vendored copy
+when the built-in module is unavailable.
 """
 
-import nntplib
+try:
+    import nntplib  # type: ignore[import-untyped]
+except ImportError:
+    from src.primary.vendor import nntplib
 import ssl
 import socket
 import threading

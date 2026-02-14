@@ -277,7 +277,8 @@ class NZBHuntDownloadManager:
         self._worker_thread: Optional[threading.Thread] = None
         self._running = False
         self._paused_global = False
-        self._config_dir = self._detect_config_dir()
+        from src.primary.utils.config_paths import CONFIG_DIR
+        self._config_dir = str(CONFIG_DIR)
         # Connection check cache (same Usenet servers used by Movie Hunt / future TV Hunt)
         self._connection_ok = False
         self._connection_check_time = 0.0
@@ -308,16 +309,6 @@ class NZBHuntDownloadManager:
         
         # Auto-start worker if there are queued items (e.g., after restart)
         self._ensure_worker_running()
-    
-    def _detect_config_dir(self) -> str:
-        """Detect config directory."""
-        if os.path.isdir("/config"):
-            return "/config"
-        base = os.path.dirname(os.path.dirname(os.path.dirname(
-            os.path.dirname(os.path.abspath(__file__)))))
-        data_dir = os.path.join(base, "data")
-        os.makedirs(data_dir, exist_ok=True)
-        return data_dir
     
     def _state_path(self) -> str:
         return os.path.join(self._config_dir, "nzb_hunt_queue.json")

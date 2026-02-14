@@ -235,15 +235,16 @@ def _register_clients_routes(bp, get_instance_id, config_key, route_prefix, use_
             data = request.get_json() or {}
             client_type = (data.get('type') or 'nzbget').strip().lower()
 
-            if client_type == 'nzbhunt' and not route_prefix:
+            if client_type in ('nzbhunt', 'nzb_hunt'):
                 try:
+                    from src.primary.routes.nzb_hunt_routes import has_nzb_servers
                     from src.primary.apps.nzb_hunt.download_manager import get_manager
-                    mgr = get_manager()
-                    if not mgr.has_servers():
+                    if not has_nzb_servers():
                         return jsonify({
                             'success': False,
                             'message': 'No usenet servers configured. Go to NZB Hunt → Settings to add servers.'
                         }), 200
+                    mgr = get_manager()
                     results = mgr.test_servers()
                     connected = [r for r in results if r[1]]
                     if connected:

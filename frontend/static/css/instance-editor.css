@@ -5,7 +5,8 @@
 
 /* ---- Section root ---- */
 #instanceEditorSection,
-#movieHuntInstanceEditorSection {
+#movieHuntInstanceEditorSection,
+#mediaHuntInstanceEditorSection {
     display: none;
     width: 100%;
     height: auto !important;
@@ -19,12 +20,14 @@
 }
 
 #instanceEditorSection.active,
-#movieHuntInstanceEditorSection.active {
+#movieHuntInstanceEditorSection.active,
+#mediaHuntInstanceEditorSection.active {
     display: block !important;
 }
 
 #instanceEditorContainer,
-#movieHuntInstanceEditorContainer {
+#movieHuntInstanceEditorContainer,
+#mediaHuntInstanceEditorContainer {
     width: 100%;
     max-width: 1400px;
     margin: 0 auto;
@@ -37,7 +40,8 @@
    Header / Toolbar
    ============================================================ */
 #instanceEditorSection .instance-editor-header,
-#movieHuntInstanceEditorSection .instance-editor-header {
+#movieHuntInstanceEditorSection .instance-editor-header,
+#mediaHuntInstanceEditorSection .instance-editor-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -98,7 +102,8 @@
 
 /* ---- Buttons ---- */
 #instanceEditorSection .ie-btn,
-#movieHuntInstanceEditorSection .ie-btn {
+#movieHuntInstanceEditorSection .ie-btn,
+#mediaHuntInstanceEditorSection .ie-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -116,14 +121,16 @@
 
 /* Ghost back button */
 #instanceEditorSection .ie-btn-ghost,
-#movieHuntInstanceEditorSection .ie-btn-ghost {
+#movieHuntInstanceEditorSection .ie-btn-ghost,
+#mediaHuntInstanceEditorSection .ie-btn-ghost {
     background: rgba(148, 163, 184, 0.08);
     border: 1px solid rgba(148, 163, 184, 0.12);
     color: #94a3b8;
 }
 
 #instanceEditorSection .ie-btn-ghost:hover,
-#movieHuntInstanceEditorSection .ie-btn-ghost:hover {
+#movieHuntInstanceEditorSection .ie-btn-ghost:hover,
+#mediaHuntInstanceEditorSection .ie-btn-ghost:hover {
     background: rgba(148, 163, 184, 0.15);
     border-color: rgba(148, 163, 184, 0.22);
     color: #e2e8f0;
@@ -132,7 +139,8 @@
 
 /* Save button — disabled */
 #instanceEditorSection .save-btn-dynamic,
-#movieHuntInstanceEditorSection .save-btn-dynamic {
+#movieHuntInstanceEditorSection .save-btn-dynamic,
+#mediaHuntInstanceEditorSection .save-btn-dynamic {
     background: rgba(71, 85, 105, 0.35) !important;
     color: rgba(255, 255, 255, 0.3) !important;
     cursor: not-allowed !important;
@@ -143,7 +151,8 @@
 
 /* Save button — enabled */
 #instanceEditorSection .save-btn-dynamic.enabled,
-#movieHuntInstanceEditorSection .save-btn-dynamic.enabled {
+#movieHuntInstanceEditorSection .save-btn-dynamic.enabled,
+#mediaHuntInstanceEditorSection .save-btn-dynamic.enabled {
     background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
     color: #fff !important;
     cursor: pointer !important;
@@ -153,7 +162,8 @@
 }
 
 #instanceEditorSection .save-btn-dynamic.enabled:hover,
-#movieHuntInstanceEditorSection .save-btn-dynamic.enabled:hover {
+#movieHuntInstanceEditorSection .save-btn-dynamic.enabled:hover,
+#mediaHuntInstanceEditorSection .save-btn-dynamic.enabled:hover {
     background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
     transform: translateY(-1px) !important;
     box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45), 0 2px 6px rgba(0, 0, 0, 0.15) !important;
@@ -163,14 +173,16 @@
    Grid Layout
    ============================================================ */
 #instance-editor-content *,
-#movie-hunt-instance-editor-content * {
+#movie-hunt-instance-editor-content *,
+#media-hunt-instance-editor-content * {
     box-sizing: border-box !important;
 }
 
 #instanceEditorSection .editor-grid,
-#movieHuntInstanceEditorSection .editor-grid {
+#movieHuntInstanceEditorSection .editor-grid,
+#mediaHuntInstanceEditorSection .editor-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    grid-template-columns: repeat(2, minmax(360px, 1fr));
     gap: 22px;
     padding: 0;
     width: 100%;
@@ -181,7 +193,8 @@
    Section Cards — Glass-morphism
    ============================================================ */
 #instanceEditorSection .editor-section,
-#movieHuntInstanceEditorSection .editor-section {
+#movieHuntInstanceEditorSection .editor-section,
+#mediaHuntInstanceEditorSection .editor-section {
     background: rgba(30, 41, 59, 0.32);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -197,7 +210,8 @@
 }
 
 #instanceEditorSection .editor-section:hover,
-#movieHuntInstanceEditorSection .editor-section:hover {
+#movieHuntInstanceEditorSection .editor-section:hover,
+#mediaHuntInstanceEditorSection .editor-section:hover {
     border-color: rgba(148, 163, 184, 0.14);
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
 }
@@ -206,7 +220,8 @@
    Section Titles
    ============================================================ */
 #instanceEditorSection .editor-section-title,
-#movieHuntInstanceEditorSection .editor-section-title {
+#movieHuntInstanceEditorSection .editor-section-title,
+#mediaHuntInstanceEditorSection .editor-section-title {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -221,14 +236,16 @@
 }
 
 #instanceEditorSection .editor-section-title .section-title-text,
-#movieHuntInstanceEditorSection .editor-section-title .section-title-text {
+#movieHuntInstanceEditorSection .editor-section-title .section-title-text,
+#mediaHuntInstanceEditorSection .editor-section-title .section-title-text {
     display: inline-flex;
     align-items: center;
     gap: 9px;
 }
 
 #instanceEditorSection .editor-section-title .section-title-icon,
-#movieHuntInstanceEditorSection .editor-section-title .section-title-icon {
+#movieHuntInstanceEditorSection .editor-section-title .section-title-icon,
+#mediaHuntInstanceEditorSection .editor-section-title .section-title-icon {
     width: 28px;
     height: 28px;
     display: inline-flex;
@@ -272,11 +289,26 @@
     color: #f87171;
 }
 
+/* Header row with title + status pill (e.g. INFORMATION + Enabled) */
+#instanceEditorSection .editor-section-header-inline,
+#movieHuntInstanceEditorSection .editor-section-header-inline,
+#mediaHuntInstanceEditorSection .editor-section-header-inline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 22px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+}
+
 /* ============================================================
    Field Groups & Setting Items
    ============================================================ */
 #instanceEditorSection .editor-field-group,
-#movieHuntInstanceEditorSection .editor-field-group {
+#movieHuntInstanceEditorSection .editor-field-group,
+#mediaHuntInstanceEditorSection .editor-field-group {
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -284,7 +316,9 @@
     width: 100%;
 }
 
-#instanceEditorSection .editor-field-group:last-child {
+#instanceEditorSection .editor-field-group:last-child,
+#movieHuntInstanceEditorSection .editor-field-group:last-child,
+#mediaHuntInstanceEditorSection .editor-field-group:last-child {
     margin-bottom: 0;
 }
 
@@ -300,7 +334,8 @@
 
 /* ---- Labels ---- */
 #instanceEditorSection .editor-setting-item label,
-#movieHuntInstanceEditorSection .editor-setting-item label {
+#movieHuntInstanceEditorSection .editor-setting-item label,
+#mediaHuntInstanceEditorSection .editor-setting-item label {
     color: #e2e8f0;
     font-weight: 500;
     font-size: 0.9rem;
@@ -327,7 +362,15 @@
 #movieHuntInstanceEditorSection .editor-field-group input[type="number"],
 #movieHuntInstanceEditorSection .editor-field-group input[type="password"],
 #movieHuntInstanceEditorSection .editor-setting-item select,
-#movieHuntInstanceEditorSection .editor-field-group select {
+#movieHuntInstanceEditorSection .editor-field-group select,
+#mediaHuntInstanceEditorSection .editor-setting-item input[type="text"],
+#mediaHuntInstanceEditorSection .editor-setting-item input[type="number"],
+#mediaHuntInstanceEditorSection .editor-setting-item input[type="password"],
+#mediaHuntInstanceEditorSection .editor-field-group input[type="text"],
+#mediaHuntInstanceEditorSection .editor-field-group input[type="number"],
+#mediaHuntInstanceEditorSection .editor-field-group input[type="password"],
+#mediaHuntInstanceEditorSection .editor-setting-item select,
+#mediaHuntInstanceEditorSection .editor-field-group select {
     width: 100%;
     padding: 11px 14px;
     border-radius: 10px;
@@ -344,7 +387,9 @@
 #instanceEditorSection .editor-setting-item select,
 #instanceEditorSection .editor-field-group select,
 #movieHuntInstanceEditorSection .editor-setting-item select,
-#movieHuntInstanceEditorSection .editor-field-group select {
+#movieHuntInstanceEditorSection .editor-field-group select,
+#mediaHuntInstanceEditorSection .editor-setting-item select,
+#mediaHuntInstanceEditorSection .editor-field-group select {
     cursor: pointer;
     appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
@@ -360,7 +405,11 @@
 #movieHuntInstanceEditorSection .editor-setting-item input:focus,
 #movieHuntInstanceEditorSection .editor-setting-item select:focus,
 #movieHuntInstanceEditorSection .editor-field-group input:focus,
-#movieHuntInstanceEditorSection .editor-field-group select:focus {
+#movieHuntInstanceEditorSection .editor-field-group select:focus,
+#mediaHuntInstanceEditorSection .editor-setting-item input:focus,
+#mediaHuntInstanceEditorSection .editor-setting-item select:focus,
+#mediaHuntInstanceEditorSection .editor-field-group input:focus,
+#mediaHuntInstanceEditorSection .editor-field-group select:focus {
     border-color: rgba(99, 102, 241, 0.45);
     outline: none;
     background: rgba(15, 23, 42, 0.7);
@@ -370,16 +419,19 @@
 #instanceEditorSection .editor-setting-item input::placeholder,
 #instanceEditorSection .editor-field-group input::placeholder,
 #movieHuntInstanceEditorSection .editor-setting-item input::placeholder,
-#movieHuntInstanceEditorSection .editor-field-group input::placeholder {
+#movieHuntInstanceEditorSection .editor-field-group input::placeholder,
+#mediaHuntInstanceEditorSection .editor-setting-item input::placeholder,
+#mediaHuntInstanceEditorSection .editor-field-group input::placeholder {
     color: #4a5568;
 }
 
 /* ---- Help Text ---- */
 #instanceEditorSection .editor-help-text,
-#movieHuntInstanceEditorSection .editor-help-text {
+#movieHuntInstanceEditorSection .editor-help-text,
+#mediaHuntInstanceEditorSection .editor-help-text {
     color: #64748b;
     font-size: 0.82rem;
-    margin: 2px 0 0 0 !important;
+    margin: 8px 0 0 0 !important;
     padding-left: 1px;
     line-height: 1.5;
     text-align: left !important;
@@ -387,11 +439,13 @@
 }
 
 #instanceEditorSection .editor-help-text a,
-#movieHuntInstanceEditorSection .editor-help-text a {
+#movieHuntInstanceEditorSection .editor-help-text a,
+#mediaHuntInstanceEditorSection .editor-help-text a {
     transition: opacity 0.2s ease;
 }
 #instanceEditorSection .editor-help-text a:hover,
-#movieHuntInstanceEditorSection .editor-help-text a:hover {
+#movieHuntInstanceEditorSection .editor-help-text a:hover,
+#mediaHuntInstanceEditorSection .editor-help-text a:hover {
     opacity: 0.8;
 }
 
@@ -399,7 +453,8 @@
    Connection Status Badges
    ============================================================ */
 #instanceEditorSection .connection-status,
-#movieHuntInstanceEditorSection .connection-status {
+#movieHuntInstanceEditorSection .connection-status,
+#mediaHuntInstanceEditorSection .connection-status {
     display: inline-flex;
     align-items: center;
     gap: 7px;
@@ -415,14 +470,16 @@
 }
 
 #instanceEditorSection .connection-status.checking,
-#movieHuntInstanceEditorSection .connection-status.checking {
+#movieHuntInstanceEditorSection .connection-status.checking,
+#mediaHuntInstanceEditorSection .connection-status.checking {
     background: rgba(59, 130, 246, 0.1);
     color: #60a5fa;
     border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
 #instanceEditorSection .connection-status.success,
-#movieHuntInstanceEditorSection .connection-status.success {
+#movieHuntInstanceEditorSection .connection-status.success,
+#mediaHuntInstanceEditorSection .connection-status.success {
     background: rgba(16, 185, 129, 0.1);
     color: #34d399;
     border: 1px solid rgba(16, 185, 129, 0.22);
@@ -430,7 +487,8 @@
 }
 
 #instanceEditorSection .connection-status.error,
-#movieHuntInstanceEditorSection .connection-status.error {
+#movieHuntInstanceEditorSection .connection-status.error,
+#mediaHuntInstanceEditorSection .connection-status.error {
     background: rgba(239, 68, 68, 0.1);
     color: #f87171;
     border: 1px solid rgba(239, 68, 68, 0.2);
@@ -444,7 +502,8 @@
 
 /* --- Toggle row: label + toggle on the same line --- */
 #instanceEditorSection .editor-setting-item.flex-row,
-#movieHuntInstanceEditorSection .editor-setting-item.flex-row {
+#movieHuntInstanceEditorSection .editor-setting-item.flex-row,
+#mediaHuntInstanceEditorSection .editor-setting-item.flex-row {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center !important;
@@ -454,7 +513,8 @@
 
 /* Text label fills remaining space; toggle stays at natural width */
 #instanceEditorSection .editor-setting-item.flex-row > label:not(.toggle-switch),
-#movieHuntInstanceEditorSection .editor-setting-item.flex-row > label:not(.toggle-switch) {
+#movieHuntInstanceEditorSection .editor-setting-item.flex-row > label:not(.toggle-switch),
+#mediaHuntInstanceEditorSection .editor-setting-item.flex-row > label:not(.toggle-switch) {
     min-width: 0;
     margin: 0 !important;
     overflow-wrap: anywhere;
@@ -462,7 +522,8 @@
 
 /* Toggle as a flex child — don't grow, don't shrink */
 #instanceEditorSection .toggle-switch,
-#movieHuntInstanceEditorSection .toggle-switch {
+#movieHuntInstanceEditorSection .toggle-switch,
+#mediaHuntInstanceEditorSection .toggle-switch {
     flex: 0 0 44px !important;
     margin: 0 !important;
     justify-self: end;
@@ -470,7 +531,8 @@
 
 /* Instance editor uses indigo checked colour */
 #instanceEditorSection input:checked + .toggle-slider,
-#movieHuntInstanceEditorSection input:checked + .toggle-slider {
+#movieHuntInstanceEditorSection input:checked + .toggle-slider,
+#mediaHuntInstanceEditorSection input:checked + .toggle-slider {
     background: #6366f1 !important;
     border-color: rgba(99, 102, 241, 0.5) !important;
 }
@@ -479,7 +541,8 @@
    Reset State Button
    ============================================================ */
 #instanceEditorSection .btn-reset-state,
-#movieHuntInstanceEditorSection .btn-reset-state {
+#movieHuntInstanceEditorSection .btn-reset-state,
+#mediaHuntInstanceEditorSection .btn-reset-state {
     width: 100%;
     justify-content: center;
     padding: 12px;
@@ -493,7 +556,9 @@
    ============================================================ */
 #instanceEditorSection #state-status-display,
 #movieHuntInstanceEditorSection #state-status-display,
-#movieHuntInstanceEditorSection #mh-state-status-display {
+#movieHuntInstanceEditorSection #mh-state-status-display,
+#mediaHuntInstanceEditorSection #state-status-display,
+#mediaHuntInstanceEditorSection #mh-state-status-display {
     border-radius: 12px !important;
 }
 
@@ -501,7 +566,8 @@
    Warning / Info Boxes
    ============================================================ */
 #instanceEditorSection .ie-warning-box,
-#movieHuntInstanceEditorSection .ie-warning-box {
+#movieHuntInstanceEditorSection .ie-warning-box,
+#mediaHuntInstanceEditorSection .ie-warning-box {
     padding: 12px 16px;
     border-radius: 10px;
     font-size: 0.85rem;
@@ -509,14 +575,16 @@
 }
 
 #instanceEditorSection .ie-warning-box.warn-amber,
-#movieHuntInstanceEditorSection .ie-warning-box.warn-amber {
+#movieHuntInstanceEditorSection .ie-warning-box.warn-amber,
+#mediaHuntInstanceEditorSection .ie-warning-box.warn-amber {
     background: rgba(245, 158, 11, 0.1);
     border: 1px solid rgba(245, 158, 11, 0.3);
     color: #fcd34d;
 }
 
 #instanceEditorSection .ie-warning-box.warn-red,
-#movieHuntInstanceEditorSection .ie-warning-box.warn-red {
+#movieHuntInstanceEditorSection .ie-warning-box.warn-red,
+#mediaHuntInstanceEditorSection .ie-warning-box.warn-red {
     background: rgba(239, 68, 68, 0.1);
     border: 1px solid rgba(239, 68, 68, 0.3);
     color: #fca5a5;
@@ -530,21 +598,27 @@
 #instanceEditorSection .editor-field-disabled .toggle-switch,
 #movieHuntInstanceEditorSection .editor-field-disabled input,
 #movieHuntInstanceEditorSection .editor-field-disabled select,
-#movieHuntInstanceEditorSection .editor-field-disabled .toggle-switch {
+#movieHuntInstanceEditorSection .editor-field-disabled .toggle-switch,
+#mediaHuntInstanceEditorSection .editor-field-disabled input,
+#mediaHuntInstanceEditorSection .editor-field-disabled select,
+#mediaHuntInstanceEditorSection .editor-field-disabled .toggle-switch {
     opacity: 0.45;
     pointer-events: none;
     cursor: not-allowed;
 }
 
 #instanceEditorSection .editor-field-disabled label,
-#movieHuntInstanceEditorSection .editor-field-disabled label {
+#movieHuntInstanceEditorSection .editor-field-disabled label,
+#mediaHuntInstanceEditorSection .editor-field-disabled label {
     opacity: 0.45;
 }
 
 #instanceEditorSection .editor-field-readonly .editor-input-readonly,
 #instanceEditorSection input.editor-input-readonly,
 #movieHuntInstanceEditorSection .editor-field-readonly .editor-input-readonly,
-#movieHuntInstanceEditorSection input.editor-input-readonly {
+#movieHuntInstanceEditorSection input.editor-input-readonly,
+#mediaHuntInstanceEditorSection .editor-field-readonly .editor-input-readonly,
+#mediaHuntInstanceEditorSection input.editor-input-readonly {
     background: rgba(71, 85, 105, 0.3) !important;
     color: rgba(148, 163, 184, 0.85) !important;
     cursor: not-allowed !important;
@@ -555,7 +629,8 @@
    Exempt Tags
    ============================================================ */
 #instanceEditorSection .exempt-tag-chip,
-#movieHuntInstanceEditorSection .exempt-tag-chip {
+#movieHuntInstanceEditorSection .exempt-tag-chip,
+#mediaHuntInstanceEditorSection .exempt-tag-chip {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -569,25 +644,29 @@
 }
 
 #instanceEditorSection .exempt-tag-chip:hover,
-#movieHuntInstanceEditorSection .exempt-tag-chip:hover {
+#movieHuntInstanceEditorSection .exempt-tag-chip:hover,
+#mediaHuntInstanceEditorSection .exempt-tag-chip:hover {
     background: rgba(220, 38, 38, 1);
 }
 
 #instanceEditorSection .exempt-tag-chip .exempt-tag-remove,
-#movieHuntInstanceEditorSection .exempt-tag-chip .exempt-tag-remove {
+#movieHuntInstanceEditorSection .exempt-tag-chip .exempt-tag-remove,
+#mediaHuntInstanceEditorSection .exempt-tag-chip .exempt-tag-remove {
     cursor: pointer;
     opacity: 0.8;
     transition: opacity 0.15s ease;
 }
 
 #instanceEditorSection .exempt-tag-chip .exempt-tag-remove:hover,
-#movieHuntInstanceEditorSection .exempt-tag-chip .exempt-tag-remove:hover {
+#movieHuntInstanceEditorSection .exempt-tag-chip .exempt-tag-remove:hover,
+#mediaHuntInstanceEditorSection .exempt-tag-chip .exempt-tag-remove:hover {
     opacity: 1;
 }
 
 /* Exempt tags nested section */
 #instanceEditorSection .editor-section .editor-section.exempt-tags-subsection,
-#movieHuntInstanceEditorSection .editor-section .editor-section.exempt-tags-subsection {
+#movieHuntInstanceEditorSection .editor-section .editor-section.exempt-tags-subsection,
+#mediaHuntInstanceEditorSection .editor-section .editor-section.exempt-tags-subsection {
     border: 1px solid rgba(239, 68, 68, 0.15);
     border-radius: 12px;
     padding: 18px;
@@ -597,7 +676,8 @@
 
 /* Sub-boxes for tag setting groups (missing/upgrade/shows) */
 #instanceEditorSection .tag-sub-box,
-#movieHuntInstanceEditorSection .tag-sub-box {
+#movieHuntInstanceEditorSection .tag-sub-box,
+#mediaHuntInstanceEditorSection .tag-sub-box {
     border: 1px solid rgba(148, 163, 184, 0.12);
     border-radius: 12px;
     padding: 14px 14px 10px;
@@ -667,20 +747,24 @@
    Responsive
    ============================================================ */
 @media (max-width: 900px) {
-    #instanceEditorSection .editor-grid {
+    #instanceEditorSection .editor-grid,
+    #movieHuntInstanceEditorSection .editor-grid,
+    #mediaHuntInstanceEditorSection .editor-grid {
         grid-template-columns: 1fr;
     }
 }
 
 @media (max-width: 768px) {
     #instanceEditorContainer,
-    #movieHuntInstanceEditorContainer {
+    #movieHuntInstanceEditorContainer,
+    #mediaHuntInstanceEditorContainer {
         padding: 16px 12px;
         padding-bottom: 100px;
     }
 
     #instanceEditorSection .instance-editor-header,
-    #movieHuntInstanceEditorSection .instance-editor-header {
+    #movieHuntInstanceEditorSection .instance-editor-header,
+    #mediaHuntInstanceEditorSection .instance-editor-header {
         flex-direction: row !important;
         justify-content: space-between !important;
         gap: 12px;
@@ -698,36 +782,44 @@
     }
 
     #instanceEditorSection .editor-section,
-    #movieHuntInstanceEditorSection .editor-section {
+    #movieHuntInstanceEditorSection .editor-section,
+    #mediaHuntInstanceEditorSection .editor-section {
         padding: 20px 18px;
         border-radius: 14px;
     }
 
     #instanceEditorSection .editor-section-title,
-    #movieHuntInstanceEditorSection .editor-section-title {
+    #movieHuntInstanceEditorSection .editor-section-title,
+    #mediaHuntInstanceEditorSection .editor-section-title {
         flex-direction: column;
         align-items: flex-start !important;
         gap: 10px;
     }
 
     #instanceEditorSection .connection-status,
-    #movieHuntInstanceEditorSection .connection-status {
+    #movieHuntInstanceEditorSection .connection-status,
+    #mediaHuntInstanceEditorSection .connection-status {
         max-width: 100%;
     }
 
     #instanceEditorSection .ie-btn,
-    #movieHuntInstanceEditorSection .ie-btn {
+    #movieHuntInstanceEditorSection .ie-btn,
+    #mediaHuntInstanceEditorSection .ie-btn {
         padding: 8px 14px;
         font-size: 0.82rem;
     }
 }
 
 @media (max-width: 480px) {
-    #instanceEditorSection .editor-grid {
+    #instanceEditorSection .editor-grid,
+    #movieHuntInstanceEditorSection .editor-grid,
+    #mediaHuntInstanceEditorSection .editor-grid {
         gap: 16px;
     }
 
-    #instanceEditorSection .editor-section {
+    #instanceEditorSection .editor-section,
+    #movieHuntInstanceEditorSection .editor-section,
+    #mediaHuntInstanceEditorSection .editor-section {
         padding: 18px 14px;
     }
 }

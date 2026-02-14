@@ -74,8 +74,10 @@
             if (passwordEl) passwordEl.addEventListener('input', () => this.checkClientConnection());
         }
         
-        // Initial connection check
-        this.checkClientConnection();
+        // Initial connection check (skip for NZB Hunt - built-in, no status needed)
+        if (typeVal !== 'nzbhunt') {
+            this.checkClientConnection();
+        }
 
         if (window.huntarrUI && window.huntarrUI.switchSection) {
             window.huntarrUI.switchSection('instance-editor');
@@ -119,7 +121,7 @@
                 <div class="editor-section">
                     <div class="editor-section-title" style="display: flex; align-items: center; justify-content: space-between;">
                         <span>${isNzbHunt ? 'NZB Hunt (Built-in)' : 'Connection Settings'}</span>
-                        <div id="client-connection-status-container" style="display: flex; justify-content: flex-end; flex: 1;"></div>
+                        <div id="client-connection-status-container" style="display: ${isNzbHunt ? 'none' : 'flex'}; justify-content: flex-end; flex: 1;"></div>
                     </div>
                     ${isNzbHunt ? `
                     <div class="editor-field-group">
@@ -181,10 +183,10 @@
                 </div>
                 <div class="editor-section">
                     <div class="editor-section-title">Additional Configurations</div>
-                    <div class="editor-field-group">
+                    <div class="editor-field-group"${isNzbHunt ? ' style="display: none;"' : ''}>
                         <label for="editor-client-category">Category</label>
                         <input type="text" id="editor-client-category" value="${category}" placeholder="movies" />
-                        <p class="editor-help-text">${isNzbHunt ? 'Category for organizing downloads in NZB Hunt. Must match a category configured in NZB Hunt Settings.' : 'Adding a category specific to Movie Hunt avoids conflicts with unrelated non–Movie Hunt downloads. Using a category is optional, but strongly recommended.'}</p>
+                        <p class="editor-help-text">Adding a category specific to Movie Hunt avoids conflicts with unrelated non–Movie Hunt downloads. Using a category is optional, but strongly recommended.</p>
                     </div>
                     <div class="editor-field-group">
                         <label for="editor-client-recent-priority">Recent Priority</label>
@@ -234,7 +236,11 @@
         const apiKey = apiKeyEl ? apiKeyEl.value.trim() : '';
         const username = usernameEl ? usernameEl.value.trim() : '';
         const password = passwordEl ? passwordEl.value.trim() : '';
-        const category = categoryEl ? categoryEl.value.trim() : 'movies';
+        let category = (categoryEl && !isNzbHuntType) ? categoryEl.value.trim() : 'movies';
+        if (isNzbHuntType) {
+            const orig = this._currentEditing && this._currentEditing.originalInstance;
+            category = (orig && orig.category) ? String(orig.category).trim() : '';
+        }
         const recentPriority = recentPriorityEl ? (recentPriorityEl.value || 'default').toLowerCase() : 'default';
         const olderPriority = olderPriorityEl ? (olderPriorityEl.value || 'default').toLowerCase() : 'default';
         let clientPriority = 50;
@@ -243,7 +249,7 @@
             if (!isNaN(p) && p >= 1 && p <= 99) clientPriority = p;
         }
 
-        const isNzbHuntType = type === 'nzbhunt';
+        const isNzbHuntType = (type === 'nzbhunt' || type === 'nzb_hunt');
         const body = {
             name: name || 'Unnamed',
             type: type,
@@ -319,26 +325,9 @@
             ? String(this._currentEditing.originalInstance.type).trim().toLowerCase()
             : 'nzbget';
         
-        // NZB Hunt (built-in) - no host/port needed, test server config
-        if (type === 'nzbhunt') {
-            container.innerHTML = '<span class="connection-status checking"><i class="fas fa-spinner fa-spin"></i><span>Checking servers...</span></span>';
-            fetch('./api/clients/test-connection', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ type: 'nzbhunt' })
-            })
-            .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
-            .then(function(result) {
-                const data = result.data || {};
-                if (data.success === true) {
-                    container.innerHTML = '<span class="connection-status success"><i class="fas fa-check-circle"></i><span>' + (data.message || 'NZB Hunt ready') + '</span></span>';
-                } else {
-                    container.innerHTML = '<span class="connection-status error"><i class="fas fa-exclamation-triangle"></i><span>' + (data.message || 'Configure usenet servers in NZB Hunt Settings') + '</span></span>';
-                }
-            })
-            .catch(function(err) {
-                container.innerHTML = '<span class="connection-status error"><i class="fas fa-times-circle"></i><span>' + (err.message || 'Error checking NZB Hunt') + '</span></span>';
-            });
+        // NZB Hunt (built-in) - no connection status; it's built-in and managed in NZB Hunt Settings
+        if (type === 'nzbhunt' || type === 'nzb_hunt') {
+            if (container) container.style.display = 'none';
             return;
         }
         
