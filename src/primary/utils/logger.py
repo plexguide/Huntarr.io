@@ -389,7 +389,7 @@ def debug_log(message: str, data: object = None, app_type: Optional[str] = None)
                     as_json = as_json[:500] + "..."
                 # Combine message and data in single log entry to prevent fragmentation
                 current_logger.debug(f"{message} | Data: {as_json}")
-            except:
+            except Exception:
                 data_str = str(data)
                 if len(data_str) > 500:
                     data_str = data_str[:500] + "..."

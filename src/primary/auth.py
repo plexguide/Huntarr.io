@@ -287,9 +287,13 @@ def verify_user(username: str, password: str, otp_code: str = None) -> Tuple[boo
         logger.debug(f"OTP code provided: {bool(otp_code)}")
 
         if two_fa_enabled:
+            two_fa_secret = user_data.get("two_fa_secret") or ""
+            if not two_fa_secret.strip():
+                logger.warning(f"Login attempt failed for user '{username}': 2FA enabled but secret missing.")
+                return False, False
             # If 2FA code was provided, verify it
             if otp_code:
-                totp = pyotp.TOTP(user_data.get("two_fa_secret"))
+                totp = pyotp.TOTP(two_fa_secret)
                 valid_code = totp.verify(otp_code)
                 logger.debug(f"OTP code validation result: {valid_code}")
                 if valid_code:

@@ -95,7 +95,7 @@ def get_enabled_instances():
 def request_media():
     """Request media through app instance"""
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
         logger.info(f"[Requestarr] Received request: {data}")
         
         # Validate required fields

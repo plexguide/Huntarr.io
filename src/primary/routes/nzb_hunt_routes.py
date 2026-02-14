@@ -548,7 +548,7 @@ def browse_nzb_dirs():
     try:
         entries = sorted(os.listdir(path))
     except Exception as e:
-        return jsonify({"path": path, "directories": [], "error": "Cannot list directory"})
+        return jsonify({"path": path, "directories": [], "error": "Cannot list directory"}), 500
 
     dirs = []
     for entry in entries:

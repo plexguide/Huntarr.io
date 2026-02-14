@@ -1065,6 +1065,6 @@ def upload_backup():
             for temp_dir in temp_dirs:
                 if temp_dir.is_dir():
                     shutil.rmtree(temp_dir, ignore_errors=True)
-        except:
-            pass
+        except Exception as cleanup_err:
+            logger.debug(f"Cleanup after upload error: {cleanup_err}")
         return jsonify({"success": False, "error": str(e)}), 500
