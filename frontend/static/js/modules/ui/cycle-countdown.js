@@ -14,8 +14,8 @@ window.CycleCountdown = (function() {
     const pendingResets = {};
     // Per-instance cycle activity (e.g. "Season Search (360/600)" or "Processing missing") when running
     const cycleActivities = {};
-    // List of apps to track (movie_hunt first so it appears first when configured)
-    const trackedApps = ['movie_hunt', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'whisparr-v3', 'eros', 'swaparr'];
+    // List of apps to track (movie_hunt, tv_hunt first so they appear first when configured)
+    const trackedApps = ['movie_hunt', 'tv_hunt', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'whisparr-v3', 'eros', 'swaparr'];
     
     function getBaseUrl() {
         return (window.HUNTARR_BASE_URL || '');
@@ -226,6 +226,19 @@ window.CycleCountdown = (function() {
         });
     }
     
+    // Replace any "Loading..." timers with "Starting Cycle" so we never leave them stuck
+    function clearStaleLoadingTimers() {
+        trackedApps.forEach(app => {
+            getTimerElements(app).forEach(timerElement => {
+                const timerValue = timerElement.querySelector('.timer-value');
+                if (timerValue && timerValue.textContent === 'Loading...') {
+                    timerValue.textContent = 'Starting Cycle';
+                    timerValue.classList.remove('refreshing-state');
+                }
+            });
+        });
+    }
+
     // Return all timer elements for an app (grid cards AND list-mode rows)
     // Excludes timers inside hidden (old static) cards.
     function getTimerElements(app) {
@@ -423,6 +436,7 @@ window.CycleCountdown = (function() {
                 }
                 
                 if (dataProcessed) {
+                    clearStaleLoadingTimers();
                     // When any instance still has no next_cycle (shows "Starting Cycle"), poll every 2s until we get
                     // a countdown (sleep just started; backend sets next_cycle shortly)
                     const hasStartingCycleWithInstances = Object.keys(data).some(app => {
@@ -443,6 +457,7 @@ window.CycleCountdown = (function() {
                     }
                     resolve(data);
                 } else {
+                    clearStaleLoadingTimers();
                     resolve({}); // No configured apps found
                 }
             })
@@ -683,9 +698,16 @@ window.CycleCountdown = (function() {
     });
     
     // Refresh all cycle data immediately (for timezone changes)
+    // When called right after list-mode render, a second delayed refresh ensures
+    // timers (which may not exist yet) get updated — fixes TV Hunt etc. stuck on "Loading..."
     function refreshAllData() {
         fetchAllCycleData()
-            .then(() => {})
+            .then(() => {
+                // Delayed refresh to catch timers that appeared after first fetch (list-mode race)
+                safeSetTimeout(() => {
+                    fetchAllCycleData().then(clearStaleLoadingTimers).catch(() => {});
+                }, 500);
+            })
             .catch(() => {});
     }
 

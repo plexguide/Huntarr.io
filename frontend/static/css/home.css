@@ -676,6 +676,48 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════
+   NARROW DESKTOP — list mode (small but not mobile)
+   Prevents jumbled API + Status when viewport is 769px–1100px
+   ═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 1100px) and (min-width: 769px) {
+    .app-list-table colgroup .col-instance { width: 16%; }
+    .app-list-table colgroup .col-searches { width: 11%; }
+    .app-list-table colgroup .col-upgrades { width: 11%; }
+    .app-list-table colgroup .col-api      { width: 16%; }
+    .app-list-table colgroup .col-status  { width: 30%; }
+    .app-list-table colgroup .col-actions  { width: 8%; }
+
+    /* Status column: min-width for timer, clear visual separation from API */
+    .app-list-table tbody td.list-status {
+        min-width: 115px;
+        padding-left: 14px;
+        margin-left: 6px;
+        border-left: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .app-list-table tbody .list-api {
+        gap: 6px;
+        max-width: 92%;
+    }
+    /* Abbreviated headers to avoid jumbled "FOUND / SEARCHESUPGRADES" */
+    .app-list-table thead th.col-searches,
+    .app-list-table thead th.col-upgrades {
+        font-size: 0;
+        white-space: nowrap;
+    }
+    .app-list-table thead th.col-searches::after,
+    .app-list-table thead th.col-upgrades::after {
+        content: attr(data-abbr);
+        font-size: 0.62rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+    .app-list-table thead th {
+        font-size: 0.65rem;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    MOBILE ADJUSTMENTS
    ═══════════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {

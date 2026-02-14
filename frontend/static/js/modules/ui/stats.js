@@ -586,8 +586,8 @@ window.HuntarrStats = {
                     '</colgroup>' +
                     '<thead><tr>' +
                         '<th>Instance</th>' +
-                        '<th>' + (app === 'movie_hunt' || app === 'tv_hunt' ? 'Found / Searches' : 'Searches') + '</th>' +
-                        '<th>' + (app === 'movie_hunt' || app === 'tv_hunt' ? 'Found / Upgrades' : 'Upgrades') + '</th>' +
+                        '<th class="col-searches" data-abbr="' + (app === 'movie_hunt' || app === 'tv_hunt' ? 'F/Srch' : 'Searches') + '">' + (app === 'movie_hunt' || app === 'tv_hunt' ? 'Found / Searches' : 'Searches') + '</th>' +
+                        '<th class="col-upgrades" data-abbr="' + (app === 'movie_hunt' || app === 'tv_hunt' ? 'F/Upg' : 'Upgrades') + '">' + (app === 'movie_hunt' || app === 'tv_hunt' ? 'Found / Upgrades' : 'Upgrades') + '</th>' +
                         '<th>API Usage</th>' +
                         '<th>Status</th>' +
                         '<th></th>' +
