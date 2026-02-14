@@ -1239,11 +1239,8 @@ export class RequestarrContent {
                     this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
                 }
             } else {
-                // For TV shows: TV Hunt = popup unless in library; Sonarr = always detail page
-                const tvInstance = card.suggestedInstance || this.selectedTVInstance;
-                const tvDecoded = tvInstance ? decodeInstanceValue(tvInstance, 'sonarr') : { appType: 'sonarr' };
-                const isTVHunt = tvDecoded.appType === 'tv_hunt';
-                const shouldOpenModal = isTVHunt && !inLibrary;
+                // For TV shows (Sonarr + TV Hunt): modal when not requested and not in library; detail page when requested or in library
+                const shouldOpenModal = !inLibrary && !partial;
                 if (shouldOpenModal) {
                     this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
                 } else if (window.RequestarrTVDetail && window.RequestarrTVDetail.openDetail) {

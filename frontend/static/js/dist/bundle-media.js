@@ -1106,6 +1106,8 @@
                     openRequestModal();
                 }
             };
+            // When not in library and not requested: any click opens modal. When requested or in library: click opens detail page.
+            const shouldOpenModal = !inLibrary && !partial;
             if (hideBtnEl) hideBtnEl.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); window.MediaHunt.hideMediaFromHome(item, card); });
             if (deleteBtnEl) deleteBtnEl.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); window.MediaHunt.openDeleteModalFromHome(item, card); });
             card.style.cursor = 'pointer';
@@ -1113,7 +1115,11 @@
                 if (hideBtnEl && (e.target === hideBtnEl || hideBtnEl.contains(e.target))) return;
                 if (deleteBtnEl && (e.target === deleteBtnEl || deleteBtnEl.contains(e.target))) return;
                 if (requestBtn && (e.target === requestBtn || requestBtn.contains(e.target))) { e.preventDefault(); e.stopPropagation(); openRequestModal(); return; }
-                openDetailPage();
+                if (shouldOpenModal) {
+                    openRequestModal();
+                } else {
+                    openDetailPage();
+                }
             });
             return card;
         },
