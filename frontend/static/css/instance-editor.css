@@ -326,6 +326,15 @@ button.reqset-back-btn {
     align-items: start;
 }
 
+/* NZB Hunt client: single column, natural width flow */
+#instanceEditorSection .editor-grid.editor-grid-nzbhunt {
+    grid-template-columns: 1fr;
+    max-width: 640px;
+}
+#instanceEditorSection .editor-grid.editor-grid-nzbhunt .editor-section-single {
+    width: 100%;
+}
+
 /* ============================================================
    Section Cards — Glass-morphism
    ============================================================ */

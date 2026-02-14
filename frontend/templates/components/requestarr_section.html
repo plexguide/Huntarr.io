@@ -776,15 +776,21 @@
                     <div class="mh-req-fields">
                         <div class="mh-req-field">
                             <label>Instance</label>
-                            <select id="modal-instance-select" aria-label="Instance">
-                                <option value="">Loading...</option>
-                            </select>
+                            <div class="mh-req-instance-wrap">
+                                <a href="#" id="modal-instance-info-icon" class="mh-req-root-info-icon" style="display: none;" title="Go to Instances to configure" aria-label="Configure instances"><i class="fas fa-info-circle"></i></a>
+                                <select id="modal-instance-select" aria-label="Instance">
+                                    <option value="">Loading...</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="mh-req-field">
                             <label>Root Folder</label>
-                            <select id="modal-root-folder">
-                                <option value="">Loading...</option>
-                            </select>
+                            <div class="mh-req-root-folder-wrap">
+                                <a href="#" id="modal-root-folder-info-icon" class="mh-req-root-info-icon" style="display: none;" title="Go to Root Folders to configure" aria-label="Configure root folders"><i class="fas fa-info-circle"></i></a>
+                                <select id="modal-root-folder">
+                                    <option value="">Loading...</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="mh-req-field">
                             <label>Quality Profile</label>

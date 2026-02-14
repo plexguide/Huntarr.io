@@ -129,6 +129,8 @@
                     selected = combined[0].value;
                 }
                 selectEl.value = selected;
+                self._applyRequestarrGotoInstance(selectEl);
+                selected = selectEl.value || selected;
                 var noInstEl = document.getElementById('settings-root-folders-no-instances');
                 var noIdxEl = document.getElementById('settings-root-folders-no-indexers');
                 var noCliEl = document.getElementById('settings-root-folders-no-clients');
@@ -156,6 +158,27 @@
             });
         },
 
+        _applyRequestarrGotoInstance: function(selectEl) {
+            if (!selectEl) return;
+            try {
+                var goto = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('requestarr-goto-root-instance');
+                if (!goto) return;
+                var payload = JSON.parse(goto);
+                var wantApp = (payload.appType || '').indexOf('tv') >= 0 ? 'tv' : 'movie';
+                var wantLabel = (wantApp === 'tv' ? 'TV - ' : 'Movie - ') + (payload.instanceName || '');
+                for (var i = 0; i < selectEl.options.length; i++) {
+                    var opt = selectEl.options[i];
+                    if (opt.value && opt.textContent === wantLabel) {
+                        selectEl.value = opt.value;
+                        window.RootFolders._rfMode = wantApp;
+                        if (typeof localStorage !== 'undefined') localStorage.setItem('media-hunt-root-folders-last-instance', opt.value);
+                        break;
+                    }
+                }
+                sessionStorage.removeItem('requestarr-goto-root-instance');
+            } catch (e) {}
+        },
+
         onCombinedInstanceChange: function() {
             var selectEl = document.getElementById('settings-root-folders-instance-select');
             if (!selectEl) return;
@@ -178,6 +201,7 @@
                 var val = selectEl.value || '';
                 var parts = val.split(':');
                 if (parts.length === 2) self._rfMode = parts[0] === 'tv' ? 'tv' : 'movie';
+                self._applyRequestarrGotoInstance(selectEl);
                 self.refreshList();
             }
             if (selectEl && !selectEl._rfChangeBound) {

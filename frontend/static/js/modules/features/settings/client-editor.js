@@ -115,10 +115,11 @@
 
         const isNzbHunt = typeVal === 'nzbhunt';
         const hideForNzbHunt = isNzbHunt ? ' style="display: none;"' : '';
+        const nzbHuntGridClass = isNzbHunt ? ' editor-grid-nzbhunt' : '';
 
         return `
-            <div class="editor-grid">
-                <div class="editor-section">
+            <div class="editor-grid${nzbHuntGridClass}">
+                <div class="editor-section${isNzbHunt ? ' editor-section-single' : ''}">
                     <div class="editor-section-title" style="display: flex; align-items: center; justify-content: space-between;">
                         <span>${isNzbHunt ? 'NZB Hunt (Built-in)' : 'Connection Settings'}</span>
                         <div id="client-connection-status-container" style="display: ${isNzbHunt ? 'none' : 'flex'}; justify-content: flex-end; flex: 1;"></div>
@@ -150,11 +151,13 @@
                         </div>
                         <p class="editor-help-text">Enable or disable this download client</p>
                     </div>
+                    ${!isNzbHunt ? `
                     <div class="editor-field-group">
                         <label for="editor-client-name">Name</label>
-                        <input type="text" id="editor-client-name" value="${name}" placeholder="${isNzbHunt ? 'NZB Hunt' : 'e.g. My ' + (typeVal === 'sabnzbd' ? 'SABnzbd' : 'NZBGet')}" />
+                        <input type="text" id="editor-client-name" value="${name}" placeholder="${typeVal === 'sabnzbd' ? 'e.g. My SABnzbd' : 'e.g. My NZBGet'}" />
                         <p class="editor-help-text">A friendly name to identify this client</p>
                     </div>
+                    ` : ''}
                     <div class="editor-field-group"${hideForNzbHunt}>
                         <label for="editor-client-host">Host</label>
                         <input type="text" id="editor-client-host" value="${host}" placeholder="localhost or 192.168.1.10" />
@@ -180,14 +183,16 @@
                         <input type="password" id="editor-client-password" placeholder="${pwdPlaceholder.replace(/"/g, '&quot;')}" autocomplete="off" />
                         <p class="editor-help-text">${isEdit ? 'Leave blank to keep existing password' : 'Password for authentication (if required)'}</p>
                     </div>
+                    ${!isNzbHunt ? `
                 </div>
                 <div class="editor-section">
                     <div class="editor-section-title">Additional Configurations</div>
-                    <div class="editor-field-group"${isNzbHunt ? ' style="display: none;"' : ''}>
+                    <div class="editor-field-group">
                         <label for="editor-client-category">Category</label>
                         <input type="text" id="editor-client-category" value="${category}" placeholder="movies" />
                         <p class="editor-help-text">Adding a category specific to Movie Hunt avoids conflicts with unrelated non–Movie Hunt downloads. Using a category is optional, but strongly recommended.</p>
                     </div>
+                    ` : ''}
                     <div class="editor-field-group">
                         <label for="editor-client-recent-priority">Recent Priority</label>
                         <select id="editor-client-recent-priority">${recentOptionsHtml}</select>
@@ -222,10 +227,11 @@
         const olderPriorityEl = document.getElementById('editor-client-older-priority');
         const clientPriorityEl = document.getElementById('editor-client-priority');
 
-        const name = nameEl ? nameEl.value.trim() : '';
         const type = (this._currentEditing && this._currentEditing.originalInstance && this._currentEditing.originalInstance.type)
             ? String(this._currentEditing.originalInstance.type).trim().toLowerCase()
             : 'nzbget';
+        const isNzbHuntType = (type === 'nzbhunt' || type === 'nzb_hunt');
+        const name = isNzbHuntType ? 'NZB Hunt' : (nameEl ? nameEl.value.trim() : '');
         const host = hostEl ? hostEl.value.trim() : '';
         let port = 8080;
         if (portEl && portEl.value.trim() !== '') {
@@ -249,9 +255,8 @@
             if (!isNaN(p) && p >= 1 && p <= 99) clientPriority = p;
         }
 
-        const isNzbHuntType = (type === 'nzbhunt' || type === 'nzb_hunt');
         const body = {
-            name: name || 'Unnamed',
+            name: isNzbHuntType ? 'NZB Hunt' : (name || 'Unnamed'),
             type: type,
             host: isNzbHuntType ? 'internal' : host,
             port: isNzbHuntType ? 0 : port,

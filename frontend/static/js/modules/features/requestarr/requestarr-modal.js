@@ -45,6 +45,8 @@ class RequestarrModal {
         if (posterImg) posterImg.src = './static/images/blackout.jpg';
         if (requestBtn) { requestBtn.disabled = true; requestBtn.textContent = 'Request'; requestBtn.classList.remove('disabled', 'success'); }
         if (instanceSelect) instanceSelect.innerHTML = '<option value="">Loading...</option>';
+        const instanceInfoIcon = document.getElementById('modal-instance-info-icon');
+        if (instanceInfoIcon) instanceInfoIcon.style.display = 'none';
         if (rootSelect) rootSelect.innerHTML = '<option value="">Loading...</option>';
         if (qualitySelect) qualitySelect.innerHTML = '<option value="">Loading...</option>';
 
@@ -260,9 +262,12 @@ class RequestarrModal {
         const instanceSelect = document.getElementById('modal-instance-select');
         if (instanceSelect) {
             instanceSelect.innerHTML = '';
+            const instanceInfoIcon = document.getElementById('modal-instance-info-icon');
+            if (instanceInfoIcon) instanceInfoIcon.style.display = 'none';
             if (uniqueInstances.length === 0) {
                 instanceSelect.innerHTML = '<option value="">No Instance Configured</option>';
                 instanceSelect.classList.add('field-warning');
+                this._showInstanceInfoIcon();
             } else {
                 instanceSelect.classList.remove('field-warning');
                 uniqueInstances.forEach(instance => {
@@ -358,6 +363,8 @@ class RequestarrModal {
         const actualInstanceName = decoded.name;
         rootSelect.innerHTML = '<option value="">Loading...</option>';
         rootSelect.classList.remove('field-warning');
+        const infoIcon = document.getElementById('modal-root-folder-info-icon');
+        if (infoIcon) infoIcon.style.display = 'none';
 
         try {
             const response = await fetch(`./api/requestarr/rootfolders?app_type=${appType}&instance_name=${encodeURIComponent(actualInstanceName)}`);
@@ -382,6 +389,7 @@ class RequestarrModal {
                 if (seenPaths.size === 0) {
                     rootSelect.innerHTML = '<option value="">No Root Configured</option>';
                     rootSelect.classList.add('field-warning');
+                    this._showRootFolderInfoIcon(instanceName, isTVShow);
                 } else {
                     rootSelect.classList.remove('field-warning');
                     rootSelect.innerHTML = '';
@@ -405,15 +413,69 @@ class RequestarrModal {
             } else {
                 rootSelect.innerHTML = '<option value="">No Root Configured</option>';
                 rootSelect.classList.add('field-warning');
+                this._showRootFolderInfoIcon(instanceName, isTVShow);
             }
         } catch (error) {
             console.error('[RequestarrModal] Error loading root folders:', error);
             rootSelect.innerHTML = '<option value="">No Root Configured</option>';
             rootSelect.classList.add('field-warning');
+            this._showRootFolderInfoIcon(instanceName, isTVShow);
         } finally {
             this._loadingModalRootFolders = false;
             this._updateRequestButtonFromRootFolder();
         }
+    }
+
+    /**
+     * Show info icon when no instance configured; click navigates to Instances page.
+     */
+    _showInstanceInfoIcon() {
+        const infoIcon = document.getElementById('modal-instance-info-icon');
+        if (!infoIcon) return;
+        infoIcon.style.display = '';
+        const self = this;
+        infoIcon.onclick = function(e) {
+            e.preventDefault();
+            self.closeModal();
+            if (window.location.hash !== '#media-hunt-instances') {
+                window.location.hash = '#media-hunt-instances';
+            } else {
+                window.dispatchEvent(new HashChangeEvent('hashchange'));
+            }
+        };
+    }
+
+    /**
+     * Show info icon when no root configured; click navigates to Root Folders page with instance selected.
+     */
+    _showRootFolderInfoIcon(instanceName, isTVShow) {
+        const decoded = decodeInstanceValue(instanceName, isTVShow ? 'sonarr' : 'radarr');
+        const appType = decoded.appType || '';
+        // Root Folders settings page only configures Movie Hunt and TV Hunt; hide icon for Sonarr/Radarr
+        if (appType !== 'movie_hunt' && appType !== 'tv_hunt') return;
+        const infoIcon = document.getElementById('modal-root-folder-info-icon');
+        if (!infoIcon) return;
+        infoIcon.style.display = '';
+        const self = this;
+        infoIcon.onclick = function(e) {
+            e.preventDefault();
+            const instanceSelect = document.getElementById('modal-instance-select');
+            const compoundValue = (instanceSelect && instanceSelect.value) || instanceName || '';
+            if (!compoundValue) return;
+            const decoded = decodeInstanceValue(compoundValue, isTVShow ? 'sonarr' : 'radarr');
+            try {
+                sessionStorage.setItem('requestarr-goto-root-instance', JSON.stringify({
+                    appType: decoded.appType || (isTVShow ? 'tv_hunt' : 'movie_hunt'),
+                    instanceName: decoded.name || ''
+                }));
+            } catch (err) {}
+            self.closeModal();
+            if (window.location.hash !== '#settings-root-folders') {
+                window.location.hash = '#settings-root-folders';
+            } else {
+                window.dispatchEvent(new HashChangeEvent('hashchange'));
+            }
+        };
     }
 
     /**

@@ -4099,6 +4099,33 @@ body.requestarr-modal-open {
     font-size: 13px !important;
     font-weight: 600 !important;
 }
+/* Instance and root folder fields: icon + select in a row */
+.mh-req-instance-wrap,
+.mh-req-root-folder-wrap {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+}
+.mh-req-instance-wrap .mh-req-root-info-icon,
+.mh-req-root-folder-wrap .mh-req-root-info-icon {
+    flex-shrink: 0;
+    color: #94a3b8;
+    font-size: 16px;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.mh-req-instance-wrap .mh-req-root-info-icon:hover,
+.mh-req-root-folder-wrap .mh-req-root-info-icon:hover {
+    color: #3b82f6;
+}
+.mh-req-instance-wrap select,
+.mh-req-root-folder-wrap select {
+    flex: 1 !important;
+    min-width: 0 !important;
+}
+
 .mh-req-field select {
     grid-column: 2 !important;
     grid-row: 1 !important;

@@ -6516,10 +6516,11 @@ document.head.appendChild(styleEl);
 
         const isNzbHunt = typeVal === 'nzbhunt';
         const hideForNzbHunt = isNzbHunt ? ' style="display: none;"' : '';
+        const nzbHuntGridClass = isNzbHunt ? ' editor-grid-nzbhunt' : '';
 
         return `
-            <div class="editor-grid">
-                <div class="editor-section">
+            <div class="editor-grid${nzbHuntGridClass}">
+                <div class="editor-section${isNzbHunt ? ' editor-section-single' : ''}">
                     <div class="editor-section-title" style="display: flex; align-items: center; justify-content: space-between;">
                         <span>${isNzbHunt ? 'NZB Hunt (Built-in)' : 'Connection Settings'}</span>
                         <div id="client-connection-status-container" style="display: ${isNzbHunt ? 'none' : 'flex'}; justify-content: flex-end; flex: 1;"></div>
@@ -6551,11 +6552,13 @@ document.head.appendChild(styleEl);
                         </div>
                         <p class="editor-help-text">Enable or disable this download client</p>
                     </div>
+                    ${!isNzbHunt ? `
                     <div class="editor-field-group">
                         <label for="editor-client-name">Name</label>
-                        <input type="text" id="editor-client-name" value="${name}" placeholder="${isNzbHunt ? 'NZB Hunt' : 'e.g. My ' + (typeVal === 'sabnzbd' ? 'SABnzbd' : 'NZBGet')}" />
+                        <input type="text" id="editor-client-name" value="${name}" placeholder="${typeVal === 'sabnzbd' ? 'e.g. My SABnzbd' : 'e.g. My NZBGet'}" />
                         <p class="editor-help-text">A friendly name to identify this client</p>
                     </div>
+                    ` : ''}
                     <div class="editor-field-group"${hideForNzbHunt}>
                         <label for="editor-client-host">Host</label>
                         <input type="text" id="editor-client-host" value="${host}" placeholder="localhost or 192.168.1.10" />
@@ -6581,14 +6584,16 @@ document.head.appendChild(styleEl);
                         <input type="password" id="editor-client-password" placeholder="${pwdPlaceholder.replace(/"/g, '&quot;')}" autocomplete="off" />
                         <p class="editor-help-text">${isEdit ? 'Leave blank to keep existing password' : 'Password for authentication (if required)'}</p>
                     </div>
+                    ${!isNzbHunt ? `
                 </div>
                 <div class="editor-section">
                     <div class="editor-section-title">Additional Configurations</div>
-                    <div class="editor-field-group"${isNzbHunt ? ' style="display: none;"' : ''}>
+                    <div class="editor-field-group">
                         <label for="editor-client-category">Category</label>
                         <input type="text" id="editor-client-category" value="${category}" placeholder="movies" />
                         <p class="editor-help-text">Adding a category specific to Movie Hunt avoids conflicts with unrelated non–Movie Hunt downloads. Using a category is optional, but strongly recommended.</p>
                     </div>
+                    ` : ''}
                     <div class="editor-field-group">
                         <label for="editor-client-recent-priority">Recent Priority</label>
                         <select id="editor-client-recent-priority">${recentOptionsHtml}</select>
@@ -6623,10 +6628,11 @@ document.head.appendChild(styleEl);
         const olderPriorityEl = document.getElementById('editor-client-older-priority');
         const clientPriorityEl = document.getElementById('editor-client-priority');
 
-        const name = nameEl ? nameEl.value.trim() : '';
         const type = (this._currentEditing && this._currentEditing.originalInstance && this._currentEditing.originalInstance.type)
             ? String(this._currentEditing.originalInstance.type).trim().toLowerCase()
             : 'nzbget';
+        const isNzbHuntType = (type === 'nzbhunt' || type === 'nzb_hunt');
+        const name = isNzbHuntType ? 'NZB Hunt' : (nameEl ? nameEl.value.trim() : '');
         const host = hostEl ? hostEl.value.trim() : '';
         let port = 8080;
         if (portEl && portEl.value.trim() !== '') {
@@ -6650,9 +6656,8 @@ document.head.appendChild(styleEl);
             if (!isNaN(p) && p >= 1 && p <= 99) clientPriority = p;
         }
 
-        const isNzbHuntType = (type === 'nzbhunt' || type === 'nzb_hunt');
         const body = {
-            name: name || 'Unnamed',
+            name: isNzbHuntType ? 'NZB Hunt' : (name || 'Unnamed'),
             type: type,
             host: isNzbHuntType ? 'internal' : host,
             port: isNzbHuntType ? 0 : port,
@@ -8758,6 +8763,8 @@ document.head.appendChild(styleEl);
                     selected = combined[0].value;
                 }
                 selectEl.value = selected;
+                self._applyRequestarrGotoInstance(selectEl);
+                selected = selectEl.value || selected;
                 var noInstEl = document.getElementById('settings-root-folders-no-instances');
                 var noIdxEl = document.getElementById('settings-root-folders-no-indexers');
                 var noCliEl = document.getElementById('settings-root-folders-no-clients');
@@ -8785,6 +8792,27 @@ document.head.appendChild(styleEl);
             });
         },
 
+        _applyRequestarrGotoInstance: function(selectEl) {
+            if (!selectEl) return;
+            try {
+                var goto = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('requestarr-goto-root-instance');
+                if (!goto) return;
+                var payload = JSON.parse(goto);
+                var wantApp = (payload.appType || '').indexOf('tv') >= 0 ? 'tv' : 'movie';
+                var wantLabel = (wantApp === 'tv' ? 'TV - ' : 'Movie - ') + (payload.instanceName || '');
+                for (var i = 0; i < selectEl.options.length; i++) {
+                    var opt = selectEl.options[i];
+                    if (opt.value && opt.textContent === wantLabel) {
+                        selectEl.value = opt.value;
+                        window.RootFolders._rfMode = wantApp;
+                        if (typeof localStorage !== 'undefined') localStorage.setItem('media-hunt-root-folders-last-instance', opt.value);
+                        break;
+                    }
+                }
+                sessionStorage.removeItem('requestarr-goto-root-instance');
+            } catch (e) {}
+        },
+
         onCombinedInstanceChange: function() {
             var selectEl = document.getElementById('settings-root-folders-instance-select');
             if (!selectEl) return;
@@ -8807,6 +8835,7 @@ document.head.appendChild(styleEl);
                 var val = selectEl.value || '';
                 var parts = val.split(':');
                 if (parts.length === 2) self._rfMode = parts[0] === 'tv' ? 'tv' : 'movie';
+                self._applyRequestarrGotoInstance(selectEl);
                 self.refreshList();
             }
             if (selectEl && !selectEl._rfChangeBound) {
