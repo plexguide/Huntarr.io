@@ -55,6 +55,22 @@ MAX_PAGES = 5  # 100 items total
 _result_cache: Dict[str, dict] = {}
 
 
+def _safe_int(val, default):
+    """Safely parse value to int, returning default on failure."""
+    try:
+        return int(val) if val is not None else default
+    except (TypeError, ValueError):
+        return default
+
+
+def _safe_float(val, default):
+    """Safely parse value to float, returning default on failure."""
+    try:
+        return float(val) if val is not None else default
+    except (TypeError, ValueError):
+        return default
+
+
 def _cache_key(settings: dict, movie_instance: str, tv_instance: str, movie_app_type: str) -> str:
     """Produce a deterministic hash of the settings + instance combo."""
     blob = json.dumps(
@@ -107,7 +123,7 @@ class SmartHuntEngine:
             page = MAX_PAGES
 
         # Determine cache TTL from settings (0 = disabled)
-        ttl_minutes = int(settings.get("cache_ttl_minutes", SMARTHUNT_DEFAULTS["cache_ttl_minutes"]))
+        ttl_minutes = _safe_int(settings.get("cache_ttl_minutes"), SMARTHUNT_DEFAULTS["cache_ttl_minutes"])
         ttl_seconds = CACHE_TTL_OPTIONS.get(ttl_minutes, ttl_minutes * 60)
 
         ck = _cache_key(settings, movie_instance, tv_instance, movie_app_type)
@@ -145,10 +161,10 @@ class SmartHuntEngine:
         """Build the full 100-item pool across all categories."""
 
         pcts = settings.get("percentages", SMARTHUNT_DEFAULTS["percentages"])
-        min_rating = float(settings.get("min_tmdb_rating", SMARTHUNT_DEFAULTS["min_tmdb_rating"]))
-        min_votes = int(settings.get("min_vote_count", SMARTHUNT_DEFAULTS["min_vote_count"]))
-        year_start = int(settings.get("year_start", SMARTHUNT_DEFAULTS["year_start"]))
-        year_end = int(settings.get("year_end", SMARTHUNT_DEFAULTS["year_end"]))
+        min_rating = _safe_float(settings.get("min_tmdb_rating"), SMARTHUNT_DEFAULTS["min_tmdb_rating"])
+        min_votes = _safe_int(settings.get("min_vote_count"), SMARTHUNT_DEFAULTS["min_vote_count"])
+        year_start = _safe_int(settings.get("year_start"), SMARTHUNT_DEFAULTS["year_start"])
+        year_end = _safe_int(settings.get("year_end"), SMARTHUNT_DEFAULTS["year_end"])
         api_key = self._get_api_key()
 
         region = discover_filters.get("region", "")

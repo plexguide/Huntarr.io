@@ -391,7 +391,10 @@ class NZBHuntDownloadManager:
             # so they don't retry forever on restart (same bad download looping)
             proc = self._get_processing_settings()
             abort_hopeless = proc.get("abort_hopeless", True)
-            abort_threshold_pct = float(proc.get("abort_threshold_pct", 5))
+            try:
+                abort_threshold_pct = float(proc.get("abort_threshold_pct", 5))
+            except (TypeError, ValueError):
+                abort_threshold_pct = 5.0
             to_remove = []
             for item in self._queue:
                 if item.state in (STATE_DOWNLOADING, STATE_ASSEMBLING, STATE_EXTRACTING):

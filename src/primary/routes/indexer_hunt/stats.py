@@ -64,14 +64,22 @@ def api_ih_stats_per_indexer():
                 by_indexer[iid] = {}
             by_indexer[iid][s['stat_type']] = s['stat_value']
 
+        def _si(val, default=0):
+            try:
+                return int(val) if val is not None else default
+            except (TypeError, ValueError):
+                return default
         result = []
         for idx in indexers:
             iid = idx['id']
             st = by_indexer.get(iid, {})
-            searches = int(st.get('search', 0))
-            grabs = int(st.get('grab', 0))
-            failures = int(st.get('failure', 0))
-            avg_ms = round(st.get('avg_response_ms', 0), 1)
+            searches = _si(st.get('search'), 0)
+            grabs = _si(st.get('grab'), 0)
+            failures = _si(st.get('failure'), 0)
+            try:
+                avg_ms = round(float(st.get('avg_response_ms') or 0), 1)
+            except (TypeError, ValueError):
+                avg_ms = 0.0
             failure_rate = 0
             if searches > 0:
                 failure_rate = round((failures / searches) * 100, 1)

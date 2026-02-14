@@ -72,18 +72,27 @@ INDEXER_DEFAULT_CATEGORIES = MOVIE_INDEXER_DEFAULT_CATEGORIES
 INDEXER_CATEGORIES = MOVIE_INDEXER_CATEGORIES
 
 
+def _safe_category_int(x, low, high):
+    """Safely parse category ID within range. Returns None if invalid."""
+    try:
+        v = int(x)
+        return v if low <= v <= high else None
+    except (TypeError, ValueError):
+        return None
+
+
 def _filter_categories_movie(ids):
     """Keep only 2000-series (Movies). No cross-ref with TV 5000 series."""
     if not isinstance(ids, (list, tuple)):
         return list(MOVIE_INDEXER_CATEGORIES_DEFAULT_IDS)
-    return [int(x) for x in ids if isinstance(x, (int, str)) and 2000 <= int(x) <= 2999]
+    return [v for x in ids if (v := _safe_category_int(x, 2000, 2999)) is not None]
 
 
 def _filter_categories_tv(ids):
     """Keep only 5000-series (TV). No cross-ref with Movie 2000 series."""
     if not isinstance(ids, (list, tuple)):
         return list(TV_INDEXER_DEFAULT_CATEGORIES)
-    return [int(x) for x in ids if isinstance(x, (int, str)) and 5000 <= int(x) <= 5999]
+    return [v for x in ids if (v := _safe_category_int(x, 5000, 5999)) is not None]
 
 
 def _get_indexers_config(instance_id):

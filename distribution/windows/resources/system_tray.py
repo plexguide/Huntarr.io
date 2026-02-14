@@ -13,16 +13,25 @@ import logging
 
 logger = logging.getLogger('HuntarrSystemTray')
 
+def _safe_port():
+    """Parse port from env with fallback. Avoids crash on invalid PORT."""
+    try:
+        return int(os.environ.get("HUNTARR_PORT", os.environ.get("PORT", 9705)))
+    except (TypeError, ValueError):
+        return 9705
+
+
 class HuntarrSystemTray:
     """System tray icon for Huntarr on Windows"""
     
-    def __init__(self, port=9705):
+    def __init__(self, port=None):
         """Initialize the system tray icon
         
         Args:
-            port (int): Port number where Huntarr web interface is running
+            port (int): Port number where Huntarr web interface is running.
+                       If None, reads from HUNTARR_PORT or PORT env.
         """
-        self.port = port
+        self.port = port if port is not None else _safe_port()
         self.icon = None
         self.running = True
         self.icon_thread = None
@@ -171,7 +180,7 @@ class HuntarrSystemTray:
             logger.error(f"Error stopping system tray: {e}")
 
 
-def create_system_tray(port=9705):
+def create_system_tray(port=None):
     """Create and return a system tray instance
     
     Args:

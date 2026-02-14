@@ -9,6 +9,18 @@ from src.primary.utils.database import get_database
 
 logger = logging.getLogger(__name__)
 
+
+def _safe_int_list(lst):
+    """Safely parse list of values to ints, skipping invalid entries."""
+    out = []
+    for x in lst or []:
+        try:
+            out.append(int(x))
+        except (TypeError, ValueError):
+            pass
+    return out
+
+
 class RequestarrAPI:
     """API handler for Requestarr functionality"""
     
@@ -29,14 +41,6 @@ class RequestarrAPI:
         languages = filters.get('languages', [])
         providers = filters.get('providers', [])
         blacklisted = self.get_blacklisted_genres()
-        def _safe_int_list(lst):
-            out = []
-            for x in lst or []:
-                try:
-                    out.append(int(x))
-                except (TypeError, ValueError):
-                    pass
-            return out
         blacklisted_movie = _safe_int_list(blacklisted.get('blacklisted_movie_genres', []))
         blacklisted_tv = _safe_int_list(blacklisted.get('blacklisted_tv_genres', []))
         
@@ -153,7 +157,7 @@ class RequestarrAPI:
         languages = filters.get('languages', [])
         providers = filters.get('providers', [])
         blacklisted = self.get_blacklisted_genres()
-        blacklisted_movie = [int(x) for x in blacklisted.get('blacklisted_movie_genres', [])]
+        blacklisted_movie = _safe_int_list(blacklisted.get('blacklisted_movie_genres', []))
         
         all_results = []
         
@@ -273,7 +277,7 @@ class RequestarrAPI:
         languages = filters.get('languages', [])
         providers = filters.get('providers', [])
         blacklisted = self.get_blacklisted_genres()
-        blacklisted_tv = [int(x) for x in blacklisted.get('blacklisted_tv_genres', [])]
+        blacklisted_tv = _safe_int_list(blacklisted.get('blacklisted_tv_genres', []))
         
         all_results = []
         
@@ -1428,8 +1432,8 @@ class RequestarrAPI:
         """Set blacklisted TV and movie genre IDs."""
         try:
             requestarr_config = self.db.get_app_config('requestarr') or {}
-            requestarr_config['blacklisted_tv_genres'] = [int(x) for x in blacklisted_tv_genres if x is not None]
-            requestarr_config['blacklisted_movie_genres'] = [int(x) for x in blacklisted_movie_genres if x is not None]
+            requestarr_config['blacklisted_tv_genres'] = _safe_int_list([x for x in blacklisted_tv_genres if x is not None])
+            requestarr_config['blacklisted_movie_genres'] = _safe_int_list([x for x in blacklisted_movie_genres if x is not None])
             self.db.save_app_config('requestarr', requestarr_config)
             logger.info(f"Set blacklisted genres - TV: {requestarr_config['blacklisted_tv_genres']}, Movie: {requestarr_config['blacklisted_movie_genres']}")
         except Exception as e:

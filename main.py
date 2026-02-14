@@ -228,8 +228,11 @@ def run_web_server():
     web_logger = get_logger("WebServer") # Use app's logger
     debug_mode = os.environ.get('DEBUG', 'false').lower() == 'true'
     host = os.environ.get('FLASK_HOST', '0.0.0.0')
-    port = int(os.environ.get('HUNTARR_PORT', os.environ.get('PORT', 9705))) # Check HUNTARR_PORT first, then PORT, then default
-    
+    try:
+        port = int(os.environ.get('HUNTARR_PORT', os.environ.get('PORT', 9705)))
+    except (TypeError, ValueError):
+        port = 9705
+
     web_logger.info(f"Starting web server on {host}:{port} (Debug: {debug_mode})...")
     
     # TODO: System tray implementation temporarily disabled
