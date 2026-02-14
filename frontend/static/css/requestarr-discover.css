@@ -9,8 +9,6 @@
 #requestarr-section .requestarr-content {
     padding: 0;
     width: 100%;
-    max-width: none !important;
-    margin: 0;
     overflow: visible;
     box-sizing: border-box;
 }

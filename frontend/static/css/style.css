@@ -136,6 +136,8 @@ button {
     flex-direction: column;
 }
 
+/* Content boundary — see content-boundary.css (single source of truth) */
+
 /* Blue slate background for main content area (Home, Media Hunt, etc.) */
 body:has(.app-container) .main-content,
 .app-container .main-content {

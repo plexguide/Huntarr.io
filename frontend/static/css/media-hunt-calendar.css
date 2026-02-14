@@ -24,8 +24,6 @@
 .media-hunt-calendar-view {
     padding: 0 0 20px 0;
     width: 100%;
-    max-width: none !important;
-    margin: 0;
     box-sizing: border-box;
 }
 

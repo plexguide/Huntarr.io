@@ -1,0 +1,29 @@
+/* ==========================================================================
+   Content Boundary — Single source of truth for page content width
+   All pages: sponsor banners, headers, content align to Import Media template.
+   Left edge: Back button | Right edge: Scan Folders / Partner Projects
+   ========================================================================== */
+
+:root {
+    --content-max-width: 1200px;
+}
+
+/* Constrain all direct content children of content-section to same width.
+   Excludes modals (position:fixed) and link tags. */
+.content-section > div:not([class*="modal"]):not([id*="modal"]),
+.content-section > section {
+    max-width: var(--content-max-width) !important;
+    width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box;
+}
+
+/* Explicit overrides for Backup & Restore, Notifications, User — ensure boundary wins */
+#backupRestoreSection .app-content-panel,
+#notificationsSection .app-content-panel,
+#userSection .app-content-panel {
+    max-width: var(--content-max-width) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}

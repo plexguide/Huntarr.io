@@ -2,10 +2,10 @@
    Backup & Restore — Modernized Huntarr Theme
    ============================================================ */
 
-/* Container */
+/* Container — align with content boundary (no horizontal padding) */
 .br-container {
     width: 100%;
-    padding: 0 16px;
+    padding: 0;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -465,7 +465,7 @@
    ============================================================ */
 @media (max-width: 768px) {
     .br-container {
-        padding: 0 4px;
+        padding: 0;
         gap: 14px;
     }
 

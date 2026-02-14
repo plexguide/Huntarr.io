@@ -23,8 +23,6 @@
 
 .nzb-hunt-container {
     width: 100%;
-    max-width: none !important;
-    margin: 0 !important;
     padding: 24px 0 !important;
     display: flex;
     flex-direction: column;

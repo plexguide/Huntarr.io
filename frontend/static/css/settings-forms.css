@@ -938,8 +938,7 @@ input#stateful_management_hours {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   Settings sub-pages — Match home page width (no centering, no extra
-   horizontal padding; content-section 40px provides consistent alignment)
+   Settings sub-pages — Use global content boundary (Import Media width)
    ═══════════════════════════════════════════════════════════════════ */
 #media-hunt-settings-default-section .app-content-panel,
 #movieManagementSection .app-content-panel,
@@ -952,8 +951,6 @@ input#stateful_management_hours {
 #settingsImportMediaSection .app-content-panel,
 #settingsRootFoldersSection .app-content-panel,
 #settingsLogsSection .app-content-panel {
-    max-width: none !important;
-    margin: 0 !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
 }

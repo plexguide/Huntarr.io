@@ -402,8 +402,6 @@
 .media-hunt-collection-view {
     padding: 0 0 20px 0;
     width: 100%;
-    max-width: none !important;
-    margin: 0;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -729,8 +727,6 @@
 #mediaHuntSection .requestarr-content {
     padding: 0;
     width: 100%;
-    max-width: none !important;
-    margin: 0;
     box-sizing: border-box;
 }
 #mediaHuntSection .requestarr-view { display: block; }
