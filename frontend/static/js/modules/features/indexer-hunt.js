@@ -77,6 +77,8 @@
                     _openIHImportPanel();
                 }
             });
+            // Edit/Delete on instance indexer cards (capture so we handle before other listeners)
+            wrapper.addEventListener('click', _onInstanceIndexerCardClick, true);
         }
         var cancelBtn = document.getElementById('ih-import-cancel');
         if (cancelBtn) cancelBtn.addEventListener('click', _closeIHImportPanel);
@@ -150,6 +152,74 @@
     function _closeIHImportPanel() {
         var panel = document.getElementById('ih-import-panel');
         if (panel) panel.style.display = 'none';
+    }
+
+    function _onInstanceIndexerCardClick(e) {
+        var grid = e.target.closest('#indexer-instances-grid-unified');
+        if (!grid || !grid.closest('#indexer-hunt-section')) return;
+        var editBtn = e.target.closest('.btn-card.edit[data-app-type="indexer"]');
+        var deleteBtn = e.target.closest('.btn-card.delete[data-app-type="indexer"]');
+        if (editBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            var card = editBtn.closest('.instance-card');
+            if (!card) return;
+            var index = parseInt(card.getAttribute('data-instance-index'), 10);
+            if (isNaN(index)) return;
+            var list = window.SettingsForms && window.SettingsForms._indexersList;
+            if (!list || index < 0 || index >= list.length) return;
+            if (window.SettingsForms && window.SettingsForms.openIndexerEditor) {
+                window.SettingsForms.openIndexerEditor(false, index, list[index]);
+            }
+            return;
+        }
+        if (deleteBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            var card = deleteBtn.closest('.instance-card');
+            if (!card) return;
+            var index = parseInt(card.getAttribute('data-instance-index'), 10);
+            if (isNaN(index)) return;
+            var list = window.SettingsForms && window.SettingsForms._indexersList;
+            if (!list || index < 0 || index >= list.length) return;
+            var indexer = list[index];
+            var name = (indexer && indexer.name) ? indexer.name : 'Unnamed';
+            var Forms = window.SettingsForms;
+            var isTV = Forms._indexersMode === 'tv';
+            var deleteId = isTV && indexer && indexer.id ? indexer.id : index;
+            if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                window.HuntarrConfirm.show({
+                    title: 'Delete Indexer',
+                    message: 'Are you sure you want to remove "' + name + '" from this instance? It will no longer be used for searches and will be removed from Index Master tracking for this instance.',
+                    confirmLabel: 'Delete',
+                    onConfirm: function() {
+                        var apiBase = Forms.getIndexersApiBase();
+                        var url = apiBase + '/' + encodeURIComponent(String(deleteId));
+                        fetch(url, { method: 'DELETE' })
+                            .then(function(r) { return r.json(); })
+                            .then(function(data) {
+                                if (data.success !== false) {
+                                    if (window.SettingsForms && window.SettingsForms.refreshIndexersList) {
+                                        window.SettingsForms.refreshIndexersList();
+                                    }
+                                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                        window.huntarrUI.showNotification('Indexer removed.', 'success');
+                                    }
+                                } else {
+                                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                        window.huntarrUI.showNotification(data.error || 'Failed to remove indexer.', 'error');
+                                    }
+                                }
+                            })
+                            .catch(function() {
+                                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                    window.huntarrUI.showNotification('Failed to remove indexer.', 'error');
+                                }
+                            });
+                    }
+                });
+            }
+        }
     }
 
     function _updateIHImportButton() {
@@ -277,7 +347,6 @@
         if (query) {
             filtered = _indexers.filter(function(idx) {
                 return (idx.name || '').toLowerCase().indexOf(query) !== -1 ||
-                       (idx.display_name || '').toLowerCase().indexOf(query) !== -1 ||
                        (idx.url || '').toLowerCase().indexOf(query) !== -1 ||
                        (idx.preset || '').toLowerCase().indexOf(query) !== -1;
             });
@@ -309,12 +378,9 @@
             var presetLabel = _getPresetLabel(idx.preset);
             var url = idx.url || '\u2014';
             var keyDisplay = idx.api_key_last4 ? '\u2022\u2022\u2022\u2022' + _esc(idx.api_key_last4) : 'No key';
-            var displayLabel = idx.display_name || idx.name || '';
-            var displayName = displayLabel ? '<span class="ih-card-display-name">' + _esc(displayLabel) + '</span>' : '';
-
             html += '<div class="ih-card' + (enabled ? '' : ' ih-card-disabled') + '" data-id="' + _esc(idx.id) + '">'
                 + '<div class="ih-card-header">'
-                    + '<div class="ih-card-name"><span>' + _esc(idx.name) + displayName + '</span></div>'
+                    + '<div class="ih-card-name"><span>' + _esc(idx.name || '') + '</span></div>'
                     + '<span class="ih-card-status ' + statusClass + '"><i class="fas ' + statusIcon + '"></i> ' + statusText + '</span>'
                 + '</div>'
                 + '<div class="ih-card-body">'
@@ -363,7 +429,6 @@
 
         var presetSel = document.getElementById('ih-form-preset');
         var nameEl = document.getElementById('ih-form-name');
-        var displayNameEl = document.getElementById('ih-form-display-name');
         var urlEl = document.getElementById('ih-form-url');
         var apiPathEl = document.getElementById('ih-form-api-path');
         var apiKeyEl = document.getElementById('ih-form-api-key');
@@ -377,7 +442,6 @@
         if (existingIdx) {
             if (presetSel) { presetSel.value = existingIdx.preset || 'manual'; presetSel.disabled = true; }
             if (nameEl) nameEl.value = existingIdx.name || '';
-            if (displayNameEl) displayNameEl.value = existingIdx.display_name || '';
             if (urlEl) { urlEl.value = existingIdx.url || ''; urlEl.readOnly = existingIdx.preset !== 'manual'; }
             if (apiPathEl) { apiPathEl.value = existingIdx.api_path || '/api'; apiPathEl.readOnly = existingIdx.preset !== 'manual'; }
             if (apiKeyEl) apiKeyEl.value = '';
@@ -391,7 +455,6 @@
         } else {
             if (presetSel) { presetSel.value = 'manual'; presetSel.disabled = false; }
             if (nameEl) nameEl.value = '';
-            if (displayNameEl) displayNameEl.value = '';
             if (urlEl) { urlEl.value = ''; urlEl.readOnly = false; }
             if (apiPathEl) { apiPathEl.value = '/api'; apiPathEl.readOnly = false; }
             if (apiKeyEl) { apiKeyEl.value = ''; apiKeyEl.placeholder = 'Enter API key'; }
@@ -431,7 +494,6 @@
     function _saveForm() {
         var nameEl = document.getElementById('ih-form-name');
         var presetEl = document.getElementById('ih-form-preset');
-        var displayNameEl = document.getElementById('ih-form-display-name');
         var urlEl = document.getElementById('ih-form-url');
         var apiPathEl = document.getElementById('ih-form-api-path');
         var apiKeyEl = document.getElementById('ih-form-api-key');
@@ -442,7 +504,6 @@
         var body = {
             name: (nameEl ? nameEl.value : '').trim(),
             preset: presetEl ? presetEl.value : 'manual',
-            display_name: (displayNameEl ? displayNameEl.value : '').trim(),
             url: (urlEl ? urlEl.value : '').trim(),
             api_path: (apiPathEl ? apiPathEl.value : '/api').trim(),
             api_key: (apiKeyEl ? apiKeyEl.value : '').trim(),

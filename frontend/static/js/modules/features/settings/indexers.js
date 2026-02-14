@@ -20,7 +20,7 @@
         const isDefault = index === 0;
         const isTV = Forms._indexersMode === 'tv';
         const indexerIdAttr = (isTV && indexer.id) ? ' data-indexer-id="' + String(indexer.id).replace(/"/g, '&quot;') + '"' : '';
-        const headerName = indexer.name || indexer.display_name || 'Unnamed';
+        const headerName = indexer.name || 'Unnamed';
         const name = headerName.replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const last4 = indexer.api_key_last4 || (indexer.api_key && indexer.api_key.slice(-4)) || '****';
         const preset = (indexer.preset || 'manual').replace(/"/g, '&quot;');
@@ -198,6 +198,76 @@
         return (settingsSection && settingsSection.classList.contains('active')) ||
                (indexMasterSection && indexMasterSection.classList.contains('active'));
     }
+
+    // Delegated Edit/Delete for instance indexer cards (unified and legacy grids)
+    function onIndexerGridClick(e) {
+        var grid = e.target.closest('#indexer-instances-grid-unified, #indexer-instances-grid');
+        if (!grid) return;
+        var editBtn = e.target.closest('.btn-card.edit[data-app-type="indexer"]');
+        var deleteBtn = e.target.closest('.btn-card.delete[data-app-type="indexer"]');
+        if (editBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            var card = editBtn.closest('.instance-card');
+            if (!card) return;
+            var index = parseInt(card.getAttribute('data-instance-index'), 10);
+            if (isNaN(index)) return;
+            var list = window.SettingsForms._indexersList;
+            if (!list || index < 0 || index >= list.length) return;
+            if (window.SettingsForms.openIndexerEditor) {
+                window.SettingsForms.openIndexerEditor(false, index, list[index]);
+            }
+            return;
+        }
+        if (deleteBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            var card = deleteBtn.closest('.instance-card');
+            if (!card) return;
+            var index = parseInt(card.getAttribute('data-instance-index'), 10);
+            if (isNaN(index)) return;
+            var list = window.SettingsForms._indexersList;
+            if (!list || index < 0 || index >= list.length) return;
+            var indexer = list[index];
+            var name = (indexer && indexer.name) ? indexer.name : 'Unnamed';
+            var isTV = Forms._indexersMode === 'tv';
+            var deleteId = isTV && indexer && indexer.id ? indexer.id : index;
+            if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                window.HuntarrConfirm.show({
+                    title: 'Delete Indexer',
+                    message: 'Are you sure you want to remove "' + name + '" from this instance? It will no longer be used for searches.',
+                    confirmLabel: 'Delete',
+                    onConfirm: function() {
+                        var apiBase = Forms.getIndexersApiBase();
+                        var url = apiBase + '/' + encodeURIComponent(String(deleteId));
+                        fetch(url, { method: 'DELETE' })
+                            .then(function(r) { return r.json(); })
+                            .then(function(data) {
+                                if (data.success !== false) {
+                                    if (window.SettingsForms && window.SettingsForms.refreshIndexersList) {
+                                        window.SettingsForms.refreshIndexersList();
+                                    }
+                                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                        window.huntarrUI.showNotification('Indexer removed.', 'success');
+                                    }
+                                } else {
+                                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                        window.huntarrUI.showNotification(data.error || 'Failed to remove indexer.', 'error');
+                                    }
+                                }
+                            })
+                            .catch(function() {
+                                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                    window.huntarrUI.showNotification('Failed to remove indexer.', 'error');
+                                }
+                            });
+                    }
+                });
+            }
+        }
+    }
+
+    document.addEventListener('click', onIndexerGridClick, true);
 
     document.addEventListener('huntarr:instances-changed', function() {
         if (isIndexersUIVisible()) Forms.initOrRefreshIndexers();

@@ -291,14 +291,6 @@
     white-space: nowrap;
 }
 
-.ih-card-display-name {
-    display: block;
-    font-size: 0.8rem;
-    color: #64748b;
-    font-weight: 400;
-    margin-top: 2px;
-}
-
 .ih-card-status {
     display: inline-flex;
     align-items: center;

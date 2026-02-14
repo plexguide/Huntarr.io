@@ -10,6 +10,9 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 PORT=9705
 
+# Ensure Python can find both 'src.primary' and 'primary' when running main.py
+export PYTHONPATH="${REPO_ROOT}${PYTHONPATH:+:${PYTHONPATH}}"
+
 # Use .venv if it exists, else venv
 if [ -d ".venv" ]; then
     VENV=".venv"
