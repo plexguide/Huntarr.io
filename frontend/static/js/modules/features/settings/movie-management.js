@@ -331,6 +331,10 @@
                 emptyOpt.value = '';
                 emptyOpt.textContent = 'No Movie or TV Hunt instances';
                 selectEl.appendChild(emptyOpt);
+                var noInstEl = document.getElementById('movie-management-no-instances');
+                var wrapperEl = document.getElementById('movie-management-content-wrapper');
+                if (noInstEl) noInstEl.style.display = '';
+                if (wrapperEl) wrapperEl.style.display = 'none';
                 return;
             }
             combined.forEach(function(item) {
@@ -358,6 +362,10 @@
             }
             selectEl.value = selected;
             var parts = (selected || '').split(':');
+            var noInstEl = document.getElementById('movie-management-no-instances');
+            var wrapperEl = document.getElementById('movie-management-content-wrapper');
+            if (noInstEl) noInstEl.style.display = 'none';
+            if (wrapperEl) wrapperEl.style.display = '';
             if (parts.length === 2) {
                 _mgmtMode = parts[0] === 'tv' ? 'tv' : 'movie';
                 if (typeof localStorage !== 'undefined') localStorage.setItem('media-hunt-management-last-instance', selected);
