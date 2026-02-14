@@ -737,6 +737,8 @@ class SmartHuntEngine:
             if not i.get("in_library") and not i.get("in_cooldown")
         ]
 
+        # Shuffle so movies and TV are mixed randomly (not movie-block then TV-block)
+        random.shuffle(filtered)
         return filtered
 
 

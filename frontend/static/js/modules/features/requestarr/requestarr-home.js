@@ -265,22 +265,41 @@ const HomeRequestarr = {
         const select = this.elements.tvInstanceSelect;
         if (!select) return;
         try {
-            const response = await fetch(`./api/requestarr/instances/sonarr?t=${Date.now()}`, { cache: 'no-store' });
-            const data = await response.json();
-            const instances = (data.instances || []).map(inst => ({ name: String(inst.name).trim() }));
+            const _ts = Date.now();
+            const [thResponse, sonarrResponse] = await Promise.all([
+                fetch(`./api/tv-hunt/instances?t=${_ts}`, { cache: 'no-store' }),
+                fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' })
+            ]);
+            let thData = await thResponse.json();
+            if (!thResponse.ok || thData.error) thData = { instances: [] };
+            else thData = { instances: (thData.instances || []).filter(i => i.enabled !== false) };
+            const sonarrData = await sonarrResponse.json();
+
+            const thInstances = (thData.instances || []).map(inst => ({
+                name: String(inst.name).trim(),
+                appType: 'tv_hunt',
+                label: `TV Hunt \u2013 ${String(inst.name).trim()}`
+            }));
+            const sonarrInstances = (sonarrData.instances || []).map(inst => ({
+                name: String(inst.name).trim(),
+                appType: 'sonarr',
+                label: `Sonarr \u2013 ${String(inst.name).trim()}`
+            }));
+            const allInstances = [...thInstances, ...sonarrInstances];
 
             const previousValue = this.defaultTVInstance || select.value || '';
             select.innerHTML = '';
-            if (instances.length === 0) {
+            if (allInstances.length === 0) {
                 select.innerHTML = '<option value="">No TV instances</option>';
                 return;
             }
 
-            instances.forEach(inst => {
+            allInstances.forEach(inst => {
+                const cv = this._encodeInstance(inst.appType, inst.name);
                 const opt = document.createElement('option');
-                opt.value = inst.name;
-                opt.textContent = `Sonarr \u2013 ${inst.name}`;
-                if (previousValue && inst.name === previousValue) opt.selected = true;
+                opt.value = cv;
+                opt.textContent = inst.label;
+                if (previousValue && (cv === previousValue || inst.name === previousValue)) opt.selected = true;
                 select.appendChild(opt);
             });
 
