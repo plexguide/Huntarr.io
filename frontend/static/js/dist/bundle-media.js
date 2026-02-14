@@ -488,7 +488,8 @@
             fetch(api('./api/movie-hunt/instances') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
             fetch(api('./api/movie-hunt/instances/current') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
             fetch(api('./api/tv-hunt/instances') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch(api('./api/tv-hunt/instances/current') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+            fetch(api('./api/tv-hunt/instances/current') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch(api('./api/indexer-hunt/indexers') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
         ]).then(function(results) {
             var movieList = results[0].instances || [];
             var movieCurrent = results[1].current_instance_id != null ? Number(results[1].current_instance_id) : null;
@@ -503,10 +504,21 @@
                 emptyOpt.textContent = 'No Movie Hunt or TV Hunt instances';
                 select.appendChild(emptyOpt);
                 select.value = '';
-                _updateActivityNoInstancesVisibility(select.id, true);
+                _updateActivityVisibility(select.id, 'no-instances');
                 return;
             }
-            _updateActivityNoInstancesVisibility(select.id, false);
+            var indexerCount = (results[4].indexers || []).length;
+            if (indexerCount === 0) {
+                select.innerHTML = '';
+                var emptyOpt = document.createElement('option');
+                emptyOpt.value = '';
+                emptyOpt.textContent = 'No indexers configured';
+                select.appendChild(emptyOpt);
+                select.value = '';
+                _updateActivityVisibility(select.id, 'no-indexers');
+                return;
+            }
+            _updateActivityVisibility(select.id, 'ok');
 
             if (movieList.length > 0) {
                 var movieGroup = document.createElement('optgroup');
@@ -548,23 +560,26 @@
             select.value = targetVal;
         }).catch(function() {
             select.innerHTML = '<option value="">Unable to load instances</option>';
-            _updateActivityNoInstancesVisibility(select.id, false);
+            _updateActivityVisibility(select.id, 'ok');
         });
     }
 
-    function _updateActivityNoInstancesVisibility(selectId, isEmpty) {
-        var noInstEl, wrapperEl;
+    function _updateActivityVisibility(selectId, state) {
+        var noInstEl, noIdxEl, wrapperEl;
         if (selectId === 'activity-combined-instance-select') {
             noInstEl = document.getElementById('activity-no-instances');
+            noIdxEl = document.getElementById('activity-no-indexers');
             wrapperEl = document.getElementById('activity-content-wrapper');
         } else if (selectId === 'tv-activity-combined-instance-select') {
             noInstEl = document.getElementById('tv-activity-no-instances');
+            noIdxEl = document.getElementById('tv-activity-no-indexers');
             wrapperEl = document.getElementById('tv-activity-content-wrapper');
         } else {
             return;
         }
-        if (noInstEl) noInstEl.style.display = isEmpty ? '' : 'none';
-        if (wrapperEl) wrapperEl.style.display = isEmpty ? 'none' : '';
+        if (noInstEl) noInstEl.style.display = (state === 'no-instances') ? '' : 'none';
+        if (noIdxEl) noIdxEl.style.display = (state === 'no-indexers') ? '' : 'none';
+        if (wrapperEl) wrapperEl.style.display = (state === 'ok') ? '' : 'none';
     }
 
     function attachActivityCombined(selectId, onChanged, preferMode) {
@@ -6042,7 +6057,8 @@
             fetch('./api/requestarr/instances/movie_hunt?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
             fetch('./api/requestarr/instances/radarr?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
             fetch('./api/requestarr/instances/tv_hunt?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/requestarr/instances/sonarr?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+            fetch('./api/requestarr/instances/sonarr?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch('./api/indexer-hunt/indexers?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
         ]).then(function(results) {
             var mh = results[0].instances || [];
             var radarr = results[1].instances || [];
@@ -6089,16 +6105,32 @@
                 empty.textContent = 'No instances configured';
                 sel.appendChild(empty);
                 var noInst = document.getElementById('media-hunt-calendar-no-instances');
+                var noIdx = document.getElementById('media-hunt-calendar-no-indexers');
                 var wrapper = document.getElementById('media-hunt-calendar-content-wrapper');
                 if (noInst) noInst.style.display = '';
+                if (noIdx) noIdx.style.display = 'none';
+                if (wrapper) wrapper.style.display = 'none';
+                _collectionLoaded = false;
+                _upcomingLoaded = false;
+                return;
+            }
+            var indexerCount = (results[4].indexers || []).length;
+            if (indexerCount === 0) {
+                var noInst = document.getElementById('media-hunt-calendar-no-instances');
+                var noIdx = document.getElementById('media-hunt-calendar-no-indexers');
+                var wrapper = document.getElementById('media-hunt-calendar-content-wrapper');
+                if (noInst) noInst.style.display = 'none';
+                if (noIdx) noIdx.style.display = '';
                 if (wrapper) wrapper.style.display = 'none';
                 _collectionLoaded = false;
                 _upcomingLoaded = false;
                 return;
             }
             var noInst = document.getElementById('media-hunt-calendar-no-instances');
+            var noIdx = document.getElementById('media-hunt-calendar-no-indexers');
             var wrapper = document.getElementById('media-hunt-calendar-content-wrapper');
             if (noInst) noInst.style.display = 'none';
+            if (noIdx) noIdx.style.display = 'none';
             if (wrapper) wrapper.style.display = '';
             if (preferred) {
                 sel.value = preferred;

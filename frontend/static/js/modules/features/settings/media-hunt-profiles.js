@@ -85,7 +85,8 @@
             fetch('./api/movie-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
             fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
             fetch('./api/movie-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+            fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch('./api/indexer-hunt/indexers?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
         ]).then(function(results) {
             var movieList = (results[0].instances || []).map(function(inst) {
                 return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
@@ -104,8 +105,26 @@
                 emptyOpt.textContent = 'No Movie or TV Hunt instances';
                 selectEl.appendChild(emptyOpt);
                 var noInstEl = document.getElementById('media-hunt-profiles-no-instances');
+                var noIdxEl = document.getElementById('media-hunt-profiles-no-indexers');
                 var wrapperEl = document.getElementById('media-hunt-profiles-content-wrapper');
                 if (noInstEl) noInstEl.style.display = '';
+                if (noIdxEl) noIdxEl.style.display = 'none';
+                if (wrapperEl) wrapperEl.style.display = 'none';
+                M._combinedDropdownPopulated = true;
+                return;
+            }
+            var indexerCount = (results[4].indexers || []).length;
+            if (indexerCount === 0) {
+                selectEl.innerHTML = '';
+                var emptyOpt = document.createElement('option');
+                emptyOpt.value = '';
+                emptyOpt.textContent = 'No indexers configured';
+                selectEl.appendChild(emptyOpt);
+                var noInstEl = document.getElementById('media-hunt-profiles-no-instances');
+                var noIdxEl = document.getElementById('media-hunt-profiles-no-indexers');
+                var wrapperEl = document.getElementById('media-hunt-profiles-content-wrapper');
+                if (noInstEl) noInstEl.style.display = 'none';
+                if (noIdxEl) noIdxEl.style.display = '';
                 if (wrapperEl) wrapperEl.style.display = 'none';
                 M._combinedDropdownPopulated = true;
                 return;
@@ -136,8 +155,10 @@
             selectEl.value = selected;
             M._combinedDropdownPopulated = true;
             var noInstEl = document.getElementById('media-hunt-profiles-no-instances');
+            var noIdxEl = document.getElementById('media-hunt-profiles-no-indexers');
             var wrapperEl = document.getElementById('media-hunt-profiles-content-wrapper');
             if (noInstEl) noInstEl.style.display = 'none';
+            if (noIdxEl) noIdxEl.style.display = 'none';
             if (wrapperEl) wrapperEl.style.display = '';
             var parts = (selected || '').split(':');
             if (parts.length === 2) {

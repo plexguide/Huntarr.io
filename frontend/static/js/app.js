@@ -7,12 +7,21 @@
 function _checkLogsMediaHuntInstances(cb) {
     Promise.all([
         fetch('./api/movie-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); }),
-        fetch('./api/tv-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); })
+        fetch('./api/tv-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); }),
+        fetch('./api/indexer-hunt/indexers', { cache: 'no-store' }).then(function(r) { return r.json(); })
     ]).then(function(results) {
         var movieCount = (results[0].instances || []).length;
         var tvCount = (results[1].instances || []).length;
-        cb(movieCount > 0 || tvCount > 0);
-    }).catch(function() { cb(false); });
+        var indexerCount = (results[2].indexers || []).length;
+        var hasInstances = movieCount > 0 || tvCount > 0;
+        if (!hasInstances) {
+            cb('no-instances');
+        } else if (indexerCount === 0) {
+            cb('no-indexers');
+        } else {
+            cb('ok');
+        }
+    }).catch(function() { cb('no-instances'); });
 }
 
 let huntarrUI = {
@@ -692,11 +701,13 @@ let huntarrUI = {
             newTitle = 'Logs';
             this.currentSection = section;
             this.showMovieHuntSidebar();
-            _checkLogsMediaHuntInstances(function(hasInstances) {
+            _checkLogsMediaHuntInstances(function(state) {
                 var noInst = document.getElementById('logs-media-hunt-no-instances');
+                var noIdx = document.getElementById('logs-media-hunt-no-indexers');
                 var wrapper = document.getElementById('logs-media-hunt-content-wrapper');
-                if (noInst) noInst.style.display = hasInstances ? 'none' : '';
-                if (wrapper) wrapper.style.display = hasInstances ? '' : 'none';
+                if (noInst) noInst.style.display = (state === 'no-instances') ? '' : 'none';
+                if (noIdx) noIdx.style.display = (state === 'no-indexers') ? '' : 'none';
+                if (wrapper) wrapper.style.display = (state === 'ok') ? '' : 'none';
             });
             var logAppSelect = document.getElementById('logAppSelect');
             if (logAppSelect) logAppSelect.value = 'media_hunt';
@@ -860,11 +871,13 @@ let huntarrUI = {
             newTitle = 'Logs';
             this.currentSection = section;
             this.showTVHuntSidebar();
-            _checkLogsMediaHuntInstances(function(hasInstances) {
+            _checkLogsMediaHuntInstances(function(state) {
                 var noInst = document.getElementById('logs-media-hunt-no-instances');
+                var noIdx = document.getElementById('logs-media-hunt-no-indexers');
                 var wrapper = document.getElementById('logs-media-hunt-content-wrapper');
-                if (noInst) noInst.style.display = hasInstances ? 'none' : '';
-                if (wrapper) wrapper.style.display = hasInstances ? '' : 'none';
+                if (noInst) noInst.style.display = (state === 'no-instances') ? '' : 'none';
+                if (noIdx) noIdx.style.display = (state === 'no-indexers') ? '' : 'none';
+                if (wrapper) wrapper.style.display = (state === 'ok') ? '' : 'none';
             });
             var logAppSelect2 = document.getElementById('logAppSelect');
             if (logAppSelect2) logAppSelect2.value = 'media_hunt';

@@ -4851,7 +4851,8 @@ document.head.appendChild(styleEl);
             fetch('./api/movie-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
             fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
             fetch('./api/movie-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+            fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch('./api/indexer-hunt/indexers?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
         ]).then(function(results) {
             var movieList = (results[0].instances || []).map(function(inst) {
                 return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
@@ -4870,8 +4871,26 @@ document.head.appendChild(styleEl);
                 emptyOpt.textContent = 'No Movie or TV Hunt instances';
                 selectEl.appendChild(emptyOpt);
                 var noInstEl = document.getElementById('media-hunt-profiles-no-instances');
+                var noIdxEl = document.getElementById('media-hunt-profiles-no-indexers');
                 var wrapperEl = document.getElementById('media-hunt-profiles-content-wrapper');
                 if (noInstEl) noInstEl.style.display = '';
+                if (noIdxEl) noIdxEl.style.display = 'none';
+                if (wrapperEl) wrapperEl.style.display = 'none';
+                M._combinedDropdownPopulated = true;
+                return;
+            }
+            var indexerCount = (results[4].indexers || []).length;
+            if (indexerCount === 0) {
+                selectEl.innerHTML = '';
+                var emptyOpt = document.createElement('option');
+                emptyOpt.value = '';
+                emptyOpt.textContent = 'No indexers configured';
+                selectEl.appendChild(emptyOpt);
+                var noInstEl = document.getElementById('media-hunt-profiles-no-instances');
+                var noIdxEl = document.getElementById('media-hunt-profiles-no-indexers');
+                var wrapperEl = document.getElementById('media-hunt-profiles-content-wrapper');
+                if (noInstEl) noInstEl.style.display = 'none';
+                if (noIdxEl) noIdxEl.style.display = '';
                 if (wrapperEl) wrapperEl.style.display = 'none';
                 M._combinedDropdownPopulated = true;
                 return;
@@ -4902,8 +4921,10 @@ document.head.appendChild(styleEl);
             selectEl.value = selected;
             M._combinedDropdownPopulated = true;
             var noInstEl = document.getElementById('media-hunt-profiles-no-instances');
+            var noIdxEl = document.getElementById('media-hunt-profiles-no-indexers');
             var wrapperEl = document.getElementById('media-hunt-profiles-content-wrapper');
             if (noInstEl) noInstEl.style.display = 'none';
+            if (noIdxEl) noIdxEl.style.display = 'none';
             if (wrapperEl) wrapperEl.style.display = '';
             var parts = (selected || '').split(':');
             if (parts.length === 2) {
@@ -6070,12 +6091,13 @@ document.head.appendChild(styleEl);
         if (!selectEl) return;
         selectEl.innerHTML = '<option value="">Loading...</option>';
         var ts = Date.now();
-        Promise.all([
-            fetch('./api/movie-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/movie-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
-        ]).then(function(results) {
+            Promise.all([
+                fetch('./api/movie-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                fetch('./api/movie-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                fetch('./api/indexer-hunt/indexers?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+            ]).then(function(results) {
             var movieList = (results[0].instances || []).map(function(inst) {
                 return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
             });
@@ -6087,18 +6109,35 @@ document.head.appendChild(styleEl);
             var currentMovie = results[2].current_instance_id != null ? Number(results[2].current_instance_id) : null;
             var currentTv = results[3].current_instance_id != null ? Number(results[3].current_instance_id) : null;
             selectEl.innerHTML = '';
-            if (combined.length === 0) {
-                var emptyOpt = document.createElement('option');
-                emptyOpt.value = '';
-                emptyOpt.textContent = 'No Movie or TV Hunt instances';
-                selectEl.appendChild(emptyOpt);
-                var noInstEl = document.getElementById('movie-management-no-instances');
-                var wrapperEl = document.getElementById('movie-management-content-wrapper');
-                if (noInstEl) noInstEl.style.display = '';
-                if (wrapperEl) wrapperEl.style.display = 'none';
-                return;
-            }
-            combined.forEach(function(item) {
+                if (combined.length === 0) {
+                    var emptyOpt = document.createElement('option');
+                    emptyOpt.value = '';
+                    emptyOpt.textContent = 'No Movie or TV Hunt instances';
+                    selectEl.appendChild(emptyOpt);
+                    var noInstEl = document.getElementById('movie-management-no-instances');
+                    var noIdxEl = document.getElementById('movie-management-no-indexers');
+                    var wrapperEl = document.getElementById('movie-management-content-wrapper');
+                    if (noInstEl) noInstEl.style.display = '';
+                    if (noIdxEl) noIdxEl.style.display = 'none';
+                    if (wrapperEl) wrapperEl.style.display = 'none';
+                    return;
+                }
+                var indexerCount = (results[4].indexers || []).length;
+                if (indexerCount === 0) {
+                    selectEl.innerHTML = '';
+                    var emptyOpt = document.createElement('option');
+                    emptyOpt.value = '';
+                    emptyOpt.textContent = 'No indexers configured';
+                    selectEl.appendChild(emptyOpt);
+                    var noInstEl = document.getElementById('movie-management-no-instances');
+                    var noIdxEl = document.getElementById('movie-management-no-indexers');
+                    var wrapperEl = document.getElementById('movie-management-content-wrapper');
+                    if (noInstEl) noInstEl.style.display = 'none';
+                    if (noIdxEl) noIdxEl.style.display = '';
+                    if (wrapperEl) wrapperEl.style.display = 'none';
+                    return;
+                }
+                combined.forEach(function(item) {
                 var opt = document.createElement('option');
                 opt.value = item.value;
                 opt.textContent = item.label;
@@ -6124,8 +6163,10 @@ document.head.appendChild(styleEl);
             selectEl.value = selected;
             var parts = (selected || '').split(':');
             var noInstEl = document.getElementById('movie-management-no-instances');
+            var noIdxEl = document.getElementById('movie-management-no-indexers');
             var wrapperEl = document.getElementById('movie-management-content-wrapper');
             if (noInstEl) noInstEl.style.display = 'none';
+            if (noIdxEl) noIdxEl.style.display = 'none';
             if (wrapperEl) wrapperEl.style.display = '';
             if (parts.length === 2) {
                 _mgmtMode = parts[0] === 'tv' ? 'tv' : 'movie';
@@ -6623,22 +6664,34 @@ document.head.appendChild(styleEl);
         const noInstEl = document.getElementById('settings-clients-no-instances');
         const wrapperEl = document.getElementById('settings-clients-content-wrapper');
         if (!grid) return;
+        var noIdxEl = document.getElementById('settings-clients-no-indexers');
         Promise.all([
             fetch('./api/movie-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/tv-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); })
+            fetch('./api/tv-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch('./api/indexer-hunt/indexers', { cache: 'no-store' }).then(function(r) { return r.json(); })
         ]).then(function(results) {
             var movieCount = (results[0].instances || []).length;
             var tvCount = (results[1].instances || []).length;
+            var indexerCount = (results[2].indexers || []).length;
             if (movieCount === 0 && tvCount === 0) {
                 if (noInstEl) noInstEl.style.display = '';
+                if (noIdxEl) noIdxEl.style.display = 'none';
+                if (wrapperEl) wrapperEl.style.display = 'none';
+                return;
+            }
+            if (indexerCount === 0) {
+                if (noInstEl) noInstEl.style.display = 'none';
+                if (noIdxEl) noIdxEl.style.display = '';
                 if (wrapperEl) wrapperEl.style.display = 'none';
                 return;
             }
             if (noInstEl) noInstEl.style.display = 'none';
+            if (noIdxEl) noIdxEl.style.display = 'none';
             if (wrapperEl) wrapperEl.style.display = '';
             _doRefreshClientsList(grid);
         }).catch(function() {
             if (noInstEl) noInstEl.style.display = 'none';
+            if (noIdxEl) noIdxEl.style.display = 'none';
             if (wrapperEl) wrapperEl.style.display = '';
             _doRefreshClientsList(grid);
         });
@@ -6732,7 +6785,8 @@ document.head.appendChild(styleEl);
                 fetch('./api/movie-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
                 fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
                 fetch('./api/movie-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+                fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                fetch('./api/indexer-hunt/indexers?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
             ]).then(function(results) {
                 var movieList = (results[0].instances || []).map(function(inst) {
                     return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
@@ -6751,8 +6805,25 @@ document.head.appendChild(styleEl);
                     emptyOpt.textContent = 'No Movie or TV Hunt instances';
                     selectEl.appendChild(emptyOpt);
                     var noInstEl = document.getElementById('settings-import-lists-no-instances');
+                    var noIdxEl = document.getElementById('settings-import-lists-no-indexers');
                     var wrapperEl = document.getElementById('settings-import-lists-content-wrapper');
                     if (noInstEl) noInstEl.style.display = '';
+                    if (noIdxEl) noIdxEl.style.display = 'none';
+                    if (wrapperEl) wrapperEl.style.display = 'none';
+                    return;
+                }
+                var indexerCount = (results[4].indexers || []).length;
+                if (indexerCount === 0) {
+                    selectEl.innerHTML = '';
+                    var emptyOpt = document.createElement('option');
+                    emptyOpt.value = '';
+                    emptyOpt.textContent = 'No indexers configured';
+                    selectEl.appendChild(emptyOpt);
+                    var noInstEl = document.getElementById('settings-import-lists-no-instances');
+                    var noIdxEl = document.getElementById('settings-import-lists-no-indexers');
+                    var wrapperEl = document.getElementById('settings-import-lists-content-wrapper');
+                    if (noInstEl) noInstEl.style.display = 'none';
+                    if (noIdxEl) noIdxEl.style.display = '';
                     if (wrapperEl) wrapperEl.style.display = 'none';
                     return;
                 }
@@ -6781,8 +6852,10 @@ document.head.appendChild(styleEl);
                 }
                 selectEl.value = selected;
                 var noInstEl = document.getElementById('settings-import-lists-no-instances');
+                var noIdxEl = document.getElementById('settings-import-lists-no-indexers');
                 var wrapperEl = document.getElementById('settings-import-lists-content-wrapper');
                 if (noInstEl) noInstEl.style.display = 'none';
+                if (noIdxEl) noIdxEl.style.display = 'none';
                 if (wrapperEl) wrapperEl.style.display = '';
                 var parts = (selected || '').split(':');
                 if (parts.length === 2) {
@@ -8347,7 +8420,8 @@ document.head.appendChild(styleEl);
                 fetch('./api/movie-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
                 fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
                 fetch('./api/movie-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+                fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                fetch('./api/indexer-hunt/indexers?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
             ]).then(function(results) {
                 var movieList = (results[0].instances || []).map(function(inst) {
                     return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
@@ -8366,8 +8440,25 @@ document.head.appendChild(styleEl);
                     emptyOpt.textContent = 'No Movie or TV Hunt instances';
                     selectEl.appendChild(emptyOpt);
                     var noInstEl = document.getElementById('settings-root-folders-no-instances');
+                    var noIdxEl = document.getElementById('settings-root-folders-no-indexers');
                     var wrapperEl = document.getElementById('settings-root-folders-content-wrapper');
                     if (noInstEl) noInstEl.style.display = '';
+                    if (noIdxEl) noIdxEl.style.display = 'none';
+                    if (wrapperEl) wrapperEl.style.display = 'none';
+                    return;
+                }
+                var indexerCount = (results[4].indexers || []).length;
+                if (indexerCount === 0) {
+                    selectEl.innerHTML = '';
+                    var emptyOpt = document.createElement('option');
+                    emptyOpt.value = '';
+                    emptyOpt.textContent = 'No indexers configured';
+                    selectEl.appendChild(emptyOpt);
+                    var noInstEl = document.getElementById('settings-root-folders-no-instances');
+                    var noIdxEl = document.getElementById('settings-root-folders-no-indexers');
+                    var wrapperEl = document.getElementById('settings-root-folders-content-wrapper');
+                    if (noInstEl) noInstEl.style.display = 'none';
+                    if (noIdxEl) noIdxEl.style.display = '';
                     if (wrapperEl) wrapperEl.style.display = 'none';
                     return;
                 }
@@ -8396,8 +8487,10 @@ document.head.appendChild(styleEl);
                 }
                 selectEl.value = selected;
                 var noInstEl = document.getElementById('settings-root-folders-no-instances');
+                var noIdxEl = document.getElementById('settings-root-folders-no-indexers');
                 var wrapperEl = document.getElementById('settings-root-folders-content-wrapper');
                 if (noInstEl) noInstEl.style.display = 'none';
+                if (noIdxEl) noIdxEl.style.display = 'none';
                 if (wrapperEl) wrapperEl.style.display = '';
                 var parts = (selected || '').split(':');
                 if (parts.length === 2) {
@@ -9408,7 +9501,8 @@ document.head.appendChild(styleEl);
                 fetch('./api/movie-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
                 fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
                 fetch('./api/movie-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+                fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                fetch('./api/indexer-hunt/indexers?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
             ]).then(function(results) {
                 var movieList = (results[0].instances || []).map(function(inst) {
                     return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
@@ -9427,8 +9521,25 @@ document.head.appendChild(styleEl);
                     emptyOpt.textContent = 'No Movie or TV Hunt instances';
                     selectEl.appendChild(emptyOpt);
                     var noInstEl = document.getElementById('settings-custom-formats-no-instances');
+                    var noIdxEl = document.getElementById('settings-custom-formats-no-indexers');
                     var wrapperEl = document.getElementById('settings-custom-formats-content-wrapper');
                     if (noInstEl) noInstEl.style.display = '';
+                    if (noIdxEl) noIdxEl.style.display = 'none';
+                    if (wrapperEl) wrapperEl.style.display = 'none';
+                    return;
+                }
+                var indexerCount = (results[4].indexers || []).length;
+                if (indexerCount === 0) {
+                    selectEl.innerHTML = '';
+                    var emptyOpt = document.createElement('option');
+                    emptyOpt.value = '';
+                    emptyOpt.textContent = 'No indexers configured';
+                    selectEl.appendChild(emptyOpt);
+                    var noInstEl = document.getElementById('settings-custom-formats-no-instances');
+                    var noIdxEl = document.getElementById('settings-custom-formats-no-indexers');
+                    var wrapperEl = document.getElementById('settings-custom-formats-content-wrapper');
+                    if (noInstEl) noInstEl.style.display = 'none';
+                    if (noIdxEl) noIdxEl.style.display = '';
                     if (wrapperEl) wrapperEl.style.display = 'none';
                     return;
                 }
@@ -9457,8 +9568,10 @@ document.head.appendChild(styleEl);
                 }
                 selectEl.value = selected;
                 var noInstEl = document.getElementById('settings-custom-formats-no-instances');
+                var noIdxEl = document.getElementById('settings-custom-formats-no-indexers');
                 var wrapperEl = document.getElementById('settings-custom-formats-content-wrapper');
                 if (noInstEl) noInstEl.style.display = 'none';
+                if (noIdxEl) noIdxEl.style.display = 'none';
                 if (wrapperEl) wrapperEl.style.display = '';
                 var parts = (selected || '').split(':');
                 if (parts.length === 2) {

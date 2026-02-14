@@ -45,22 +45,34 @@
         const noInstEl = document.getElementById('settings-clients-no-instances');
         const wrapperEl = document.getElementById('settings-clients-content-wrapper');
         if (!grid) return;
+        var noIdxEl = document.getElementById('settings-clients-no-indexers');
         Promise.all([
             fetch('./api/movie-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/tv-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); })
+            fetch('./api/tv-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch('./api/indexer-hunt/indexers', { cache: 'no-store' }).then(function(r) { return r.json(); })
         ]).then(function(results) {
             var movieCount = (results[0].instances || []).length;
             var tvCount = (results[1].instances || []).length;
+            var indexerCount = (results[2].indexers || []).length;
             if (movieCount === 0 && tvCount === 0) {
                 if (noInstEl) noInstEl.style.display = '';
+                if (noIdxEl) noIdxEl.style.display = 'none';
+                if (wrapperEl) wrapperEl.style.display = 'none';
+                return;
+            }
+            if (indexerCount === 0) {
+                if (noInstEl) noInstEl.style.display = 'none';
+                if (noIdxEl) noIdxEl.style.display = '';
                 if (wrapperEl) wrapperEl.style.display = 'none';
                 return;
             }
             if (noInstEl) noInstEl.style.display = 'none';
+            if (noIdxEl) noIdxEl.style.display = 'none';
             if (wrapperEl) wrapperEl.style.display = '';
             _doRefreshClientsList(grid);
         }).catch(function() {
             if (noInstEl) noInstEl.style.display = 'none';
+            if (noIdxEl) noIdxEl.style.display = 'none';
             if (wrapperEl) wrapperEl.style.display = '';
             _doRefreshClientsList(grid);
         });

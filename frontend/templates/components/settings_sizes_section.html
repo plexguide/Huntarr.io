@@ -8,6 +8,12 @@
             <p class="no-instances-desc">Configure a Movie Hunt or TV Hunt instance to manage size limits.</p>
             <a href="./#media-hunt-instances" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure instances</a>
         </div>
+        <div id="settings-sizes-no-indexers" class="settings-no-indexers" style="display: none;">
+            <i class="fas fa-satellite-dish" aria-hidden="true"></i>
+            <p class="no-instances-title">No indexers configured</p>
+            <p class="no-instances-desc">Configure at least one indexer in the Index Master Pool to use this section.</p>
+            <a href="./#indexer-hunt" class="no-instances-action-btn"><i class="fas fa-plus"></i> Add Indexer</a>
+        </div>
         <div id="settings-sizes-content-wrapper" style="display: none;">
         <div class="settings-group sizes-settings-group">
             <div class="sizes-header">
@@ -623,23 +629,35 @@
 
     function loadSizes() {
         var noInstEl = document.getElementById('settings-sizes-no-instances');
+        var noIdxEl = document.getElementById('settings-sizes-no-indexers');
         var wrapperEl = document.getElementById('settings-sizes-content-wrapper');
         Promise.all([
             fetch('./api/movie-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/tv-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); })
+            fetch('./api/tv-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch('./api/indexer-hunt/indexers', { cache: 'no-store' }).then(function(r) { return r.json(); })
         ]).then(function(results) {
             var movieCount = (results[0].instances || []).length;
             var tvCount = (results[1].instances || []).length;
+            var indexerCount = (results[2].indexers || []).length;
             if (movieCount === 0 && tvCount === 0) {
                 if (noInstEl) noInstEl.style.display = '';
+                if (noIdxEl) noIdxEl.style.display = 'none';
+                if (wrapperEl) wrapperEl.style.display = 'none';
+                return;
+            }
+            if (indexerCount === 0) {
+                if (noInstEl) noInstEl.style.display = 'none';
+                if (noIdxEl) noIdxEl.style.display = '';
                 if (wrapperEl) wrapperEl.style.display = 'none';
                 return;
             }
             if (noInstEl) noInstEl.style.display = 'none';
+            if (noIdxEl) noIdxEl.style.display = 'none';
             if (wrapperEl) wrapperEl.style.display = '';
             doLoadSizes();
         }).catch(function() {
             if (noInstEl) noInstEl.style.display = 'none';
+            if (noIdxEl) noIdxEl.style.display = 'none';
             if (wrapperEl) wrapperEl.style.display = '';
             doLoadSizes();
         });

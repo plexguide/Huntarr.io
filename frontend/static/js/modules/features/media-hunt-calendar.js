@@ -381,7 +381,8 @@
             fetch('./api/requestarr/instances/movie_hunt?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
             fetch('./api/requestarr/instances/radarr?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
             fetch('./api/requestarr/instances/tv_hunt?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/requestarr/instances/sonarr?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+            fetch('./api/requestarr/instances/sonarr?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch('./api/indexer-hunt/indexers?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
         ]).then(function(results) {
             var mh = results[0].instances || [];
             var radarr = results[1].instances || [];
@@ -428,16 +429,32 @@
                 empty.textContent = 'No instances configured';
                 sel.appendChild(empty);
                 var noInst = document.getElementById('media-hunt-calendar-no-instances');
+                var noIdx = document.getElementById('media-hunt-calendar-no-indexers');
                 var wrapper = document.getElementById('media-hunt-calendar-content-wrapper');
                 if (noInst) noInst.style.display = '';
+                if (noIdx) noIdx.style.display = 'none';
+                if (wrapper) wrapper.style.display = 'none';
+                _collectionLoaded = false;
+                _upcomingLoaded = false;
+                return;
+            }
+            var indexerCount = (results[4].indexers || []).length;
+            if (indexerCount === 0) {
+                var noInst = document.getElementById('media-hunt-calendar-no-instances');
+                var noIdx = document.getElementById('media-hunt-calendar-no-indexers');
+                var wrapper = document.getElementById('media-hunt-calendar-content-wrapper');
+                if (noInst) noInst.style.display = 'none';
+                if (noIdx) noIdx.style.display = '';
                 if (wrapper) wrapper.style.display = 'none';
                 _collectionLoaded = false;
                 _upcomingLoaded = false;
                 return;
             }
             var noInst = document.getElementById('media-hunt-calendar-no-instances');
+            var noIdx = document.getElementById('media-hunt-calendar-no-indexers');
             var wrapper = document.getElementById('media-hunt-calendar-content-wrapper');
             if (noInst) noInst.style.display = 'none';
+            if (noIdx) noIdx.style.display = 'none';
             if (wrapper) wrapper.style.display = '';
             if (preferred) {
                 sel.value = preferred;
