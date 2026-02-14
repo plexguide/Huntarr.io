@@ -613,11 +613,26 @@ def _delete_from_download_client(client, item_ids):
     """Delete queue items from one download client by id(s). Returns (removed_count, error_message)."""
     if not item_ids:
         return 0, None
+    client_type = (client.get('type') or 'nzbget').strip().lower()
+    name = (client.get('name') or 'Download client').strip() or 'Download client'
+
+    if client_type in ('nzbhunt', 'nzb_hunt'):
+        try:
+            from src.primary.apps.nzb_hunt.download_manager import get_manager
+            mgr = get_manager()
+            removed = 0
+            for iid in item_ids:
+                if mgr.remove_item(str(iid)):
+                    removed += 1
+            failed = len(item_ids) - removed
+            err = ('Failed to remove %d item(s) from %s' % (failed, name)) if failed else None
+            return removed, err
+        except Exception as e:
+            return 0, str(e) or 'Delete failed'
+
     base_url = _download_client_base_url(client)
     if not base_url:
         return 0, 'Invalid client'
-    client_type = (client.get('type') or 'nzbget').strip().lower()
-    name = (client.get('name') or 'Download client').strip() or 'Download client'
     try:
         from src.primary.settings_manager import get_ssl_verify_setting
         verify_ssl = get_ssl_verify_setting()

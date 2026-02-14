@@ -6,6 +6,13 @@
 (function () {
     'use strict';
 
+    function _parseJsonOrThrow(r) {
+        return r.json().then(function (data) {
+            if (!r.ok) throw new Error(data && (data.error || data.message) || 'Request failed');
+            return data;
+        });
+    }
+
     window.NzbHunt = {
         currentTab: 'queue',
         _servers: [],
@@ -46,7 +53,15 @@
                     if (icon) icon.className = self._paused ? 'fas fa-play' : 'fas fa-pause';
                     pauseBtn.title = self._paused ? 'Resume all downloads' : 'Pause all downloads';
                     fetch(self._paused ? './api/nzb-hunt/queue/pause-all' : './api/nzb-hunt/queue/resume-all', { method: 'POST' })
-                        .then(function () { self._fetchQueueAndStatus(); });
+                        .then(function (r) { return _parseJsonOrThrow(r); })
+                        .then(function () { self._fetchQueueAndStatus(); })
+                        .catch(function (e) {
+                            console.error('[NzbHunt] Pause/resume error:', e);
+                            if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                window.huntarrUI.showNotification(e.message || 'Failed to pause/resume', 'error');
+                            }
+                            self._fetchQueueAndStatus();
+                        });
                 });
             }
 
@@ -72,8 +87,12 @@
             var self = this;
             // Fetch both queue and status in parallel
             Promise.all([
-                fetch('./api/nzb-hunt/queue?t=' + Date.now()).then(function (r) { return r.json(); }),
-                fetch('./api/nzb-hunt/status?t=' + Date.now()).then(function (r) { return r.json(); })
+                fetch('./api/nzb-hunt/queue?t=' + Date.now()).then(function (r) {
+                    return r.ok ? r.json() : Promise.resolve({ queue: [] });
+                }),
+                fetch('./api/nzb-hunt/status?t=' + Date.now()).then(function (r) {
+                    return r.ok ? r.json() : Promise.resolve({});
+                })
             ]).then(function (results) {
                 var queueData = results[0];
                 var statusData = results[1];
@@ -362,9 +381,15 @@
                 return;
             }
             fetch(url, { method: method })
-                .then(function (r) { return r.json(); })
+                .then(function (r) { return _parseJsonOrThrow(r); })
                 .then(function () { self._fetchQueueAndStatus(); })
-                .catch(function (err) { console.error('[NzbHunt] Action error:', err); });
+                .catch(function (err) {
+                    console.error('[NzbHunt] Action error:', err);
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification(err.message || 'Action failed', 'error');
+                    }
+                    self._fetchQueueAndStatus();
+                });
         },
 
         _stateIcon: function (state) {
@@ -463,7 +488,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ speed_limit_bps: bps })
             })
-                .then(function (r) { return r.json(); })
+                .then(function (r) { return _parseJsonOrThrow(r); })
                 .then(function (data) {
                     if (data.success) {
                         var msg = bps > 0
@@ -723,7 +748,10 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: warnId })
-            }).then(function () { self._fetchQueueAndStatus(); });
+            })
+                .then(function (r) { return _parseJsonOrThrow(r); })
+                .then(function () { self._fetchQueueAndStatus(); })
+                .catch(function (e) { console.error('[NzbHunt] Dismiss warning:', e); self._fetchQueueAndStatus(); });
         },
 
         _dismissAllWarnings: function () {
@@ -732,7 +760,10 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: '__all__' })
-            }).then(function () { self._fetchQueueAndStatus(); });
+            })
+                .then(function (r) { return _parseJsonOrThrow(r); })
+                .then(function () { self._fetchQueueAndStatus(); })
+                .catch(function (e) { console.error('[NzbHunt] Dismiss all warnings:', e); self._fetchQueueAndStatus(); });
         },
 
         /* ──────────────────────────────────────────────
@@ -948,15 +979,29 @@
         _deleteHistoryItem: function (nzbId) {
             var self = this;
             fetch('./api/nzb-hunt/history/' + encodeURIComponent(nzbId), { method: 'DELETE' })
+                .then(function (r) { return _parseJsonOrThrow(r); })
                 .then(function () { self._fetchHistory(); })
-                .catch(function (err) { console.error('[NzbHunt] Delete history item error:', err); });
+                .catch(function (err) {
+                    console.error('[NzbHunt] Delete history item error:', err);
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification(err.message || 'Delete failed', 'error');
+                    }
+                    self._fetchHistory();
+                });
         },
 
         _clearHistory: function () {
             var self = this;
             fetch('./api/nzb-hunt/history', { method: 'DELETE' })
+                .then(function (r) { return _parseJsonOrThrow(r); })
                 .then(function () { self._fetchHistory(); })
-                .catch(function (err) { console.error('[NzbHunt] Clear history error:', err); });
+                .catch(function (err) {
+                    console.error('[NzbHunt] Clear history error:', err);
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification(err.message || 'Clear history failed', 'error');
+                    }
+                    self._fetchHistory();
+                });
         },
 
         /* ──────────────────────────────────────────────
@@ -1124,7 +1169,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ show_on_home: showHome })
             })
-                .then(function (r) { return r.json(); })
+                .then(function (r) { return _parseJsonOrThrow(r); })
                 .then(function (data) {
                     if (data.success) {
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
@@ -1183,7 +1228,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             })
-                .then(function (r) { return r.json(); })
+                .then(function (r) { return _parseJsonOrThrow(r); })
                 .then(function (data) {
                     if (data.success) {
                         if (window.huntarrUI && window.huntarrUI.showNotification) {

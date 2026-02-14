@@ -703,16 +703,10 @@ def nzb_hunt_clear_history():
 
 @nzb_hunt_bp.route("/api/nzb-hunt/history/<path:nzb_id>", methods=["DELETE"])
 def nzb_hunt_delete_history_item(nzb_id):
-    """Delete a single history item by its nzo_id."""
+    """Delete a single history item by its id."""
     try:
         mgr = _get_download_manager()
-        if hasattr(mgr, 'delete_history_item'):
-            mgr.delete_history_item(nzb_id)
-        else:
-            # Fallback: filter from history file
-            history = mgr.get_history(limit=10000)
-            history = [h for h in history if h.get('nzo_id') != nzb_id and h.get('id') != nzb_id]
-            mgr._save_history(history)
+        mgr.delete_history_item(nzb_id)
         return jsonify({"success": True})
     except Exception as e:
         logger.exception("Delete history item error: %s", nzb_id)

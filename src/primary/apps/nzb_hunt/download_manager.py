@@ -883,6 +883,12 @@ class NZBHuntDownloadManager:
         with self._queue_lock:
             self._history.clear()
             self._save_state()
+
+    def delete_history_item(self, nzb_id: str):
+        """Remove a single item from history by id."""
+        with self._queue_lock:
+            self._history = [h for h in self._history if h.id != nzb_id]
+            self._save_state()
     
     def pause_all(self):
         """Pause all active and queued downloads."""
