@@ -1193,7 +1193,7 @@ export class RequestarrContent {
         const hideBtn = card.querySelector('.media-card-hide-btn');
         const deleteBtn = card.querySelector('.media-card-delete-btn');
         
-        // Click anywhere on card opens detail page (movies) or modal (TV)
+        // Click anywhere on card opens detail page (poster/body); Request button opens modal
         card.style.cursor = 'pointer';
         card.addEventListener('click', (e) => {
             // Request button opens modal only
@@ -1239,8 +1239,26 @@ export class RequestarrContent {
                     this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
                 }
             } else {
-                // For TV shows use modal
-                this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
+                // For TV shows: open detail page (like movies)
+                if (window.RequestarrTVDetail && window.RequestarrTVDetail.openDetail) {
+                    const seriesData = {
+                        tmdb_id: item.tmdb_id,
+                        id: item.tmdb_id,
+                        title: item.title,
+                        name: item.title,
+                        year: item.year,
+                        poster_path: item.poster_path,
+                        backdrop_path: item.backdrop_path,
+                        overview: item.overview,
+                        vote_average: item.vote_average,
+                        in_library: inLibrary
+                    };
+                    window.RequestarrTVDetail.openDetail(seriesData, {
+                        suggestedInstance: card.suggestedInstance
+                    });
+                } else {
+                    this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
+                }
             }
         });
         
