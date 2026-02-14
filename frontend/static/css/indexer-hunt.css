@@ -323,18 +323,20 @@
     gap: 6px;
     font-size: 0.8rem;
     font-weight: 500;
-    padding: 4px 10px;
-    border-radius: 8px;
+    padding: 5px 12px;
+    border-radius: 20px;
     background: rgba(148, 163, 184, 0.12);
     color: #94a3b8;
 }
 .ih-card-connection-status.ih-card-connection-ok {
     background: rgba(16, 185, 129, 0.15);
     color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.22);
 }
 .ih-card-connection-status.ih-card-connection-fail {
     background: rgba(239, 68, 68, 0.15);
     color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
 .ih-card-body {
@@ -558,6 +560,44 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 24px;
+}
+
+.ih-editor-single {
+    max-width: 640px;
+}
+
+.ih-editor-single .ih-editor-section {
+    margin-bottom: 0;
+}
+
+/* Connection status in editor: rounded pill like Sonarr/app settings */
+#indexer-hunt-section #ih-connection-status-container .connection-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 13px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+#indexer-hunt-section #ih-connection-status-container .connection-status.checking {
+    background: rgba(59, 130, 246, 0.1);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+#indexer-hunt-section #ih-connection-status-container .connection-status.success {
+    background: rgba(16, 185, 129, 0.1);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.22);
+}
+#indexer-hunt-section #ih-connection-status-container .connection-status.error {
+    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
 .ih-editor-section {

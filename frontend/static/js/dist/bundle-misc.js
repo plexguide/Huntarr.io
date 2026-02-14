@@ -4172,7 +4172,6 @@
         _on('ih-empty-add-btn', 'click', function() { _openEditor(null); });
         _on('ih-editor-back', 'click', function() { _showListView(); });
         _on('ih-editor-save', 'click', _saveForm);
-        _on('ih-form-test-btn', 'click', _testFromForm);
         _on('ih-search-input', 'input', function() { _renderCards(); });
         _on('ih-form-preset', 'change', _onPresetChange);
 
@@ -4589,9 +4588,6 @@
         var priorityEl = document.getElementById('ih-form-priority');
         var enabledEl = document.getElementById('ih-form-enabled');
         var protocolEl = document.getElementById('ih-form-protocol');
-        var testResult = document.getElementById('ih-test-result');
-
-        if (testResult) testResult.innerHTML = '';
 
         if (existingIdx) {
             if (presetSel) { presetSel.value = existingIdx.preset || 'manual'; presetSel.disabled = true; }
@@ -4771,50 +4767,6 @@
         })
         .catch(function(err) {
             if (window.huntarrUI) window.huntarrUI.showNotification('Error: ' + err, 'error');
-        });
-    }
-
-    function _testFromForm() {
-        var presetEl = document.getElementById('ih-form-preset');
-        var urlEl = document.getElementById('ih-form-url');
-        var apiPathEl = document.getElementById('ih-form-api-path');
-        var apiKeyEl = document.getElementById('ih-form-api-key');
-        var resultEl = document.getElementById('ih-test-result');
-
-        var body = {
-            preset: presetEl ? presetEl.value : 'manual',
-            url: (urlEl ? urlEl.value : '').trim(),
-            api_path: (apiPathEl ? apiPathEl.value : '/api').trim(),
-            api_key: (apiKeyEl ? apiKeyEl.value : '').trim(),
-        };
-
-        if (!body.api_key) {
-            if (window.huntarrUI) window.huntarrUI.showNotification('API Key is required to test.', 'error');
-            return;
-        }
-
-        var btn = document.getElementById('ih-form-test-btn');
-        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...'; }
-        if (resultEl) resultEl.innerHTML = '';
-
-        fetch('./api/indexer-hunt/validate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-        })
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (data.valid) {
-                if (resultEl) resultEl.innerHTML = '<div class="ih-test-ok"><i class="fas fa-check-circle"></i> Connection successful</div>';
-            } else {
-                if (resultEl) resultEl.innerHTML = '<div class="ih-test-fail"><i class="fas fa-times-circle"></i> ' + _esc(data.message || 'Connection failed') + '</div>';
-            }
-        })
-        .catch(function(err) {
-            if (resultEl) resultEl.innerHTML = '<div class="ih-test-fail"><i class="fas fa-times-circle"></i> ' + _esc(String(err)) + '</div>';
-        })
-        .finally(function() {
-            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-plug"></i> Test Connection'; }
         });
     }
 

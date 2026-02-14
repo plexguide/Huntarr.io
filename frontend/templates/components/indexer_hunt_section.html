@@ -90,8 +90,7 @@
             </button>
         </div>
 
-        <div class="ih-editor-grid">
-            <!-- Left: Connection Settings -->
+        <div class="ih-editor-single">
             <div class="ih-editor-section">
                 <div class="ih-editor-section-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                     <span>Connection Settings</span>
@@ -126,11 +125,6 @@
                     <label for="ih-form-api-key">API Key</label>
                     <input type="text" id="ih-form-api-key" class="ih-input" placeholder="Enter API key">
                 </div>
-            </div>
-
-            <!-- Right: Configuration -->
-            <div class="ih-editor-section">
-                <div class="ih-editor-section-title">Configuration</div>
                 <div class="ih-field">
                     <label for="ih-form-priority">Priority (1-99)</label>
                     <input type="number" id="ih-form-priority" class="ih-input" value="50" min="1" max="99">
@@ -142,12 +136,6 @@
                         <div class="ih-toggle active" id="ih-form-enabled"></div>
                         <span id="ih-form-enabled-label" class="ih-toggle-label">Enabled</span>
                     </div>
-                </div>
-                <div class="ih-field ih-test-area">
-                    <button class="ih-btn-test" id="ih-form-test-btn">
-                        <i class="fas fa-plug"></i> Test Connection
-                    </button>
-                    <div class="ih-test-result" id="ih-test-result"></div>
                 </div>
             </div>
         </div>
