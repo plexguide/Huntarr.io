@@ -2,6 +2,14 @@
 <section id="mediaHuntProfilesSection" class="content-section" style="display: none;">
     {% with section_id='settings-profiles' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <div class="app-content-panel" style="width:100%;padding:20px;margin:0;background:transparent;box-shadow:none;border:none;">
+        <!-- No-instances warning box (same style as Media Management) -->
+        <div id="media-hunt-profiles-no-instances" class="media-hunt-profiles-no-instances" style="display: none;">
+            <i class="fas fa-cube" aria-hidden="true"></i>
+            <p class="no-instances-title">No instances configured</p>
+            <p class="no-instances-desc">Configure a Movie Hunt or TV Hunt instance to manage profiles.</p>
+            <a href="./#media-hunt-instances" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure instances</a>
+        </div>
+        <div id="media-hunt-profiles-content-wrapper">
         <div class="media-hunt-settings-instance-bar" style="margin-bottom: 16px;">
             <select id="media-hunt-profiles-instance-select" class="control-select" aria-label="Instance">
                 <option value="">Loading...</option>
@@ -17,6 +25,7 @@
             <div class="instance-card-grid" id="media-hunt-profiles-grid">
                 <!-- Populated by JS: profile cards + Add Profile card -->
             </div>
+        </div>
         </div>
     </div>
 
@@ -43,6 +52,54 @@
 <style>
     #mediaHuntProfilesSection { width: 100%; min-height: 60vh; overflow-y: auto; }
     #mediaHuntProfilesSection.active { display: block !important; }
+    /* No-instances warning box — same style as Media Management */
+    .media-hunt-profiles-no-instances {
+        text-align: center;
+        padding: 64px 24px;
+        width: 100%;
+        box-sizing: border-box;
+        background: rgba(15, 23, 42, 0.4);
+        border: 1px solid rgba(148, 163, 184, 0.08);
+        border-radius: 12px;
+        margin: 0 0 20px 0;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    }
+    .media-hunt-profiles-no-instances i.fa-cube {
+        font-size: 3rem;
+        color: #334155;
+        margin-bottom: 16px;
+        display: block;
+    }
+    .media-hunt-profiles-no-instances .no-instances-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #f1f5f9;
+        margin: 0 0 8px 0;
+    }
+    .media-hunt-profiles-no-instances .no-instances-desc {
+        font-size: 0.95rem;
+        color: #94a3b8;
+        line-height: 1.6;
+        margin: 0 auto 24px auto;
+        max-width: 400px;
+    }
+    .media-hunt-profiles-no-instances .no-instances-action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(99, 102, 241, 0.2);
+        border: 1px solid rgba(99, 102, 241, 0.4);
+        color: #818cf8;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: background 0.2s, border-color 0.2s;
+    }
+    .media-hunt-profiles-no-instances .no-instances-action-btn:hover {
+        background: rgba(99, 102, 241, 0.3);
+        border-color: rgba(99, 102, 241, 0.5);
+    }
     body.profile-add-modal-open { overflow: hidden; }
 
     /* Profiles header — matches Import Lists (box, title, line under it) */

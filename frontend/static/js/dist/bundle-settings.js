@@ -4869,6 +4869,10 @@ document.head.appendChild(styleEl);
                 emptyOpt.value = '';
                 emptyOpt.textContent = 'No Movie or TV Hunt instances';
                 selectEl.appendChild(emptyOpt);
+                var noInstEl = document.getElementById('media-hunt-profiles-no-instances');
+                var wrapperEl = document.getElementById('media-hunt-profiles-content-wrapper');
+                if (noInstEl) noInstEl.style.display = '';
+                if (wrapperEl) wrapperEl.style.display = 'none';
                 M._combinedDropdownPopulated = true;
                 return;
             }
@@ -4897,6 +4901,10 @@ document.head.appendChild(styleEl);
             }
             selectEl.value = selected;
             M._combinedDropdownPopulated = true;
+            var noInstEl = document.getElementById('media-hunt-profiles-no-instances');
+            var wrapperEl = document.getElementById('media-hunt-profiles-content-wrapper');
+            if (noInstEl) noInstEl.style.display = 'none';
+            if (wrapperEl) wrapperEl.style.display = '';
             var parts = (selected || '').split(':');
             if (parts.length === 2) {
                 var m = parts[0] === 'tv' ? 'tv' : 'movie';
