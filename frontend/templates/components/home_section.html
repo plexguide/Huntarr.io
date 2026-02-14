@@ -631,7 +631,8 @@
     .nzb-home-status-metrics {
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 20px;
+        row-gap: 10px;
         flex-wrap: wrap;
     }
     .nzb-home-status-title {
@@ -639,6 +640,7 @@
         font-weight: 600;
         font-size: 0.82rem;
         white-space: nowrap;
+        margin-right: 4px;
     }
     .nzb-home-status-title i {
         color: #6366f1;
@@ -647,7 +649,10 @@
     .nzb-home-status-item {
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.04);
         color: #94a3b8;
         font-size: 0.78rem;
         white-space: nowrap;
@@ -691,11 +696,24 @@
     #nzb-hunt-home-card {
         margin: 0;
     }
+    @media (max-width: 900px) {
+        .nzb-home-status-metrics {
+            gap: 12px;
+            row-gap: 8px;
+        }
+        .nzb-home-status-item {
+            padding: 4px 8px;
+        }
+    }
     @media (max-width: 768px) {
         .nzb-home-status-bar {
             flex-direction: column;
             align-items: flex-start;
             gap: 8px;
+        }
+        .nzb-home-status-metrics {
+            gap: 10px;
+            row-gap: 8px;
         }
         .nzb-home-status-actions {
             width: 100%;
