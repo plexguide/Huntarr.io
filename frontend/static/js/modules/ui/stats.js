@@ -361,6 +361,7 @@ window.HuntarrStats = {
         var cssClass = app.replace(/-/g, '');
         card.innerHTML =
             '<div class="card-drag-handle" title="Drag to reorder"><i class="fas fa-grip-vertical"></i></div>' +
+            '<div class="status-container"><span class="status-badge"></span></div>' +
             '<div class="hourly-cap-container">' +
                 '<div class="hourly-cap-status">' +
                     '<span class="hourly-cap-icon"></span>' +
@@ -841,7 +842,7 @@ window.HuntarrStats = {
     checkAppConnections: function() {
         if (!window.huntarrUI) return;
         var self = this;
-        var apps = ['movie_hunt', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+        var apps = ['movie_hunt', 'tv_hunt', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
         var checkPromises = apps.map(function(app) { return self.checkAppConnection(app); });
         Promise.all(checkPromises)
             .then(function() {
@@ -861,7 +862,7 @@ window.HuntarrStats = {
             .then(function(data) {
                 self.updateConnectionStatus(app, data);
                 var isConfigured = data.configured === true;
-                if (['movie_hunt', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr'].indexOf(app) !== -1) {
+                if (['movie_hunt', 'tv_hunt', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr'].indexOf(app) !== -1) {
                     isConfigured = (data.total_configured || 0) > 0;
                 }
                 if (window.huntarrUI) window.huntarrUI.configuredApps[app] = isConfigured;
@@ -874,8 +875,12 @@ window.HuntarrStats = {
     },
 
     updateConnectionStatus: function(app, statusData) {
-        if (!window.huntarrUI || !window.huntarrUI.elements) return;
-        var statusElement = window.huntarrUI.elements[app + 'HomeStatus'];
+        if (!window.huntarrUI) return;
+        var statusElement = (window.huntarrUI.elements && window.huntarrUI.elements[app + 'HomeStatus']) || null;
+        if (!statusElement) {
+            var card = document.querySelector('.app-stats-card[data-app="' + app + '"]');
+            statusElement = card ? card.querySelector('.status-container .status-badge') : null;
+        }
         if (!statusElement) return;
 
         var isConfigured = statusData && statusData.configured === true;
@@ -883,17 +888,19 @@ window.HuntarrStats = {
         var connectedCount = (statusData && statusData.connected_count) || 0;
         var totalConfigured = (statusData && statusData.total_configured) || 0;
 
-        if (['movie_hunt', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr'].indexOf(app) !== -1) {
+        if (['movie_hunt', 'tv_hunt', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr'].indexOf(app) !== -1) {
             isConfigured = totalConfigured > 0;
             isConnected = isConfigured && connectedCount > 0;
         }
 
         var card = statusElement.closest('.app-stats-card');
+        var statusContainer = statusElement.closest('.status-container');
         var wrapper = card ? card.closest('.app-stats-card-wrapper') : null;
         var container = wrapper || card;
         if (isConfigured) {
             if (container) container.style.display = '';
             if (wrapper) wrapper.querySelectorAll('.app-stats-card').forEach(function(c) { c.style.display = ''; });
+            if (statusContainer) statusContainer.style.display = '';
         } else {
             if (container) container.style.display = 'none';
             if (card) card.style.display = 'none';
@@ -902,7 +909,7 @@ window.HuntarrStats = {
             return;
         }
 
-        if (['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr'].indexOf(app) !== -1) {
+        if (['movie_hunt', 'tv_hunt', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr'].indexOf(app) !== -1) {
             statusElement.innerHTML = '<i class="fas fa-plug"></i> Connected ' + connectedCount + '/' + totalConfigured;
             statusElement.className = 'status-badge ' + (isConnected ? 'connected' : 'error');
         } else {
