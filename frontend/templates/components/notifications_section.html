@@ -1,6 +1,9 @@
 <section id="notificationsSection" class="content-section" style="display: none;">
     {% with section_id='notifications' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
-    <div class="notif-container">
+    <div class="app-content-panel" style="padding: 20px;">
+        {% from 'components/page_header_partial.html' import page_header %}
+        {{ page_header(back_href='./#settings', parent_icon='fas fa-bell', parent_name='Settings', current_name='Notifications') }}
+        <div class="notif-container">
 
         <!-- Add New Connection -->
         <div class="notif-card" id="addConnectionPanel">
@@ -39,6 +42,7 @@
             </div>
         </div>
 
+        </div>
     </div>
 
     <!-- Edit / Add Modal Overlay -->

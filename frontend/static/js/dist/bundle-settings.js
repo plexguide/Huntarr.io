@@ -11797,24 +11797,7 @@ document.head.appendChild(styleEl);
         container.setAttribute("data-app-type", "logs");
 
         container.innerHTML = `
-            <!-- Toolbar -->
-            <div class="mset-toolbar">
-                <div class="mset-toolbar-left">
-                    <div class="mset-breadcrumb">
-                        <i class="fas fa-file-alt"></i>
-                        <span>Settings</span>
-                        <i class="fas fa-chevron-right mset-breadcrumb-sep"></i>
-                        <span>Logs</span>
-                    </div>
-                </div>
-                <div class="mset-toolbar-right">
-                    <button type="button" id="logs-save-button" class="mset-save-btn" disabled>
-                        <i class="fas fa-save"></i> Save
-                    </button>
-                </div>
-            </div>
-
-            <!-- Two-column grid -->
+            <!-- Two-column grid (header is in template) -->
             <div class="mset-grid">
 
                 <!-- Log Rotation card -->
@@ -12954,24 +12937,7 @@ document.head.appendChild(styleEl);
         })();
 
         container.innerHTML = `
-            <!-- Toolbar -->
-            <div class="mset-toolbar">
-                <div class="mset-toolbar-left">
-                    <div class="mset-breadcrumb">
-                        <i class="fas fa-cog"></i>
-                        <span>Settings</span>
-                        <i class="fas fa-chevron-right mset-breadcrumb-sep"></i>
-                        <span>Main</span>
-                    </div>
-                </div>
-                <div class="mset-toolbar-right">
-                    <button type="button" id="settings-save-button" class="mset-save-btn" disabled>
-                        <i class="fas fa-save"></i> Save
-                    </button>
-                </div>
-            </div>
-
-            <!-- Two-column grid -->
+            <!-- Two-column grid (header is in template) -->
             <div class="mset-grid">
 
                 <!-- System Settings card -->
