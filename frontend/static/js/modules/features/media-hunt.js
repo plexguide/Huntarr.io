@@ -445,10 +445,12 @@
         },
 
         addToCollection(show, instanceIdFromContext) {
-            const collectionSelect = document.getElementById('media-hunt-collection-instance-select');
+            const tvCollectionSelect = document.getElementById('media-hunt-collection-tv-instance-select');
+            const collectionSelect = document.getElementById('media-hunt-collection-instance-select'); // legacy fallback
             const discoverSelect = document.getElementById('media-hunt-instance-select');
             const instId = (instanceIdFromContext !== undefined && instanceIdFromContext !== '') ? instanceIdFromContext
-                : (collectionSelect ? collectionSelect.value : '')
+                : (tvCollectionSelect ? tvCollectionSelect.value : '')
+                || (collectionSelect ? collectionSelect.value : '')
                 || (discoverSelect ? discoverSelect.value : '');
             if (!instId) {
                 if (window.huntarrUI) window.huntarrUI.showNotification('Please select an instance first.', 'error');

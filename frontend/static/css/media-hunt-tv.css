@@ -338,6 +338,7 @@
 #media-hunt-collection-view .movies-controls {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     gap: 16px;
     flex-wrap: wrap;
     margin-bottom: 20px;

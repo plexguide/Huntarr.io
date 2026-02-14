@@ -49,6 +49,58 @@
     justify-items: start;
 }
 
+/* Media Hunt Collection: no-instances empty state — full-width expanding box (like Index Master Pool ih-group-box) */
+#media-hunt-collection-grid:has(.media-hunt-collection-no-instances) {
+    display: block;
+}
+.media-hunt-collection-no-instances {
+    text-align: center;
+    padding: 64px 24px;
+    width: 100%;
+    box-sizing: border-box;
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(148, 163, 184, 0.08);
+    border-radius: 12px;
+    margin: 0 0 20px 0;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+.media-hunt-collection-no-instances i.fa-cube {
+    font-size: 3rem;
+    color: #334155;
+    margin-bottom: 16px;
+    display: block;
+}
+.media-hunt-collection-no-instances .no-instances-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    margin: 0 0 8px 0;
+}
+.media-hunt-collection-no-instances .no-instances-desc {
+    font-size: 0.95rem;
+    color: #94a3b8;
+    line-height: 1.6;
+    margin: 0 auto 24px auto;
+    max-width: 400px;
+}
+.media-hunt-collection-no-instances .no-instances-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(99, 102, 241, 0.2);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    color: #818cf8;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background 0.2s, border-color 0.2s;
+}
+.media-hunt-collection-no-instances .no-instances-action-btn:hover {
+    background: rgba(99, 102, 241, 0.3);
+    border-color: rgba(99, 102, 241, 0.5);
+}
+
 /* ── Requestarr-style Search Bar ───────────────────────────────── */
 .requestarr-search-container {
     position: relative;
@@ -353,6 +405,16 @@
     max-width: none !important;
     margin: 0;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+#media-hunt-collection-view .content-section-title,
+#media-hunt-collection-view .instance-management-description {
+    text-align: left;
+}
+#media-hunt-collection-view .instance-management-description {
+    margin-bottom: 32px !important;
 }
 #media-hunt-collection-view .media-grid,
 #media-hunt-collection-view .media-table-container,
@@ -548,12 +610,19 @@
     margin-bottom: 20px;
 }
 
+/* Media Hunt Collection: dual instance dropdowns (Movie Hunt + TV Hunt only), like Requestarr */
+#media-hunt-collection-view .discover-instance-controls.media-hunt-collection-controls,
 #media-hunt-collection-view .media-hunt-collection-controls {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     gap: 16px;
     flex-wrap: wrap;
     margin-bottom: 20px;
+}
+
+#media-hunt-collection-view .discover-instance-controls .instance-selector-container {
+    flex-shrink: 0;
 }
 
 /* Collection search bar - blue-tinted style matching Requestarr */

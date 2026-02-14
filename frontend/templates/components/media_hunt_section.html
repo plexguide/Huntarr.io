@@ -46,10 +46,10 @@
         </div>
     </div>
 
-    <!-- Media Hunt Collection: one combined instance dropdown (TV - Name / Movie - Name), one content area -->
+    <!-- Media Hunt Collection: Movie Hunt + TV Hunt instance dropdowns, combined library view -->
     <div id="media-hunt-collection-view" class="media-hunt-collection-view" style="display: none;">
         <h2 class="content-section-title" style="margin-bottom: 12px;">Media Hunt Collection</h2>
-        <p class="instance-management-description" style="margin-bottom: 24px;">View and manage your TV and Movie collections. Select an instance below to view its collection.</p>
+        <p class="instance-management-description" style="margin-bottom: 24px;">View and manage your TV and Movie collections. Select Movie Hunt and TV Hunt instances below to see a combined library.</p>
 
         <div class="global-search-bar" style="margin-bottom: 12px;">
             <i class="fas fa-search"></i>
@@ -60,15 +60,23 @@
             <div id="media-hunt-collection-search-results-grid" class="search-results-grid"></div>
         </div>
         <div id="media-hunt-collection-main-content">
-            <div class="movies-controls media-hunt-collection-controls">
+            <div class="discover-instance-controls media-hunt-collection-controls" style="margin-bottom: 20px;">
                 <div class="instance-selector-container">
-                    <select id="media-hunt-collection-instance-select" class="control-select instance-select" aria-label="Instance">
-                        <option value="">Loading instances...</option>
+                    <select id="media-hunt-collection-movie-instance-select" class="control-select instance-select" aria-label="Movie Hunt Instance">
+                        <option value="">Loading Movie Hunt instances...</option>
+                    </select>
+                </div>
+                <div class="instance-selector-container">
+                    <select id="media-hunt-collection-tv-instance-select" class="control-select instance-select" aria-label="TV Hunt Instance">
+                        <option value="">Loading TV Hunt instances...</option>
                     </select>
                 </div>
                 <div class="sort-dropdown">
                     <select id="media-hunt-collection-sort" class="control-select">
                         <option value="title.asc">Title (A-Z)</option>
+                        <option value="title.desc">Title (Z-A)</option>
+                        <option value="year.desc">Year (newest)</option>
+                        <option value="year.asc">Year (oldest)</option>
                     </select>
                 </div>
                 <div class="view-mode-selector">
@@ -84,7 +92,7 @@
             </div>
             <div id="media-hunt-collection-table" class="media-table-container" style="display: none;">
                 <table class="media-table">
-                    <thead><tr><th style="width: 60px;"></th><th>Title</th><th style="width: 80px;">Year</th><th style="width: 120px;">Status</th></tr></thead>
+                    <thead><tr><th style="width: 60px;"></th><th>Title</th><th style="width: 80px;">Year</th><th style="width: 80px;">Type</th></tr></thead>
                     <tbody id="media-hunt-collection-table-body"></tbody>
                 </table>
             </div>
