@@ -58,7 +58,22 @@
     }
 
     function onSidebarClick(e) {
-        if (e.target.closest('a.nav-item')) shut();
+        var link = e.target.closest('a.nav-item');
+        if (!link) return;
+        /* Subcategory (child item): close */
+        if (link.classList.contains('nav-item-sub')) { shut(); return; }
+        /* Parent with submenu in same sidebar: keep open */
+        var next = link.nextElementSibling;
+        if (next && next.classList.contains('nav-sub-group')) {
+            return;
+        }
+        /* Major category: link switches to sidebar with more nav (Requests, Media Hunt, Apps, NZB Hunt): keep open */
+        var href = link.getAttribute('href') || '';
+        var hash = href.indexOf('#') >= 0 ? href.substring(href.indexOf('#')) : '';
+        var categoryHashes = ['#requestarr', '#media-hunt-collection', '#apps', '#nzb-hunt-home'];
+        if (hash && categoryHashes.indexOf(hash) >= 0) return;
+        /* Leaf item: close */
+        shut();
     }
 
     function shut() {
