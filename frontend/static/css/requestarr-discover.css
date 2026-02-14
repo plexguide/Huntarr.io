@@ -4125,6 +4125,10 @@ body.requestarr-modal-open {
     border-color: #3b82f6 !important;
     background-color: rgba(15, 23, 42, 0.8) !important;
 }
+/* Thin red border when no instance or no root configured */
+.mh-req-field select.field-warning {
+    border: 1px solid #ef4444 !important;
+}
 .mh-req-field select option {
     background-color: #1e293b !important;
     color: #f1f5f9 !important;

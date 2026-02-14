@@ -262,7 +262,9 @@ class RequestarrModal {
             instanceSelect.innerHTML = '';
             if (uniqueInstances.length === 0) {
                 instanceSelect.innerHTML = '<option value="">No Instance Configured</option>';
+                instanceSelect.classList.add('field-warning');
             } else {
+                instanceSelect.classList.remove('field-warning');
                 uniqueInstances.forEach(instance => {
                     const opt = document.createElement('option');
                     opt.value = instance.compoundValue || instance.name;
@@ -330,7 +332,10 @@ class RequestarrModal {
                 statusContainer.innerHTML = '';
             }
             const rootSelect = document.getElementById('modal-root-folder');
-            if (rootSelect) rootSelect.innerHTML = '<option value="">Select an instance first</option>';
+            if (rootSelect) {
+                rootSelect.innerHTML = '<option value="">Select an instance first</option>';
+                rootSelect.classList.remove('field-warning');
+            }
         }
 
         // Disable request button if no instances configured
@@ -352,6 +357,7 @@ class RequestarrModal {
         const appType = decoded.appType;
         const actualInstanceName = decoded.name;
         rootSelect.innerHTML = '<option value="">Loading...</option>';
+        rootSelect.classList.remove('field-warning');
 
         try {
             const response = await fetch(`./api/requestarr/rootfolders?app_type=${appType}&instance_name=${encodeURIComponent(actualInstanceName)}`);
@@ -374,8 +380,10 @@ class RequestarrModal {
                 });
 
                 if (seenPaths.size === 0) {
-                    rootSelect.innerHTML = '<option value="">Use default (first root folder)</option>';
+                    rootSelect.innerHTML = '<option value="">No Root Configured</option>';
+                    rootSelect.classList.add('field-warning');
                 } else {
+                    rootSelect.classList.remove('field-warning');
                     rootSelect.innerHTML = '';
                     let defaultFound = false;
                     let firstPath = null;
@@ -395,11 +403,13 @@ class RequestarrModal {
                     }
                 }
             } else {
-                rootSelect.innerHTML = '<option value="">Use default (first root folder)</option>';
+                rootSelect.innerHTML = '<option value="">No Root Configured</option>';
+                rootSelect.classList.add('field-warning');
             }
         } catch (error) {
             console.error('[RequestarrModal] Error loading root folders:', error);
-            rootSelect.innerHTML = '<option value="">Use default (first root folder)</option>';
+            rootSelect.innerHTML = '<option value="">No Root Configured</option>';
+            rootSelect.classList.add('field-warning');
         } finally {
             this._loadingModalRootFolders = false;
             this._updateRequestButtonFromRootFolder();
