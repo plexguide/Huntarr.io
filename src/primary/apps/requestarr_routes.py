@@ -236,11 +236,22 @@ def request_media():
             logger.error(f"[Requestarr] {error_msg}")
             return jsonify({'success': False, 'message': error_msg}), 400
         
-        # Determine app_type from media_type if not provided
+        # Determine app_type from request; fallback for TV when quality_profile is a name (TV Hunt)
         media_type = data['media_type']
-        app_type = data.get('app_type')
+        app_type = (data.get('app_type') or '').strip() or None
         if not app_type:
             app_type = 'sonarr' if media_type == 'tv' else 'radarr'
+        quality_profile_raw = data.get('quality_profile')
+        # If TV + quality_profile looks like a name (not numeric), treat as TV Hunt
+        if media_type == 'tv' and quality_profile_raw and str(quality_profile_raw).strip():
+            try:
+                int(quality_profile_raw)
+            except (TypeError, ValueError):
+                if app_type == 'sonarr':
+                    th_instances = requestarr_api.get_enabled_instances().get('tv_hunt', [])
+                    if any(inst.get('name') == instance_name for inst in th_instances):
+                        app_type = 'tv_hunt'
+                        logger.info(f"[Requestarr] Inferred app_type=tv_hunt (instance '{instance_name}' in TV Hunt, profile name '{quality_profile_raw}')")
         
         logger.info(f"[Requestarr] Processing {media_type} request for '{data['title']}' to {app_type} instance '{instance_name}'")
         
@@ -262,8 +273,14 @@ def request_media():
             quality_profile_id = None
             quality_profile_name = quality_profile if quality_profile and quality_profile != '' else None
         else:
-            quality_profile_id = int(quality_profile) if quality_profile and quality_profile != '' else None
+            quality_profile_id = None
             quality_profile_name = None
+            if quality_profile and str(quality_profile).strip() != '':
+                try:
+                    quality_profile_id = int(quality_profile)
+                except (TypeError, ValueError):
+                    logger.warning(f"[Requestarr] quality_profile '{quality_profile}' is not a valid ID for {app_type}")
+                    return jsonify({'success': False, 'message': f'Invalid quality profile. For TV Hunt, select a TV Hunt instance (not Sonarr).'}), 400
         
         monitor = (data.get('monitor') or '').strip() or None
         result = requestarr_api.request_media(
