@@ -6560,16 +6560,14 @@ window.HuntarrStats = {
                         '<col class="col-instance">' +
                         '<col class="col-searches">' +
                         '<col class="col-upgrades">' +
-                        '<col class="col-api">' +
-                        '<col class="col-status">' +
+                        '<col class="col-api-status">' +
                         '<col class="col-actions">' +
                     '</colgroup>' +
                     '<thead><tr>' +
                         '<th>Instance</th>' +
                         '<th class="col-searches" data-abbr="' + (app === 'movie_hunt' || app === 'tv_hunt' ? 'F/Srch' : 'Searches') + '">' + (app === 'movie_hunt' || app === 'tv_hunt' ? 'Found / Searches' : 'Searches') + '</th>' +
                         '<th class="col-upgrades" data-abbr="' + (app === 'movie_hunt' || app === 'tv_hunt' ? 'F/Upg' : 'Upgrades') + '">' + (app === 'movie_hunt' || app === 'tv_hunt' ? 'Found / Upgrades' : 'Upgrades') + '</th>' +
-                        '<th>API Usage</th>' +
-                        '<th>Status</th>' +
+                        '<th>API / Status</th>' +
                         '<th></th>' +
                     '</tr></thead><tbody>';
 
@@ -6597,13 +6595,15 @@ window.HuntarrStats = {
                         '<td class="list-instance-name">' + name + '</td>' +
                         '<td class="list-stat ' + app + '">' + searchesCell + '</td>' +
                         '<td class="list-stat ' + app + '">' + upgradesCell + '</td>' +
-                        '<td class="list-api">' +
-                            '<div class="list-api-bar"><div class="list-api-fill ' + app + '" style="width:' + pct + '%;"></div></div>' +
-                            '<span class="list-api-text">' + apiHits + '/' + apiLimit + '</span>' +
-                        '</td>' +
-                        '<td class="list-status">' +
-                            '<div class="cycle-timer inline-timer ' + cssClass + '" data-app-type="' + app + '">' +
-                                '<i class="fas fa-clock ' + cssClass + '-icon"></i> <span class="timer-value">Loading...</span>' +
+                        '<td class="list-api-status">' +
+                            '<div class="list-api-row">' +
+                                '<div class="list-api-bar"><div class="list-api-fill ' + app + '" style="width:' + pct + '%;"></div></div>' +
+                                '<span class="list-api-text">' + apiHits + '/' + apiLimit + '</span>' +
+                            '</div>' +
+                            '<div class="list-status-row">' +
+                                '<div class="cycle-timer inline-timer ' + cssClass + '" data-app-type="' + app + '">' +
+                                    '<i class="fas fa-clock ' + cssClass + '-icon"></i> <span class="timer-value">Loading...</span>' +
+                                '</div>' +
                             '</div>' +
                         '</td>' +
                         '<td class="list-actions">' +

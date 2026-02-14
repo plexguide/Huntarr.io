@@ -12,7 +12,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 16px;
+    padding: 10px 20px 10px 16px;
     background: rgba(0, 0, 0, 0.15);
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
     border-radius: 12px 12px 0 0;
@@ -505,11 +505,16 @@
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.06);
     background: rgba(15, 23, 42, 0.5);
+    /* Extend into container padding so headers touch the border */
+    margin: 0 -16px;
+    padding: 0 16px;
 }
 
 .app-stats-list .app-group-header.list-header {
     margin-bottom: 0;
-    padding: 12px 20px;
+    margin-left: -16px;
+    margin-right: -16px;
+    padding: 12px 20px 12px 16px;
     background: linear-gradient(145deg, rgba(30, 41, 59, 0.7), rgba(22, 30, 45, 0.6));
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 0;
@@ -523,12 +528,11 @@
 }
 
 /* Column widths for alignment */
-.app-list-table colgroup .col-instance { width: 22%; }
-.app-list-table colgroup .col-searches { width: 13%; }
-.app-list-table colgroup .col-upgrades { width: 13%; }
-.app-list-table colgroup .col-api      { width: 22%; }
-.app-list-table colgroup .col-status   { width: 20%; }
-.app-list-table colgroup .col-actions  { width: 10%; }
+.app-list-table colgroup .col-instance     { width: 20%; }
+.app-list-table colgroup .col-searches    { width: 12%; }
+.app-list-table colgroup .col-upgrades   { width: 12%; }
+.app-list-table colgroup .col-api-status  { width: 32%; }
+.app-list-table colgroup .col-actions     { width: 8%; }
 
 .app-list-table thead th {
     text-align: left;
@@ -588,20 +592,37 @@
 .list-stat.whisparr,
 .list-stat.eros       { color: #f472b6; }
 
-/* API usage cell in list mode */
-.list-api {
+/* API + Status combined cell — two rows to prevent collision */
+.list-api-status {
+    vertical-align: middle;
+    white-space: normal;
+}
+
+.list-api-row {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.list-status-row {
+    display: flex;
+    align-items: center;
+    min-height: 28px;
+}
+
+.list-api-row .list-api-bar {
+    flex: 0 1 auto;
+    width: 56px;
+    min-width: 36px;
+    max-width: 70px;
 }
 
 .list-api-bar {
-    width: 80px;
     height: 5px;
     background: rgba(15, 23, 42, 0.8);
     border-radius: 4px;
     overflow: hidden;
-    flex-shrink: 0;
     border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
@@ -628,12 +649,8 @@
     min-width: 42px;
 }
 
-/* Status column in list mode — inline timer */
-.list-status {
-    white-space: nowrap;
-}
-
-.list-status .cycle-timer {
+/* Status row — timer on its own row, no collision with API */
+.list-status-row .cycle-timer {
     display: inline-flex;
     align-items: center;
     gap: 5px;
@@ -645,12 +662,12 @@
     border-radius: 5px;
 }
 
-.list-status .cycle-timer i {
+.list-status-row .cycle-timer i {
     font-size: 0.7rem;
     opacity: 0.7;
 }
 
-.list-status .timer-value {
+.list-status-row .timer-value {
     font-size: 0.76rem !important;
     font-weight: 600;
     letter-spacing: 0.3px;
@@ -658,6 +675,7 @@
 
 .list-actions {
     text-align: right;
+    padding-right: 20px !important; /* Keep refresh button inset from container border */
 }
 
 .list-actions .cycle-reset-button {
@@ -680,24 +698,18 @@
    Prevents jumbled API + Status when viewport is 769px–1100px
    ═══════════════════════════════════════════════════════════════════ */
 @media (max-width: 1100px) and (min-width: 769px) {
-    .app-list-table colgroup .col-instance { width: 16%; }
-    .app-list-table colgroup .col-searches { width: 11%; }
-    .app-list-table colgroup .col-upgrades { width: 11%; }
-    .app-list-table colgroup .col-api      { width: 16%; }
-    .app-list-table colgroup .col-status  { width: 30%; }
-    .app-list-table colgroup .col-actions  { width: 8%; }
+    .app-list-table colgroup .col-instance    { width: 16%; }
+    .app-list-table colgroup .col-searches   { width: 11%; }
+    .app-list-table colgroup .col-upgrades   { width: 11%; }
+    .app-list-table colgroup .col-api-status { width: 36%; }
+    .app-list-table colgroup .col-actions    { width: 8%; }
 
-    /* Status column: min-width for timer, clear visual separation from API */
-    .app-list-table tbody td.list-status {
-        min-width: 115px;
-        padding-left: 14px;
-        margin-left: 6px;
-        border-left: 1px solid rgba(255, 255, 255, 0.08);
+    /* Shrink API bar further in narrow view */
+    .list-api-row .list-api-bar {
+        max-width: 52px;
+        min-width: 36px;
     }
-    .app-list-table tbody .list-api {
-        gap: 6px;
-        max-width: 92%;
-    }
+    .list-api-row { gap: 6px; }
     /* Abbreviated headers to avoid jumbled "FOUND / SEARCHESUPGRADES" */
     .app-list-table thead th.col-searches,
     .app-list-table thead th.col-upgrades {
@@ -801,8 +813,7 @@
     .app-list-table tbody td.list-instance-name:before { content: "Instance"; }
     .app-list-table tbody td.list-stat:nth-of-type(2):before { content: "Searches"; }
     .app-list-table tbody td.list-stat:nth-of-type(3):before { content: "Upgrades"; }
-    .app-list-table tbody td.list-api:before { content: "API"; }
-    .app-list-table tbody td.list-status:before { content: "Status"; }
+    .app-list-table tbody td.list-api-status:before { content: "API / Status"; }
     .app-list-table tbody td.list-actions:before { content: none; }
 
     /* Instance name — prominent, full width on mobile */
@@ -828,21 +839,24 @@
         padding-top: 8px;
     }
 
-    /* Status timer in mobile card */
-    .app-list-table tbody td.list-status {
+    /* API/Status combined cell in mobile card — two rows stack */
+    .app-list-table tbody td.list-api-status {
         padding-left: 38%;
-        text-align: right;
     }
+    .list-api-row { margin-bottom: 6px; }
+    .list-status-row { justify-content: flex-end; }
 
-    .list-status .cycle-timer {
+    .list-status-row .cycle-timer {
         display: inline-flex;
         font-size: 0.72rem;
         padding: 2px 6px;
     }
 
-    /* API bar slightly smaller on mobile */
+    /* API bar smaller on mobile */
+    .list-api-row .list-api-bar,
     .list-api-bar {
-        width: 50px;
+        max-width: 44px;
+        min-width: 36px;
     }
 
     .list-api-text {
