@@ -93,7 +93,10 @@
         <div class="ih-editor-grid">
             <!-- Left: Connection Settings -->
             <div class="ih-editor-section">
-                <div class="ih-editor-section-title">Connection Settings</div>
+                <div class="ih-editor-section-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <span>Connection Settings</span>
+                    <div id="ih-connection-status-container"></div>
+                </div>
                 <div class="ih-field">
                     <label for="ih-form-protocol">Protocol</label>
                     <select id="ih-form-protocol" class="ih-input">

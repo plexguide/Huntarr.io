@@ -4501,6 +4501,7 @@
                     + '<span class="ih-card-status ' + statusClass + '"><i class="fas ' + statusIcon + '"></i> ' + statusText + '</span>'
                 + '</div>'
                 + '<div class="ih-card-body">'
+                    + '<div class="ih-card-detail ih-card-connection-row"><span class="ih-card-connection-status" data-connection="pending"><i class="fas fa-spinner fa-spin"></i> Checking...</span></div>'
                     + '<div class="ih-card-detail"><i class="fas fa-globe"></i><span class="ih-detail-value">' + _esc(url) + '</span></div>'
                     + '<div class="ih-card-detail"><i class="fas fa-key"></i><span class="ih-detail-value">' + keyDisplay + '</span></div>'
                     + '<div class="ih-card-detail" style="gap: 8px;">'
@@ -4526,6 +4527,42 @@
 
         var addCard = document.getElementById('ih-add-card-inline');
         if (addCard) addCard.addEventListener('click', function() { _openEditor(null); });
+
+        // Test each indexer connection and update card status (like app settings)
+        _testIndexerCardsConnectionStatus(filtered);
+    }
+
+    function _testIndexerCardsConnectionStatus(indexerList) {
+        if (!indexerList || indexerList.length === 0) return;
+        indexerList.forEach(function(idx) {
+            var card = document.querySelector('.ih-card[data-id="' + idx.id + '"]');
+            var statusEl = card ? card.querySelector('.ih-card-connection-status') : null;
+            if (!statusEl) return;
+            fetch('./api/indexer-hunt/indexers/' + idx.id + '/test', { method: 'POST' })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (!statusEl.parentNode) return;
+                    if (data.valid) {
+                        statusEl.setAttribute('data-connection', 'connected');
+                        statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Connected';
+                        statusEl.classList.add('ih-card-connection-ok');
+                        statusEl.classList.remove('ih-card-connection-fail', 'ih-card-connection-pending');
+                    } else {
+                        statusEl.setAttribute('data-connection', 'error');
+                        statusEl.innerHTML = '<i class="fas fa-times-circle"></i> Failed';
+                        statusEl.classList.add('ih-card-connection-fail');
+                        statusEl.classList.remove('ih-card-connection-ok', 'ih-card-connection-pending');
+                    }
+                })
+                .catch(function() {
+                    if (statusEl.parentNode) {
+                        statusEl.setAttribute('data-connection', 'error');
+                        statusEl.innerHTML = '<i class="fas fa-times-circle"></i> Failed';
+                        statusEl.classList.add('ih-card-connection-fail');
+                        statusEl.classList.remove('ih-card-connection-ok', 'ih-card-connection-pending');
+                    }
+                });
+        });
     }
 
     function _getPresetLabel(preset) {
@@ -4584,6 +4621,80 @@
         if (enabledLabel && enabledEl) enabledLabel.textContent = enabledEl.classList.contains('active') ? 'Enabled' : 'Disabled';
 
         _showEditorView();
+
+        // Auto-test connection when URL or API key changes (like Sonarr/app settings)
+        var statusContainer = document.getElementById('ih-connection-status-container');
+        if (statusContainer) statusContainer.style.display = 'flex';
+        if (!window._ihConnectionListenersBound) {
+            window._ihConnectionListenersBound = true;
+            var urlEl2 = document.getElementById('ih-form-url');
+            var apiPathEl2 = document.getElementById('ih-form-api-path');
+            var apiKeyEl2 = document.getElementById('ih-form-api-key');
+            var debounceTimer;
+            var runStatus = function() {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(function() { _updateConnectionStatusFromForm(); }, 500);
+            };
+            if (urlEl2) { urlEl2.addEventListener('input', runStatus); urlEl2.addEventListener('blur', runStatus); }
+            if (apiPathEl2) { apiPathEl2.addEventListener('input', runStatus); apiPathEl2.addEventListener('blur', runStatus); }
+            if (apiKeyEl2) { apiKeyEl2.addEventListener('input', runStatus); apiKeyEl2.addEventListener('blur', runStatus); }
+        }
+        setTimeout(function() { _updateConnectionStatusFromForm(); }, 100);
+    }
+
+    function _updateConnectionStatusFromForm() {
+        var container = document.getElementById('ih-connection-status-container');
+        if (!container) return;
+        var urlEl = document.getElementById('ih-form-url');
+        var apiPathEl = document.getElementById('ih-form-api-path');
+        var apiKeyEl = document.getElementById('ih-form-api-key');
+        var url = urlEl ? urlEl.value.trim() : '';
+        var apiPath = apiPathEl ? (apiPathEl.value.trim() || '/api') : '/api';
+        var apiKey = apiKeyEl ? apiKeyEl.value.trim() : '';
+        var hasSavedKey = _editingId && _indexers.length;
+        if (hasSavedKey) {
+            var existing = null;
+            _indexers.forEach(function(i) { if (i.id === _editingId) existing = i; });
+            hasSavedKey = !!(existing && existing.api_key_last4);
+        }
+        if (url.length <= 10 && apiKey.length < 10) {
+            container.innerHTML = '<div class="connection-status" style="background: rgba(148,163,184,0.1); color: #94a3b8; border: 1px solid rgba(148,163,184,0.2);"><i class="fas fa-info-circle"></i><span>Enter URL and API Key</span></div>';
+            return;
+        }
+        if (url.length <= 10) {
+            container.innerHTML = '<div class="connection-status" style="background: rgba(251,191,36,0.1); color: #fbbf24; border: 1px solid rgba(251,191,36,0.2);"><i class="fas fa-exclamation-triangle"></i><span>Missing URL</span></div>';
+            return;
+        }
+        if (apiKey.length < 10 && !hasSavedKey) {
+            container.innerHTML = '<div class="connection-status" style="background: rgba(251,191,36,0.1); color: #fbbf24; border: 1px solid rgba(251,191,36,0.2);"><i class="fas fa-exclamation-triangle"></i><span>Missing API Key</span></div>';
+            return;
+        }
+        if (apiKey.length < 10 && hasSavedKey) {
+            container.innerHTML = '<div class="connection-status" style="background: rgba(148,163,184,0.1); color: #94a3b8; border: 1px solid rgba(148,163,184,0.2);"><i class="fas fa-check-circle"></i><span>API key saved. Leave blank to keep.</span></div>';
+            return;
+        }
+        container.innerHTML = '<div class="connection-status checking"><i class="fas fa-spinner fa-spin"></i><span>Checking...</span></div>';
+        var presetEl = document.getElementById('ih-form-preset');
+        var preset = presetEl ? presetEl.value : 'manual';
+        var body = { preset: preset, url: url, api_path: apiPath, api_key: apiKey };
+        fetch('./api/indexer-hunt/validate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.valid) {
+                var msg = 'Connected';
+                if (data.response_time_ms != null) msg += ' (' + data.response_time_ms + 'ms)';
+                container.innerHTML = '<div class="connection-status success"><i class="fas fa-check-circle"></i><span>' + _esc(msg) + '</span></div>';
+            } else {
+                container.innerHTML = '<div class="connection-status error"><i class="fas fa-times-circle"></i><span>' + _esc(data.message || 'Connection failed') + '</span></div>';
+            }
+        })
+        .catch(function(err) {
+            container.innerHTML = '<div class="connection-status error"><i class="fas fa-times-circle"></i><span>' + _esc(String(err && err.message ? err.message : 'Connection failed')) + '</span></div>';
+        });
     }
 
     function _onPresetChange() {

@@ -314,6 +314,29 @@
     color: #ef4444;
 }
 
+.ih-card-connection-row {
+    margin-bottom: 4px;
+}
+.ih-card-connection-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: rgba(148, 163, 184, 0.12);
+    color: #94a3b8;
+}
+.ih-card-connection-status.ih-card-connection-ok {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+.ih-card-connection-status.ih-card-connection-fail {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
 .ih-card-body {
     margin-bottom: 16px;
 }
