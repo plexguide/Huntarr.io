@@ -587,24 +587,45 @@ def _get_download_manager():
 
 
 def _nzb_hunt_configured_as_client() -> bool:
-    """Check if NZB Hunt is configured as a download client in any Movie Hunt or TV Hunt instance."""
+    """Check if NZB Hunt is configured as a download client in any Movie Hunt or TV Hunt instance.
+    Reads raw app_config to catch all instance keys (handles legacy formats and any key naming)."""
     try:
         from src.primary.utils.database import get_database
         db = get_database()
-        for inst in db.get_movie_hunt_instances():
-            config = db.get_app_config_for_instance('clients', inst['id'])
-            if config and isinstance(config.get('clients'), list):
-                if any((c.get('type') or '').lower() == 'nzbhunt' for c in config['clients']):
+
+        def has_nzbhunt(clients):
+            if not clients or not isinstance(clients, list):
+                return False
+            for c in clients:
+                t = (c.get('type') or '').lower().replace('_', '')
+                if t == 'nzbhunt':
                     return True
-        for inst in db.get_tv_hunt_instances():
-            config = db.get_app_config_for_instance('tv_hunt_clients', inst['id'])
-            if config and isinstance(config.get('clients'), list):
-                if any((c.get('type') or '').lower() == 'nzbhunt' for c in config['clients']):
+            return False
+
+        # Movie Hunt: app_type 'clients'
+        raw = db.get_app_config('clients')
+        if raw and isinstance(raw, dict):
+            instances = raw.get('instances')
+            if isinstance(instances, dict):
+                for _k, inst_data in instances.items():
+                    if has_nzbhunt(inst_data.get('clients') if isinstance(inst_data, dict) else None):
+                        return True
+            # Legacy: no instances key, whole blob is for instance 1
+            elif 'clients' in raw and has_nzbhunt(raw['clients']):
+                return True
+
+        # TV Hunt: app_type 'tv_hunt_clients', fallback 'clients' (shared with Movie in some setups)
+        for app_type in ('tv_hunt_clients',):
+            raw = db.get_app_config(app_type)
+            if raw and isinstance(raw, dict):
+                instances = raw.get('instances')
+                if isinstance(instances, dict):
+                    for _k, inst_data in instances.items():
+                        if has_nzbhunt(inst_data.get('clients') if isinstance(inst_data, dict) else None):
+                            return True
+                elif 'clients' in raw and has_nzbhunt(raw['clients']):
                     return True
-            config = db.get_app_config_for_instance('clients', inst['id'])
-            if config and isinstance(config.get('clients'), list):
-                if any((c.get('type') or '').lower() == 'nzbhunt' for c in config['clients']):
-                    return True
+
         return False
     except Exception:
         return False
@@ -616,6 +637,9 @@ def nzb_hunt_status():
     try:
         mgr = _get_download_manager()
         status = mgr.get_status()
+        # Ensure we have a plain dict so we can add our key
+        if not isinstance(status, dict):
+            status = dict(status) if hasattr(status, 'items') else {}
         bandwidth = status.get("bandwidth_by_server", {})
         if bandwidth:
             try:
@@ -628,6 +652,12 @@ def nzb_hunt_status():
     except Exception as e:
         logger.exception("NZB Hunt status error")
         return jsonify({"error": str(e)}), 500
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/is-client-configured", methods=["GET"])
+def nzb_hunt_is_client_configured():
+    """Lightweight check: is NZB Hunt configured as a download client? Used by NZB Home banner."""
+    return jsonify({"configured": _nzb_hunt_configured_as_client()})
 
 
 @nzb_hunt_bp.route("/api/nzb-hunt/queue", methods=["GET"])

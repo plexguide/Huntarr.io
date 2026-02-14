@@ -85,17 +85,19 @@
         ────────────────────────────────────────────── */
         _fetchQueueAndStatus: function () {
             var self = this;
-            // Fetch queue and status (status includes nzb_hunt_configured_as_client)
+            var ts = '?t=' + Date.now();
+            // Fetch queue, status, and is-client-configured (fallback if status omits it)
             Promise.all([
-                fetch('./api/nzb-hunt/queue?t=' + Date.now()).then(function (r) {
-                    return r.ok ? r.json() : Promise.resolve({ queue: [] });
-                }),
-                fetch('./api/nzb-hunt/status?t=' + Date.now()).then(function (r) {
-                    return r.ok ? r.json() : Promise.resolve({});
-                })
+                fetch('./api/nzb-hunt/queue' + ts).then(function (r) { return r.ok ? r.json() : Promise.resolve({ queue: [] }); }),
+                fetch('./api/nzb-hunt/status' + ts).then(function (r) { return r.ok ? r.json() : Promise.resolve({}); }),
+                fetch('./api/nzb-hunt/is-client-configured' + ts).then(function (r) { return r.ok ? r.json() : Promise.resolve({}); })
             ]).then(function (results) {
                 var queueData = results[0];
                 var statusData = results[1];
+                var configuredData = results[2];
+                if (statusData.nzb_hunt_configured_as_client === undefined && configuredData && typeof configuredData.configured === 'boolean') {
+                    statusData.nzb_hunt_configured_as_client = configuredData.configured;
+                }
                 self._lastStatus = statusData;
                 self._lastQueue = queueData.queue || [];
                 self._renderQueue(self._lastQueue);
@@ -147,7 +149,7 @@
             // Show warning when NZB Hunt is not configured as a download client (hide when it is)
             var warnEl = document.getElementById('nzb-client-warning');
             if (warnEl) {
-                var hasNzbHunt = status.nzb_hunt_configured_as_client === true;
+                var hasNzbHunt = status.nzb_hunt_configured_as_client === true || status.nzb_hunt_configured_as_client === 'true';
                 warnEl.style.display = hasNzbHunt ? 'none' : 'flex';
             }
 
