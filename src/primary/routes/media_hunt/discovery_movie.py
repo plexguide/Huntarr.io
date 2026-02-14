@@ -1412,8 +1412,14 @@ def register_movie_discovery_routes(bp):
             sort_key = (request.args.get('sort') or 'title.asc').strip()
             items = _sort_collection_items(items, sort_key)
             total = len(items)
-            page = max(1, int(request.args.get('page', 1)))
-            page_size = max(1, min(100, int(request.args.get('page_size', 20))))
+            try:
+                page = max(1, int(request.args.get('page', 1)))
+            except (TypeError, ValueError):
+                page = 1
+            try:
+                page_size = max(1, min(100, int(request.args.get('page_size', 20))))
+            except (TypeError, ValueError):
+                page_size = 20
             start = (page - 1) * page_size
             page_items = items[start:start + page_size]
             return jsonify({

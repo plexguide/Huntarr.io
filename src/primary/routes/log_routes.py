@@ -67,8 +67,14 @@ def get_logs(app_type):
 
         # Get query parameters
         level = request.args.get('level')
-        limit = int(request.args.get('limit', 100))
-        offset = int(request.args.get('offset', 0))
+        try:
+            limit = max(1, min(1000, int(request.args.get('limit', 100))))
+        except (TypeError, ValueError):
+            limit = 100
+        try:
+            offset = max(0, int(request.args.get('offset', 0)))
+        except (TypeError, ValueError):
+            offset = 0
         search = request.args.get('search')
 
         # When app_type is 'all': include all app types (including movie_hunt)
@@ -198,9 +204,14 @@ def cleanup_logs():
         
         # Get parameters from request
         data = request.get_json() or {}
-        days_to_keep = data.get('days_to_keep', 30)
-        max_entries_per_app = data.get('max_entries_per_app', 10000)
-        
+        try:
+            days_to_keep = int(data.get('days_to_keep', 30))
+            max_entries_per_app = int(data.get('max_entries_per_app', 10000))
+        except (TypeError, ValueError):
+            return jsonify({'success': False, 'error': 'days_to_keep and max_entries_per_app must be valid integers'}), 400
+        days_to_keep = max(1, min(365, days_to_keep))
+        max_entries_per_app = max(100, min(100000, max_entries_per_app))
+
         deleted_count = logs_db.cleanup_old_logs(
             days_to_keep=days_to_keep,
             max_entries_per_app=max_entries_per_app

@@ -3832,7 +3832,7 @@ class LogsDatabase:
             try:
                 if self.db_path.exists():
                     self.db_path.unlink()
-            except:
+            except OSError:
                 pass
     
     def ensure_logs_database_exists(self):

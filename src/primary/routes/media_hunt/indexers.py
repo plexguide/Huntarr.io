@@ -14,6 +14,17 @@ from flask import request, jsonify
 
 from ...utils.logger import logger
 
+
+def _safe_int(val, default=0):
+    """Parse int from value, return default on failure."""
+    if val is None:
+        return default
+    try:
+        return int(val)
+    except (TypeError, ValueError):
+        return default
+
+
 # Movie presets/categories
 MOVIE_INDEXER_PRESETS = {
     'dognzb':         {'name': 'DOGnzb',         'url': 'https://api.dognzb.cr',      'api_path': '/api'},
@@ -403,7 +414,7 @@ def register_tv_indexers_routes(bp, get_instance_id):
                 'api_key': (data.get('api_key') or '').strip(),
                 'protocol': (data.get('protocol') or 'usenet').strip().lower(),
                 'categories': cats,
-                'priority': int(data.get('priority', 25)),
+                'priority': _safe_int(data.get('priority'), 25),
                 'enabled': data.get('enabled', True),
             }
             indexers = _get_config(instance_id)
@@ -424,9 +435,11 @@ def register_tv_indexers_routes(bp, get_instance_id):
             indexers = _get_config(instance_id)
             for idx in indexers:
                 if idx.get('id') == indexer_id:
-                    for key in ('name', 'display_name', 'url', 'api_url', 'api_key', 'protocol', 'priority', 'enabled'):
+                    for key in ('name', 'display_name', 'url', 'api_url', 'api_key', 'protocol', 'enabled'):
                         if key in data:
                             idx[key] = data[key]
+                    if 'priority' in data:
+                        idx['priority'] = _safe_int(data['priority'], idx.get('priority', 25))
                     if 'categories' in data:
                         cats = _filter_categories_tv(data['categories'])
                         idx['categories'] = cats if cats else TV_INDEXER_DEFAULT_CATEGORIES

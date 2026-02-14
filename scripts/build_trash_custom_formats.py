@@ -80,7 +80,7 @@ def load_local_html_formats():
                     # Convert name to format_id style
                     fmt_id = name.lower().replace('.', '-').replace(' ', '-')
                     formats_by_name[fmt_id] = obj
-            except:
+            except (json.JSONDecodeError, TypeError, KeyError):
                 pass
         
         return formats_by_name

@@ -159,7 +159,10 @@ def _extract_embedded_ids(name):
 
     m = _TMDB_PATTERN.search(name)
     if m:
-        tmdb_id = int(m.group(1) or m.group(2) or m.group(3))
+        try:
+            tmdb_id = int(m.group(1) or m.group(2) or m.group(3))
+        except (TypeError, ValueError):
+            tmdb_id = None
 
     m = _IMDB_PATTERN.search(name)
     if m:

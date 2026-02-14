@@ -45,14 +45,20 @@ def get_rotation_settings():
     Get log rotation settings from settings manager.
     Imports locally to avoid circular dependencies.
     """
+    def _safe_int(val, default):
+        try:
+            return int(val) if val is not None else default
+        except (TypeError, ValueError):
+            return default
+
     try:
         import src.primary.settings_manager as settings_manager
         settings = settings_manager.load_settings("general")
         return {
             "enabled": settings.get("log_rotation_enabled", True),
-            "max_bytes": int(settings.get("log_max_size_mb", 50)) * 1024 * 1024,
-            "backup_count": int(settings.get("log_backup_count", 5)),
-            "retention_days": int(settings.get("log_retention_days", 30)),
+            "max_bytes": _safe_int(settings.get("log_max_size_mb"), 50) * 1024 * 1024,
+            "backup_count": _safe_int(settings.get("log_backup_count"), 5),
+            "retention_days": _safe_int(settings.get("log_retention_days"), 30),
             "auto_cleanup": settings.get("log_auto_cleanup", True)
         }
     except Exception as e:

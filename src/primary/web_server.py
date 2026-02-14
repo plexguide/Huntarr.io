@@ -1330,7 +1330,10 @@ def start_web_server():
     web_logger.info("--- start_web_server function called ---") # Added log
     debug_mode = os.environ.get('DEBUG', 'false').lower() == 'true'
     host = '0.0.0.0'  # Listen on all interfaces
-    port = int(os.environ.get('PORT', 9705))
+    try:
+        port = int(os.environ.get('PORT', 9705))
+    except (TypeError, ValueError):
+        port = 9705
 
     # Ensure the log directory exists
     os.makedirs(LOG_DIR, exist_ok=True)

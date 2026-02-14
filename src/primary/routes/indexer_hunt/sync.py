@@ -7,6 +7,16 @@ from . import indexer_hunt_bp
 from ...utils.logger import logger
 
 
+def _safe_priority(val, default=50):
+    """Parse priority as int, return default on failure."""
+    if val is None:
+        return default
+    try:
+        return int(val)
+    except (TypeError, ValueError):
+        return default
+
+
 def _get_all_movie_hunt_instance_ids():
     """Return list of all Movie Hunt instance IDs."""
     from src.primary.utils.database import get_database
@@ -128,7 +138,10 @@ def api_ih_sync():
         if not isinstance(indexer_ids, list) or not indexer_ids:
             return jsonify({'success': False, 'error': 'indexer_ids list is required'}), 400
 
-        instance_id = int(instance_id)
+        try:
+            instance_id = int(instance_id)
+        except (TypeError, ValueError):
+            return jsonify({'success': False, 'error': 'instance_id must be a valid integer'}), 400
 
         from src.primary.utils.database import get_database
         from src.primary.routes.media_hunt.indexers import (
@@ -164,7 +177,7 @@ def api_ih_sync():
                     'api_key': ih_idx.get('api_key', ''),
                     'protocol': ih_idx.get('protocol', 'usenet'),
                     'categories': default_cats,
-                    'priority': int(ih_idx.get('priority', 50)),
+                    'priority': _safe_priority(ih_idx.get('priority'), 50),
                     'enabled': ih_idx.get('enabled', True),
                     'indexer_hunt_id': ih_id,
                 }
@@ -184,7 +197,7 @@ def api_ih_sync():
                     'categories': default_cats,
                     'url': ih_idx.get('url', ''),
                     'api_path': ih_idx.get('api_path', '/api'),
-                    'priority': ih_idx.get('priority', 50),
+                    'priority': _safe_priority(ih_idx.get('priority'), 50),
                     'indexer_hunt_id': ih_id,
                 }
             existing.append(new_idx)

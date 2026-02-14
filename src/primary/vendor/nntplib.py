@@ -340,7 +340,7 @@ class NNTP:
             self._base_init(readermode)
             if user or usenetrc:
                 self.login(user, password, usenetrc)
-        except:
+        except Exception:
             if self.file:
                 self.file.close()
             self.sock.close()
@@ -1031,7 +1031,7 @@ if _have_ssl:
             sock = super()._create_socket(timeout)
             try:
                 sock = _encrypt_on(sock, self.ssl_context, self.host)
-            except:
+            except Exception:
                 sock.close()
                 raise
             else:

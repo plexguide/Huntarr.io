@@ -210,7 +210,7 @@ def list_connections():
 def create_connection():
     """Create a new notification connection."""
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         if not data:
             return jsonify({"error": "JSON body required"}), 400
 
@@ -239,7 +239,7 @@ def create_connection():
 def update_connection(conn_id):
     """Update an existing notification connection."""
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         if not data:
             return jsonify({"error": "JSON body required"}), 400
 

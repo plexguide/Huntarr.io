@@ -11,8 +11,14 @@ def get_app_history(app_type):
     """Get history entries for a specific app or all apps"""
     try:
         search_query = request.args.get('search', '')
-        page = int(request.args.get('page', 1))
-        page_size = int(request.args.get('page_size', 20))
+        try:
+            page = max(1, int(request.args.get('page', 1)))
+        except (TypeError, ValueError):
+            page = 1
+        try:
+            page_size = max(1, min(100, int(request.args.get('page_size', 20))))
+        except (TypeError, ValueError):
+            page_size = 20
         
         # Validate page_size to be one of the allowed values
         allowed_page_sizes = [10, 20, 30, 50, 100, 250, 1000]

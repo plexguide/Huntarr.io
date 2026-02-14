@@ -586,7 +586,7 @@ def register_tv_discovery_routes(bp):
             instance_id = _get_tv_hunt_instance_id_from_request()
             if not instance_id:
                 return jsonify({'error': 'No instance selected'}), 400
-            data = request.get_json()
+            data = request.get_json(silent=True) or {}
             if not data or not isinstance(data, dict):
                 return jsonify({'error': 'Invalid data'}), 400
             

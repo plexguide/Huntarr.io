@@ -181,7 +181,7 @@ def restore_recovered_data(db, recovered_data):
                 elif setting_type == 'json':
                     try:
                         settings_dict[key] = json.loads(value)
-                    except:
+                    except (json.JSONDecodeError, TypeError):
                         settings_dict[key] = value
                 else:
                     settings_dict[key] = value

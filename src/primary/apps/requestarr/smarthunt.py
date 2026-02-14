@@ -154,15 +154,29 @@ class SmartHuntEngine:
         region = discover_filters.get("region", "")
         languages = discover_filters.get("languages", [])
         providers = discover_filters.get("providers", [])
-        bl_movie = set(int(x) for x in blacklisted_genres.get("blacklisted_movie_genres", []))
-        bl_tv = set(int(x) for x in blacklisted_genres.get("blacklisted_tv_genres", []))
+        def _safe_int_set(lst):
+            out = set()
+            for x in lst or []:
+                try:
+                    out.add(int(x))
+                except (TypeError, ValueError):
+                    pass
+            return out
+        bl_movie = _safe_int_set(blacklisted_genres.get("blacklisted_movie_genres", []))
+        bl_tv = _safe_int_set(blacklisted_genres.get("blacklisted_tv_genres", []))
 
         total_target = BATCH_SIZE * MAX_PAGES  # 100
 
         # Calculate how many items each category should contribute
+        def _safe_pct(val):
+            try:
+                return max(0, min(100, int(val)))
+            except (TypeError, ValueError):
+                return 0
         category_counts = {}
         for cat, pct in pcts.items():
-            category_counts[cat] = max(1, round(total_target * int(pct) / 100)) if int(pct) > 0 else 0
+            p = _safe_pct(pct)
+            category_counts[cat] = max(1, round(total_target * p / 100)) if p > 0 else 0
 
         # Common params shared by most fetchers
         common = {

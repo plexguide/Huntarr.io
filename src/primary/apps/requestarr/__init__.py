@@ -29,8 +29,16 @@ class RequestarrAPI:
         languages = filters.get('languages', [])
         providers = filters.get('providers', [])
         blacklisted = self.get_blacklisted_genres()
-        blacklisted_movie = [int(x) for x in blacklisted.get('blacklisted_movie_genres', [])]
-        blacklisted_tv = [int(x) for x in blacklisted.get('blacklisted_tv_genres', [])]
+        def _safe_int_list(lst):
+            out = []
+            for x in lst or []:
+                try:
+                    out.append(int(x))
+                except (TypeError, ValueError):
+                    pass
+            return out
+        blacklisted_movie = _safe_int_list(blacklisted.get('blacklisted_movie_genres', []))
+        blacklisted_tv = _safe_int_list(blacklisted.get('blacklisted_tv_genres', []))
         
         all_results = []
         movie_results = []

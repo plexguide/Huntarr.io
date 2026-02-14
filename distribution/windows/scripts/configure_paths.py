@@ -16,7 +16,7 @@ def is_admin():
     """Check if script is running with administrator privileges"""
     try:
         return ctypes.windll.shell32.IsUserAnAdmin() != 0
-    except:
+    except Exception:
         return False
 
 def setup_config_directories(base_dir=None):

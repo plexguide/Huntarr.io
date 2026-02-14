@@ -171,12 +171,24 @@ def request_media():
         logger.error(f"[Requestarr] {error_msg}", exc_info=True)
         return jsonify({'success': False, 'message': error_msg}), 500
 
+def _safe_pagination():
+    """Parse page/page_size from query with safe defaults."""
+    try:
+        page = max(1, int(request.args.get('page', 1)))
+    except (TypeError, ValueError):
+        page = 1
+    try:
+        page_size = max(1, min(100, int(request.args.get('page_size', 20))))
+    except (TypeError, ValueError):
+        page_size = 20
+    return page, page_size
+
+
 @requestarr_bp.route('/requests', methods=['GET'])
 def get_requests():
     """Get paginated list of requests"""
     try:
-        page = int(request.args.get('page', 1))
-        page_size = int(request.args.get('page_size', 20))
+        page, page_size = _safe_pagination()
         
         requests_data = requestarr_api.db.get_requests(page, page_size)
         return jsonify(requests_data)
@@ -243,7 +255,7 @@ def get_trending():
 def get_popular_movies():
     """Get popular movies with optional filters"""
     try:
-        page = int(request.args.get('page', 1))
+        page, _ = _safe_pagination()
         hide_available = request.args.get('hide_available', 'false').lower() == 'true'
         
         # Log instance parameters
@@ -315,7 +327,7 @@ def get_popular_movies():
 def get_popular_tv():
     """Get popular TV shows with optional filters"""
     try:
-        page = int(request.args.get('page', 1))
+        page, _ = _safe_pagination()
         hide_available = request.args.get('hide_available', 'false').lower() == 'true'
         
         # Log instance parameters
@@ -734,8 +746,7 @@ def remove_hidden_media(tmdb_id, media_type, app_type, instance_name):
 def get_hidden_media():
     """Get list of hidden media with pagination and optional filters"""
     try:
-        page = int(request.args.get('page', 1))
-        page_size = int(request.args.get('page_size', 20))
+        page, page_size = _safe_pagination()
         media_type = request.args.get('media_type')  # Optional filter
         app_type = request.args.get('app_type')  # Optional filter
         instance_name = request.args.get('instance_name')  # Optional filter
@@ -874,7 +885,7 @@ def get_smarthunt():
     try:
         from src.primary.apps.requestarr.smarthunt import SmartHuntEngine, get_smarthunt_settings
 
-        page = int(request.args.get('page', 1))
+        page, _ = _safe_pagination()
         movie_app_type = request.args.get('movie_app_type', '')
         movie_instance_name = request.args.get('movie_instance_name', '')
         tv_instance_name = request.args.get('tv_instance_name', '')
@@ -945,7 +956,7 @@ def save_smarthunt_settings_route():
     """Save Smart Hunt settings."""
     try:
         from src.primary.apps.requestarr.smarthunt import save_smarthunt_settings
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         if not data:
             return jsonify({'error': 'No data provided'}), 400
 

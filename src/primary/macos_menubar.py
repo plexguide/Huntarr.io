@@ -12,7 +12,12 @@ import logging
 logger = logging.getLogger("Huntarr")
 
 # Default port; matches main.py
-DEFAULT_PORT = int(os.environ.get("HUNTARR_PORT", os.environ.get("PORT", 9705)))
+def _safe_port():
+    try:
+        return int(os.environ.get("HUNTARR_PORT", os.environ.get("PORT", 9705)))
+    except (TypeError, ValueError):
+        return 9705
+DEFAULT_PORT = _safe_port()
 
 
 def _icon_path():

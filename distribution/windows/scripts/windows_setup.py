@@ -18,7 +18,7 @@ def is_admin():
     """Check if the script is running with administrator privileges"""
     try:
         return ctypes.windll.shell32.IsUserAnAdmin() != 0
-    except:
+    except Exception:
         return False
 
 def setup_environment():
@@ -141,7 +141,7 @@ def check_requirements():
             requirements_met = False
         else:
             print("Port 9705 is available")
-    except:
+    except OSError:
         print("Could not check port availability")
     
     return requirements_met
