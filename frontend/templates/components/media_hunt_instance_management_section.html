@@ -3,22 +3,8 @@
     <link rel="stylesheet" href="./static/css/instance-editor.css?v=1.0.2">
     {% with section_id='media-hunt-settings' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <div class="app-content-panel" style="width:100%;padding:20px;margin:0;background:transparent;box-shadow:none;border:none;">
-        <div class="instance-editor-header instance-management-header">
-            <div class="instance-editor-nav">
-                <a href="./#media-hunt-collection" class="ie-btn ie-btn-ghost" id="media-hunt-instances-back">
-                    <i class="fas fa-arrow-left"></i>
-                    <span>Back</span>
-                </a>
-                <div class="instance-editor-breadcrumb">
-                    <span class="ie-breadcrumb-app">
-                        <i class="fas fa-folder-open"></i>
-                        <span>Media Hunt</span>
-                    </span>
-                    <i class="fas fa-chevron-right"></i>
-                    <span class="ie-breadcrumb-name">Instances</span>
-                </div>
-            </div>
-        </div>
+        {% from 'components/page_header_partial.html' import page_header %}
+        {{ page_header(back_href='./#media-hunt-collection', parent_icon='fas fa-folder-open', parent_name='Media Hunt', current_name='Instances') }}
 
         <!-- Movie Instances – Profiles-style box -->
         <div class="settings-group instances-settings-group">

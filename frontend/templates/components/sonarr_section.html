@@ -1,15 +1,8 @@
 <section id="sonarrSection" class="content-section">
-    <!-- Sponsor + Partner Projects - Same as home page -->
-    <div class="app-banners-row">
-        <a href="#" target="_blank" rel="noopener noreferrer" class="app-sponsor-banner sonarr-sponsor-banner" id="sonarr-sponsor-banner" data-sponsor-url="">
-            <span class="sponsor-label">Daughter's College Sponsor:</span>
-            <span class="sponsor-name" id="sonarr-sponsor-name">Loading...</span>
-        </a>
-        <a href="#" target="_blank" rel="noopener noreferrer" class="app-sponsor-banner" id="sonarr-partner-projects-banner" data-partner-url="">
-            <span class="sponsor-label">Partner Projects:</span>
-            <span class="sponsor-name" id="sonarr-partner-projects-name">Loading...</span>
-        </a>
-    </div>
+    <link rel="stylesheet" href="./static/css/instance-editor.css?v=1.0.2">
+    {% with section_id='sonarr' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
+    {% from 'components/page_header_partial.html' import page_header %}
+{{ page_header(back_href='./#apps', parent_icon='fas fa-th-large', parent_name='Apps', current_name='Sonarr') }}
     <div id="sonarrApps" class="app-content-panel"></div>
 </section>
 

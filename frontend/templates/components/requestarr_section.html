@@ -1,22 +1,35 @@
 <!-- Requestarr Section - Discover Style -->
 <div id="requestarr-section" class="content-section" style="display: none;">
     <link rel="stylesheet" href="./static/css/requestarr-discover.css?v=1.3.0">
+    <link rel="stylesheet" href="./static/css/instance-editor.css?v=1.0.2">
+    {% with section_id='requestarr' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <link rel="stylesheet" href="./static/css/media-hunt-detail.css?v=1.5.0">
     <link rel="stylesheet" href="./static/css/media-hunt-tv.css?v=1.0.0">
     
     <div class="requestarr-content">
-        <!-- Sponsor + Partner Projects -->
-        <div class="app-banners-row">
-            <a href="#" target="_blank" rel="noopener noreferrer" class="app-sponsor-banner" id="requestarr-sponsor-banner" data-sponsor-url="">
-                <span class="sponsor-label">Daughter's College Sponsor:</span>
-                <span class="sponsor-name" id="requestarr-sponsor-name">Loading...</span>
-            </a>
-            <a href="#" target="_blank" rel="noopener noreferrer" class="app-sponsor-banner" id="requestarr-partner-projects-banner" data-partner-url="">
-                <span class="sponsor-label">Partner Projects:</span>
-                <span class="sponsor-name" id="requestarr-partner-projects-name">Loading...</span>
-            </a>
+        <!-- Page headers (one shown per view) — always below sponsor, above search bar -->
+        <div id="requestarr-header-discover" class="requestarr-view-header" style="display: block;">
+            {% from 'components/page_header_partial.html' import page_header %}
+            {{ page_header(back_href='./#home', parent_icon='fas fa-plus-circle', parent_name='Requests', current_name='Discover') }}
         </div>
-        <!-- Global Search Bar -->
+        <div id="requestarr-header-search" class="requestarr-view-header" style="display: none;">
+            {% from 'components/page_header_partial.html' import page_header %}
+            {{ page_header(back_href='./#requestarr', parent_icon='fas fa-search', parent_name='Requests', current_name='Search Results') }}
+        </div>
+        <div id="requestarr-header-movies" class="requestarr-view-header" style="display: none;">
+            {% from 'components/page_header_partial.html' import page_header %}
+            {{ page_header(back_href='./#requestarr', parent_icon='fas fa-film', parent_name='Requests', current_name='Movies') }}
+        </div>
+        <div id="requestarr-header-tv" class="requestarr-view-header" style="display: none;">
+            {% from 'components/page_header_partial.html' import page_header %}
+            {{ page_header(back_href='./#requestarr', parent_icon='fas fa-tv', parent_name='Requests', current_name='TV Shows') }}
+        </div>
+        <div id="requestarr-header-hidden" class="requestarr-view-header" style="display: none;">
+            {% from 'components/page_header_partial.html' import page_header %}
+            {{ page_header(back_href='./#requestarr', parent_icon='fas fa-eye-slash', parent_name='Requests', current_name='Hidden Media') }}
+        </div>
+
+        <!-- Global Search Bar — below header, above content -->
         <div class="global-search-bar">
             <i class="fas fa-search"></i>
             <input type="text" id="global-search-input" placeholder="Search Movies & TV">
@@ -24,7 +37,7 @@
 
         <!-- Search Results View -->
         <div id="search-results-view" class="requestarr-view" style="display: none;">
-            <h2 class="search-results-title">Search Results</h2>
+            <h2 class="search-results-title" style="margin-top: 0;">Search Results</h2>
             <div id="search-results-grid" class="search-results-grid">
                 <!-- Results populated by JS -->
             </div>

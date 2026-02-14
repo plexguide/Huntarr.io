@@ -1,15 +1,8 @@
 <section id="prowlarrSection" class="content-section">
-    <!-- Sponsor + Partner Projects -->
-    <div class="app-banners-row">
-        <a href="#" target="_blank" rel="noopener noreferrer" class="app-sponsor-banner prowlarr-sponsor-banner" id="prowlarr-sponsor-banner" data-sponsor-url="">
-            <span class="sponsor-label">Daughter's College Sponsor:</span>
-            <span class="sponsor-name" id="prowlarr-sponsor-name">Loading...</span>
-        </a>
-        <a href="#" target="_blank" rel="noopener noreferrer" class="app-sponsor-banner" id="prowlarr-partner-projects-banner" data-partner-url="">
-            <span class="sponsor-label">Partner Projects:</span>
-            <span class="sponsor-name" id="prowlarr-partner-projects-name">Loading...</span>
-        </a>
-    </div>
+    <link rel="stylesheet" href="./static/css/instance-editor.css?v=1.0.2">
+    {% with section_id='prowlarr' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
+    {% from 'components/page_header_partial.html' import page_header %}
+{{ page_header(back_href='./#apps', parent_icon='fas fa-th-large', parent_name='Apps', current_name='Prowlarr') }}
     <div id="prowlarrContainer" class="settings-container">
         <!-- Prowlarr content will be loaded here -->
     </div>

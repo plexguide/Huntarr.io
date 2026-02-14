@@ -1,0 +1,26 @@
+{# Page header: Back + breadcrumb (icon left of parent name), optional Save on right.
+   Matches Smart Hunt toolbar: reqset-toolbar layout, purple icon, reqset-save-btn style.
+   Usage: {{ page_header(back_href='...', parent_icon='fas fa-fire', parent_name='Requestarr', current_name='Smart Hunt') }}
+   With Save: {{ page_header(..., save_button_id='sizes-save-btn') }} #}
+{% macro page_header(back_href, parent_icon, parent_name, current_name, save_button_id=None, save_button_class=None) %}
+<div class="reqset-toolbar page-header-bar">
+    <div class="reqset-toolbar-left">
+        <a href="{{ back_href }}" class="reqset-back-btn">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+        <div class="reqset-breadcrumb">
+            <i class="{{ parent_icon }}"></i>
+            <span>{{ parent_name }}</span>
+            <i class="fas fa-chevron-right reqset-breadcrumb-sep"></i>
+            <span>{{ current_name }}</span>
+        </div>
+    </div>
+    <div class="reqset-toolbar-right">
+        {% if save_button_id %}
+        <button type="button" id="{{ save_button_id }}" class="reqset-save-btn page-header-save {% if save_button_class %}{{ save_button_class }}{% endif %}" disabled>
+            <i class="fas fa-save"></i> Save
+        </button>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}

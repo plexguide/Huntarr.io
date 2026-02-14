@@ -1228,37 +1228,37 @@
     align-items: center;
     justify-content: space-between;
     margin-bottom: 20px;
-    padding: 12px 18px;
+    padding: 9px 14px;
     background: rgba(15, 23, 42, 0.55);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid rgba(148, 163, 184, 0.08);
-    border-radius: 12px;
-    gap: 16px;
+    border-radius: 10px;
+    gap: 12px;
 }
 
 .reqset-toolbar-left {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 10px;
 }
 
 .reqset-toolbar-right {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .reqset-back-btn {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 7px 14px;
-    border-radius: 8px;
+    gap: 5px;
+    padding: 5px 11px;
+    border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(255, 255, 255, 0.04);
     color: var(--text-muted, #94a3b8);
-    font-size: 13px;
+    font-size: 12px;
     cursor: pointer;
     transition: all 0.15s ease;
 }
@@ -1271,8 +1271,8 @@
 .reqset-breadcrumb {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 14px;
+    gap: 6px;
+    font-size: 12px;
     font-weight: 500;
     color: var(--text-primary, #e2e8f0);
 }
@@ -1282,20 +1282,20 @@
 }
 
 .reqset-breadcrumb-sep {
-    font-size: 10px;
+    font-size: 9px;
     color: var(--text-muted, #64748b);
 }
 
 .reqset-save-btn {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px 20px;
-    border-radius: 8px;
+    gap: 5px;
+    padding: 6px 15px;
+    border-radius: 6px;
     border: none;
     background: linear-gradient(135deg, #6366f1, #818cf8);
     color: #fff;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.15s ease;

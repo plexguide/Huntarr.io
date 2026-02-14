@@ -5,6 +5,8 @@
     <link rel="stylesheet" href="./static/css/media-hunt-tv.css?v=1.0.0">
     {% with section_id='media-hunt' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <div class="requestarr-content media-hunt-content">
+        {% from 'components/page_header_partial.html' import page_header %}
+        {{ page_header(back_href='./#home', parent_icon='fas fa-film', parent_name='Media Hunt', current_name='Discover') }}
         <div id="media-hunt-beta-notice" class="media-hunt-beta-notice" role="status">
             <i class="fas fa-flask" aria-hidden="true"></i>
             <span id="media-hunt-beta-text"><strong>Beta feature:</strong> Media Hunt is in active development.</span>
@@ -48,8 +50,9 @@
 
     <!-- Media Hunt Collection: Movie Hunt + TV Hunt instance dropdowns, combined library view -->
     <div id="media-hunt-collection-view" class="media-hunt-collection-view" style="display: none;">
-        <h2 class="content-section-title" style="margin-bottom: 12px;">Media Hunt Collection</h2>
-        <p class="instance-management-description" style="margin-bottom: 24px;">View and manage your TV and Movie collections. Select Movie Hunt and TV Hunt instances below to see a combined library.</p>
+        <div style="padding: 0 20px 20px;">
+        {% from 'components/page_header_partial.html' import page_header %}
+        {{ page_header(back_href='./#home', parent_icon='fas fa-folder-open', parent_name='Media Hunt', current_name='Collections') }}
 
         <div id="media-hunt-collection-no-instances" class="media-hunt-collection-no-instances" style="display: none;">
             <i class="fas fa-cube" aria-hidden="true"></i>
@@ -124,6 +127,7 @@
                 <button type="button" class="back-btn" id="media-hunt-collection-series-back-btn"><i class="fas fa-arrow-left"></i> Back to Collection</button>
             </div>
             <div id="media-hunt-collection-series-detail-content"></div>
+        </div>
         </div>
         </div>
     </div>

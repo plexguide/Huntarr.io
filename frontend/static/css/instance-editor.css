@@ -37,8 +37,106 @@
 }
 
 /* ============================================================
-   Header / Toolbar
+   Page Header Bar — matches Smart Hunt (reqset-toolbar) design
+   Used by page_header_partial across Media Hunt, Apps, Settings, etc.
    ============================================================ */
+.page-header-bar.reqset-toolbar,
+.reqset-toolbar.page-header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding: 9px 14px;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(148, 163, 184, 0.08);
+    border-radius: 10px;
+    gap: 12px;
+}
+
+.page-header-bar .reqset-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.page-header-bar .reqset-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+a.reqset-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 11px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-muted, #94a3b8);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+}
+
+a.reqset-back-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary, #e2e8f0);
+}
+
+.page-header-bar .reqset-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary, #e2e8f0);
+}
+
+.page-header-bar .reqset-breadcrumb i:first-child {
+    color: #818cf8;
+}
+
+.page-header-bar .reqset-breadcrumb-sep {
+    font-size: 9px;
+    color: var(--text-muted, #64748b);
+}
+
+.page-header-bar .reqset-save-btn,
+.page-header-bar .page-header-save {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 15px;
+    border-radius: 6px;
+    border: none;
+    background: linear-gradient(135deg, #6366f1, #818cf8);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.page-header-bar .reqset-save-btn:hover:not(:disabled),
+.page-header-bar .page-header-save:hover:not(:disabled) {
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+}
+
+.page-header-bar .reqset-save-btn:disabled,
+.page-header-bar .page-header-save:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* ============================================================
+   Header / Toolbar — unified across all content sections except home
+   ============================================================ */
+.main-content .instance-editor-header,
 #instanceEditorSection .instance-editor-header,
 #movieHuntInstanceEditorSection .instance-editor-header,
 #mediaHuntInstanceEditorSection .instance-editor-header,
@@ -104,6 +202,7 @@
 }
 
 /* ---- Buttons ---- */
+.main-content .ie-btn,
 #instanceEditorSection .ie-btn,
 #movieHuntInstanceEditorSection .ie-btn,
 #mediaHuntInstanceEditorSection .ie-btn,
@@ -126,6 +225,7 @@
 }
 
 /* Ghost back button */
+.main-content .ie-btn-ghost,
 #instanceEditorSection .ie-btn-ghost,
 #movieHuntInstanceEditorSection .ie-btn-ghost,
 #mediaHuntInstanceEditorSection .ie-btn-ghost,
@@ -137,6 +237,7 @@
     color: #94a3b8;
 }
 
+.main-content .ie-btn-ghost:hover,
 #instanceEditorSection .ie-btn-ghost:hover,
 #movieHuntInstanceEditorSection .ie-btn-ghost:hover,
 #mediaHuntInstanceEditorSection .ie-btn-ghost:hover,
@@ -150,6 +251,7 @@
 }
 
 /* Save button — disabled */
+.main-content .save-btn-dynamic,
 #instanceEditorSection .save-btn-dynamic,
 #movieHuntInstanceEditorSection .save-btn-dynamic,
 #mediaHuntInstanceEditorSection .save-btn-dynamic {
@@ -162,6 +264,7 @@
 }
 
 /* Save button — enabled */
+.main-content .save-btn-dynamic.enabled,
 #instanceEditorSection .save-btn-dynamic.enabled,
 #movieHuntInstanceEditorSection .save-btn-dynamic.enabled,
 #mediaHuntInstanceEditorSection .save-btn-dynamic.enabled {
@@ -173,6 +276,7 @@
     box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
 }
 
+.main-content .save-btn-dynamic.enabled:hover,
 #instanceEditorSection .save-btn-dynamic.enabled:hover,
 #movieHuntInstanceEditorSection .save-btn-dynamic.enabled:hover,
 #mediaHuntInstanceEditorSection .save-btn-dynamic.enabled:hover {

@@ -21,6 +21,8 @@
             <a href="./#settings-clients" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure Clients</a>
         </div>
         <div id="settings-sizes-content-wrapper" style="display: none;">
+        {% from 'components/page_header_partial.html' import page_header %}
+        {{ page_header(back_href='./#media-hunt-settings', parent_icon='fas fa-weight-hanging', parent_name='Media Hunt', current_name='Sizes', save_button_id='sizes-save-btn') }}
         <div class="settings-group sizes-settings-group">
             <div class="sizes-header">
                 <div class="sizes-header-left">
@@ -30,9 +32,6 @@
                 <div class="sizes-header-actions">
                     <button type="button" class="btn-sizes-reset" id="sizes-reset-btn" title="Reset all to defaults">
                         <i class="fas fa-undo"></i> Reset Defaults
-                    </button>
-                    <button type="button" class="btn-sizes-save" id="sizes-save-btn" disabled>
-                        <i class="fas fa-save"></i> Save
                     </button>
                 </div>
             </div>
@@ -139,26 +138,6 @@
         background: rgba(71, 85, 105, 0.6);
         color: #f1f5f9;
     }
-    .btn-sizes-save {
-        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-        border: none;
-        color: #fff;
-        padding: 8px 18px;
-        border-radius: 8px;
-        font-size: 0.82rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    .btn-sizes-save:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-    }
-    .btn-sizes-save:not(:disabled):hover {
-        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
-        transform: translateY(-1px);
-    }
-
     /* Group headers */
     .sizes-group-header {
         display: flex;

@@ -5510,6 +5510,17 @@ class RequestarrDiscover {
             searchResultsView.style.display = 'none';
         }
         
+        // Hide all view headers, show the one for current view (settings/smarthunt have their own toolbar)
+        document.querySelectorAll('.requestarr-view-header').forEach(el => {
+            el.style.display = 'none';
+        });
+        if (view !== 'settings' && view !== 'smarthunt-settings') {
+            const headerEl = document.getElementById(`requestarr-header-${view}`);
+            if (headerEl) {
+                headerEl.style.display = '';
+            }
+        }
+
         // Hide all views
         document.querySelectorAll('.requestarr-view').forEach(container => {
             container.classList.remove('active');
