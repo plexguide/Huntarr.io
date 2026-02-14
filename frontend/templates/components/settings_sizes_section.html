@@ -1,6 +1,14 @@
 <section id="settingsSizesSection" class="content-section" style="display: none;">
     {% with section_id='settings-sizes' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <div id="sizesManagementContainer" class="app-content-panel">
+        <!-- No-instances warning box (same style as Media Management) -->
+        <div id="settings-sizes-no-instances" class="settings-no-instances" style="display: none;">
+            <i class="fas fa-cube" aria-hidden="true"></i>
+            <p class="no-instances-title">No instances configured</p>
+            <p class="no-instances-desc">Configure a Movie Hunt or TV Hunt instance to manage size limits.</p>
+            <a href="./#media-hunt-instances" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure instances</a>
+        </div>
+        <div id="settings-sizes-content-wrapper">
         <div class="settings-group sizes-settings-group">
             <div class="sizes-header">
                 <div class="sizes-header-left">
@@ -22,10 +30,28 @@
                 <div class="sizes-loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
             </div>
         </div>
+        </div>
     </div>
 </section>
 
 <style>
+    /* No-instances warning box — same style as Media Management */
+    #settingsSizesSection .settings-no-instances {
+        text-align: center; padding: 64px 24px; width: 100%; box-sizing: border-box;
+        background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(148, 163, 184, 0.08);
+        border-radius: 12px; margin: 0 0 20px 0; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    }
+    #settingsSizesSection .settings-no-instances i.fa-cube { font-size: 3rem; color: #334155; margin-bottom: 16px; display: block; }
+    #settingsSizesSection .settings-no-instances .no-instances-title { font-size: 1.2rem; font-weight: 600; color: #f1f5f9; margin: 0 0 8px 0; }
+    #settingsSizesSection .settings-no-instances .no-instances-desc { font-size: 0.95rem; color: #94a3b8; line-height: 1.6; margin: 0 auto 24px auto; max-width: 400px; }
+    #settingsSizesSection .settings-no-instances .no-instances-action-btn {
+        display: inline-flex; align-items: center; gap: 8px; background: rgba(99, 102, 241, 0.2);
+        border: 1px solid rgba(99, 102, 241, 0.4); color: #818cf8; padding: 10px 20px; border-radius: 8px;
+        text-decoration: none; font-weight: 500; transition: background 0.2s, border-color 0.2s;
+    }
+    #settingsSizesSection .settings-no-instances .no-instances-action-btn:hover {
+        background: rgba(99, 102, 241, 0.3); border-color: rgba(99, 102, 241, 0.5);
+    }
     #settingsSizesSection {
         width: 100%;
         min-height: 100vh;
@@ -596,6 +622,29 @@
     }
 
     function loadSizes() {
+        var noInstEl = document.getElementById('settings-sizes-no-instances');
+        var wrapperEl = document.getElementById('settings-sizes-content-wrapper');
+        Promise.all([
+            fetch('./api/movie-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch('./api/tv-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); })
+        ]).then(function(results) {
+            var movieCount = (results[0].instances || []).length;
+            var tvCount = (results[1].instances || []).length;
+            if (movieCount === 0 && tvCount === 0) {
+                if (noInstEl) noInstEl.style.display = '';
+                if (wrapperEl) wrapperEl.style.display = 'none';
+                return;
+            }
+            if (noInstEl) noInstEl.style.display = 'none';
+            if (wrapperEl) wrapperEl.style.display = '';
+            doLoadSizes();
+        }).catch(function() {
+            if (noInstEl) noInstEl.style.display = 'none';
+            if (wrapperEl) wrapperEl.style.display = '';
+            doLoadSizes();
+        });
+    }
+    function doLoadSizes() {
         fetch('./api/sizes')
             .then(function(r) { return r.json(); })
             .then(function(data) {
@@ -610,6 +659,7 @@
                 if (container) container.innerHTML = '<div class="sizes-loading" style="color:#ef4444;">Failed to load sizes. <a href="#" onclick="location.reload()" style="color:#6366f1;">Retry</a></div>';
             });
     }
+
 
     function saveSizes() {
         var btn = document.getElementById('sizes-save-btn');

@@ -54,6 +54,10 @@
                     emptyOpt.value = '';
                     emptyOpt.textContent = 'No Movie or TV Hunt instances';
                     selectEl.appendChild(emptyOpt);
+                    var noInstEl = document.getElementById('settings-root-folders-no-instances');
+                    var wrapperEl = document.getElementById('settings-root-folders-content-wrapper');
+                    if (noInstEl) noInstEl.style.display = '';
+                    if (wrapperEl) wrapperEl.style.display = 'none';
                     return;
                 }
                 combined.forEach(function(item) {
@@ -80,6 +84,10 @@
                     selected = combined[0].value;
                 }
                 selectEl.value = selected;
+                var noInstEl = document.getElementById('settings-root-folders-no-instances');
+                var wrapperEl = document.getElementById('settings-root-folders-content-wrapper');
+                if (noInstEl) noInstEl.style.display = 'none';
+                if (wrapperEl) wrapperEl.style.display = '';
                 var parts = (selected || '').split(':');
                 if (parts.length === 2) {
                     self._rfMode = parts[0] === 'tv' ? 'tv' : 'movie';
