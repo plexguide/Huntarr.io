@@ -86,10 +86,8 @@ let huntarrUI = {
                     var onSettings = ['settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user'].indexOf(this.currentSection) !== -1;
                     nav.style.display = (onSystem || onSettings) ? 'none' : '';
                 }
-                // NZB Hunt: always visible (desktop and mobile), no dev key required
+                // NZB Hunt: always visible, no dev key required (accessed via Media Hunt sidebar)
                 this._enableNzbHunt = true;
-                var nzbNav = document.getElementById('nzbHuntSupportNav');
-                if (nzbNav) nzbNav.style.display = '';
                 
                 // Initialize originalSettings early
                 this.originalSettings = all || {};
@@ -2036,12 +2034,10 @@ let huntarrUI = {
         this._updateMainSidebarBetaVisibility();
     },
 
-    /** When on Settings (main, scheduling, notifications, backup-restore, logs, user) or System (hunt-manager, logs, about), hide Beta, Partner Projects, and Movie Hunt in main sidebar. */
+    /** When on Settings (main, scheduling, notifications, backup-restore, logs, user) or System (hunt-manager, logs, about), hide Partner Projects in main sidebar. */
     _updateMainSidebarBetaVisibility: function() {
         var hideBetaSections = ['settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'system', 'hunt-manager', 'logs', 'about'];
         var hide = hideBetaSections.indexOf(this.currentSection) !== -1;
-        var betaGroup = document.getElementById('main-sidebar-beta-group');
-        if (betaGroup) betaGroup.style.display = hide ? 'none' : '';
         var partnerGroup = document.getElementById('main-sidebar-partner-projects-group');
         if (partnerGroup) partnerGroup.style.display = hide ? 'none' : '';
     },
