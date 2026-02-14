@@ -481,15 +481,21 @@
     // --- Combined Activity dropdown (Movie Hunt + TV Hunt instances in one select) ---
     var _activityCombinedWired = {};  // selectId -> { element, onChanged, preferMode }
 
+    function safeJsonFetch(url, fallback) {
+        return fetch(url, { cache: 'no-store' }).then(function(r) { return r.json(); }).catch(function() { return fallback || {}; });
+    }
+
     function populateActivityCombined(select, preferMode) {
         select.innerHTML = '<option value="">Loading...</option>';
         var ts = Date.now();
+        var base = api('./api/') || './api/';
         Promise.all([
-            fetch(api('./api/movie-hunt/instances') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch(api('./api/movie-hunt/instances/current') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch(api('./api/tv-hunt/instances') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch(api('./api/tv-hunt/instances/current') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch(api('./api/indexer-hunt/indexers') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+            safeJsonFetch(base + 'movie-hunt/instances?t=' + ts, { instances: [] }),
+            safeJsonFetch(base + 'movie-hunt/instances/current?t=' + ts, { current_instance_id: null }),
+            safeJsonFetch(base + 'tv-hunt/instances?t=' + ts, { instances: [] }),
+            safeJsonFetch(base + 'tv-hunt/instances/current?t=' + ts, { current_instance_id: null }),
+            safeJsonFetch(base + 'indexer-hunt/indexers?t=' + ts, { indexers: [] }),
+            safeJsonFetch(base + 'movie-hunt/has-clients?t=' + ts, { has_clients: false })
         ]).then(function(results) {
             var movieList = results[0].instances || [];
             var movieCurrent = results[1].current_instance_id != null ? Number(results[1].current_instance_id) : null;
@@ -516,6 +522,17 @@
                 select.appendChild(emptyOpt);
                 select.value = '';
                 _updateActivityVisibility(select.id, 'no-indexers');
+                return;
+            }
+            var hasClients = results[5].has_clients === true;
+            if (!hasClients) {
+                select.innerHTML = '';
+                var emptyOpt = document.createElement('option');
+                emptyOpt.value = '';
+                emptyOpt.textContent = 'No clients configured';
+                select.appendChild(emptyOpt);
+                select.value = '';
+                _updateActivityVisibility(select.id, 'no-clients');
                 return;
             }
             _updateActivityVisibility(select.id, 'ok');
@@ -560,25 +577,31 @@
             select.value = targetVal;
         }).catch(function() {
             select.innerHTML = '<option value="">Unable to load instances</option>';
-            _updateActivityVisibility(select.id, 'ok');
+            _updateActivityVisibility(select.id, 'unable-to-load');
         });
     }
 
     function _updateActivityVisibility(selectId, state) {
-        var noInstEl, noIdxEl, wrapperEl;
+        var noInstEl, noIdxEl, noCliEl, unableEl, wrapperEl;
         if (selectId === 'activity-combined-instance-select') {
             noInstEl = document.getElementById('activity-no-instances');
             noIdxEl = document.getElementById('activity-no-indexers');
+            noCliEl = document.getElementById('activity-no-clients');
+            unableEl = document.getElementById('activity-unable-to-load');
             wrapperEl = document.getElementById('activity-content-wrapper');
         } else if (selectId === 'tv-activity-combined-instance-select') {
             noInstEl = document.getElementById('tv-activity-no-instances');
             noIdxEl = document.getElementById('tv-activity-no-indexers');
+            noCliEl = document.getElementById('tv-activity-no-clients');
+            unableEl = document.getElementById('tv-activity-unable-to-load');
             wrapperEl = document.getElementById('tv-activity-content-wrapper');
         } else {
             return;
         }
         if (noInstEl) noInstEl.style.display = (state === 'no-instances') ? '' : 'none';
         if (noIdxEl) noIdxEl.style.display = (state === 'no-indexers') ? '' : 'none';
+        if (noCliEl) noCliEl.style.display = (state === 'no-clients') ? '' : 'none';
+        if (unableEl) unableEl.style.display = (state === 'unable-to-load') ? '' : 'none';
         if (wrapperEl) wrapperEl.style.display = (state === 'ok') ? '' : 'none';
     }
 
@@ -5314,33 +5337,46 @@
             var moviePromise = fetch('./api/movie-hunt/instances').then(function(r) { return r.json(); }).then(function(d) { return d.instances || []; }).catch(function() { return []; });
             var tvPromise = fetch('./api/tv-hunt/instances').then(function(r) { return r.json(); }).then(function(d) { return d.instances || []; }).catch(function() { return []; });
             var indexerPromise = fetch('./api/indexer-hunt/indexers').then(function(r) { return r.json(); }).then(function(d) { return d.indexers || []; }).catch(function() { return []; });
+            var hasClientsPromise = fetch('./api/movie-hunt/has-clients').then(function(r) { return r.json(); }).then(function(d) { return d.has_clients === true; }).catch(function() { return false; });
 
-            Promise.all([moviePromise, tvPromise, indexerPromise]).then(function(results) {
+            Promise.all([moviePromise, tvPromise, indexerPromise, hasClientsPromise]).then(function(results) {
                 var movieInstances = results[0];
                 var tvInstances = results[1];
                 var indexers = results[2];
+                var hasClients = results[3];
                 var hasInstances = (movieInstances || []).length > 0 || (tvInstances || []).length > 0;
                 var hasIndexers = (indexers || []).length > 0;
 
                 var noInstEl = document.getElementById('media-hunt-collection-no-instances');
                 var noIdxEl = document.getElementById('media-hunt-collection-no-indexers');
+                var noCliEl = document.getElementById('media-hunt-collection-no-clients');
                 var contentWrapper = document.getElementById('media-hunt-collection-content-wrapper');
 
                 if (!hasInstances) {
                     if (noInstEl) noInstEl.style.display = '';
                     if (noIdxEl) noIdxEl.style.display = 'none';
+                    if (noCliEl) noCliEl.style.display = 'none';
                     if (contentWrapper) contentWrapper.style.display = 'none';
                     return;
                 }
                 if (!hasIndexers) {
                     if (noInstEl) noInstEl.style.display = 'none';
                     if (noIdxEl) noIdxEl.style.display = '';
+                    if (noCliEl) noCliEl.style.display = 'none';
+                    if (contentWrapper) contentWrapper.style.display = 'none';
+                    return;
+                }
+                if (!hasClients) {
+                    if (noInstEl) noInstEl.style.display = 'none';
+                    if (noIdxEl) noIdxEl.style.display = 'none';
+                    if (noCliEl) noCliEl.style.display = '';
                     if (contentWrapper) contentWrapper.style.display = 'none';
                     return;
                 }
 
                 if (noInstEl) noInstEl.style.display = 'none';
                 if (noIdxEl) noIdxEl.style.display = 'none';
+                if (noCliEl) noCliEl.style.display = 'none';
                 if (contentWrapper) contentWrapper.style.display = '';
 
                 movieSelect.innerHTML = '';
@@ -6073,17 +6109,22 @@
         if (upcomingView) upcomingView.style.display = 'none';
     }
 
+    function safeJsonFetch(url, fallback) {
+        return fetch(url, { cache: 'no-store' }).then(function(r) { return r.json(); }).catch(function() { return fallback || {}; });
+    }
+
     function populateInstanceDropdown() {
         var sel = document.getElementById('media-hunt-calendar-instance-select');
         if (!sel) return;
         sel.innerHTML = '<option value="">Loading instances...</option>';
         var ts = Date.now();
         Promise.all([
-            fetch('./api/requestarr/instances/movie_hunt?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/requestarr/instances/radarr?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/requestarr/instances/tv_hunt?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/requestarr/instances/sonarr?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/indexer-hunt/indexers?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+            safeJsonFetch('./api/requestarr/instances/movie_hunt?t=' + ts, { instances: [] }),
+            safeJsonFetch('./api/requestarr/instances/radarr?t=' + ts, { instances: [] }),
+            safeJsonFetch('./api/requestarr/instances/tv_hunt?t=' + ts, { instances: [] }),
+            safeJsonFetch('./api/requestarr/instances/sonarr?t=' + ts, { instances: [] }),
+            safeJsonFetch('./api/indexer-hunt/indexers?t=' + ts, { indexers: [] }),
+            safeJsonFetch('./api/movie-hunt/has-clients?t=' + ts, { has_clients: false })
         ]).then(function(results) {
             var mh = results[0].instances || [];
             var radarr = results[1].instances || [];
@@ -6131,9 +6172,11 @@
                 sel.appendChild(empty);
                 var noInst = document.getElementById('media-hunt-calendar-no-instances');
                 var noIdx = document.getElementById('media-hunt-calendar-no-indexers');
+                var noCli = document.getElementById('media-hunt-calendar-no-clients');
                 var wrapper = document.getElementById('media-hunt-calendar-content-wrapper');
                 if (noInst) noInst.style.display = '';
                 if (noIdx) noIdx.style.display = 'none';
+                if (noCli) noCli.style.display = 'none';
                 if (wrapper) wrapper.style.display = 'none';
                 _collectionLoaded = false;
                 _upcomingLoaded = false;
@@ -6143,9 +6186,25 @@
             if (indexerCount === 0) {
                 var noInst = document.getElementById('media-hunt-calendar-no-instances');
                 var noIdx = document.getElementById('media-hunt-calendar-no-indexers');
+                var noCli = document.getElementById('media-hunt-calendar-no-clients');
                 var wrapper = document.getElementById('media-hunt-calendar-content-wrapper');
                 if (noInst) noInst.style.display = 'none';
                 if (noIdx) noIdx.style.display = '';
+                if (noCli) noCli.style.display = 'none';
+                if (wrapper) wrapper.style.display = 'none';
+                _collectionLoaded = false;
+                _upcomingLoaded = false;
+                return;
+            }
+            var hasClients = results[5].has_clients === true;
+            if (!hasClients) {
+                var noInst = document.getElementById('media-hunt-calendar-no-instances');
+                var noIdx = document.getElementById('media-hunt-calendar-no-indexers');
+                var noCli = document.getElementById('media-hunt-calendar-no-clients');
+                var wrapper = document.getElementById('media-hunt-calendar-content-wrapper');
+                if (noInst) noInst.style.display = 'none';
+                if (noIdx) noIdx.style.display = 'none';
+                if (noCli) noCli.style.display = '';
                 if (wrapper) wrapper.style.display = 'none';
                 _collectionLoaded = false;
                 _upcomingLoaded = false;
@@ -6153,9 +6212,11 @@
             }
             var noInst = document.getElementById('media-hunt-calendar-no-instances');
             var noIdx = document.getElementById('media-hunt-calendar-no-indexers');
+            var noCli = document.getElementById('media-hunt-calendar-no-clients');
             var wrapper = document.getElementById('media-hunt-calendar-content-wrapper');
             if (noInst) noInst.style.display = 'none';
             if (noIdx) noIdx.style.display = 'none';
+            if (noCli) noCli.style.display = 'none';
             if (wrapper) wrapper.style.display = '';
             if (preferred) {
                 sel.value = preferred;
@@ -6175,9 +6236,13 @@
         }).catch(function() {
             sel.innerHTML = '<option value="">Failed to load instances</option>';
             var noInst = document.getElementById('media-hunt-calendar-no-instances');
+            var noIdx = document.getElementById('media-hunt-calendar-no-indexers');
+            var noCli = document.getElementById('media-hunt-calendar-no-clients');
             var wrapper = document.getElementById('media-hunt-calendar-content-wrapper');
             if (noInst) noInst.style.display = 'none';
-            if (wrapper) wrapper.style.display = '';
+            if (noIdx) noIdx.style.display = 'none';
+            if (noCli) noCli.style.display = '';
+            if (wrapper) wrapper.style.display = 'none';
         });
     }
 

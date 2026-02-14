@@ -14,6 +14,12 @@
             <p class="no-instances-desc">Configure at least one indexer in the Index Master Pool to use this section.</p>
             <a href="./#indexer-hunt" class="no-instances-action-btn"><i class="fas fa-plus"></i> Add Indexer</a>
         </div>
+        <div id="media-hunt-import-media-no-clients" class="settings-no-clients" style="display: none;">
+            <i class="fas fa-download" aria-hidden="true"></i>
+            <p class="no-instances-title">No clients configured</p>
+            <p class="no-instances-desc">Configure at least one download client in Settings → Clients to use this section.</p>
+            <a href="./#settings-clients" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure Clients</a>
+        </div>
         <div id="media-hunt-import-media-content-wrapper" style="display: none;">
         <div class="media-hunt-settings-instance-bar" style="margin-bottom: 16px;">
             <select id="media-hunt-import-media-instance-select" class="control-select" aria-label="Instance">
@@ -114,7 +120,8 @@
 }
 #media-hunt-import-media-instance-select { min-width: 200px; }
 #mediaHuntSettingsImportMediaSection .settings-no-instances,
-#mediaHuntSettingsImportMediaSection .settings-no-indexers {
+#mediaHuntSettingsImportMediaSection .settings-no-indexers,
+#mediaHuntSettingsImportMediaSection .settings-no-clients {
     text-align: center;
     padding: 64px 24px;
     width: 100%;
@@ -126,13 +133,17 @@
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 #mediaHuntSettingsImportMediaSection .settings-no-instances i.fa-cube,
-#mediaHuntSettingsImportMediaSection .settings-no-indexers i.fa-satellite-dish { font-size: 3rem; color: #334155; margin-bottom: 16px; display: block; }
+#mediaHuntSettingsImportMediaSection .settings-no-indexers i.fa-satellite-dish,
+#mediaHuntSettingsImportMediaSection .settings-no-clients i.fa-download { font-size: 3rem; color: #334155; margin-bottom: 16px; display: block; }
 #mediaHuntSettingsImportMediaSection .settings-no-instances .no-instances-title,
-#mediaHuntSettingsImportMediaSection .settings-no-indexers .no-instances-title { font-size: 1.2rem; font-weight: 600; color: #f1f5f9; margin: 0 0 8px 0; }
+#mediaHuntSettingsImportMediaSection .settings-no-indexers .no-instances-title,
+#mediaHuntSettingsImportMediaSection .settings-no-clients .no-instances-title { font-size: 1.2rem; font-weight: 600; color: #f1f5f9; margin: 0 0 8px 0; }
 #mediaHuntSettingsImportMediaSection .settings-no-instances .no-instances-desc,
-#mediaHuntSettingsImportMediaSection .settings-no-indexers .no-instances-desc { font-size: 0.95rem; color: #94a3b8; line-height: 1.6; margin: 0 auto 24px auto; max-width: 400px; }
+#mediaHuntSettingsImportMediaSection .settings-no-indexers .no-instances-desc,
+#mediaHuntSettingsImportMediaSection .settings-no-clients .no-instances-desc { font-size: 0.95rem; color: #94a3b8; line-height: 1.6; margin: 0 auto 24px auto; max-width: 400px; }
 #mediaHuntSettingsImportMediaSection .settings-no-instances .no-instances-action-btn,
-#mediaHuntSettingsImportMediaSection .settings-no-indexers .no-instances-action-btn {
+#mediaHuntSettingsImportMediaSection .settings-no-indexers .no-instances-action-btn,
+#mediaHuntSettingsImportMediaSection .settings-no-clients .no-instances-action-btn {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -146,7 +157,8 @@
     transition: background 0.2s, border-color 0.2s;
 }
 #mediaHuntSettingsImportMediaSection .settings-no-instances .no-instances-action-btn:hover,
-#mediaHuntSettingsImportMediaSection .settings-no-indexers .no-instances-action-btn:hover {
+#mediaHuntSettingsImportMediaSection .settings-no-indexers .no-instances-action-btn:hover,
+#mediaHuntSettingsImportMediaSection .settings-no-clients .no-instances-action-btn:hover {
     background: rgba(99, 102, 241, 0.3);
     border-color: rgba(99, 102, 241, 0.5);
 }

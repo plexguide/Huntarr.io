@@ -30,18 +30,24 @@
             return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'instance_id=' + encodeURIComponent(id);
         },
 
+        _safeJsonFetch: function(url, fallback) {
+            return fetch(url, { cache: 'no-store' }).then(function(r) { return r.json(); }).catch(function() { return fallback || {}; });
+        },
+
         populateCombinedInstanceDropdown: function(preferMode) {
             var self = window.ImportLists;
             var selectEl = document.getElementById('settings-import-lists-instance-select');
             if (!selectEl) return;
             selectEl.innerHTML = '<option value="">Loading...</option>';
             var ts = Date.now();
+            var sf = self._safeJsonFetch.bind(self);
             Promise.all([
-                fetch('./api/movie-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/movie-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/indexer-hunt/indexers?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+                sf('./api/movie-hunt/instances?t=' + ts, { instances: [] }),
+                sf('./api/tv-hunt/instances?t=' + ts, { instances: [] }),
+                sf('./api/movie-hunt/instances/current?t=' + ts, { current_instance_id: null }),
+                sf('./api/tv-hunt/instances/current?t=' + ts, { current_instance_id: null }),
+                sf('./api/indexer-hunt/indexers?t=' + ts, { indexers: [] }),
+                sf('./api/movie-hunt/has-clients?t=' + ts, { has_clients: false })
             ]).then(function(results) {
                 var movieList = (results[0].instances || []).map(function(inst) {
                     return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
@@ -61,9 +67,11 @@
                     selectEl.appendChild(emptyOpt);
                     var noInstEl = document.getElementById('settings-import-lists-no-instances');
                     var noIdxEl = document.getElementById('settings-import-lists-no-indexers');
+                    var noCliEl = document.getElementById('settings-import-lists-no-clients');
                     var wrapperEl = document.getElementById('settings-import-lists-content-wrapper');
                     if (noInstEl) noInstEl.style.display = '';
                     if (noIdxEl) noIdxEl.style.display = 'none';
+                    if (noCliEl) noCliEl.style.display = 'none';
                     if (wrapperEl) wrapperEl.style.display = 'none';
                     return;
                 }
@@ -76,9 +84,28 @@
                     selectEl.appendChild(emptyOpt);
                     var noInstEl = document.getElementById('settings-import-lists-no-instances');
                     var noIdxEl = document.getElementById('settings-import-lists-no-indexers');
+                    var noCliEl = document.getElementById('settings-import-lists-no-clients');
                     var wrapperEl = document.getElementById('settings-import-lists-content-wrapper');
                     if (noInstEl) noInstEl.style.display = 'none';
                     if (noIdxEl) noIdxEl.style.display = '';
+                    if (noCliEl) noCliEl.style.display = 'none';
+                    if (wrapperEl) wrapperEl.style.display = 'none';
+                    return;
+                }
+                var hasClients = results[5].has_clients === true;
+                if (!hasClients) {
+                    selectEl.innerHTML = '';
+                    var emptyOpt = document.createElement('option');
+                    emptyOpt.value = '';
+                    emptyOpt.textContent = 'No clients configured';
+                    selectEl.appendChild(emptyOpt);
+                    var noInstEl = document.getElementById('settings-import-lists-no-instances');
+                    var noIdxEl = document.getElementById('settings-import-lists-no-indexers');
+                    var noCliEl = document.getElementById('settings-import-lists-no-clients');
+                    var wrapperEl = document.getElementById('settings-import-lists-content-wrapper');
+                    if (noInstEl) noInstEl.style.display = 'none';
+                    if (noIdxEl) noIdxEl.style.display = 'none';
+                    if (noCliEl) noCliEl.style.display = '';
                     if (wrapperEl) wrapperEl.style.display = 'none';
                     return;
                 }
@@ -108,9 +135,11 @@
                 selectEl.value = selected;
                 var noInstEl = document.getElementById('settings-import-lists-no-instances');
                 var noIdxEl = document.getElementById('settings-import-lists-no-indexers');
+                var noCliEl = document.getElementById('settings-import-lists-no-clients');
                 var wrapperEl = document.getElementById('settings-import-lists-content-wrapper');
                 if (noInstEl) noInstEl.style.display = 'none';
                 if (noIdxEl) noIdxEl.style.display = 'none';
+                if (noCliEl) noCliEl.style.display = 'none';
                 if (wrapperEl) wrapperEl.style.display = '';
                 var parts = (selected || '').split(':');
                 if (parts.length === 2) {
@@ -120,6 +149,14 @@
                 }
             }).catch(function() {
                 selectEl.innerHTML = '<option value="">Failed to load instances</option>';
+                var noInstEl = document.getElementById('settings-import-lists-no-instances');
+                var noIdxEl = document.getElementById('settings-import-lists-no-indexers');
+                var noCliEl = document.getElementById('settings-import-lists-no-clients');
+                var wrapperEl = document.getElementById('settings-import-lists-content-wrapper');
+                if (noInstEl) noInstEl.style.display = 'none';
+                if (noIdxEl) noIdxEl.style.display = 'none';
+                if (noCliEl) noCliEl.style.display = '';
+                if (wrapperEl) wrapperEl.style.display = 'none';
             });
         },
 

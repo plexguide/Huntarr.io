@@ -4842,17 +4842,22 @@ document.head.appendChild(styleEl);
         });
     }
 
+    function safeJsonFetch(url, fallback) {
+        return fetch(url, { cache: 'no-store' }).then(function(r) { return r.json(); }).catch(function() { return fallback || {}; });
+    }
+
     function populateCombinedInstanceDropdown(preferMode) {
         var selectEl = document.getElementById('media-hunt-profiles-instance-select');
         if (!selectEl) return;
         selectEl.innerHTML = '<option value="">Loading...</option>';
         var ts = Date.now();
         Promise.all([
-            fetch('./api/movie-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/movie-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/indexer-hunt/indexers?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+            safeJsonFetch('./api/movie-hunt/instances?t=' + ts, { instances: [] }),
+            safeJsonFetch('./api/tv-hunt/instances?t=' + ts, { instances: [] }),
+            safeJsonFetch('./api/movie-hunt/instances/current?t=' + ts, { current_instance_id: null }),
+            safeJsonFetch('./api/tv-hunt/instances/current?t=' + ts, { current_instance_id: null }),
+            safeJsonFetch('./api/indexer-hunt/indexers?t=' + ts, { indexers: [] }),
+            safeJsonFetch('./api/movie-hunt/has-clients?t=' + ts, { has_clients: false })
         ]).then(function(results) {
             var movieList = (results[0].instances || []).map(function(inst) {
                 return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
@@ -4872,9 +4877,11 @@ document.head.appendChild(styleEl);
                 selectEl.appendChild(emptyOpt);
                 var noInstEl = document.getElementById('media-hunt-profiles-no-instances');
                 var noIdxEl = document.getElementById('media-hunt-profiles-no-indexers');
+                var noCliEl = document.getElementById('media-hunt-profiles-no-clients');
                 var wrapperEl = document.getElementById('media-hunt-profiles-content-wrapper');
                 if (noInstEl) noInstEl.style.display = '';
                 if (noIdxEl) noIdxEl.style.display = 'none';
+                if (noCliEl) noCliEl.style.display = 'none';
                 if (wrapperEl) wrapperEl.style.display = 'none';
                 M._combinedDropdownPopulated = true;
                 return;
@@ -4888,9 +4895,29 @@ document.head.appendChild(styleEl);
                 selectEl.appendChild(emptyOpt);
                 var noInstEl = document.getElementById('media-hunt-profiles-no-instances');
                 var noIdxEl = document.getElementById('media-hunt-profiles-no-indexers');
+                var noCliEl = document.getElementById('media-hunt-profiles-no-clients');
                 var wrapperEl = document.getElementById('media-hunt-profiles-content-wrapper');
                 if (noInstEl) noInstEl.style.display = 'none';
                 if (noIdxEl) noIdxEl.style.display = '';
+                if (noCliEl) noCliEl.style.display = 'none';
+                if (wrapperEl) wrapperEl.style.display = 'none';
+                M._combinedDropdownPopulated = true;
+                return;
+            }
+            var hasClients = results[5].has_clients === true;
+            if (!hasClients) {
+                selectEl.innerHTML = '';
+                var emptyOpt = document.createElement('option');
+                emptyOpt.value = '';
+                emptyOpt.textContent = 'No clients configured';
+                selectEl.appendChild(emptyOpt);
+                var noInstEl = document.getElementById('media-hunt-profiles-no-instances');
+                var noIdxEl = document.getElementById('media-hunt-profiles-no-indexers');
+                var noCliEl = document.getElementById('media-hunt-profiles-no-clients');
+                var wrapperEl = document.getElementById('media-hunt-profiles-content-wrapper');
+                if (noInstEl) noInstEl.style.display = 'none';
+                if (noIdxEl) noIdxEl.style.display = 'none';
+                if (noCliEl) noCliEl.style.display = '';
                 if (wrapperEl) wrapperEl.style.display = 'none';
                 M._combinedDropdownPopulated = true;
                 return;
@@ -4922,9 +4949,11 @@ document.head.appendChild(styleEl);
             M._combinedDropdownPopulated = true;
             var noInstEl = document.getElementById('media-hunt-profiles-no-instances');
             var noIdxEl = document.getElementById('media-hunt-profiles-no-indexers');
+            var noCliEl = document.getElementById('media-hunt-profiles-no-clients');
             var wrapperEl = document.getElementById('media-hunt-profiles-content-wrapper');
             if (noInstEl) noInstEl.style.display = 'none';
             if (noIdxEl) noIdxEl.style.display = 'none';
+            if (noCliEl) noCliEl.style.display = 'none';
             if (wrapperEl) wrapperEl.style.display = '';
             var parts = (selected || '').split(':');
             if (parts.length === 2) {
@@ -4934,6 +4963,15 @@ document.head.appendChild(styleEl);
             }
         }).catch(function() {
             selectEl.innerHTML = '<option value="">Failed to load instances</option>';
+            var noInstEl = document.getElementById('media-hunt-profiles-no-instances');
+            var noIdxEl = document.getElementById('media-hunt-profiles-no-indexers');
+            var noCliEl = document.getElementById('media-hunt-profiles-no-clients');
+            var wrapperEl = document.getElementById('media-hunt-profiles-content-wrapper');
+            if (noInstEl) noInstEl.style.display = 'none';
+            if (noIdxEl) noIdxEl.style.display = 'none';
+            if (noCliEl) noCliEl.style.display = '';
+            if (wrapperEl) wrapperEl.style.display = 'none';
+            M._combinedDropdownPopulated = true;
         });
     }
 
@@ -6086,18 +6124,23 @@ document.head.appendChild(styleEl);
             '</div></div></div>';
     }
 
+    function safeJsonFetch(url, fallback) {
+        return fetch(url, { cache: 'no-store' }).then(function(r) { return r.json(); }).catch(function() { return fallback || {}; });
+    }
+
     function populateCombinedInstanceDropdown(preferMode) {
         var selectEl = document.getElementById('movie-management-instance-select');
         if (!selectEl) return;
         selectEl.innerHTML = '<option value="">Loading...</option>';
         var ts = Date.now();
-            Promise.all([
-                fetch('./api/movie-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/movie-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/indexer-hunt/indexers?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
-            ]).then(function(results) {
+        Promise.all([
+            safeJsonFetch('./api/movie-hunt/instances?t=' + ts, { instances: [] }),
+            safeJsonFetch('./api/tv-hunt/instances?t=' + ts, { instances: [] }),
+            safeJsonFetch('./api/movie-hunt/instances/current?t=' + ts, { current_instance_id: null }),
+            safeJsonFetch('./api/tv-hunt/instances/current?t=' + ts, { current_instance_id: null }),
+            safeJsonFetch('./api/indexer-hunt/indexers?t=' + ts, { indexers: [] }),
+            safeJsonFetch('./api/movie-hunt/has-clients?t=' + ts, { has_clients: false })
+        ]).then(function(results) {
             var movieList = (results[0].instances || []).map(function(inst) {
                 return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
             });
@@ -6116,9 +6159,11 @@ document.head.appendChild(styleEl);
                     selectEl.appendChild(emptyOpt);
                     var noInstEl = document.getElementById('movie-management-no-instances');
                     var noIdxEl = document.getElementById('movie-management-no-indexers');
+                    var noCliEl = document.getElementById('movie-management-no-clients');
                     var wrapperEl = document.getElementById('movie-management-content-wrapper');
                     if (noInstEl) noInstEl.style.display = '';
                     if (noIdxEl) noIdxEl.style.display = 'none';
+                    if (noCliEl) noCliEl.style.display = 'none';
                     if (wrapperEl) wrapperEl.style.display = 'none';
                     return;
                 }
@@ -6131,9 +6176,28 @@ document.head.appendChild(styleEl);
                     selectEl.appendChild(emptyOpt);
                     var noInstEl = document.getElementById('movie-management-no-instances');
                     var noIdxEl = document.getElementById('movie-management-no-indexers');
+                    var noCliEl = document.getElementById('movie-management-no-clients');
                     var wrapperEl = document.getElementById('movie-management-content-wrapper');
                     if (noInstEl) noInstEl.style.display = 'none';
                     if (noIdxEl) noIdxEl.style.display = '';
+                    if (noCliEl) noCliEl.style.display = 'none';
+                    if (wrapperEl) wrapperEl.style.display = 'none';
+                    return;
+                }
+                var hasClients = results[5].has_clients === true;
+                if (!hasClients) {
+                    selectEl.innerHTML = '';
+                    var emptyOpt = document.createElement('option');
+                    emptyOpt.value = '';
+                    emptyOpt.textContent = 'No clients configured';
+                    selectEl.appendChild(emptyOpt);
+                    var noInstEl = document.getElementById('movie-management-no-instances');
+                    var noIdxEl = document.getElementById('movie-management-no-indexers');
+                    var noCliEl = document.getElementById('movie-management-no-clients');
+                    var wrapperEl = document.getElementById('movie-management-content-wrapper');
+                    if (noInstEl) noInstEl.style.display = 'none';
+                    if (noIdxEl) noIdxEl.style.display = 'none';
+                    if (noCliEl) noCliEl.style.display = '';
                     if (wrapperEl) wrapperEl.style.display = 'none';
                     return;
                 }
@@ -6164,9 +6228,11 @@ document.head.appendChild(styleEl);
             var parts = (selected || '').split(':');
             var noInstEl = document.getElementById('movie-management-no-instances');
             var noIdxEl = document.getElementById('movie-management-no-indexers');
+            var noCliEl = document.getElementById('movie-management-no-clients');
             var wrapperEl = document.getElementById('movie-management-content-wrapper');
             if (noInstEl) noInstEl.style.display = 'none';
             if (noIdxEl) noIdxEl.style.display = 'none';
+            if (noCliEl) noCliEl.style.display = 'none';
             if (wrapperEl) wrapperEl.style.display = '';
             if (parts.length === 2) {
                 _mgmtMode = parts[0] === 'tv' ? 'tv' : 'movie';
@@ -6175,6 +6241,14 @@ document.head.appendChild(styleEl);
             }
         }).catch(function() {
             selectEl.innerHTML = '<option value="">Failed to load instances</option>';
+            var noInstEl = document.getElementById('movie-management-no-instances');
+            var noIdxEl = document.getElementById('movie-management-no-indexers');
+            var noCliEl = document.getElementById('movie-management-no-clients');
+            var wrapperEl = document.getElementById('movie-management-content-wrapper');
+            if (noInstEl) noInstEl.style.display = 'none';
+            if (noIdxEl) noIdxEl.style.display = 'none';
+            if (noCliEl) noCliEl.style.display = '';
+            if (wrapperEl) wrapperEl.style.display = 'none';
         });
     }
 
@@ -6775,18 +6849,24 @@ document.head.appendChild(styleEl);
             return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'instance_id=' + encodeURIComponent(id);
         },
 
+        _safeJsonFetch: function(url, fallback) {
+            return fetch(url, { cache: 'no-store' }).then(function(r) { return r.json(); }).catch(function() { return fallback || {}; });
+        },
+
         populateCombinedInstanceDropdown: function(preferMode) {
             var self = window.ImportLists;
             var selectEl = document.getElementById('settings-import-lists-instance-select');
             if (!selectEl) return;
             selectEl.innerHTML = '<option value="">Loading...</option>';
             var ts = Date.now();
+            var sf = self._safeJsonFetch.bind(self);
             Promise.all([
-                fetch('./api/movie-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/movie-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/indexer-hunt/indexers?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+                sf('./api/movie-hunt/instances?t=' + ts, { instances: [] }),
+                sf('./api/tv-hunt/instances?t=' + ts, { instances: [] }),
+                sf('./api/movie-hunt/instances/current?t=' + ts, { current_instance_id: null }),
+                sf('./api/tv-hunt/instances/current?t=' + ts, { current_instance_id: null }),
+                sf('./api/indexer-hunt/indexers?t=' + ts, { indexers: [] }),
+                sf('./api/movie-hunt/has-clients?t=' + ts, { has_clients: false })
             ]).then(function(results) {
                 var movieList = (results[0].instances || []).map(function(inst) {
                     return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
@@ -6806,9 +6886,11 @@ document.head.appendChild(styleEl);
                     selectEl.appendChild(emptyOpt);
                     var noInstEl = document.getElementById('settings-import-lists-no-instances');
                     var noIdxEl = document.getElementById('settings-import-lists-no-indexers');
+                    var noCliEl = document.getElementById('settings-import-lists-no-clients');
                     var wrapperEl = document.getElementById('settings-import-lists-content-wrapper');
                     if (noInstEl) noInstEl.style.display = '';
                     if (noIdxEl) noIdxEl.style.display = 'none';
+                    if (noCliEl) noCliEl.style.display = 'none';
                     if (wrapperEl) wrapperEl.style.display = 'none';
                     return;
                 }
@@ -6821,9 +6903,28 @@ document.head.appendChild(styleEl);
                     selectEl.appendChild(emptyOpt);
                     var noInstEl = document.getElementById('settings-import-lists-no-instances');
                     var noIdxEl = document.getElementById('settings-import-lists-no-indexers');
+                    var noCliEl = document.getElementById('settings-import-lists-no-clients');
                     var wrapperEl = document.getElementById('settings-import-lists-content-wrapper');
                     if (noInstEl) noInstEl.style.display = 'none';
                     if (noIdxEl) noIdxEl.style.display = '';
+                    if (noCliEl) noCliEl.style.display = 'none';
+                    if (wrapperEl) wrapperEl.style.display = 'none';
+                    return;
+                }
+                var hasClients = results[5].has_clients === true;
+                if (!hasClients) {
+                    selectEl.innerHTML = '';
+                    var emptyOpt = document.createElement('option');
+                    emptyOpt.value = '';
+                    emptyOpt.textContent = 'No clients configured';
+                    selectEl.appendChild(emptyOpt);
+                    var noInstEl = document.getElementById('settings-import-lists-no-instances');
+                    var noIdxEl = document.getElementById('settings-import-lists-no-indexers');
+                    var noCliEl = document.getElementById('settings-import-lists-no-clients');
+                    var wrapperEl = document.getElementById('settings-import-lists-content-wrapper');
+                    if (noInstEl) noInstEl.style.display = 'none';
+                    if (noIdxEl) noIdxEl.style.display = 'none';
+                    if (noCliEl) noCliEl.style.display = '';
                     if (wrapperEl) wrapperEl.style.display = 'none';
                     return;
                 }
@@ -6853,9 +6954,11 @@ document.head.appendChild(styleEl);
                 selectEl.value = selected;
                 var noInstEl = document.getElementById('settings-import-lists-no-instances');
                 var noIdxEl = document.getElementById('settings-import-lists-no-indexers');
+                var noCliEl = document.getElementById('settings-import-lists-no-clients');
                 var wrapperEl = document.getElementById('settings-import-lists-content-wrapper');
                 if (noInstEl) noInstEl.style.display = 'none';
                 if (noIdxEl) noIdxEl.style.display = 'none';
+                if (noCliEl) noCliEl.style.display = 'none';
                 if (wrapperEl) wrapperEl.style.display = '';
                 var parts = (selected || '').split(':');
                 if (parts.length === 2) {
@@ -6865,6 +6968,14 @@ document.head.appendChild(styleEl);
                 }
             }).catch(function() {
                 selectEl.innerHTML = '<option value="">Failed to load instances</option>';
+                var noInstEl = document.getElementById('settings-import-lists-no-instances');
+                var noIdxEl = document.getElementById('settings-import-lists-no-indexers');
+                var noCliEl = document.getElementById('settings-import-lists-no-clients');
+                var wrapperEl = document.getElementById('settings-import-lists-content-wrapper');
+                if (noInstEl) noInstEl.style.display = 'none';
+                if (noIdxEl) noIdxEl.style.display = 'none';
+                if (noCliEl) noCliEl.style.display = '';
+                if (wrapperEl) wrapperEl.style.display = 'none';
             });
         },
 
@@ -7805,13 +7916,15 @@ document.head.appendChild(styleEl);
                 fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
                 fetch('./api/movie-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
                 fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/indexer-hunt/indexers?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+                fetch('./api/indexer-hunt/indexers?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+                fetch('./api/movie-hunt/has-clients?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
             ]).then(function(results) {
                 var movieList = results[0].instances || [];
                 var tvList = results[1].instances || [];
                 var movieCurrent = results[2].current_instance_id != null ? Number(results[2].current_instance_id) : null;
                 var tvCurrent = results[3].current_instance_id != null ? Number(results[3].current_instance_id) : null;
                 var indexerCount = (results[4].indexers || []).length;
+                var hasClients = results[5].has_clients === true;
 
                 var opts = [];
                 movieList.forEach(function(inst) {
@@ -7823,6 +7936,7 @@ document.head.appendChild(styleEl);
 
                 var noInstEl = document.getElementById(PREFIX + '-no-instances');
                 var noIdxEl = document.getElementById(PREFIX + '-no-indexers');
+                var noCliEl = document.getElementById(PREFIX + '-no-clients');
                 var wrapperEl = document.getElementById(PREFIX + '-content-wrapper');
 
                 if (opts.length === 0) {
@@ -7830,6 +7944,7 @@ document.head.appendChild(styleEl);
                     select.appendChild(document.createElement('option')).value = ''; select.options[0].textContent = 'No instances';
                     if (noInstEl) noInstEl.style.display = '';
                     if (noIdxEl) noIdxEl.style.display = 'none';
+                    if (noCliEl) noCliEl.style.display = 'none';
                     if (wrapperEl) wrapperEl.style.display = 'none';
                     return;
                 }
@@ -7838,12 +7953,23 @@ document.head.appendChild(styleEl);
                     select.appendChild(document.createElement('option')).value = ''; select.options[0].textContent = 'No indexers configured';
                     if (noInstEl) noInstEl.style.display = 'none';
                     if (noIdxEl) noIdxEl.style.display = '';
+                    if (noCliEl) noCliEl.style.display = 'none';
+                    if (wrapperEl) wrapperEl.style.display = 'none';
+                    return;
+                }
+                if (!hasClients) {
+                    select.innerHTML = '';
+                    select.appendChild(document.createElement('option')).value = ''; select.options[0].textContent = 'No clients configured';
+                    if (noInstEl) noInstEl.style.display = 'none';
+                    if (noIdxEl) noIdxEl.style.display = 'none';
+                    if (noCliEl) noCliEl.style.display = '';
                     if (wrapperEl) wrapperEl.style.display = 'none';
                     return;
                 }
 
                 if (noInstEl) noInstEl.style.display = 'none';
                 if (noIdxEl) noIdxEl.style.display = 'none';
+                if (noCliEl) noCliEl.style.display = 'none';
                 if (wrapperEl) wrapperEl.style.display = '';
 
                 select.innerHTML = '';
@@ -8430,18 +8556,24 @@ document.head.appendChild(styleEl);
             return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'instance_id=' + encodeURIComponent(id);
         },
 
+        _safeJsonFetch: function(url, fallback) {
+            return fetch(url, { cache: 'no-store' }).then(function(r) { return r.json(); }).catch(function() { return fallback || {}; });
+        },
+
         populateCombinedInstanceDropdown: function(preferMode) {
             var self = window.RootFolders;
             var selectEl = document.getElementById('settings-root-folders-instance-select');
             if (!selectEl) return;
             selectEl.innerHTML = '<option value="">Loading...</option>';
             var ts = Date.now();
+            var sf = self._safeJsonFetch.bind(self);
             Promise.all([
-                fetch('./api/movie-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/movie-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/indexer-hunt/indexers?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+                sf('./api/movie-hunt/instances?t=' + ts, { instances: [] }),
+                sf('./api/tv-hunt/instances?t=' + ts, { instances: [] }),
+                sf('./api/movie-hunt/instances/current?t=' + ts, { current_instance_id: null }),
+                sf('./api/tv-hunt/instances/current?t=' + ts, { current_instance_id: null }),
+                sf('./api/indexer-hunt/indexers?t=' + ts, { indexers: [] }),
+                sf('./api/movie-hunt/has-clients?t=' + ts, { has_clients: false })
             ]).then(function(results) {
                 var movieList = (results[0].instances || []).map(function(inst) {
                     return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
@@ -8461,9 +8593,11 @@ document.head.appendChild(styleEl);
                     selectEl.appendChild(emptyOpt);
                     var noInstEl = document.getElementById('settings-root-folders-no-instances');
                     var noIdxEl = document.getElementById('settings-root-folders-no-indexers');
+                    var noCliEl = document.getElementById('settings-root-folders-no-clients');
                     var wrapperEl = document.getElementById('settings-root-folders-content-wrapper');
                     if (noInstEl) noInstEl.style.display = '';
                     if (noIdxEl) noIdxEl.style.display = 'none';
+                    if (noCliEl) noCliEl.style.display = 'none';
                     if (wrapperEl) wrapperEl.style.display = 'none';
                     return;
                 }
@@ -8476,9 +8610,28 @@ document.head.appendChild(styleEl);
                     selectEl.appendChild(emptyOpt);
                     var noInstEl = document.getElementById('settings-root-folders-no-instances');
                     var noIdxEl = document.getElementById('settings-root-folders-no-indexers');
+                    var noCliEl = document.getElementById('settings-root-folders-no-clients');
                     var wrapperEl = document.getElementById('settings-root-folders-content-wrapper');
                     if (noInstEl) noInstEl.style.display = 'none';
                     if (noIdxEl) noIdxEl.style.display = '';
+                    if (noCliEl) noCliEl.style.display = 'none';
+                    if (wrapperEl) wrapperEl.style.display = 'none';
+                    return;
+                }
+                var hasClients = results[5].has_clients === true;
+                if (!hasClients) {
+                    selectEl.innerHTML = '';
+                    var emptyOpt = document.createElement('option');
+                    emptyOpt.value = '';
+                    emptyOpt.textContent = 'No clients configured';
+                    selectEl.appendChild(emptyOpt);
+                    var noInstEl = document.getElementById('settings-root-folders-no-instances');
+                    var noIdxEl = document.getElementById('settings-root-folders-no-indexers');
+                    var noCliEl = document.getElementById('settings-root-folders-no-clients');
+                    var wrapperEl = document.getElementById('settings-root-folders-content-wrapper');
+                    if (noInstEl) noInstEl.style.display = 'none';
+                    if (noIdxEl) noIdxEl.style.display = 'none';
+                    if (noCliEl) noCliEl.style.display = '';
                     if (wrapperEl) wrapperEl.style.display = 'none';
                     return;
                 }
@@ -8508,9 +8661,11 @@ document.head.appendChild(styleEl);
                 selectEl.value = selected;
                 var noInstEl = document.getElementById('settings-root-folders-no-instances');
                 var noIdxEl = document.getElementById('settings-root-folders-no-indexers');
+                var noCliEl = document.getElementById('settings-root-folders-no-clients');
                 var wrapperEl = document.getElementById('settings-root-folders-content-wrapper');
                 if (noInstEl) noInstEl.style.display = 'none';
                 if (noIdxEl) noIdxEl.style.display = 'none';
+                if (noCliEl) noCliEl.style.display = 'none';
                 if (wrapperEl) wrapperEl.style.display = '';
                 var parts = (selected || '').split(':');
                 if (parts.length === 2) {
@@ -8520,6 +8675,14 @@ document.head.appendChild(styleEl);
                 }
             }).catch(function() {
                 selectEl.innerHTML = '<option value="">Failed to load instances</option>';
+                var noInstEl = document.getElementById('settings-root-folders-no-instances');
+                var noIdxEl = document.getElementById('settings-root-folders-no-indexers');
+                var noCliEl = document.getElementById('settings-root-folders-no-clients');
+                var wrapperEl = document.getElementById('settings-root-folders-content-wrapper');
+                if (noInstEl) noInstEl.style.display = 'none';
+                if (noIdxEl) noIdxEl.style.display = 'none';
+                if (noCliEl) noCliEl.style.display = '';
+                if (wrapperEl) wrapperEl.style.display = 'none';
             });
         },
 
@@ -9512,17 +9675,23 @@ document.head.appendChild(styleEl);
             });
         },
 
+        _safeJsonFetch: function(url, fallback) {
+            return fetch(url, { cache: 'no-store' }).then(function(r) { return r.json(); }).catch(function() { return fallback || {}; });
+        },
+
         populateCombinedInstanceDropdown: function(preferMode) {
             var selectEl = document.getElementById('settings-custom-formats-instance-select');
             if (!selectEl) return;
             selectEl.innerHTML = '<option value="">Loading...</option>';
             var ts = Date.now();
+            var sf = window.CustomFormats._safeJsonFetch.bind(window.CustomFormats);
             Promise.all([
-                fetch('./api/movie-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/tv-hunt/instances?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/movie-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/tv-hunt/instances/current?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-                fetch('./api/indexer-hunt/indexers?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+                sf('./api/movie-hunt/instances?t=' + ts, { instances: [] }),
+                sf('./api/tv-hunt/instances?t=' + ts, { instances: [] }),
+                sf('./api/movie-hunt/instances/current?t=' + ts, { current_instance_id: null }),
+                sf('./api/tv-hunt/instances/current?t=' + ts, { current_instance_id: null }),
+                sf('./api/indexer-hunt/indexers?t=' + ts, { indexers: [] }),
+                sf('./api/movie-hunt/has-clients?t=' + ts, { has_clients: false })
             ]).then(function(results) {
                 var movieList = (results[0].instances || []).map(function(inst) {
                     return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
@@ -9542,9 +9711,11 @@ document.head.appendChild(styleEl);
                     selectEl.appendChild(emptyOpt);
                     var noInstEl = document.getElementById('settings-custom-formats-no-instances');
                     var noIdxEl = document.getElementById('settings-custom-formats-no-indexers');
+                    var noCliEl = document.getElementById('settings-custom-formats-no-clients');
                     var wrapperEl = document.getElementById('settings-custom-formats-content-wrapper');
                     if (noInstEl) noInstEl.style.display = '';
                     if (noIdxEl) noIdxEl.style.display = 'none';
+                    if (noCliEl) noCliEl.style.display = 'none';
                     if (wrapperEl) wrapperEl.style.display = 'none';
                     return;
                 }
@@ -9557,9 +9728,28 @@ document.head.appendChild(styleEl);
                     selectEl.appendChild(emptyOpt);
                     var noInstEl = document.getElementById('settings-custom-formats-no-instances');
                     var noIdxEl = document.getElementById('settings-custom-formats-no-indexers');
+                    var noCliEl = document.getElementById('settings-custom-formats-no-clients');
                     var wrapperEl = document.getElementById('settings-custom-formats-content-wrapper');
                     if (noInstEl) noInstEl.style.display = 'none';
                     if (noIdxEl) noIdxEl.style.display = '';
+                    if (noCliEl) noCliEl.style.display = 'none';
+                    if (wrapperEl) wrapperEl.style.display = 'none';
+                    return;
+                }
+                var hasClients = results[5].has_clients === true;
+                if (!hasClients) {
+                    selectEl.innerHTML = '';
+                    var emptyOpt = document.createElement('option');
+                    emptyOpt.value = '';
+                    emptyOpt.textContent = 'No clients configured';
+                    selectEl.appendChild(emptyOpt);
+                    var noInstEl = document.getElementById('settings-custom-formats-no-instances');
+                    var noIdxEl = document.getElementById('settings-custom-formats-no-indexers');
+                    var noCliEl = document.getElementById('settings-custom-formats-no-clients');
+                    var wrapperEl = document.getElementById('settings-custom-formats-content-wrapper');
+                    if (noInstEl) noInstEl.style.display = 'none';
+                    if (noIdxEl) noIdxEl.style.display = 'none';
+                    if (noCliEl) noCliEl.style.display = '';
                     if (wrapperEl) wrapperEl.style.display = 'none';
                     return;
                 }
@@ -9589,9 +9779,11 @@ document.head.appendChild(styleEl);
                 selectEl.value = selected;
                 var noInstEl = document.getElementById('settings-custom-formats-no-instances');
                 var noIdxEl = document.getElementById('settings-custom-formats-no-indexers');
+                var noCliEl = document.getElementById('settings-custom-formats-no-clients');
                 var wrapperEl = document.getElementById('settings-custom-formats-content-wrapper');
                 if (noInstEl) noInstEl.style.display = 'none';
                 if (noIdxEl) noIdxEl.style.display = 'none';
+                if (noCliEl) noCliEl.style.display = 'none';
                 if (wrapperEl) wrapperEl.style.display = '';
                 var parts = (selected || '').split(':');
                 if (parts.length === 2) {
@@ -9601,6 +9793,14 @@ document.head.appendChild(styleEl);
                 }
             }).catch(function() {
                 selectEl.innerHTML = '<option value="">Failed to load instances</option>';
+                var noInstEl = document.getElementById('settings-custom-formats-no-instances');
+                var noIdxEl = document.getElementById('settings-custom-formats-no-indexers');
+                var noCliEl = document.getElementById('settings-custom-formats-no-clients');
+                var wrapperEl = document.getElementById('settings-custom-formats-content-wrapper');
+                if (noInstEl) noInstEl.style.display = 'none';
+                if (noIdxEl) noIdxEl.style.display = 'none';
+                if (noCliEl) noCliEl.style.display = '';
+                if (wrapperEl) wrapperEl.style.display = 'none';
             });
         },
 

@@ -1,0 +1,163 @@
+/* No-clients warning (third step after instances + indexers) — shared across Media Hunt sections */
+
+#settingsSizesSection .settings-no-clients,
+#settingsRootFoldersSection .settings-no-clients,
+#settingsImportListsSection .settings-no-clients,
+#settingsCustomFormatsSection .settings-no-clients,
+#mediaHuntSettingsImportMediaSection .settings-no-clients,
+#movieManagementSection .movie-management-no-clients,
+#mediaHuntProfilesSection .media-hunt-profiles-no-clients,
+#activitySection .activity-no-clients,
+#tvHuntActivitySection .activity-no-clients,
+#indexer-hunt-history-section .ih-no-clients,
+#indexer-hunt-stats-section .ih-no-clients,
+#mediaHuntCalendarSection .mh-calendar-no-clients,
+#logsSection .logs-no-clients,
+#media-hunt-collection-view .media-hunt-collection-no-clients {
+    text-align: center;
+    padding: 64px 24px;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 20px 0;
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(148, 163, 184, 0.08);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+#settingsSizesSection .settings-no-clients i.fa-download,
+#settingsRootFoldersSection .settings-no-clients i.fa-download,
+#settingsImportListsSection .settings-no-clients i.fa-download,
+#settingsCustomFormatsSection .settings-no-clients i.fa-download,
+#mediaHuntSettingsImportMediaSection .settings-no-clients i.fa-download,
+#movieManagementSection .movie-management-no-clients i.fa-download,
+#mediaHuntProfilesSection .media-hunt-profiles-no-clients i.fa-download,
+#activitySection .activity-no-clients i.fa-download,
+#tvHuntActivitySection .activity-no-clients i.fa-download,
+#indexer-hunt-history-section .ih-no-clients i.fa-download,
+#indexer-hunt-stats-section .ih-no-clients i.fa-download,
+#mediaHuntCalendarSection .mh-calendar-no-clients i.fa-download,
+#logsSection .logs-no-clients i.fa-download,
+#media-hunt-collection-view .media-hunt-collection-no-clients i.fa-download {
+    font-size: 3rem;
+    color: #334155;
+    margin-bottom: 16px;
+    display: block;
+}
+#settingsSizesSection .settings-no-clients .no-instances-title,
+#settingsRootFoldersSection .settings-no-clients .no-instances-title,
+#settingsImportListsSection .settings-no-clients .no-instances-title,
+#settingsCustomFormatsSection .settings-no-clients .no-instances-title,
+#mediaHuntSettingsImportMediaSection .settings-no-clients .no-instances-title,
+#movieManagementSection .movie-management-no-clients .no-instances-title,
+#mediaHuntProfilesSection .media-hunt-profiles-no-clients .no-instances-title,
+#activitySection .activity-no-clients .no-instances-title,
+#tvHuntActivitySection .activity-no-clients .no-instances-title,
+#indexer-hunt-history-section .ih-no-clients .no-instances-title,
+#indexer-hunt-stats-section .ih-no-clients .no-instances-title,
+#mediaHuntCalendarSection .mh-calendar-no-clients .no-instances-title,
+#logsSection .logs-no-clients .no-instances-title,
+#media-hunt-collection-view .media-hunt-collection-no-clients .no-instances-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    margin: 0 0 8px 0;
+}
+#settingsSizesSection .settings-no-clients .no-instances-desc,
+#settingsRootFoldersSection .settings-no-clients .no-instances-desc,
+#settingsImportListsSection .settings-no-clients .no-instances-desc,
+#settingsCustomFormatsSection .settings-no-clients .no-instances-desc,
+#mediaHuntSettingsImportMediaSection .settings-no-clients .no-instances-desc,
+#movieManagementSection .movie-management-no-clients .no-instances-desc,
+#mediaHuntProfilesSection .media-hunt-profiles-no-clients .no-instances-desc,
+#activitySection .activity-no-clients .no-instances-desc,
+#tvHuntActivitySection .activity-no-clients .no-instances-desc,
+#indexer-hunt-history-section .ih-no-clients .no-instances-desc,
+#indexer-hunt-stats-section .ih-no-clients .no-instances-desc,
+#mediaHuntCalendarSection .mh-calendar-no-clients .no-instances-desc,
+#logsSection .logs-no-clients .no-instances-desc,
+#media-hunt-collection-view .media-hunt-collection-no-clients .no-instances-desc {
+    font-size: 0.95rem;
+    color: #94a3b8;
+    line-height: 1.6;
+    margin: 0 auto 24px auto;
+    max-width: 400px;
+}
+#settingsSizesSection .settings-no-clients .no-instances-action-btn,
+#settingsRootFoldersSection .settings-no-clients .no-instances-action-btn,
+#settingsImportListsSection .settings-no-clients .no-instances-action-btn,
+#settingsCustomFormatsSection .settings-no-clients .no-instances-action-btn,
+#mediaHuntSettingsImportMediaSection .settings-no-clients .no-instances-action-btn,
+#movieManagementSection .movie-management-no-clients .no-instances-action-btn,
+#mediaHuntProfilesSection .media-hunt-profiles-no-clients .no-instances-action-btn,
+#activitySection .activity-no-clients .no-instances-action-btn,
+#tvHuntActivitySection .activity-no-clients .no-instances-action-btn,
+#indexer-hunt-history-section .ih-no-clients .no-instances-action-btn,
+#indexer-hunt-stats-section .ih-no-clients .no-instances-action-btn,
+#mediaHuntCalendarSection .mh-calendar-no-clients .no-instances-action-btn,
+#logsSection .logs-no-clients .no-instances-action-btn,
+#media-hunt-collection-view .media-hunt-collection-no-clients .no-instances-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(99, 102, 241, 0.2);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    color: #818cf8;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background 0.2s, border-color 0.2s;
+}
+#settingsSizesSection .settings-no-clients .no-instances-action-btn:hover,
+#settingsRootFoldersSection .settings-no-clients .no-instances-action-btn:hover,
+#settingsImportListsSection .settings-no-clients .no-instances-action-btn:hover,
+#settingsCustomFormatsSection .settings-no-clients .no-instances-action-btn:hover,
+#mediaHuntSettingsImportMediaSection .settings-no-clients .no-instances-action-btn:hover,
+#movieManagementSection .movie-management-no-clients .no-instances-action-btn:hover,
+#mediaHuntProfilesSection .media-hunt-profiles-no-clients .no-instances-action-btn:hover,
+#activitySection .activity-no-clients .no-instances-action-btn:hover,
+#tvHuntActivitySection .activity-no-clients .no-instances-action-btn:hover,
+#indexer-hunt-history-section .ih-no-clients .no-instances-action-btn:hover,
+#indexer-hunt-stats-section .ih-no-clients .no-instances-action-btn:hover,
+#mediaHuntCalendarSection .mh-calendar-no-clients .no-instances-action-btn:hover,
+#logsSection .logs-no-clients .no-instances-action-btn:hover,
+#media-hunt-collection-view .media-hunt-collection-no-clients .no-instances-action-btn:hover {
+    background: rgba(99, 102, 241, 0.3);
+    border-color: rgba(99, 102, 241, 0.5);
+}
+
+/* Unable-to-load state (when API fetch fails) — Activity & TV Activity */
+#activitySection .activity-unable-to-load,
+#tvHuntActivitySection .activity-unable-to-load {
+    text-align: center;
+    padding: 64px 24px;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 20px 0;
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(148, 163, 184, 0.08);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+#activitySection .activity-unable-to-load i.fa-exclamation-triangle,
+#tvHuntActivitySection .activity-unable-to-load i.fa-exclamation-triangle {
+    font-size: 3rem;
+    color: #f59e0b;
+    margin-bottom: 16px;
+    display: block;
+}
+#activitySection .activity-unable-to-load .no-instances-title,
+#tvHuntActivitySection .activity-unable-to-load .no-instances-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    margin: 0 0 8px 0;
+}
+#activitySection .activity-unable-to-load .no-instances-desc,
+#tvHuntActivitySection .activity-unable-to-load .no-instances-desc {
+    font-size: 0.95rem;
+    color: #94a3b8;
+    line-height: 1.6;
+    margin: 0 auto 24px auto;
+    max-width: 400px;
+}

@@ -1347,33 +1347,46 @@
             var moviePromise = fetch('./api/movie-hunt/instances').then(function(r) { return r.json(); }).then(function(d) { return d.instances || []; }).catch(function() { return []; });
             var tvPromise = fetch('./api/tv-hunt/instances').then(function(r) { return r.json(); }).then(function(d) { return d.instances || []; }).catch(function() { return []; });
             var indexerPromise = fetch('./api/indexer-hunt/indexers').then(function(r) { return r.json(); }).then(function(d) { return d.indexers || []; }).catch(function() { return []; });
+            var hasClientsPromise = fetch('./api/movie-hunt/has-clients').then(function(r) { return r.json(); }).then(function(d) { return d.has_clients === true; }).catch(function() { return false; });
 
-            Promise.all([moviePromise, tvPromise, indexerPromise]).then(function(results) {
+            Promise.all([moviePromise, tvPromise, indexerPromise, hasClientsPromise]).then(function(results) {
                 var movieInstances = results[0];
                 var tvInstances = results[1];
                 var indexers = results[2];
+                var hasClients = results[3];
                 var hasInstances = (movieInstances || []).length > 0 || (tvInstances || []).length > 0;
                 var hasIndexers = (indexers || []).length > 0;
 
                 var noInstEl = document.getElementById('media-hunt-collection-no-instances');
                 var noIdxEl = document.getElementById('media-hunt-collection-no-indexers');
+                var noCliEl = document.getElementById('media-hunt-collection-no-clients');
                 var contentWrapper = document.getElementById('media-hunt-collection-content-wrapper');
 
                 if (!hasInstances) {
                     if (noInstEl) noInstEl.style.display = '';
                     if (noIdxEl) noIdxEl.style.display = 'none';
+                    if (noCliEl) noCliEl.style.display = 'none';
                     if (contentWrapper) contentWrapper.style.display = 'none';
                     return;
                 }
                 if (!hasIndexers) {
                     if (noInstEl) noInstEl.style.display = 'none';
                     if (noIdxEl) noIdxEl.style.display = '';
+                    if (noCliEl) noCliEl.style.display = 'none';
+                    if (contentWrapper) contentWrapper.style.display = 'none';
+                    return;
+                }
+                if (!hasClients) {
+                    if (noInstEl) noInstEl.style.display = 'none';
+                    if (noIdxEl) noIdxEl.style.display = 'none';
+                    if (noCliEl) noCliEl.style.display = '';
                     if (contentWrapper) contentWrapper.style.display = 'none';
                     return;
                 }
 
                 if (noInstEl) noInstEl.style.display = 'none';
                 if (noIdxEl) noIdxEl.style.display = 'none';
+                if (noCliEl) noCliEl.style.display = 'none';
                 if (contentWrapper) contentWrapper.style.display = '';
 
                 movieSelect.innerHTML = '';

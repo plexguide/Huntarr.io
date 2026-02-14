@@ -170,15 +170,21 @@
     // --- Combined Activity dropdown (Movie Hunt + TV Hunt instances in one select) ---
     var _activityCombinedWired = {};  // selectId -> { element, onChanged, preferMode }
 
+    function safeJsonFetch(url, fallback) {
+        return fetch(url, { cache: 'no-store' }).then(function(r) { return r.json(); }).catch(function() { return fallback || {}; });
+    }
+
     function populateActivityCombined(select, preferMode) {
         select.innerHTML = '<option value="">Loading...</option>';
         var ts = Date.now();
+        var base = api('./api/') || './api/';
         Promise.all([
-            fetch(api('./api/movie-hunt/instances') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch(api('./api/movie-hunt/instances/current') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch(api('./api/tv-hunt/instances') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch(api('./api/tv-hunt/instances/current') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch(api('./api/indexer-hunt/indexers') + '?t=' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+            safeJsonFetch(base + 'movie-hunt/instances?t=' + ts, { instances: [] }),
+            safeJsonFetch(base + 'movie-hunt/instances/current?t=' + ts, { current_instance_id: null }),
+            safeJsonFetch(base + 'tv-hunt/instances?t=' + ts, { instances: [] }),
+            safeJsonFetch(base + 'tv-hunt/instances/current?t=' + ts, { current_instance_id: null }),
+            safeJsonFetch(base + 'indexer-hunt/indexers?t=' + ts, { indexers: [] }),
+            safeJsonFetch(base + 'movie-hunt/has-clients?t=' + ts, { has_clients: false })
         ]).then(function(results) {
             var movieList = results[0].instances || [];
             var movieCurrent = results[1].current_instance_id != null ? Number(results[1].current_instance_id) : null;
@@ -205,6 +211,17 @@
                 select.appendChild(emptyOpt);
                 select.value = '';
                 _updateActivityVisibility(select.id, 'no-indexers');
+                return;
+            }
+            var hasClients = results[5].has_clients === true;
+            if (!hasClients) {
+                select.innerHTML = '';
+                var emptyOpt = document.createElement('option');
+                emptyOpt.value = '';
+                emptyOpt.textContent = 'No clients configured';
+                select.appendChild(emptyOpt);
+                select.value = '';
+                _updateActivityVisibility(select.id, 'no-clients');
                 return;
             }
             _updateActivityVisibility(select.id, 'ok');
@@ -249,25 +266,31 @@
             select.value = targetVal;
         }).catch(function() {
             select.innerHTML = '<option value="">Unable to load instances</option>';
-            _updateActivityVisibility(select.id, 'ok');
+            _updateActivityVisibility(select.id, 'unable-to-load');
         });
     }
 
     function _updateActivityVisibility(selectId, state) {
-        var noInstEl, noIdxEl, wrapperEl;
+        var noInstEl, noIdxEl, noCliEl, unableEl, wrapperEl;
         if (selectId === 'activity-combined-instance-select') {
             noInstEl = document.getElementById('activity-no-instances');
             noIdxEl = document.getElementById('activity-no-indexers');
+            noCliEl = document.getElementById('activity-no-clients');
+            unableEl = document.getElementById('activity-unable-to-load');
             wrapperEl = document.getElementById('activity-content-wrapper');
         } else if (selectId === 'tv-activity-combined-instance-select') {
             noInstEl = document.getElementById('tv-activity-no-instances');
             noIdxEl = document.getElementById('tv-activity-no-indexers');
+            noCliEl = document.getElementById('tv-activity-no-clients');
+            unableEl = document.getElementById('tv-activity-unable-to-load');
             wrapperEl = document.getElementById('tv-activity-content-wrapper');
         } else {
             return;
         }
         if (noInstEl) noInstEl.style.display = (state === 'no-instances') ? '' : 'none';
         if (noIdxEl) noIdxEl.style.display = (state === 'no-indexers') ? '' : 'none';
+        if (noCliEl) noCliEl.style.display = (state === 'no-clients') ? '' : 'none';
+        if (unableEl) unableEl.style.display = (state === 'unable-to-load') ? '' : 'none';
         if (wrapperEl) wrapperEl.style.display = (state === 'ok') ? '' : 'none';
     }
 

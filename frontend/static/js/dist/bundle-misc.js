@@ -4331,34 +4331,48 @@ window.HuntarrIndexerHuntHome = {
         var noInstEl = document.getElementById('indexer-hunt-stats-no-instances');
         var wrapperEl = document.getElementById('indexer-hunt-stats-content-wrapper');
         var noIdxEl = document.getElementById('indexer-hunt-stats-no-indexers');
+        var noCliEl = document.getElementById('indexer-hunt-stats-no-clients');
         Promise.all([
             fetch('./api/movie-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); }),
             fetch('./api/tv-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/indexer-hunt/indexers', { cache: 'no-store' }).then(function(r) { return r.json(); })
+            fetch('./api/indexer-hunt/indexers', { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch('./api/movie-hunt/has-clients', { cache: 'no-store' }).then(function(r) { return r.json(); })
         ]).then(function(results) {
             var movieCount = (results[0].instances || []).length;
             var tvCount = (results[1].instances || []).length;
             var indexerCount = (results[2].indexers || []).length;
+            var hasClients = results[3].has_clients === true;
             if (movieCount === 0 && tvCount === 0) {
                 if (noInstEl) noInstEl.style.display = '';
                 if (noIdxEl) noIdxEl.style.display = 'none';
+                if (noCliEl) noCliEl.style.display = 'none';
                 if (wrapperEl) wrapperEl.style.display = 'none';
                 return;
             }
             if (indexerCount === 0) {
                 if (noInstEl) noInstEl.style.display = 'none';
                 if (noIdxEl) noIdxEl.style.display = '';
+                if (noCliEl) noCliEl.style.display = 'none';
+                if (wrapperEl) wrapperEl.style.display = 'none';
+                return;
+            }
+            if (!hasClients) {
+                if (noInstEl) noInstEl.style.display = 'none';
+                if (noIdxEl) noIdxEl.style.display = 'none';
+                if (noCliEl) noCliEl.style.display = '';
                 if (wrapperEl) wrapperEl.style.display = 'none';
                 return;
             }
             if (noInstEl) noInstEl.style.display = 'none';
             if (noIdxEl) noIdxEl.style.display = 'none';
+            if (noCliEl) noCliEl.style.display = 'none';
             if (wrapperEl) wrapperEl.style.display = '';
             _loadAggregateStats();
             _loadPerIndexerStats();
         }).catch(function() {
             if (noInstEl) noInstEl.style.display = 'none';
             if (noIdxEl) noIdxEl.style.display = 'none';
+            if (noCliEl) noCliEl.style.display = 'none';
             if (wrapperEl) wrapperEl.style.display = '';
             _loadAggregateStats();
             _loadPerIndexerStats();
@@ -4472,34 +4486,48 @@ window.HuntarrIndexerHuntHome = {
         var noInstEl = document.getElementById('indexer-hunt-history-no-instances');
         var wrapperEl = document.getElementById('indexer-hunt-history-content-wrapper');
         var noIdxEl = document.getElementById('indexer-hunt-history-no-indexers');
+        var noCliEl = document.getElementById('indexer-hunt-history-no-clients');
         Promise.all([
             fetch('./api/movie-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); }),
             fetch('./api/tv-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/indexer-hunt/indexers', { cache: 'no-store' }).then(function(r) { return r.json(); })
+            fetch('./api/indexer-hunt/indexers', { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch('./api/movie-hunt/has-clients', { cache: 'no-store' }).then(function(r) { return r.json(); })
         ]).then(function(results) {
             var movieCount = (results[0].instances || []).length;
             var tvCount = (results[1].instances || []).length;
             var indexerCount = (results[2].indexers || []).length;
+            var hasClients = results[3].has_clients === true;
             if (movieCount === 0 && tvCount === 0) {
                 if (noInstEl) noInstEl.style.display = '';
                 if (noIdxEl) noIdxEl.style.display = 'none';
+                if (noCliEl) noCliEl.style.display = 'none';
                 if (wrapperEl) wrapperEl.style.display = 'none';
                 return;
             }
             if (indexerCount === 0) {
                 if (noInstEl) noInstEl.style.display = 'none';
                 if (noIdxEl) noIdxEl.style.display = '';
+                if (noCliEl) noCliEl.style.display = 'none';
+                if (wrapperEl) wrapperEl.style.display = 'none';
+                return;
+            }
+            if (!hasClients) {
+                if (noInstEl) noInstEl.style.display = 'none';
+                if (noIdxEl) noIdxEl.style.display = 'none';
+                if (noCliEl) noCliEl.style.display = '';
                 if (wrapperEl) wrapperEl.style.display = 'none';
                 return;
             }
             if (noInstEl) noInstEl.style.display = 'none';
             if (noIdxEl) noIdxEl.style.display = 'none';
+            if (noCliEl) noCliEl.style.display = 'none';
             if (wrapperEl) wrapperEl.style.display = '';
             _currentPage = 1;
             _loadHistory();
         }).catch(function() {
             if (noInstEl) noInstEl.style.display = 'none';
             if (noIdxEl) noIdxEl.style.display = 'none';
+            if (noCliEl) noCliEl.style.display = 'none';
             if (wrapperEl) wrapperEl.style.display = '';
             _currentPage = 1;
             _loadHistory();
