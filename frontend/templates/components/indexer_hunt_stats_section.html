@@ -3,6 +3,14 @@
     <link rel="stylesheet" href="./static/css/indexer-hunt.css">
     {% with section_id='indexer-hunt-stats' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
 
+    <!-- No-instances warning box (same style as Media Management) -->
+    <div id="indexer-hunt-stats-no-instances" class="ih-no-instances" style="display: none;">
+        <i class="fas fa-cube" aria-hidden="true"></i>
+        <p class="no-instances-title">No instances configured</p>
+        <p class="no-instances-desc">Configure a Movie Hunt or TV Hunt instance to view indexer stats.</p>
+        <a href="./#media-hunt-instances" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure instances</a>
+    </div>
+    <div id="indexer-hunt-stats-content-wrapper">
     <div class="ih-stats-page">
         <div class="ih-stats-page-header">
             <i class="fas fa-chart-bar"></i>
@@ -60,5 +68,6 @@
                 <p>No stats available yet. Stats are recorded when Movie Hunt searches indexers.</p>
             </div>
         </div>
+    </div>
     </div>
 </section>

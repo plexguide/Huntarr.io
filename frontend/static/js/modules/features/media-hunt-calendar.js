@@ -427,9 +427,21 @@
                 empty.value = '';
                 empty.textContent = 'No instances configured';
                 sel.appendChild(empty);
-            } else if (preferred) {
+                var noInst = document.getElementById('media-hunt-calendar-no-instances');
+                var wrapper = document.getElementById('media-hunt-calendar-content-wrapper');
+                if (noInst) noInst.style.display = '';
+                if (wrapper) wrapper.style.display = 'none';
+                _collectionLoaded = false;
+                _upcomingLoaded = false;
+                return;
+            }
+            var noInst = document.getElementById('media-hunt-calendar-no-instances');
+            var wrapper = document.getElementById('media-hunt-calendar-content-wrapper');
+            if (noInst) noInst.style.display = 'none';
+            if (wrapper) wrapper.style.display = '';
+            if (preferred) {
                 sel.value = preferred;
-            } else if (sel.options.length) {
+            } else {
                 sel.selectedIndex = 0;
             }
             _collectionLoaded = false;
@@ -444,6 +456,10 @@
             }
         }).catch(function() {
             sel.innerHTML = '<option value="">Failed to load instances</option>';
+            var noInst = document.getElementById('media-hunt-calendar-no-instances');
+            var wrapper = document.getElementById('media-hunt-calendar-content-wrapper');
+            if (noInst) noInst.style.display = 'none';
+            if (wrapper) wrapper.style.display = '';
         });
     }
 

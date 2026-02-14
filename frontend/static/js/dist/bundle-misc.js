@@ -4328,8 +4328,29 @@ window.HuntarrIndexerHuntHome = {
     var Stats = window.IndexerHuntStats = {};
 
     Stats.init = function() {
-        _loadAggregateStats();
-        _loadPerIndexerStats();
+        var noInstEl = document.getElementById('indexer-hunt-stats-no-instances');
+        var wrapperEl = document.getElementById('indexer-hunt-stats-content-wrapper');
+        Promise.all([
+            fetch('./api/movie-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch('./api/tv-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); })
+        ]).then(function(results) {
+            var movieCount = (results[0].instances || []).length;
+            var tvCount = (results[1].instances || []).length;
+            if (movieCount === 0 && tvCount === 0) {
+                if (noInstEl) noInstEl.style.display = '';
+                if (wrapperEl) wrapperEl.style.display = 'none';
+                return;
+            }
+            if (noInstEl) noInstEl.style.display = 'none';
+            if (wrapperEl) wrapperEl.style.display = '';
+            _loadAggregateStats();
+            _loadPerIndexerStats();
+        }).catch(function() {
+            if (noInstEl) noInstEl.style.display = 'none';
+            if (wrapperEl) wrapperEl.style.display = '';
+            _loadAggregateStats();
+            _loadPerIndexerStats();
+        });
     };
 
     function _loadAggregateStats() {
@@ -4403,6 +4424,17 @@ window.HuntarrIndexerHuntHome = {
         return d.innerHTML;
     }
 
+    document.addEventListener('huntarr:instances-changed', function() {
+        if (document.getElementById('indexer-hunt-stats-content-wrapper') && window.huntarrUI && window.huntarrUI.currentSection === 'indexer-hunt-stats') {
+            Stats.init();
+        }
+    });
+    document.addEventListener('huntarr:tv-hunt-instances-changed', function() {
+        if (document.getElementById('indexer-hunt-stats-content-wrapper') && window.huntarrUI && window.huntarrUI.currentSection === 'indexer-hunt-stats') {
+            Stats.init();
+        }
+    });
+
 })();
 
 
@@ -4425,8 +4457,29 @@ window.HuntarrIndexerHuntHome = {
             _loadIndexerFilter();
             _initialized = true;
         }
-        _currentPage = 1;
-        _loadHistory();
+        var noInstEl = document.getElementById('indexer-hunt-history-no-instances');
+        var wrapperEl = document.getElementById('indexer-hunt-history-content-wrapper');
+        Promise.all([
+            fetch('./api/movie-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch('./api/tv-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); })
+        ]).then(function(results) {
+            var movieCount = (results[0].instances || []).length;
+            var tvCount = (results[1].instances || []).length;
+            if (movieCount === 0 && tvCount === 0) {
+                if (noInstEl) noInstEl.style.display = '';
+                if (wrapperEl) wrapperEl.style.display = 'none';
+                return;
+            }
+            if (noInstEl) noInstEl.style.display = 'none';
+            if (wrapperEl) wrapperEl.style.display = '';
+            _currentPage = 1;
+            _loadHistory();
+        }).catch(function() {
+            if (noInstEl) noInstEl.style.display = 'none';
+            if (wrapperEl) wrapperEl.style.display = '';
+            _currentPage = 1;
+            _loadHistory();
+        });
     };
 
     function _bindEvents() {
@@ -4583,6 +4636,17 @@ window.HuntarrIndexerHuntHome = {
         d.appendChild(document.createTextNode(s));
         return d.innerHTML;
     }
+
+    document.addEventListener('huntarr:instances-changed', function() {
+        if (document.getElementById('indexer-hunt-history-content-wrapper') && window.huntarrUI && window.huntarrUI.currentSection === 'indexer-hunt-history') {
+            History.init();
+        }
+    });
+    document.addEventListener('huntarr:tv-hunt-instances-changed', function() {
+        if (document.getElementById('indexer-hunt-history-content-wrapper') && window.huntarrUI && window.huntarrUI.currentSection === 'indexer-hunt-history') {
+            History.init();
+        }
+    });
 
 })();
 
