@@ -65,6 +65,139 @@
             var label = document.getElementById('ih-form-enabled-label');
             if (label) label.textContent = this.classList.contains('active') ? 'Enabled' : 'Disabled';
         });
+
+        // "Import from Index Master" card: show select list (ih-import-panel)
+        var wrapper = document.getElementById('indexer-hunt-content-wrapper');
+        if (wrapper) {
+            wrapper.addEventListener('click', function(e) {
+                var card = e.target.closest('.add-instance-card[data-source="indexer-hunt"]');
+                if (card) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    _openIHImportPanel();
+                }
+            });
+        }
+        var cancelBtn = document.getElementById('ih-import-cancel');
+        if (cancelBtn) cancelBtn.addEventListener('click', _closeIHImportPanel);
+        var confirmBtn = document.getElementById('ih-import-confirm');
+        if (confirmBtn) confirmBtn.addEventListener('click', _confirmIHImport);
+    }
+
+    function _getInstanceIdAndMode() {
+        var sel = document.getElementById('settings-indexers-instance-select');
+        var val = (sel && sel.value) ? sel.value.trim() : '';
+        if (!val) return { instanceId: 1, mode: 'movie' };
+        var parts = val.split(':');
+        if (parts.length === 2) {
+            var mode = parts[0] === 'tv' ? 'tv' : 'movie';
+            var id = parseInt(parts[1], 10);
+            return { instanceId: isNaN(id) ? 1 : id, mode: mode };
+        }
+        return { instanceId: 1, mode: 'movie' };
+    }
+
+    function _openIHImportPanel() {
+        var panel = document.getElementById('ih-import-panel');
+        var list = document.getElementById('ih-import-list');
+        var actions = document.getElementById('ih-import-actions');
+        if (panel) panel.style.display = 'block';
+        if (list) list.innerHTML = '<div style="color: #94a3b8; padding: 20px; text-align: center;"><i class="fas fa-spinner fa-spin"></i> Loading available indexers...</div>';
+        if (actions) actions.style.display = 'none';
+
+        var par = _getInstanceIdAndMode();
+        var url = './api/indexer-hunt/available/' + par.instanceId + '?mode=' + encodeURIComponent(par.mode);
+
+        fetch(url)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var available = data.available || [];
+                if (available.length === 0) {
+                    if (list) list.innerHTML = '<div class="ih-import-empty"><i class="fas fa-check-circle" style="color: #10b981; margin-right: 6px;"></i>All Index Master indexers are already imported to this instance.</div>';
+                    return;
+                }
+                var html = '';
+                available.forEach(function(idx) {
+                    var keyDisplay = idx.api_key_last4 ? '\u2022\u2022\u2022\u2022' + _esc(idx.api_key_last4) : 'No key';
+                    html += '<div class="ih-import-item" data-ih-id="' + idx.id + '">'
+                        + '<div class="ih-import-checkbox"><i class="fas fa-check"></i></div>'
+                        + '<div class="ih-import-info">'
+                            + '<div class="ih-import-name">' + _esc(idx.name) + '</div>'
+                            + '<div class="ih-import-meta">'
+                                + '<span><i class="fas fa-globe"></i> ' + _esc(idx.url || 'N/A') + '</span>'
+                                + '<span><i class="fas fa-sort-amount-up"></i> Priority: ' + (idx.priority || 50) + '</span>'
+                                + '<span><i class="fas fa-key"></i> ' + keyDisplay + '</span>'
+                            + '</div>'
+                        + '</div>'
+                    + '</div>';
+                });
+                if (list) list.innerHTML = html;
+                if (actions) actions.style.display = 'flex';
+
+                var items = list.querySelectorAll('.ih-import-item');
+                items.forEach(function(item) {
+                    item.addEventListener('click', function() {
+                        item.classList.toggle('selected');
+                        _updateIHImportButton();
+                    });
+                });
+            })
+            .catch(function(err) {
+                if (list) list.innerHTML = '<div class="ih-import-empty">Failed to load available indexers.</div>';
+            });
+    }
+
+    function _closeIHImportPanel() {
+        var panel = document.getElementById('ih-import-panel');
+        if (panel) panel.style.display = 'none';
+    }
+
+    function _updateIHImportButton() {
+        var selected = document.querySelectorAll('#ih-import-list .ih-import-item.selected');
+        var btn = document.getElementById('ih-import-confirm');
+        if (btn) {
+            btn.disabled = selected.length === 0;
+            btn.innerHTML = '<i class="fas fa-download"></i> Import Selected (' + selected.length + ')';
+        }
+    }
+
+    function _confirmIHImport() {
+        var selected = document.querySelectorAll('#ih-import-list .ih-import-item.selected');
+        if (selected.length === 0) return;
+
+        var ids = [];
+        selected.forEach(function(item) {
+            ids.push(item.getAttribute('data-ih-id'));
+        });
+        var par = _getInstanceIdAndMode();
+
+        var btn = document.getElementById('ih-import-confirm');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importing...'; }
+
+        fetch('./api/indexer-hunt/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ instance_id: par.instanceId, mode: par.mode, indexer_ids: ids }),
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                var msg = 'Imported ' + (data.added || 0) + ' indexer(s) from Index Master.';
+                if (window.huntarrUI) window.huntarrUI.showNotification(msg, 'success');
+                _closeIHImportPanel();
+                if (window.SettingsForms && window.SettingsForms.refreshIndexersList) {
+                    window.SettingsForms.refreshIndexersList();
+                }
+            } else {
+                if (window.huntarrUI) window.huntarrUI.showNotification(data.error || 'Import failed.', 'error');
+            }
+        })
+        .catch(function(err) {
+            if (window.huntarrUI) window.huntarrUI.showNotification('Import error.', 'error');
+        })
+        .finally(function() {
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-download"></i> Import Selected'; }
+        });
     }
 
     function _on(id, event, fn) {
