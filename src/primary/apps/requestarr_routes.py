@@ -466,6 +466,41 @@ def get_movie_detail_status():
         logger.error(f"Error getting movie detail status: {e}")
         return jsonify({'success': False, 'found': False}), 500
 
+@requestarr_bp.route('/sonarr/season-search', methods=['POST'])
+def sonarr_season_search():
+    """Trigger Sonarr SeasonSearch for a series/season. Series must exist in Sonarr."""
+    try:
+        data = request.get_json(silent=True) or {}
+        tmdb_id = data.get('tmdb_id') or data.get('tmdbId')
+        instance_name = (data.get('instance') or data.get('instance_name') or '').strip()
+        season_number = data.get('season_number') or data.get('seasonNumber')
+        if not tmdb_id or not instance_name or season_number is None:
+            return jsonify({'success': False, 'message': 'Missing tmdb_id, instance, or season_number'}), 400
+        result = requestarr_api.trigger_sonarr_season_search(int(tmdb_id), instance_name, int(season_number))
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Sonarr season search error: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@requestarr_bp.route('/sonarr/episode-search', methods=['POST'])
+def sonarr_episode_search():
+    """Trigger Sonarr EpisodeSearch for a specific episode. Series must exist in Sonarr."""
+    try:
+        data = request.get_json(silent=True) or {}
+        tmdb_id = data.get('tmdb_id') or data.get('tmdbId')
+        instance_name = (data.get('instance') or data.get('instance_name') or '').strip()
+        season_number = data.get('season_number') or data.get('seasonNumber')
+        episode_number = data.get('episode_number') or data.get('episodeNumber')
+        if not tmdb_id or not instance_name or season_number is None or episode_number is None:
+            return jsonify({'success': False, 'message': 'Missing tmdb_id, instance, season_number, or episode_number'}), 400
+        result = requestarr_api.trigger_sonarr_episode_search(
+            int(tmdb_id), instance_name, int(season_number), int(episode_number)
+        )
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Sonarr episode search error: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 @requestarr_bp.route('/check-seasons', methods=['GET'])
 def check_requested_seasons():
     """Check which seasons of a TV show are already in Sonarr"""

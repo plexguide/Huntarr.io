@@ -537,6 +537,34 @@ class RequestarrAPI:
                     missing_episodes = total_episodes - available_episodes
                     series_id = series.get('id')
 
+                    def _extract_quality_from_episode_file(ef: dict) -> Optional[str]:
+                        """Extract quality/resolution from Sonarr episodeFile. Tries multiple JSON paths."""
+                        if not ef:
+                            return None
+                        # Try quality.quality.name, qualityQuality.name, quality.name (Sonarr/Radarr structure)
+                        for qkey in ('quality', 'Quality', 'qualityQuality'):
+                            q = ef.get(qkey) or {}
+                            if not isinstance(q, dict):
+                                continue
+                            inner = q.get('quality') or q.get('Quality') or {}
+                            if isinstance(inner, dict):
+                                name = (inner.get('name') or inner.get('Name') or '').strip()
+                                if name:
+                                    return name
+                            name = (q.get('name') or q.get('Name') or '').strip()
+                            if name:
+                                return name
+                        # Fallback: parse from filename (relativePath, path)
+                        import os
+                        fpath = ef.get('relativePath') or ef.get('path') or ef.get('RelativePath') or ef.get('Path') or ''
+                        if fpath:
+                            from src.primary.routes.media_hunt.helpers import _extract_quality_from_filename
+                            fname = os.path.basename(str(fpath))
+                            parsed = _extract_quality_from_filename(fname)
+                            if parsed and parsed != '-':
+                                return parsed
+                        return None
+
                     # Fetch episode-level details (status, quality) for per-episode display
                     seasons_with_episodes = []
                     try:
@@ -548,7 +576,32 @@ class RequestarrAPI:
                         )
                         if ep_resp.status_code == 200:
                             all_episodes = ep_resp.json()
+                            # Fetch episode files for quality via GET /api/v3/episodefile?seriesId=X
+                            episode_id_to_quality = {}
+                            try:
+                                ef_resp = requests.get(
+                                    f"{sonarr_url}/api/v3/episodefile",
+                                    params={"seriesId": series_id},
+                                    headers=headers,
+                                    timeout=15
+                                )
+                                if ef_resp.status_code == 200:
+                                    episode_files = ef_resp.json()
+                                    files_list = episode_files if isinstance(episode_files, list) else ([episode_files] if episode_files else [])
+                                    for ef_item in files_list:
+                                        q = _extract_quality_from_episode_file(ef_item)
+                                        if q:
+                                            eids = ef_item.get('episodeIds')
+                                            if not eids and ef_item.get('episodeId') is not None:
+                                                eids = [ef_item.get('episodeId')]
+                                            for eid in (eids or []):
+                                                if eid is not None:
+                                                    episode_id_to_quality[eid] = q
+                            except Exception as ef_err:
+                                logger.debug(f"Sonarr episodefile fetch for series {series_id}: {ef_err}")
                             by_season = {}
+                            per_episode_fetch_count = 0
+                            max_per_episode_fetches = 100  # cap to avoid hammering API on huge series
                             for ep in all_episodes:
                                 sn = ep.get('seasonNumber')
                                 if sn is None:
@@ -556,8 +609,24 @@ class RequestarrAPI:
                                 if sn not in by_season:
                                     by_season[sn] = []
                                 ef = ep.get('episodeFile') or {}
-                                qobj = (ef.get('quality') or {}).get('quality') or {}
-                                qname = (qobj.get('name') or (ef.get('quality') or {}).get('name') or '').strip()
+                                qname = _extract_quality_from_episode_file(ef)
+                                if not qname and ep.get('hasFile') and ep.get('id'):
+                                    qname = episode_id_to_quality.get(ep['id'])
+                                # Fallback: episode has episodeFile.id but no quality - fetch file directly
+                                if not qname and ep.get('hasFile') and ef and per_episode_fetch_count < max_per_episode_fetches:
+                                    ef_id = ef.get('id') or ef.get('Id')
+                                    if ef_id is not None:
+                                        try:
+                                            per_episode_fetch_count += 1
+                                            efr = requests.get(
+                                                f"{sonarr_url}/api/v3/episodefile/{ef_id}",
+                                                headers=headers,
+                                                timeout=5
+                                            )
+                                            if efr.status_code == 200:
+                                                qname = _extract_quality_from_episode_file(efr.json())
+                                        except Exception:
+                                            pass
                                 by_season[sn].append({
                                     'season_number': sn,
                                     'seasonNumber': sn,
@@ -640,7 +709,81 @@ class RequestarrAPI:
                 'previously_requested': already_requested_in_db,
                 'cooldown_status': cooldown_status
             }
-    
+
+    def trigger_sonarr_season_search(self, tmdb_id: int, instance_name: str, season_number: int) -> Dict[str, Any]:
+        """Trigger Sonarr SeasonSearch command for a series/season. Series must exist in Sonarr."""
+        try:
+            app_config = self.db.get_app_config('sonarr')
+            if not app_config or not app_config.get('instances'):
+                return {'success': False, 'message': 'No Sonarr instance configured'}
+            target = next((i for i in app_config['instances'] if (i.get('name') or '').strip() == instance_name), None)
+            if not target:
+                return {'success': False, 'message': f'Sonarr instance "{instance_name}" not found'}
+            url = (target.get('api_url') or target.get('url') or '').rstrip('/')
+            api_key = (target.get('api_key') or '').strip()
+            if not url or not api_key:
+                return {'success': False, 'message': 'Invalid Sonarr instance configuration'}
+            headers = {'X-Api-Key': api_key}
+            resp = requests.get(f"{url}/api/v3/series", headers=headers, timeout=10)
+            if resp.status_code != 200:
+                return {'success': False, 'message': 'Failed to reach Sonarr'}
+            for s in resp.json():
+                if s.get('tmdbId') == tmdb_id:
+                    series_id = s.get('id')
+                    if series_id is None:
+                        break
+                    from src.primary.apps.sonarr.api import search_season
+                    cmd_id = search_season(url, api_key, 15, series_id, season_number)
+                    if cmd_id:
+                        return {'success': True, 'message': 'Season search started'}
+                    return {'success': False, 'message': 'Failed to trigger season search'}
+            return {'success': False, 'message': 'Series not in Sonarr. Add it first.'}
+        except Exception as e:
+            logger.error(f"Sonarr season search error: {e}")
+            return {'success': False, 'message': str(e) or 'Request failed'}
+
+    def trigger_sonarr_episode_search(self, tmdb_id: int, instance_name: str, season_number: int, episode_number: int) -> Dict[str, Any]:
+        """Trigger Sonarr EpisodeSearch command for a specific episode. Series must exist in Sonarr."""
+        try:
+            app_config = self.db.get_app_config('sonarr')
+            if not app_config or not app_config.get('instances'):
+                return {'success': False, 'message': 'No Sonarr instance configured'}
+            target = next((i for i in app_config['instances'] if (i.get('name') or '').strip() == instance_name), None)
+            if not target:
+                return {'success': False, 'message': f'Sonarr instance "{instance_name}" not found'}
+            url = (target.get('api_url') or target.get('url') or '').rstrip('/')
+            api_key = (target.get('api_key') or '').strip()
+            if not url or not api_key:
+                return {'success': False, 'message': 'Invalid Sonarr instance configuration'}
+            headers = {'X-Api-Key': api_key}
+            resp = requests.get(f"{url}/api/v3/series", headers=headers, timeout=10)
+            if resp.status_code != 200:
+                return {'success': False, 'message': 'Failed to reach Sonarr'}
+            series_id = None
+            for s in resp.json():
+                if s.get('tmdbId') == tmdb_id:
+                    series_id = s.get('id')
+                    break
+            if series_id is None:
+                return {'success': False, 'message': 'Series not in Sonarr. Add it first.'}
+            ep_resp = requests.get(f"{url}/api/v3/episode", params={"seriesId": series_id}, headers=headers, timeout=15)
+            if ep_resp.status_code != 200:
+                return {'success': False, 'message': 'Failed to fetch episodes'}
+            for ep in ep_resp.json():
+                if ep.get('seasonNumber') == season_number and ep.get('episodeNumber') == episode_number:
+                    ep_id = ep.get('id')
+                    if ep_id is not None:
+                        from src.primary.apps.sonarr.api import search_episode
+                        cmd_id = search_episode(url, api_key, 15, [ep_id])
+                        if cmd_id:
+                            return {'success': True, 'message': 'Episode search started'}
+                        return {'success': False, 'message': 'Failed to trigger episode search'}
+                    break
+            return {'success': False, 'message': 'Episode not found in Sonarr'}
+        except Exception as e:
+            logger.error(f"Sonarr episode search error: {e}")
+            return {'success': False, 'message': str(e) or 'Request failed'}
+
     def get_series_status_from_tv_hunt(self, tmdb_id: int, instance_name: str) -> Dict[str, Any]:
         """Get series status from TV Hunt collection - exists, missing episodes, etc."""
         try:

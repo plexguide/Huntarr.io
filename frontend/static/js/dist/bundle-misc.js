@@ -1322,9 +1322,7 @@
             sorted.forEach(season => {
                 const name = season.name || ('Season ' + season.season_number);
                 const epCount = season.episode_count != null ? season.episode_count : '?';
-                const requestSeasonBtn = isTVHunt
-                    ? '<div class="season-actions"><button class="season-action-btn request-season-btn" title="Request entire season"><i class="fas fa-download"></i> Request Season</button></div>'
-                    : '';
+                const requestSeasonBtn = '<div class="season-actions"><button class="season-action-btn request-season-btn" title="Request entire season"><i class="fas fa-hand-paper"></i> Request Season</button></div>';
                 html += `
                     <div class="requestarr-tv-season-item" data-season="${season.season_number}" data-tmdb-id="${details.id}">
                         <span class="season-chevron"><i class="fas fa-chevron-right"></i></span>
@@ -1403,18 +1401,19 @@
                         // Status overlay: TV Hunt uses TV Hunt seriesStatus; Sonarr uses Sonarr seriesStatus
                         const epStatusMap = this.buildEpisodeStatusMap(seasonNum);
                         const sorted = [...eps].sort((a, b) => (b.episode_number ?? b.episodeNumber ?? 0) - (a.episode_number ?? a.episodeNumber ?? 0));
-                        let tbl = '<table class="episode-table"><thead><tr><th>#</th><th>Title</th><th>Air Date</th><th>Status</th><th></th></tr></thead><tbody>';
+                        let tbl = '<table class="episode-table"><thead><tr><th>#</th><th>Title</th><th>Air Date</th><th>Availability</th><th></th></tr></thead><tbody>';
                         sorted.forEach(ep => {
                             const epNum = ep.episode_number ?? ep.episodeNumber;
                             const title = ep.title || ep.name || '';
                             const ad = ep.air_date || ep.airDate || '';
                             const epInfo = epStatusMap[epNum];
                             const available = !!epInfo;
+                            // TV Hunt can provide resolution; Sonarr shows "In Library" when detected
                             const quality = (epInfo && typeof epInfo === 'object' && epInfo.quality) ? epInfo.quality : null;
                             const statusBadge = available
-                                ? '<span class="mh-ep-status mh-ep-status-ok">' + (quality ? this.escapeHtml(quality) : '<i class="fas fa-check-circle"></i> In Collection') + '</span>'
+                                ? '<span class="mh-ep-status mh-ep-status-ok">' + (quality ? this.escapeHtml(quality) : '<i class="fas fa-check-circle"></i> In Library') + '</span>'
                                 : '<span class="mh-ep-status mh-ep-status-warn">Missing</span>';
-                            const requestBtn = (isTVHunt && !available) ? `<button class="ep-request-btn" data-season="${seasonNum}" data-episode="${epNum}" title="Request episode"><i class="fas fa-download"></i></button>` : '';
+                            const requestBtn = !available ? `<button class="ep-request-btn" data-season="${seasonNum}" data-episode="${epNum}" title="Request episode"><i class="fas fa-hand-paper"></i></button>` : '';
                             tbl += `<tr><td>${epNum || ''}</td><td>${this.escapeHtml(title)}</td><td>${ad}</td><td>${statusBadge}</td><td>${requestBtn}</td></tr>`;
                         });
                         tbl += '</tbody></table>';
@@ -1544,6 +1543,32 @@
         },
 
         async requestSeason(tmdbId, seasonNum) {
+            const decoded = _decodeInstanceValue(this.selectedInstanceName || '');
+            if (!decoded.name) {
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('No instance selected.', 'error');
+                }
+                return;
+            }
+            if (decoded.appType === 'sonarr') {
+                try {
+                    const r = await fetch('./api/requestarr/sonarr/season-search', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ tmdb_id: tmdbId, instance: decoded.name, season_number: seasonNum }),
+                    });
+                    const data = await r.json();
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification(data.success ? (data.message || 'Season search started') : (data.message || 'Request failed'), data.success ? 'success' : 'error');
+                    }
+                    if (data.success) this.updateDetailInfoBar();
+                } catch (e) {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Request failed.', 'error');
+                    }
+                }
+                return;
+            }
             const instanceId = this.getTVHuntInstanceId();
             if (!instanceId) {
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
@@ -1578,6 +1603,32 @@
         },
 
         async requestEpisode(tmdbId, seasonNum, episodeNum) {
+            const decoded = _decodeInstanceValue(this.selectedInstanceName || '');
+            if (!decoded.name) {
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('No instance selected.', 'error');
+                }
+                return;
+            }
+            if (decoded.appType === 'sonarr') {
+                try {
+                    const r = await fetch('./api/requestarr/sonarr/episode-search', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ tmdb_id: tmdbId, instance: decoded.name, season_number: seasonNum, episode_number: episodeNum }),
+                    });
+                    const data = await r.json();
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification(data.success ? (data.message || 'Episode search started') : (data.message || 'Request failed'), data.success ? 'success' : 'error');
+                    }
+                    if (data.success) this.updateDetailInfoBar();
+                } catch (e) {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Request failed.', 'error');
+                    }
+                }
+                return;
+            }
             const instanceId = this.getTVHuntInstanceId();
             if (!instanceId) {
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
