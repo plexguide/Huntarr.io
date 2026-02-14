@@ -42,6 +42,7 @@
 #instanceEditorSection .instance-editor-header,
 #movieHuntInstanceEditorSection .instance-editor-header,
 #mediaHuntInstanceEditorSection .instance-editor-header,
+#mediaHuntInstanceManagementSection .instance-editor-header,
 #movieManagementSection .instance-editor-header,
 #mediaHuntProfilesSection .instance-editor-header {
     display: flex;
@@ -106,6 +107,7 @@
 #instanceEditorSection .ie-btn,
 #movieHuntInstanceEditorSection .ie-btn,
 #mediaHuntInstanceEditorSection .ie-btn,
+#mediaHuntInstanceManagementSection .ie-btn,
 #movieManagementSection .ie-btn,
 #mediaHuntProfilesSection .ie-btn {
     display: inline-flex;
@@ -127,6 +129,7 @@
 #instanceEditorSection .ie-btn-ghost,
 #movieHuntInstanceEditorSection .ie-btn-ghost,
 #mediaHuntInstanceEditorSection .ie-btn-ghost,
+#mediaHuntInstanceManagementSection .ie-btn-ghost,
 #movieManagementSection .ie-btn-ghost,
 #mediaHuntProfilesSection .ie-btn-ghost {
     background: rgba(148, 163, 184, 0.08);
@@ -137,6 +140,7 @@
 #instanceEditorSection .ie-btn-ghost:hover,
 #movieHuntInstanceEditorSection .ie-btn-ghost:hover,
 #mediaHuntInstanceEditorSection .ie-btn-ghost:hover,
+#mediaHuntInstanceManagementSection .ie-btn-ghost:hover,
 #movieManagementSection .ie-btn-ghost:hover,
 #mediaHuntProfilesSection .ie-btn-ghost:hover {
     background: rgba(148, 163, 184, 0.15);
