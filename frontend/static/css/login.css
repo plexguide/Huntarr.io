@@ -1,0 +1,504 @@
+/**
+ * Huntarr Login — Modern design with rotating backdrop
+ * Uses Huntarr dark navy-blue palette (#111827 / #0f172a / #1e293b)
+ */
+
+/* ═══════════════════════════════════════════════════
+   Reset & Base
+   ═══════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; }
+
+.login-page {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    background: #0f172a;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ═══════════════════════════════════════════════════
+   Rotating Backdrop Layers
+   ═══════════════════════════════════════════════════ */
+.login-backdrop-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    opacity: 0;
+    transition: opacity 2s ease-in-out;
+    will-change: opacity;
+}
+.login-backdrop-layer.visible {
+    opacity: 1;
+}
+
+/* Navy-blue overlay for readability */
+.login-backdrop-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    background:
+        /* Center radial darken — navy blue */
+        radial-gradient(ellipse at center, rgba(15, 23, 42, 0.62) 0%, rgba(15, 23, 42, 0.42) 50%, rgba(15, 23, 42, 0.52) 100%),
+        /* Vignette — navy blue */
+        radial-gradient(ellipse at center, transparent 40%, rgba(15, 23, 42, 0.5) 100%);
+    pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════
+   Login Card
+   ═══════════════════════════════════════════════════ */
+.login-container {
+    position: relative;
+    z-index: 2;
+    width: 420px;
+    max-width: 92%;
+    background: #111827;
+    border-radius: 20px;
+    border: 1px solid rgba(99, 102, 241, 0.1);
+    box-shadow: 0 12px 48px rgba(15, 23, 42, 0.6), 0 0 0 1px rgba(17, 24, 39, 0.5);
+    overflow: hidden;
+    animation: loginCardIn 0.4s ease;
+}
+
+@keyframes loginCardIn {
+    from { opacity: 0; transform: translateY(16px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Header ─────────────────────────────────────── */
+.login-header {
+    padding: 32px 0 20px;
+    text-align: center;
+    background: transparent;
+    border-bottom: 1px solid rgba(99, 102, 241, 0.08);
+}
+
+.login-logo {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 10px;
+    border-radius: 14px;
+    filter: drop-shadow(0 4px 8px rgba(15, 23, 42, 0.4));
+    transition: transform 0.3s ease;
+}
+.login-logo:hover {
+    transform: scale(1.05);
+}
+
+.login-header h1 {
+    margin: 0;
+    color: #f8fafc;
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+/* ── Form Area ────────────────────────────────────── */
+.login-form {
+    padding: 28px 28px 24px;
+}
+.login-form h2 {
+    margin: 0 0 22px;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #94a3b8;
+}
+
+/* ═══════════════════════════════════════════════════
+   Form Inputs
+   ═══════════════════════════════════════════════════ */
+.form-group {
+    margin-bottom: 16px;
+    position: relative;
+}
+.form-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #cbd5e1;
+    margin-bottom: 8px;
+}
+.form-group label i {
+    color: #6366f1;
+    font-size: 0.8rem;
+    width: 16px;
+    text-align: center;
+}
+.form-group input[type="text"],
+.form-group input[type="password"],
+.form-group input[type="number"] {
+    width: 100%;
+    padding: 12px 14px;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(71, 85, 105, 0.35);
+    border-radius: 10px;
+    color: #f1f5f9;
+    font-size: 0.95rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.form-group input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+.form-group input::placeholder {
+    color: #475569;
+}
+
+/* Password toggle */
+.toggle-password {
+    position: absolute;
+    right: 12px;
+    top: 40px;
+    cursor: pointer;
+    color: rgba(148, 163, 184, 0.5);
+    z-index: 10;
+    transition: color 0.2s ease;
+}
+.toggle-password:hover {
+    color: rgba(148, 163, 184, 0.9);
+}
+
+/* ── Form Actions (remember me) ─────────────────── */
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 14px 0 4px;
+}
+.form-check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.form-check input[type="checkbox"] {
+    accent-color: #6366f1;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+.form-check label {
+    font-size: 0.82rem;
+    color: #94a3b8;
+    cursor: pointer;
+    margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════
+   Buttons
+   ═══════════════════════════════════════════════════ */
+.login-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px 24px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #6366f1, #818cf8);
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 8px;
+}
+.login-button:hover {
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+    transform: translateY(-1px);
+}
+.login-button:active {
+    transform: translateY(0);
+}
+.login-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+/* Forgot password */
+.forgot-password-section {
+    text-align: center;
+    margin-top: 14px;
+}
+.forgot-password-link {
+    color: #64748b;
+    text-decoration: none;
+    font-size: 0.82rem;
+    transition: color 0.2s ease;
+}
+.forgot-password-link:hover {
+    color: #a5b4fc;
+}
+.forgot-password-link i {
+    margin-right: 4px;
+}
+
+/* ═══════════════════════════════════════════════════
+   Plex Login Section
+   ═══════════════════════════════════════════════════ */
+.plex-login-section {
+    padding: 0 28px 24px;
+    text-align: center;
+}
+.auth-divider {
+    text-align: center;
+    color: #475569;
+    margin: 0 0 16px;
+    position: relative;
+    font-size: 0.8rem;
+}
+.auth-divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(71, 85, 105, 0.25), transparent);
+}
+.auth-divider span {
+    background: #111827;
+    padding: 0 14px;
+    position: relative;
+}
+
+.plex-login-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px 24px;
+    border-radius: 10px;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    background: rgba(245, 158, 11, 0.08);
+    color: #fbbf24;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.plex-login-button:hover {
+    background: rgba(245, 158, 11, 0.15);
+    border-color: rgba(245, 158, 11, 0.4);
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.12);
+    transform: translateY(-1px);
+}
+.plex-login-button:active {
+    transform: translateY(0);
+}
+
+/* ═══════════════════════════════════════════════════
+   Error Message
+   ═══════════════════════════════════════════════════ */
+.error-message {
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+    border-left: 3px solid #ef4444;
+    margin-bottom: 16px;
+    text-align: center;
+    display: none;
+}
+
+/* ═══════════════════════════════════════════════════
+   Modals (Plex + Recovery)
+   ═══════════════════════════════════════════════════ */
+.plex-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+.plex-modal[style*="display: block"] {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+.plex-modal-content {
+    position: relative;
+    background: rgba(17, 24, 39, 0.98);
+    border: 1px solid rgba(99, 102, 241, 0.1);
+    border-radius: 16px;
+    padding: 28px;
+    width: 420px;
+    max-width: 92%;
+    box-shadow: 0 25px 50px rgba(15, 23, 42, 0.6);
+    color: #e2e8f0;
+}
+
+.plex-modal-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+.plex-modal-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #f8fafc;
+}
+.plex-logo {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 10px;
+}
+
+.plex-pin-display {
+    background: rgba(245, 158, 11, 0.06);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-radius: 12px;
+    padding: 18px;
+    text-align: center;
+    margin: 16px 0;
+}
+.plex-pin-code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #f0ad4e;
+    letter-spacing: 2px;
+    margin: 8px 0;
+    word-break: break-all;
+    line-height: 1.4;
+}
+
+.plex-status {
+    margin: 14px 0;
+    padding: 10px 14px;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+.plex-status.waiting {
+    background: rgba(59, 130, 246, 0.08);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.15);
+}
+.plex-status.success {
+    background: rgba(34, 197, 94, 0.08);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.15);
+}
+.plex-status.error {
+    background: rgba(239, 68, 68, 0.08);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.15);
+}
+
+.modal-close {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    background: none;
+    border: none;
+    color: #64748b;
+    font-size: 20px;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    padding: 4px;
+}
+.modal-close:hover {
+    color: #e2e8f0;
+}
+
+/* ═══════════════════════════════════════════════════
+   Recovery Form (inside modal)
+   ═══════════════════════════════════════════════════ */
+.recovery-form .form-group {
+    margin-bottom: 16px;
+}
+.recovery-form .form-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #cbd5e1;
+    margin-bottom: 8px;
+}
+.recovery-form .form-group label i {
+    color: #6366f1;
+}
+.recovery-form .form-group input {
+    width: 100%;
+    padding: 12px 14px;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(71, 85, 105, 0.35);
+    border-radius: 10px;
+    color: #f1f5f9;
+    font-size: 0.95rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.recovery-form .form-group input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+.recovery-form .login-button {
+    margin-bottom: 8px;
+}
+.recovery-form .login-button[style*="background: linear-gradient(135deg, #22c55e"] {
+    background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+}
+
+/* ═══════════════════════════════════════════════════
+   Spinner
+   ═══════════════════════════════════════════════════ */
+.spinner {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+/* ═══════════════════════════════════════════════════
+   Responsive
+   ═══════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+    .login-container {
+        max-width: 96%;
+        border-radius: 16px;
+    }
+    .login-form {
+        padding: 22px 20px 18px;
+    }
+    .login-header {
+        padding: 24px 0 16px;
+    }
+    .login-logo {
+        width: 52px;
+        height: 52px;
+    }
+    .plex-login-section {
+        padding: 0 20px 18px;
+    }
+    /* Prevent iOS zoom on input focus */
+    .form-group input {
+        font-size: 16px !important;
+    }
+}

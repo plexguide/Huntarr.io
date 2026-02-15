@@ -4,404 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Huntarr Login</title>
-    <!-- Inline script to prevent theme flashing -->
-    <script>
-        // Check theme preference immediately before any rendering
-        (function() {
-            var prefersDarkMode = localStorage.getItem('huntarr-dark-mode') === 'true';
-            if (prefersDarkMode || window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                document.documentElement.classList.add('dark-theme');
-                // Add inline styles to prevent flash
-                document.write('<style>body, html { background-color: #1a1d24 !important; color: #f8f9fa !important; } .login-container { background-color: #252a34 !important; } .login-header { background-color: #121212 !important; }</style>');
-            }
-        })();
-    </script>
-    <!-- Preload logo -->
     <link rel="preload" href="./static/logo/256.png" as="image" fetchpriority="high">
-    <link rel="stylesheet" href="./static/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha384-nRgPTkuX86pH8yjPJUAFuASXQSSl2/bBUiNV47vSYpKFxHJhbcrGnmlYpYJMeD7a" crossorigin="anonymous" referrerpolicy="no-referrer">
     <link rel="icon" href="./static/logo/16.png">
-    <!-- Preload script to prevent flashing -->
-    <script src="./static/js/modules/core/theme-preload.js"></script>
-    <!-- Modern login styles -->
-    <style>
-        .login-page {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #13171f 0%, #1c2230 100%);
-            margin: 0;
-            padding: 20px;
-        }
-        
-        .login-container {
-            width: 400px;
-            max-width: 90%;
-            background: linear-gradient(180deg, rgba(22, 26, 34, 0.98), rgba(18, 22, 30, 0.95));
-            border-radius: 15px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-            border: 1px solid rgba(90, 109, 137, 0.15);
-        }
-        
-        .login-header {
-            background: linear-gradient(180deg, rgba(18, 22, 30, 0.98), rgba(24, 28, 37, 0.95));
-            padding: 30px 0;
-            text-align: center;
-            border-bottom: 1px solid rgba(90, 109, 137, 0.15);
-        }
-        
-        .login-logo {
-            width: 80px;
-            height: 80px;
-            margin-bottom: 10px;
-            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.2));
-            transition: transform 0.3s ease, opacity 0.2s ease-in-out;
-        }
-        
-        .login-logo.loaded {
-            opacity: 1;
-        }
-        
-        .login-logo:hover {
-            transform: scale(1.05);
-        }
-        
-        .login-header h1 {
-            margin: 0;
-            color: #fff;
-            font-size: 24px;
-            font-weight: 600;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-        }
-        
-        .login-form {
-            padding: 30px;
-        }
-        
-        .login-form h2 {
-            margin: 0 0 25px;
-            text-align: center;
-            font-size: 20px;
-            color: #fff;
-            font-weight: 500;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-            position: relative;
-        }
-        
-        .form-group label {
-            display: flex;
-            align-items: center;
-            margin-bottom: 8px;
-            color: rgba(255, 255, 255, 0.9);
-            font-weight: 500;
-        }
-        
-        .form-group label i {
-            margin-right: 8px;
-            color: rgba(65, 105, 225, 0.9);
-        }
-        
-        .form-group input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 1px solid rgba(90, 109, 137, 0.2);
-            border-radius: 8px;
-            background-color: rgba(28, 36, 54, 0.6);
-            color: #fff;
-            font-size: 16px;
-            transition: all 0.3s ease;
-        }
-        
-        .form-group input:focus {
-            border-color: rgba(65, 105, 225, 0.6);
-            box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.2);
-            outline: none;
-        }
-        
-        .toggle-password {
-            position: absolute;
-            right: 12px;
-            top: 40px;
-            cursor: pointer;
-            color: rgba(255, 255, 255, 0.6);
-            z-index: 10;
-        }
-        
-        .toggle-password:hover {
-            color: rgba(255, 255, 255, 0.9);
-        }
-        
-        .form-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 15px;
-        }
-        
-        .form-check {
-            display: flex;
-            align-items: center;
-        }
-        
-        .login-button {
-            background: linear-gradient(135deg, #3a71e4 0%, #5481e6 100%);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            width: 100%;
-            margin-top: 10px;
-            box-shadow: 0 4px 10px rgba(58, 113, 228, 0.3);
-        }
-        
-        .login-button:hover {
-            background: linear-gradient(135deg, #4a7deb 0%, #6491fa 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(58, 113, 228, 0.4);
-        }
-        
-        .login-button:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 8px rgba(58, 113, 228, 0.3);
-        }
-        
-        .forgot-password-section {
-            text-align: center;
-            margin-top: 12px;
-        }
-        
-        .forgot-password-link {
-            color: rgba(255, 255, 255, 0.7);
-            text-decoration: none;
-            font-size: 14px;
-            transition: color 0.3s ease;
-        }
-        
-        .forgot-password-link:hover {
-            color: rgba(65, 105, 225, 0.9);
-            text-decoration: underline;
-        }
-        
-        .forgot-password-link i {
-            margin-right: 5px;
-        }
-        
-        .plex-login-section {
-            margin-top: 15px;
-            padding-top: 10px;
-            border-top: 1px solid rgba(90, 109, 137, 0.2);
-            text-align: center;
-        }
-        
-        .plex-login-button {
-            background: linear-gradient(135deg, #cc7b19 0%, #e69500 100%);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            width: 100%;
-            margin-top: 0px;
-            box-shadow: 0 4px 10px rgba(204, 123, 25, 0.3);
-        }
-        
-        .plex-login-button:hover {
-            background: linear-gradient(135deg, #d68725 0%, #f0a500 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(204, 123, 25, 0.4);
-        }
-        
-        .plex-login-button:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 8px rgba(204, 123, 25, 0.3);
-        }
-        
-        .auth-divider {
-            text-align: center;
-            color: rgba(255, 255, 255, 0.5);
-            margin: 20px 0;
-            position: relative;
-        }
-        
-        .auth-divider::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(90, 109, 137, 0.3), transparent);
-        }
-        
-        .auth-divider span {
-            background: linear-gradient(180deg, rgba(22, 26, 34, 0.98), rgba(18, 22, 30, 0.95));
-            padding: 0 15px;
-            font-size: 14px;
-        }
-        
-        .plex-modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
-        }
-        
-        .plex-modal-content {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: linear-gradient(180deg, rgba(22, 26, 34, 0.98), rgba(18, 22, 30, 0.95));
-            border-radius: 15px;
-            padding: 30px;
-            width: 400px;
-            max-width: 90%;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(90, 109, 137, 0.15);
-            color: #f8f9fa;
-        }
-        
-        .plex-modal-header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        
-        .plex-logo {
-            width: 60px;
-            height: 60px;
-            margin-bottom: 10px;
-        }
-        
-        .plex-pin-display {
-            background: rgba(90, 109, 137, 0.1);
-            border: 2px solid rgba(204, 123, 25, 0.5);
-            border-radius: 10px;
-            padding: 20px;
-            text-align: center;
-            margin: 20px 0;
-        }
-        
-        .plex-pin-code {
-            font-size: 13px;
-            font-weight: bold;
-            color: #e69500;
-            letter-spacing: 2px;
-            margin: 10px 0;
-            word-wrap: break-word;
-            word-break: break-all;
-            line-height: 1.4;
-        }
-        
-        .plex-status {
-            margin: 15px 0;
-            padding: 10px;
-            border-radius: 8px;
-            text-align: center;
-        }
-        
-        .plex-status.waiting {
-            background: rgba(255, 193, 7, 0.2);
-            border: 1px solid rgba(255, 193, 7, 0.3);
-            color: #ffc107;
-        }
-        
-        .plex-status.success {
-            background: rgba(40, 167, 69, 0.2);
-            border: 1px solid rgba(40, 167, 69, 0.3);
-            color: #28a745;
-        }
-        
-        .plex-status.error {
-            background: rgba(220, 53, 69, 0.2);
-            border: 1px solid rgba(220, 53, 69, 0.3);
-            color: #dc3545;
-        }
-        
-        .modal-close {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            background: none;
-            border: none;
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 24px;
-            cursor: pointer;
-            transition: color 0.3s ease;
-        }
-        
-        .modal-close:hover {
-            color: #fff;
-        }
-        
-        .spinner {
-            animation: spin 1s linear infinite;
-            display: inline-block;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .additional-options {
-            text-align: center;
-            margin-top: 25px;
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 14px;
-        }
-        
-        .error-message {
-            background-color: rgba(220, 53, 69, 0.2);
-            color: #ff6b6b;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: center;
-            border-left: 4px solid #dc3545;
-            display: none;
-        }
-        
-        @media (max-width: 768px) {
-            .login-container {
-                width: 95%;
-            }
-            
-            .login-form {
-                padding: 20px;
-            }
-            
-            .login-header {
-                padding: 20px 0;
-            }
-            
-            .login-logo {
-                width: 60px;
-                height: 60px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="./static/css/login.css">
 </head>
 <body class="login-page">
+    <!-- Rotating backdrop layers -->
+    <div class="login-backdrop-layer" id="backdropA"></div>
+    <div class="login-backdrop-layer" id="backdropB"></div>
+    <div class="login-backdrop-overlay"></div>
+
     <div class="login-container">
         <div class="login-header">
-            <img src="./static/logo/256.png" alt="Huntarr Logo" class="login-logo" onload="this.classList.add('loaded')">
+            <img src="./static/logo/256.png" alt="Huntarr" class="login-logo">
             <h1>Huntarr</h1>
         </div>
         <div class="login-form">
@@ -428,13 +44,12 @@
                 <div class="form-actions">
                     <div class="form-check">
                         <input type="checkbox" id="rememberMe" name="rememberMe">
-                        <label for="rememberMe" style="margin-left: 5px;">Remember me</label>
+                        <label for="rememberMe">Remember me</label>
                     </div>
                 </div>
                 <button type="submit" class="login-button" id="loginButton">
                     <i class="fas fa-sign-in-alt"></i> Log In
                 </button>
-                
                 <div class="forgot-password-section">
                     <a href="#" id="forgotPasswordLink" class="forgot-password-link">
                         <i class="fas fa-question-circle"></i> Forgot Password?
@@ -444,18 +59,20 @@
         </div>
         {% if plex_auth_enabled %}
         <div class="plex-login-section">
+            <div class="auth-divider"><span>or</span></div>
             <button class="plex-login-button" id="plexLoginButton">
                 <i class="fas fa-tv"></i> Log in with Plex
             </button>
         </div>
         {% endif %}
     </div>
+
     {% if plex_auth_enabled %}
     <div class="plex-modal" id="plexModal">
         <div class="plex-modal-content">
             <div class="plex-modal-header">
                 <div class="plex-logo">
-                    <i class="fas fa-tv" style="font-size: 60px; color: #e69500;"></i>
+                    <i class="fas fa-tv" style="font-size: 48px; color: #f0ad4e;"></i>
                 </div>
                 <h2>Plex Login</h2>
             </div>
@@ -475,56 +92,46 @@
         <div class="plex-modal-content">
             <div class="plex-modal-header">
                 <div class="plex-logo">
-                    <i class="fas fa-life-ring" style="font-size: 60px; color: #4a7deb;"></i>
+                    <i class="fas fa-life-ring" style="font-size: 48px; color: #818cf8;"></i>
                 </div>
                 <h2>Account Recovery</h2>
-                <p style="color: rgba(255, 255, 255, 0.7); font-size: 14px; margin: 10px 0;">Enter your recovery key to reset your password</p>
+                <p style="color: #94a3b8; font-size: 0.85rem; margin: 10px 0 0;">Enter your recovery key to reset your password</p>
             </div>
-            
+
             <div class="recovery-form">
-                <div class="form-group" style="margin-bottom: 20px;">
-                    <label for="recoveryKeyInput" style="color: rgba(255, 255, 255, 0.9); margin-bottom: 8px; display: block;">
+                <div class="form-group">
+                    <label for="recoveryKeyInput">
                         <i class="fas fa-key"></i> Recovery Key
                     </label>
-                    <input type="text" id="recoveryKeyInput" placeholder="ocean-light-tower-51" 
-                           style="width: 100%; padding: 12px 15px; border: 1px solid rgba(90, 109, 137, 0.2); 
-                                  border-radius: 8px; background-color: rgba(28, 36, 54, 0.6); 
-                                  color: #fff; font-size: 16px; font-family: 'Courier New', monospace;">
+                    <input type="text" id="recoveryKeyInput" placeholder="ocean-light-tower-51" style="font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;">
                 </div>
-                
+
                 <div id="newPasswordSection" style="display: none;">
-                    <div class="form-group" style="margin-bottom: 15px;">
-                        <label for="newPasswordInput" style="color: rgba(255, 255, 255, 0.9); margin-bottom: 8px; display: block;">
+                    <div class="form-group">
+                        <label for="newPasswordInput">
                             <i class="fas fa-lock"></i> New Password
                         </label>
-                        <input type="password" id="newPasswordInput" 
-                               style="width: 100%; padding: 12px 15px; border: 1px solid rgba(90, 109, 137, 0.2); 
-                                      border-radius: 8px; background-color: rgba(28, 36, 54, 0.6); 
-                                      color: #fff; font-size: 16px;">
+                        <input type="password" id="newPasswordInput">
                     </div>
-                    
-                    <div class="form-group" style="margin-bottom: 20px;">
-                        <label for="confirmNewPasswordInput" style="color: rgba(255, 255, 255, 0.9); margin-bottom: 8px; display: block;">
+                    <div class="form-group">
+                        <label for="confirmNewPasswordInput">
                             <i class="fas fa-lock"></i> Confirm New Password
                         </label>
-                        <input type="password" id="confirmNewPasswordInput" 
-                               style="width: 100%; padding: 12px 15px; border: 1px solid rgba(90, 109, 137, 0.2); 
-                                      border-radius: 8px; background-color: rgba(28, 36, 54, 0.6); 
-                                      color: #fff; font-size: 16px;">
+                        <input type="password" id="confirmNewPasswordInput">
                     </div>
                 </div>
-                
+
                 <button id="verifyRecoveryKeyBtn" class="login-button" style="margin-bottom: 10px;">
                     <i class="fas fa-check"></i> Verify Recovery Key
                 </button>
-                
-                <button id="resetPasswordBtn" class="login-button" style="display: none; background: linear-gradient(135deg, #28a745 0%, #34ce57 100%);">
+
+                <button id="resetPasswordBtn" class="login-button" style="display: none; background: linear-gradient(135deg, #22c55e, #16a34a);">
                     <i class="fas fa-save"></i> Reset Password
                 </button>
             </div>
-            
-            <div id="recoveryStatus" style="margin: 15px 0; text-align: center; display: none;"></div>
-            
+
+            <div id="recoveryStatus" style="margin: 14px 0; text-align: center; display: none;"></div>
+
             <button class="modal-close" id="recoveryModalClose">
                 <i class="fas fa-times"></i>
             </button>
@@ -533,7 +140,6 @@
 
     <!-- Pass base URL configuration to JavaScript -->
     <script>window.HUNTARR_BASE_URL = '{{ base_url|default("", true) }}';</script>
-    <!-- Pass global scripts -->
     {% include 'components/scripts.html' %}
     <script>
         const loginForm = document.getElementById('loginForm');
@@ -544,7 +150,7 @@
         const twoFactorContainer = document.getElementById('twoFactorContainer');
         let otpInput = null;
         let twoFactorMode = false;
-        
+
         // Toggle password visibility
         togglePassword.addEventListener('click', function() {
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -552,114 +158,73 @@
             this.classList.toggle('fa-eye');
             this.classList.toggle('fa-eye-slash');
         });
-        
+
         loginForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            
-            // Clear previous errors
             errorMessage.style.display = 'none';
             errorMessage.textContent = '';
-            
+
             const username = usernameInput.value.trim();
             const password = passwordInput.value;
-            
+
             if (!username || !password) {
                 showError('Please enter both username and password.');
                 return;
             }
-            
-            // Check if we're in 2FA mode and validate the 2FA code
+
             if (twoFactorMode && otpInput) {
                 const otpCode = otpInput.value.trim();
-                if (!otpCode) {
-                    showError('Please enter your two-factor authentication code.');
-                    return;
-                }
-                
-                if (otpCode.length !== 6 || !/^\d+$/.test(otpCode)) {
-                    showError('Two-factor code must be 6 digits.');
-                    return;
-                }
+                if (!otpCode) { showError('Please enter your two-factor authentication code.'); return; }
+                if (otpCode.length !== 6 || !/^\d+$/.test(otpCode)) { showError('Two-factor code must be 6 digits.'); return; }
             }
-            
-            // Show loading state on button
+
             const loginButton = document.getElementById('loginButton');
             const originalText = loginButton.innerHTML;
             loginButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
             loginButton.disabled = true;
-            
-            // Prepare login data
+
             const loginData = {
                 username: username,
                 password: password,
                 rememberMe: document.getElementById('rememberMe').checked
             };
-            
-            // Add 2FA code if we're in 2FA mode
             if (twoFactorMode && otpInput) {
                 loginData.twoFactorCode = otpInput.value.trim();
             }
-            
-            // Submit the form data
+
             HuntarrUtils.fetchWithTimeout('/login', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(loginData)
             })
             .then(response => response.json().then(data => ({ status: response.status, body: data })))
             .then(({ status, body }) => {
-                console.log('Login response:', status, body);
-                
-                // Check for 2FA requirement
                 const requires2FA = body.requires_2fa || body.requiresTwoFactor || body.requires2fa || body.requireTwoFactor || false;
-                
+
                 if (status === 200 && body.success) {
-                    // Login successful
                     window.location.href = body.redirect || './';
                 } else if (status === 401 && requires2FA) {
-                    // 2FA is required
-                    console.log('2FA required, showing 2FA input field');
                     twoFactorMode = true;
-                    
-                    // Add 2FA field
                     twoFactorContainer.innerHTML = `
                     <div class="form-group" id="twoFactorGroup">
                         <label for="twoFactorCode">
                             <i class="fas fa-shield-alt"></i>
                             <span>Two-Factor Code</span>
                         </label>
-                        <input type="text" id="twoFactorCode" name="twoFactorCode" 
+                        <input type="text" id="twoFactorCode" name="twoFactorCode"
                                placeholder="Enter your 6-digit code" maxlength="6"
-                               style="width: 100%; padding: 12px 15px; border: 1px solid rgba(90, 109, 137, 0.2); 
-                                      border-radius: 8px; background-color: rgba(28, 36, 54, 0.6); 
-                                      color: #fff; font-size: 16px;">
+                               style="letter-spacing: 4px; text-align: center;">
                     </div>`;
-                    
-                    // Update reference to the new input
                     otpInput = document.getElementById('twoFactorCode');
                     if (otpInput) {
                         otpInput.focus();
-                        
-                        // Add input validation
-                        otpInput.addEventListener('input', function() {
-                            // Only allow digits
-                            this.value = this.value.replace(/[^0-9]/g, '');
-                        });
+                        otpInput.addEventListener('input', function() { this.value = this.value.replace(/[^0-9]/g, ''); });
                     }
-                    
-                    // Reset button
                     loginButton.innerHTML = originalText;
                     loginButton.disabled = false;
-                    
-                    // Show message
                     showError('Please enter your two-factor authentication code.');
                 } else {
-                    // Show error message
                     showError(body.error || 'Invalid username or password.');
-                    
-                    // Reset button
                     loginButton.innerHTML = originalText;
                     loginButton.disabled = false;
                 }
@@ -667,231 +232,118 @@
             .catch(error => {
                 console.error('Login error:', error);
                 showError('An error occurred during login. Please try again.');
-                
-                // Reset button
                 loginButton.innerHTML = originalText;
                 loginButton.disabled = false;
             });
         });
-        
+
         function showError(message) {
             errorMessage.textContent = message;
             errorMessage.style.display = 'block';
         }
-        
+
         {% if plex_auth_enabled %}
         const plexLoginButton = document.getElementById('plexLoginButton');
         const plexModal = document.getElementById('plexModal');
         const plexModalClose = document.getElementById('plexModalClose');
         const plexPinCode = document.getElementById('plexPinCode');
         const plexStatus = document.getElementById('plexStatus');
-        
+
         let currentPinId = null;
         let pinCheckInterval = null;
-        
-        // Check if we're returning from Plex authentication
+
+        // Check if returning from Plex authentication
         const plexLogin = localStorage.getItem('huntarr-plex-login');
         const plexPinId = localStorage.getItem('huntarr-plex-pin-id');
-        
+
         if (plexLogin === 'true' && plexPinId) {
-            // Clear the flags
             localStorage.removeItem('huntarr-plex-login');
             localStorage.removeItem('huntarr-plex-pin-id');
-            
-            // Show modal and continue PIN checking
             plexModal.style.display = 'block';
-            
-            // Extract PIN code for display (but hide it since user already authenticated)
             const pinCodeValue = plexPinId.substring(0, 4) + '-' + plexPinId.substring(4);
             plexPinCode.textContent = pinCodeValue;
-            
             currentPinId = plexPinId;
             setPlexStatus('waiting', 'Completing authentication...');
             startPinChecking();
         }
-        
-        plexLoginButton.addEventListener('click', function() {
-            startPlexAuthentication();
-        });
-        
-        plexModalClose.addEventListener('click', function() {
-            stopPlexAuthentication();
-            plexModal.style.display = 'none';
-        });
-        
-        // Close modal when clicking outside
-        plexModal.addEventListener('click', function(e) {
-            if (e.target === plexModal) {
-                stopPlexAuthentication();
-                plexModal.style.display = 'none';
-            }
-        });
-        
+
+        plexLoginButton.addEventListener('click', function() { startPlexAuthentication(); });
+        plexModalClose.addEventListener('click', function() { stopPlexAuthentication(); plexModal.style.display = 'none'; });
+        plexModal.addEventListener('click', function(e) { if (e.target === plexModal) { stopPlexAuthentication(); plexModal.style.display = 'none'; } });
+
         function startPlexAuthentication() {
-            // Show modal and set loading state
             plexModal.style.display = 'block';
             plexPinCode.textContent = '';
             setPlexStatus('waiting', '<i class="fas fa-spinner spinner"></i> Creating Plex PIN...');
-            
-            // Create Plex PIN
+
             HuntarrUtils.fetchWithTimeout('./api/auth/plex/pin', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ login_mode: true })
             })
             .then(response => {
-                if (!response.ok) {
-                    return response.json().then(data => {
-                        throw new Error(data.error || `Server error: ${response.status}`);
-                    }).catch(() => {
-                        throw new Error(`HTTP error: ${response.status}`);
-                    });
-                }
+                if (!response.ok) return response.json().then(data => { throw new Error(data.error || 'Server error: ' + response.status); }).catch(() => { throw new Error('HTTP error: ' + response.status); });
                 return response.json();
             })
             .then(data => {
                 if (data.success) {
                     currentPinId = data.pin_id;
-                    
-                    // Extract PIN code from auth URL
                     const hashPart = data.auth_url.split('#')[1];
                     if (hashPart) {
-                        const urlParams = new URLSearchParams(hashPart.substring(1)); // Remove the '?' after '#'
+                        const urlParams = new URLSearchParams(hashPart.substring(1));
                         const pinCode = urlParams.get('code');
                         plexPinCode.textContent = pinCode || 'PIN-' + currentPinId;
-                    } else {
-                        plexPinCode.textContent = 'PIN-' + currentPinId;
-                    }
-                    
+                    } else { plexPinCode.textContent = 'PIN-' + currentPinId; }
                     setPlexStatus('waiting', 'You will be redirected to Plex to sign in. After signing in, you will be brought back here automatically.');
-                    
-                    // Store PIN ID in localStorage for when we return
                     localStorage.setItem('huntarr-plex-pin-id', currentPinId);
                     localStorage.setItem('huntarr-plex-login', 'true');
-                    
-                    // Redirect to Plex authentication instead of popup
-                    setTimeout(() => {
-                        window.location.href = data.auth_url;
-                    }, 2000); // 2 second delay to show the message
-                } else {
-                    setPlexStatus('error', 'Failed to create Plex PIN: ' + (data.error || 'Unknown error'));
-                }
+                    setTimeout(() => { window.location.href = data.auth_url; }, 2000);
+                } else { setPlexStatus('error', 'Failed to create Plex PIN: ' + (data.error || 'Unknown error')); }
             })
-            .catch(error => {
-                console.error('Error creating Plex PIN:', error);
-                setPlexStatus('error', 'Failed to create Plex PIN: ' + error.message);
-            });
+            .catch(error => { setPlexStatus('error', 'Failed to create Plex PIN: ' + error.message); });
         }
-        
+
         function startPinChecking() {
-            if (pinCheckInterval) {
-                clearInterval(pinCheckInterval);
-            }
-            
+            if (pinCheckInterval) clearInterval(pinCheckInterval);
             pinCheckInterval = setInterval(() => {
                 if (!currentPinId) return;
-                
-                HuntarrUtils.fetchWithTimeout(`./api/auth/plex/check/${currentPinId}`, {
-                    method: 'GET'
-                })
-                .then(response => {
-                    // Check response status before parsing JSON
-                    if (response.ok) {
-                        return response.json().then(data => ({ data, status: response.status }));
-                    } else {
-                        return response.json().then(data => ({ data, status: response.status }));
-                    }
-                })
-                .then(({ data, status }) => {
-                    if (data.success) {
-                        if (data.claimed) {
-                            // PIN was claimed, now login with the token
-                            setPlexStatus('success', '<i class="fas fa-check"></i> Plex authenticated! Logging in...');
-                            loginWithPlexToken(data.token, data.user_data);
-                        }
-                        // If not claimed yet, keep checking
-                    } else {
-                        setPlexStatus('error', 'Error checking PIN: ' + (data.error || 'Unknown error'));
-                        stopPlexAuthentication();
-                    }
-                })
-                .catch(error => {
-                    console.error('Error checking PIN:', error);
-                    setPlexStatus('error', 'Network error checking PIN status');
-                    stopPlexAuthentication();
-                });
-            }, 2000); // Check every 2 seconds
-            
-            // Stop checking after 10 minutes
-            setTimeout(() => {
-                if (pinCheckInterval) {
-                    stopPlexAuthentication();
-                    setPlexStatus('error', 'PIN expired. Please try again.');
-                }
-            }, 600000);
+                HuntarrUtils.fetchWithTimeout('./api/auth/plex/check/' + currentPinId, { method: 'GET' })
+                    .then(response => response.json().then(data => ({ data, status: response.status })))
+                    .then(({ data, status }) => {
+                        if (data.success) {
+                            if (data.claimed) { setPlexStatus('success', '<i class="fas fa-check"></i> Plex authenticated! Logging in...'); loginWithPlexToken(data.token, data.user_data); }
+                        } else { setPlexStatus('error', 'Error checking PIN: ' + (data.error || 'Unknown error')); stopPlexAuthentication(); }
+                    })
+                    .catch(error => { setPlexStatus('error', 'Network error checking PIN status'); stopPlexAuthentication(); });
+            }, 2000);
+            setTimeout(() => { if (pinCheckInterval) { stopPlexAuthentication(); setPlexStatus('error', 'PIN expired. Please try again.'); } }, 600000);
         }
-        
+
         function loginWithPlexToken(token, userData) {
             HuntarrUtils.fetchWithTimeout('./api/auth/plex/login', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    token: token
-                })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: token })
             })
-            .then(response => {
-                // Check response status before parsing JSON
-                if (response.ok) {
-                    return response.json().then(data => ({ data, status: response.status }));
-                } else {
-                    return response.json().then(data => ({ data, status: response.status }));
-                }
-            })
+            .then(response => response.json().then(data => ({ data, status: response.status })))
             .then(({ data, status }) => {
                 if (data.success) {
                     setPlexStatus('success', '<i class="fas fa-check"></i> Login successful! Redirecting...');
-                    setTimeout(() => {
-                        window.location.href = data.redirect || './';
-                    }, 1500);
+                    setTimeout(() => { window.location.href = data.redirect || './'; }, 1500);
                 } else {
-                    if (status === 409) {
-                        // Local user exists, show linking option
-                        setPlexStatus('error', 'Local user exists. Please link your Plex account in user settings.');
-                    } else if (status === 403) {
-                        // Plex account not linked to this instance
-                        setPlexStatus('error', 'This Plex account is not linked to this Huntarr instance. Please link your account in user settings first.');
-                    } else {
-                        setPlexStatus('error', 'Login failed: ' + (data.error || 'Unknown error'));
-                    }
+                    if (status === 409) setPlexStatus('error', 'Local user exists. Please link your Plex account in user settings.');
+                    else if (status === 403) setPlexStatus('error', 'This Plex account is not linked to this Huntarr instance. Please link your account in user settings first.');
+                    else setPlexStatus('error', 'Login failed: ' + (data.error || 'Unknown error'));
                 }
             })
-            .catch(error => {
-                console.error('Error during Plex login:', error);
-                setPlexStatus('error', 'Network error during login');
-            })
-            .finally(() => {
-                stopPlexAuthentication();
-            });
+            .catch(error => { setPlexStatus('error', 'Network error during login'); })
+            .finally(() => { stopPlexAuthentication(); });
         }
-        
-        function stopPlexAuthentication() {
-            if (pinCheckInterval) {
-                clearInterval(pinCheckInterval);
-                pinCheckInterval = null;
-            }
-            currentPinId = null;
-        }
-        
-        function setPlexStatus(type, message) {
-            plexStatus.className = `plex-status ${type}`;
-            plexStatus.innerHTML = message;
-        }
+
+        function stopPlexAuthentication() { if (pinCheckInterval) { clearInterval(pinCheckInterval); pinCheckInterval = null; } currentPinId = null; }
+        function setPlexStatus(type, message) { plexStatus.className = 'plex-status ' + type; plexStatus.innerHTML = message; }
         {% endif %}
-        
+
         // Recovery functionality
         const forgotPasswordLink = document.getElementById('forgotPasswordLink');
         const recoveryModal = document.getElementById('recoveryModal');
@@ -903,146 +355,143 @@
         const confirmNewPasswordInput = document.getElementById('confirmNewPasswordInput');
         const newPasswordSection = document.getElementById('newPasswordSection');
         const recoveryStatus = document.getElementById('recoveryStatus');
-        
         let verifiedUsername = null;
-        
-        // Show recovery modal
-        forgotPasswordLink.addEventListener('click', function(e) {
-            e.preventDefault();
-            recoveryModal.style.display = 'block';
-            recoveryKeyInput.focus();
-        });
-        
-        // Close recovery modal
-        recoveryModalClose.addEventListener('click', function() {
-            closeRecoveryModal();
-        });
-        
-        // Close modal when clicking outside
-        recoveryModal.addEventListener('click', function(e) {
-            if (e.target === recoveryModal) {
-                closeRecoveryModal();
-            }
-        });
-        
-        function closeRecoveryModal() {
-            recoveryModal.style.display = 'none';
-            resetRecoveryForm();
-        }
-        
+
+        forgotPasswordLink.addEventListener('click', function(e) { e.preventDefault(); recoveryModal.style.display = 'block'; recoveryKeyInput.focus(); });
+        recoveryModalClose.addEventListener('click', function() { closeRecoveryModal(); });
+        recoveryModal.addEventListener('click', function(e) { if (e.target === recoveryModal) closeRecoveryModal(); });
+
+        function closeRecoveryModal() { recoveryModal.style.display = 'none'; resetRecoveryForm(); }
         function resetRecoveryForm() {
-            recoveryKeyInput.value = '';
-            newPasswordInput.value = '';
-            confirmNewPasswordInput.value = '';
-            newPasswordSection.style.display = 'none';
-            verifyRecoveryKeyBtn.style.display = 'block';
-            resetPasswordBtn.style.display = 'none';
-            recoveryStatus.style.display = 'none';
-            verifiedUsername = null;
+            recoveryKeyInput.value = ''; newPasswordInput.value = ''; confirmNewPasswordInput.value = '';
+            newPasswordSection.style.display = 'none'; verifyRecoveryKeyBtn.style.display = 'block';
+            resetPasswordBtn.style.display = 'none'; recoveryStatus.style.display = 'none'; verifiedUsername = null;
         }
-        
-        // Verify recovery key
+
         verifyRecoveryKeyBtn.addEventListener('click', function() {
             const recoveryKey = recoveryKeyInput.value.trim();
-            
-            if (!recoveryKey) {
-                showRecoveryStatus('Please enter your recovery key', 'error');
-                return;
-            }
-            
+            if (!recoveryKey) { showRecoveryStatus('Please enter your recovery key', 'error'); return; }
             const originalText = this.innerHTML;
-            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
-            this.disabled = true;
-            
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...'; this.disabled = true;
+
             HuntarrUtils.fetchWithTimeout('./auth/recovery-key/verify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ recovery_key: recoveryKey })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     verifiedUsername = data.username;
-                    showRecoveryStatus(`Recovery key verified for user: ${data.username}`, 'success');
-                    newPasswordSection.style.display = 'block';
-                    verifyRecoveryKeyBtn.style.display = 'none';
-                    resetPasswordBtn.style.display = 'block';
-                    newPasswordInput.focus();
-                } else {
-                    showRecoveryStatus(data.error || 'Invalid recovery key', 'error');
-                }
+                    showRecoveryStatus('Recovery key verified for user: ' + data.username, 'success');
+                    newPasswordSection.style.display = 'block'; verifyRecoveryKeyBtn.style.display = 'none';
+                    resetPasswordBtn.style.display = 'block'; newPasswordInput.focus();
+                } else { showRecoveryStatus(data.error || 'Invalid recovery key', 'error'); }
             })
-            .catch(error => {
-                console.error('Error verifying recovery key:', error);
-                showRecoveryStatus('Error verifying recovery key: ' + error.message, 'error');
-            })
-            .finally(() => {
-                this.innerHTML = originalText;
-                this.disabled = false;
-            });
+            .catch(error => { showRecoveryStatus('Error verifying recovery key: ' + error.message, 'error'); })
+            .finally(() => { this.innerHTML = originalText; this.disabled = false; });
         });
-        
-        // Reset password
+
         resetPasswordBtn.addEventListener('click', function() {
             const newPassword = newPasswordInput.value;
             const confirmPassword = confirmNewPasswordInput.value;
             const recoveryKey = recoveryKeyInput.value.trim();
-            
-            if (!newPassword || !confirmPassword) {
-                showRecoveryStatus('Please fill in all password fields', 'error');
-                return;
-            }
-            
-            if (newPassword !== confirmPassword) {
-                showRecoveryStatus('Passwords do not match', 'error');
-                return;
-            }
-            
-            if (newPassword.length < 8) {
-                showRecoveryStatus('Password must be at least 8 characters long', 'error');
-                return;
-            }
-            
+            if (!newPassword || !confirmPassword) { showRecoveryStatus('Please fill in all password fields', 'error'); return; }
+            if (newPassword !== confirmPassword) { showRecoveryStatus('Passwords do not match', 'error'); return; }
+            if (newPassword.length < 8) { showRecoveryStatus('Password must be at least 8 characters long', 'error'); return; }
             const originalText = this.innerHTML;
-            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetting...';
-            this.disabled = true;
-            
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetting...'; this.disabled = true;
+
             HuntarrUtils.fetchWithTimeout('./auth/recovery-key/reset', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    recovery_key: recoveryKey,
-                    new_password: newPassword 
-                })
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ recovery_key: recoveryKey, new_password: newPassword })
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    showRecoveryStatus('Password reset successfully! You can now log in with your new password.', 'success');
-                    setTimeout(() => {
-                        closeRecoveryModal();
-                        // Focus on username field
-                        usernameInput.focus();
-                    }, 3000);
-                } else {
-                    showRecoveryStatus(data.error || 'Failed to reset password', 'error');
-                }
+                if (data.success) { showRecoveryStatus('Password reset successfully! You can now log in with your new password.', 'success'); setTimeout(() => { closeRecoveryModal(); usernameInput.focus(); }, 3000); }
+                else { showRecoveryStatus(data.error || 'Failed to reset password', 'error'); }
             })
-            .catch(error => {
-                console.error('Error resetting password:', error);
-                showRecoveryStatus('Error resetting password: ' + error.message, 'error');
-            })
-            .finally(() => {
-                this.innerHTML = originalText;
-                this.disabled = false;
-            });
+            .catch(error => { showRecoveryStatus('Error resetting password: ' + error.message, 'error'); })
+            .finally(() => { this.innerHTML = originalText; this.disabled = false; });
         });
-        
+
         function showRecoveryStatus(message, type) {
             recoveryStatus.textContent = message;
             recoveryStatus.className = type === 'success' ? 'plex-status success' : 'plex-status error';
             recoveryStatus.style.display = 'block';
         }
+
+        // ════════════════════════════════════════════════════════
+        //  Rotating Backdrop — TMDB trending images
+        // ════════════════════════════════════════════════════════
+        (function() {
+            var layerA = document.getElementById('backdropA');
+            var layerB = document.getElementById('backdropB');
+            if (!layerA || !layerB) return;
+
+            var images = [];
+            var preloaded = {};
+            var currentIndex = -1;
+            var activeLayer = 'A';
+            var INTERVAL = 10000;
+            var rotationTimer = null;
+
+            function shuffle(arr) {
+                for (var i = arr.length - 1; i > 0; i--) {
+                    var j = Math.floor(Math.random() * (i + 1));
+                    var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+                }
+                return arr;
+            }
+
+            function preload(url) {
+                if (preloaded[url]) return Promise.resolve(url);
+                return new Promise(function(resolve) {
+                    var img = new Image();
+                    img.onload = function() { preloaded[url] = true; resolve(url); };
+                    img.onerror = function() { resolve(null); };
+                    img.src = url;
+                });
+            }
+
+            function preloadAhead(fromIndex, count) {
+                for (var i = 0; i < count; i++) {
+                    var idx = (fromIndex + i) % images.length;
+                    preload(images[idx]);
+                }
+            }
+
+            function showNext() {
+                if (images.length === 0) return;
+                currentIndex = (currentIndex + 1) % images.length;
+                var url = images[currentIndex];
+                var showLayer, hideLayer;
+                if (activeLayer === 'A') { showLayer = layerB; hideLayer = layerA; activeLayer = 'B'; }
+                else { showLayer = layerA; hideLayer = layerB; activeLayer = 'A'; }
+                showLayer.style.backgroundImage = 'url(' + url + ')';
+                void showLayer.offsetWidth;
+                showLayer.classList.add('visible');
+                hideLayer.classList.remove('visible');
+                preloadAhead(currentIndex + 1, 3);
+            }
+
+            function init() {
+                fetch('./api/setup/backdrops')
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (!data.success || !data.images || data.images.length === 0) return;
+                        images = shuffle(data.images.slice());
+                        Promise.all([preload(images[0]), preload(images[1] || images[0]), preload(images[2] || images[0])])
+                            .then(function() {
+                                showNext();
+                                rotationTimer = setInterval(showNext, INTERVAL);
+                            });
+                    })
+                    .catch(function() {});
+            }
+
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+            else init();
+        })();
     </script>
 </body>
 </html>

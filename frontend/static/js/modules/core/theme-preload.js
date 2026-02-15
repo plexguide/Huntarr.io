@@ -15,7 +15,7 @@
     const style = document.createElement('style');
     style.textContent = `
         body, html { 
-            background-color: #1a1d24 !important; 
+            background-color: #0f172a !important; 
             color: #f8f9fa !important;
         }
         .sidebar {
@@ -23,12 +23,6 @@
         }
         .top-bar {
             background-color: #252a34 !important;
-        }
-        .login-container {
-            background-color: #252a34 !important;
-        }
-        .login-header {
-            background-color: #121212 !important;
         }
     `;
     document.head.appendChild(style);
