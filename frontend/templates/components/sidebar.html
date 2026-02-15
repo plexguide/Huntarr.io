@@ -402,6 +402,11 @@ function expandSidebarGroup(groupId) {
 }
 
 // ── Click handlers on group headers ──────────────────────────
+// Map group IDs to default navigation hashes (click header → navigate to default page)
+var GROUP_DEFAULT_HASH = {
+    'sidebar-group-media-hunt': '#media-hunt-collection'
+};
+
 document.addEventListener('click', function(e) {
     var header = e.target.closest('.nav-group-header');
     if (!header) return;
@@ -412,6 +417,11 @@ document.addEventListener('click', function(e) {
     var isCollapsed = body.classList.contains('collapsed');
     if (isCollapsed) {
         expandSidebarGroup(groupId);
+        // If this group has a default page, navigate to it
+        var defaultHash = GROUP_DEFAULT_HASH[groupId];
+        if (defaultHash) {
+            window.location.hash = defaultHash;
+        }
     } else {
         collapseGroup(groupId);
     }
