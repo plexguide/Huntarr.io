@@ -6,31 +6,13 @@
         <div class="page-title" id="currentPageTitle"></div>
     </div>
     
-    <div class="topbar-section center">
-        <div class="topbar-info-strip">
-            <!-- Version chip -->
-            <a href="https://github.com/plexguide/Huntarr.io/releases" target="_blank" rel="noopener" class="topbar-chip version-chip" title="Current version">
-                <span class="chip-icon"><i class="fas fa-code-branch"></i></span>
-                <span class="chip-label">v</span><span id="version-value" class="chip-value" style="display: none;"></span>
-            </a>
-            
-            <!-- Latest chip -->
-            <a href="https://github.com/plexguide/Huntarr.io/releases" target="_blank" rel="noopener" class="topbar-chip latest-chip" title="Latest release">
-                <span class="chip-icon"><i class="fas fa-arrow-up"></i></span>
-                <span id="latest-version-value" class="chip-value" style="display: none;"></span>
-            </a>
-            
-            <!-- Star chip -->
-            <a href="https://github.com/plexguide/huntarr" target="_blank" rel="noopener" class="topbar-chip star-chip" title="GitHub Stars">
-                <span class="chip-icon"><i class="fas fa-star"></i></span>
-                <span id="github-stars-value" class="chip-value">--</span>
-            </a>
-            
-            <!-- Social icons moved to sidebar -->
-        </div>
-    </div>
+    <div class="topbar-section center"></div>
     
     <div class="topbar-section right">
+        <a href="https://github.com/plexguide/huntarr" target="_blank" rel="noopener" class="topbar-chip star-chip" title="GitHub Stars">
+            <span class="chip-icon"><i class="fas fa-star"></i></span>
+            <span id="github-stars-value" class="chip-value">--</span>
+        </a>
         <a href="https://plexguide.github.io/Huntarr.io/donate.html" target="_blank" rel="noopener noreferrer" class="topbar-sponsor-btn" title="Become a Sponsor">
             <i class="fas fa-heart"></i>
             <span>Become a Sponsor</span>
@@ -189,48 +171,9 @@
         opacity: 0.8;
     }
     
-    .chip-label {
-        opacity: 0.6;
-        font-weight: 500;
-    }
-    
     .chip-value {
         font-weight: 700;
         font-variant-numeric: tabular-nums;
-    }
-
-    /* ===== VERSION CHIP ===== */
-    .version-chip {
-        background: rgba(99, 102, 241, 0.08);
-        border-color: rgba(99, 102, 241, 0.18);
-        color: #a5b4fc;
-    }
-    
-    .version-chip .chip-icon { color: #6366f1; }
-    .version-chip .chip-value { color: #c7d2fe; }
-    
-    .version-chip:hover {
-        background: rgba(99, 102, 241, 0.16);
-        border-color: rgba(99, 102, 241, 0.35);
-        color: #c7d2fe;
-        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
-    }
-
-    /* ===== LATEST CHIP ===== */
-    .latest-chip {
-        background: rgba(46, 204, 113, 0.08);
-        border-color: rgba(46, 204, 113, 0.18);
-        color: #7cd4a0;
-    }
-    
-    .latest-chip .chip-icon { color: #2ecc71; }
-    .latest-chip .chip-value { color: #a8e6c5; }
-    
-    .latest-chip:hover {
-        background: rgba(46, 204, 113, 0.16);
-        border-color: rgba(46, 204, 113, 0.35);
-        color: #a8e6c5;
-        box-shadow: 0 2px 8px rgba(46, 204, 113, 0.15);
     }
 
     /* ===== STAR CHIP ===== */
@@ -341,13 +284,11 @@
 
     /* ===== RESPONSIVE ===== */
     @media (max-width: 1100px) {
-        .chip-label { display: none; }
         .topbar-info-strip { gap: 4px; }
         .topbar-chip { padding: 0 8px; }
     }
     
     @media (max-width: 900px) {
-        .latest-chip { display: none; }
     }
 
     /* Mobile: hide desktop topbar — mobile.css handles the rest */

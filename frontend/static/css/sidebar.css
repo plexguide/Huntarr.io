@@ -563,10 +563,24 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 5px;
     font-size: 11px;
     font-weight: 500;
     color: #475569;
+    flex-wrap: wrap;
+}
+
+.sidebar-footer-version-link {
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.sidebar-footer-version-link:hover {
+    text-decoration: none;
+}
+
+.sidebar-footer-version-link:hover .sidebar-footer-version {
+    color: #94a3b8;
 }
 
 .sidebar-footer-version {
@@ -575,6 +589,41 @@
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
     font-size: 10px;
     letter-spacing: 0.02em;
+    transition: color 0.2s ease;
+}
+
+.sidebar-footer-upgrade {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 9px;
+    font-weight: 600;
+    color: #34d399;
+    background: rgba(52, 211, 153, 0.08);
+    border: 1px solid rgba(52, 211, 153, 0.2);
+    border-radius: 10px;
+    padding: 1px 7px 1px 5px;
+    line-height: 1;
+    white-space: nowrap;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.sidebar-footer-upgrade:hover {
+    background: rgba(52, 211, 153, 0.16);
+    border-color: rgba(52, 211, 153, 0.35);
+    color: #6ee7b7;
+    text-decoration: none;
+}
+
+.sidebar-footer-upgrade i {
+    font-size: 7px;
+    color: #34d399;
+    transition: color 0.2s ease;
+}
+
+.sidebar-footer-upgrade:hover i {
+    color: #6ee7b7;
 }
 
 .sidebar-footer-sep {

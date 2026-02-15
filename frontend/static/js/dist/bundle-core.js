@@ -923,13 +923,7 @@ window.HuntarrVersion = {
                 return response.text();
             })
             .then(version => {
-                const versionElement = document.getElementById('version-value');
-                if (versionElement) {
-                    versionElement.textContent = version.trim();
-                    versionElement.style.display = 'inline';
-                }
-                
-                // Store in localStorage for topbar access
+                // Store in localStorage for sidebar footer display
                 try {
                     const versionInfo = localStorage.getItem('huntarr-version-info') || '{}';
                     const parsedInfo = JSON.parse(versionInfo);
@@ -941,11 +935,6 @@ window.HuntarrVersion = {
             })
             .catch(error => {
                 console.error('Error loading current version:', error);
-                const versionElement = document.getElementById('version-value');
-                if (versionElement) {
-                    versionElement.textContent = 'Error';
-                    versionElement.style.display = 'inline';
-                }
             });
     },
 
@@ -962,12 +951,8 @@ window.HuntarrVersion = {
                 return response.json();
             })
             .then(data => {
-                const latestVersionElement = document.getElementById('latest-version-value');
-                if (latestVersionElement && data && data.tag_name) {
-                    latestVersionElement.textContent = data.tag_name;
-                    latestVersionElement.style.display = 'inline';
-                    
-                    // Store in localStorage for topbar access
+                if (data && data.tag_name) {
+                    // Store in localStorage for sidebar footer display
                     try {
                         const versionInfo = localStorage.getItem('huntarr-version-info') || '{}';
                         const parsedInfo = JSON.parse(versionInfo);
@@ -976,18 +961,10 @@ window.HuntarrVersion = {
                     } catch (e) {
                         console.error('Error saving latest version to localStorage:', e);
                     }
-                } else if (latestVersionElement) {
-                     latestVersionElement.textContent = 'N/A';
-                     latestVersionElement.style.display = 'inline';
                 }
             })
             .catch(error => {
                 console.error('Error loading latest version from GitHub:', error);
-                const latestVersionElement = document.getElementById('latest-version-value');
-                if (latestVersionElement) {
-                    latestVersionElement.textContent = error.message === 'Rate limited' ? 'Rate Limited' : 'Error';
-                    latestVersionElement.style.display = 'inline';
-                }
             });
     },
     

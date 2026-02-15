@@ -320,7 +320,13 @@
         </div>
         <div class="sidebar-footer-divider"></div>
         <div class="sidebar-footer-info">
-            <span class="sidebar-footer-version" id="sidebar-footer-version"></span>
+            <a href="https://github.com/plexguide/Huntarr.io/releases" target="_blank" rel="noopener" class="sidebar-footer-version-link" id="sidebar-footer-version-link" title="View releases">
+                <span class="sidebar-footer-version" id="sidebar-footer-version"></span>
+            </a>
+            <a href="https://github.com/plexguide/Huntarr.io/releases" target="_blank" rel="noopener" class="sidebar-footer-upgrade" id="sidebar-footer-upgrade" style="display:none;" title="Update available">
+                <i class="fas fa-arrow-up"></i>
+                <span id="sidebar-footer-upgrade-version"></span>
+            </a>
             <span class="sidebar-footer-sep">&middot;</span>
             <a href="https://github.com/Admin9705/" target="_blank" rel="noopener" class="sidebar-footer-dev">Admin9705</a>
         </div>
@@ -527,22 +533,35 @@ function setActiveNavItem() {
     window.updateMovieHuntSettingsVisibility = updateMediaHuntSidebarVisibility;
 })();
 
-// ── Sidebar footer version ────────────────────────────────────
+// ── Sidebar footer version + upgrade indicator ───────────────
 (function() {
     function updateSidebarVersion() {
-        var el = document.getElementById('sidebar-footer-version');
-        if (!el) return;
+        var verEl = document.getElementById('sidebar-footer-version');
+        var upgradeEl = document.getElementById('sidebar-footer-upgrade');
+        var upgradeVerEl = document.getElementById('sidebar-footer-upgrade-version');
+        if (!verEl) return;
         try {
             var info = localStorage.getItem('huntarr-version-info');
             if (info) {
                 var parsed = JSON.parse(info);
                 if (parsed.currentVersion) {
-                    el.textContent = 'v' + parsed.currentVersion;
+                    verEl.textContent = 'v' + parsed.currentVersion;
+                    // Show upgrade indicator if latest differs from current
+                    if (upgradeEl && upgradeVerEl && parsed.latestVersion &&
+                        parsed.latestVersion !== parsed.currentVersion) {
+                        upgradeVerEl.textContent = parsed.latestVersion;
+                        upgradeEl.style.display = '';
+                        upgradeEl.closest('.sidebar-footer-info')
+                            && upgradeEl.setAttribute('title', 'Update available: ' + parsed.latestVersion);
+                    } else if (upgradeEl) {
+                        upgradeEl.style.display = 'none';
+                    }
                     return;
                 }
             }
         } catch(e) {}
-        el.textContent = '';
+        verEl.textContent = '';
+        if (upgradeEl) upgradeEl.style.display = 'none';
     }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', updateSidebarVersion);
