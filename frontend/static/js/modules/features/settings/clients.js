@@ -69,16 +69,18 @@
                 for (var i = 0; i < withIndex.length; i++) {
                     html += window.SettingsForms.renderClientCard(withIndex[i].client, withIndex[i].originalIndex);
                 }
-                html += '<div class="add-instance-card" data-app-type="client"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Adding Client</div></div>';
+                html += '<div class="add-instance-card" data-app-type="client"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Client</div></div>';
                 grid.innerHTML = html;
                 
                 // Also refresh remote mappings if available
                 if (window.RemoteMappings && typeof window.RemoteMappings.refreshList === 'function') {
                     window.RemoteMappings.refreshList();
                 }
+                // Dispatch event so UI can react to client list changes
+                document.dispatchEvent(new CustomEvent('huntarr:clients-list-updated', { detail: { clients: list } }));
             })
             .catch(function() {
-                grid.innerHTML = '<div class="add-instance-card" data-app-type="client"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Adding Client</div></div>';
+                grid.innerHTML = '<div class="add-instance-card" data-app-type="client"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Client</div></div>';
             });
     }
 

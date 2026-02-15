@@ -26,8 +26,14 @@
     <div id="indexer-hunt-content-wrapper" style="display: none;">
     <!-- ── Instance Indexers (first: per-instance indexers + Import from Index Master) ───────────────────────── -->
     <div class="app-content-panel ih-page-wrapper ih-instance-area" id="ih-instance-area" style="width:100%;padding:20px;margin:0;background:transparent;box-shadow:none;border:none;display:none;">
+        <div id="indexer-instance-setup-callout" class="instance-setup-callout" style="display: none; margin-bottom: 16px;">
+            <i class="fas fa-cube" aria-hidden="true"></i>
+            <div>
+                <strong>Select which instance you're configuring.</strong> Indexers are assigned per-instance — you must import indexers into <strong>each</strong> Movie Hunt and TV Hunt instance. Use the dropdown below to switch between instances.
+            </div>
+        </div>
         <div class="media-hunt-settings-instance-bar" style="margin-bottom: 16px;">
-            <label for="settings-indexers-instance-select" class="instance-selector-label">Instance</label>
+            <label for="settings-indexers-instance-select" class="instance-selector-label instance-selector-label-emphasis">Instance</label>
             <select id="settings-indexers-instance-select" class="control-select" aria-label="Instance">
                 <option value="">Loading...</option>
             </select>

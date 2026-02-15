@@ -6806,16 +6806,18 @@ document.head.appendChild(styleEl);
                 for (var i = 0; i < withIndex.length; i++) {
                     html += window.SettingsForms.renderClientCard(withIndex[i].client, withIndex[i].originalIndex);
                 }
-                html += '<div class="add-instance-card" data-app-type="client"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Adding Client</div></div>';
+                html += '<div class="add-instance-card" data-app-type="client"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Client</div></div>';
                 grid.innerHTML = html;
                 
                 // Also refresh remote mappings if available
                 if (window.RemoteMappings && typeof window.RemoteMappings.refreshList === 'function') {
                     window.RemoteMappings.refreshList();
                 }
+                // Dispatch event so UI can react to client list changes
+                document.dispatchEvent(new CustomEvent('huntarr:clients-list-updated', { detail: { clients: list } }));
             })
             .catch(function() {
-                grid.innerHTML = '<div class="add-instance-card" data-app-type="client"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Adding Client</div></div>';
+                grid.innerHTML = '<div class="add-instance-card" data-app-type="client"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Client</div></div>';
             });
     }
 
@@ -8539,6 +8541,35 @@ document.head.appendChild(styleEl);
 (function() {
     'use strict';
 
+    function _rebindBrowseItem(el) {
+        el.querySelectorAll('.root-folders-browse-item-btn').forEach(function(btn) {
+            btn.onclick = function(e) {
+                e.stopPropagation();
+                var action = btn.getAttribute('data-action');
+                var p = el.getAttribute('data-path') || '';
+                var name = el.getAttribute('data-name') || '';
+                if (action === 'rename') window.RootFolders.browseRenameFolder(p, name, el);
+                else if (action === 'delete') window.RootFolders.browseDeleteFolder(p, name);
+            };
+        });
+    }
+
+    function _showBrowseToast(msg, isError) {
+        var container = document.querySelector('.root-folders-browse-body');
+        if (!container) return;
+        var toast = document.createElement('div');
+        toast.style.cssText = 'padding:8px 14px;margin-bottom:8px;border-radius:6px;font-size:0.85rem;font-weight:500;' +
+            (isError ? 'background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.3);'
+                     : 'background:rgba(16,185,129,0.12);color:#6ee7b7;border:1px solid rgba(16,185,129,0.3);');
+        toast.textContent = msg;
+        container.insertBefore(toast, document.getElementById('root-folders-browse-list'));
+        setTimeout(function() {
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.3s ease';
+            setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
+        }, 3000);
+    }
+
     window.RootFolders = {
         _browseTargetInput: null,
         _rfMode: 'movie',
@@ -8675,6 +8706,7 @@ document.head.appendChild(styleEl);
             var self = window.RootFolders;
             self._rfMode = (preferMode === 'tv') ? 'tv' : 'movie';
             var selectEl = document.getElementById('settings-root-folders-instance-select');
+            updateRootFoldersSetupBanner();
             if (selectEl && selectEl.options.length <= 1) {
                 self.populateCombinedInstanceDropdown(preferMode);
             } else {
@@ -8734,6 +8766,7 @@ document.head.appendChild(styleEl);
                         '<div class="add-text">Add Root Folder</div></div>';
                     gridEl.innerHTML = html;
                     window.RootFolders._bindCardButtons();
+                    refreshInstanceStatusBanner();
                 })
                 .catch(function() {
                     var addCard = '<div class="add-instance-card add-root-folder-card" id="root-folders-add-card" data-app-type="root-folder">' +
@@ -9012,11 +9045,137 @@ document.head.appendChild(styleEl);
             window.RootFolders.loadBrowsePath(parent);
         },
 
+        browseCreateFolder: function() {
+            var row = document.getElementById('root-folders-browse-new-folder-row');
+            var input = document.getElementById('root-folders-browse-new-folder-input');
+            var delRow = document.getElementById('root-folders-browse-delete-confirm-row');
+            if (delRow) delRow.style.display = 'none';
+            if (!row || !input) return;
+            row.style.display = 'flex';
+            input.value = '';
+            setTimeout(function() { input.focus(); }, 50);
+        },
+
+        _doBrowseCreateFolder: function() {
+            var input = document.getElementById('root-folders-browse-new-folder-input');
+            var row = document.getElementById('root-folders-browse-new-folder-row');
+            var pathInput = document.getElementById('root-folders-browse-path-input');
+            var name = (input && input.value || '').trim();
+            if (!name) { if (input) input.focus(); return; }
+            var parent = (pathInput && pathInput.value || '').trim() || '/';
+            var url = window.RootFolders.getApiBase() + '/browse/create';
+            url = window.RootFolders._appendInstanceParam(url);
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ parent_path: parent, name: name })
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                if (data.success) {
+                    if (row) row.style.display = 'none';
+                    window.RootFolders.loadBrowsePath(parent);
+                } else {
+                    if (input) { input.style.borderColor = '#f87171'; input.focus(); }
+                    _showBrowseToast(data.error || 'Failed to create folder', true);
+                }
+            }).catch(function() { _showBrowseToast('Failed to create folder', true); });
+        },
+
+        _cancelBrowseCreateFolder: function() {
+            var row = document.getElementById('root-folders-browse-new-folder-row');
+            if (row) row.style.display = 'none';
+        },
+
+        browseRenameFolder: function(path, currentName, el) {
+            var main = el && el.querySelector('.root-folders-browse-item-main');
+            if (!main) return;
+            var origHTML = main.innerHTML;
+            main.innerHTML = '<i class="fas fa-folder" style="color:#818cf8;flex-shrink:0;"></i>' +
+                '<input type="text" class="root-folders-browse-item-rename-input" value="' + (currentName || '').replace(/"/g, '&quot;') + '" />' +
+                '<button type="button" class="root-folders-browse-inline-ok root-folders-rename-confirm"><i class="fas fa-check"></i></button>' +
+                '<button type="button" class="root-folders-browse-inline-cancel root-folders-rename-cancel"><i class="fas fa-times"></i></button>';
+            var inp = main.querySelector('input');
+            if (inp) { inp.focus(); inp.select(); }
+            main.onclick = null;
+            var self = window.RootFolders;
+            function doRename() {
+                var name = (inp && inp.value || '').trim();
+                if (!name || name === currentName) { revert(); return; }
+                var url = self.getApiBase() + '/browse/rename';
+                url = self._appendInstanceParam(url);
+                fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path: path, new_name: name })
+                }).then(function(r) { return r.json(); }).then(function(data) {
+                    if (data.success) {
+                        var pathInput = document.getElementById('root-folders-browse-path-input');
+                        var parent = path.replace(/\/+$/, '').split('/').slice(0, -1).join('/') || '/';
+                        self.loadBrowsePath(parent || (pathInput && pathInput.value) || '/');
+                    } else {
+                        if (inp) { inp.style.borderColor = '#f87171'; inp.focus(); }
+                        _showBrowseToast(data.error || 'Failed to rename', true);
+                    }
+                }).catch(function() { _showBrowseToast('Failed to rename folder', true); });
+            }
+            function revert() { main.innerHTML = origHTML; _rebindBrowseItem(el); }
+            main.querySelector('.root-folders-rename-confirm').onclick = function(e) { e.stopPropagation(); doRename(); };
+            main.querySelector('.root-folders-rename-cancel').onclick = function(e) { e.stopPropagation(); revert(); };
+            if (inp) inp.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') { e.preventDefault(); doRename(); }
+                if (e.key === 'Escape') { e.preventDefault(); revert(); }
+            });
+        },
+
+        browseDeleteFolder: function(path, name) {
+            var row = document.getElementById('root-folders-browse-delete-confirm-row');
+            var nameEl = document.getElementById('root-folders-browse-delete-name');
+            var newRow = document.getElementById('root-folders-browse-new-folder-row');
+            if (newRow) newRow.style.display = 'none';
+            if (!row) return;
+            row.style.display = 'flex';
+            if (nameEl) nameEl.textContent = 'Delete "' + (name || path) + '"?';
+            window.RootFolders._pendingDeletePath = path;
+        },
+
+        _doBrowseDeleteFolder: function() {
+            var path = window.RootFolders._pendingDeletePath;
+            var row = document.getElementById('root-folders-browse-delete-confirm-row');
+            if (!path) return;
+            var url = window.RootFolders.getApiBase() + '/browse/delete';
+            url = window.RootFolders._appendInstanceParam(url);
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: path })
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                if (data.success) {
+                    if (row) row.style.display = 'none';
+                    var pathInput = document.getElementById('root-folders-browse-path-input');
+                    var parent = path.replace(/\/+$/, '').split('/').slice(0, -1).join('/') || '/';
+                    window.RootFolders.loadBrowsePath(parent);
+                    _showBrowseToast('Folder deleted', false);
+                } else {
+                    _showBrowseToast(data.error || 'Folder may not be empty', true);
+                }
+            }).catch(function() { _showBrowseToast('Failed to delete folder', true); });
+        },
+
+        _cancelBrowseDeleteFolder: function() {
+            var row = document.getElementById('root-folders-browse-delete-confirm-row');
+            if (row) row.style.display = 'none';
+            window.RootFolders._pendingDeletePath = null;
+        },
+
         loadBrowsePath: function(path) {
             var listEl = document.getElementById('root-folders-browse-list');
             var pathInput = document.getElementById('root-folders-browse-path-input');
             var upBtn = document.getElementById('root-folders-browse-up');
             if (!listEl || !pathInput) return;
+            // Hide inline rows on navigate
+            var newRow = document.getElementById('root-folders-browse-new-folder-row');
+            var delRow = document.getElementById('root-folders-browse-delete-confirm-row');
+            if (newRow) newRow.style.display = 'none';
+            if (delRow) delRow.style.display = 'none';
             path = (path || pathInput.value || '/').trim() || '/';
             pathInput.value = path;
             if (upBtn) {
@@ -9044,25 +9203,38 @@ document.head.appendChild(styleEl);
                     var html = '';
                     for (var i = 0; i < dirs.length; i++) {
                         var d = dirs[i];
-                        var name = (d.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                        var rawName = d.name || '';
+                        var name = rawName.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
                         var p = (d.path || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-                        html += '<div class="root-folders-browse-item" data-path="' + p + '" title="' + p + '">' +
+                        var nameAttr = rawName.replace(/"/g, '&quot;');
+                        html += '<div class="root-folders-browse-item" data-path="' + p + '" data-name="' + nameAttr + '" title="' + p + '">' +
+                            '<span class="root-folders-browse-item-main">' +
                             '<i class="fas fa-folder"></i>' +
                             '<span class="root-folders-browse-item-path">' + name + '</span>' +
-                            '</div>';
+                            '</span>' +
+                            '<span class="root-folders-browse-item-actions">' +
+                            '<button type="button" class="root-folders-browse-item-btn" data-action="rename" title="Rename"><i class="fas fa-pen"></i></button>' +
+                            '<button type="button" class="root-folders-browse-item-btn" data-action="delete" title="Delete"><i class="fas fa-trash"></i></button>' +
+                            '</span></div>';
                     }
                     listEl.innerHTML = html || '<div style="padding: 16px; color: #64748b;">No subdirectories</div>';
                     listEl.querySelectorAll('.root-folders-browse-item').forEach(function(el) {
-                        el.onclick = function() {
-                            var p = el.getAttribute('data-path') || '';
-                            if (p) window.RootFolders.loadBrowsePath(p);
-                        };
+                        var main = el.querySelector('.root-folders-browse-item-main');
+                        if (main) {
+                            main.onclick = function() {
+                                var p = el.getAttribute('data-path') || '';
+                                if (p) window.RootFolders.loadBrowsePath(p);
+                            };
+                        }
+                        _rebindBrowseItem(el);
                     });
                 })
                 .catch(function() {
                     listEl.innerHTML = '<div style="padding: 16px; color: #f87171;">Failed to load</div>';
                 });
         },
+
+        _pendingDeletePath: null,
 
         init: function() {
             var self = window.RootFolders;
@@ -9115,6 +9287,23 @@ document.head.appendChild(styleEl);
             }
             var upBtn = document.getElementById('root-folders-browse-up');
             if (upBtn) upBtn.onclick = function() { self.goToParent(); };
+            var newFolderBtn = document.getElementById('root-folders-browse-new-folder');
+            if (newFolderBtn) newFolderBtn.onclick = function() { self.browseCreateFolder(); };
+            // Inline create folder confirm/cancel
+            var createConfirm = document.getElementById('root-folders-browse-new-folder-confirm');
+            var createCancel = document.getElementById('root-folders-browse-new-folder-cancel');
+            var createInput = document.getElementById('root-folders-browse-new-folder-input');
+            if (createConfirm) createConfirm.onclick = function() { self._doBrowseCreateFolder(); };
+            if (createCancel) createCancel.onclick = function() { self._cancelBrowseCreateFolder(); };
+            if (createInput) createInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') { e.preventDefault(); self._doBrowseCreateFolder(); }
+                if (e.key === 'Escape') { e.preventDefault(); self._cancelBrowseCreateFolder(); }
+            });
+            // Inline delete confirm/cancel
+            var deleteYes = document.getElementById('root-folders-browse-delete-yes');
+            var deleteNo = document.getElementById('root-folders-browse-delete-no');
+            if (deleteYes) deleteYes.onclick = function() { self._doBrowseDeleteFolder(); };
+            if (deleteNo) deleteNo.onclick = function() { self._cancelBrowseDeleteFolder(); };
             document.addEventListener('huntarr:instances-changed', function() { if (self._rfMode === 'movie') self.populateCombinedInstanceDropdown('movie'); updateRootFoldersSetupBanner(); });
             document.addEventListener('huntarr:tv-hunt-instances-changed', function() { if (self._rfMode === 'tv') self.populateCombinedInstanceDropdown('tv'); updateRootFoldersSetupBanner(); });
             updateRootFoldersSetupBanner();
@@ -9123,9 +9312,76 @@ document.head.appendChild(styleEl);
 
     function updateRootFoldersSetupBanner() {
         var banner = document.getElementById('root-folders-setup-wizard-continue-banner');
-        if (!banner) return;
-        var show = window.SetupWizard && typeof window.SetupWizard.isComplete === 'function' && !window.SetupWizard.isComplete();
-        banner.style.display = show ? 'flex' : 'none';
+        var callout = document.getElementById('root-folders-instance-setup-callout');
+        var statusArea = document.getElementById('root-folders-instance-status-area');
+        var showSetup = window.SetupWizard && typeof window.SetupWizard.isComplete === 'function' && !window.SetupWizard.isComplete();
+        if (banner) banner.style.display = showSetup ? 'flex' : 'none';
+        if (callout) callout.style.display = showSetup ? 'flex' : 'none';
+        /* Status by instance: always visible (helps all users), not just during wizard */
+        if (statusArea) {
+            statusArea.style.display = 'block';
+            refreshInstanceStatusBanner();
+        }
+    }
+
+    function refreshInstanceStatusBanner() {
+        var gridEl = document.getElementById('root-folders-instance-status-grid');
+        if (!gridEl) return;
+        gridEl.innerHTML = '<div style="padding: 12px; color: #94a3b8;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+        var sf = window.RootFolders._safeJsonFetch.bind(window.RootFolders);
+        var ts = '?t=' + Date.now();
+        Promise.all([
+            sf('./api/movie-hunt/instances' + ts, { instances: [] }),
+            sf('./api/tv-hunt/instances' + ts, { instances: [] })
+        ]).then(function(results) {
+            var movieInstances = (results[0].instances || []).map(function(i) { return { value: 'movie:' + i.id, label: 'Movie - ' + (i.name || 'Instance ' + i.id), id: i.id, type: 'movie' }; });
+            var tvInstances = (results[1].instances || []).map(function(i) { return { value: 'tv:' + i.id, label: 'TV - ' + (i.name || 'Instance ' + i.id), id: i.id, type: 'tv' }; });
+            var all = movieInstances.concat(tvInstances);
+            var statusArea = document.getElementById('root-folders-instance-status-area');
+            if (all.length === 0) {
+                gridEl.innerHTML = '';
+                if (statusArea) statusArea.style.display = 'none';
+                return;
+            }
+            if (statusArea) statusArea.style.display = 'block';
+            var fetches = all.map(function(inst) {
+                var url = inst.type === 'tv' ? './api/tv-hunt/root-folders' : './api/movie-hunt/root-folders';
+                url += '?instance_id=' + encodeURIComponent(inst.id) + '&t=' + Date.now();
+                return sf(url, { root_folders: [] }).then(function(d) {
+                    var folders = d.root_folders || d.rootFolders || [];
+                    return { label: inst.label, value: inst.value, hasRoots: folders.length > 0 };
+                });
+            });
+            Promise.all(fetches).then(function(statuses) {
+                var html = '';
+                for (var i = 0; i < statuses.length; i++) {
+                    var s = statuses[i];
+                    var cardClass = s.hasRoots ? 'instance-complete' : 'instance-not-setup';
+                    var iconClass = s.hasRoots ? 'fa-check-circle' : 'fa-folder-open';
+                    var badgeText = s.hasRoots ? 'Root Instance Complete' : 'Not Setup';
+                    var nameEsc = (s.label || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                    html += '<div class="root-folders-instance-status-card ' + cardClass + '" data-value="' + (s.value || '').replace(/"/g, '&quot;') + '">' +
+                        '<div class="instance-status-icon"><i class="fas ' + iconClass + '" aria-hidden="true"></i></div>' +
+                        '<div class="instance-status-body">' +
+                        '<div class="instance-status-name">' + nameEsc + '</div>' +
+                        '<span class="instance-status-badge">' + badgeText + '</span>' +
+                        '</div></div>';
+                }
+                gridEl.innerHTML = html;
+                gridEl.querySelectorAll('.root-folders-instance-status-card').forEach(function(card) {
+                    var val = card.getAttribute('data-value');
+                    if (val) {
+                        card.style.cursor = 'pointer';
+                        card.addEventListener('click', function() {
+                            var sel = document.getElementById('settings-root-folders-instance-select');
+                            if (sel && val) { sel.value = val; window.RootFolders.onCombinedInstanceChange(); }
+                        });
+                    }
+                });
+            });
+        }).catch(function() {
+            gridEl.innerHTML = '';
+        });
     }
 
     if (document.readyState === 'loading') {

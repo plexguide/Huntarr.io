@@ -50,7 +50,12 @@
         <div class="root-folders-browse-content">
             <div class="root-folders-browse-header">
                 <h2 class="root-folders-browse-title">File Browser</h2>
-                <button type="button" class="root-folders-browse-close" id="tv-hunt-root-folders-browse-close" aria-label="Close"><i class="fas fa-times"></i></button>
+                <div class="root-folders-browse-header-actions">
+                    <button type="button" class="btn-root-folders-browse-new-folder" id="tv-hunt-root-folders-browse-new-folder" title="Create new folder">
+                        <i class="fas fa-folder-plus"></i> New Folder
+                    </button>
+                    <button type="button" class="root-folders-browse-close" id="tv-hunt-root-folders-browse-close" aria-label="Close"><i class="fas fa-times"></i></button>
+                </div>
             </div>
             <div class="root-folders-browse-body">
                 <label for="tv-hunt-root-folders-browse-path-input">Start typing or select a path below</label>
@@ -293,6 +298,16 @@
         padding: 16px 20px; border-bottom: 1px solid rgba(148, 163, 184, 0.2);
     }
     .root-folders-browse-title { margin: 0; font-size: 1.1rem; color: #f8fafc; }
+    .root-folders-browse-header-actions { display: flex; align-items: center; gap: 10px; }
+    .btn-root-folders-browse-new-folder {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 8px 14px; font-size: 0.85rem;
+        background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.4);
+        color: #a5b4fc; border-radius: 8px; cursor: pointer; font-weight: 500;
+    }
+    .btn-root-folders-browse-new-folder:hover {
+        background: rgba(99, 102, 241, 0.3); border-color: rgba(99, 102, 241, 0.5);
+    }
     .root-folders-browse-close {
         background: none; border: none; color: #94a3b8; cursor: pointer; padding: 8px;
     }
@@ -326,13 +341,24 @@
         background: rgba(15, 23, 42, 0.5);
     }
     .root-folders-browse-item {
-        display: flex; align-items: center; gap: 10px; padding: 10px 14px;
-        cursor: pointer; border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.1);
         color: #e2e8f0;
     }
+    .root-folders-browse-item-main {
+        display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; cursor: pointer;
+    }
     .root-folders-browse-item:hover { background: rgba(148, 163, 184, 0.15); }
-    .root-folders-browse-item i { color: #94a3b8; }
+    .root-folders-browse-item-main i { color: #94a3b8; flex-shrink: 0; }
     .root-folders-browse-item-path { font-family: monospace; font-size: 0.9rem; word-break: break-all; }
+    .root-folders-browse-item-actions { display: flex; gap: 4px; flex-shrink: 0; opacity: 0.7; }
+    .root-folders-browse-item:hover .root-folders-browse-item-actions { opacity: 1; }
+    .root-folders-browse-item-btn {
+        padding: 4px 8px; background: transparent; border: none; color: #94a3b8;
+        cursor: pointer; border-radius: 4px; font-size: 0.8rem;
+    }
+    .root-folders-browse-item-btn:hover { background: rgba(148, 163, 184, 0.2); color: #e2e8f0; }
+    .root-folders-browse-item-btn[data-action="delete"]:hover { color: #f87171; }
     .root-folders-browse-actions {
         display: flex; justify-content: flex-end; gap: 12px;
         padding: 16px 20px; border-top: 1px solid rgba(148, 163, 184, 0.2);

@@ -1880,6 +1880,114 @@ body.setup-wizard-active .app-banners-row {
     display: none !important;
 }
 
+/* Instance callout during setup — emphasizes per-instance config (Root Folders, Indexers) */
+.instance-setup-callout {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 20px;
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px solid rgba(99, 102, 241, 0.35);
+    border-left: 4px solid #6366f1;
+    border-radius: 10px;
+    color: #e2e8f0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+.instance-setup-callout i {
+    font-size: 1.25rem;
+    color: #818cf8;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+.instance-setup-callout strong { color: #f1f5f9; }
+.instance-selector-label-emphasis {
+    font-weight: 700 !important;
+    color: #e2e8f0 !important;
+    font-size: 15px !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Root folders instance status checklist (setup) — muted, inside bordered box */
+.root-folders-instance-status-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.root-folders-instance-status-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    min-width: 200px;
+    flex: 1 1 200px;
+    max-width: 280px;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+.root-folders-instance-status-card:hover {
+    background: rgba(30, 41, 59, 0.5);
+    border-color: rgba(148, 163, 184, 0.2);
+}
+.root-folders-instance-status-card.instance-complete {
+    border-left: 3px solid rgba(16, 185, 129, 0.5);
+}
+.root-folders-instance-status-card.instance-complete .instance-status-icon {
+    color: rgba(16, 185, 129, 0.85);
+}
+.root-folders-instance-status-card.instance-complete .instance-status-badge {
+    background: rgba(16, 185, 129, 0.2);
+    color: #6ee7b7;
+    font-weight: 600;
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.root-folders-instance-status-card.instance-not-setup {
+    border-left: 3px solid rgba(180, 150, 80, 0.5);
+}
+.root-folders-instance-status-card.instance-not-setup .instance-status-icon {
+    color: rgba(180, 150, 80, 0.8);
+}
+.root-folders-instance-status-card.instance-not-setup .instance-status-badge {
+    background: rgba(180, 150, 80, 0.12);
+    color: #d4c4a8;
+    font-weight: 600;
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.root-folders-instance-status-card .instance-status-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1rem;
+}
+.root-folders-instance-status-card .instance-status-body {
+    flex: 1;
+    min-width: 0;
+}
+.root-folders-instance-status-card .instance-status-name {
+    font-weight: 600;
+    color: #e2e8f0;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+}
+.root-folders-instance-status-card .instance-status-badge {
+    display: inline-block;
+}
+
 .setup-wizard {
     background: rgba(15, 20, 30, 0.6);
     border: 1px solid rgba(90, 109, 137, 0.25);

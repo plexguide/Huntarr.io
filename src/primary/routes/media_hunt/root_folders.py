@@ -125,6 +125,72 @@ def set_default_root_folder(instance_id, config_key, index):
     return True, None
 
 
+def create_folder(parent_path, name):
+    """Create a directory. Returns (success, result). result is dict with 'path' or 'error'."""
+    parent_path = (parent_path or '').strip() or BROWSE_DEFAULT_PATH
+    name = (name or '').strip()
+    if not name:
+        return False, {'error': 'Folder name is required'}
+    if '..' in parent_path or '..' in name:
+        return False, {'error': 'Invalid path or name'}
+    if '/' in name or (os.sep and os.sep in name):
+        return False, {'error': 'Folder name cannot contain path separators'}
+    dir_path = os.path.abspath(os.path.normpath(parent_path))
+    if not os.path.isdir(dir_path):
+        return False, {'error': 'Parent path is not a directory'}
+    new_path = os.path.join(dir_path, name)
+    try:
+        os.makedirs(new_path, exist_ok=False)
+        return True, {'path': new_path}
+    except FileExistsError:
+        return False, {'error': f'Folder already exists: {name}'}
+    except OSError as e:
+        return False, {'error': str(e)}
+
+
+def delete_folder(path):
+    """Delete an empty directory. Returns (success, error_message)."""
+    path = (path or '').strip()
+    if not path:
+        return False, 'Path is required'
+    if '..' in path:
+        return False, 'Invalid path'
+    dir_path = os.path.abspath(os.path.normpath(path))
+    if not os.path.isdir(dir_path):
+        return False, 'Not a directory'
+    try:
+        os.rmdir(dir_path)
+        return True, None
+    except OSError as e:
+        return False, str(e)
+
+
+def rename_folder(old_path, new_name):
+    """Rename a directory (same parent). Returns (success, result). result is dict with 'path' or 'error'."""
+    old_path = (old_path or '').strip()
+    new_name = (new_name or '').strip()
+    if not old_path or not new_name:
+        return False, {'error': 'Path and new name are required'}
+    if '..' in old_path or '..' in new_name:
+        return False, {'error': 'Invalid path or name'}
+    if '/' in new_name or (os.sep and os.sep in new_name):
+        return False, {'error': 'Folder name cannot contain path separators'}
+    dir_path = os.path.abspath(os.path.normpath(old_path))
+    if not os.path.isdir(dir_path):
+        return False, {'error': 'Not a directory'}
+    parent = os.path.dirname(dir_path)
+    new_path = os.path.join(parent, new_name)
+    if dir_path == new_path:
+        return True, {'path': new_path}
+    if os.path.exists(new_path):
+        return False, {'error': f'Folder already exists: {new_name}'}
+    try:
+        os.rename(dir_path, new_path)
+        return True, {'path': new_path}
+    except OSError as e:
+        return False, {'error': str(e)}
+
+
 def browse_root_folders(path):
     """List directories under path. Returns dict with path, directories, and optional error."""
     path = (path or '').strip() or BROWSE_DEFAULT_PATH

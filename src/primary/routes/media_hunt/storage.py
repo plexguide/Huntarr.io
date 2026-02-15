@@ -293,6 +293,47 @@ def register_movie_storage_routes(bp, get_instance_id):
             logger.exception('Root folders browse error')
             return jsonify({'path': '', 'directories': [], 'error': str(e)}), 500
 
+    @bp.route('/api/movie-hunt/root-folders/browse/create', methods=['POST'])
+    def api_movie_hunt_root_folders_browse_create():
+        try:
+            data = request.get_json() or {}
+            parent = (data.get('parent_path') or data.get('path') or '').strip()
+            name = (data.get('name') or '').strip()
+            success, result = mh_rf.create_folder(parent, name)
+            if success:
+                return jsonify({'success': True, 'path': result['path']}), 200
+            return jsonify({'success': False, 'error': result.get('error', 'Failed')}), 400
+        except Exception as e:
+            logger.exception('Root folders browse create error')
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @bp.route('/api/movie-hunt/root-folders/browse/delete', methods=['POST'])
+    def api_movie_hunt_root_folders_browse_delete():
+        try:
+            data = request.get_json() or {}
+            path = (data.get('path') or '').strip()
+            success, err = mh_rf.delete_folder(path)
+            if success:
+                return jsonify({'success': True}), 200
+            return jsonify({'success': False, 'error': err or 'Failed'}), 400
+        except Exception as e:
+            logger.exception('Root folders browse delete error')
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @bp.route('/api/movie-hunt/root-folders/browse/rename', methods=['POST'])
+    def api_movie_hunt_root_folders_browse_rename():
+        try:
+            data = request.get_json() or {}
+            path = (data.get('path') or '').strip()
+            new_name = (data.get('new_name') or '').strip()
+            success, result = mh_rf.rename_folder(path, new_name)
+            if success:
+                return jsonify({'success': True, 'path': result['path']}), 200
+            return jsonify({'success': False, 'error': result.get('error', 'Failed')}), 400
+        except Exception as e:
+            logger.exception('Root folders browse rename error')
+            return jsonify({'success': False, 'error': str(e)}), 500
+
     @bp.route('/api/movie-hunt/root-folders/test', methods=['POST'])
     def api_movie_hunt_root_folders_test():
         try:
@@ -435,6 +476,47 @@ def register_tv_storage_routes(bp, get_instance_id):
             return jsonify(result), 400 if result.get('error') == 'Invalid path' else 200
         except Exception as e:
             return jsonify({'path': '', 'directories': [], 'error': str(e)}), 500
+
+    @bp.route('/api/tv-hunt/root-folders/browse/create', methods=['POST'])
+    def api_tv_hunt_root_folders_browse_create():
+        try:
+            data = request.get_json() or {}
+            parent = (data.get('parent_path') or data.get('path') or '').strip()
+            name = (data.get('name') or '').strip()
+            success, result = mh_rf.create_folder(parent, name)
+            if success:
+                return jsonify({'success': True, 'path': result['path']}), 200
+            return jsonify({'success': False, 'error': result.get('error', 'Failed')}), 400
+        except Exception as e:
+            logger.exception('TV Hunt root folders browse create error')
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @bp.route('/api/tv-hunt/root-folders/browse/delete', methods=['POST'])
+    def api_tv_hunt_root_folders_browse_delete():
+        try:
+            data = request.get_json() or {}
+            path = (data.get('path') or '').strip()
+            success, err = mh_rf.delete_folder(path)
+            if success:
+                return jsonify({'success': True}), 200
+            return jsonify({'success': False, 'error': err or 'Failed'}), 400
+        except Exception as e:
+            logger.exception('TV Hunt root folders browse delete error')
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @bp.route('/api/tv-hunt/root-folders/browse/rename', methods=['POST'])
+    def api_tv_hunt_root_folders_browse_rename():
+        try:
+            data = request.get_json() or {}
+            path = (data.get('path') or '').strip()
+            new_name = (data.get('new_name') or '').strip()
+            success, result = mh_rf.rename_folder(path, new_name)
+            if success:
+                return jsonify({'success': True, 'path': result['path']}), 200
+            return jsonify({'success': False, 'error': result.get('error', 'Failed')}), 400
+        except Exception as e:
+            logger.exception('TV Hunt root folders browse rename error')
+            return jsonify({'success': False, 'error': str(e)}), 500
 
     @bp.route('/api/tv-hunt/root-folders/test', methods=['POST'])
     def api_tv_hunt_root_folders_test():

@@ -1,13 +1,44 @@
 <section id="settingsClientsSection" class="content-section" style="display: none;">
     {% with section_id='settings-clients' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <div id="clientManagementContainer" class="app-content-panel">
+        <!-- Continue to Setup Guide banner (shown when wizard incomplete) -->
+        <div id="clients-setup-wizard-continue-banner" class="setup-wizard-continue-banner" style="display: none; margin-bottom: 20px;">
+            <i class="fas fa-arrow-right"></i>
+            <span>Done configuring clients? Continue to the next step in the Setup Guide.</span>
+            <button type="button" class="setup-wizard-continue-btn" data-wizard-nav="media-hunt-collection">
+                <i class="fas fa-forward"></i> Continue to Setup Guide
+            </button>
+        </div>
+
         <div id="settings-clients-content-wrapper">
         <div class="settings-group client-settings-group">
-            <h3>Client Management</h3>
+            <h3>Download Clients</h3>
+            <p class="client-settings-help">
+                A download client handles NZB downloads for Huntarr. <strong>Only usenet clients are currently supported</strong> — torrent support is coming soon.
+            </p>
+            <div class="client-recommendation-callout" id="client-recommendation-callout">
+                <div class="client-recommendation-cards">
+                    <div class="client-rec-card client-rec-recommended">
+                        <div class="client-rec-badge">Recommended</div>
+                        <div class="client-rec-icon"><i class="fas fa-bolt"></i></div>
+                        <div class="client-rec-body">
+                            <div class="client-rec-name">NZB Hunt <span class="client-rec-tag">Built-in</span></div>
+                            <div class="client-rec-desc">Zero configuration required. Built directly into Huntarr — no external software, no remote path mappings, just works.</div>
+                        </div>
+                    </div>
+                    <div class="client-rec-card">
+                        <div class="client-rec-icon"><i class="fas fa-server"></i></div>
+                        <div class="client-rec-body">
+                            <div class="client-rec-name">SABnzbd / NZBGet</div>
+                            <div class="client-rec-desc">External clients. Requires host, port, and API key configuration. If running in Docker, you'll likely need Remote Path Mappings below.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="instance-card-grid" id="client-instances-grid">
                 <div class="add-instance-card" data-app-type="client">
                     <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
-                    <div class="add-text">Adding Client</div>
+                    <div class="add-text">Add Client</div>
                 </div>
             </div>
         </div>
@@ -15,9 +46,17 @@
         <!-- Remote Path Mappings Section -->
         <div class="settings-group remote-mappings-settings-group">
             <h3>Remote Path Mappings</h3>
+            <div id="remote-mappings-nzbhunt-notice" class="remote-mappings-notice remote-mappings-notice-ok" style="display: none;">
+                <i class="fas fa-check-circle"></i>
+                <div><strong>Not needed with NZB Hunt.</strong> Since NZB Hunt runs inside Huntarr, it uses the same paths — no remote path mappings required.</div>
+            </div>
+            <div id="remote-mappings-external-notice" class="remote-mappings-notice remote-mappings-notice-warn" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div><strong>You're using an external download client.</strong> If Huntarr and your client run in different Docker containers (or different machines), they likely see different paths. You'll need to map the client's download path to Huntarr's path.</div>
+            </div>
             <p class="remote-mappings-help">
-                When your download client and Movie Hunt don’t see the same folder paths, you need a mapping: tell Movie Hunt which <strong>local path</strong> on your system corresponds to the <strong>remote path</strong> the client uses.
-                <strong>If you run Movie Hunt in Docker</strong>, paths inside the container are usually different from the host, so remote path mappings are typically required.
+                When your download client and Huntarr don't see the same folder paths, you need a mapping: tell Huntarr which <strong>local path</strong> on your system corresponds to the <strong>remote path</strong> the client uses.
+                <strong>If running in Docker</strong>, paths inside the container are usually different from the host, so remote path mappings are typically required for external clients.
                 If both run on the same machine with the same paths, you can leave this empty.
                 For more detail see the <a href="https://wiki.servarr.com/radarr/settings#remote-path-mappings" target="_blank" rel="noopener" class="remote-mappings-wiki-link">wiki</a>.
             </p>
@@ -70,7 +109,7 @@
                             <i class="fas fa-folder-open"></i> Browse
                         </button>
                     </div>
-                    <p class="remote-mapping-help-text">Path that Movie Hunt should use to access the remote path locally</p>
+                    <p class="remote-mapping-help-text">Path that Huntarr should use to access the remote path locally</p>
                 </div>
                 
                 <div class="remote-mapping-form-group">
@@ -105,12 +144,12 @@
                 </div>
             </div>
             <div class="client-type-modal-body">
-                <p class="client-type-modal-info">Huntarr supports usenet download clients. Select one to continue.</p>
+                <p class="client-type-modal-info">Huntarr supports usenet download clients. Torrent support is coming soon. Select one to continue.</p>
                 <div class="client-type-form-group">
                     <label for="client-type-select">Client Type</label>
                     <select id="client-type-select" class="client-type-select">
                         <option value="">Select a client...</option>
-                        <option value="nzbhunt">NZB Hunt (Built-in)</option>
+                        <option value="nzbhunt">NZB Hunt (Built-in) — Recommended</option>
                         <option value="sabnzbd">SABnzbd</option>
                         <option value="nzbget">NZBGet</option>
                     </select>
@@ -167,7 +206,7 @@
         margin: 12px 0 20px 0;
     }
     .client-settings-group h3 {
-        margin: 0 0 18px 0;
+        margin: 0 0 12px 0;
         padding: 0 0 12px 0;
         font-size: 1.1rem;
         font-weight: 600;
@@ -176,6 +215,122 @@
         background: none;
         box-shadow: none;
     }
+    .client-settings-help {
+        color: #94a3b8;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        margin: 0 0 20px 0;
+    }
+
+    /* Client recommendation cards */
+    .client-recommendation-callout {
+        margin-bottom: 20px;
+    }
+    .client-recommendation-cards {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .client-rec-card {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 16px 18px;
+        background: rgba(15, 23, 42, 0.5);
+        border: 1px solid rgba(148, 163, 184, 0.12);
+        border-radius: 10px;
+        flex: 1 1 0;
+        min-width: 240px;
+        position: relative;
+    }
+    .client-rec-card.client-rec-recommended {
+        border-color: rgba(16, 185, 129, 0.35);
+        background: rgba(16, 185, 129, 0.06);
+    }
+    .client-rec-badge {
+        position: absolute;
+        top: 10px;
+        right: 12px;
+        background: rgba(16, 185, 129, 0.2);
+        color: #6ee7b7;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .client-rec-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 1.1rem;
+        background: rgba(99, 102, 241, 0.15);
+        color: #818cf8;
+    }
+    .client-rec-recommended .client-rec-icon {
+        background: rgba(16, 185, 129, 0.15);
+        color: #6ee7b7;
+    }
+    .client-rec-body {
+        flex: 1;
+        min-width: 0;
+    }
+    .client-rec-name {
+        font-weight: 600;
+        color: #e2e8f0;
+        font-size: 0.95rem;
+        margin-bottom: 4px;
+    }
+    .client-rec-tag {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #6ee7b7;
+        background: rgba(16, 185, 129, 0.15);
+        padding: 1px 6px;
+        border-radius: 4px;
+        vertical-align: middle;
+    }
+    .client-rec-desc {
+        font-size: 0.85rem;
+        color: #94a3b8;
+        line-height: 1.5;
+    }
+
+    /* Remote path mapping context notices */
+    .remote-mappings-notice {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 14px 18px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        margin-bottom: 16px;
+    }
+    .remote-mappings-notice i {
+        flex-shrink: 0;
+        margin-top: 2px;
+        font-size: 1rem;
+    }
+    .remote-mappings-notice-ok {
+        background: rgba(16, 185, 129, 0.08);
+        border: 1px solid rgba(16, 185, 129, 0.25);
+        color: #d1fae5;
+    }
+    .remote-mappings-notice-ok i { color: rgba(16, 185, 129, 0.7); }
+    .remote-mappings-notice-ok strong { color: #6ee7b7; }
+    .remote-mappings-notice-warn {
+        background: rgba(180, 150, 80, 0.08);
+        border: 1px solid rgba(180, 150, 80, 0.3);
+        color: #e2d9c8;
+    }
+    .remote-mappings-notice-warn i { color: rgba(180, 150, 80, 0.8); }
+    .remote-mappings-notice-warn strong { color: #d4c4a8; }
 
     /* Client type selection modal (like request/movie modal) */
     .client-type-modal {
@@ -669,11 +824,56 @@
         .btn-remote-mapping-browse-folder {
             width: 100%;
         }
+        .client-recommendation-cards {
+            flex-direction: column;
+        }
+        .client-rec-card {
+            max-width: 100%;
+        }
     }
 </style>
 
 <script>
 (function() {
+    // === Setup wizard banner ===
+    function updateClientsSetupBanner() {
+        var banner = document.getElementById('clients-setup-wizard-continue-banner');
+        var show = window.SetupWizard && typeof window.SetupWizard.isComplete === 'function' && !window.SetupWizard.isComplete();
+        if (banner) banner.style.display = show ? 'flex' : 'none';
+    }
+
+    // === Remote mappings context notice ===
+    function updateRemoteMappingsNotice() {
+        var nzbhuntNotice = document.getElementById('remote-mappings-nzbhunt-notice');
+        var externalNotice = document.getElementById('remote-mappings-external-notice');
+        if (!nzbhuntNotice || !externalNotice) return;
+        var clients = (window.SettingsForms && window.SettingsForms._clientsList) ? window.SettingsForms._clientsList : [];
+        if (clients.length === 0) {
+            nzbhuntNotice.style.display = 'none';
+            externalNotice.style.display = 'none';
+            return;
+        }
+        var hasNzbHunt = clients.some(function(c) { return (c.type || '').toLowerCase() === 'nzbhunt'; });
+        var hasExternal = clients.some(function(c) { var t = (c.type || '').toLowerCase(); return t === 'sabnzbd' || t === 'nzbget'; });
+        // Show appropriate notice
+        if (hasExternal) {
+            nzbhuntNotice.style.display = 'none';
+            externalNotice.style.display = 'flex';
+        } else if (hasNzbHunt) {
+            nzbhuntNotice.style.display = 'flex';
+            externalNotice.style.display = 'none';
+        } else {
+            nzbhuntNotice.style.display = 'none';
+            externalNotice.style.display = 'none';
+        }
+    }
+
+    // Listen for client list updates dispatched by clients.js
+    document.addEventListener('huntarr:clients-list-updated', function() {
+        updateRemoteMappingsNotice();
+        updateClientsSetupBanner();
+    });
+
     function ensureClientTypeModalInBody() {
         var modal = document.getElementById('client-type-modal');
         if (modal && modal.parentElement !== document.body) {
@@ -693,7 +893,7 @@
                 if (!hasNzbHunt) {
                     var opt = document.createElement('option');
                     opt.value = 'nzbhunt';
-                    opt.textContent = 'NZB Hunt (Built-in)';
+                    opt.textContent = 'NZB Hunt (Built-in) \u2014 Recommended';
                     selectEl.appendChild(opt);
                 }
                 ['sabnzbd', 'nzbget'].forEach(function(t) {
@@ -847,12 +1047,16 @@
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {
-            initClientGrid();
-            initClientTypeModal();
-        });
+        initClientGrid();
+        initClientTypeModal();
+        updateClientsSetupBanner();
+        setTimeout(updateRemoteMappingsNotice, 800);
+    });
     } else {
         initClientGrid();
         initClientTypeModal();
+        updateClientsSetupBanner();
+        setTimeout(updateRemoteMappingsNotice, 800);
     }
 })();
 </script>

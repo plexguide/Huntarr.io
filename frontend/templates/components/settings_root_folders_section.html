@@ -11,8 +11,15 @@
         </div>
 
         <div id="settings-root-folders-content-wrapper">
-        <div class="media-hunt-settings-instance-bar" style="margin-bottom: 16px;">
-            <label for="settings-root-folders-instance-select" class="instance-selector-label">Instance</label>
+        <!-- Instance selector callout (shown during setup to emphasize per-instance config) -->
+        <div id="root-folders-instance-setup-callout" class="instance-setup-callout" style="display: none; margin-bottom: 16px;">
+            <i class="fas fa-cube" aria-hidden="true"></i>
+            <div>
+                <strong>Select which instance you're configuring.</strong> Root folders are per-instance — you must add folders for <strong>each</strong> Movie Hunt and TV Hunt instance. Use the dropdown below to switch between instances.
+            </div>
+        </div>
+        <div class="media-hunt-settings-instance-bar root-folders-instance-bar" style="margin-bottom: 16px;">
+            <label for="settings-root-folders-instance-select" class="instance-selector-label instance-selector-label-emphasis">Instance</label>
             <select id="settings-root-folders-instance-select" class="control-select" aria-label="Instance">
                 <option value="">Loading...</option>
             </select>
@@ -25,6 +32,13 @@
                     <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
                     <div class="add-text">Add Root Folder</div>
                 </div>
+            </div>
+        </div>
+        <!-- Instance status checklist — below Root Folders, always visible to help users track per-instance config -->
+        <div id="root-folders-instance-status-area" class="settings-group root-folders-settings-group root-folders-instance-status-area">
+            <h3>Status by instance</h3>
+            <div id="root-folders-instance-status-grid" class="root-folders-instance-status-grid">
+                <!-- Populated by JS -->
             </div>
         </div>
         </div>
@@ -62,7 +76,12 @@
         <div class="root-folders-browse-content">
             <div class="root-folders-browse-header">
                 <h2 class="root-folders-browse-title">File Browser</h2>
-                <button type="button" class="root-folders-browse-close" id="root-folders-browse-close" aria-label="Close"><i class="fas fa-times"></i></button>
+                <div class="root-folders-browse-header-actions">
+                    <button type="button" class="btn-root-folders-browse-new-folder" id="root-folders-browse-new-folder" title="Create new folder">
+                        <i class="fas fa-folder-plus"></i> New Folder
+                    </button>
+                    <button type="button" class="root-folders-browse-close" id="root-folders-browse-close" aria-label="Close"><i class="fas fa-times"></i></button>
+                </div>
             </div>
             <div class="root-folders-browse-body">
                 <label for="root-folders-browse-path-input">Start typing or select a path below</label>
@@ -71,6 +90,21 @@
                     <button type="button" class="btn-root-folders-browse-up" id="root-folders-browse-up" title="Go to parent directory">
                         <i class="fas fa-arrow-up"></i> Go Back
                     </button>
+                </div>
+                <!-- Inline new-folder row (hidden by default) -->
+                <div id="root-folders-browse-new-folder-row" class="root-folders-browse-new-folder-row" style="display: none;">
+                    <i class="fas fa-folder-plus"></i>
+                    <input type="text" id="root-folders-browse-new-folder-input" class="root-folders-browse-inline-input" placeholder="Folder name" autocomplete="off" />
+                    <button type="button" class="root-folders-browse-inline-ok" id="root-folders-browse-new-folder-confirm"><i class="fas fa-check"></i></button>
+                    <button type="button" class="root-folders-browse-inline-cancel" id="root-folders-browse-new-folder-cancel"><i class="fas fa-times"></i></button>
+                </div>
+                <!-- Inline delete confirm row (hidden by default) -->
+                <div id="root-folders-browse-delete-confirm-row" class="root-folders-browse-delete-confirm-row" style="display: none;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span id="root-folders-browse-delete-name"></span>
+                    <span class="root-folders-browse-delete-hint">Must be empty to delete.</span>
+                    <button type="button" class="root-folders-browse-inline-danger" id="root-folders-browse-delete-yes"><i class="fas fa-trash"></i> Delete</button>
+                    <button type="button" class="root-folders-browse-inline-cancel" id="root-folders-browse-delete-no"><i class="fas fa-times"></i></button>
                 </div>
                 <div id="root-folders-browse-list" class="root-folders-browse-list"></div>
             </div>
@@ -341,6 +375,16 @@
         padding: 16px 20px; border-bottom: 1px solid rgba(148, 163, 184, 0.2);
     }
     .root-folders-browse-title { margin: 0; font-size: 1.1rem; color: #f8fafc; }
+    .root-folders-browse-header-actions { display: flex; align-items: center; gap: 10px; }
+    .btn-root-folders-browse-new-folder {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 8px 14px; font-size: 0.85rem;
+        background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.4);
+        color: #a5b4fc; border-radius: 8px; cursor: pointer; font-weight: 500;
+    }
+    .btn-root-folders-browse-new-folder:hover {
+        background: rgba(99, 102, 241, 0.3); border-color: rgba(99, 102, 241, 0.5);
+    }
     .root-folders-browse-close {
         background: none; border: none; color: #94a3b8; cursor: pointer; padding: 8px;
     }
@@ -378,13 +422,64 @@
         background: rgba(15, 23, 42, 0.5);
     }
     .root-folders-browse-item {
-        display: flex; align-items: center; gap: 10px; padding: 10px 14px;
-        cursor: pointer; border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.1);
         color: #e2e8f0;
     }
+    .root-folders-browse-item-main {
+        display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; cursor: pointer;
+    }
     .root-folders-browse-item:hover { background: rgba(148, 163, 184, 0.15); }
-    .root-folders-browse-item i { color: #94a3b8; }
+    .root-folders-browse-item-main i { color: #94a3b8; flex-shrink: 0; }
     .root-folders-browse-item-path { font-family: monospace; font-size: 0.9rem; word-break: break-all; }
+    .root-folders-browse-item-actions { display: flex; gap: 4px; flex-shrink: 0; opacity: 0.7; }
+    .root-folders-browse-item:hover .root-folders-browse-item-actions { opacity: 1; }
+    .root-folders-browse-item-btn {
+        padding: 4px 8px; background: transparent; border: none; color: #94a3b8;
+        cursor: pointer; border-radius: 4px; font-size: 0.8rem;
+    }
+    .root-folders-browse-item-btn:hover { background: rgba(148, 163, 184, 0.2); color: #e2e8f0; }
+    .root-folders-browse-item-btn[data-action="delete"]:hover { color: #f87171; }
+    /* Inline new-folder row */
+    .root-folders-browse-new-folder-row,
+    .root-folders-browse-delete-confirm-row {
+        display: flex; align-items: center; gap: 8px; padding: 10px 14px; margin-bottom: 8px;
+        background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.3);
+        border-radius: 8px;
+    }
+    .root-folders-browse-new-folder-row i { color: #818cf8; font-size: 1rem; flex-shrink: 0; }
+    .root-folders-browse-delete-confirm-row {
+        background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.3);
+    }
+    .root-folders-browse-delete-confirm-row i { color: #f87171; font-size: 1rem; flex-shrink: 0; }
+    .root-folders-browse-delete-confirm-row span { color: #f1f5f9; font-size: 0.9rem; font-weight: 500; }
+    .root-folders-browse-delete-hint { color: #94a3b8 !important; font-weight: 400 !important; font-size: 0.8rem !important; flex: 1; }
+    .root-folders-browse-inline-input {
+        flex: 1; padding: 7px 10px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(148, 163, 184, 0.3);
+        border-radius: 6px; color: #f8fafc; font-family: monospace; font-size: 0.9rem; box-sizing: border-box;
+    }
+    .root-folders-browse-inline-input:focus { outline: none; border-color: #6366f1; }
+    .root-folders-browse-inline-ok {
+        padding: 6px 12px; background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4);
+        border-radius: 6px; color: #6ee7b7; cursor: pointer; font-size: 0.85rem;
+    }
+    .root-folders-browse-inline-ok:hover { background: rgba(16, 185, 129, 0.3); }
+    .root-folders-browse-inline-cancel {
+        padding: 6px 12px; background: rgba(148, 163, 184, 0.15); border: 1px solid rgba(148, 163, 184, 0.3);
+        border-radius: 6px; color: #94a3b8; cursor: pointer; font-size: 0.85rem;
+    }
+    .root-folders-browse-inline-cancel:hover { background: rgba(148, 163, 184, 0.25); }
+    .root-folders-browse-inline-danger {
+        padding: 6px 12px; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4);
+        border-radius: 6px; color: #f87171; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+    }
+    .root-folders-browse-inline-danger:hover { background: rgba(239, 68, 68, 0.3); }
+    /* Inline rename input (replaces name text in a folder row) */
+    .root-folders-browse-item-rename-input {
+        flex: 1; padding: 5px 8px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(99, 102, 241, 0.4);
+        border-radius: 5px; color: #f8fafc; font-family: monospace; font-size: 0.9rem; box-sizing: border-box;
+    }
+    .root-folders-browse-item-rename-input:focus { outline: none; border-color: #6366f1; }
     .root-folders-browse-actions {
         display: flex; justify-content: flex-end; gap: 12px;
         padding: 16px 20px; border-top: 1px solid rgba(148, 163, 184, 0.2);

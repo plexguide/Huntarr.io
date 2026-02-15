@@ -319,6 +319,53 @@
             window.TVHuntRootFolders.loadBrowsePath(parent);
         },
 
+        browseCreateFolder: function() {
+            var pathInput = document.getElementById('tv-hunt-root-folders-browse-path-input');
+            if (!pathInput) return;
+            var parent = (pathInput.value || '').trim() || '/';
+            var name = (typeof prompt === 'function' && prompt('New folder name:')) || '';
+            name = (name || '').trim();
+            if (!name) return;
+            fetch('./api/tv-hunt/root-folders/browse/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ parent_path: parent, name: name })
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                if (data.success) window.TVHuntRootFolders.loadBrowsePath(parent);
+                else alert(data.error || 'Failed to create folder');
+            }).catch(function() { alert('Failed to create folder'); });
+        },
+
+        browseRenameFolder: function(path, currentName) {
+            var name = (typeof prompt === 'function' && prompt('Rename folder to:', currentName)) || '';
+            name = (name || '').trim();
+            if (!name || name === currentName) return;
+            fetch('./api/tv-hunt/root-folders/browse/rename', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: path, new_name: name })
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                if (data.success) {
+                    var parent = path.replace(/\/+$/, '').split('/').slice(0, -1).join('/') || '/';
+                    window.TVHuntRootFolders.loadBrowsePath(parent);
+                } else alert(data.error || 'Failed to rename');
+            }).catch(function() { alert('Failed to rename folder'); });
+        },
+
+        browseDeleteFolder: function(path) {
+            if (!confirm('Delete this folder? It must be empty.')) return;
+            fetch('./api/tv-hunt/root-folders/browse/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: path })
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                if (data.success) {
+                    var parent = path.replace(/\/+$/, '').split('/').slice(0, -1).join('/') || '/';
+                    window.TVHuntRootFolders.loadBrowsePath(parent);
+                } else alert(data.error || 'Failed to delete (folder may not be empty)');
+            }).catch(function() { alert('Failed to delete folder'); });
+        },
+
         loadBrowsePath: function(path) {
             var listEl = document.getElementById('tv-hunt-root-folders-browse-list');
             var pathInput = document.getElementById('tv-hunt-root-folders-browse-path-input');
@@ -349,19 +396,39 @@
                     var html = '';
                     for (var i = 0; i < dirs.length; i++) {
                         var d = dirs[i];
-                        var name = (d.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                        var rawName = d.name || '';
+                        var name = rawName.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
                         var p = (d.path || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-                        html += '<div class="root-folders-browse-item" data-path="' + p + '" title="' + p + '">' +
+                        var nameAttr = rawName.replace(/"/g, '&quot;');
+                        html += '<div class="root-folders-browse-item" data-path="' + p + '" data-name="' + nameAttr + '" title="' + p + '">' +
+                            '<span class="root-folders-browse-item-main">' +
                             '<i class="fas fa-folder"></i>' +
                             '<span class="root-folders-browse-item-path">' + name + '</span>' +
-                            '</div>';
+                            '</span>' +
+                            '<span class="root-folders-browse-item-actions">' +
+                            '<button type="button" class="root-folders-browse-item-btn" data-action="rename" title="Rename"><i class="fas fa-pen"></i></button>' +
+                            '<button type="button" class="root-folders-browse-item-btn" data-action="delete" title="Delete"><i class="fas fa-trash"></i></button>' +
+                            '</span></div>';
                     }
                     listEl.innerHTML = html || '<div style="padding: 16px; color: #64748b;">No subdirectories</div>';
                     listEl.querySelectorAll('.root-folders-browse-item').forEach(function(el) {
-                        el.onclick = function() {
-                            var p = el.getAttribute('data-path') || '';
-                            if (p) window.TVHuntRootFolders.loadBrowsePath(p);
-                        };
+                        var main = el.querySelector('.root-folders-browse-item-main');
+                        if (main) {
+                            main.onclick = function() {
+                                var p = el.getAttribute('data-path') || '';
+                                if (p) window.TVHuntRootFolders.loadBrowsePath(p);
+                            };
+                        }
+                        el.querySelectorAll('.root-folders-browse-item-btn').forEach(function(btn) {
+                            btn.onclick = function(e) {
+                                e.stopPropagation();
+                                var action = btn.getAttribute('data-action');
+                                var p = el.getAttribute('data-path') || '';
+                                var name = el.getAttribute('data-name') || '';
+                                if (action === 'rename') window.TVHuntRootFolders.browseRenameFolder(p, name);
+                                else if (action === 'delete') window.TVHuntRootFolders.browseDeleteFolder(p);
+                            };
+                        });
                     });
                 })
                 .catch(function() {
@@ -418,6 +485,8 @@
             }
             var upBtn = document.getElementById('tv-hunt-root-folders-browse-up');
             if (upBtn) upBtn.onclick = function() { self.goToParent(); };
+            var newFolderBtn = document.getElementById('tv-hunt-root-folders-browse-new-folder');
+            if (newFolderBtn) newFolderBtn.onclick = function() { self.browseCreateFolder(); };
         }
     };
 

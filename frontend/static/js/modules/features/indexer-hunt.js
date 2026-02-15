@@ -16,9 +16,10 @@
 
     function _updateSetupWizardBanner() {
         var banner = document.getElementById('indexer-setup-wizard-continue-banner');
-        if (!banner) return;
+        var callout = document.getElementById('indexer-instance-setup-callout');
         var show = window.SetupWizard && typeof window.SetupWizard.isComplete === 'function' && !window.SetupWizard.isComplete();
-        banner.style.display = show ? 'flex' : 'none';
+        if (banner) banner.style.display = show ? 'flex' : 'none';
+        if (callout) callout.style.display = show ? 'flex' : 'none';
     }
 
     IH.init = function() {
