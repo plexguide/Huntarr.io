@@ -6806,70 +6806,23 @@ document.addEventListener('DOMContentLoaded', function() {
         EXTRA_BANNER_SECTIONS.forEach(section => {
             updateSponsorBanner(sponsor, section);
         });
-    }
-
-    // --- Partner Projects (sidebar nav, under Beta) - same 1-min rotation as sponsors ---
-    function getCachedPartner() {
-        try {
-            const cached = localStorage.getItem(PARTNER_PROJECTS_CACHE_KEY);
-            if (!cached) return null;
-            const { project, timestamp } = JSON.parse(cached);
-            if (Date.now() - timestamp < CACHE_DURATION) return project;
-            localStorage.removeItem(PARTNER_PROJECTS_CACHE_KEY);
-            return null;
-        } catch (e) {
-            return null;
+        // Update sidebar "Daughter's Sponsors" slot (reuses partner-projects IDs)
+        const sidebarNameEl = document.getElementById('sidebar-partner-projects-name');
+        const sidebarNavEl = document.getElementById('sidebar-partner-projects-nav');
+        if (sidebarNameEl) sidebarNameEl.textContent = sponsor.name;
+        if (sidebarNavEl && sponsor.url) sidebarNavEl.href = sponsor.url;
+        // Update topbar sponsor chip
+        const topbarName = document.getElementById('topbar-sponsor-name');
+        const topbarBanner = document.getElementById('topbar-sponsor-banner');
+        if (topbarName) topbarName.textContent = sponsor.name;
+        if (topbarBanner && sponsor.url) {
+            topbarBanner.href = sponsor.url;
         }
     }
 
-    function cachePartner(project) {
-        try {
-            localStorage.setItem(PARTNER_PROJECTS_CACHE_KEY, JSON.stringify({ project, timestamp: Date.now() }));
-        } catch (e) {}
-    }
-
-    function getRandomPartner() {
-        if (!PARTNER_PROJECTS.length) return null;
-        return PARTNER_PROJECTS[Math.floor(Math.random() * PARTNER_PROJECTS.length)];
-    }
-
-    let partnerCurrentIndex = 0;
-
-    function updateSidebarPartnerNav(project) {
-        const nameEl = document.getElementById('sidebar-partner-projects-name');
-        const navEl = document.getElementById('sidebar-partner-projects-nav');
-        if (nameEl) nameEl.textContent = project ? project.name : 'Loading...';
-        if (navEl && project && project.url) {
-            navEl.href = project.url;
-        }
-    }
-
-    function doOnePartnerRotation() {
-        const project = PARTNER_PROJECTS[partnerCurrentIndex];
-        partnerCurrentIndex = (partnerCurrentIndex + 1) % PARTNER_PROJECTS.length;
-        if (project) {
-            updateSidebarPartnerNav(project);
-            cachePartner(project);
-        }
-    }
-
+    // Sidebar "Daughter's Sponsors" now uses the same sponsor rotation — no separate partner logic needed
     function loadPartnerProjects() {
-        const cached = getCachedPartner();
-        if (cached) {
-            updateSidebarPartnerNav(cached);
-            const idx = PARTNER_PROJECTS.findIndex(p => p.name === cached.name && p.url === cached.url);
-            partnerCurrentIndex = idx >= 0 ? (idx + 1) % PARTNER_PROJECTS.length : 0;
-        } else {
-            const project = getRandomPartner();
-            if (project) {
-                updateSidebarPartnerNav(project);
-                cachePartner(project);
-                partnerCurrentIndex = (PARTNER_PROJECTS.findIndex(p => p.name === project.name) + 1) % PARTNER_PROJECTS.length;
-            } else {
-                updateSidebarPartnerNav({ name: '—', url: '#' });
-            }
-        }
-        setInterval(doOnePartnerRotation, ROTATION_INTERVAL);
+        // No-op: sidebar sponsor slot is updated via updateAllAppBanners()
     }
 
     function doOneRotation() {

@@ -82,17 +82,18 @@
         right: 0;
         height: 2px;
         background: linear-gradient(90deg, 
-            rgba(99, 102, 241, 0.15) 0%,
-            rgba(99, 102, 241, 0.5) 20%,
-            #6366f1 40%, 
+            rgba(99, 102, 241, 0) 0%,
+            rgba(99, 102, 241, 0.4) 15%,
+            #6366f1 35%, 
             #818cf8 50%, 
-            #6366f1 60%,
-            rgba(99, 102, 241, 0.5) 80%, 
-            rgba(99, 102, 241, 0.15) 100%
+            #6366f1 65%,
+            rgba(99, 102, 241, 0.4) 85%, 
+            rgba(99, 102, 241, 0) 100%
         );
-        background-size: 100% 100%;
+        background-size: 200% 100%;
         z-index: 10;
-        opacity: 0.8;
+        opacity: 0.7;
+        animation: topbar-gradient-flow 8s ease infinite;
     }
     
     @keyframes topbar-gradient-flow {
@@ -123,6 +124,7 @@
         flex: 1;
         justify-content: flex-end;
         min-width: 0;
+        gap: 8px;
     }
 
     /* ===== PAGE TITLE ===== */

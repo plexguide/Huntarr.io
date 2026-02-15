@@ -138,13 +138,23 @@
     margin: 6px 10px 2px !important;
 }
 
+.nav-item-home .nav-icon-wrapper {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+}
+
+.nav-item-home .nav-icon-wrapper i {
+    font-size: 13px;
+}
+
 /* ===== NAV GROUPS ===== */
 .nav-group {
     margin: 0 0 2px 0;
     padding: 0;
 }
 
-/* Static group title (Partner Projects) */
+/* Static group title (Daughter's Sponsors) */
 .nav-group-title {
     font-size: 10px;
     font-weight: 700;
