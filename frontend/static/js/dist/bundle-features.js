@@ -7865,9 +7865,6 @@ window.HuntarrProwlarr = {
             var navBtn = e.target.closest('[data-wizard-nav]');
             if (navBtn) {
                 var section = navBtn.getAttribute('data-wizard-nav');
-                if (section !== 'media-hunt-collection') {
-                    _setSidebarVisible(true); // Restore sidebar when leaving wizard for config page
-                }
                 if (section && window.huntarrUI && typeof window.huntarrUI.switchSection === 'function') {
                     window.huntarrUI.switchSection(section);
                 } else if (section) {
