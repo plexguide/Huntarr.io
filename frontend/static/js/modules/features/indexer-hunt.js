@@ -17,9 +17,12 @@
     function _updateSetupWizardBanner() {
         var banner = document.getElementById('indexer-setup-wizard-continue-banner');
         var callout = document.getElementById('indexer-instance-setup-callout');
-        var show = window.SetupWizard && typeof window.SetupWizard.isComplete === 'function' && !window.SetupWizard.isComplete();
-        if (banner) banner.style.display = show ? 'flex' : 'none';
-        if (callout) callout.style.display = show ? 'flex' : 'none';
+        // Only show if user navigated here from the setup wizard
+        var fromWizard = false;
+        try { fromWizard = sessionStorage.getItem('setup-wizard-active-nav') === '1'; } catch (e) {}
+        if (fromWizard) { try { sessionStorage.removeItem('setup-wizard-active-nav'); } catch (e) {} }
+        if (banner) banner.style.display = fromWizard ? 'flex' : 'none';
+        if (callout) callout.style.display = fromWizard ? 'flex' : 'none';
     }
 
     IH.init = function() {

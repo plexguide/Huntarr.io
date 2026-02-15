@@ -778,7 +778,11 @@
         var banner = document.getElementById('root-folders-setup-wizard-continue-banner');
         var callout = document.getElementById('root-folders-instance-setup-callout');
         var statusArea = document.getElementById('root-folders-instance-status-area');
-        var showSetup = window.SetupWizard && typeof window.SetupWizard.isComplete === 'function' && !window.SetupWizard.isComplete();
+        // Only show if user navigated here from the setup wizard
+        var fromWizard = false;
+        try { fromWizard = sessionStorage.getItem('setup-wizard-active-nav') === '1'; } catch (e) {}
+        if (fromWizard) { try { sessionStorage.removeItem('setup-wizard-active-nav'); } catch (e) {} }
+        var showSetup = fromWizard;
         if (banner) banner.style.display = showSetup ? 'flex' : 'none';
         if (callout) callout.style.display = showSetup ? 'flex' : 'none';
         /* Status by instance: always visible (helps all users), not just during wizard */

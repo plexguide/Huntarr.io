@@ -2,79 +2,133 @@
 <section id="nzb-hunt-server-editor-section" class="content-section" style="display: none;">
     {% with section_id='nzb-hunt-server-editor' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <div class="nzb-hunt-container">
-        <div class="nzb-server-editor-header">
-            <button type="button" id="nzb-server-editor-back" class="nzb-btn nzb-btn-ghost">
-                <i class="fas fa-arrow-left"></i>
-                <span>Back</span>
-            </button>
-            <h2 id="nzb-server-editor-title" class="nzb-server-editor-title">Add Usenet Server</h2>
-            <div class="nzb-server-editor-actions">
-                <button type="button" id="nzb-server-editor-test" class="nzb-btn nzb-btn-ghost nzb-btn-test-subtle" title="Manually re-test connection"><i class="fas fa-plug"></i> Test</button>
-                <button type="button" id="nzb-server-editor-save" class="nzb-btn nzb-btn-primary" disabled title="Save when you make changes"><i class="fas fa-save"></i> Save</button>
+        <!-- Standard Huntarr page header bar -->
+        <div class="reqset-toolbar page-header-bar nzb-editor-toolbar">
+            <div class="reqset-toolbar-left">
+                <button type="button" id="nzb-server-editor-back" class="reqset-back-btn">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <div class="reqset-breadcrumb">
+                    <i class="fas fa-download"></i>
+                    <span>NZB Hunt</span>
+                    <i class="fas fa-chevron-right reqset-breadcrumb-sep"></i>
+                    <span id="nzb-server-editor-title">Add Server</span>
+                </div>
+            </div>
+            <div class="reqset-toolbar-right">
+                <!-- Connection status pill -->
+                <div id="nzb-server-connection-pill" class="nzb-server-connection-pill" style="display: none;">
+                    <i id="nzb-server-pill-icon" class="fas fa-circle-notch fa-spin"></i>
+                    <span id="nzb-server-pill-text">Checking...</span>
+                </div>
+                <button type="button" id="nzb-server-editor-save" class="reqset-save-btn page-header-save" disabled title="Save when you make changes">
+                    <i class="fas fa-save"></i> Save
+                </button>
             </div>
         </div>
 
-        <div class="nzb-settings-group nzb-server-editor-form">
-            <div class="nzb-form-group">
-                <label for="nzb-server-name">Name</label>
-                <input type="text" id="nzb-server-name" placeholder="e.g. EasyNews" autocomplete="off" />
-            </div>
-            <div class="nzb-form-row">
-                <div class="nzb-form-group" style="flex: 2;">
-                    <label for="nzb-server-host">Host</label>
-                    <input type="text" id="nzb-server-host" placeholder="news.provider.com" autocomplete="off" />
+        <div class="nzb-server-editor-grid">
+            <!-- Connection Section -->
+            <div class="nzb-editor-section">
+                <div class="nzb-editor-section-title">
+                    <span class="nzb-editor-section-icon nzb-editor-icon-blue"><i class="fas fa-plug"></i></span>
+                    Connection
                 </div>
-                <div class="nzb-form-group" style="flex: 1;">
-                    <label for="nzb-server-port">Port</label>
-                    <input type="number" id="nzb-server-port" value="563" min="1" max="65535" />
+                <div class="nzb-editor-section-body">
+                    <div class="nzb-form-group">
+                        <label for="nzb-server-name">Server Name</label>
+                        <input type="text" id="nzb-server-name" placeholder="e.g. Easynews, Newshosting" autocomplete="off" />
+                        <p class="nzb-form-help">A friendly name to identify this server.</p>
+                    </div>
+                    <div class="nzb-form-row">
+                        <div class="nzb-form-group" style="flex: 2;">
+                            <label for="nzb-server-host">Host</label>
+                            <input type="text" id="nzb-server-host" placeholder="news.provider.com" autocomplete="off" />
+                        </div>
+                        <div class="nzb-form-group" style="flex: 1;">
+                            <label for="nzb-server-port">Port</label>
+                            <input type="number" id="nzb-server-port" value="563" min="1" max="65535" />
+                        </div>
+                    </div>
+                    <div class="nzb-form-group">
+                        <label class="nzb-toggle-row nzb-toggle-row-huntarr">
+                            <span>SSL / TLS</span>
+                            <input type="checkbox" id="nzb-server-ssl" checked />
+                            <span class="nzb-toggle-slider-huntarr"></span>
+                        </label>
+                        <p class="nzb-form-help">Use encrypted connection. Port 563 for SSL, port 119 for plain.</p>
+                    </div>
                 </div>
-            </div>
-            <div class="nzb-form-group">
-                <label class="nzb-toggle-row">
-                    <span>SSL / TLS</span>
-                    <input type="checkbox" id="nzb-server-ssl" checked />
-                    <span class="nzb-toggle-switch"></span>
-                </label>
-            </div>
-            <div class="nzb-form-row">
-                <div class="nzb-form-group" style="flex: 1;">
-                    <label for="nzb-server-username">Username</label>
-                    <input type="text" id="nzb-server-username" placeholder="" autocomplete="off" />
-                </div>
-                <div class="nzb-form-group" style="flex: 1;">
-                    <label for="nzb-server-password">Password</label>
-                    <input type="password" id="nzb-server-password" placeholder="" autocomplete="off" />
-                </div>
-            </div>
-            <div class="nzb-form-row">
-                <div class="nzb-form-group" style="flex: 1;">
-                    <label for="nzb-server-connections">Connections</label>
-                    <input type="number" id="nzb-server-connections" value="8" min="1" max="100" />
-                </div>
-                <div class="nzb-form-group" style="flex: 1;">
-                    <label for="nzb-server-priority">Priority</label>
-                    <input type="number" id="nzb-server-priority" value="0" min="0" max="99" />
-                    <p class="nzb-priority-help">
-                        <strong>0 = highest priority, 99 = lowest.</strong> Servers with the same priority work together in parallel. 
-                        If downloads fail on higher-priority servers, NZB Hunt falls back to the next priority. 
-                        When running slow, it can still use priority servers and incorporate lower-priority ones to assist—creating a smart balance.
-                    </p>
-                </div>
-            </div>
-            <div class="nzb-form-group">
-                <label class="nzb-toggle-row">
-                    <span>Enabled</span>
-                    <input type="checkbox" id="nzb-server-enabled" checked />
-                    <span class="nzb-toggle-switch"></span>
-                </label>
             </div>
 
-            <!-- Connection Test Status -->
-            <div id="nzb-server-test-status" class="nzb-server-test-status" style="display: none;">
-                <div class="nzb-server-test-inner">
-                    <i id="nzb-server-test-icon" class="fas fa-circle-notch fa-spin"></i>
-                    <span id="nzb-server-test-msg">Testing connection...</span>
+            <!-- Authentication Section -->
+            <div class="nzb-editor-section">
+                <div class="nzb-editor-section-title">
+                    <span class="nzb-editor-section-icon nzb-editor-icon-green"><i class="fas fa-key"></i></span>
+                    Authentication
                 </div>
+                <div class="nzb-editor-section-body">
+                    <div class="nzb-form-group">
+                        <label for="nzb-server-username">Username</label>
+                        <input type="text" id="nzb-server-username" placeholder="Your provider username" autocomplete="off" />
+                    </div>
+                    <div class="nzb-form-group">
+                        <label for="nzb-server-password">Password</label>
+                        <input type="password" id="nzb-server-password" placeholder="Your provider password" autocomplete="off" />
+                    </div>
+                    <p class="nzb-form-help">Credentials from your Usenet provider. Leave blank if not required.</p>
+                </div>
+            </div>
+
+            <!-- Performance Section -->
+            <div class="nzb-editor-section">
+                <div class="nzb-editor-section-title">
+                    <span class="nzb-editor-section-icon nzb-editor-icon-amber"><i class="fas fa-tachometer-alt"></i></span>
+                    Performance
+                </div>
+                <div class="nzb-editor-section-body">
+                    <div class="nzb-form-row">
+                        <div class="nzb-form-group" style="flex: 1;">
+                            <label for="nzb-server-connections">Connections</label>
+                            <input type="number" id="nzb-server-connections" value="8" min="1" max="100" />
+                            <p class="nzb-form-help">Max simultaneous connections. Check your provider's limit.</p>
+                        </div>
+                        <div class="nzb-form-group" style="flex: 1;">
+                            <label for="nzb-server-priority">Priority</label>
+                            <input type="number" id="nzb-server-priority" value="0" min="0" max="99" />
+                            <p class="nzb-form-help"><strong>0 = highest.</strong> Same priority = parallel. Higher number = fallback.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Section -->
+            <div class="nzb-editor-section">
+                <div class="nzb-editor-section-title">
+                    <span class="nzb-editor-section-icon nzb-editor-icon-purple"><i class="fas fa-toggle-on"></i></span>
+                    Status
+                </div>
+                <div class="nzb-editor-section-body">
+                    <div class="nzb-form-group">
+                        <label class="nzb-toggle-row nzb-toggle-row-huntarr">
+                            <span>Enabled</span>
+                            <input type="checkbox" id="nzb-server-enabled" checked />
+                            <span class="nzb-toggle-slider-huntarr"></span>
+                        </label>
+                        <p class="nzb-form-help">Disabled servers will not be used for downloads.</p>
+                    </div>
+                    <button type="button" id="nzb-server-editor-test" class="nzb-btn nzb-btn-ghost nzb-btn-test-inline" title="Manually re-test connection">
+                        <i class="fas fa-plug"></i> Test Connection
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden legacy status element (kept for JS compatibility) -->
+        <div id="nzb-server-test-status" class="nzb-server-test-status" style="display: none;">
+            <div class="nzb-server-test-inner">
+                <i id="nzb-server-test-icon" class="fas fa-circle-notch fa-spin"></i>
+                <span id="nzb-server-test-msg">Testing connection...</span>
             </div>
         </div>
     </div>

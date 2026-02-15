@@ -175,8 +175,11 @@
     function updateSetupWizardBanner() {
         var banner = document.getElementById('setup-wizard-continue-banner');
         if (!banner) return;
-        var show = window.SetupWizard && typeof window.SetupWizard.isComplete === 'function' && !window.SetupWizard.isComplete();
-        banner.style.display = show ? 'flex' : 'none';
+        // Only show if user navigated here from the setup wizard
+        var fromWizard = false;
+        try { fromWizard = sessionStorage.getItem('setup-wizard-active-nav') === '1'; } catch (e) {}
+        if (fromWizard) { try { sessionStorage.removeItem('setup-wizard-active-nav'); } catch (e) {} }
+        banner.style.display = fromWizard ? 'flex' : 'none';
     }
 
     window.MediaHuntInstanceManagement.init = function() {

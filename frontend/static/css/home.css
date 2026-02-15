@@ -2273,7 +2273,43 @@ body.setup-wizard-active .app-banners-row {
     flex-shrink: 0;
 }
 
-/* Skip setup guide button */
+/* Done with setup area */
+.setup-wizard-done-area {
+    text-align: center;
+    padding: 20px 20px 24px;
+    border-top: 1px solid rgba(148, 163, 184, 0.08);
+}
+.setup-wizard-done-btn {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0.08) 100%);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    color: #a5b4fc;
+    padding: 12px 32px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+.setup-wizard-done-btn:hover {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(99, 102, 241, 0.15) 100%);
+    border-color: rgba(99, 102, 241, 0.5);
+    color: #c7d2fe;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+.setup-wizard-done-btn i {
+    font-size: 1.05rem;
+}
+.setup-wizard-done-hint {
+    margin: 10px 0 0;
+    font-size: 0.78rem;
+    color: #64748b;
+}
+
+/* Legacy skip button class (keep for JS compatibility) */
 .setup-wizard-skip-btn {
     background: none;
     border: 1px solid rgba(100, 116, 139, 0.3);

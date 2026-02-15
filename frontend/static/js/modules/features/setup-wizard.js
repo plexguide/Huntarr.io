@@ -246,7 +246,9 @@
         fetch('./api/nzb-hunt/home-stats', { cache: 'no-store' })
             .then(function(r) { return r.json(); })
             .then(function(d) {
-                cb(d.servers && d.servers.length > 0);
+                // API returns has_servers (boolean) or servers (array)
+                var hasServers = d.has_servers === true || (d.servers && d.servers.length > 0);
+                cb(hasServers);
             })
             .catch(function() { cb(false); });
     }
@@ -326,6 +328,8 @@
             var navBtn = e.target.closest('[data-wizard-nav]');
             if (navBtn) {
                 var section = navBtn.getAttribute('data-wizard-nav');
+                // Mark that user is navigating from the setup wizard
+                try { sessionStorage.setItem('setup-wizard-active-nav', '1'); } catch (e2) {}
                 if (section && window.huntarrUI && typeof window.huntarrUI.switchSection === 'function') {
                     window.huntarrUI.switchSection(section);
                 } else if (section) {

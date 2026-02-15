@@ -50,9 +50,6 @@
 
     <!-- ===== MEDIA HUNT SETUP WIZARD (full-takeover, shown when setup incomplete) ===== -->
     <div id="media-hunt-setup-wizard-view" style="display: none; padding: 20px;">
-        {% from 'components/page_header_partial.html' import page_header %}
-        {{ page_header(back_href='./#home', parent_icon='fas fa-folder-open', parent_name='Media Hunt', current_name='Setup Guide', sponsor_section_id='media-hunt-collection') }}
-
         <div class="setup-wizard" id="media-hunt-setup-wizard" style="max-width: 640px; margin: 30px auto 0;">
             <div class="setup-wizard-header">
                 <div class="setup-wizard-icon">
@@ -173,11 +170,12 @@
                 </div>
             </div>
 
-            <!-- Skip button -->
-            <div style="text-align: center; padding: 18px 20px;">
-                <button type="button" id="setup-wizard-skip" class="setup-wizard-skip-btn">
-                    <i class="fas fa-forward"></i> Skip Setup Guide
+            <!-- Done / Skip actions -->
+            <div class="setup-wizard-done-area">
+                <button type="button" id="setup-wizard-skip" class="setup-wizard-done-btn">
+                    <i class="fas fa-check-circle"></i> Done with Setup
                 </button>
+                <p class="setup-wizard-done-hint">You can always return to configure more later from Settings.</p>
             </div>
         </div>
     </div>

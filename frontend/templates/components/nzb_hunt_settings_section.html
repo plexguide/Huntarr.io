@@ -1,9 +1,28 @@
 <!-- NZB Hunt Settings Section - Standalone module (independent of Movie Hunt / Requestarr) -->
 <section id="nzb-hunt-settings-section" class="content-section" style="display: none;">
     <link rel="stylesheet" href="./static/css/nzb-hunt.css">
-    {% from 'components/page_header_partial.html' import page_header %}
     <div class="nzb-hunt-settings-header page-header-bar-container">
-        {{ page_header(back_href='./#nzb-hunt-home', parent_icon='fas fa-download', parent_name='NZB Hunt', current_name='Folders', sponsor_section_id='nzb-hunt-settings', current_name_id='nzb-hunt-settings-breadcrumb-current') }}
+        <div class="reqset-toolbar page-header-bar">
+            <div class="reqset-toolbar-left">
+                <a href="./#nzb-hunt-home" class="reqset-back-btn">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+                <div class="reqset-breadcrumb">
+                    <i class="fas fa-download"></i>
+                    <span>NZB Hunt</span>
+                    <i class="fas fa-chevron-right reqset-breadcrumb-sep"></i>
+                    <span id="nzb-hunt-settings-breadcrumb-current">Folders</span>
+                </div>
+            </div>
+            <div class="reqset-toolbar-right">
+                <button type="button" id="nzb-save-advanced-header" class="reqset-save-btn page-header-save" style="display: none;">
+                    <i class="fas fa-save"></i> Save
+                </button>
+                <span id="nzb-hunt-settings-sponsor-slot">
+                    {% with section_id='nzb-hunt-settings' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
+                </span>
+            </div>
+        </div>
     </div>
     <div class="nzb-hunt-container">
 
@@ -61,6 +80,14 @@
 
         <!-- ═══════ Servers Panel ═══════ -->
         <div class="nzb-settings-panel" data-settings-panel="servers" style="display: none;">
+            <!-- Continue to Setup Guide banner (shown when wizard incomplete) -->
+            <div id="nzb-servers-setup-wizard-continue-banner" class="setup-wizard-continue-banner" style="display: none; margin-bottom: 16px;">
+                <i class="fas fa-arrow-right"></i>
+                <span>Done adding servers? Continue to the next step in the Setup Guide.</span>
+                <button type="button" class="setup-wizard-continue-btn" data-wizard-nav="media-hunt-collection">
+                    <i class="fas fa-forward"></i> Continue to Setup Guide
+                </button>
+            </div>
             <div class="nzb-settings-group">
                 <h3><i class="fas fa-server" style="color: #3b82f6; margin-right: 8px;"></i>Usenet Servers</h3>
                 <p class="nzb-settings-help">Add your Usenet provider connections. Servers are tried in priority order (lower number = higher priority).</p>
@@ -177,9 +204,9 @@
                             <label class="nzb-adv-setting-label">Abort jobs that cannot be completed</label>
                             <p class="nzb-adv-setting-help">When during download it becomes clear that too much data is missing, abort the job.</p>
                             <div class="nzb-adv-setting-input">
-                                <label class="nzb-toggle-row" style="margin:0;">
+                                <label class="nzb-toggle-row nzb-toggle-row-huntarr" style="margin:0;">
                                     <input type="checkbox" id="nzb-proc-abort-hopeless" checked />
-                                    <span class="nzb-toggle-switch"></span>
+                                    <span class="nzb-toggle-slider-huntarr"></span>
                                 </label>
                             </div>
                         </div>
@@ -202,9 +229,9 @@
                             <label class="nzb-adv-setting-label">Disconnect on empty queue</label>
                             <p class="nzb-adv-setting-help">Disconnect from Usenet server(s) when queue is empty or paused.</p>
                             <div class="nzb-adv-setting-input">
-                                <label class="nzb-toggle-row" style="margin:0;">
+                                <label class="nzb-toggle-row nzb-toggle-row-huntarr" style="margin:0;">
                                     <input type="checkbox" id="nzb-proc-disconnect-empty" checked />
-                                    <span class="nzb-toggle-switch"></span>
+                                    <span class="nzb-toggle-slider-huntarr"></span>
                                 </label>
                             </div>
                         </div>
@@ -234,9 +261,9 @@
                             <label class="nzb-adv-setting-label">Allow proper releases</label>
                             <p class="nzb-adv-setting-help">Bypass smart duplicate detection when PROPER, REAL, or REPACK is detected in the new download name. Allows upgrades.</p>
                             <div class="nzb-adv-setting-input">
-                                <label class="nzb-toggle-row" style="margin:0;">
+                                <label class="nzb-toggle-row nzb-toggle-row-huntarr" style="margin:0;">
                                     <input type="checkbox" id="nzb-proc-allow-proper" checked />
-                                    <span class="nzb-toggle-switch"></span>
+                                    <span class="nzb-toggle-slider-huntarr"></span>
                                 </label>
                             </div>
                         </div>
@@ -255,9 +282,9 @@
                             <label class="nzb-adv-setting-label">Direct Unpack</label>
                             <p class="nzb-adv-setting-help">Jobs will start unpacking during downloading. Only works for jobs that do not need repair.</p>
                             <div class="nzb-adv-setting-input">
-                                <label class="nzb-toggle-row" style="margin:0;">
+                                <label class="nzb-toggle-row nzb-toggle-row-huntarr" style="margin:0;">
                                     <input type="checkbox" id="nzb-proc-direct-unpack" />
-                                    <span class="nzb-toggle-switch"></span>
+                                    <span class="nzb-toggle-slider-huntarr"></span>
                                 </label>
                             </div>
                         </div>
@@ -288,9 +315,7 @@
                 </div>
             </div>
 
-            <div class="nzb-settings-footer" style="margin-top: 28px;">
-                <button class="nzb-btn nzb-btn-primary" id="nzb-save-advanced"><i class="fas fa-save"></i> Save Advanced</button>
-            </div>
+            <!-- Save button is in the page header bar -->
         </div>
 
     </div>

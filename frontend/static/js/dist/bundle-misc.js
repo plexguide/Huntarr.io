@@ -3082,6 +3082,7 @@
             this._loadCategories();
             this._loadAdvanced();
             this._loadProcessing();
+            this._updateNzbServersSetupBanner();
             console.log('[NzbHunt] Settings initialized');
         },
 
@@ -3229,6 +3230,32 @@
                 var labels = { folders: 'Folders', servers: 'Servers', advanced: 'Advanced' };
                 bc.textContent = labels[tab] || tab;
             }
+            // Toggle header save button vs sponsor based on tab
+            var headerSave = document.getElementById('nzb-save-advanced-header');
+            var sponsorSlot = document.getElementById('nzb-hunt-settings-sponsor-slot');
+            if (tab === 'advanced') {
+                if (headerSave) headerSave.style.display = '';
+                if (sponsorSlot) sponsorSlot.style.display = 'none';
+            } else {
+                if (headerSave) headerSave.style.display = 'none';
+                if (sponsorSlot) sponsorSlot.style.display = '';
+            }
+            // Show/hide setup wizard continue banner on servers tab
+            if (tab === 'servers') {
+                this._updateNzbServersSetupBanner();
+            }
+        },
+
+        _updateNzbServersSetupBanner: function () {
+            var banner = document.getElementById('nzb-servers-setup-wizard-continue-banner');
+            if (!banner) return;
+            // Only show if user navigated here from the setup wizard (not on direct page load)
+            var fromWizard = false;
+            try { fromWizard = sessionStorage.getItem('setup-wizard-active-nav') === '1'; } catch (e) {}
+            if (fromWizard) {
+                try { sessionStorage.removeItem('setup-wizard-active-nav'); } catch (e) {}
+            }
+            banner.style.display = fromWizard ? 'flex' : 'none';
         },
 
         /* ──────────────────────────────────────────────
@@ -3596,7 +3623,7 @@
                 : null;
 
             var title = document.getElementById('nzb-server-editor-title');
-            if (title) title.textContent = server ? 'Edit Usenet Server' : 'Add Usenet Server';
+            if (title) title.textContent = server ? 'Edit Server' : 'Add Server';
 
             // Fill fields
             var f = function (id, val) { var el = document.getElementById(id); if (el) { if (el.type === 'checkbox') el.checked = val; else el.value = val; } };
@@ -3825,28 +3852,50 @@
                 el.style.display = 'none';
                 el.className = 'nzb-server-test-status';
             }
+            // Also reset pill
+            var pill = document.getElementById('nzb-server-connection-pill');
+            if (pill) pill.style.display = 'none';
         },
 
         _showTestStatus: function (state, message) {
+            // Update legacy status bar (hidden but kept for compatibility)
             var el = document.getElementById('nzb-server-test-status');
             var icon = document.getElementById('nzb-server-test-icon');
             var msg = document.getElementById('nzb-server-test-msg');
-            if (!el) return;
-
-            el.style.display = 'block';
-            el.className = 'nzb-server-test-status test-' + state;
-
-            if (icon) {
-                if (state === 'testing') {
-                    icon.className = 'fas fa-circle-notch fa-spin';
-                } else if (state === 'success') {
-                    icon.className = 'fas fa-check-circle';
-                } else {
-                    icon.className = 'fas fa-times-circle';
+            if (el) {
+                el.style.display = 'block';
+                el.className = 'nzb-server-test-status test-' + state;
+                if (icon) {
+                    if (state === 'testing') icon.className = 'fas fa-circle-notch fa-spin';
+                    else if (state === 'success') icon.className = 'fas fa-check-circle';
+                    else icon.className = 'fas fa-times-circle';
                 }
+                if (msg) msg.textContent = message;
             }
 
-            if (msg) msg.textContent = message;
+            // Update connection pill in header
+            var pill = document.getElementById('nzb-server-connection-pill');
+            var pillIcon = document.getElementById('nzb-server-pill-icon');
+            var pillText = document.getElementById('nzb-server-pill-text');
+            if (pill) {
+                pill.style.display = 'inline-flex';
+                pill.className = 'nzb-server-connection-pill pill-' + (state === 'testing' ? 'checking' : state);
+                if (pillIcon) {
+                    if (state === 'testing') pillIcon.className = 'fas fa-circle-notch fa-spin';
+                    else if (state === 'success') pillIcon.className = 'fas fa-check-circle';
+                    else pillIcon.className = 'fas fa-times-circle';
+                }
+                if (pillText) {
+                    // Show short text in pill
+                    if (state === 'testing') pillText.textContent = 'Checking...';
+                    else if (state === 'success') {
+                        var host = (document.getElementById('nzb-server-host') || {}).value || '';
+                        pillText.textContent = 'Connected' + (host ? ' to ' + host.trim() : '');
+                    } else {
+                        pillText.textContent = 'Connection Failed';
+                    }
+                }
+            }
         },
 
         _testServerConnection: function (callback) {
@@ -4038,6 +4087,12 @@
         ────────────────────────────────────────────── */
         _setupAdvanced: function () {
             var self = this;
+            // Header save button (primary)
+            var headerSaveBtn = document.getElementById('nzb-save-advanced-header');
+            if (headerSaveBtn) {
+                headerSaveBtn.addEventListener('click', function () { self._saveAdvanced(); });
+            }
+            // Legacy bottom save button (fallback)
             var saveBtn = document.getElementById('nzb-save-advanced');
             if (saveBtn) {
                 saveBtn.addEventListener('click', function () { self._saveAdvanced(); });
@@ -4176,9 +4231,12 @@
     function _updateSetupWizardBanner() {
         var banner = document.getElementById('indexer-setup-wizard-continue-banner');
         var callout = document.getElementById('indexer-instance-setup-callout');
-        var show = window.SetupWizard && typeof window.SetupWizard.isComplete === 'function' && !window.SetupWizard.isComplete();
-        if (banner) banner.style.display = show ? 'flex' : 'none';
-        if (callout) callout.style.display = show ? 'flex' : 'none';
+        // Only show if user navigated here from the setup wizard
+        var fromWizard = false;
+        try { fromWizard = sessionStorage.getItem('setup-wizard-active-nav') === '1'; } catch (e) {}
+        if (fromWizard) { try { sessionStorage.removeItem('setup-wizard-active-nav'); } catch (e) {} }
+        if (banner) banner.style.display = fromWizard ? 'flex' : 'none';
+        if (callout) callout.style.display = fromWizard ? 'flex' : 'none';
     }
 
     IH.init = function() {
