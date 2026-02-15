@@ -1,9 +1,6 @@
 <section id="homeSection" class="content-section">
     <link rel="stylesheet" href="./static/css/home.css">
     
-    <!-- Daughter's Sponsor — upper right only, no toolbar -->
-    {% with section_id='home' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
-    
     <!-- NZB Hunt: Warning when no Usenet servers configured (shown by default, hidden via JS when servers exist) -->
     <div class="nzb-hunt-home-warning" id="nzb-hunt-home-warning">
         <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>

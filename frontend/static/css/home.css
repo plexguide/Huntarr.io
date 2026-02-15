@@ -1362,10 +1362,7 @@
 .sponsor-icon a img { transition: transform 0.3s ease; }
 .sponsor-icon a:hover img { transform: scale(1.05); }
 
-/* ── Home: Daughter's Sponsor only, upper right ── */
-#homeSection .app-banners-row {
-    margin-bottom: 12px;
-}
+/* Sponsor banners moved to sidebar — hidden globally */
 
 /* ── Stats Card (Live Hunts / Swaparr / Prowlarr containers) ───── */
 .stats-card {

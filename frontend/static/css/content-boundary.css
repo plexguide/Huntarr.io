@@ -1,154 +1,43 @@
 /* ==========================================================================
-   Content Boundary — Single source of truth for page content width
-   All pages: sponsor banners, headers, content align to Import Media template.
-   Left edge: Back button | Right edge: Scan Folders / Partner Projects
+   Content Boundary — Single source of truth for page content layout
+   Full-width with standardized gap on both sides.
+   Change --page-gap in variables.css to adjust globally.
    ========================================================================== */
 
-:root {
-    --content-max-width: 1200px;
+/* All content sections: full width with consistent side gap */
+.content-section {
+    padding-left: var(--page-gap, 15px) !important;
+    padding-right: var(--page-gap, 15px) !important;
 }
 
-/* Wrapper class: single constrained block for sections that need it */
-.content-boundary-inner {
-    max-width: var(--content-max-width) !important;
-    width: 100% !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    box-sizing: border-box;
-}
-
-/* Constrain all direct content children of content-section to same width.
-   Excludes modals (position:fixed) and link tags. */
+/* Direct children stretch full width — no max-width cap */
 .content-section > div:not([class*="modal"]):not([id*="modal"]),
 .content-section > section {
-    max-width: var(--content-max-width) !important;
     width: 100% !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
+    max-width: 100% !important;
     box-sizing: border-box;
 }
 
-/* Explicit overrides — ensure boundary wins over section-specific CSS */
-#backupRestoreSection .app-content-panel,
-#notificationsSection .app-content-panel,
-#userSection .app-content-panel,
-#sonarrSection .app-banners-row,
-#sonarrSection .reqset-toolbar,
-#sonarrSection .app-content-panel,
-#sonarrSection #sonarrApps,
-#radarrSection .app-banners-row,
-#radarrSection .reqset-toolbar,
-#radarrSection .app-content-panel,
-#radarrSection #radarrApps,
-#lidarrSection .app-banners-row,
-#lidarrSection .reqset-toolbar,
-#lidarrSection .app-content-panel,
-#lidarrSection #lidarrApps,
-#readarrSection .app-banners-row,
-#readarrSection .reqset-toolbar,
-#readarrSection .app-content-panel,
-#readarrSection #readarrApps,
-#whisparrSection .app-banners-row,
-#whisparrSection .reqset-toolbar,
-#whisparrSection .app-content-panel,
-#whisparrSection #whisparrApps,
-#erosSection .app-banners-row,
-#erosSection .reqset-toolbar,
-#erosSection .app-content-panel,
-#erosSection #erosApps,
-#prowlarrSection .app-banners-row,
-#prowlarrSection .reqset-toolbar,
-#prowlarrSection .app-content-panel,
-#prowlarrSection #prowlarrContainer,
-#swaparrSection .app-banners-row,
-#swaparrSection .reqset-toolbar,
-#swaparrSection .single-scroll-container,
-#appsSection .app-banners-row,
-#appsSection .reqset-toolbar,
-#appsSection .apps-dashboard,
-#instanceEditorSection .app-banners-row,
-#instanceEditorSection #instanceEditorContainer,
-#movieHuntInstanceEditorSection .app-banners-row,
-#movieHuntInstanceEditorSection #movieHuntInstanceEditorContainer,
-#mediaHuntInstanceEditorSection .app-banners-row,
-#mediaHuntInstanceEditorSection #mediaHuntInstanceEditorContainer,
-/* Home, System, Requestarr, Media Hunt */
-#homeSection .dashboard-grid,
-#homeSection .app-banners-row,
-#systemSection .app-banners-row,
-#systemSection .system-tab-panel,
-#requestarr-section .app-banners-row,
-#requestarr-section .reqset-toolbar,
-#requestarr-section .requestarr-content,
-#mediaHuntSection .app-banners-row,
-#mediaHuntSection .requestarr-content,
-#mediaHuntSection .media-hunt-collection-view,
-/* Indexer Hunt */
-#indexer-hunt-section .app-banners-row,
-#indexer-hunt-section .reqset-toolbar,
-#indexer-hunt-section .app-content-panel,
-#indexer-hunt-stats-section .app-banners-row,
-#indexer-hunt-stats-section .app-content-panel,
-#indexer-hunt-history-section .app-banners-row,
-#indexer-hunt-history-section .app-content-panel,
-/* NZB Hunt */
-#nzb-hunt-section .app-banners-row,
-#nzb-hunt-section .nzb-hunt-container,
-#nzb-hunt-activity-section .app-banners-row,
-#nzb-hunt-activity-section .nzb-hunt-container,
-#nzb-hunt-settings-section .app-banners-row,
-#nzb-hunt-settings-section .nzb-hunt-container,
-#nzb-hunt-server-editor-section .app-banners-row,
-#nzb-hunt-server-editor-section .nzb-hunt-container,
-/* Media Hunt sub-pages */
-#mediaHuntCalendarSection .app-banners-row,
-#mediaHuntCalendarSection .app-content-panel,
-#mediaHuntProfilesSection .app-banners-row,
-#mediaHuntProfilesSection .app-content-panel,
-#tvHuntActivitySection .app-banners-row,
-#tvHuntActivitySection .app-content-panel,
-#mediaHuntInstanceManagementSection .app-banners-row,
-#mediaHuntInstanceManagementSection .app-content-panel,
-#media-hunt-settings-default-section .app-banners-row,
-#media-hunt-settings-default-section .app-content-panel,
-/* Settings */
-#settingsSection .app-banners-row,
-#settingsSection .app-content-panel,
-#settingsLogsSection .app-banners-row,
-#settingsLogsSection .app-content-panel,
-#schedulingSection .app-banners-row,
-#schedulingSection .reqset-toolbar,
-#schedulingSection .sched-container,
-/* Other */
-#profileEditorSection .app-banners-row,
-#profileEditorSection .app-content-panel,
-#historySection .section-header,
-#historySection .history-container,
-#historySection .pagination-controls,
-#movieManagementSection .app-content-panel,
-#settingsSizesSection .app-content-panel,
-#settingsCustomFormatsSection .app-content-panel,
-#settingsIndexersSection .app-content-panel,
-#settingsClientsSection .app-content-panel,
-#settingsImportListsSection .app-content-panel,
-#settingsRootFoldersSection .app-content-panel,
-#mediaHuntSettingsImportMediaSection .app-banners-row,
-#mediaHuntSettingsImportMediaSection .app-content-panel,
-#tvHuntSettingsRootFoldersSection .app-banners-row,
-#tvHuntSettingsRootFoldersSection .app-content-panel,
-#tvHuntSettingsSizesSection .app-banners-row,
-#tvHuntSettingsSizesSection .app-content-panel,
-#tvHuntSettingsImportListsSection .app-banners-row,
-#tvHuntSettingsImportListsSection .app-content-panel,
-#tvHuntSettingsTVManagementSection .app-banners-row,
-#tvHuntSettingsTVManagementSection .app-content-panel,
-#tvHuntSettingsClientsSection .app-banners-row,
-#tvHuntSettingsClientsSection .app-content-panel,
-#tvHuntSettingsIndexersSection .app-banners-row,
-#tvHuntSettingsIndexersSection .app-content-panel,
-#tvHuntSettingsCustomFormatsSection .app-banners-row,
-#tvHuntSettingsCustomFormatsSection .app-content-panel {
-    max-width: var(--content-max-width) !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
+/* Explicit overrides — ensure all page panels, toolbars, etc. go full width */
+.app-content-panel,
+.reqset-toolbar,
+.app-banners-row,
+.dashboard-grid,
+.sched-container,
+.requestarr-content,
+.media-hunt-collection-view,
+.nzb-hunt-container,
+.system-tab-panel,
+.content-boundary-inner {
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box;
+}
+
+/* Mobile: tighter gap */
+@media (max-width: 768px) {
+    .content-section {
+        padding-left: var(--page-gap-mobile, 10px) !important;
+        padding-right: var(--page-gap-mobile, 10px) !important;
+    }
 }

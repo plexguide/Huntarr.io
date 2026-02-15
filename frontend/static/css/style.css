@@ -1493,14 +1493,9 @@ label .info-icon ~ text {
     cursor: not-allowed !important;
 }
 
-/* Daughter's Sponsor — slick badge design */
+/* Daughter's Sponsor — moved to sidebar; banners hidden on all pages */
 .app-banners-row {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 10px;
-    margin: 0 0 12px 0;
-    flex-wrap: wrap;
+    display: none !important;
 }
 
 .app-sponsor-banner {

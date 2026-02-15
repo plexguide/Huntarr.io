@@ -29,7 +29,7 @@
     overflow: auto !important;
     opacity: 1;
     z-index: 1;
-    padding: 10px 20px;
+    padding: 15px var(--page-gap, 15px);
 }
 
 /* Dashboard Cards */
@@ -39,25 +39,36 @@
     gap: 20px;
 }
 
-.card {
-    background: linear-gradient(135deg, rgba(17, 24, 39, 0.95) 0%, rgba(15, 23, 42, 0.95) 50%, rgba(17, 24, 39, 0.95) 100%);
+/* ===== GLASS CARD — unified frosted glass surface ===== */
+.card,
+.glass-card {
+    background: var(--glass-bg, rgba(17, 24, 39, 0.65));
+    backdrop-filter: blur(var(--glass-blur, 12px));
+    -webkit-backdrop-filter: blur(var(--glass-blur, 12px));
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--glass-shadow);
     padding: 20px;
     position: relative;
-    border: 1px solid var(--border-color-light);
+    border: 1px solid var(--glass-border, rgba(99, 102, 241, 0.08));
     overflow: hidden;
-    transition: box-shadow var(--transition-base), transform var(--transition-base);
+    transition: border-color var(--transition-base), box-shadow var(--transition-base);
 }
 
-.card::before {
+.card:hover,
+.glass-card:hover {
+    border-color: rgba(99, 102, 241, 0.14);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(99, 102, 241, 0.06);
+}
+
+.card::before,
+.glass-card::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 2px;
-    background: linear-gradient(90deg, rgba(99, 102, 241, 0.4), rgba(129, 140, 248, 0.2));
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.3), rgba(129, 140, 248, 0.15), transparent);
     opacity: 0.7;
 }
 
@@ -463,6 +474,209 @@
 .styled-select:focus, .styled-select:hover {
     background: var(--accent-hover);
     box-shadow: 0 0 10px var(--accent-glow);
+}
+
+/* ==========================================================================
+   Unified Form Styles — Consistent inputs, selects, textareas, toggles
+   Use these as the base. Page-specific CSS should only ADD, not override.
+   ========================================================================== */
+
+/* ── Inputs & Textareas ── */
+.huntarr-input,
+input[type="text"],
+input[type="number"],
+input[type="password"],
+input[type="url"],
+input[type="email"],
+textarea,
+select {
+    width: 100%;
+    height: var(--input-height, 42px);
+    padding: 10px 14px;
+    border-radius: var(--input-radius, 8px);
+    border: 1px solid var(--input-border, rgba(71, 85, 105, 0.4));
+    background: var(--input-bg, rgba(15, 23, 42, 0.6));
+    color: var(--input-text, #e2e8f0);
+    font-size: 0.9rem;
+    font-family: inherit;
+    line-height: 1.4;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    box-sizing: border-box;
+    outline: none;
+}
+
+textarea {
+    height: auto;
+    min-height: 80px;
+    resize: vertical;
+}
+
+.huntarr-input:focus,
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="password"]:focus,
+input[type="url"]:focus,
+input[type="email"]:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--input-focus-border, rgba(99, 102, 241, 0.5));
+    box-shadow: var(--input-focus-glow, 0 0 0 3px rgba(99, 102, 241, 0.1));
+    background: rgba(15, 23, 42, 0.75);
+}
+
+.huntarr-input::placeholder,
+input::placeholder,
+textarea::placeholder {
+    color: var(--input-placeholder, #64748b);
+}
+
+/* ── Selects / Dropdowns ── */
+select,
+.huntarr-select {
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 38px;
+}
+
+select option {
+    background: var(--bg-secondary, #111827);
+    color: var(--text-primary, #f8fafc);
+    padding: 8px 12px;
+}
+
+/* ── Floating Label Groups ── */
+.form-group {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    color: var(--text-muted, #94a3b8);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+    transition: color 0.2s ease;
+}
+
+.form-group:focus-within label {
+    color: var(--accent-secondary, #a5b4fc);
+}
+
+/* Setting item pattern (used across settings pages) */
+.setting-item {
+    margin-bottom: 20px;
+}
+
+.setting-item label {
+    display: block;
+    color: #e2e8f0;
+    font-weight: 500;
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+}
+
+.setting-help {
+    color: #64748b;
+    font-size: 0.82rem;
+    margin-top: 4px;
+    line-height: 1.5;
+}
+
+/* ── Toggle Switches ── */
+.toggle-switch {
+    position: relative;
+    display: inline-flex;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: var(--switch-bg, #334155);
+    border-radius: 24px;
+    border: 1px solid rgba(71, 85, 105, 0.3);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    left: 2px;
+    bottom: 2px;
+    background: #e2e8f0;
+    border-radius: 50%;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+input:checked + .toggle-slider {
+    background: var(--accent-color, #6366f1);
+    border-color: rgba(99, 102, 241, 0.5);
+}
+
+input:checked + .toggle-slider::before {
+    transform: translateX(20px);
+}
+
+/* ── Buttons (unified) ── */
+.btn-primary,
+.huntarr-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: #fff;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    line-height: 1.2;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.25);
+}
+
+.btn-primary:hover,
+.huntarr-btn-primary:hover {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+}
+
+.btn-primary:disabled,
+.huntarr-btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* ── App Banners Row (sponsor) — hidden since sponsors moved to sidebar ── */
+.app-banners-row {
+    display: none !important;
 }
 
 /* Responsive adjustments */

@@ -1,5 +1,4 @@
 <section id="settingsSection" class="content-section">
-    {% with section_id='settings' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <div class="app-content-panel" style="padding: 20px;">
         {% from 'components/page_header_partial.html' import page_header %}
         {{ page_header(back_href='./#home', parent_icon='fas fa-cog', parent_name='Settings', current_name='Main', save_button_id='settings-save-button') }}

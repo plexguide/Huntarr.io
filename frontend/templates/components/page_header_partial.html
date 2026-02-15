@@ -21,8 +21,6 @@
         <button type="button" id="{{ save_button_id }}" class="reqset-save-btn page-header-save {% if save_button_class %}{{ save_button_class }}{% endif %}" disabled>
             <i class="fas fa-save"></i> Save
         </button>
-        {% elif sponsor_section_id %}
-        {% with section_id=sponsor_section_id %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
         {% endif %}
     </div>
 </div>

@@ -60,6 +60,26 @@
     --log-bg:     #111827;
     --log-border: rgba(71, 85, 105, 0.35);
 
+    /* ── Page Layout ─────────────────────────────────────────── */
+    --page-gap:         15px;  /* gap on left & right of content */
+    --page-gap-mobile:  10px;
+
+    /* ── Glass Card Surface ──────────────────────────────────── */
+    --glass-bg:         rgba(17, 24, 39, 0.65);
+    --glass-border:     rgba(99, 102, 241, 0.08);
+    --glass-blur:       12px;
+    --glass-shadow:     0 4px 24px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(99, 102, 241, 0.04);
+
+    /* ── Form Inputs ─────────────────────────────────────────── */
+    --input-bg:         rgba(15, 23, 42, 0.6);
+    --input-border:     rgba(71, 85, 105, 0.4);
+    --input-focus-border: rgba(99, 102, 241, 0.5);
+    --input-focus-glow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    --input-text:       #e2e8f0;
+    --input-placeholder: #64748b;
+    --input-height:     42px;
+    --input-radius:     8px;
+
     /* ── Radius Scale ─────────────────────────────────────────── */
     --radius-sm:  6px;
     --radius-md:  8px;
