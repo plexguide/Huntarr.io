@@ -50,6 +50,7 @@
             var view = document.getElementById('media-hunt-setup-wizard-view');
             if (view) view.style.display = '';
             _setSidebarVisible(false);
+            _setSponsorsVisible(false);
             _updateStepUI();
             _expandFirstIncomplete();
             _maybeShowReturnBanner();
@@ -62,6 +63,7 @@
             var view = document.getElementById('media-hunt-setup-wizard-view');
             if (view) view.style.display = 'none';
             _setSidebarVisible(true);
+            _setSponsorsVisible(true);
         },
 
         /**
@@ -129,6 +131,14 @@
     function _setSidebarVisible(visible) {
         var wrapper = document.getElementById('sidebar-wrapper');
         if (wrapper) wrapper.style.display = visible ? '' : 'none';
+    }
+
+    function _setSponsorsVisible(visible) {
+        if (visible) {
+            document.body.classList.remove('setup-wizard-active');
+        } else {
+            document.body.classList.add('setup-wizard-active');
+        }
     }
 
     function _maybeShowReturnBanner() {

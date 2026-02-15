@@ -1875,6 +1875,11 @@
    SETUP WIZARD — step-by-step configuration guide on Home page
    ═══════════════════════════════════════════════════════════════════ */
 
+/* Hide sponsor banners during setup wizard (sidebar is also hidden) */
+body.setup-wizard-active .app-banners-row {
+    display: none !important;
+}
+
 .setup-wizard {
     background: rgba(15, 20, 30, 0.6);
     border: 1px solid rgba(90, 109, 137, 0.25);

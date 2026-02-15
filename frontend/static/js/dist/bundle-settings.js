@@ -8575,9 +8575,7 @@ document.head.appendChild(styleEl);
                 sf('./api/movie-hunt/instances?t=' + ts, { instances: [] }),
                 sf('./api/tv-hunt/instances?t=' + ts, { instances: [] }),
                 sf('./api/movie-hunt/instances/current?t=' + ts, { current_instance_id: null }),
-                sf('./api/tv-hunt/instances/current?t=' + ts, { current_instance_id: null }),
-                sf('./api/indexer-hunt/indexers?t=' + ts, { indexers: [] }),
-                sf('./api/movie-hunt/has-clients?t=' + ts, { has_clients: false })
+                sf('./api/tv-hunt/instances/current?t=' + ts, { current_instance_id: null })
             ]).then(function(results) {
                 var movieList = (results[0].instances || []).map(function(inst) {
                     return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
@@ -8595,48 +8593,8 @@ document.head.appendChild(styleEl);
                     emptyOpt.value = '';
                     emptyOpt.textContent = 'No Movie or TV Hunt instances';
                     selectEl.appendChild(emptyOpt);
-                    var noInstEl = document.getElementById('settings-root-folders-no-instances');
-                    var noIdxEl = document.getElementById('settings-root-folders-no-indexers');
-                    var noCliEl = document.getElementById('settings-root-folders-no-clients');
                     var wrapperEl = document.getElementById('settings-root-folders-content-wrapper');
-                    if (noInstEl) noInstEl.style.display = '';
-                    if (noIdxEl) noIdxEl.style.display = 'none';
-                    if (noCliEl) noCliEl.style.display = 'none';
-                    if (wrapperEl) wrapperEl.style.display = 'none';
-                    return;
-                }
-                var indexerCount = (results[4].indexers || []).length;
-                if (indexerCount === 0) {
-                    selectEl.innerHTML = '';
-                    var emptyOpt = document.createElement('option');
-                    emptyOpt.value = '';
-                    emptyOpt.textContent = 'No indexers configured';
-                    selectEl.appendChild(emptyOpt);
-                    var noInstEl = document.getElementById('settings-root-folders-no-instances');
-                    var noIdxEl = document.getElementById('settings-root-folders-no-indexers');
-                    var noCliEl = document.getElementById('settings-root-folders-no-clients');
-                    var wrapperEl = document.getElementById('settings-root-folders-content-wrapper');
-                    if (noInstEl) noInstEl.style.display = 'none';
-                    if (noIdxEl) noIdxEl.style.display = '';
-                    if (noCliEl) noCliEl.style.display = 'none';
-                    if (wrapperEl) wrapperEl.style.display = 'none';
-                    return;
-                }
-                var hasClients = results[5].has_clients === true;
-                if (!hasClients) {
-                    selectEl.innerHTML = '';
-                    var emptyOpt = document.createElement('option');
-                    emptyOpt.value = '';
-                    emptyOpt.textContent = 'No clients configured';
-                    selectEl.appendChild(emptyOpt);
-                    var noInstEl = document.getElementById('settings-root-folders-no-instances');
-                    var noIdxEl = document.getElementById('settings-root-folders-no-indexers');
-                    var noCliEl = document.getElementById('settings-root-folders-no-clients');
-                    var wrapperEl = document.getElementById('settings-root-folders-content-wrapper');
-                    if (noInstEl) noInstEl.style.display = 'none';
-                    if (noIdxEl) noIdxEl.style.display = 'none';
-                    if (noCliEl) noCliEl.style.display = '';
-                    if (wrapperEl) wrapperEl.style.display = 'none';
+                    if (wrapperEl) wrapperEl.style.display = '';
                     return;
                 }
                 combined.forEach(function(item) {
@@ -8665,13 +8623,7 @@ document.head.appendChild(styleEl);
                 selectEl.value = selected;
                 self._applyRequestarrGotoInstance(selectEl);
                 selected = selectEl.value || selected;
-                var noInstEl = document.getElementById('settings-root-folders-no-instances');
-                var noIdxEl = document.getElementById('settings-root-folders-no-indexers');
-                var noCliEl = document.getElementById('settings-root-folders-no-clients');
                 var wrapperEl = document.getElementById('settings-root-folders-content-wrapper');
-                if (noInstEl) noInstEl.style.display = 'none';
-                if (noIdxEl) noIdxEl.style.display = 'none';
-                if (noCliEl) noCliEl.style.display = 'none';
                 if (wrapperEl) wrapperEl.style.display = '';
                 var parts = (selected || '').split(':');
                 if (parts.length === 2) {
@@ -8681,14 +8633,8 @@ document.head.appendChild(styleEl);
                 }
             }).catch(function() {
                 selectEl.innerHTML = '<option value="">Failed to load instances</option>';
-                var noInstEl = document.getElementById('settings-root-folders-no-instances');
-                var noIdxEl = document.getElementById('settings-root-folders-no-indexers');
-                var noCliEl = document.getElementById('settings-root-folders-no-clients');
                 var wrapperEl = document.getElementById('settings-root-folders-content-wrapper');
-                if (noInstEl) noInstEl.style.display = 'none';
-                if (noIdxEl) noIdxEl.style.display = 'none';
-                if (noCliEl) noCliEl.style.display = '';
-                if (wrapperEl) wrapperEl.style.display = 'none';
+                if (wrapperEl) wrapperEl.style.display = '';
             });
         },
 
@@ -8966,9 +8912,6 @@ document.head.appendChild(styleEl);
                         }
                         window.RootFolders.refreshList();
                         if (window.updateMovieHuntSettingsVisibility) window.updateMovieHuntSettingsVisibility();
-                        if (window.SetupWizard && typeof window.SetupWizard.maybeReturnToCollection === 'function') {
-                            window.SetupWizard.maybeReturnToCollection();
-                        }
                     } else {
                         var msg = (result.data && result.data.message) ? result.data.message : 'Add failed';
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
@@ -9172,10 +9115,18 @@ document.head.appendChild(styleEl);
             }
             var upBtn = document.getElementById('root-folders-browse-up');
             if (upBtn) upBtn.onclick = function() { self.goToParent(); };
-            document.addEventListener('huntarr:instances-changed', function() { if (self._rfMode === 'movie') self.populateCombinedInstanceDropdown('movie'); });
-            document.addEventListener('huntarr:tv-hunt-instances-changed', function() { if (self._rfMode === 'tv') self.populateCombinedInstanceDropdown('tv'); });
+            document.addEventListener('huntarr:instances-changed', function() { if (self._rfMode === 'movie') self.populateCombinedInstanceDropdown('movie'); updateRootFoldersSetupBanner(); });
+            document.addEventListener('huntarr:tv-hunt-instances-changed', function() { if (self._rfMode === 'tv') self.populateCombinedInstanceDropdown('tv'); updateRootFoldersSetupBanner(); });
+            updateRootFoldersSetupBanner();
         }
     };
+
+    function updateRootFoldersSetupBanner() {
+        var banner = document.getElementById('root-folders-setup-wizard-continue-banner');
+        if (!banner) return;
+        var show = window.SetupWizard && typeof window.SetupWizard.isComplete === 'function' && !window.SetupWizard.isComplete();
+        banner.style.display = show ? 'flex' : 'none';
+    }
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() { window.RootFolders.init(); });
