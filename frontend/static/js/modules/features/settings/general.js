@@ -207,29 +207,40 @@
                         confirmLabel: 'Reset',
                         cancelLabel: 'Cancel',
                         onConfirm: function() {
-                            HuntarrUtils.setUIPreference('media-hunt-wizard-completed', false);
-                            // Save the preference to the server
-                            var prefs = (window.huntarrUI && window.huntarrUI.originalSettings && window.huntarrUI.originalSettings.general) ? window.huntarrUI.originalSettings.general.ui_preferences || {} : {};
-                            fetch('./api/settings/general', {
-                                method: 'PUT',
+                            // Update in-memory prefs
+                            if (window.huntarrUI && window.huntarrUI.originalSettings && window.huntarrUI.originalSettings.general) {
+                                var prefs = window.huntarrUI.originalSettings.general.ui_preferences || {};
+                                prefs['media-hunt-wizard-completed'] = false;
+                                window.huntarrUI.originalSettings.general.ui_preferences = prefs;
+                            }
+                            // Save directly to server (don't rely on setUIPreference chaining)
+                            HuntarrUtils.fetchWithTimeout('./api/settings/general', {
+                                method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ ui_preferences: prefs })
+                                body: JSON.stringify({ ui_preferences: { 'media-hunt-wizard-completed': false } })
                             }).then(function() {
-                                if (window.HuntarrToast) window.HuntarrToast.success('Media Hunt wizard has been reset. It will show on your next visit.');
-                            }).catch(function() {
+                                if (window.HuntarrToast) window.HuntarrToast.success('Media Hunt wizard has been reset. It will show on your next visit to Media Hunt.');
+                            }).catch(function(err) {
+                                console.error('[ResetWizard] Failed to save:', err);
                                 if (window.HuntarrToast) window.HuntarrToast.error('Failed to save wizard reset.');
                             });
+                            // Set a force-show flag so the wizard appears even if all steps are done
+                            try { sessionStorage.setItem('setup-wizard-force-show', '1'); } catch (e) {}
                         }
                     });
                 } else {
                     if (confirm('Reset the Media Hunt wizard? It will show again on your next visit.')) {
-                        HuntarrUtils.setUIPreference('media-hunt-wizard-completed', false);
-                        var prefs = (window.huntarrUI && window.huntarrUI.originalSettings && window.huntarrUI.originalSettings.general) ? window.huntarrUI.originalSettings.general.ui_preferences || {} : {};
-                        fetch('./api/settings/general', {
-                            method: 'PUT',
+                        if (window.huntarrUI && window.huntarrUI.originalSettings && window.huntarrUI.originalSettings.general) {
+                            var prefs = window.huntarrUI.originalSettings.general.ui_preferences || {};
+                            prefs['media-hunt-wizard-completed'] = false;
+                            window.huntarrUI.originalSettings.general.ui_preferences = prefs;
+                        }
+                        HuntarrUtils.fetchWithTimeout('./api/settings/general', {
+                            method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ ui_preferences: prefs })
-                        });
+                            body: JSON.stringify({ ui_preferences: { 'media-hunt-wizard-completed': false } })
+                        }).catch(function(err) { console.error('[ResetWizard] Failed to save:', err); });
+                        try { sessionStorage.setItem('setup-wizard-force-show', '1'); } catch (e) {}
                     }
                 }
             });

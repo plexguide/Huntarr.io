@@ -4150,16 +4150,24 @@ document.head.appendChild(styleEl);
         var preset = opt.getAttribute('data-preset') || 'manual';
         var priority = parseInt(opt.getAttribute('data-priority') || '50', 10);
 
-        // Read instance ID synchronously from dropdown
+        // Read instance ID and mode from dropdown (value format: "movie:1" or "tv:1")
         var instanceId = 1;
+        var mode = 'movie';
         var instSel = document.getElementById('settings-indexers-instance-select');
-        if (instSel && instSel.value) instanceId = parseInt(instSel.value, 10) || 1;
+        if (instSel && instSel.value) {
+            var parts = instSel.value.split(':');
+            if (parts.length === 2) {
+                mode = parts[0] === 'tv' ? 'tv' : 'movie';
+                var parsed = parseInt(parts[1], 10);
+                if (!isNaN(parsed)) instanceId = parsed;
+            }
+        }
 
         // Sync this indexer to the current instance via the API
         fetch('./api/indexer-hunt/sync', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ instance_id: instanceId, indexer_ids: [ihId] }),
+            body: JSON.stringify({ instance_id: instanceId, mode: mode, indexer_ids: [ihId] }),
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
@@ -6656,9 +6664,9 @@ document.head.appendChild(styleEl);
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
                     window.huntarrUI.showNotification(isAdd ? 'Client added.' : 'Client updated.', 'success');
                 }
-                if (window.SetupWizard && typeof window.SetupWizard.maybeReturnToCollection === 'function') {
-                    window.SetupWizard.maybeReturnToCollection();
-                }
+                // Don't auto-navigate back to collection after saving a client.
+                // The user may want to add more clients. The wizard banner on the
+                // clients page handles the "continue" flow when the user is ready.
                 if (window.SettingsForms && window.SettingsForms._currentEditing) {
                     window.SettingsForms._currentEditing.isAdd = false;
                     if (data && data.index !== undefined) {
@@ -13317,29 +13325,40 @@ document.head.appendChild(styleEl);
                         confirmLabel: 'Reset',
                         cancelLabel: 'Cancel',
                         onConfirm: function() {
-                            HuntarrUtils.setUIPreference('media-hunt-wizard-completed', false);
-                            // Save the preference to the server
-                            var prefs = (window.huntarrUI && window.huntarrUI.originalSettings && window.huntarrUI.originalSettings.general) ? window.huntarrUI.originalSettings.general.ui_preferences || {} : {};
-                            fetch('./api/settings/general', {
-                                method: 'PUT',
+                            // Update in-memory prefs
+                            if (window.huntarrUI && window.huntarrUI.originalSettings && window.huntarrUI.originalSettings.general) {
+                                var prefs = window.huntarrUI.originalSettings.general.ui_preferences || {};
+                                prefs['media-hunt-wizard-completed'] = false;
+                                window.huntarrUI.originalSettings.general.ui_preferences = prefs;
+                            }
+                            // Save directly to server (don't rely on setUIPreference chaining)
+                            HuntarrUtils.fetchWithTimeout('./api/settings/general', {
+                                method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ ui_preferences: prefs })
+                                body: JSON.stringify({ ui_preferences: { 'media-hunt-wizard-completed': false } })
                             }).then(function() {
-                                if (window.HuntarrToast) window.HuntarrToast.success('Media Hunt wizard has been reset. It will show on your next visit.');
-                            }).catch(function() {
+                                if (window.HuntarrToast) window.HuntarrToast.success('Media Hunt wizard has been reset. It will show on your next visit to Media Hunt.');
+                            }).catch(function(err) {
+                                console.error('[ResetWizard] Failed to save:', err);
                                 if (window.HuntarrToast) window.HuntarrToast.error('Failed to save wizard reset.');
                             });
+                            // Set a force-show flag so the wizard appears even if all steps are done
+                            try { sessionStorage.setItem('setup-wizard-force-show', '1'); } catch (e) {}
                         }
                     });
                 } else {
                     if (confirm('Reset the Media Hunt wizard? It will show again on your next visit.')) {
-                        HuntarrUtils.setUIPreference('media-hunt-wizard-completed', false);
-                        var prefs = (window.huntarrUI && window.huntarrUI.originalSettings && window.huntarrUI.originalSettings.general) ? window.huntarrUI.originalSettings.general.ui_preferences || {} : {};
-                        fetch('./api/settings/general', {
-                            method: 'PUT',
+                        if (window.huntarrUI && window.huntarrUI.originalSettings && window.huntarrUI.originalSettings.general) {
+                            var prefs = window.huntarrUI.originalSettings.general.ui_preferences || {};
+                            prefs['media-hunt-wizard-completed'] = false;
+                            window.huntarrUI.originalSettings.general.ui_preferences = prefs;
+                        }
+                        HuntarrUtils.fetchWithTimeout('./api/settings/general', {
+                            method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ ui_preferences: prefs })
-                        });
+                            body: JSON.stringify({ ui_preferences: { 'media-hunt-wizard-completed': false } })
+                        }).catch(function(err) { console.error('[ResetWizard] Failed to save:', err); });
+                        try { sessionStorage.setItem('setup-wizard-force-show', '1'); } catch (e) {}
                     }
                 }
             });

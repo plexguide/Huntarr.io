@@ -7532,13 +7532,19 @@ window.HuntarrProwlarr = {
         check: function(cb) {
             if (_isDismissed()) { cb(false); return; }
 
+            // If a force-reset was requested, always show the wizard once
+            var forceShow = false;
+            try { forceShow = sessionStorage.getItem('setup-wizard-force-show') === '1'; } catch (e) {}
+
             _checkAllSteps(function() {
                 var allDone = _allStepsComplete();
-                if (allDone) {
+                if (allDone && !forceShow) {
                     // Auto-mark complete so it never shows again
                     _markComplete();
                     cb(false);
                 } else {
+                    // Clear the force flag so it only applies once
+                    try { sessionStorage.removeItem('setup-wizard-force-show'); } catch (e) {}
                     cb(true);
                 }
             });

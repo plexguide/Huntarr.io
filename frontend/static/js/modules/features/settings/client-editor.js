@@ -300,9 +300,9 @@
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
                     window.huntarrUI.showNotification(isAdd ? 'Client added.' : 'Client updated.', 'success');
                 }
-                if (window.SetupWizard && typeof window.SetupWizard.maybeReturnToCollection === 'function') {
-                    window.SetupWizard.maybeReturnToCollection();
-                }
+                // Don't auto-navigate back to collection after saving a client.
+                // The user may want to add more clients. The wizard banner on the
+                // clients page handles the "continue" flow when the user is ready.
                 if (window.SettingsForms && window.SettingsForms._currentEditing) {
                     window.SettingsForms._currentEditing.isAdd = false;
                     if (data && data.index !== undefined) {

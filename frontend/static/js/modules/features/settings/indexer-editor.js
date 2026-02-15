@@ -338,16 +338,24 @@
         var preset = opt.getAttribute('data-preset') || 'manual';
         var priority = parseInt(opt.getAttribute('data-priority') || '50', 10);
 
-        // Read instance ID synchronously from dropdown
+        // Read instance ID and mode from dropdown (value format: "movie:1" or "tv:1")
         var instanceId = 1;
+        var mode = 'movie';
         var instSel = document.getElementById('settings-indexers-instance-select');
-        if (instSel && instSel.value) instanceId = parseInt(instSel.value, 10) || 1;
+        if (instSel && instSel.value) {
+            var parts = instSel.value.split(':');
+            if (parts.length === 2) {
+                mode = parts[0] === 'tv' ? 'tv' : 'movie';
+                var parsed = parseInt(parts[1], 10);
+                if (!isNaN(parsed)) instanceId = parsed;
+            }
+        }
 
         // Sync this indexer to the current instance via the API
         fetch('./api/indexer-hunt/sync', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ instance_id: instanceId, indexer_ids: [ihId] }),
+            body: JSON.stringify({ instance_id: instanceId, mode: mode, indexer_ids: [ihId] }),
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
