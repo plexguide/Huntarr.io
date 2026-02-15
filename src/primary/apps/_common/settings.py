@@ -1,6 +1,7 @@
 """Common settings extraction and validation for app modules."""
 
 from src.primary.settings_manager import get_advanced_setting
+from src.primary.apps._common.tagging import extract_tag_settings
 
 
 def extract_app_settings(app_settings, app_type, hunt_key, default_instance_name=None):
@@ -15,7 +16,7 @@ def extract_app_settings(app_settings, app_type, hunt_key, default_instance_name
     Returns dict with normalized keys:
         api_url, api_key, api_timeout, instance_name, instance_key,
         hunt_count, monitored_only, skip_future_releases,
-        tag_processed_items, tag_enable_missing, tag_enable_upgrade,
+        tag_settings (dict from extract_tag_settings — the single source of truth),
         command_wait_delay, command_wait_attempts, exempt_tags
     """
     if default_instance_name is None:
@@ -33,9 +34,8 @@ def extract_app_settings(app_settings, app_type, hunt_key, default_instance_name
         'hunt_count': app_settings.get(hunt_key, 0),
         'monitored_only': app_settings.get("monitored_only", True),
         'skip_future_releases': app_settings.get("skip_future_releases", True),
-        'tag_processed_items': app_settings.get("tag_processed_items", True),
-        'tag_enable_missing': app_settings.get("tag_enable_missing", True),
-        'tag_enable_upgrade': app_settings.get("tag_enable_upgrade", True),
+        # Tag settings — single source of truth via tagging module
+        'tag_settings': extract_tag_settings(app_settings),
         'command_wait_delay': get_advanced_setting("command_wait_delay", 1),
         'command_wait_attempts': get_advanced_setting("command_wait_attempts", 600),
         'exempt_tags': app_settings.get("exempt_tags") or [],

@@ -87,6 +87,13 @@ def get_configured_instances(quiet=False):
                 instance_settings["max_seed_queue_size"] = instance.get("max_seed_queue_size", -1)
                 instance_settings["seed_check_torrent_client"] = instance.get("seed_check_torrent_client")
                 
+                # Tag settings (CRITICAL: must be passed through or they default to True)
+                instance_settings["tag_processed_items"] = instance.get("tag_processed_items", False)
+                instance_settings["tag_enable_missing"] = instance.get("tag_enable_missing", False)
+                instance_settings["tag_enable_upgrade"] = instance.get("tag_enable_upgrade", False)
+                instance_settings["tag_enable_upgraded"] = instance.get("tag_enable_upgraded", False)
+                instance_settings["custom_tags"] = instance.get("custom_tags", {})
+                
                 instances.append(instance_settings)
     else:
         # Fallback to legacy single-instance config

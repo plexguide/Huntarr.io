@@ -17,6 +17,7 @@ from src.primary.state import check_state_reset
 from src.primary.apps._common.settings import extract_app_settings, validate_settings
 from src.primary.apps._common.filtering import filter_exempt_items, filter_unprocessed
 from src.primary.apps._common.processing import should_continue_processing
+from src.primary.apps._common.tagging import try_tag_item, extract_tag_settings
 
 # Get logger for the app
 lidarr_logger = get_logger(__name__) # Use __name__ for correct logger hierarchy
@@ -71,9 +72,8 @@ def process_cutoff_upgrades(
     processed_count = 0
     processed_any = False
 
-    # Per-instance tagging (from instance settings)
-    tag_processed_items = app_settings.get("tag_processed_items", True)
-    tag_enable_upgraded = app_settings.get("tag_enable_upgraded", True)
+    # Extract tag settings using shared utility
+    tag_settings = extract_tag_settings(app_settings)
 
     try:
         if upgrade_selection_method == "tags":
@@ -200,19 +200,15 @@ def process_cutoff_upgrades(
                         except Exception as e:
                             lidarr_logger.warning(f"Failed to add upgrade tag '{upgrade_tag}' to artist {artist_id}: {e}")
             
-            # Also tag artists with huntarr-upgraded if enabled (per-tag toggle)
-            if tag_processed_items and tag_enable_upgraded:
-                custom_tag = app_settings.get("custom_tags", {}).get("upgraded", "huntarr-upgraded") or "huntarr-upgraded"
-                tagged_artists = set()  # Track which artists we've already tagged
-                for album in albums_to_search:
-                    artist_id = album.get('artistId')
-                    if artist_id and artist_id not in tagged_artists:
-                        try:
-                            lidarr_api.tag_processed_artist(api_url, api_key, api_timeout, artist_id, custom_tag)
-                            lidarr_logger.debug(f"Tagged artist {artist_id} with '{custom_tag}'")
-                            tagged_artists.add(artist_id)
-                        except Exception as e:
-                            lidarr_logger.warning(f"Failed to tag artist {artist_id} with '{custom_tag}': {e}")
+            # Tag artists with huntarr-upgraded if enabled (unified tagging)
+            tagged_artists_upgraded = set()
+            for album in albums_to_search:
+                artist_id = album.get('artistId')
+                if artist_id and artist_id not in tagged_artists_upgraded:
+                    try_tag_item(tag_settings, "upgraded", lidarr_api.tag_processed_artist,
+                                 api_url, api_key, api_timeout, artist_id,
+                                 lidarr_logger, f"artist {artist_id}")
+                    tagged_artists_upgraded.add(artist_id)
             
             # Log to history
             for album_id in album_ids_to_search:

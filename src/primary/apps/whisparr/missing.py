@@ -20,6 +20,7 @@ from src.primary.state import check_state_reset
 from src.primary.apps._common.settings import extract_app_settings, validate_settings
 from src.primary.apps._common.filtering import filter_unprocessed
 from src.primary.apps._common.processing import should_continue_processing
+from src.primary.apps._common.tagging import try_tag_item
 
 # Get logger for the app
 whisparr_logger = get_logger("whisparr")
@@ -56,8 +57,7 @@ def process_missing_items(
     api_timeout = s['api_timeout']
     monitored_only = s['monitored_only']
     hunt_missing_items = s['hunt_count']
-    tag_processed_items = s['tag_processed_items']
-    tag_enable_missing = s['tag_enable_missing']
+    tag_settings = s['tag_settings']
     
     # App-specific settings
     skip_future_releases = app_settings.get("skip_future_releases", True)
@@ -186,16 +186,12 @@ def process_missing_items(
         if search_command_id:
             whisparr_logger.info(f"Triggered search command {search_command_id}. Assuming success for now.")
             
-            # Tag the series if enabled
-            if tag_processed_items and tag_enable_missing:
-                custom_tag = app_settings.get("custom_tags", {}).get("missing", "huntarr-missing")
-                series_id = item.get('seriesId')
-                if series_id:
-                    try:
-                        whisparr_api.tag_processed_series(api_url, api_key, api_timeout, series_id, custom_tag)
-                        whisparr_logger.debug(f"Tagged series {series_id} with '{custom_tag}'")
-                    except Exception as e:
-                        whisparr_logger.warning(f"Failed to tag series {series_id} with '{custom_tag}': {e}")
+            # Tag the series if enabled (unified tagging)
+            series_id = item.get('seriesId')
+            if series_id:
+                try_tag_item(tag_settings, "missing", whisparr_api.tag_processed_series,
+                             api_url, api_key, api_timeout, series_id,
+                             whisparr_logger, f"series {series_id}")
             
             # Log to history system
             media_name = f"{title} - {season_episode}"

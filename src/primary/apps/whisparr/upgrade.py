@@ -20,6 +20,7 @@ from src.primary.state import check_state_reset
 from src.primary.apps._common.settings import extract_app_settings, validate_settings
 from src.primary.apps._common.filtering import filter_unprocessed
 from src.primary.apps._common.processing import should_continue_processing
+from src.primary.apps._common.tagging import try_tag_item, extract_tag_settings
 
 # Get logger for the app
 whisparr_logger = get_logger("whisparr")
@@ -56,8 +57,7 @@ def process_cutoff_upgrades(
     api_timeout = s['api_timeout']
     monitored_only = s['monitored_only']
     hunt_upgrade_items = s['hunt_count']
-    tag_processed_items = s['tag_processed_items']
-    tag_enable_upgraded = app_settings.get("tag_enable_upgraded", True)
+    tag_settings = extract_tag_settings(app_settings)
     
     whisparr_logger.debug(f"Using Whisparr V2 API for instance: {instance_name}")
 
@@ -162,16 +162,12 @@ def process_cutoff_upgrades(
         if search_command_id:
             whisparr_logger.info(f"Triggered search command {search_command_id}. Assuming success for now.")
             
-            # Tag the series if enabled
-            if tag_processed_items and tag_enable_upgraded:
-                custom_tag = app_settings.get("custom_tags", {}).get("upgraded", "huntarr-upgraded") or "huntarr-upgraded"
-                series_id = item.get('seriesId')
-                if series_id:
-                    try:
-                        whisparr_api.tag_processed_series(api_url, api_key, api_timeout, series_id, custom_tag)
-                        whisparr_logger.debug(f"Tagged series {series_id} with '{custom_tag}'")
-                    except Exception as e:
-                        whisparr_logger.warning(f"Failed to tag series {series_id} with '{custom_tag}': {e}")
+            # Tag the series if enabled (unified tagging)
+            series_id = item.get('seriesId')
+            if series_id:
+                try_tag_item(tag_settings, "upgraded", whisparr_api.tag_processed_series,
+                             api_url, api_key, api_timeout, series_id,
+                             whisparr_logger, f"series {series_id}")
             
             # Log to history so the upgrade appears in the history UI
             series_title = item.get("series", {}).get("title", "Unknown Series")

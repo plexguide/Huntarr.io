@@ -7,6 +7,7 @@ import time
 import random
 from typing import List, Dict, Any, Set, Callable, Union, Optional
 from src.primary.utils.logger import get_logger
+from src.primary.apps._common.tagging import try_tag_item
 from src.primary.apps.sonarr import api as sonarr_api
 from src.primary.apps.sonarr.missing import _normalize_exempt_tags
 from src.primary.stats_manager import increment_stat, check_hourly_cap_exceeded
@@ -29,9 +30,9 @@ def process_cutoff_upgrades(
     command_wait_delay: int = get_advanced_setting("command_wait_delay", 1),
     command_wait_attempts: int = get_advanced_setting("command_wait_attempts", 600),
     stop_check: Callable[[], bool] = lambda: False,
-    tag_processed_items: bool = True,
-    tag_enable_upgrade: bool = True,
-    tag_enable_upgraded: bool = True,
+    tag_processed_items: bool = False,
+    tag_enable_upgrade: bool = False,
+    tag_enable_upgraded: bool = False,
     custom_tags: dict = None,
     upgrade_selection_method: str = "cutoff",
     upgrade_tag: str = "",
@@ -61,6 +62,16 @@ def process_cutoff_upgrades(
             "upgrade": "huntarr-upgrade",
             "shows_missing": "huntarr-shows-missing"
         }
+
+    # Build unified tag settings
+    _tag_settings = {
+        "enabled": tag_processed_items,
+        "tag_enable_missing": False,
+        "tag_enable_upgrade": tag_enable_upgrade,
+        "tag_enable_upgraded": tag_enable_upgraded,
+        "tag_enable_shows_missing": False,
+        "custom_tags": custom_tags or {},
+    }
     
     # Tag-based upgrade path (Upgradinatorr-style): series WITHOUT tag -> SeriesSearch -> add tag
     if method == "tags":
@@ -126,15 +137,9 @@ def process_cutoff_upgrades(
                     except Exception as e:
                         sonarr_logger.warning(f"Failed to add upgrade tag '{tag_label}' to series {series_id} ('{title}'): {e}")
                 
-                # Also tag with huntarr-upgraded if enabled (per-tag toggle)
-                if tag_processed_items and tag_enable_upgraded and custom_tags:
-                    custom_tag = custom_tags.get("upgraded", "huntarr-upgraded") or "huntarr-upgraded"
-                    tag_id = sonarr_api.get_or_create_tag(api_url, api_key, api_timeout, custom_tag)
-                    if tag_id:
-                        try:
-                            sonarr_api.add_tag_to_series(api_url, api_key, api_timeout, series_id, tag_id)
-                        except Exception:
-                            pass
+                try_tag_item(_tag_settings, "upgraded", sonarr_api.tag_processed_series,
+                             api_url, api_key, api_timeout, series_id,
+                             sonarr_logger, f"series {series_id}")
                 processed_count += 1
         sonarr_logger.info(f"Finished tag-based upgrade cycle: processed {processed_count} series.")
         return processed_count > 0
@@ -200,9 +205,9 @@ def process_upgrade_seasons_mode(
     command_wait_delay: int,
     command_wait_attempts: int,
     stop_check: Callable[[], bool],
-    tag_processed_items: bool = True,
-    tag_enable_upgrade: bool = True,
-    tag_enable_upgraded: bool = True,
+    tag_processed_items: bool = False,
+    tag_enable_upgrade: bool = False,
+    tag_enable_upgraded: bool = False,
     custom_tags: dict = None,
     exempt_tags: list = None,
     instance_display_name: Optional[str] = None,
@@ -218,6 +223,16 @@ def process_upgrade_seasons_mode(
             "upgrade": "huntarr-upgrade",
             "shows_missing": "huntarr-shows-missing"
         }
+
+    # Build unified tag settings
+    _tag_settings = {
+        "enabled": tag_processed_items,
+        "tag_enable_missing": False,
+        "tag_enable_upgrade": tag_enable_upgrade,
+        "tag_enable_upgraded": tag_enable_upgraded,
+        "tag_enable_shows_missing": False,
+        "custom_tags": custom_tags or {},
+    }
     
     # Flag to skip individual episode history logging since we log the whole season pack
     skip_episode_history = True
@@ -365,14 +380,9 @@ def process_upgrade_seasons_mode(
                 processed_any = True
                 sonarr_logger.info(f"Successfully triggered season pack search for {series_title} Season {season_number} with {len(episode_ids)} cutoff unmet episodes")
                 
-                # Tag the series if enabled (per-tag toggle)
-                if tag_processed_items and tag_enable_upgrade:
-                    custom_tag = custom_tags.get("upgrade", "huntarr-upgrade")
-                    try:
-                        sonarr_api.tag_processed_series(api_url, api_key, api_timeout, series_id, custom_tag)
-                        sonarr_logger.debug(f"Tagged series {series_id} with '{custom_tag}'")
-                    except Exception as e:
-                        sonarr_logger.warning(f"Failed to tag series {series_id} with '{custom_tag}': {e}")
+                try_tag_item(_tag_settings, "upgrade", sonarr_api.tag_processed_series,
+                             api_url, api_key, api_timeout, series_id,
+                             sonarr_logger, f"series {series_id}")
                 
                 # Log this as a season pack upgrade in the history
                 log_season_pack_upgrade(api_url, api_key, api_timeout, series_id, season_number, instance_name, instance_display_name)
@@ -438,15 +448,25 @@ def process_upgrade_shows_mode(
     command_wait_delay: int,
     command_wait_attempts: int,
     stop_check: Callable[[], bool],
-    tag_processed_items: bool = True,
-    tag_enable_upgrade: bool = True,
-    tag_enable_upgraded: bool = True,
+    tag_processed_items: bool = False,
+    tag_enable_upgrade: bool = False,
+    tag_enable_upgraded: bool = False,
     custom_tags: dict = None,
 ) -> bool:
     """Process upgrades in show mode - gets all cutoff unmet episodes for entire shows."""
     processed_any = False
     if custom_tags is None:
         custom_tags = {"missing": "huntarr-missing", "upgrade": "huntarr-upgrade", "shows_missing": "huntarr-shows-missing"}
+
+    # Build unified tag settings
+    _tag_settings = {
+        "enabled": tag_processed_items,
+        "tag_enable_missing": False,
+        "tag_enable_upgrade": tag_enable_upgrade,
+        "tag_enable_upgraded": tag_enable_upgraded,
+        "tag_enable_shows_missing": False,
+        "custom_tags": custom_tags or {},
+    }
     
     # For shows mode, we want individual episode history entries
     skip_episode_history = False
@@ -560,14 +580,9 @@ def process_upgrade_shows_mode(
                 processed_any = True
                 sonarr_logger.info(f"Successfully processed {len(episode_ids)} cutoff unmet episodes in {series_title}")
                 
-                # Tag the series if enabled (per-tag toggle)
-                if tag_processed_items and tag_enable_upgrade:
-                    custom_tag = custom_tags.get("upgrade", "huntarr-upgrade")
-                    try:
-                        sonarr_api.tag_processed_series(api_url, api_key, api_timeout, series_id, custom_tag)
-                        sonarr_logger.debug(f"Tagged series {series_id} with '{custom_tag}'")
-                    except Exception as e:
-                        sonarr_logger.warning(f"Failed to tag series {series_id} with '{custom_tag}': {e}")
+                try_tag_item(_tag_settings, "upgrade", sonarr_api.tag_processed_series,
+                             api_url, api_key, api_timeout, series_id,
+                             sonarr_logger, f"series {series_id}")
                 
                 # We'll increment stats individually for each episode instead of in batch
                 # increment_stat("sonarr", "upgraded", len(episode_ids))
@@ -623,9 +638,9 @@ def process_upgrade_episodes_mode(
     command_wait_delay: int,
     command_wait_attempts: int,
     stop_check: Callable[[], bool],
-    tag_processed_items: bool = True,
-    tag_enable_upgrade: bool = True,
-    tag_enable_upgraded: bool = True,
+    tag_processed_items: bool = False,
+    tag_enable_upgrade: bool = False,
+    tag_enable_upgraded: bool = False,
     custom_tags: dict = None,
     exempt_tags: list = None,
     instance_display_name: Optional[str] = None,

@@ -18,6 +18,7 @@ from src.primary.utils.date_utils import parse_date
 from src.primary.apps._common.settings import extract_app_settings, validate_settings
 from src.primary.apps._common.filtering import filter_exempt_items, filter_unprocessed
 from src.primary.apps._common.processing import should_continue_processing
+from src.primary.apps._common.tagging import try_tag_item
 
 # Get logger for the app
 radarr_logger = get_logger("radarr")
@@ -83,8 +84,7 @@ def process_cutoff_upgrades(
     api_timeout = s['api_timeout']
     monitored_only = s['monitored_only']
     hunt_upgrade_movies = s['hunt_count']
-    tag_processed_items = s['tag_processed_items']
-    tag_enable_upgraded = app_settings.get("tag_enable_upgraded", True)
+    tag_settings = s['tag_settings']
     
     # App-specific settings
     skip_future_releases = app_settings.get("skip_future_releases", True)
@@ -305,14 +305,10 @@ def process_cutoff_upgrades(
                 except Exception as e:
                     radarr_logger.warning(f"Failed to add upgrade tag '{upgrade_tag}' to movie {movie_id}: {e}")
             
-            # Also tag with huntarr-upgraded if enabled (per-tag toggle)
-            if tag_processed_items and tag_enable_upgraded:
-                custom_tag = app_settings.get("custom_tags", {}).get("upgraded", "huntarr-upgraded") or "huntarr-upgraded"
-                try:
-                    radarr_api.tag_processed_movie(api_url, api_key, api_timeout, movie_id, custom_tag)
-                    radarr_logger.debug(f"Tagged movie {movie_id} with '{custom_tag}'")
-                except Exception as e:
-                    radarr_logger.warning(f"Failed to tag movie {movie_id} with '{custom_tag}': {e}")
+            # Tag with huntarr-upgrade if enabled (unified tagging)
+            try_tag_item(tag_settings, "upgrade", radarr_api.tag_processed_movie,
+                         api_url, api_key, api_timeout, movie_id,
+                         radarr_logger, f"movie {movie_id}")
             
             # Log to history so the upgrade appears in the history UI
             media_name = f"{movie_title} ({movie_year})"

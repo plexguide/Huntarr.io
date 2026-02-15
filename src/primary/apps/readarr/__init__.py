@@ -80,6 +80,12 @@ def get_configured_instances(quiet=False):
                     "max_download_queue_size": instance.get("max_download_queue_size", -1),
                     "max_seed_queue_size": instance.get("max_seed_queue_size", -1),
                     "seed_check_torrent_client": instance.get("seed_check_torrent_client"),
+                    # Tag settings (CRITICAL: must be passed through or they default to True)
+                    "tag_processed_items": instance.get("tag_processed_items", False),
+                    "tag_enable_missing": instance.get("tag_enable_missing", False),
+                    "tag_enable_upgrade": instance.get("tag_enable_upgrade", False),
+                    "tag_enable_upgraded": instance.get("tag_enable_upgraded", False),
+                    "custom_tags": instance.get("custom_tags", {}),
                 }
                 instances.append(instance_data)
     

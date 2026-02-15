@@ -679,9 +679,9 @@ def app_specific_loop(app_type: str) -> None:
                     
                     if app_type == "sonarr":
                         air_date_delay_days = instance_details.get("air_date_delay_days", 0)
-                        tag_processed_items = instance_details.get("tag_processed_items", True)
-                        tag_enable_missing = instance_details.get("tag_enable_missing", True)
-                        tag_enable_shows_missing = instance_details.get("tag_enable_shows_missing", True)
+                        tag_processed_items = instance_details.get("tag_processed_items", False)
+                        tag_enable_missing = instance_details.get("tag_enable_missing", False)
+                        tag_enable_shows_missing = instance_details.get("tag_enable_shows_missing", False)
                         custom_tags = instance_details.get("custom_tags", {
                             "missing": "huntarr-missing",
                             "upgrade": "huntarr-upgrade",
@@ -746,9 +746,9 @@ def app_specific_loop(app_type: str) -> None:
                         upgrade_tag = (instance_details.get("upgrade_tag") or "").strip()
                         command_wait_delay = combined_settings.get("command_wait_delay", 1)
                         command_wait_attempts = combined_settings.get("command_wait_attempts", 600)
-                        tag_processed_items = instance_details.get("tag_processed_items", True)
-                        tag_enable_upgrade = instance_details.get("tag_enable_upgrade", True)
-                        tag_enable_upgraded = instance_details.get("tag_enable_upgraded", True)
+                        tag_processed_items = instance_details.get("tag_processed_items", False)
+                        tag_enable_upgrade = instance_details.get("tag_enable_upgrade", False)
+                        tag_enable_upgraded = instance_details.get("tag_enable_upgraded", False)
                         custom_tags = instance_details.get("custom_tags", {
                             "missing": "huntarr-missing",
                             "upgrade": "huntarr-upgrade",

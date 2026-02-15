@@ -18,6 +18,7 @@ from src.primary.settings_manager import load_settings
 from src.primary.apps._common.settings import extract_app_settings, validate_settings
 from src.primary.apps._common.filtering import filter_exempt_items, filter_unprocessed
 from src.primary.apps._common.processing import should_continue_processing
+from src.primary.apps._common.tagging import try_tag_item
 
 # Get logger for the app
 readarr_logger = get_logger("readarr")
@@ -52,8 +53,7 @@ def process_cutoff_upgrades(
     api_timeout = s['api_timeout']
     monitored_only = s['monitored_only']
     hunt_upgrade_books = s['hunt_count']
-    tag_processed_items = s['tag_processed_items']
-    tag_enable_upgraded = app_settings.get("tag_enable_upgraded", True)
+    tag_settings = s['tag_settings']
     
     readarr_logger.info(f"Using API timeout of {api_timeout} seconds for Readarr")
     
@@ -201,20 +201,16 @@ def process_cutoff_upgrades(
                     except Exception as e:
                         readarr_logger.warning(f"Failed to add upgrade tag '{upgrade_tag}' to author {author_id}: {e}")
         
-        # Also tag authors with huntarr-upgraded if enabled (separate tracking feature)
-        if tag_processed_items and tag_enable_upgraded:
-            custom_tag = app_settings.get("custom_tags", {}).get("upgraded", "huntarr-upgraded") or "huntarr-upgraded"
-            tagged_authors = set()  # Track which authors we've already tagged
-            for book in books_to_process:
-                author_id = book.get('authorId')
-                if author_id and author_id not in tagged_authors:
-                    try:
-                        readarr_api.tag_processed_author(api_url, api_key, api_timeout, author_id, custom_tag)
-                        readarr_logger.debug(f"Tagged author {author_id} with '{custom_tag}'")
-                        tagged_authors.add(author_id)
-                    except Exception as e:
-                        readarr_logger.warning(f"Failed to tag author {author_id} with '{custom_tag}': {e}")
-            
+        # Tag authors with huntarr-upgraded if enabled (unified tagging)
+        tagged_authors_upgraded = set()
+        for book in books_to_process:
+            author_id = book.get('authorId')
+            if author_id and author_id not in tagged_authors_upgraded:
+                try_tag_item(tag_settings, "upgraded", readarr_api.tag_processed_author,
+                             api_url, api_key, api_timeout, author_id,
+                             readarr_logger, f"author {author_id}")
+                tagged_authors_upgraded.add(author_id)
+
         # Log to history system for each book
         for book in books_to_process:
             # Ensure we have a valid author name - if missing, fetch it

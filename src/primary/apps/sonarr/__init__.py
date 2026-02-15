@@ -77,7 +77,12 @@ def get_configured_instances(quiet=False):
                     "sleep_duration": instance.get("sleep_duration", settings.get("sleep_duration", 900)),  # Per-instance cycle interval
                     "hourly_cap": instance.get("hourly_cap", settings.get("hourly_cap", 20)),  # Per-instance API cap
                     "exempt_tags": instance.get("exempt_tags") or [],
-                    "tag_processed_items": instance.get("tag_processed_items", True),  # Add huntarr-upgraded etc. when processing
+                    "tag_processed_items": instance.get("tag_processed_items", False),
+                    "tag_enable_missing": instance.get("tag_enable_missing", False),
+                    "tag_enable_upgrade": instance.get("tag_enable_upgrade", False),
+                    "tag_enable_upgraded": instance.get("tag_enable_upgraded", False),
+                    "tag_enable_shows_missing": instance.get("tag_enable_shows_missing", False),
+                    "custom_tags": instance.get("custom_tags", {}),
                     "state_management_hours": instance.get("state_management_hours", 72),  # CRITICAL for Issue #717 fix
                     "state_management_mode": instance.get("state_management_mode", "custom"),  # CRITICAL for Issue #717 fix
                     "api_timeout": instance.get("api_timeout", 120),

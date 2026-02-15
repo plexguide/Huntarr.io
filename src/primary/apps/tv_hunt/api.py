@@ -97,10 +97,10 @@ def get_configured_instances(quiet: bool = False) -> List[Dict[str, Any]]:
                 "max_seed_queue_size": settings.get("max_seed_queue_size", -1),
                 "seed_check_torrent_client": settings.get("seed_check_torrent_client"),
                 "monitored_only": settings.get("monitored_only", True),
-                "tag_processed_items": settings.get("tag_processed_items", True),
-                "tag_enable_missing": settings.get("tag_enable_missing", True),
-                "tag_enable_upgrade": settings.get("tag_enable_upgrade", True),
-                "tag_enable_upgraded": settings.get("tag_enable_upgraded", True),
+                "tag_processed_items": settings.get("tag_processed_items", False),
+                "tag_enable_missing": settings.get("tag_enable_missing", False),
+                "tag_enable_upgrade": settings.get("tag_enable_upgrade", False),
+                "tag_enable_upgraded": settings.get("tag_enable_upgraded", False),
                 "custom_tags": settings.get("custom_tags") or {},
             }
             instances.append(instance_details)

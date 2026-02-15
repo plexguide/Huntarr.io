@@ -14,6 +14,7 @@ from src.primary.settings_manager import load_settings, get_advanced_setting
 from src.primary.utils.history_utils import log_processed_media
 from src.primary.stats_manager import increment_stat, increment_stat_only, check_hourly_cap_exceeded
 from src.primary.stateful_manager import is_processed, add_processed_id
+from src.primary.apps._common.tagging import try_tag_item, extract_tag_settings
 from src.primary.apps.sonarr import api as sonarr_api
 
 def should_delay_episode_search(air_date_str: str, delay_days: int) -> bool:
@@ -92,9 +93,9 @@ def process_missing_episodes(
     command_wait_delay: int = get_advanced_setting("command_wait_delay", 1),
     command_wait_attempts: int = get_advanced_setting("command_wait_attempts", 600),
     stop_check: Callable[[], bool] = lambda: False,
-    tag_processed_items: bool = True,
-    tag_enable_missing: bool = True,
-    tag_enable_shows_missing: bool = True,
+    tag_processed_items: bool = False,
+    tag_enable_missing: bool = False,
+    tag_enable_shows_missing: bool = False,
     custom_tags: dict = None,
     exempt_tags: list = None,
     instance_display_name: Optional[str] = None,
@@ -169,9 +170,9 @@ def process_missing_seasons_packs_mode(
     command_wait_delay: int,
     command_wait_attempts: int,
     stop_check: Callable[[], bool],
-    tag_processed_items: bool = True,
-    tag_enable_missing: bool = True,
-    tag_enable_shows_missing: bool = True,
+    tag_processed_items: bool = False,
+    tag_enable_missing: bool = False,
+    tag_enable_shows_missing: bool = False,
     custom_tags: dict = None,
     exempt_tags: list = None,
     hunt_missing_mode: str = "seasons_packs",
@@ -192,6 +193,16 @@ def process_missing_seasons_packs_mode(
             "upgrade": "huntarr-upgrade",
             "shows_missing": "huntarr-shows-missing"
         }
+
+    # Build unified tag settings
+    _tag_settings = {
+        "enabled": tag_processed_items,
+        "tag_enable_missing": tag_enable_missing,
+        "tag_enable_upgrade": False,
+        "tag_enable_upgraded": False,
+        "tag_enable_shows_missing": tag_enable_shows_missing,
+        "custom_tags": custom_tags or {},
+    }
     
     # Get all missing episodes using efficient random page selection instead of fetching all
     missing_episodes = sonarr_api.get_missing_episodes_random_page(
@@ -360,14 +371,9 @@ def process_missing_seasons_packs_mode(
             success = add_processed_id("sonarr", instance_name, season_id)
             sonarr_logger.debug(f"Added season ID {season_id} to processed list for {instance_name}, success: {success}")
             
-                    # Tag the series if enabled
-        if tag_processed_items and tag_enable_missing:
-            custom_tag = custom_tags.get("missing", "huntarr-missing")
-            try:
-                sonarr_api.tag_processed_series(api_url, api_key, api_timeout, series_id, custom_tag)
-                sonarr_logger.debug(f"Tagged series {series_id} with '{custom_tag}'")
-            except Exception as e:
-                sonarr_logger.warning(f"Failed to tag series {series_id} with '{custom_tag}': {e}")
+            try_tag_item(_tag_settings, "missing", sonarr_api.tag_processed_series,
+                         api_url, api_key, api_timeout, series_id,
+                         sonarr_logger, f"series {series_id}")
             
             # Log to history system
             media_name = f"{series_title} - Season {season_number} (contains {episode_count} missing episodes)"
@@ -406,9 +412,9 @@ def process_missing_shows_mode(
     command_wait_delay: int,
     command_wait_attempts: int,
     stop_check: Callable[[], bool],
-    tag_processed_items: bool = True,
-    tag_enable_missing: bool = True,
-    tag_enable_shows_missing: bool = True,
+    tag_processed_items: bool = False,
+    tag_enable_missing: bool = False,
+    tag_enable_shows_missing: bool = False,
     custom_tags: dict = None,
     exempt_tags: list = None,
     instance_display_name: Optional[str] = None,
@@ -424,6 +430,16 @@ def process_missing_shows_mode(
             "upgrade": "huntarr-upgrade",
             "shows_missing": "huntarr-shows-missing"
         }
+
+    # Build unified tag settings
+    _tag_settings = {
+        "enabled": tag_processed_items,
+        "tag_enable_missing": tag_enable_missing,
+        "tag_enable_upgrade": False,
+        "tag_enable_upgraded": False,
+        "tag_enable_shows_missing": tag_enable_shows_missing,
+        "custom_tags": custom_tags or {},
+    }
     
     # Get series with missing episodes
     sonarr_logger.info("Retrieving series with missing episodes...")
@@ -563,14 +579,9 @@ def process_missing_shows_mode(
             processed_any = True
             sonarr_logger.info(f"Successfully processed {len(episode_ids)} missing episodes in {show_title}")
             
-                    # Tag the series if enabled
-        if tag_processed_items and tag_enable_shows_missing:
-            custom_tag = custom_tags.get("shows_missing", "huntarr-shows-missing")
-            try:
-                sonarr_api.tag_processed_series(api_url, api_key, api_timeout, show_id, custom_tag)
-                sonarr_logger.debug(f"Tagged series {show_id} with '{custom_tag}'")
-            except Exception as e:
-                sonarr_logger.warning(f"Failed to tag series {show_id} with '{custom_tag}': {e}")
+            try_tag_item(_tag_settings, "shows_missing", sonarr_api.tag_processed_series,
+                         api_url, api_key, api_timeout, show_id,
+                         sonarr_logger, f"series {show_id}")
             
             # Add episode IDs to stateful manager IMMEDIATELY after processing each batch
             for episode_id in episode_ids:
@@ -626,9 +637,9 @@ def process_missing_episodes_mode(
     command_wait_delay: int,
     command_wait_attempts: int,
     stop_check: Callable[[], bool],
-    tag_processed_items: bool = True,
-    tag_enable_missing: bool = True,
-    tag_enable_shows_missing: bool = True,
+    tag_processed_items: bool = False,
+    tag_enable_missing: bool = False,
+    tag_enable_shows_missing: bool = False,
     custom_tags: dict = None,
     exempt_tags: list = None,
     instance_display_name: Optional[str] = None,

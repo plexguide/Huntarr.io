@@ -20,6 +20,7 @@ from src.primary.state import check_state_reset
 from src.primary.apps._common.settings import extract_app_settings, validate_settings
 from src.primary.apps._common.filtering import filter_exempt_items, filter_unprocessed
 from src.primary.apps._common.processing import should_continue_processing
+from src.primary.apps._common.tagging import try_tag_item
 
 # Get logger for the app
 eros_logger = get_logger("eros")
@@ -56,8 +57,7 @@ def process_missing_items(
     api_timeout = s['api_timeout']
     monitored_only = s['monitored_only']
     hunt_missing_items = s['hunt_count']
-    tag_processed_items = s['tag_processed_items']
-    tag_enable_missing = s['tag_enable_missing']
+    tag_settings = s['tag_settings']
     
     # App-specific settings
     skip_future_releases = app_settings.get("skip_future_releases", True)
@@ -189,14 +189,10 @@ def process_missing_items(
         if search_command_id:
             eros_logger.info(f"Triggered search command {search_command_id}. Assuming success for now.")
             
-            # Tag the movie if enabled
-            if tag_processed_items and tag_enable_missing:
-                custom_tag = app_settings.get("custom_tags", {}).get("missing", "huntarr-missing")
-                try:
-                    eros_api.tag_processed_movie(api_url, api_key, api_timeout, item_id, custom_tag)
-                    eros_logger.debug(f"Tagged movie {item_id} with '{custom_tag}'")
-                except Exception as e:
-                    eros_logger.warning(f"Failed to tag movie {item_id} with '{custom_tag}': {e}")
+            # Tag the movie if enabled (unified tagging)
+            try_tag_item(tag_settings, "missing", eros_api.tag_processed_movie,
+                         api_url, api_key, api_timeout, item_id,
+                         eros_logger, f"movie {item_id}")
             
             # Log to history system
             log_processed_media("eros", item_info, item_id, instance_key, "missing", display_name_for_log=app_settings.get("instance_display_name") or instance_name)
