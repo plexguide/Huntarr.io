@@ -3656,6 +3656,22 @@
     overflow: visible;
 }
 
+/* Settings view: allow dropdowns to overflow outside cards */
+#requestarr-settings-view {
+    overflow: visible !important;
+}
+#requestarr-settings-view .reqset-card {
+    overflow: visible !important;
+}
+#requestarr-settings-view .reqset-card-body {
+    overflow: visible !important;
+}
+
+/* When settings is active, remove the scroll container that clips dropdowns */
+.requestarr-content.settings-active {
+    overflow: visible !important;
+}
+
 @media (max-width: 768px) {
     #requestarr-section .requestarr-content {
         padding: 0;

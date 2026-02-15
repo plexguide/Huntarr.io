@@ -162,10 +162,14 @@ export class RequestarrDiscover {
         });
         // Hide the entire header bar when settings/smarthunt-settings have their own toolbar
         const headerBar = document.querySelector('.requestarr-header-bar');
+        const contentEl = document.querySelector('.requestarr-content');
         if (view === 'settings' || view === 'smarthunt-settings') {
             if (headerBar) headerBar.style.display = 'none';
+            // Allow dropdowns to overflow outside cards in settings view
+            if (contentEl) contentEl.classList.add('settings-active');
         } else {
             if (headerBar) headerBar.style.display = '';
+            if (contentEl) contentEl.classList.remove('settings-active');
             const headerEl = document.getElementById(`requestarr-header-${view}`);
             if (headerEl) {
                 headerEl.style.display = '';
