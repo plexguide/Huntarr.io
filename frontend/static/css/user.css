@@ -2,17 +2,15 @@
    User Account Page Styles
    ========================================================================== */
 
-/* Section root */
+/* Section root — scrolling & layout handled by .content-section in style.css */
 #userSection {
     display: none;
     width: 100%;
-    padding: 20px;
-    overflow-y: auto;
-    max-height: calc(100vh - 120px);
 }
 
 #userSection.active {
-    display: block;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Container */
