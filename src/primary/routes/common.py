@@ -1315,6 +1315,85 @@ def setup_status():
         return jsonify({"success": False, "error": "Failed to check setup status"}), 500
 
 
+# ── Setup backdrop images (TMDB trending) ─────────────────────────
+_backdrop_cache = {'images': [], 'fetched_at': 0}
+
+@common_bp.route('/api/setup/backdrops', methods=['GET'])
+def setup_backdrops():
+    """Return a list of TMDB trending backdrop image URLs for the setup page."""
+    import time
+    try:
+        now = time.time()
+        # Cache for 1 hour
+        if _backdrop_cache['images'] and (now - _backdrop_cache['fetched_at']) < 3600:
+            return jsonify({'success': True, 'images': _backdrop_cache['images']})
+
+        TMDB_KEY = "9265b0bd0cd1962f7f3225989fcd7192"
+        TMDB_BASE = "https://api.themoviedb.org/3"
+        IMAGE_BASE = "https://image.tmdb.org/t/p/w1280"
+        backdrops = []
+
+        # Fetch trending movies (page 1 & 2 = 40 items)
+        for page in (1, 2):
+            try:
+                r = requests.get(f"{TMDB_BASE}/trending/movie/week", params={
+                    'api_key': TMDB_KEY, 'language': 'en-US', 'page': page
+                }, timeout=8)
+                if r.ok:
+                    for item in r.json().get('results', []):
+                        bp = item.get('backdrop_path')
+                        if bp:
+                            backdrops.append(IMAGE_BASE + bp)
+            except Exception:
+                pass
+
+        # Fetch trending TV (page 1 & 2 = 40 items)
+        for page in (1, 2):
+            try:
+                r = requests.get(f"{TMDB_BASE}/trending/tv/week", params={
+                    'api_key': TMDB_KEY, 'language': 'en-US', 'page': page
+                }, timeout=8)
+                if r.ok:
+                    for item in r.json().get('results', []):
+                        bp = item.get('backdrop_path')
+                        if bp:
+                            backdrops.append(IMAGE_BASE + bp)
+            except Exception:
+                pass
+
+        # Also fetch top-rated from the US for variety
+        try:
+            r = requests.get(f"{TMDB_BASE}/movie/popular", params={
+                'api_key': TMDB_KEY, 'language': 'en-US', 'region': 'US', 'page': 1
+            }, timeout=8)
+            if r.ok:
+                for item in r.json().get('results', []):
+                    bp = item.get('backdrop_path')
+                    if bp:
+                        url = IMAGE_BASE + bp
+                        if url not in backdrops:
+                            backdrops.append(url)
+        except Exception:
+            pass
+
+        # Deduplicate and cap
+        seen = set()
+        unique = []
+        for url in backdrops:
+            if url not in seen:
+                seen.add(url)
+                unique.append(url)
+        backdrops = unique[:80]
+
+        _backdrop_cache['images'] = backdrops
+        _backdrop_cache['fetched_at'] = now
+
+        return jsonify({'success': True, 'images': backdrops})
+    except Exception as e:
+        logger.error(f"Setup backdrops API error: {e}")
+        return jsonify({'success': False, 'images': [], 'error': str(e)})
+
+
 # Register unified calendar routes (Radarr, Sonarr)
 from .calendar_routes import register_calendar_routes
 register_calendar_routes(common_bp)
