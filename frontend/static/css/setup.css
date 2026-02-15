@@ -806,6 +806,50 @@
     margin-right: 4px;
 }
 
+/* ===== Compact Recovery Key layout ===== */
+.setup-key-display-compact {
+    padding: 20px 24px;
+    margin: 16px 0;
+}
+.setup-key-display-compact h3 { display: none; }
+.setup-key-top-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(240, 173, 78, 0.12);
+}
+.setup-key-top-row i { flex-shrink: 0; margin-top: 2px; }
+.setup-key-info {
+    font-size: 13.5px;
+    color: rgba(255, 255, 255, 0.72);
+    line-height: 1.55;
+}
+.setup-key-info strong { color: #f0ad4e; }
+.setup-key-display-compact .setup-key-value {
+    margin: 12px 0;
+    padding: 12px 16px;
+}
+.setup-key-display-compact .setup-key-value span {
+    font-size: 20px;
+    letter-spacing: 1.5px;
+}
+.setup-key-actions-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 10px;
+}
+.setup-key-warning-inline {
+    font-size: 12px;
+    color: #dc3545;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.setup-key-warning-inline i { margin-right: 4px; }
+
 /* Countdown section */
 .setup-countdown {
     background: rgba(240, 173, 78, 0.1);
@@ -813,6 +857,26 @@
     padding: 14px;
     border: 1px solid rgba(240, 173, 78, 0.2);
     margin: 16px 0;
+}
+.setup-countdown-compact {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 14px;
+    margin: 10px 0 0;
+}
+.setup-countdown-compact span {
+    font-size: 13px;
+    color: #f0ad4e;
+    font-weight: 600;
+}
+.setup-countdown-compact .countdown-number {
+    font-size: 22px;
+    font-weight: bold;
+    color: #f0ad4e;
+    min-width: 28px;
+    text-align: center;
 }
 
 .setup-countdown p {
@@ -839,6 +903,26 @@
     padding: 16px;
     border: 1px solid rgba(58, 113, 228, 0.2);
     margin: 16px 0;
+}
+.setup-confirm-compact {
+    padding: 12px 14px;
+    margin: 10px 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+.setup-confirm-compact > span {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+}
+.setup-confirm-compact > span i {
+    margin-right: 5px;
+    color: #6b9eff;
+}
+.setup-confirm-compact .setup-confirm-buttons {
+    margin-left: auto;
 }
 
 .setup-confirm-prompt p {

@@ -219,39 +219,38 @@
             <div id="recoveryKeySetup" class="setup-section">
                 <h2>Recovery Key</h2>
                 <p>Save this key to recover your account if you lose access.</p>
-                <div class="setup-card">
-                    <div class="setup-card-header">
-                        <i class="fas fa-key setup-card-icon amber"></i>
-                        <div>
-                            <h3>Secure Your Account</h3>
-                            <ul>
-                                <li><strong>Account Recovery:</strong> Reset password without external help</li>
-                                <li><strong>2FA Bypass:</strong> Regain access if your 2FA device is lost</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
 
                 <div id="recoveryKeyDisplay">
-                    <div class="setup-key-display">
-                        <h3><i class="fas fa-key"></i> Your Recovery Key</h3>
+                    <div class="setup-key-display setup-key-display-compact">
+                        <div class="setup-key-top-row">
+                            <i class="fas fa-shield-alt" style="color: #f0ad4e; font-size: 18px;"></i>
+                            <div class="setup-key-info">
+                                This is the <strong>only way</strong> to recover your account if you lose your password or 2FA device. Huntarr cannot reset your credentials or assist with account recovery &mdash; your security is fully self-sovereign to harden against cybersecurity attacks.
+                            </div>
+                        </div>
                         <div class="setup-key-value">
                             <span id="recoveryKeyValue">Generating...</span>
                         </div>
-                        <button type="button" id="copyRecoveryKeyButton" class="copy-button copy-button-centered">
-                            <i class="fas fa-copy"></i> Copy Recovery Key
-                        </button>
+                        <div class="setup-key-actions-row">
+                            <button type="button" id="copyRecoveryKeyButton" class="copy-button">
+                                <i class="fas fa-copy"></i> Copy Key
+                            </button>
+                            <span class="setup-key-warning-inline">
+                                <i class="fas fa-exclamation-triangle"></i> Will not be shown again
+                            </span>
+                        </div>
 
                         <div id="countdownSection" style="display: none;">
-                            <div class="setup-countdown">
-                                <p><i class="fas fa-clock"></i> Please copy/save your recovery key</p>
-                                <div class="countdown-number" id="countdownTimer">10</div>
+                            <div class="setup-countdown setup-countdown-compact">
+                                <i class="fas fa-clock" style="color: #f0ad4e; margin-right: 6px;"></i>
+                                <span>Copy/save your key</span>
+                                <span class="countdown-number" id="countdownTimer">10</span>
                             </div>
                         </div>
 
                         <div id="confirmationSection" style="display: none;">
-                            <div class="setup-confirm-prompt">
-                                <p><i class="fas fa-question-circle"></i> Have you copied your recovery key?</p>
+                            <div class="setup-confirm-prompt setup-confirm-compact">
+                                <span><i class="fas fa-question-circle"></i> Have you copied your recovery key?</span>
                                 <div class="setup-confirm-buttons">
                                     <button type="button" id="confirmCopiedButton" class="next-button btn-green">
                                         <i class="fas fa-check"></i> Yes, I've copied it
@@ -262,11 +261,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        <p class="setup-key-warning">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            Save this key safely - it will not be shown again!
-                        </p>
                     </div>
                 </div>
 
