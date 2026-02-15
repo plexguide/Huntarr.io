@@ -26,6 +26,15 @@
             </div>
         </div>
 
+        <!-- Continue to Setup Guide banner (shown when in wizard flow) -->
+        <div id="nzb-server-editor-wizard-banner" class="setup-wizard-continue-banner" style="display: none; margin-bottom: 16px;">
+            <i class="fas fa-arrow-right"></i>
+            <span>After saving your server, head back and continue the Setup Guide.</span>
+            <button type="button" class="setup-wizard-continue-btn" data-wizard-nav="media-hunt-collection">
+                <i class="fas fa-forward"></i> Continue to Setup Guide
+            </button>
+        </div>
+
         <div class="nzb-server-editor-grid">
             <!-- Connection Section -->
             <div class="nzb-editor-section">
@@ -123,12 +132,10 @@
             </div>
         </div>
 
-        <!-- Hidden legacy status element (kept for JS compatibility) -->
-        <div id="nzb-server-test-status" class="nzb-server-test-status" style="display: none;">
-            <div class="nzb-server-test-inner">
-                <i id="nzb-server-test-icon" class="fas fa-circle-notch fa-spin"></i>
-                <span id="nzb-server-test-msg">Testing connection...</span>
-            </div>
+        <!-- Legacy status element hidden (connection status shown in header pill only) -->
+        <div id="nzb-server-test-status" class="nzb-server-test-status" style="display: none !important;">
+            <i id="nzb-server-test-icon" class="fas fa-circle-notch fa-spin"></i>
+            <span id="nzb-server-test-msg">Testing connection...</span>
         </div>
     </div>
 </section>

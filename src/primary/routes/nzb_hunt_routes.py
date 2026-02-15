@@ -359,6 +359,14 @@ def add_nzb_server():
     servers.append(server)
     cfg["servers"] = servers
     _save_config(cfg)
+    # Reset any stale bandwidth stats for this server key (from previous installs)
+    try:
+        from src.primary.apps.nzb_hunt.bandwidth_history import get_bandwidth_history
+        key = _server_bandwidth_key(server["name"], server["host"])
+        hist = get_bandwidth_history(_config_dir())
+        hist.reset_server(key)
+    except Exception:
+        pass
     try:
         mgr = _get_download_manager()
         mgr.configure_servers()
@@ -397,6 +405,32 @@ def update_nzb_server(index):
         mgr.configure_servers()
     except Exception:
         pass
+    return jsonify({"success": True})
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/servers/<int:index>/bandwidth", methods=["DELETE"])
+def reset_nzb_server_bandwidth(index):
+    """Reset bandwidth stats for a specific server."""
+    cfg = _load_config()
+    servers = cfg.get("servers", [])
+    if index < 0 or index >= len(servers):
+        return jsonify({"success": False, "error": "Invalid index"}), 400
+    srv = servers[index]
+    key = _server_bandwidth_key(srv.get("name", "Server"), srv.get("host", ""))
+    try:
+        from src.primary.apps.nzb_hunt.bandwidth_history import get_bandwidth_history
+        hist = get_bandwidth_history(_config_dir())
+        hist.reset_server(key)
+        # Also reset the in-memory session counter in the download manager
+        try:
+            mgr = _get_download_manager()
+            bw = mgr.get_status().get("bandwidth_by_server", {})
+            if key in bw:
+                bw[key] = 0
+        except Exception:
+            pass
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
     return jsonify({"success": True})
 
 

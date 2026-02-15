@@ -3246,6 +3246,8 @@
             }
         },
 
+        _fromSetupWizard: false,
+
         _updateNzbServersSetupBanner: function () {
             var banner = document.getElementById('nzb-servers-setup-wizard-continue-banner');
             if (!banner) return;
@@ -3254,8 +3256,9 @@
             try { fromWizard = sessionStorage.getItem('setup-wizard-active-nav') === '1'; } catch (e) {}
             if (fromWizard) {
                 try { sessionStorage.removeItem('setup-wizard-active-nav'); } catch (e) {}
+                this._fromSetupWizard = true;
             }
-            banner.style.display = fromWizard ? 'flex' : 'none';
+            banner.style.display = (fromWizard || this._fromSetupWizard) ? 'flex' : 'none';
         },
 
         /* ──────────────────────────────────────────────
@@ -3478,6 +3481,9 @@
                     '<div class="nzb-server-card-footer">' +
                         '<button class="nzb-btn" data-action="edit" data-idx="' + idx + '"><i class="fas fa-pen"></i> Edit</button>' +
                         '<button class="nzb-btn nzb-btn-danger" data-action="delete" data-idx="' + idx + '"><i class="fas fa-trash"></i> Delete</button>' +
+                    '</div>' +
+                    '<div class="nzb-server-card-footer nzb-server-card-footer-secondary">' +
+                        '<button class="nzb-btn nzb-btn-subtle" data-action="reset-stats" data-idx="' + idx + '"><i class="fas fa-undo"></i> Reset Stats</button>' +
                     '</div>';
 
                 card.addEventListener('click', function (e) {
@@ -3488,6 +3494,28 @@
                     if (action === 'edit') {
                         self._editIndex = i;
                         self._navigateToServerEditor(self._servers[i]);
+                    } else if (action === 'reset-stats') {
+                        var name = (self._servers[i] || {}).name || 'this server';
+                        var idx = i;
+                        var doReset = function() {
+                            fetch('./api/nzb-hunt/servers/' + idx + '/bandwidth', { method: 'DELETE' })
+                                .then(function (r) { return r.json(); })
+                                .then(function (data) {
+                                    if (data.success) {
+                                        self._loadServers();
+                                        if (window.HuntarrToast) window.HuntarrToast.success('Bandwidth stats reset for "' + name + '".');
+                                    }
+                                })
+                                .catch(function () {
+                                    if (window.HuntarrToast) window.HuntarrToast.error('Failed to reset stats.');
+                                });
+                        };
+                        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                            window.HuntarrConfirm.show({ title: 'Reset Bandwidth Stats', message: 'Reset all bandwidth statistics for "' + name + '"? This cannot be undone.', confirmLabel: 'Reset', onConfirm: doReset });
+                        } else {
+                            if (!confirm('Reset bandwidth stats for "' + name + '"?')) return;
+                            doReset();
+                        }
                     } else if (action === 'delete') {
                         var name = (self._servers[i] || {}).name || 'this server';
                         var idx = i;
@@ -3614,6 +3642,10 @@
         },
 
         _navigateToServerEditor: function () {
+            // Propagate setup wizard context to the server editor
+            if (this._fromSetupWizard) {
+                try { sessionStorage.setItem('setup-wizard-server-editor', '1'); } catch (e) {}
+            }
             window.location.hash = 'nzb-hunt-server-editor';
         },
 
@@ -3654,8 +3686,24 @@
 
             this._updateServerModalSaveButton();
 
+            // Show/hide setup wizard banner on server editor
+            var editorFromWizard = false;
+            try { editorFromWizard = sessionStorage.getItem('setup-wizard-server-editor') === '1'; } catch (e) {}
+            if (editorFromWizard) {
+                try { sessionStorage.removeItem('setup-wizard-server-editor'); } catch (e) {}
+            }
+            var editorBanner = document.getElementById('nzb-server-editor-wizard-banner');
+            if (editorBanner) editorBanner.style.display = (editorFromWizard || this._fromSetupWizard) ? 'flex' : 'none';
+            // Hide breadcrumb bar during wizard flow
+            if (editorFromWizard || this._fromSetupWizard) {
+                var editorSection = document.getElementById('nzb-hunt-server-editor-section');
+                var hdr = editorSection && editorSection.querySelector('.page-header-bar');
+                if (hdr) hdr.style.display = 'none';
+            }
+
             // Auto-test connection when editing an existing server
-            if (server && server.host) {
+            // Only auto-test if we have host AND credentials (username + password)
+            if (server && server.host && server.username) {
                 var self = this;
                 setTimeout(function () {
                     self._showTestStatus('testing', 'Auto-detecting connection...');
@@ -3719,9 +3767,11 @@
                 var handler = function () {
                     self._updateServerModalSaveButton();
                     // Auto-test when connection-relevant fields change
+                    // Requires host AND username to be filled before auto-testing
                     if (connectionIds.indexOf(id) !== -1) {
                         var host = (document.getElementById('nzb-server-host') || {}).value || '';
-                        if (host.trim().length > 3) {
+                        var username = (document.getElementById('nzb-server-username') || {}).value || '';
+                        if (host.trim().length > 3 && username.trim().length > 0) {
                             // Debounce: wait 1.5s after last keystroke
                             if (self._autoTestTimer) clearTimeout(self._autoTestTimer);
                             self._autoTestTimer = setTimeout(function () {
@@ -3755,6 +3805,10 @@
                 onCancel: function () {
                     self._serverEditorOriginalValues = self._getServerEditorFormSnapshot();
                     self._updateServerModalSaveButton();
+                    // Re-set the wizard flag so the servers page banner shows again
+                    if (self._fromSetupWizard) {
+                        try { sessionStorage.setItem('setup-wizard-active-nav', '1'); } catch (e) {}
+                    }
                     if (window.huntarrUI && typeof window.huntarrUI.switchSection === 'function') {
                         window.huntarrUI.switchSection(targetSection);
                         window.location.hash = targetSection;
@@ -3767,6 +3821,10 @@
             if (this._isServerEditorDirty()) {
                 this._confirmLeaveServerEditor('nzb-hunt-servers');
                 return;
+            }
+            // Re-set the wizard flag so the servers page banner shows again
+            if (this._fromSetupWizard) {
+                try { sessionStorage.setItem('setup-wizard-active-nav', '1'); } catch (e) {}
             }
             if (window.huntarrUI && typeof window.huntarrUI.switchSection === 'function') {
                 window.huntarrUI.switchSection('nzb-hunt-servers');
@@ -3858,20 +3916,7 @@
         },
 
         _showTestStatus: function (state, message) {
-            // Update legacy status bar (hidden but kept for compatibility)
-            var el = document.getElementById('nzb-server-test-status');
-            var icon = document.getElementById('nzb-server-test-icon');
-            var msg = document.getElementById('nzb-server-test-msg');
-            if (el) {
-                el.style.display = 'block';
-                el.className = 'nzb-server-test-status test-' + state;
-                if (icon) {
-                    if (state === 'testing') icon.className = 'fas fa-circle-notch fa-spin';
-                    else if (state === 'success') icon.className = 'fas fa-check-circle';
-                    else icon.className = 'fas fa-times-circle';
-                }
-                if (msg) msg.textContent = message;
-            }
+            // Legacy status bar is permanently hidden — status shown via header pill only
 
             // Update connection pill in header
             var pill = document.getElementById('nzb-server-connection-pill');

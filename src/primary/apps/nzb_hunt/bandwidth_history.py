@@ -136,6 +136,16 @@ class BandwidthHistory:
             for key in bandwidth_by_server
         }
 
+    def reset_server(self, server_key: str):
+        """Reset all bandwidth stats for a specific server."""
+        with self._lock:
+            if server_key in self._data:
+                del self._data[server_key]
+            if server_key in self._last_snapshot:
+                del self._last_snapshot[server_key]
+            self._save()
+            logger.info(f"Reset bandwidth stats for server: {server_key}")
+
 
 # Module-level instance (lazy init with config dir)
 _instance: Optional[BandwidthHistory] = None

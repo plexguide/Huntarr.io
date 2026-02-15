@@ -158,8 +158,8 @@ let huntarrUI = {
             console.log('[huntarrUI] Initialization - showing system group');
             this.showMainSidebar();
         } else if (this.currentSection === 'nzb-hunt-home' || this.currentSection === 'nzb-hunt-activity' || this.currentSection === 'nzb-hunt-server-editor' || this.currentSection === 'nzb-hunt-folders' || this.currentSection === 'nzb-hunt-servers' || this.currentSection === 'nzb-hunt-advanced' || (this.currentSection && this.currentSection.startsWith('nzb-hunt-settings'))) {
-            console.log('[huntarrUI] Initialization - showing Media Hunt sidebar for NZB Hunt');
-            this.showMovieHuntSidebar();
+            console.log('[huntarrUI] Initialization - showing NZB Hunt sidebar');
+            this.showNzbHuntSidebar();
         } else if (this.currentSection === 'indexer-hunt' || this.currentSection === 'indexer-hunt-stats' || this.currentSection === 'indexer-hunt-history') {
             console.log('[huntarrUI] Initialization - showing Media Hunt sidebar for Index Master');
             this.showMovieHuntSidebar();
@@ -615,7 +615,7 @@ let huntarrUI = {
             }
             
             // Don't refresh page when navigating to/from instance editor or between app sections
-            const noRefreshSections = ['home', 'instance-editor', 'profile-editor', 'movie-hunt-instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'media-hunt-collection', 'movie-hunt-calendar', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-media-hunt', 'movie-hunt-settings', 'media-hunt-settings', 'media-hunt-instances', 'settings-instance-management', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-import-media', 'settings-custom-formats', 'settings-root-folders', 'tv-hunt-collection', 'media-hunt-collection', 'tv-hunt-calendar', 'tv-hunt-settings', 'media-hunt-settings', 'tv-hunt-settings-profiles', 'tv-hunt-settings-sizes', 'tv-hunt-settings-custom-formats', 'tv-hunt-settings-indexers', 'tv-hunt-settings-clients', 'tv-hunt-settings-import-lists', 'tv-hunt-settings-root-folders', 'tv-hunt-settings-tv-management', 'tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist', 'tv-hunt-instance-editor', 'logs-tv-hunt', 'system', 'hunt-manager', 'logs', 'about', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-settings', 'nzb-hunt-settings-folders', 'nzb-hunt-settings-servers', 'nzb-hunt-settings-processing', 'nzb-hunt-settings-advanced', 'nzb-hunt-server-editor', 'requestarr', 'requestarr-discover', 'requestarr-movies', 'requestarr-tv', 'requestarr-hidden', 'requestarr-settings', 'requestarr-smarthunt-settings', 'indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history'];
+            const noRefreshSections = ['home', 'instance-editor', 'profile-editor', 'movie-hunt-instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'media-hunt-collection', 'movie-hunt-calendar', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-media-hunt', 'movie-hunt-settings', 'media-hunt-settings', 'media-hunt-instances', 'settings-instance-management', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-import-media', 'settings-custom-formats', 'settings-root-folders', 'tv-hunt-collection', 'media-hunt-collection', 'tv-hunt-calendar', 'tv-hunt-settings', 'media-hunt-settings', 'tv-hunt-settings-profiles', 'tv-hunt-settings-sizes', 'tv-hunt-settings-custom-formats', 'tv-hunt-settings-indexers', 'tv-hunt-settings-clients', 'tv-hunt-settings-import-lists', 'tv-hunt-settings-root-folders', 'tv-hunt-settings-tv-management', 'tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist', 'tv-hunt-instance-editor', 'logs-tv-hunt', 'system', 'hunt-manager', 'logs', 'about', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-folders', 'nzb-hunt-servers', 'nzb-hunt-advanced', 'nzb-hunt-settings', 'nzb-hunt-settings-folders', 'nzb-hunt-settings-servers', 'nzb-hunt-settings-processing', 'nzb-hunt-settings-advanced', 'nzb-hunt-server-editor', 'requestarr', 'requestarr-discover', 'requestarr-movies', 'requestarr-tv', 'requestarr-hidden', 'requestarr-settings', 'requestarr-smarthunt-settings', 'indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history'];
             const skipRefresh = noRefreshSections.includes(section) || noRefreshSections.includes(this.currentSection);
             
             if (!skipRefresh) {
@@ -777,7 +777,7 @@ let huntarrUI = {
             document.getElementById('nzb-hunt-section').style.display = 'block';
             newTitle = 'NZB Hunt';
             this.currentSection = 'nzb-hunt-home';
-            this.showMovieHuntSidebar();
+            this.showNzbHuntSidebar();
             if (window.NzbHunt && typeof window.NzbHunt.init === 'function') {
                 window.NzbHunt.init();
             }
@@ -787,7 +787,7 @@ let huntarrUI = {
             document.getElementById('nzb-hunt-activity-section').style.display = 'block';
             newTitle = 'NZB Hunt – Activity';
             this.currentSection = 'nzb-hunt-activity';
-            this.showMovieHuntSidebar();
+            this.showNzbHuntSidebar();
         } else if ((section === 'nzb-hunt-folders' || section === 'nzb-hunt-servers' || section === 'nzb-hunt-advanced' || section.startsWith('nzb-hunt-settings')) && document.getElementById('nzb-hunt-settings-section')) {
             if (!this._enableNzbHunt) { this.switchSection('home'); return; }
             document.getElementById('nzb-hunt-settings-section').classList.add('active');
@@ -797,7 +797,7 @@ let huntarrUI = {
             else if (section === 'nzb-hunt-advanced' || section === 'nzb-hunt-settings-advanced') tab = 'advanced';
             newTitle = 'NZB Hunt – ' + (tab.charAt(0).toUpperCase() + tab.slice(1));
             this.currentSection = section;
-            this.showMovieHuntSidebar();
+            this.showNzbHuntSidebar();
             if (window.NzbHunt && typeof window.NzbHunt.initSettings === 'function') {
                 window.NzbHunt.initSettings();
             }
@@ -810,7 +810,7 @@ let huntarrUI = {
             document.getElementById('nzb-hunt-server-editor-section').style.display = 'block';
             newTitle = 'NZB Hunt – Usenet Server';
             this.currentSection = 'nzb-hunt-server-editor';
-            this.showMovieHuntSidebar();
+            this.showNzbHuntSidebar();
             if (window.NzbHunt) {
                 if (typeof window.NzbHunt.initSettings === 'function') window.NzbHunt.initSettings();
                 if (typeof window.NzbHunt._populateServerEditorForm === 'function') window.NzbHunt._populateServerEditorForm();

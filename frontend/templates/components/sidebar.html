@@ -476,7 +476,8 @@ function setActiveNavItem() {
     else if (h === '#swaparr') { selector = '#appsSwaparrNav'; group = 'sidebar-group-apps'; }
 
     // ── NZB Hunt ──────────────────────────────────
-    else if (h === '#nzb-hunt-home' || h === '#nzb-hunt-server-editor') { selector = '#nzbHuntHomeNav'; group = 'sidebar-group-nzb-hunt'; }
+    else if (h === '#nzb-hunt-home') { selector = '#nzbHuntHomeNav'; group = 'sidebar-group-nzb-hunt'; }
+    else if (h === '#nzb-hunt-server-editor') { selector = '#nzbHuntServersNav'; group = 'sidebar-group-nzb-hunt'; }
     else if (h === '#nzb-hunt-folders') { selector = '#nzbHuntFoldersNav'; group = 'sidebar-group-nzb-hunt'; }
     else if (h === '#nzb-hunt-servers' || h === '#nzb-hunt-settings-servers') { selector = '#nzbHuntServersNav'; group = 'sidebar-group-nzb-hunt'; }
     else if (h === '#nzb-hunt-advanced' || h === '#nzb-hunt-settings-advanced') { selector = '#nzbHuntAdvancedNav'; group = 'sidebar-group-nzb-hunt'; }

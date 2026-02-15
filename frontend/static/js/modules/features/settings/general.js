@@ -155,6 +155,13 @@
                             </select>
                             <p class="setting-help">Number of web server worker threads for handling concurrent requests. Increase if using many apps/instances. Requires restart.</p>
                         </div>
+                        <div class="setting-item" style="margin-top: 15px; border-top: 1px solid rgba(148, 163, 184, 0.08); padding-top: 15px;">
+                            <label>Reset Media Hunt Wizard:</label>
+                            <button type="button" id="reset-media-hunt-wizard-btn" class="mset-btn-secondary" style="margin-top: 6px; padding: 7px 16px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 6px; color: #f87171; font-size: 0.85rem; cursor: pointer; transition: all 0.15s;">
+                                <i class="fas fa-redo"></i> Reset Wizard
+                            </button>
+                            <p class="setting-help">Re-show the Media Hunt setup wizard on next visit. Useful if you skipped the wizard and want to run it again.</p>
+                        </div>
                     </div>
                 </div>
 
@@ -188,6 +195,45 @@
 
             </div>
         `;
+
+        // Reset Media Hunt Wizard button
+        var resetWizardBtn = container.querySelector('#reset-media-hunt-wizard-btn');
+        if (resetWizardBtn) {
+            resetWizardBtn.addEventListener('click', function() {
+                if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                    window.HuntarrConfirm.show({
+                        title: 'Reset Media Hunt Wizard',
+                        message: 'This will re-show the Media Hunt setup wizard on your next visit to Media Hunt. Continue?',
+                        confirmLabel: 'Reset',
+                        cancelLabel: 'Cancel',
+                        onConfirm: function() {
+                            HuntarrUtils.setUIPreference('media-hunt-wizard-completed', false);
+                            // Save the preference to the server
+                            var prefs = (window.huntarrUI && window.huntarrUI.originalSettings && window.huntarrUI.originalSettings.general) ? window.huntarrUI.originalSettings.general.ui_preferences || {} : {};
+                            fetch('./api/settings/general', {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ ui_preferences: prefs })
+                            }).then(function() {
+                                if (window.HuntarrToast) window.HuntarrToast.success('Media Hunt wizard has been reset. It will show on your next visit.');
+                            }).catch(function() {
+                                if (window.HuntarrToast) window.HuntarrToast.error('Failed to save wizard reset.');
+                            });
+                        }
+                    });
+                } else {
+                    if (confirm('Reset the Media Hunt wizard? It will show again on your next visit.')) {
+                        HuntarrUtils.setUIPreference('media-hunt-wizard-completed', false);
+                        var prefs = (window.huntarrUI && window.huntarrUI.originalSettings && window.huntarrUI.originalSettings.general) ? window.huntarrUI.originalSettings.general.ui_preferences || {} : {};
+                        fetch('./api/settings/general', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ ui_preferences: prefs })
+                        });
+                    }
+                }
+            });
+        }
 
         if (window.SettingsForms.setupSettingsManualSave) {
             window.SettingsForms.setupSettingsManualSave(container, settings);

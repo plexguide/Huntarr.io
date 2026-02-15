@@ -7553,6 +7553,11 @@ window.HuntarrProwlarr = {
             if (view) view.style.display = '';
             _setSidebarVisible(false);
             _setSponsorsVisible(false);
+            // Restore any page-header-bars that were hidden during wizard navigation
+            var hiddenHeaders = document.querySelectorAll('.page-header-bar');
+            for (var i = 0; i < hiddenHeaders.length; i++) {
+                hiddenHeaders[i].style.display = '';
+            }
             _updateStepUI();
             _expandFirstIncomplete();
             _maybeShowReturnBanner();
@@ -7831,12 +7836,26 @@ window.HuntarrProwlarr = {
             if (navBtn) {
                 var section = navBtn.getAttribute('data-wizard-nav');
                 // Mark that user is navigating from the setup wizard
-                try { sessionStorage.setItem('setup-wizard-active-nav', '1'); } catch (e2) {}
+                try {
+                    sessionStorage.setItem('setup-wizard-active-nav', '1');
+                } catch (e2) {}
                 if (section && window.huntarrUI && typeof window.huntarrUI.switchSection === 'function') {
                     window.huntarrUI.switchSection(section);
                 } else if (section) {
                     window.location.hash = '#' + section;
                 }
+                // Hide the breadcrumb/page-header-bar in the target section
+                // (redundant during setup — the "Continue to Setup Guide" banner
+                // provides all the navigation the user needs)
+                setTimeout(function() {
+                    var allSections = document.querySelectorAll('.content-section');
+                    for (var i = 0; i < allSections.length; i++) {
+                        if (allSections[i].style.display !== 'none' && allSections[i].offsetParent !== null) {
+                            var hdr = allSections[i].querySelector('.page-header-bar');
+                            if (hdr) hdr.style.display = 'none';
+                        }
+                    }
+                }, 150);
                 return;
             }
 
