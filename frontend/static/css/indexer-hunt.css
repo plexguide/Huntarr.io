@@ -33,6 +33,29 @@
     background: rgba(99, 102, 241, 0.3); border-color: rgba(99, 102, 241, 0.5);
 }
 
+/* ── Pool notice (pool vs. per-instance) ──────────────────────────── */
+
+.ih-pool-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 10px;
+    color: #a5b4fc;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+.ih-pool-notice i.fa-info-circle {
+    flex-shrink: 0;
+    margin-top: 2px;
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+.ih-pool-notice strong { color: #c7d2fe; }
+
 /* ── Page layout ────────────────────────────────────────────────── */
 
 #indexer-hunt-section {

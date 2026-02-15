@@ -2,9 +2,20 @@
 <section id="indexer-hunt-section" class="content-section" style="display: none;">
     <link rel="stylesheet" href="./static/css/indexer-hunt.css">
     <link rel="stylesheet" href="./static/css/instance-editor.css?v=1.0.2">
+    <link rel="stylesheet" href="./static/css/home.css">
     <div class="app-content-panel" style="padding: 20px;">
     {% from 'components/page_header_partial.html' import page_header %}
     {{ page_header(back_href='./#media-hunt-collection', parent_icon='fas fa-search-plus', parent_name='Media Hunt', current_name='Indexer Manager', sponsor_section_id='indexer-hunt') }}
+
+    <!-- Continue to Setup Guide banner (shown when wizard incomplete) -->
+    <div id="indexer-setup-wizard-continue-banner" class="setup-wizard-continue-banner" style="display: none; margin-bottom: 20px;">
+        <i class="fas fa-arrow-right"></i>
+        <span>Done with indexers? Assign them to each instance above, then continue to the next step.</span>
+        <button type="button" class="setup-wizard-continue-btn" data-wizard-nav="media-hunt-collection">
+            <i class="fas fa-forward"></i> Continue to Setup Guide
+        </button>
+    </div>
+
     <!-- No-instances warning box (same style as Media Management) -->
     <div id="indexer-hunt-no-instances" class="ih-no-instances" style="display: none;">
         <i class="fas fa-cube" aria-hidden="true"></i>
@@ -54,6 +65,14 @@
             </div>
         </div>
 
+        <!-- Info: Pool vs. per-instance (shown when pool has indexers) -->
+        <div class="ih-pool-notice" id="ih-pool-notice" style="display: none;">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <strong>Index Master Pool is just a pool.</strong> Indexers here are not used until you assign them to each instance. Use the instance selector above and click &quot;Import from Index Master&quot; to add indexers to your Movie Hunt or TV Hunt instances.
+            </div>
+        </div>
+
         <!-- Index Master Pool: central indexer definitions (hidden when empty) -->
         <div class="ih-group-box" id="ih-group-box">
             <h3>Index Master Pool</h3>
@@ -64,7 +83,8 @@
         <div class="ih-empty" id="ih-empty-state" style="display: none;">
             <div class="ih-empty-icon"><i class="fas fa-satellite-dish"></i></div>
             <h3>No Indexers Configured</h3>
-            <p>Add your first indexer to get started with centralized indexer management.</p>
+            <p><strong>Step 1:</strong> Add indexers to the Index Master Pool below (API keys, URLs).</p>
+            <p style="margin-top: 8px;"><strong>Step 2:</strong> After adding, assign them to each instance — the pool is just a pool. Use &quot;Import from Index Master&quot; for each Movie Hunt and TV Hunt instance.</p>
             <button class="ih-btn-primary" id="ih-empty-add-btn">
                 <i class="fas fa-plus"></i> Add Indexer
             </button>

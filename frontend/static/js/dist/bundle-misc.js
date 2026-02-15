@@ -4135,6 +4135,13 @@
 
     // ── Initialization ────────────────────────────────────────────────
 
+    function _updateSetupWizardBanner() {
+        var banner = document.getElementById('indexer-setup-wizard-continue-banner');
+        if (!banner) return;
+        var show = window.SetupWizard && typeof window.SetupWizard.isComplete === 'function' && !window.SetupWizard.isComplete();
+        banner.style.display = show ? 'flex' : 'none';
+    }
+
     IH.init = function() {
         var searchInput = document.getElementById('ih-search-input');
         if (searchInput) searchInput.value = '';
@@ -4142,6 +4149,7 @@
             _bindEvents();
             _initialized = true;
         }
+        _updateSetupWizardBanner();
         var noInstEl = document.getElementById('indexer-hunt-no-instances');
         var wrapperEl = document.getElementById('indexer-hunt-content-wrapper');
         Promise.all([
@@ -4468,6 +4476,8 @@
         if (filtered.length === 0 && _indexers.length === 0) {
             grid.style.display = 'none';
             if (empty) empty.style.display = '';
+            var poolNotice = document.getElementById('ih-pool-notice');
+            if (poolNotice) poolNotice.style.display = 'none';
             var instanceArea = document.getElementById('ih-instance-area');
             if (instanceArea) instanceArea.style.display = 'none';
             var groupBox = document.getElementById('ih-group-box');
@@ -4477,6 +4487,8 @@
 
         grid.style.display = '';
         if (empty) empty.style.display = 'none';
+        var poolNotice = document.getElementById('ih-pool-notice');
+        if (poolNotice) poolNotice.style.display = '';
         var instanceArea = document.getElementById('ih-instance-area');
         if (instanceArea) instanceArea.style.display = '';
         var groupBox = document.getElementById('ih-group-box');
@@ -4744,9 +4756,6 @@
                     msg += ' Updated in ' + data.linked_instances_updated + ' Movie Hunt instance(s).';
                 }
                 if (window.huntarrUI) window.huntarrUI.showNotification(msg, 'success');
-                if (window.SetupWizard && typeof window.SetupWizard.maybeReturnToCollection === 'function') {
-                    window.SetupWizard.maybeReturnToCollection();
-                }
                 var searchInput = document.getElementById('ih-search-input');
                 if (searchInput) searchInput.value = '';
                 _loadIndexers();
