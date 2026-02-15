@@ -1607,6 +1607,21 @@
             this._resetTestStatus();
 
             this._updateServerModalSaveButton();
+
+            // Auto-test connection when editing an existing server
+            if (server && server.host) {
+                var self = this;
+                setTimeout(function () {
+                    self._showTestStatus('testing', 'Auto-detecting connection...');
+                    self._testServerConnection(function (ok, msg) {
+                        if (ok) {
+                            self._showTestStatus('success', 'Connected to ' + server.host);
+                        } else {
+                            self._showTestStatus('fail', 'Could not connect: ' + (msg || 'Unknown error'));
+                        }
+                    });
+                }, 500);
+            }
         },
 
         _getServerEditorFormSnapshot: function () {
@@ -1644,14 +1659,37 @@
             saveBtn.title = canSave ? 'Save server' : (hasHost ? 'Save when you make changes' : 'Enter host first');
         },
 
+        _autoTestTimer: null,
+
         _setupServerEditorChangeDetection: function () {
             var self = this;
-            var ids = ['nzb-server-name', 'nzb-server-host', 'nzb-server-port', 'nzb-server-ssl', 'nzb-server-username', 'nzb-server-password', 'nzb-server-connections', 'nzb-server-priority', 'nzb-server-enabled'];
-            ids.forEach(function (id) {
+            var allIds = ['nzb-server-name', 'nzb-server-host', 'nzb-server-port', 'nzb-server-ssl', 'nzb-server-username', 'nzb-server-password', 'nzb-server-connections', 'nzb-server-priority', 'nzb-server-enabled'];
+            // Connection-relevant fields trigger auto-test
+            var connectionIds = ['nzb-server-host', 'nzb-server-port', 'nzb-server-ssl', 'nzb-server-username', 'nzb-server-password'];
+
+            allIds.forEach(function (id) {
                 var el = document.getElementById(id);
                 if (!el) return;
                 var handler = function () {
                     self._updateServerModalSaveButton();
+                    // Auto-test when connection-relevant fields change
+                    if (connectionIds.indexOf(id) !== -1) {
+                        var host = (document.getElementById('nzb-server-host') || {}).value || '';
+                        if (host.trim().length > 3) {
+                            // Debounce: wait 1.5s after last keystroke
+                            if (self._autoTestTimer) clearTimeout(self._autoTestTimer);
+                            self._autoTestTimer = setTimeout(function () {
+                                self._showTestStatus('testing', 'Auto-detecting connection...');
+                                self._testServerConnection(function (ok, msg) {
+                                    if (ok) {
+                                        self._showTestStatus('success', 'Connected to ' + host.trim());
+                                    } else {
+                                        self._showTestStatus('fail', 'Could not connect: ' + (msg || 'Unknown error'));
+                                    }
+                                });
+                            }, 1500);
+                        }
+                    }
                 };
                 el.removeEventListener('input', handler);
                 el.removeEventListener('change', handler);

@@ -64,7 +64,23 @@
             <div class="nzb-settings-group">
                 <h3><i class="fas fa-server" style="color: #3b82f6; margin-right: 8px;"></i>Usenet Servers</h3>
                 <p class="nzb-settings-help">Add your Usenet provider connections. Servers are tried in priority order (lower number = higher priority).</p>
-                <div class="instance-card-grid" id="nzb-server-grid">
+                <div class="nzb-servers-guidance">
+                    <div class="nzb-servers-guidance-card">
+                        <div class="nzb-servers-guidance-icon"><i class="fas fa-info-circle"></i></div>
+                        <div class="nzb-servers-guidance-body">
+                            <div class="nzb-servers-guidance-title">What is a Usenet server?</div>
+                            <div class="nzb-servers-guidance-text">A Usenet server is where NZB downloads are actually fetched from. You need a subscription to a Usenet provider (e.g. Easynews, Newshosting, Frugal Usenet). Your provider will give you a <strong>host</strong>, <strong>port</strong>, <strong>username</strong>, and <strong>password</strong> to connect.</div>
+                        </div>
+                    </div>
+                    <div class="nzb-servers-guidance-card">
+                        <div class="nzb-servers-guidance-icon nzb-servers-guidance-icon-tip"><i class="fas fa-lightbulb"></i></div>
+                        <div class="nzb-servers-guidance-body">
+                            <div class="nzb-servers-guidance-title">Tip: Multiple servers</div>
+                            <div class="nzb-servers-guidance-text">You can add multiple servers for better completion rates. Use <strong>Priority 0</strong> for your main provider and a higher number for backfill/block accounts. Same-priority servers work in parallel; lower priority is used as fallback.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="nzb-server-grid-wrapper" id="nzb-server-grid">
                     <!-- Server cards rendered dynamically -->
                     <div class="add-instance-card" id="nzb-add-server-card">
                         <div class="add-icon"><i class="fas fa-plus-circle"></i></div>

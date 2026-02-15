@@ -1157,15 +1157,71 @@
     margin-top: 8px;
 }
 
-.nzb-server-card {
-    padding: 16px;
-    border-radius: 10px;
-    background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+/* Server guidance section */
+.nzb-servers-guidance {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+.nzb-servers-guidance-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    background: rgba(15, 23, 42, 0.5);
     border: 1px solid rgba(148, 163, 184, 0.1);
-    transition: transform 0.2s, box-shadow 0.2s;
+    border-radius: 10px;
+    flex: 1 1 0;
+    min-width: 260px;
+}
+.nzb-servers-guidance-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.95rem;
+    background: rgba(59, 130, 246, 0.12);
+    color: #60a5fa;
+}
+.nzb-servers-guidance-icon-tip {
+    background: rgba(245, 158, 11, 0.12);
+    color: #fbbf24;
+}
+.nzb-servers-guidance-body { flex: 1; min-width: 0; }
+.nzb-servers-guidance-title {
+    font-weight: 600;
+    color: #e2e8f0;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+}
+.nzb-servers-guidance-text {
+    font-size: 0.82rem;
+    color: #94a3b8;
+    line-height: 1.5;
+}
+.nzb-servers-guidance-text strong { color: #cbd5e1; }
+
+/* Server grid wrapper (replaces instance-card-grid for servers) */
+.nzb-server-grid-wrapper {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+    margin-top: 8px;
+}
+
+.nzb-server-card {
+    padding: 0;
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
     display: flex;
     flex-direction: column;
-    min-height: 180px;
+    overflow: hidden;
 }
 
 .nzb-server-card:hover {
@@ -1178,7 +1234,9 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    padding: 14px 16px 10px;
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.6) 100%);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.06);
 }
 
 .nzb-server-card-name {
@@ -1242,7 +1300,7 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    margin-bottom: 12px;
+    padding: 12px 16px;
 }
 
 .nzb-server-detail {
@@ -1321,14 +1379,29 @@
 
 .nzb-server-card-footer {
     display: flex;
-    gap: 6px;
+    gap: 0;
+    border-top: 1px solid rgba(148, 163, 184, 0.08);
 }
 
 .nzb-server-card-footer .nzb-btn {
     flex: 1;
     justify-content: center;
     font-size: 0.8rem;
-    padding: 7px 10px;
+    padding: 10px 10px;
+    border-radius: 0;
+    border: none;
+    border-right: 1px solid rgba(148, 163, 184, 0.08);
+    background: rgba(30, 41, 59, 0.3);
+    transition: background 0.15s;
+}
+.nzb-server-card-footer .nzb-btn:last-child {
+    border-right: none;
+}
+.nzb-server-card-footer .nzb-btn:hover {
+    background: rgba(59, 130, 246, 0.1);
+}
+.nzb-server-card-footer .nzb-btn.nzb-btn-danger:hover {
+    background: rgba(239, 68, 68, 0.1);
 }
 
 /* ── Add server card (matches instance-card-grid pattern) ────────── */
@@ -1661,16 +1734,17 @@
     box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
 }
 
-/* ── Test Connection button style ────────────── */
-.nzb-btn-test {
-    background: rgba(99, 102, 241, 0.15) !important;
-    color: #a5b4fc !important;
-    border: 1px solid rgba(99, 102, 241, 0.3) !important;
+/* ── Test Connection button style (subtle/ghost) ────────────── */
+.nzb-btn-test-subtle {
+    background: transparent !important;
+    color: #64748b !important;
+    border: 1px solid rgba(148, 163, 184, 0.15) !important;
+    font-size: 0.85rem !important;
 }
-
-.nzb-btn-test:hover {
-    background: rgba(99, 102, 241, 0.25) !important;
-    border-color: rgba(99, 102, 241, 0.5) !important;
+.nzb-btn-test-subtle:hover {
+    background: rgba(99, 102, 241, 0.1) !important;
+    color: #a5b4fc !important;
+    border-color: rgba(99, 102, 241, 0.3) !important;
 }
 
 .nzb-server-modal-footer {
@@ -1849,6 +1923,12 @@
 @media (max-width: 768px) {
     .nzb-hunt-container {
         padding: 16px 0;
+    }
+    .nzb-servers-guidance {
+        flex-direction: column;
+    }
+    .nzb-server-grid-wrapper {
+        grid-template-columns: 1fr;
     }
     .nzb-status-bar {
         flex-direction: column;

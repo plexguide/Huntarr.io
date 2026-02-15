@@ -130,7 +130,7 @@
         </div>
     </div>
 
-    <!-- Add Download Client type selection modal (like request modal) -->
+    <!-- Add Download Client type selection modal -->
     <div id="client-type-modal" class="client-type-modal" style="display: none;">
         <div class="client-type-modal-backdrop" id="client-type-modal-backdrop"></div>
         <div class="client-type-modal-content">
@@ -140,23 +140,42 @@
                 </button>
                 <div class="client-type-modal-header-overlay">
                     <h2 class="client-type-modal-title">Add Download Client</h2>
-                    <p class="client-type-modal-subtitle">Choose a client type to configure.</p>
+                    <p class="client-type-modal-subtitle">Only usenet clients are supported. Torrent support is coming soon.</p>
                 </div>
             </div>
             <div class="client-type-modal-body">
-                <p class="client-type-modal-info">Huntarr supports usenet download clients. Torrent support is coming soon. Select one to continue.</p>
-                <div class="client-type-form-group">
-                    <label for="client-type-select">Client Type</label>
-                    <select id="client-type-select" class="client-type-select">
-                        <option value="">Select a client...</option>
-                        <option value="nzbhunt">NZB Hunt (Built-in) — Recommended</option>
-                        <option value="sabnzbd">SABnzbd</option>
-                        <option value="nzbget">NZBGet</option>
-                    </select>
+                <!-- Hidden select kept for compatibility -->
+                <select id="client-type-select" class="client-type-select" style="display:none;"></select>
+                <div class="client-type-option-cards" id="client-type-option-cards">
+                    <div class="client-type-option" data-client-type="nzbhunt" id="client-type-option-nzbhunt">
+                        <div class="client-type-option-icon client-type-option-icon-recommended"><i class="fas fa-bolt"></i></div>
+                        <div class="client-type-option-body">
+                            <div class="client-type-option-name">NZB Hunt <span class="client-type-option-tag">Built-in</span></div>
+                            <div class="client-type-option-desc">Zero config. No external software or remote path mappings needed.</div>
+                        </div>
+                        <div class="client-type-option-badge">Recommended</div>
+                        <div class="client-type-option-check"><i class="fas fa-check-circle"></i></div>
+                    </div>
+                    <div class="client-type-option" data-client-type="sabnzbd" id="client-type-option-sabnzbd">
+                        <div class="client-type-option-icon"><i class="fas fa-download"></i></div>
+                        <div class="client-type-option-body">
+                            <div class="client-type-option-name">SABnzbd</div>
+                            <div class="client-type-option-desc">External usenet client. Requires host, port, and API key.</div>
+                        </div>
+                        <div class="client-type-option-check"><i class="fas fa-check-circle"></i></div>
+                    </div>
+                    <div class="client-type-option" data-client-type="nzbget" id="client-type-option-nzbget">
+                        <div class="client-type-option-icon"><i class="fas fa-download"></i></div>
+                        <div class="client-type-option-body">
+                            <div class="client-type-option-name">NZBGet</div>
+                            <div class="client-type-option-desc">External usenet client. Requires host, port, and password.</div>
+                        </div>
+                        <div class="client-type-option-check"><i class="fas fa-check-circle"></i></div>
+                    </div>
                 </div>
                 <div class="client-type-modal-actions">
                     <button type="button" class="client-type-modal-cancel" id="client-type-modal-cancel">Cancel</button>
-                    <button type="button" class="client-type-modal-continue" id="client-type-modal-continue">Continue</button>
+                    <button type="button" class="client-type-modal-continue" id="client-type-modal-continue" disabled>Continue</button>
                 </div>
             </div>
         </div>
@@ -430,39 +449,101 @@
     .client-type-modal-body {
         padding: 24px;
     }
-    .client-type-modal-info {
-        font-size: 13px;
-        color: #94a3b8;
-        margin: 0 0 20px 0;
-    }
-    .client-type-form-group {
+    /* Card-based client type options */
+    .client-type-option-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
         margin-bottom: 24px;
     }
-    .client-type-form-group label {
-        display: block;
-        font-size: 14px;
-        font-weight: 500;
-        color: #e2e8f0;
-        margin-bottom: 8px;
-    }
-    .client-type-select {
-        width: 100%;
-        padding: 12px 14px;
-        background: rgba(15, 23, 42, 0.8);
-        border: 1px solid #475569;
-        border-radius: 8px;
-        color: #e2e8f0;
-        font-size: 15px;
+    .client-type-option {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 16px;
+        background: rgba(15, 23, 42, 0.5);
+        border: 2px solid rgba(148, 163, 184, 0.1);
+        border-radius: 10px;
         cursor: pointer;
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 12px center;
-        padding-right: 36px;
+        transition: all 0.2s ease;
+        position: relative;
     }
-    .client-type-select:focus {
-        border-color: #6366f1;
-        outline: none;
+    .client-type-option:hover {
+        background: rgba(30, 41, 59, 0.6);
+        border-color: rgba(148, 163, 184, 0.25);
+    }
+    .client-type-option.selected {
+        border-color: rgba(99, 102, 241, 0.6);
+        background: rgba(99, 102, 241, 0.08);
+    }
+    .client-type-option.client-type-option-disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+    .client-type-option-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 1rem;
+        background: rgba(99, 102, 241, 0.12);
+        color: #818cf8;
+    }
+    .client-type-option-icon-recommended {
+        background: rgba(16, 185, 129, 0.12);
+        color: #6ee7b7;
+    }
+    .client-type-option-body {
+        flex: 1;
+        min-width: 0;
+    }
+    .client-type-option-name {
+        font-weight: 600;
+        color: #e2e8f0;
+        font-size: 0.95rem;
+        margin-bottom: 2px;
+    }
+    .client-type-option-tag {
+        font-size: 0.7rem;
+        font-weight: 500;
+        color: #6ee7b7;
+        background: rgba(16, 185, 129, 0.15);
+        padding: 1px 6px;
+        border-radius: 4px;
+        vertical-align: middle;
+    }
+    .client-type-option-desc {
+        font-size: 0.82rem;
+        color: #94a3b8;
+        line-height: 1.4;
+    }
+    .client-type-option-badge {
+        position: absolute;
+        top: 8px;
+        right: 40px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: #6ee7b7;
+        background: rgba(16, 185, 129, 0.15);
+        padding: 2px 7px;
+        border-radius: 4px;
+    }
+    .client-type-option-check {
+        flex-shrink: 0;
+        width: 24px;
+        text-align: center;
+        font-size: 1.1rem;
+        color: rgba(99, 102, 241, 0);
+        transition: color 0.2s ease;
+    }
+    .client-type-option.selected .client-type-option-check {
+        color: #818cf8;
     }
     .client-type-modal-actions {
         display: flex;
@@ -880,31 +961,32 @@
             document.body.appendChild(modal);
         }
     }
+    var _selectedClientType = '';
+
     function openClientTypeModal() {
         var modal = document.getElementById('client-type-modal');
         if (modal) {
             ensureClientTypeModalInBody();
-            var selectEl = document.getElementById('client-type-select');
+            _selectedClientType = '';
             var continueBtn = document.getElementById('client-type-modal-continue');
-            if (selectEl) {
-                var clients = (window.SettingsForms && window.SettingsForms._clientsList) ? window.SettingsForms._clientsList : [];
-                var hasNzbHunt = clients.some(function(c) { return (c.type || '').toLowerCase() === 'nzbhunt'; });
-                selectEl.innerHTML = '<option value="">Select a client...</option>';
-                if (!hasNzbHunt) {
-                    var opt = document.createElement('option');
-                    opt.value = 'nzbhunt';
-                    opt.textContent = 'NZB Hunt (Built-in) \u2014 Recommended';
-                    selectEl.appendChild(opt);
-                }
-                ['sabnzbd', 'nzbget'].forEach(function(t) {
-                    var opt = document.createElement('option');
-                    opt.value = t;
-                    opt.textContent = t === 'sabnzbd' ? 'SABnzbd' : 'NZBGet';
-                    selectEl.appendChild(opt);
-                });
-                selectEl.value = '';
-            }
             if (continueBtn) continueBtn.disabled = true;
+
+            // Show/hide NZB Hunt option based on whether it's already added
+            var clients = (window.SettingsForms && window.SettingsForms._clientsList) ? window.SettingsForms._clientsList : [];
+            var hasNzbHunt = clients.some(function(c) { return (c.type || '').toLowerCase() === 'nzbhunt'; });
+            var nzbhuntOption = document.getElementById('client-type-option-nzbhunt');
+            if (nzbhuntOption) {
+                if (hasNzbHunt) {
+                    nzbhuntOption.classList.add('client-type-option-disabled');
+                } else {
+                    nzbhuntOption.classList.remove('client-type-option-disabled');
+                }
+            }
+
+            // Clear any previous selection
+            var allOptions = document.querySelectorAll('.client-type-option');
+            allOptions.forEach(function(opt) { opt.classList.remove('selected'); });
+
             modal.style.display = 'flex';
             document.body.classList.add('client-type-modal-open');
         }
@@ -915,10 +997,11 @@
             modal.style.display = 'none';
             document.body.classList.remove('client-type-modal-open');
         }
-        var selectEl = document.getElementById('client-type-select');
-        if (selectEl) selectEl.value = '';
+        _selectedClientType = '';
         var continueBtn = document.getElementById('client-type-modal-continue');
         if (continueBtn) continueBtn.disabled = true;
+        var allOptions = document.querySelectorAll('.client-type-option');
+        allOptions.forEach(function(opt) { opt.classList.remove('selected'); });
     }
     function selectClientType(type) {
         closeClientTypeModal();
@@ -940,24 +1023,42 @@
         var closeBtn = document.getElementById('client-type-modal-close');
         var cancelBtn = document.getElementById('client-type-modal-cancel');
         var continueBtn = document.getElementById('client-type-modal-continue');
-        var selectEl = document.getElementById('client-type-select');
 
         if (backdrop) backdrop.addEventListener('click', closeClientTypeModal);
         if (closeBtn) closeBtn.addEventListener('click', closeClientTypeModal);
         if (cancelBtn) cancelBtn.addEventListener('click', closeClientTypeModal);
+
+        // Card click handlers
+        var optionCards = document.getElementById('client-type-option-cards');
+        if (optionCards) {
+            optionCards.addEventListener('click', function(e) {
+                var card = e.target.closest('.client-type-option');
+                if (!card || card.classList.contains('client-type-option-disabled')) return;
+                var type = card.getAttribute('data-client-type');
+                if (!type) return;
+                // Deselect all, select this one
+                var allOptions = optionCards.querySelectorAll('.client-type-option');
+                allOptions.forEach(function(opt) { opt.classList.remove('selected'); });
+                card.classList.add('selected');
+                _selectedClientType = type;
+                if (continueBtn) continueBtn.disabled = false;
+            });
+            // Double-click to immediately continue
+            optionCards.addEventListener('dblclick', function(e) {
+                var card = e.target.closest('.client-type-option');
+                if (!card || card.classList.contains('client-type-option-disabled')) return;
+                var type = card.getAttribute('data-client-type');
+                if (type) selectClientType(type);
+            });
+        }
+
         if (continueBtn) {
             continueBtn.addEventListener('click', function() {
-                var type = selectEl ? (selectEl.value || '').trim().toLowerCase() : '';
-                if (type === 'nzbhunt' || type === 'sabnzbd' || type === 'nzbget') selectClientType(type);
+                if (_selectedClientType) selectClientType(_selectedClientType);
             });
+            continueBtn.disabled = true;
         }
-        if (selectEl) {
-            selectEl.addEventListener('change', function() {
-                var type = (selectEl.value || '').trim().toLowerCase();
-                if (continueBtn) continueBtn.disabled = type !== 'nzbhunt' && type !== 'sabnzbd' && type !== 'nzbget';
-            });
-            if (continueBtn) continueBtn.disabled = true;
-        }
+
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape' && document.getElementById('client-type-modal').style.display === 'flex') {
                 closeClientTypeModal();
