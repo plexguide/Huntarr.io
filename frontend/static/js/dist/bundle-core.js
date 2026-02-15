@@ -5,6 +5,36 @@
  * Shared functions for use across the application
  */
 
+// ── Global 401 interceptor ──────────────────────────────────────────
+// Wraps the native fetch so that ANY 401 from an internal API call
+// triggers a single redirect to the login page, silencing the flood
+// of "JSON.parse" / "HTTP 401" console errors on logout.
+(function() {
+    if (window._huntarrFetchPatched) return;
+    window._huntarrFetchPatched = true;
+    var _origFetch = window.fetch;
+    window.fetch = function(url, opts) {
+        // If we're already redirecting, swallow all subsequent requests
+        if (window._huntarrRedirectingToLogin) {
+            return new Promise(function() {}); // never resolves
+        }
+        return _origFetch.apply(this, arguments).then(function(response) {
+            if (response.status === 401) {
+                var urlStr = (typeof url === 'string') ? url : (url && url.url) || '';
+                var isApi = urlStr.indexOf('/api/') !== -1;
+                var onLogin = window.location.pathname.indexOf('/login') !== -1;
+                var onSetup = window.location.pathname.indexOf('/setup') !== -1;
+                if (isApi && !onLogin && !onSetup && !window._huntarrRedirectingToLogin) {
+                    window._huntarrRedirectingToLogin = true;
+                    window.location.href = (window.HUNTARR_BASE_URL || '') + '/login';
+                    return new Promise(function() {}); // never resolves
+                }
+            }
+            return response;
+        });
+    };
+})();
+
 const HuntarrUtils = {
     /**
      * Fetch with timeout (120s). Per-instance API timeouts are in app instances.
@@ -56,18 +86,6 @@ const HuntarrUtils = {
         return fetch(processedUrl, fetchOptions)
             .then(response => {
                 clearTimeout(timeoutId);
-                // If 401 on an API call, the session is invalid — redirect to login
-                // instead of letting every module fail with JSON parse errors
-                if (response.status === 401 && processedUrl.includes('/api/')) {
-                    // Only redirect if we're not already on the login page
-                    if (!window.location.pathname.endsWith('/login') &&
-                        !window.location.pathname.endsWith('/setup')) {
-                        console.warn('[HuntarrUtils] Session expired, redirecting to login');
-                        window.location.href = (window.HUNTARR_BASE_URL || '') + '/login';
-                        // Return a never-resolving promise to stop further processing
-                        return new Promise(() => {});
-                    }
-                }
                 return response;
             })
             .catch(error => {
