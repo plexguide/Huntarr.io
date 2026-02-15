@@ -1,6 +1,6 @@
 /**
  * Theme Module
- * Handles dark mode and logo persistence
+ * Handles logo persistence. Huntarr is always dark — no light mode.
  */
 
 window.HuntarrTheme = {
@@ -25,17 +25,7 @@ window.HuntarrTheme = {
     },
 
     initDarkMode: function() {
-        const darkModeToggle = document.getElementById('darkModeToggle');
-        if (darkModeToggle) {
-            const prefersDarkMode = HuntarrUtils.getUIPreference('dark-mode', true);
-            darkModeToggle.checked = prefersDarkMode;
-            if (prefersDarkMode) document.body.classList.add('dark-theme');
-            
-            darkModeToggle.addEventListener('change', function() {
-                const isDarkMode = this.checked;
-                document.body.classList.toggle('dark-theme', isDarkMode);
-                HuntarrUtils.setUIPreference('dark-mode', isDarkMode);
-            });
-        }
+        // Huntarr is always dark — ensure the class is applied
+        document.body.classList.add('dark-theme');
     }
 };

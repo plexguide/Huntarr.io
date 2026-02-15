@@ -15,7 +15,7 @@
     const style = document.createElement('style');
     style.textContent = `
         body, html { 
-            background-color: #0f172a !important; 
+            background-color: #1a1d24 !important; 
             color: #f8f9fa !important;
         }
         .sidebar {
