@@ -712,10 +712,10 @@ export class RequestarrContent {
         return this.hiddenMediaSet.has(key);
     }
 
-    renderTrendingResults(carousel, results) {
+    renderTrendingResults(carousel, results, append) {
         if (!carousel) return;
         if (results && results.length > 0) {
-            carousel.innerHTML = '';
+            if (!append) carousel.innerHTML = '';
             results.forEach(item => {
                 const suggestedInstance = item.media_type === 'movie' ? (this.selectedMovieInstance || null) : (this.selectedTVInstance || null);
                 let appType, instanceName;
@@ -732,7 +732,7 @@ export class RequestarrContent {
                 if (tmdbId && instanceName && this.isMediaHidden(tmdbId, item.media_type, appType, instanceName)) return;
                 carousel.appendChild(this.createMediaCard(item, suggestedInstance));
             });
-        } else {
+        } else if (!append) {
             carousel.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No trending content available</p>';
         }
     }
@@ -759,37 +759,70 @@ export class RequestarrContent {
     }
 
     async loadTrending() {
+        this._trendingPage = 1;
+        this._trendingHasMore = true;
+        this._trendingLoading = false;
         const carousel = document.getElementById('trending-carousel');
         if (!carousel) return;
         try {
             const baseUrl = this._buildTrendingUrl();
-            const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `_=${Date.now()}`;
+            const sep = baseUrl.includes('?') ? '&' : '?';
+            const url = baseUrl + sep + `page=1&_=${Date.now()}`;
             const response = await fetch(url, { cache: 'no-store' });
             const data = await response.json();
             const results = (data.results && data.results.length > 0) ? data.results : [];
-            this.renderTrendingResults(carousel, results);
+            this.renderTrendingResults(carousel, results, false);
+            this._trendingHasMore = results.length >= 10;
+            this._attachCarouselInfiniteScroll(carousel, '_trending');
         } catch (error) {
             console.error('[RequestarrDiscover] Error loading trending:', error);
             carousel.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load trending content</p>';
         }
     }
 
-    renderPopularMoviesResults(carousel, results) {
+    async _loadNextTrendingPage() {
+        if (this._trendingLoading || !this._trendingHasMore) return;
+        if (this._trendingPage >= 5) { this._trendingHasMore = false; return; }
+        this._trendingLoading = true;
+        const carousel = document.getElementById('trending-carousel');
+        if (!carousel) { this._trendingLoading = false; return; }
+        try {
+            const page = this._trendingPage + 1;
+            const baseUrl = this._buildTrendingUrl();
+            const sep = baseUrl.includes('?') ? '&' : '?';
+            const url = baseUrl + sep + `page=${page}&_=${Date.now()}`;
+            const response = await fetch(url, { cache: 'no-store' });
+            const data = await response.json();
+            const results = (data.results && data.results.length > 0) ? data.results : [];
+            this.renderTrendingResults(carousel, results, true);
+            this._trendingPage = page;
+            this._trendingHasMore = results.length >= 10 && page < 5;
+        } catch (error) {
+            console.error('[RequestarrDiscover] Error loading trending page:', error);
+        } finally {
+            this._trendingLoading = false;
+        }
+    }
+
+    renderPopularMoviesResults(carousel, results, append) {
         if (!carousel) return;
         const decoded = decodeInstanceValue(this.selectedMovieInstance);
         if (results && results.length > 0) {
-            carousel.innerHTML = '';
+            if (!append) carousel.innerHTML = '';
             results.forEach(item => {
                 const tmdbId = item.tmdb_id || item.id;
                 if (tmdbId && decoded.name && this.isMediaHidden(tmdbId, 'movie', decoded.appType, decoded.name)) return;
                 carousel.appendChild(this.createMediaCard(item, this.selectedMovieInstance || null));
             });
-        } else {
+        } else if (!append) {
             carousel.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No movies available</p>';
         }
     }
 
     async loadPopularMovies() {
+        this._popMoviesPage = 1;
+        this._popMoviesHasMore = true;
+        this._popMoviesLoading = false;
         const carousel = document.getElementById('popular-movies-carousel');
         if (!carousel) return;
         try {
@@ -800,29 +833,59 @@ export class RequestarrContent {
             const response = await fetch(url, { cache: 'no-store' });
             const data = await response.json();
             const results = (data.results && data.results.length > 0) ? data.results : [];
-            this.renderPopularMoviesResults(carousel, results);
+            this.renderPopularMoviesResults(carousel, results, false);
+            this._popMoviesHasMore = results.length >= 10;
+            this._attachCarouselInfiniteScroll(carousel, '_popMovies');
         } catch (error) {
             console.error('[RequestarrDiscover] Error loading popular movies:', error);
             carousel.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load movies</p>';
         }
     }
 
-    renderPopularTVResults(carousel, results) {
+    async _loadNextPopularMoviesPage() {
+        if (this._popMoviesLoading || !this._popMoviesHasMore) return;
+        if (this._popMoviesPage >= 5) { this._popMoviesHasMore = false; return; }
+        this._popMoviesLoading = true;
+        const carousel = document.getElementById('popular-movies-carousel');
+        if (!carousel) { this._popMoviesLoading = false; return; }
+        try {
+            const page = this._popMoviesPage + 1;
+            const decoded = decodeInstanceValue(this.selectedMovieInstance);
+            let url = `./api/requestarr/discover/movies?page=${page}`;
+            if (decoded.name) url += `&app_type=${decoded.appType}&instance_name=${encodeURIComponent(decoded.name)}`;
+            url += `&_=${Date.now()}`;
+            const response = await fetch(url, { cache: 'no-store' });
+            const data = await response.json();
+            const results = (data.results && data.results.length > 0) ? data.results : [];
+            this.renderPopularMoviesResults(carousel, results, true);
+            this._popMoviesPage = page;
+            this._popMoviesHasMore = results.length >= 10 && page < 5;
+        } catch (error) {
+            console.error('[RequestarrDiscover] Error loading popular movies page:', error);
+        } finally {
+            this._popMoviesLoading = false;
+        }
+    }
+
+    renderPopularTVResults(carousel, results, append) {
         if (!carousel) return;
         const decoded = decodeInstanceValue(this.selectedTVInstance, 'sonarr');
         if (results && results.length > 0) {
-            carousel.innerHTML = '';
+            if (!append) carousel.innerHTML = '';
             results.forEach(item => {
                 const tmdbId = item.tmdb_id || item.id;
                 if (tmdbId && decoded.name && this.isMediaHidden(tmdbId, 'tv', decoded.appType, decoded.name)) return;
                 carousel.appendChild(this.createMediaCard(item, this.selectedTVInstance || null));
             });
-        } else {
+        } else if (!append) {
             carousel.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No TV shows available</p>';
         }
     }
 
     async loadPopularTV() {
+        this._popTVPage = 1;
+        this._popTVHasMore = true;
+        this._popTVLoading = false;
         const carousel = document.getElementById('popular-tv-carousel');
         if (!carousel) return;
         try {
@@ -833,11 +896,66 @@ export class RequestarrContent {
             const response = await fetch(url, { cache: 'no-store' });
             const data = await response.json();
             const results = (data.results && data.results.length > 0) ? data.results : [];
-            this.renderPopularTVResults(carousel, results);
+            this.renderPopularTVResults(carousel, results, false);
+            this._popTVHasMore = results.length >= 10;
+            this._attachCarouselInfiniteScroll(carousel, '_popTV');
         } catch (error) {
             console.error('[RequestarrDiscover] Error loading popular TV:', error);
             carousel.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load TV shows</p>';
         }
+    }
+
+    async _loadNextPopularTVPage() {
+        if (this._popTVLoading || !this._popTVHasMore) return;
+        if (this._popTVPage >= 5) { this._popTVHasMore = false; return; }
+        this._popTVLoading = true;
+        const carousel = document.getElementById('popular-tv-carousel');
+        if (!carousel) { this._popTVLoading = false; return; }
+        try {
+            const page = this._popTVPage + 1;
+            const decoded = decodeInstanceValue(this.selectedTVInstance, 'sonarr');
+            let url = `./api/requestarr/discover/tv?page=${page}`;
+            if (decoded.name) url += `&app_type=${encodeURIComponent(decoded.appType || 'sonarr')}&instance_name=${encodeURIComponent(decoded.name)}`;
+            url += `&_=${Date.now()}`;
+            const response = await fetch(url, { cache: 'no-store' });
+            const data = await response.json();
+            const results = (data.results && data.results.length > 0) ? data.results : [];
+            this.renderPopularTVResults(carousel, results, true);
+            this._popTVPage = page;
+            this._popTVHasMore = results.length >= 10 && page < 5;
+        } catch (error) {
+            console.error('[RequestarrDiscover] Error loading popular TV page:', error);
+        } finally {
+            this._popTVLoading = false;
+        }
+    }
+
+    /**
+     * Attach an infinite scroll listener to a horizontal carousel.
+     * When the user scrolls within 300px of the right edge, load the next page.
+     * @param {HTMLElement} carousel - the .media-carousel element
+     * @param {string} prefix - property prefix, e.g. '_trending', '_popMovies', '_popTV'
+     */
+    _attachCarouselInfiniteScroll(carousel, prefix) {
+        if (!carousel) return;
+        // Remove any previous handler for this carousel
+        const handlerKey = prefix + 'ScrollHandler';
+        if (this[handlerKey]) {
+            carousel.removeEventListener('scroll', this[handlerKey]);
+        }
+        const self = this;
+        this[handlerKey] = () => {
+            const loading = self[prefix + 'Loading'];
+            const hasMore = self[prefix + 'HasMore'];
+            if (loading || !hasMore) return;
+            const remaining = carousel.scrollWidth - carousel.scrollLeft - carousel.clientWidth;
+            if (remaining < 300) {
+                if (prefix === '_trending') self._loadNextTrendingPage();
+                else if (prefix === '_popMovies') self._loadNextPopularMoviesPage();
+                else if (prefix === '_popTV') self._loadNextPopularTVPage();
+            }
+        };
+        carousel.addEventListener('scroll', this[handlerKey], { passive: true });
     }
 
     setupMoviesInfiniteScroll() {

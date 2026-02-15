@@ -33,7 +33,7 @@ class RequestarrAPI:
         """Get hardcoded TMDB API key"""
         return "9265b0bd0cd1962f7f3225989fcd7192"
     
-    def get_trending(self, time_window: str = 'week', movie_instance: str = '', tv_instance: str = '', movie_app_type: str = 'radarr', tv_app_type: str = 'sonarr') -> List[Dict[str, Any]]:
+    def get_trending(self, time_window: str = 'week', movie_instance: str = '', tv_instance: str = '', movie_app_type: str = 'radarr', tv_app_type: str = 'sonarr', page: int = 1) -> List[Dict[str, Any]]:
         """Get trending movies and TV shows sorted by popularity"""
         api_key = self.get_tmdb_api_key()
         filters = self.get_discover_filters()
@@ -55,7 +55,7 @@ class RequestarrAPI:
                 url = f"{self.tmdb_base_url}/discover/{media_type}"
                 params = {
                     'api_key': api_key,
-                    'page': 1,
+                    'page': page,
                     'sort_by': 'popularity.desc'
                 }
                 if media_type == 'movie' and blacklisted_movie:
@@ -84,7 +84,7 @@ class RequestarrAPI:
                 bl_set = set(blacklisted_movie) if media_type == 'movie' else set(blacklisted_tv)
                 count = 0
                 for item in data.get('results', []):
-                    if count >= 10:
+                    if count >= 20:
                         break
                     # Skip blacklisted genres (fallback filter)
                     item_genre_ids = set(item.get('genre_ids') or [])

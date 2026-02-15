@@ -344,6 +344,7 @@ def get_requests():
 def get_trending():
     """Get trending movies and TV shows"""
     try:
+        page = max(1, request.args.get('page', 1, type=int))
         time_window = request.args.get('time_window', 'week')
         
         # Prefer explicit query params (sent by frontend) to avoid race conditions with DB save
@@ -386,9 +387,10 @@ def get_trending():
             movie_instance=movie_instance_name,
             tv_instance=tv_instance_name,
             movie_app_type=movie_app_type or 'radarr',
-            tv_app_type=tv_app_type or 'sonarr'
+            tv_app_type=tv_app_type or 'sonarr',
+            page=page
         )
-        return jsonify({'results': results})
+        return jsonify({'results': results, 'page': page})
     except Exception as e:
         logger.error(f"Error getting trending: {e}")
         return jsonify({'error': 'Failed to get trending'}), 500

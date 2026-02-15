@@ -227,8 +227,7 @@
     overflow-x: auto;
     overflow-y: visible; /* Allow cards to extend above carousel */
     scroll-behavior: smooth;
-    padding: 20px 60px 30px; /* Extra padding top and bottom for hover scale */
-    margin: 0 -60px; /* Negative margin to align content */
+    padding: 20px 0 30px; /* Extra padding top and bottom for hover scale */
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE/Edge */
 }
