@@ -9,7 +9,8 @@ from src.primary.auth import (
     create_plex_pin, check_plex_pin, verify_plex_token, create_user_with_plex,
     link_plex_account, verify_plex_user, create_session, user_exists,
     SESSION_COOKIE_NAME, verify_user, unlink_plex_from_user, get_client_identifier,
-    verify_session, get_username_from_session, link_plex_account_session_auth
+    verify_session, get_username_from_session, link_plex_account_session_auth,
+    get_base_url_path,
 )
 from src.primary.utils.logger import logger
 import time
@@ -244,15 +245,19 @@ def plex_login():
                 # Create session
                 session_id = create_session(plex_user_data.get('username'))
                 
+                cookie_path = get_base_url_path() or '/'
+                is_https = request.headers.get('X-Forwarded-Proto') == 'https' or request.is_secure
+                redirect_url = (get_base_url_path() or '') + '/'
                 response = jsonify({
                     'success': True,
                     'message': 'Plex user created and logged in successfully',
                     'auth_type': 'plex',
-                    'redirect': './'
+                    'redirect': redirect_url
                 })
                 session[SESSION_COOKIE_NAME] = session_id  # Store in Flask session
                 response.set_cookie(SESSION_COOKIE_NAME, session_id, 
-                                  max_age=60*60*24*7, httponly=True, secure=False)
+                                  max_age=60*60*24*7, httponly=True, samesite='Lax',
+                                  path=cookie_path, secure=is_https)
                 return response
             else:
                 return jsonify({
@@ -276,15 +281,19 @@ def plex_login():
                     username = user_data['username']
                     session_id = create_session(username)
                     
+                    cookie_path = get_base_url_path() or '/'
+                    is_https = request.headers.get('X-Forwarded-Proto') == 'https' or request.is_secure
+                    redirect_url = (get_base_url_path() or '') + '/'
                     response = jsonify({
                         'success': True,
                         'message': 'Logged in with Plex successfully',
                         'auth_type': 'plex',
-                        'redirect': './'
+                        'redirect': redirect_url
                     })
                     session[SESSION_COOKIE_NAME] = session_id  # Store in Flask session
                     response.set_cookie(SESSION_COOKIE_NAME, session_id, 
-                                      max_age=60*60*24*7, httponly=True, secure=False)
+                                      max_age=60*60*24*7, httponly=True, samesite='Lax',
+                                      path=cookie_path, secure=is_https)
                     return response
                 else:
                     return jsonify({
@@ -395,7 +404,8 @@ def link_account():
                     'success': True,
                     'message': 'Plex account linked successfully'
                 })
-                response.set_cookie(SESSION_COOKIE_NAME, session_id, httponly=True, samesite='Lax', path='/')
+                cookie_path = get_base_url_path() or '/'
+                response.set_cookie(SESSION_COOKIE_NAME, session_id, httponly=True, samesite='Lax', path=cookie_path)
                 return response
             else:
                 return jsonify({

@@ -21,12 +21,24 @@ from ..auth import (
     update_session_username,
     validate_password_strength, logout, verify_session, disable_2fa_with_password_and_otp,
     user_exists, create_user, generate_2fa_secret, verify_2fa_code, is_2fa_enabled, # Add missing auth imports
-    hash_password # Add hash_password import for recovery key reset
+    hash_password, # Add hash_password import for recovery key reset
+    get_base_url_path, # For cookie path matching base URL
 )
 from ..utils.logger import logger
 from .. import settings_manager # Import settings_manager
 from ..utils.tmdb_cache import tmdb_cache # Import TMDB cache
 from datetime import datetime
+
+
+def _cookie_path():
+    """Return the cookie path that matches the configured base URL.
+    
+    When a base URL like '/huntarr' is set, cookies must use that path
+    so the browser sends them for requests under that prefix.
+    Falls back to '/' when no base URL is configured.
+    """
+    base = get_base_url_path()
+    return base if base else '/'
 
 
 common_bp = Blueprint('common', __name__)
@@ -286,9 +298,10 @@ def login_route():
                 _clear_login_attempts(client_ip)
                 session_token = create_session(username)
                 session[SESSION_COOKIE_NAME] = session_token # Store token in Flask session immediately
-                response = jsonify({"success": True, "redirect": "./"}) # Add redirect URL
+                redirect_url = (_cookie_path().rstrip('/') or '') + '/'
+                response = jsonify({"success": True, "redirect": redirect_url})
                 is_https = request.headers.get('X-Forwarded-Proto') == 'https' or request.is_secure
-                response.set_cookie(SESSION_COOKIE_NAME, session_token, httponly=True, samesite='Lax', path='/', secure=is_https)
+                response.set_cookie(SESSION_COOKIE_NAME, session_token, httponly=True, samesite='Lax', path=_cookie_path(), secure=is_https)
                 logger.debug(f"User '{username}' logged in successfully.")
                 return response
             elif needs_2fa:
@@ -367,7 +380,7 @@ def logout_route():
 
         response = jsonify({"success": True})
         # Ensure cookie deletion happens even if logout function had issues
-        response.delete_cookie(SESSION_COOKIE_NAME, path='/', samesite='Lax') # Specify path and samesite
+        response.delete_cookie(SESSION_COOKIE_NAME, path=_cookie_path(), samesite='Lax') # Match base URL path
         logger.info("Logout successful, cookie deleted.")
         return response
     except Exception as e:
@@ -489,7 +502,7 @@ def setup():
                 response = jsonify({"success": True})
                 # Set cookie in the response
                 is_https = request.headers.get('X-Forwarded-Proto') == 'https' or request.is_secure
-                response.set_cookie(SESSION_COOKIE_NAME, session_token, httponly=True, samesite='Lax', path='/', secure=is_https)
+                response.set_cookie(SESSION_COOKIE_NAME, session_token, httponly=True, samesite='Lax', path=_cookie_path(), secure=is_https)
                 return response
             else:
                 # create_user itself failed, but didn't raise an exception

@@ -23,7 +23,7 @@
         <div class="login-form">
             <h2>Log in to your account</h2>
             <div id="errorMessage" class="error-message"></div>
-            <form action="/login" method="POST" id="loginForm">
+            <form action="{{ base_url|default('', true) }}/login" method="POST" id="loginForm">
                 <div class="form-group">
                     <label for="username">
                         <i class="fas fa-user"></i>
