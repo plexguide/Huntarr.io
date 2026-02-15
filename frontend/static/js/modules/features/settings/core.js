@@ -841,6 +841,8 @@ window.SettingsForms = {
             const authMode = container.querySelector("#auth_mode")?.value || "login";
             settings.auth_mode = authMode;
             settings.ssl_verify = getInputValue("#ssl_verify", true);
+            settings.enable_media_hunt = getInputValue("#enable_media_hunt", true);
+            settings.enable_third_party_apps = getInputValue("#enable_third_party_apps", true);
             settings.base_url = getInputValue("#base_url", "");
             settings.dev_key = getInputValue("#dev_key", "");
 

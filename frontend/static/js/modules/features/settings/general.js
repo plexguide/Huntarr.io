@@ -133,7 +133,23 @@
                         <h3>Advanced Settings</h3>
                     </div>
                     <div class="mset-card-body">
-                        <div class="setting-item">
+                        <div class="setting-item flex-row">
+                            <label for="enable_media_hunt">Enable Media Hunt & NZB Hunt:</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="enable_media_hunt" ${settings.enable_media_hunt !== false ? "checked" : ""}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <p class="setting-help" style="margin-top: -8px;">When disabled, Media Hunt and NZB Hunt are hidden from the sidebar and all Media Hunt cycles stop running.</p>
+                        <div class="setting-item flex-row" style="margin-top: 12px;">
+                            <label for="enable_third_party_apps">Enable 3rd Party Apps:</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="enable_third_party_apps" ${settings.enable_third_party_apps !== false ? "checked" : ""}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <p class="setting-help" style="margin-top: -8px;">When disabled, 3rd Party Apps (Sonarr, Radarr, etc.) are hidden from the sidebar and all their hunt cycles stop running.</p>
+                        <div class="setting-item" style="margin-top: 15px; border-top: 1px solid rgba(148, 163, 184, 0.08); padding-top: 15px;">
                             <label for="base_url">Base URL:</label>
                             <input type="text" id="base_url" value="${settings.base_url || ""}" placeholder="/huntarr" class="mset-input">
                             <p class="setting-help">Base URL path for reverse proxy. Requires restart.</p>
@@ -301,7 +317,15 @@
             }
 
             const settings = window.SettingsForms.getFormSettings(container, "general");
-            window.SettingsForms.saveAppSettings("general", settings, "Settings saved successfully", { section: "main" });
+            window.SettingsForms.saveAppSettings("general", settings, "Settings saved successfully", { section: "main" })
+                .then(function() {
+                    // Re-apply feature flags to sidebar after save
+                    if (typeof window.applyFeatureFlags === 'function') window.applyFeatureFlags();
+                    if (window.huntarrUI) {
+                        window.huntarrUI._enableMediaHunt = settings.enable_media_hunt !== false;
+                        window.huntarrUI._enableThirdPartyApps = settings.enable_third_party_apps !== false;
+                    }
+                }).catch(function() {});
 
             if (liveBtn) liveBtn.innerHTML = '<i class="fas fa-save"></i> Save';
             updateSaveButtonState(false);

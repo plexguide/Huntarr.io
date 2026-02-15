@@ -77,6 +77,8 @@ let huntarrUI = {
         // Requestarr always enabled (required for Movie Hunt); NZB Hunt always visible (no dev key required)
         this._enableRequestarr = true;
         this._enableNzbHunt = true;
+        this._enableMediaHunt = true;
+        this._enableThirdPartyApps = true;
         fetch('./api/settings')
             .then(r => r.json())
             .then(all => {
@@ -91,6 +93,12 @@ let huntarrUI = {
                 // NZB Hunt: always enabled, visibility of sidebar group depends on client config
                 this._enableNzbHunt = true;
                 this._refreshNzbHuntSidebarGroup();
+
+                // Feature flags: Media Hunt + NZB Hunt and 3rd Party Apps
+                var generalSettings = (all && all.general) || {};
+                this._enableMediaHunt = generalSettings.enable_media_hunt !== false;
+                this._enableThirdPartyApps = generalSettings.enable_third_party_apps !== false;
+                if (typeof window.applyFeatureFlags === 'function') window.applyFeatureFlags();
                 
                 // Initialize originalSettings early
                 this.originalSettings = all || {};
@@ -529,6 +537,20 @@ let huntarrUI = {
         // Redirect tv-hunt-collection and movie-hunt-collection to unified media-hunt-collection
         if (section === 'tv-hunt-collection') { section = 'media-hunt-collection'; this._pendingMediaHuntSidebar = 'tv'; }
         else if (section === 'movie-hunt-collection') { section = 'media-hunt-collection'; this._pendingMediaHuntSidebar = 'movie'; }
+
+        // Feature flag guards: redirect to home if section is disabled
+        var mediaHuntSections = ['media-hunt-collection', 'media-hunt-settings', 'media-hunt-instances', 'movie-hunt-calendar', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-media-hunt', 'indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history', 'settings-clients', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'settings-custom-formats', 'settings-import-lists', 'settings-import-media', 'settings-root-folders', 'settings-instance-management', 'movie-hunt-instance-editor', 'profile-editor'];
+        var nzbHuntSections = ['nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-folders', 'nzb-hunt-servers', 'nzb-hunt-advanced', 'nzb-hunt-server-editor'];
+        var thirdPartyAppSections = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr'];
+        var requestarrSections = ['requestarr', 'requestarr-discover', 'requestarr-movies', 'requestarr-tv', 'requestarr-hidden', 'requestarr-settings', 'requestarr-smarthunt-settings'];
+        if (this._enableMediaHunt === false && (mediaHuntSections.indexOf(section) !== -1 || nzbHuntSections.indexOf(section) !== -1 || requestarrSections.indexOf(section) !== -1 || (section && section.indexOf('nzb-hunt') === 0))) {
+            console.log('[huntarrUI] Media Hunt disabled - redirecting to home');
+            this.switchSection('home'); return;
+        }
+        if (this._enableThirdPartyApps === false && thirdPartyAppSections.indexOf(section) !== -1) {
+            console.log('[huntarrUI] 3rd Party Apps disabled - redirecting to home');
+            this.switchSection('home'); return;
+        }
 
         // Check for unsaved changes before allowing navigation
         if (this.isInitialized && this.currentSection && this.currentSection !== section) {

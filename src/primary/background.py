@@ -308,6 +308,22 @@ def app_specific_loop(app_type: str) -> None:
     app_logger = logging.getLogger(f"huntarr.{app_type}")
     
     while not stop_event.is_set():
+        # --- Feature flag check: skip cycle if disabled in general settings --- #
+        try:
+            general_settings = settings_manager.load_settings('general') or {}
+            media_hunt_types = ['movie_hunt', 'tv_hunt']
+            third_party_types = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros']
+            if app_type in media_hunt_types and general_settings.get('enable_media_hunt') is False:
+                app_logger.debug(f"[{app_type.upper()}] Media Hunt disabled in settings. Sleeping 60s.")
+                stop_event.wait(60)
+                continue
+            if app_type in third_party_types and general_settings.get('enable_third_party_apps') is False:
+                app_logger.debug(f"[{app_type.upper()}] 3rd Party Apps disabled in settings. Sleeping 60s.")
+                stop_event.wait(60)
+                continue
+        except Exception:
+            pass  # If settings fail to load, proceed with cycle normally
+
         # --- Load Settings for this Cycle --- #
         try:
             # Load all settings for this app for the current cycle

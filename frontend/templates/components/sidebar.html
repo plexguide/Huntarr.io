@@ -546,6 +546,32 @@ function setActiveNavItem() {
     window.updateMovieHuntSettingsVisibility = updateMediaHuntSidebarVisibility;
 })();
 
+// ── Feature flags: hide/show sidebar groups ──────────────────
+(function() {
+    function applyFeatureFlags() {
+        fetch('./api/settings/feature-flags', { cache: 'no-store' })
+            .then(function(r) { return r.json(); })
+            .then(function(flags) {
+                var mediaHuntGroup = document.getElementById('nav-group-media-hunt');
+                var nzbHuntGroup = document.getElementById('nzb-hunt-sidebar-group');
+                var requestsGroup = document.getElementById('nav-group-requests');
+                var appsGroup = document.getElementById('nav-group-apps');
+                var hideMedia = flags.enable_media_hunt === false;
+                if (mediaHuntGroup) mediaHuntGroup.style.display = hideMedia ? 'none' : '';
+                if (nzbHuntGroup) nzbHuntGroup.style.display = hideMedia ? 'none' : '';
+                if (requestsGroup) requestsGroup.style.display = hideMedia ? 'none' : '';
+                if (appsGroup) appsGroup.style.display = flags.enable_third_party_apps === false ? 'none' : '';
+            })
+            .catch(function() { /* keep defaults visible on error */ });
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', applyFeatureFlags);
+    } else {
+        applyFeatureFlags();
+    }
+    window.applyFeatureFlags = applyFeatureFlags;
+})();
+
 // ── Sidebar footer version + upgrade indicator ───────────────
 (function() {
     function updateSidebarVersion() {

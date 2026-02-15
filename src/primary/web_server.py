@@ -664,6 +664,15 @@ def api_settings():
             pass
         return jsonify(all_settings)
 
+@app.route('/api/settings/feature-flags', methods=['GET'])
+def api_feature_flags():
+    """Return lightweight feature flag settings for sidebar visibility."""
+    general = settings_manager.load_settings('general') or {}
+    return jsonify({
+        'enable_media_hunt': general.get('enable_media_hunt', True),
+        'enable_third_party_apps': general.get('enable_third_party_apps', True),
+    })
+
 @app.route('/api/settings/general', methods=['POST'])
 def save_general_settings():
     general_logger = get_logger("web_server")
