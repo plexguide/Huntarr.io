@@ -61,8 +61,8 @@
     --log-border: rgba(71, 85, 105, 0.35);
 
     /* ── Page Layout ─────────────────────────────────────────── */
-    --page-gap:         15px;  /* gap on left & right of content */
-    --page-gap-mobile:  10px;
+    --page-gap:         30px;  /* gap on left & right of content */
+    --page-gap-mobile:  15px;
 
     /* ── Glass Card Surface ──────────────────────────────────── */
     --glass-bg:         rgba(17, 24, 39, 0.65);

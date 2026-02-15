@@ -476,8 +476,67 @@
     filter: drop-shadow(0 0 4px rgba(0, 188, 212, 0.5));
 }
 
+/* ===== SIDEBAR SOCIAL LINKS (inside footer) ===== */
+.sidebar-social-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0;
+}
+
+.sidebar-social-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    text-decoration: none;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 14px;
+}
+
+.sidebar-social-btn:hover {
+    transform: translateY(-1px) scale(1.08);
+    text-decoration: none;
+}
+
+.sidebar-social-btn.discord-btn {
+    color: #5865f2;
+    background: rgba(88, 101, 242, 0.08);
+}
+.sidebar-social-btn.discord-btn:hover {
+    color: #7289da;
+    background: rgba(88, 101, 242, 0.2);
+    border-color: rgba(88, 101, 242, 0.3);
+    box-shadow: 0 2px 8px rgba(88, 101, 242, 0.2);
+}
+
+.sidebar-social-btn.reddit-btn {
+    color: #ff4500;
+    background: rgba(255, 69, 0, 0.08);
+}
+.sidebar-social-btn.reddit-btn:hover {
+    color: #ff6633;
+    background: rgba(255, 69, 0, 0.2);
+    border-color: rgba(255, 69, 0, 0.3);
+    box-shadow: 0 2px 8px rgba(255, 69, 0, 0.2);
+}
+
+.sidebar-social-btn.docs-btn {
+    color: #6366f1;
+    background: rgba(99, 102, 241, 0.08);
+}
+.sidebar-social-btn.docs-btn:hover {
+    color: #818cf8;
+    background: rgba(99, 102, 241, 0.2);
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+}
+
 /* ===== SIDEBAR FOOTER ===== */
-/* Opaque background so it fully overwrites the nav when overlapping, not see-through */
 .sidebar-footer {
     position: absolute;
     bottom: 0;
@@ -486,67 +545,52 @@
     background: linear-gradient(180deg, rgba(12, 17, 28, 0.98) 0%, rgba(14, 19, 30, 0.99) 100%);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-    padding: 12px 12px;
+    padding: 10px 16px 12px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    z-index: 1002; /* Above nav and sidebar edge so it cleanly overwrites when overlapping */
-}
-
-.sidebar-footer-sponsor {
-    display: flex;
     align-items: center;
-    justify-content: center;
     gap: 8px;
-    padding: 2px 12px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(231, 76, 60, 0.3);
-    color: #e74c3c;
-    text-decoration: none;
-    font-size: 13px;
-    font-weight: 600;
-    transition: all 0.15s;
-}
-.sidebar-footer-sponsor:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(231, 76, 60, 0.5);
-    text-decoration: none;
-    color: #e74c3c;
-}
-.sidebar-footer-sponsor i {
-    font-size: 14px;
+    z-index: 1002;
 }
 
-.dev-mode-indicator {
+.sidebar-footer-divider {
+    width: 80%;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.sidebar-footer-info {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
-    color: #64748b;
     font-size: 11px;
     font-weight: 500;
+    color: #475569;
 }
 
-.dev-mode-indicator i {
-    font-size: 11px;
-    color: #6366f1;
-    opacity: 0.6;
-}
-
-.dev-mode-indicator span {
+.sidebar-footer-version {
     color: #64748b;
+    font-variant-numeric: tabular-nums;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 10px;
+    letter-spacing: 0.02em;
 }
 
-.dev-mode-indicator a {
+.sidebar-footer-sep {
+    color: #334155;
+    font-size: 10px;
+}
+
+.sidebar-footer-dev {
     color: #64748b;
     text-decoration: none;
     transition: color 0.2s ease;
 }
 
-.dev-mode-indicator a:hover {
+.sidebar-footer-dev:hover {
     color: #94a3b8;
+    text-decoration: none;
 }
 
 /* Adjust nav-menu bottom padding for sidebar footer */
