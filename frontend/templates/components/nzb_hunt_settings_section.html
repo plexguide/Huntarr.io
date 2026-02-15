@@ -1,7 +1,10 @@
 <!-- NZB Hunt Settings Section - Standalone module (independent of Movie Hunt / Requestarr) -->
 <section id="nzb-hunt-settings-section" class="content-section" style="display: none;">
     <link rel="stylesheet" href="./static/css/nzb-hunt.css">
-    {% with section_id='nzb-hunt-settings' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
+    {% from 'components/page_header_partial.html' import page_header %}
+    <div class="nzb-hunt-settings-header page-header-bar-container">
+        {{ page_header(back_href='./#nzb-hunt-home', parent_icon='fas fa-download', parent_name='NZB Hunt', current_name='Folders', sponsor_section_id='nzb-hunt-settings', current_name_id='nzb-hunt-settings-breadcrumb-current') }}
+    </div>
     <div class="nzb-hunt-container">
 
         <!-- ═══════ Folders Panel (temp folder + completed categories) ═══════ -->

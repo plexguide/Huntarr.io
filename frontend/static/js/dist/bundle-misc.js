@@ -3221,10 +3221,14 @@
         },
 
         _showSettingsTab: function (tab) {
-            // Panels are still switched based on the tab name
             document.querySelectorAll('#nzb-hunt-settings-section .nzb-settings-panel').forEach(function (p) {
                 p.style.display = p.getAttribute('data-settings-panel') === tab ? 'block' : 'none';
             });
+            var bc = document.getElementById('nzb-hunt-settings-breadcrumb-current');
+            if (bc) {
+                var labels = { folders: 'Folders', servers: 'Servers', advanced: 'Advanced' };
+                bc.textContent = labels[tab] || tab;
+            }
         },
 
         /* ──────────────────────────────────────────────
@@ -3696,12 +3700,12 @@
 
         _navigateBackFromServerEditor: function () {
             if (this._isServerEditorDirty()) {
-                this._confirmLeaveServerEditor('nzb-hunt-settings-servers');
+                this._confirmLeaveServerEditor('nzb-hunt-servers');
                 return;
             }
             if (window.huntarrUI && typeof window.huntarrUI.switchSection === 'function') {
-                window.huntarrUI.switchSection('nzb-hunt-settings-servers');
-                window.location.hash = 'nzb-hunt-settings-servers';
+                window.huntarrUI.switchSection('nzb-hunt-servers');
+                window.location.hash = 'nzb-hunt-servers';
             }
         },
 

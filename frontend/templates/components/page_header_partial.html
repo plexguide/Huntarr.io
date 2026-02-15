@@ -3,7 +3,7 @@
    Usage: {{ page_header(back_href='...', parent_icon='fas fa-fire', parent_name='Requestarr', current_name='Smart Hunt') }}
    With Save: {{ page_header(..., save_button_id='sizes-save-btn') }} — sponsor not shown when Save is present.
    With sponsor (no Save): {{ page_header(..., sponsor_section_id='apps') }} — sponsor/partner inside header bar. #}
-{% macro page_header(back_href, parent_icon, parent_name, current_name, save_button_id=None, save_button_class=None, sponsor_section_id=None) %}
+{% macro page_header(back_href, parent_icon, parent_name, current_name, save_button_id=None, save_button_class=None, sponsor_section_id=None, current_name_id=None) %}
 <div class="reqset-toolbar page-header-bar">
     <div class="reqset-toolbar-left">
         <a href="{{ back_href }}" class="reqset-back-btn">
@@ -13,7 +13,7 @@
             <i class="{{ parent_icon }}"></i>
             <span>{{ parent_name }}</span>
             <i class="fas fa-chevron-right reqset-breadcrumb-sep"></i>
-            <span>{{ current_name }}</span>
+            <span {% if current_name_id %}id="{{ current_name_id }}"{% endif %}>{{ current_name }}</span>
         </div>
     </div>
     <div class="reqset-toolbar-right">

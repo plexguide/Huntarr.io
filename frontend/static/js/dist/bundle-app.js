@@ -162,7 +162,7 @@ let huntarrUI = {
             this.showMainSidebar();
             var systemSub = document.getElementById('system-sub');
             if (systemSub) { systemSub.classList.add('expanded'); systemSub.style.display = 'block'; }
-        } else if (this.currentSection === 'nzb-hunt-home' || this.currentSection === 'nzb-hunt-activity' || this.currentSection === 'nzb-hunt-server-editor' || (this.currentSection && this.currentSection.startsWith('nzb-hunt-settings'))) {
+        } else if (this.currentSection === 'nzb-hunt-home' || this.currentSection === 'nzb-hunt-activity' || this.currentSection === 'nzb-hunt-server-editor' || this.currentSection === 'nzb-hunt-folders' || this.currentSection === 'nzb-hunt-servers' || this.currentSection === 'nzb-hunt-advanced' || (this.currentSection && this.currentSection.startsWith('nzb-hunt-settings'))) {
             console.log('[huntarrUI] Initialization - showing nzb hunt sidebar');
             this.showNzbHuntSidebar();
         } else if (this.currentSection === 'indexer-hunt' || this.currentSection === 'indexer-hunt-stats' || this.currentSection === 'indexer-hunt-history') {
@@ -813,21 +813,20 @@ let huntarrUI = {
             newTitle = 'NZB Hunt – Activity';
             this.currentSection = 'nzb-hunt-activity';
             this.showNzbHuntSidebar();
-        } else if (section.startsWith('nzb-hunt-settings') && document.getElementById('nzb-hunt-settings-section')) {
+        } else if ((section === 'nzb-hunt-folders' || section === 'nzb-hunt-servers' || section === 'nzb-hunt-advanced' || section.startsWith('nzb-hunt-settings')) && document.getElementById('nzb-hunt-settings-section')) {
             if (!this._enableNzbHunt) { this.switchSection('home'); return; }
             document.getElementById('nzb-hunt-settings-section').classList.add('active');
             document.getElementById('nzb-hunt-settings-section').style.display = 'block';
-            newTitle = 'NZB Hunt – Settings';
-            this.currentSection = section; // Keep the full section name (e.g., nzb-hunt-settings-folders)
+            var tab = 'folders';
+            if (section === 'nzb-hunt-servers' || section === 'nzb-hunt-settings-servers') tab = 'servers';
+            else if (section === 'nzb-hunt-advanced' || section === 'nzb-hunt-settings-advanced') tab = 'advanced';
+            newTitle = 'NZB Hunt – ' + (tab.charAt(0).toUpperCase() + tab.slice(1));
+            this.currentSection = section;
             this.showNzbHuntSidebar();
             if (window.NzbHunt && typeof window.NzbHunt.initSettings === 'function') {
                 window.NzbHunt.initSettings();
             }
-            // If it's a specific sub-section, show that tab
             if (window.NzbHunt && typeof window.NzbHunt._showSettingsTab === 'function') {
-                var tab = 'folders'; // default
-                if (section === 'nzb-hunt-settings-servers') tab = 'servers';
-                else if (section === 'nzb-hunt-settings-advanced') tab = 'advanced';
                 window.NzbHunt._showSettingsTab(tab);
             }
         } else if (section === 'nzb-hunt-server-editor' && document.getElementById('nzb-hunt-server-editor-section')) {
@@ -2096,9 +2095,6 @@ let huntarrUI = {
         // Update active nav item
         var items = document.querySelectorAll('#nzb-hunt-sidebar .nav-item');
         for (var i = 0; i < items.length; i++) items[i].classList.remove('active');
-        var subGroup = document.getElementById('nzb-hunt-settings-sub');
-        if (subGroup) subGroup.classList.remove('expanded');
-
         var section = this.currentSection;
         if (section === 'nzb-hunt-home') {
             var n = document.getElementById('nzbHuntHomeNav');
@@ -2106,24 +2102,12 @@ let huntarrUI = {
         } else if (section === 'nzb-hunt-activity') {
             var n = document.getElementById('nzbHuntActivityNav');
             if (n) n.classList.add('active');
-        } else if (section.startsWith('nzb-hunt-settings') || section === 'nzb-hunt-server-editor') {
-            var subGroup = document.getElementById('nzb-hunt-settings-sub');
-            if (subGroup) subGroup.classList.add('expanded');
-            
-            // Highlight only the specific sub-item (Folders, Servers, Processing, Advanced), not the parent Settings
-            var subId = '';
-            if (section === 'nzb-hunt-settings-folders') subId = 'nzbHuntSettingsFoldersNav';
-            else if (section === 'nzb-hunt-settings-servers' || section === 'nzb-hunt-server-editor') subId = 'nzbHuntSettingsServersNav';
-            else if (section === 'nzb-hunt-settings-advanced') subId = 'nzbHuntSettingsAdvancedNav';
-            
-            if (subId) {
-                var sn = document.getElementById(subId);
-                if (sn) sn.classList.add('active');
-            } else {
-                // Generic nzb-hunt-settings (no sub-section) — highlight Settings parent
-                var n = document.getElementById('nzbHuntSettingsNav');
-                if (n) n.classList.add('active');
-            }
+        } else if (section === 'nzb-hunt-folders' || section === 'nzb-hunt-servers' || section === 'nzb-hunt-advanced' || section.startsWith('nzb-hunt-settings') || section === 'nzb-hunt-server-editor') {
+            var navId = 'nzbHuntFoldersNav';
+            if (section === 'nzb-hunt-servers' || section === 'nzb-hunt-settings-servers' || section === 'nzb-hunt-server-editor') navId = 'nzbHuntServersNav';
+            else if (section === 'nzb-hunt-advanced' || section === 'nzb-hunt-settings-advanced') navId = 'nzbHuntAdvancedNav';
+            var n = document.getElementById(navId);
+            if (n) n.classList.add('active');
         }
     },
 

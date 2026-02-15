@@ -280,24 +280,18 @@
                 <div class="nav-icon-wrapper"><i class="fas fa-download"></i></div>
                 <span>NZB Home</span>
             </a>
-            <a href="./#nzb-hunt-settings-folders" class="nav-item" id="nzbHuntSettingsNav">
-                <div class="nav-icon-wrapper"><i class="fas fa-cog"></i></div>
-                <span>Settings</span>
+            <a href="./#nzb-hunt-folders" class="nav-item" id="nzbHuntFoldersNav">
+                <div class="nav-icon-wrapper"><i class="fas fa-folder-open"></i></div>
+                <span>Folders</span>
             </a>
-            <div class="nav-sub-group" id="nzb-hunt-settings-sub">
-                <a href="./#nzb-hunt-settings-folders" class="nav-item nav-item-sub" id="nzbHuntSettingsFoldersNav" data-nzb-tab="folders">
-                    <div class="nav-icon-wrapper"><i class="fas fa-folder-open"></i></div>
-                    <span>Folders</span>
-                </a>
-                <a href="./#nzb-hunt-settings-servers" class="nav-item nav-item-sub" id="nzbHuntSettingsServersNav" data-nzb-tab="servers">
-                    <div class="nav-icon-wrapper"><i class="fas fa-server"></i></div>
-                    <span>Servers</span>
-                </a>
-                <a href="./#nzb-hunt-settings-advanced" class="nav-item nav-item-sub" id="nzbHuntSettingsAdvancedNav" data-nzb-tab="advanced">
-                    <div class="nav-icon-wrapper"><i class="fas fa-sliders-h"></i></div>
-                    <span>Advanced</span>
-                </a>
-            </div>
+            <a href="./#nzb-hunt-servers" class="nav-item" id="nzbHuntServersNav">
+                <div class="nav-icon-wrapper"><i class="fas fa-server"></i></div>
+                <span>Servers</span>
+            </a>
+            <a href="./#nzb-hunt-advanced" class="nav-item" id="nzbHuntAdvancedNav">
+                <div class="nav-icon-wrapper"><i class="fas fa-sliders-h"></i></div>
+                <span>Advanced</span>
+            </a>
         </div>
     </nav>
     <div class="sidebar-footer">
@@ -509,7 +503,7 @@
 
 <script>
     // All sub-group IDs – collapse all first, then expand only the active section's sub
-    var ALL_SUB_GROUP_IDS = ['system-sub', 'settings-sub', 'movie-hunt-collection-sub', 'movie-hunt-activity-sub', 'index-master-sub', 'movie-hunt-settings-sub', 'nzb-hunt-settings-sub'];
+    var ALL_SUB_GROUP_IDS = ['system-sub', 'settings-sub', 'movie-hunt-collection-sub', 'movie-hunt-activity-sub', 'index-master-sub', 'movie-hunt-settings-sub'];
 
     function collapseAllSubs() {
         ALL_SUB_GROUP_IDS.forEach(function(id) { collapseSub(id); });
@@ -618,8 +612,15 @@
             selector = '#movieHuntImportMediaNav';
             expandSub('movie-hunt-collection-sub');
         }
-        // NZB Hunt
-        else if (currentHash.startsWith('#nzb-hunt-settings')) { selector = '#nzbHuntSettingsNav'; expandSub('nzb-hunt-settings-sub'); }
+        // NZB Hunt (Folders, Servers, Advanced are top-level; no sub-group)
+        else if (currentHash === '#nzb-hunt-folders') selector = '#nzbHuntFoldersNav';
+        else if (currentHash === '#nzb-hunt-servers') selector = '#nzbHuntServersNav';
+        else if (currentHash === '#nzb-hunt-advanced') selector = '#nzbHuntAdvancedNav';
+        else if (currentHash.startsWith('#nzb-hunt-settings')) {
+            if (currentHash === '#nzb-hunt-settings-servers') selector = '#nzbHuntServersNav';
+            else if (currentHash === '#nzb-hunt-settings-advanced') selector = '#nzbHuntAdvancedNav';
+            else selector = '#nzbHuntFoldersNav';
+        }
         // Indexer Manager (own category under Media Hunt)
         else if (currentHash === '#indexer-hunt') { selector = '#movieHuntIndexMasterNav'; expandSub('index-master-sub'); }
         else if (currentHash === '#indexer-hunt-stats') { selector = '#movieHuntIndexMasterStatsNav'; expandSub('index-master-sub'); }

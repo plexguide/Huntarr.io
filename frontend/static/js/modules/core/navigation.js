@@ -110,18 +110,24 @@ window.HuntarrNavigation = {
                 window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#logs-media-hunt');
             }
         }
-        // NZB Hunt Settings → go directly to Folders
-        if (section === 'nzb-hunt-settings') {
-            section = 'nzb-hunt-settings-folders';
-            if (window.location.hash !== '#nzb-hunt-settings-folders') {
-                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#nzb-hunt-settings-folders');
+        // NZB Hunt: canonical hashes are nzb-hunt-folders, nzb-hunt-servers, nzb-hunt-advanced
+        // Legacy nzb-hunt-settings* → redirect to new hashes
+        if (section === 'nzb-hunt-settings' || section === 'nzb-hunt-settings-folders') {
+            section = 'nzb-hunt-folders';
+            if (window.location.hash !== '#nzb-hunt-folders') {
+                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#nzb-hunt-folders');
             }
         }
-        // NZB Hunt Processing → merged into Advanced
-        if (section === 'nzb-hunt-settings-processing') {
-            section = 'nzb-hunt-settings-advanced';
-            if (window.location.hash !== '#nzb-hunt-settings-advanced') {
-                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#nzb-hunt-settings-advanced');
+        if (section === 'nzb-hunt-settings-servers') {
+            section = 'nzb-hunt-servers';
+            if (window.location.hash !== '#nzb-hunt-servers') {
+                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#nzb-hunt-servers');
+            }
+        }
+        if (section === 'nzb-hunt-settings-processing' || section === 'nzb-hunt-settings-advanced') {
+            section = 'nzb-hunt-advanced';
+            if (window.location.hash !== '#nzb-hunt-advanced') {
+                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#nzb-hunt-advanced');
             }
         }
         // Instances moved to Collection: settings-instance-management redirects to media-hunt-instances
