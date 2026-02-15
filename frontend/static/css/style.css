@@ -1,99 +1,6 @@
-:root {
-    /* Light Theme Colors */
-    --bg-primary: #f8f9fa;
-    --bg-secondary: #ffffff;
-    --bg-tertiary: #f1f3f5;
-    --text-primary: #212529;
-    --text-secondary: #495057;
-    --text-muted: #6c757d;
-    --border-color: #dee2e6;
-    --accent-color: #3498db;
-    --accent-hover: #2980b9;
-    --success-color: #27ae60;
-    --warning-color: #f39c12;
-    --error-color: #e74c3c;
-    --info-color: #2980b9;
-    --debug-color: #7f8c8d;
-    
-    /* Component Colors */
-    --sidebar-bg: #2c3e50;
-    --sidebar-text: #ecf0f1;
-    --sidebar-item-hover: #34495e;
-    --sidebar-item-active: #3498db;
-    --topbar-bg: var(--bg-secondary);
-    --card-bg: var(--bg-secondary);
-    --switch-bg: #cbd2d9;
-    --switch-active: #3498db;
-    
-    /* Button Colors */
-    --button-primary-bg: #3498db;
-    --button-primary-text: #ffffff;
-    --button-primary-hover: #2980b9;
-    --button-danger-bg: #e74c3c;
-    --button-danger-hover: #c0392b;
-    --button-success-bg: #27ae60;
-    --button-success-hover: #219955;
-    
-    /* Status Colors */
-    --status-connected: #27ae60;
-    --status-not-connected: #e74c3c;
-    
-    /* Logs Colors */
-    --log-bg: var(--bg-secondary);
-    --log-border: var(--border-color);
-}
+/* Design tokens are in variables.css — no duplicates here */
 
-.dark-theme {
-    --bg-primary: #1a1d24;
-    --bg-secondary: #252a34;
-    --bg-tertiary: #2d3748;
-    --text-primary: #f8f9fa;
-    --text-secondary: #e9ecef;
-    --text-muted: #adb5bd;
-    --border-color: #4a5568;
-    --accent-color: #3498db;
-    --accent-hover: #2980b9;
-    
-    /* Component Colors */
-    --sidebar-bg: #121212;
-    --sidebar-text: #ecf0f1;
-    --sidebar-item-hover: #2d3748;
-    --sidebar-item-active: #3498db;
-    --topbar-bg: #252a34;
-    --card-bg: #252a34;
-    --switch-bg: #4a5568;
-    
-    /* Logs Colors */
-    --log-bg: #252a34;
-    --log-border: #4a5568;
-}
-
-/* Base Styles */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
-    line-height: 1.6;
-    transition: background-color 0.3s, color 0.3s;
-    height: 100vh;
-    overflow: auto;
-}
-
-a {
-    text-decoration: none;
-    color: var(--accent-color);
-}
-
-button {
-    cursor: pointer;
-    font-family: inherit;
-}
+/* Base resets live in base.css — keep only layout & component styles here */
 
 /* Layout Structure - COMPLETE OVERHAUL FOR GAP FIX */
 .app-container {
@@ -115,7 +22,7 @@ button {
     position: relative;
 }
 
-/* Match sidebar blue edge line on right for design consistency */
+/* Indigo edge line on right for design consistency */
 .main-content::after {
     content: '';
     position: absolute;
@@ -124,13 +31,13 @@ button {
     bottom: 0;
     width: 2px;
     background: linear-gradient(180deg,
-        #1a5276 0%,
-        #2980b9 20%,
-        #3498db 40%,
-        #5dade2 50%,
-        #3498db 60%,
-        #2980b9 80%,
-        #1a5276 100%
+        rgba(99, 102, 241, 0.15) 0%,
+        rgba(99, 102, 241, 0.5) 20%,
+        #6366f1 40%,
+        #818cf8 50%,
+        #6366f1 60%,
+        rgba(99, 102, 241, 0.5) 80%,
+        rgba(99, 102, 241, 0.15) 100%
     );
     background-size: 100% 100%;
     z-index: 1000;
@@ -236,10 +143,15 @@ body:has(.app-container) {
 }
 
 .card {
-    background-color: var(--card-bg);
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
     padding: 20px;
+    border: 1px solid var(--border-color-light);
+    transition: box-shadow var(--transition-base), transform var(--transition-base);
+}
+.card:hover {
+    box-shadow: var(--shadow-lg);
 }
 
 .card h2, .card h3 {
@@ -285,12 +197,12 @@ body:has(.app-container) {
 }
 
 .status-badge.connected {
-    background-color: rgba(39, 174, 96, 0.2);
+    background-color: rgba(34, 197, 94, 0.12);
     color: var(--status-connected);
 }
 
 .status-badge.not-connected {
-    background-color: rgba(231, 76, 60, 0.2);
+    background-color: rgba(239, 68, 68, 0.12);
     color: var(--status-not-connected);
 }
 
@@ -305,9 +217,14 @@ body:has(.app-container) {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 10px;
-    border-radius: 6px;
+    padding: 12px;
+    border-radius: var(--radius-md);
     background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color-light);
+    transition: transform var(--transition-fast);
+}
+.stat-item:hover {
+    transform: translateY(-1px);
 }
 
 .stat-value {
@@ -330,14 +247,14 @@ body:has(.app-container) {
 
 .action-button {
     padding: 12px 20px;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     border: none;
     font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
     flex: 1;
-    transition: background-color 0.3s, transform 0.2s;
+    transition: background-color var(--transition-base), transform var(--transition-fast), box-shadow var(--transition-base);
 }
 
 .action-button i {
@@ -367,14 +284,14 @@ body:has(.app-container) {
 /* Small action button */
 .action-button-small {
     padding: 8px 12px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     border: none;
     font-weight: 600;
     background-color: var(--button-danger-bg);
     color: white;
     font-size: 0.9em;
     cursor: pointer;
-    transition: background-color 0.3s, transform 0.2s;
+    transition: background-color var(--transition-base), transform var(--transition-fast);
 }
 
 .action-button-small:hover {
@@ -384,24 +301,24 @@ body:has(.app-container) {
 
 /* Danger action button */
 .action-button.danger {
-    background-color: #e74c3c;
+    background-color: var(--button-danger-bg);
     color: #fff;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     padding: 6px 12px;
     font-size: 13px;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    transition: background-color var(--transition-base), transform var(--transition-fast);
     width: fit-content;
     max-width: max-content;
     white-space: nowrap;
 }
 
 .action-button.danger:hover {
-    background-color: #c0392b;
+    background-color: var(--button-danger-hover);
 }
 
 .action-button.danger:active {
@@ -432,11 +349,11 @@ body:has(.app-container) {
 .app-tab, .settings-tab {
     padding: 8px 20px;
     background-color: var(--bg-tertiary);
-    border: none;
+    border: 1px solid transparent;
     border-radius: 20px;
-    color: var(--text-secondary);
+    color: var(--text-muted);
     font-weight: 500;
-    transition: all 0.3s;
+    transition: all var(--transition-base);
 }
 
 .app-tab.active, .settings-tab.active {
@@ -533,12 +450,15 @@ body:has(.app-container) {
 .save-button, .reset-button {
     padding: 8px 16px;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-md);
     font-weight: 500;
     display: flex;
     align-items: center;
     gap: 6px;
-    transition: background-color 0.3s;
+    transition: background-color var(--transition-base), transform var(--transition-fast), box-shadow var(--transition-base);
+}
+.save-button:hover, .reset-button:hover {
+    transform: translateY(-1px);
 }
 
 .save-button {
@@ -612,11 +532,19 @@ body:has(.app-container) {
 .setting-item input[type="number"],
 .setting-item input[type="password"] {
     width: 300px;
-    padding: 8px 12px;
+    padding: 10px 14px;
     border: 1px solid var(--border-color);
-    border-radius: 4px;
-    background-color: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    background-color: rgba(15, 23, 42, 0.6);
     color: var(--text-primary);
+    transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+.setting-item input[type="text"]:focus,
+.setting-item input[type="number"]:focus,
+.setting-item input[type="password"]:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
 }
 
 .setting-help {
@@ -703,8 +631,8 @@ body:has(.app-container) {
 }
 
 input:checked + .toggle-slider {
-    background: #3498db;
-    border-color: rgba(52, 152, 219, 0.5);
+    background: #6366f1;
+    border-color: rgba(99, 102, 241, 0.5);
 }
 
 input:checked + .toggle-slider:before {
@@ -723,7 +651,7 @@ input:disabled + .toggle-slider {
     width: 100%;
     margin-bottom: 25px;
     padding-bottom: 15px;
-    border-bottom: 1px solid #2d3748; /* Darker border matching the screenshot */
+    border-bottom: 1px solid var(--border-color);
 }
 
 .stateful-header-wrapper h3 {
@@ -796,13 +724,13 @@ input:disabled + .toggle-slider {
 }
 
 .date-value {
-    font-family: monospace;
+    font-family: 'SF Mono', 'Fira Code', monospace;
     font-size: 14px;
     font-weight: 600;
     color: var(--accent-color);
     padding: 4px 8px;
-    background-color: rgba(52, 152, 219, 0.1);
-    border-radius: 4px;
+    background-color: rgba(99, 102, 241, 0.1);
+    border-radius: var(--radius-sm);
 }
 
 .reset-help {
@@ -848,11 +776,11 @@ input:disabled + .toggle-slider {
 
 /* Custom reset button that matches the screenshot exactly */
 .danger-reset-button {
-    background-color: #e74c3c; /* Solid red to match the image */
+    background-color: var(--button-danger-bg);
     color: white;
     border: none;
     padding: 6px 12px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
@@ -868,7 +796,7 @@ input:disabled + .toggle-slider {
 }
 
 .danger-reset-button:hover {
-    background-color: #c0392b;
+    background-color: var(--button-danger-hover);
 }
 
 .danger-reset-button i {
@@ -919,10 +847,11 @@ input:disabled + .toggle-slider {
     padding: 20px;
     margin-top: 20px;
     background-color: var(--bg-secondary);
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    color: var(--text-secondary);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    color: var(--text-muted);
     font-size: 14px;
+    border: 1px solid var(--border-color-light);
 }
 
 .footer p {
@@ -947,14 +876,15 @@ input:disabled + .toggle-slider {
     top: 20px;
     right: 20px;
     padding: 15px 25px;
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
     color: white;
     font-weight: 500;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-lg);
     z-index: 1000;
     transform: translateY(-20px);
     opacity: 0;
-    transition: transform 0.3s, opacity 0.3s;
+    transition: transform var(--transition-base), opacity var(--transition-base);
+    backdrop-filter: blur(8px);
 }
 
 .notification.show {
@@ -1083,7 +1013,7 @@ label .info-icon ~ text {
     align-items: center;
     padding-bottom: 12px;
     margin-bottom: 20px;
-    border-bottom: 1px solid #2d3748; /* Dark border line matching the screenshot */
+    border-bottom: 1px solid var(--border-color);
     width: 100%;
 }
 
@@ -1096,11 +1026,11 @@ label .info-icon ~ text {
 
 /* Reset button styling exactly matching the screenshot */
 #reset_stateful_btn {
-    background-color: #e74c3c;
+    background-color: var(--button-danger-bg);
     color: white;
     border: none;
     padding: 5px 12px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
@@ -1111,7 +1041,7 @@ label .info-icon ~ text {
 }
 
 #reset_stateful_btn:hover {
-    background-color: #c0392b;
+    background-color: var(--button-danger-hover);
 }
 
 #reset_stateful_btn i {
@@ -1173,9 +1103,9 @@ label .info-icon ~ text {
 }
 
 .tag-item {
-    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-    border: 1px solid rgba(90, 109, 137, 0.4);
-    border-radius: 6px;
+    background: linear-gradient(135deg, #312e81 0%, #6366f1 100%);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: var(--radius-sm);
     padding: 6px 10px;
     display: flex;
     align-items: center;
@@ -1188,8 +1118,8 @@ label .info-icon ~ text {
 }
 
 .tag-item:hover {
-    background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
-    border-color: rgba(90, 109, 137, 0.6);
+    background: linear-gradient(135deg, #4338ca 0%, #818cf8 100%);
+    border-color: rgba(99, 102, 241, 0.5);
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
@@ -1224,20 +1154,20 @@ label .info-icon ~ text {
 
 .tag-input {
     flex: 1;
-    background: #374151;
-    border: 1px solid rgba(90, 109, 137, 0.2);
-    border-radius: 6px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
     padding: 8px 12px;
-    color: #e5e7eb;
+    color: var(--text-secondary);
     font-size: 14px;
     outline: none;
-    transition: all 0.2s ease;
+    transition: all var(--transition-base);
 }
 
 .tag-input:focus {
-    border-color: rgba(90, 109, 137, 0.5);
-    background: #4b5563;
-    box-shadow: 0 0 0 3px rgba(90, 109, 137, 0.1);
+    border-color: var(--accent-color);
+    background: rgba(15, 23, 42, 0.8);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
 }
 
 .tag-input::placeholder {
@@ -1341,49 +1271,51 @@ label .info-icon ~ text {
 }
 
 .remove-instance-btn {
-    background-color: #dc3545;
+    background-color: var(--button-danger-bg);
     color: white;
     border: none;
     padding: 6px 12px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     gap: 5px;
     font-size: 13px;
     margin-top: 5px;
-    transition: background-color 0.2s;
+    transition: background-color var(--transition-base), transform var(--transition-fast);
 }
 
 .remove-instance-btn:hover {
-    background-color: #c82333;
+    background-color: var(--button-danger-hover);
+    transform: translateY(-1px);
 }
 
 .test-connection-btn {
-    background-color: #28a745;
+    background-color: var(--button-success-bg);
     color: white;
     border: none;
     padding: 6px 12px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     gap: 5px;
     font-size: 13px;
     margin-top: 5px;
-    transition: background-color 0.2s;
+    transition: background-color var(--transition-base), transform var(--transition-fast);
 }
 
 .test-connection-btn:hover {
-    background-color: #218838;
+    background-color: var(--button-success-hover);
+    transform: translateY(-1px);
 }
 
 .test-connection-btn.test-success {
-    background-color: #28a745;
+    background-color: var(--button-success-bg);
 }
 
 .test-connection-btn.test-failed {
-    background-color: #dc3545;
+    background-color: var(--button-danger-bg);
 }
 
 .test-connection-btn:disabled {
@@ -1442,7 +1374,7 @@ label .info-icon ~ text {
     align-items: center;
     justify-content: center;
     padding: 20px;
-    color: #dc3545;
+    color: var(--error-color);
     gap: 10px;
 }
 
@@ -1489,11 +1421,7 @@ label .info-icon ~ text {
 
 .stat-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.dark-theme .stat-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--shadow-md);
 }
 
 .stat-label {
@@ -1613,19 +1541,19 @@ label .info-icon ~ text {
 
 .app-sponsor-banner .sponsor-name {
     font-weight: 600;
-    color: #60a5fa;
+    color: #a5b4fc;
     font-size: 12px;
 }
 
 .app-sponsor-banner:hover {
     background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%);
-    border-color: rgba(96, 165, 250, 0.25);
-    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.12);
+    border-color: rgba(99, 102, 241, 0.25);
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.12);
     transform: translateY(-1px);
 }
 
 .app-sponsor-banner:hover .sponsor-name {
-    color: #93c5fd;
+    color: #c7d2fe;
 }
 
 /* Daughter's Sponsor — warm gold accent */

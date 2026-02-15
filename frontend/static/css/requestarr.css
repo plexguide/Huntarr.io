@@ -53,8 +53,8 @@
 }
 
 #requestarr-search:focus {
-    border-color: rgba(52, 152, 219, 0.5);
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15), 0 1px 0 rgba(255, 255, 255, 0.1) inset;
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), 0 1px 0 rgba(255, 255, 255, 0.1) inset;
 }
 
 #requestarr-search::placeholder {
@@ -386,8 +386,8 @@
 }
 
 .form-group input[type="text"]:focus {
-    border-color: rgba(52, 152, 219, 0.5);
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15), 0 1px 0 rgba(255, 255, 255, 0.1) inset;
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), 0 1px 0 rgba(255, 255, 255, 0.1) inset;
 }
 
 .form-group select {
@@ -412,8 +412,8 @@
 }
 
 .form-group select:focus {
-    border-color: rgba(52, 152, 219, 0.5);
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15), 0 1px 0 rgba(255, 255, 255, 0.1) inset;
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), 0 1px 0 rgba(255, 255, 255, 0.1) inset;
 }
 
 /* Attention style for unselected instance dropdown */
@@ -432,12 +432,12 @@
 
 .form-group select option:hover,
 .form-group select option:focus {
-    background-color: rgba(52, 152, 219, 0.8);
+    background-color: rgba(99, 102, 241, 0.8);
     color: #ffffff;
 }
 
 .form-group select option:checked {
-    background-color: rgba(52, 152, 219, 0.9);
+    background-color: rgba(99, 102, 241, 0.9);
     color: #ffffff;
     font-weight: 600;
 }
@@ -628,7 +628,7 @@
     align-self: flex-end;
     gap: 6px;
     padding: 8px 16px;
-    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    background: linear-gradient(135deg, #ef4444, #f87171);
     color: #fff;
     border: none;
     border-radius: 6px;
@@ -640,7 +640,7 @@
 }
 
 .modal-close-btn:hover {
-    background: linear-gradient(135deg, #c0392b, #a93226);
+    background: linear-gradient(135deg, #f87171, #a93226);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
 }

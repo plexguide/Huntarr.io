@@ -405,8 +405,8 @@
     display: inline-flex;
     align-items: center;
     font-size: 0.7rem;
-    background: rgba(59, 130, 246, 0.12);
-    color: #60a5fa;
+    background: rgba(99, 102, 241, 0.12);
+    color: #a5b4fc;
     padding: 2px 8px;
     border-radius: 12px;
     font-weight: 600;
@@ -604,9 +604,9 @@
     transition: all 0.3s ease;
 }
 #indexer-hunt-section #ih-connection-status-container .connection-status.checking {
-    background: rgba(59, 130, 246, 0.1);
-    color: #60a5fa;
-    border: 1px solid rgba(59, 130, 246, 0.2);
+    background: rgba(99, 102, 241, 0.1);
+    color: #a5b4fc;
+    border: 1px solid rgba(99, 102, 241, 0.2);
 }
 #indexer-hunt-section #ih-connection-status-container .connection-status.success {
     background: rgba(16, 185, 129, 0.1);
@@ -1043,8 +1043,8 @@ select.ih-input {
 }
 
 .ih-event-search {
-    background: rgba(59, 130, 246, 0.15);
-    color: #60a5fa;
+    background: rgba(99, 102, 241, 0.15);
+    color: #a5b4fc;
 }
 
 .ih-event-grab {

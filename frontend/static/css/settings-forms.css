@@ -380,7 +380,7 @@
 .save-button, .reset-button {
     padding: 8px 16px;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-weight: 500;
     display: flex;
     align-items: center;
@@ -481,14 +481,14 @@
 
 .setting-item label .info-icon {
     margin-right: 8px;
-    color: rgba(52, 152, 219, 0.8);
+    color: rgba(99, 102, 241, 0.8);
     transition: color 0.2s ease, transform 0.2s ease;
     flex-shrink: 0;
     margin-top: 1px;
 }
 
 .setting-item label .info-icon:hover {
-    color: rgba(52, 152, 219, 1);
+    color: rgba(99, 102, 241, 1);
     transform: scale(1.1);
 }
 
@@ -512,8 +512,8 @@
 .setting-item input[type="text"]:focus,
 .setting-item input[type="number"]:focus,
 .setting-item input[type="password"]:focus {
-    border-color: rgba(52, 152, 219, 0.5);
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15), 0 1px 0 rgba(255, 255, 255, 0.1) inset;
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), 0 1px 0 rgba(255, 255, 255, 0.1) inset;
     outline: none;
 }
 
@@ -544,8 +544,8 @@
 }
 
 .setting-item select:focus {
-    border-color: rgba(52, 152, 219, 0.5);
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15), 0 1px 0 rgba(255, 255, 255, 0.1) inset;
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), 0 1px 0 rgba(255, 255, 255, 0.1) inset;
     outline: none;
 }
 
@@ -564,12 +564,12 @@
 
 .setting-item select option:hover,
 .setting-item select option:focus {
-    background-color: rgba(52, 152, 219, 0.8);
+    background-color: rgba(99, 102, 241, 0.8);
     color: #ffffff;
 }
 
 .setting-item select option:checked {
-    background-color: rgba(52, 152, 219, 0.9);
+    background-color: rgba(99, 102, 241, 0.9);
     color: #ffffff;
     font-weight: 600;
 }
@@ -631,7 +631,7 @@
     font-family: 'Font Awesome 5 Free';
     font-weight: 900;
     margin-right: 10px;
-    color: rgba(52, 152, 219, 0.8);
+    color: rgba(99, 102, 241, 0.8);
     font-size: 14px;
 }
 
@@ -653,15 +653,15 @@
 }
 
 .test-connection-btn {
-    background: linear-gradient(145deg, rgba(41, 128, 185, 0.2), rgba(52, 152, 219, 0.15));
-    color: rgba(52, 152, 219, 0.9);
-    border: 1px solid rgba(52, 152, 219, 0.3);
+    background: linear-gradient(145deg, rgba(41, 128, 185, 0.2), rgba(99, 102, 241, 0.15));
+    color: rgba(99, 102, 241, 0.9);
+    border: 1px solid rgba(99, 102, 241, 0.3);
 }
 
 .test-connection-btn:hover {
-    background: linear-gradient(145deg, rgba(41, 128, 185, 0.3), rgba(52, 152, 219, 0.25));
+    background: linear-gradient(145deg, rgba(41, 128, 185, 0.3), rgba(99, 102, 241, 0.25));
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    color: rgba(52, 152, 219, 1);
+    color: rgba(99, 102, 241, 1);
 }
 
 .add-instance-btn {
@@ -702,12 +702,12 @@
 
 .connection-status-badge.status-success {
     background-color: rgba(39, 174, 96, 0.2) !important;
-    color: #27ae60 !important;
+    color: #22c55e !important;
 }
 
 .connection-status-badge.status-error {
     background-color: rgba(231, 76, 60, 0.2) !important;
-    color: #e74c3c !important;
+    color: #ef4444 !important;
 }
 
 .connection-status-badge.status-unknown {
@@ -716,8 +716,8 @@
 }
 
 .connection-status-badge.status-testing {
-    background-color: rgba(52, 152, 219, 0.2) !important;
-    color: #3498db !important;
+    background-color: rgba(99, 102, 241, 0.2) !important;
+    color: #6366f1 !important;
 }
 
 .connection-status-badge i {

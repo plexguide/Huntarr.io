@@ -40,13 +40,14 @@
 }
 
 .card {
-    background: linear-gradient(135deg, rgba(30, 39, 56, 0.95) 0%, rgba(14, 20, 32, 0.95) 50%, rgba(16, 24, 36, 0.95) 100%);
-    border-radius: 12px;
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+    background: linear-gradient(135deg, rgba(17, 24, 39, 0.95) 0%, rgba(15, 23, 42, 0.95) 50%, rgba(17, 24, 39, 0.95) 100%);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
     padding: 20px;
     position: relative;
-    border: 1px solid rgba(90, 109, 137, 0.1);
+    border: 1px solid var(--border-color-light);
     overflow: hidden;
+    transition: box-shadow var(--transition-base), transform var(--transition-base);
 }
 
 .card::before {
@@ -56,7 +57,7 @@
     left: 0;
     width: 100%;
     height: 2px;
-    background: linear-gradient(90deg, rgba(52, 152, 219, 0.3), rgba(155, 89, 182, 0.3));
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.4), rgba(129, 140, 248, 0.2));
     opacity: 0.7;
 }
 
@@ -103,12 +104,12 @@
 }
 
 .status-badge.connected {
-    background-color: rgba(39, 174, 96, 0.2);
+    background-color: rgba(34, 197, 94, 0.12);
     color: var(--status-connected);
 }
 
 .status-badge.not-connected {
-    background-color: rgba(231, 76, 60, 0.2);
+    background-color: rgba(239, 68, 68, 0.12);
     color: var(--status-not-connected);
 }
 
@@ -133,9 +134,10 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 10px;
-    border-radius: 6px;
+    padding: 12px;
+    border-radius: var(--radius-md);
     background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color-light);
 }
 
 .stat-value {
@@ -158,14 +160,14 @@
 
 .action-button {
     padding: 12px 20px;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     border: none;
     font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
     flex: 1;
-    transition: background-color 0.3s, transform 0.2s;
+    transition: background-color var(--transition-base), transform var(--transition-fast);
 }
 
 .action-button i {
@@ -243,19 +245,21 @@
     background-color: var(--accent-color);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-md);
     cursor: pointer;
     font-weight: 500;
-    transition: background-color 0.2s;
+    transition: background-color var(--transition-base), transform var(--transition-fast);
 }
 
 .add-instance-btn:hover {
-    background-color: var(--accent-color-dark);
+    background-color: var(--accent-hover);
+    transform: translateY(-1px);
 }
 
 .add-instance-btn:disabled {
-    background-color: #ccc;
+    background-color: var(--bg-hover);
     cursor: not-allowed;
+    opacity: 0.5;
 }
 
 .remove-instance-btn {
@@ -349,14 +353,15 @@
     top: 20px;
     right: 20px;
     padding: 15px 25px;
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
     color: white;
     font-weight: 500;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-lg);
     z-index: 1000;
     transform: translateY(-20px);
     opacity: 0;
-    transition: transform 0.3s, opacity 0.3s;
+    transition: transform var(--transition-base), opacity var(--transition-base);
+    backdrop-filter: blur(8px);
 }
 
 .notification.show {
@@ -434,13 +439,13 @@
     font-weight: 500;
     font-size: 1rem;
     min-width: 140px;
-    box-shadow: 0 0 7.5px rgba(52, 152, 219, 0.4);
+    box-shadow: 0 0 7.5px var(--accent-glow);
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
     cursor: pointer;
     outline: none;
-    transition: all 0.3s ease;
+    transition: all var(--transition-base);
     margin-right: 10px;
     position: relative;
     background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
@@ -457,7 +462,7 @@
 
 .styled-select:focus, .styled-select:hover {
     background: var(--accent-hover);
-    box-shadow: 0 0 10px rgba(52, 152, 219, 0.6);
+    box-shadow: 0 0 10px var(--accent-glow);
 }
 
 /* Responsive adjustments */

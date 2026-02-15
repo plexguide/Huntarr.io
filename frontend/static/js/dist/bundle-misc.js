@@ -6876,7 +6876,7 @@ window.HuntarrStats = {
     APP_META: {
         tv_hunt:    { label: 'TV Hunt',    icon: './static/logo/256.png', accent: '#a855f7' },
         movie_hunt: { label: 'Movie Hunt', icon: './static/logo/256.png', accent: '#f59e0b' },
-        sonarr:     { label: 'Sonarr',     icon: './static/images/app-icons/sonarr.png', accent: '#3b82f6' },
+        sonarr:     { label: 'Sonarr',     icon: './static/images/app-icons/sonarr.png', accent: '#6366f1' },
         radarr:     { label: 'Radarr',     icon: './static/images/app-icons/radarr.png', accent: '#f59e0b' },
         lidarr:     { label: 'Lidarr',     icon: './static/images/app-icons/lidarr.png', accent: '#22c55e' },
         readarr:    { label: 'Readarr',    icon: './static/images/app-icons/readarr.png', accent: '#a855f7' },
@@ -8926,7 +8926,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // App-specific colors matching your existing design
     const appColors = {
-        'sonarr': '#3498db',  // Blue
+        'sonarr': '#6366f1',  // Indigo
         'radarr': '#f39c12',  // Yellow/orange
         'lidarr': '#2ecc71',  // Green
         'readarr': '#e74c3c', // Red

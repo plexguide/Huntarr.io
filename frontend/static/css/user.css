@@ -266,9 +266,9 @@
 
 /* Plex modal overrides */
 .plex-status.waiting {
-    background: rgba(52, 152, 219, 0.15);
-    border: 1px solid rgba(52, 152, 219, 0.3);
-    color: #3498db;
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    color: #6366f1;
 }
 
 .plex-status.success {

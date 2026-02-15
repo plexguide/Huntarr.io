@@ -85,8 +85,8 @@
 }
 
 .br-icon-blue {
-    background: rgba(59, 130, 246, 0.15);
-    color: #60a5fa;
+    background: rgba(99, 102, 241, 0.15);
+    color: #a5b4fc;
 }
 .br-icon-green {
     background: rgba(34, 197, 94, 0.15);
@@ -155,8 +155,8 @@
 .br-field input:focus,
 .br-field select:focus {
     outline: none;
-    border-color: rgba(59, 130, 246, 0.5);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
 }
 
 .br-input-danger {
@@ -184,7 +184,7 @@
 
 /* ---- Info link (replaces old blue circle-i) ---- */
 .br-info-link {
-    color: #60a5fa;
+    color: #a5b4fc;
     text-decoration: none;
     font-size: 14px;
     opacity: 0.7;
@@ -203,8 +203,8 @@
     align-items: center;
     gap: 8px;
     padding: 10px 16px;
-    background: rgba(59, 130, 246, 0.08);
-    border: 1px solid rgba(59, 130, 246, 0.18);
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.18);
     border-radius: 8px;
     color: #93bbfc;
     font-size: 0.875rem;
@@ -232,13 +232,13 @@
 }
 
 .br-btn-primary {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    background: linear-gradient(135deg, #6366f1 0%, #2563eb 100%);
     color: #fff;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
 }
 .br-btn-primary:hover:not(:disabled) {
-    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
-    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+    background: linear-gradient(135deg, #a5b4fc 0%, #6366f1 100%);
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
     transform: translateY(-1px);
 }
 
@@ -344,9 +344,9 @@
 }
 
 .br-file-upload:hover .br-file-label {
-    border-color: rgba(59, 130, 246, 0.35);
+    border-color: rgba(99, 102, 241, 0.35);
     color: #93bbfc;
-    background: rgba(59, 130, 246, 0.04);
+    background: rgba(99, 102, 241, 0.04);
 }
 
 .br-file-label i {
@@ -370,7 +370,7 @@
 .br-progress-track .progress-fill,
 .br-progress-wrap .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    background: linear-gradient(90deg, #6366f1, #a5b4fc);
     width: 0%;
     border-radius: 3px;
     transition: width 0.3s ease;

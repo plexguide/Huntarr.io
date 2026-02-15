@@ -134,8 +134,8 @@
 
 .requestarr-search-container input:focus {
     outline: none;
-    border-color: rgba(59, 130, 246, 0.5);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
     background: rgba(30, 41, 59, 0.9);
 }
 
@@ -212,7 +212,7 @@
     transition: background 0.15s;
 }
 .media-table tbody tr:hover {
-    background: rgba(59, 130, 246, 0.08);
+    background: rgba(99, 102, 241, 0.08);
 }
 .media-table td {
     padding: 12px 16px;
@@ -256,17 +256,17 @@
 }
 .media-table .table-action-btn {
     padding: 6px 10px;
-    background: rgba(59, 130, 246, 0.15);
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.3);
     border-radius: 4px;
-    color: #60a5fa;
+    color: #a5b4fc;
     font-size: 11px;
     cursor: pointer;
     transition: all 0.15s;
 }
 .media-table .table-action-btn:hover {
-    background: rgba(59, 130, 246, 0.25);
-    border-color: rgba(59, 130, 246, 0.5);
+    background: rgba(99, 102, 241, 0.25);
+    border-color: rgba(99, 102, 241, 0.5);
 }
 .media-table .table-action-btn.danger {
     background: rgba(239, 68, 68, 0.15);
@@ -363,17 +363,17 @@
 }
 .media-overview-action-btn {
     padding: 6px 12px;
-    background: rgba(59, 130, 246, 0.15);
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.3);
     border-radius: 4px;
-    color: #60a5fa;
+    color: #a5b4fc;
     font-size: 12px;
     cursor: pointer;
     transition: all 0.15s;
 }
 .media-overview-action-btn:hover {
-    background: rgba(59, 130, 246, 0.25);
-    border-color: rgba(59, 130, 246, 0.5);
+    background: rgba(99, 102, 241, 0.25);
+    border-color: rgba(99, 102, 241, 0.5);
 }
 .media-overview-action-btn.danger {
     background: rgba(239, 68, 68, 0.15);
@@ -436,7 +436,7 @@
 
 #media-hunt-collection-grid .media-card:hover {
     transform: translateY(-4px);
-    border-color: rgba(59, 130, 246, 0.35);
+    border-color: rgba(99, 102, 241, 0.35);
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
 }
 
@@ -655,8 +655,8 @@
 
 #media-hunt-collection-view .global-search-bar input:focus {
     outline: none;
-    border-color: rgba(59, 130, 246, 0.5);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
     background: rgba(30, 41, 59, 0.9);
 }
 
@@ -687,8 +687,8 @@
 
 #media-hunt-collection-view .hidden-media-search-input:focus {
     outline: none;
-    border-color: rgba(59, 130, 246, 0.5);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
     background: rgba(30, 41, 59, 0.9);
 }
 
@@ -760,8 +760,8 @@
 }
 #mediaHuntSection .global-search-bar input:focus {
     outline: none;
-    border-color: rgba(59, 130, 246, 0.5);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
     background: rgba(30, 41, 59, 0.9);
 }
 #mediaHuntSection .search-results-title {
@@ -841,8 +841,8 @@
 #mediaHuntSection .instance-selector-container .control-select:focus,
 .media-hunt-settings-instance-bar .control-select:focus {
     outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
 }
 #activitySection .activity-instance-group {
     flex-shrink: 0;
@@ -976,7 +976,7 @@
     border: 2px solid #16a34a;
 }
 #mediaHuntSection .media-card-status-badge.available {
-    background: #3b82f6;
+    background: #6366f1;
     border: 2px solid #2563eb;
 }
 #mediaHuntSection .media-card-status-badge.partial {

@@ -133,12 +133,12 @@
     }
     .mtb-reddit:hover { background: rgba(255,69,0,.2); color: #ff6633; }
     .mtb-docs {
-        color: #3498db;
-        background: rgba(52,152,219,.1);
+        color: #6366f1;
+        background: rgba(99,102,241,.1);
     }
-    .mtb-docs:hover { background: rgba(52,152,219,.2); color: #5dade2; }
+    .mtb-docs:hover { background: rgba(99,102,241,.2); color: #818cf8; }
     .mtb-heart {
-        color: #e74c3c;
+        color: #ef4444;
         background: rgba(231,76,60,.1);
     }
     .mtb-heart:hover { background: rgba(231,76,60,.2); color: #ff6b6b; }
@@ -146,7 +146,7 @@
     /* Accent line */
     .mtb-accent {
         height: 2px;
-        background: linear-gradient(90deg, #1a5276, #2980b9, #5dade2, #2980b9, #1a5276);
+        background: linear-gradient(90deg, rgba(99, 102, 241, 0.15), #818cf8, #818cf8, #818cf8, rgba(99, 102, 241, 0.15));
         opacity: .8;
     }
 }

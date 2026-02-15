@@ -75,7 +75,7 @@
 
 .logs-filter-chip:hover,
 .logs-filter-chip:focus-within {
-    border-color: rgba(59, 130, 246, 0.4);
+    border-color: rgba(99, 102, 241, 0.4);
 }
 
 .logs-filter-chip i {
@@ -128,8 +128,8 @@
 }
 
 .logs-search-bar:focus-within {
-    border-color: rgba(59, 130, 246, 0.5);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
 }
 
 .logs-search-bar i {
@@ -176,8 +176,8 @@
 }
 
 .logs-btn-search:hover {
-    border-color: rgba(59, 130, 246, 0.5);
-    color: #60a5fa;
+    border-color: rgba(99, 102, 241, 0.5);
+    color: #a5b4fc;
 }
 
 .logs-btn-danger:hover {
@@ -258,9 +258,9 @@
 }
 
 .logs-page-btn:hover:not(:disabled) {
-    border-color: rgba(59, 130, 246, 0.4);
-    color: #60a5fa;
-    background: rgba(59, 130, 246, 0.08);
+    border-color: rgba(99, 102, 241, 0.4);
+    color: #a5b4fc;
+    background: rgba(99, 102, 241, 0.08);
 }
 
 .logs-page-btn:disabled {
@@ -322,7 +322,7 @@
 }
 
 .logs-data-table tbody tr:hover {
-    background: rgba(59, 130, 246, 0.04);
+    background: rgba(99, 102, 241, 0.04);
 }
 
 .logs-data-table tr:last-child td {
@@ -345,7 +345,7 @@
 
 .col-app {
     width: 100px;
-    color: #60a5fa !important;
+    color: #a5b4fc !important;
     font-weight: 600;
     font-size: 0.82rem !important;
     white-space: nowrap;
@@ -389,9 +389,9 @@
 }
 
 .log-level-info {
-    background: rgba(59, 130, 246, 0.12);
-    color: #60a5fa;
-    border: 1px solid rgba(59, 130, 246, 0.2);
+    background: rgba(99, 102, 241, 0.12);
+    color: #a5b4fc;
+    border: 1px solid rgba(99, 102, 241, 0.2);
 }
 
 .log-level-debug {
@@ -432,7 +432,7 @@
 }
 
 .log-entry:hover {
-    background-color: rgba(59, 130, 246, 0.04);
+    background-color: rgba(99, 102, 241, 0.04);
 }
 
 .log-entry-row {
@@ -472,7 +472,7 @@
 
 .log-source {
     font-weight: 600;
-    color: #60a5fa;
+    color: #a5b4fc;
     min-width: 70px;
     text-align: left;
     font-size: 11px;

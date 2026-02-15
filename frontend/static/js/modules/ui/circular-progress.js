@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // App-specific colors matching your existing design
     const appColors = {
-        'sonarr': '#3498db',  // Blue
+        'sonarr': '#6366f1',  // Indigo
         'radarr': '#f39c12',  // Yellow/orange
         'lidarr': '#2ecc71',  // Green
         'readarr': '#e74c3c', // Red

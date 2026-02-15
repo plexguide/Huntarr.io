@@ -511,8 +511,8 @@
     border-color: rgba(148,163,184,0.2);
 }
 #settingsImportListsSection .media-hunt-settings-instance-bar .control-select:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99,102,241,0.2);
 }
 
 .import-lists-settings-group .add-import-list-card .add-icon {
@@ -546,8 +546,8 @@
 .import-list-modal .control-input:focus,
 .import-list-modal .control-select:focus {
     outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99,102,241,0.2);
 }
 .import-list-modal .control-select option {
     background: #0f172a;

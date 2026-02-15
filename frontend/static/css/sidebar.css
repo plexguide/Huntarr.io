@@ -45,7 +45,7 @@
     background: rgba(255, 255, 255, 0.15);
 }
 
-/* ===== ANIMATED EDGE LINE ===== */
+/* ===== ANIMATED EDGE LINE — indigo ===== */
 /* z-index above footer so line runs full height, not cut off */
 .sidebar::after {
     content: '';
@@ -55,13 +55,13 @@
     bottom: 0;
     width: 2px;
     background: linear-gradient(180deg,
-        #1a5276 0%,
-        #2980b9 20%,
-        #3498db 40%,
-        #5dade2 50%,
-        #3498db 60%,
-        #2980b9 80%,
-        #1a5276 100%
+        rgba(99, 102, 241, 0.15) 0%,
+        rgba(99, 102, 241, 0.5) 20%,
+        #6366f1 40%,
+        #818cf8 50%,
+        #6366f1 60%,
+        rgba(99, 102, 241, 0.5) 80%,
+        rgba(99, 102, 241, 0.15) 100%
     );
     background-size: 100% 100%;
     z-index: 1003;
@@ -99,7 +99,7 @@
     margin-right: 12px;
     border-radius: 12px;
     transition: all 0.3s ease;
-    filter: drop-shadow(0 2px 8px rgba(52, 152, 219, 0.3));
+    filter: drop-shadow(0 2px 8px rgba(99, 102, 241, 0.3));
 }
 
 .logo-small {
@@ -217,7 +217,7 @@
 
 /* ===== HOVER STATE ===== */
 .nav-item:hover {
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(99, 102, 241, 0.06);
     color: #e2e8f0;
     transform: none;
     text-decoration: none;
@@ -227,10 +227,10 @@
     color: #94a3b8;
 }
 
-/* ===== ACTIVE STATE ===== */
+/* ===== ACTIVE STATE — indigo ===== */
 .nav-item.active {
-    background: rgba(59, 130, 246, 0.12);
-    color: #60a5fa;
+    background: rgba(99, 102, 241, 0.1);
+    color: #a5b4fc;
     box-shadow: none;
     transform: none;
 }
@@ -243,8 +243,8 @@
     bottom: 6px;
     width: 3px;
     border-radius: 0 3px 3px 0;
-    background: #3b82f6;
-    box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+    background: #6366f1;
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
 }
 
 .nav-item.active .nav-icon-wrapper {
@@ -255,13 +255,13 @@
 
 .nav-item.active .nav-icon-wrapper i,
 .nav-item.active i {
-    color: #60a5fa;
-    filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.4));
+    color: #a5b4fc;
+    filter: drop-shadow(0 0 3px rgba(99, 102, 241, 0.4));
 }
 
 .nav-item.active span {
     font-weight: 600;
-    color: #60a5fa;
+    color: #a5b4fc;
 }
 
 /* ===== SUB-GROUPS ===== */
@@ -344,10 +344,10 @@
 /* App-specific active/hover colors */
 .sonarr-app:hover .sonarr-icon,
 .sonarr-app.active .sonarr-icon {
-    background: rgba(52, 152, 219, 0.15);
+    background: rgba(99, 102, 241, 0.15);
     border-radius: 7px;
 }
-.sonarr-app.active .app-icon-img { filter: brightness(1.2) drop-shadow(0 0 4px rgba(52, 152, 219, 0.5)); }
+.sonarr-app.active .app-icon-img { filter: brightness(1.2) drop-shadow(0 0 4px rgba(99, 102, 241, 0.5)); }
 
 .radarr-app:hover .radarr-icon,
 .radarr-app.active .radarr-icon {
@@ -457,7 +457,7 @@
 
 .dev-mode-indicator i {
     font-size: 11px;
-    color: #3498db;
+    color: #6366f1;
     opacity: 0.6;
 }
 

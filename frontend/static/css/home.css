@@ -92,9 +92,9 @@
 }
 
 .home-section-btn:hover {
-    border-color: rgba(59, 130, 246, 0.4);
-    color: #60a5fa;
-    background: rgba(59, 130, 246, 0.08);
+    border-color: rgba(99, 102, 241, 0.4);
+    color: #a5b4fc;
+    background: rgba(99, 102, 241, 0.08);
 }
 
 .home-section-btn i {
@@ -155,7 +155,7 @@
 
 /* Keep the colored top accent but make it more subtle */
 #homeSection .app-stats-card.movie_hunt { border-top: 2px solid rgba(245, 158, 11, 0.5) !important; }
-#homeSection .app-stats-card.sonarr  { border-top: 2px solid rgba(59, 130, 246, 0.4) !important; }
+#homeSection .app-stats-card.sonarr  { border-top: 2px solid rgba(99, 102, 241, 0.4) !important; }
 #homeSection .app-stats-card.radarr  { border-top: 2px solid rgba(245, 158, 11, 0.4) !important; }
 #homeSection .app-stats-card.lidarr  { border-top: 2px solid rgba(34, 197, 94, 0.4) !important; }
 #homeSection .app-stats-card.readarr { border-top: 2px solid rgba(168, 85, 247, 0.4) !important; }
@@ -270,8 +270,8 @@
 }
 
 #homeSection .global-search-bar:focus-within {
-    border-color: rgba(59, 130, 246, 0.5) !important;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1) !important;
+    border-color: rgba(99, 102, 241, 0.5) !important;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1) !important;
 }
 
 #homeSection .global-search-bar i {
@@ -320,8 +320,8 @@
 }
 
 #homeSection .home-instance-controls .instance-select:focus {
-    border-color: rgba(59, 130, 246, 0.5) !important;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1) !important;
+    border-color: rgba(99, 102, 241, 0.5) !important;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1) !important;
     outline: none;
 }
 
@@ -340,7 +340,7 @@
 /* ── Trending bar accent ────────────────────────────────────────── */
 #homeSection .trending-bar {
     height: 2px !important;
-    background: linear-gradient(90deg, rgba(59, 130, 246, 0.6) 0%, rgba(59, 130, 246, 0) 100%) !important;
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.6) 0%, rgba(99, 102, 241, 0) 100%) !important;
     border-radius: 2px;
     margin-bottom: 14px;
 }
@@ -408,8 +408,8 @@
 }
 
 .view-toggle-btn.active {
-    background: rgba(59, 130, 246, 0.15);
-    color: #60a5fa;
+    background: rgba(99, 102, 241, 0.15);
+    color: #a5b4fc;
 }
 
 .view-toggle-btn:hover:not(.active) {
@@ -474,7 +474,7 @@
 
 .card-drag-handle:active {
     cursor: grabbing;
-    color: #60a5fa;
+    color: #a5b4fc;
 }
 
 /* Push card content down so the drag handle doesn't overlap the API bar */
@@ -508,8 +508,8 @@
 /* SortableJS ghost element */
 .sortable-ghost {
     opacity: 0.35;
-    background: rgba(59, 130, 246, 0.08) !important;
-    border: 1px dashed rgba(59, 130, 246, 0.4) !important;
+    background: rgba(99, 102, 241, 0.08) !important;
+    border: 1px dashed rgba(99, 102, 241, 0.4) !important;
     border-radius: 10px;
 }
 
@@ -582,7 +582,7 @@
 }
 
 .app-list-table tbody tr:hover {
-    background: rgba(59, 130, 246, 0.04);
+    background: rgba(99, 102, 241, 0.04);
 }
 
 .app-list-table tbody td {
@@ -612,7 +612,7 @@
 
 /* Per-app stat colors in list mode */
 .list-stat.movie_hunt { color: #fbbf24; }
-.list-stat.sonarr     { color: #60a5fa; }
+.list-stat.sonarr     { color: #a5b4fc; }
 .list-stat.radarr     { color: #fbbf24; }
 .list-stat.lidarr     { color: #4ade80; }
 .list-stat.readarr    { color: #c084fc; }
@@ -661,7 +661,7 @@
 
 /* Per-app progress fill colors in list */
 .list-api-fill.movie_hunt { background: linear-gradient(90deg, #f59e0b, #fbbf24); box-shadow: 0 0 4px rgba(245, 158, 11, 0.3); }
-.list-api-fill.sonarr     { background: linear-gradient(90deg, #3b82f6, #60a5fa); box-shadow: 0 0 4px rgba(59, 130, 246, 0.3); }
+.list-api-fill.sonarr     { background: linear-gradient(90deg, #6366f1, #a5b4fc); box-shadow: 0 0 4px rgba(99, 102, 241, 0.3); }
 .list-api-fill.radarr     { background: linear-gradient(90deg, #f59e0b, #fbbf24); box-shadow: 0 0 4px rgba(245, 158, 11, 0.3); }
 .list-api-fill.lidarr     { background: linear-gradient(90deg, #22c55e, #4ade80); box-shadow: 0 0 4px rgba(34, 197, 94, 0.3); }
 .list-api-fill.readarr    { background: linear-gradient(90deg, #a855f7, #c084fc); box-shadow: 0 0 4px rgba(168, 85, 247, 0.3); }
@@ -1044,9 +1044,9 @@
 /* Reset Stats header button – blue accent */
 #reset-stats,
 .stats-card > .card-header > .cycle-reset-button {
-    background: rgba(59, 130, 246, 0.15);
-    color: #60a5fa;
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    background: rgba(99, 102, 241, 0.15);
+    color: #a5b4fc;
+    border: 1px solid rgba(99, 102, 241, 0.3);
     padding: 6px 14px;
     border-radius: 8px;
     font-size: 0.85em;
@@ -1056,8 +1056,8 @@
 
 #reset-stats:hover,
 .stats-card > .card-header > .cycle-reset-button:hover {
-    background: rgba(59, 130, 246, 0.25);
-    border-color: rgba(59, 130, 246, 0.5);
+    background: rgba(99, 102, 241, 0.25);
+    border-color: rgba(99, 102, 241, 0.5);
     color: #93c5fd;
     transform: translateY(-1px);
 }
@@ -1123,7 +1123,7 @@
     background: linear-gradient(to right,
         rgba(245, 158, 11, 0.7) 0%,
         rgba(245, 158, 11, 0.4) 30%,
-        rgba(59, 130, 246, 0.3) 60%,
+        rgba(99, 102, 241, 0.3) 60%,
         transparent 100%
     );
     border-radius: 2px;
@@ -1399,7 +1399,7 @@
 }
 
 /* Colored top accent per app */
-.app-stats-card.sonarr  { border-top: 2px solid rgba(59, 130, 246, 0.5); }
+.app-stats-card.sonarr  { border-top: 2px solid rgba(99, 102, 241, 0.5); }
 .app-stats-card.radarr  { border-top: 2px solid rgba(245, 158, 11, 0.5); }
 .app-stats-card.lidarr  { border-top: 2px solid rgba(34, 197, 94, 0.5); }
 .app-stats-card.readarr { border-top: 2px solid rgba(168, 85, 247, 0.5); }
@@ -1437,7 +1437,7 @@
 
 /* Per-app stat number colors */
 .app-stats-card.sonarr .stat-number {
-    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+    background: linear-gradient(135deg, #a5b4fc 0%, #6366f1 100%);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
 
@@ -1519,7 +1519,7 @@
     transition: width 0.5s ease;
 }
 
-.app-stats-card.sonarr .api-progress-fill  { background: linear-gradient(90deg, #3b82f6, #60a5fa); box-shadow: 0 0 6px rgba(59, 130, 246, 0.4); }
+.app-stats-card.sonarr .api-progress-fill  { background: linear-gradient(90deg, #6366f1, #a5b4fc); box-shadow: 0 0 6px rgba(99, 102, 241, 0.4); }
 .app-stats-card.radarr .api-progress-fill  { background: linear-gradient(90deg, #f59e0b, #fbbf24); box-shadow: 0 0 6px rgba(245, 158, 11, 0.4); }
 .app-stats-card.lidarr .api-progress-fill  { background: linear-gradient(90deg, #22c55e, #4ade80); box-shadow: 0 0 6px rgba(34, 197, 94, 0.4); }
 .app-stats-card.readarr .api-progress-fill { background: linear-gradient(90deg, #a855f7, #c084fc); box-shadow: 0 0 6px rgba(168, 85, 247, 0.4); }

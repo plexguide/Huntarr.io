@@ -108,7 +108,7 @@
     border-radius: 50%;
     flex-shrink: 0;
 }
-.mh-cal-dot-cinemas { background: #3b82f6; }
+.mh-cal-dot-cinemas { background: #6366f1; }
 .mh-cal-dot-digital { background: #8b5cf6; }
 .mh-cal-dot-physical { background: #22c55e; }
 .mh-cal-dot-tba { background: #64748b; }
@@ -250,9 +250,9 @@
     white-space: nowrap;
 }
 .mh-cal-event-type.inCinemas {
-    background: rgba(59, 130, 246, 0.12);
-    color: #60a5fa;
-    border: 1px solid rgba(59, 130, 246, 0.2);
+    background: rgba(99, 102, 241, 0.12);
+    color: #a5b4fc;
+    border: 1px solid rgba(99, 102, 241, 0.2);
 }
 .mh-cal-event-type.digitalRelease {
     background: rgba(139, 92, 246, 0.12);
@@ -285,8 +285,8 @@
     color: #4ade80;
 }
 .mh-cal-event-status.requested {
-    background: rgba(59, 130, 246, 0.12);
-    color: #60a5fa;
+    background: rgba(99, 102, 241, 0.12);
+    color: #a5b4fc;
 }
 .mh-cal-event-avail {
     font-size: 11px;

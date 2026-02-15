@@ -1,73 +1,83 @@
 /* ==========================================================================
-   Huntarr Design Tokens & Theme Variables
+   Huntarr Design Tokens
+   Dark-only palette — indigo accent, navy backgrounds
    ========================================================================== */
 
 :root {
-    /* Light Theme Colors */
-    --bg-primary: #f8f9fa;
-    --bg-secondary: #ffffff;
-    --bg-tertiary: #f1f3f5;
-    --text-primary: #212529;
-    --text-secondary: #495057;
-    --text-muted: #6c757d;
-    --border-color: #dee2e6;
-    --accent-color: #3498db;
-    --accent-hover: #2980b9;
-    --success-color: #27ae60;
-    --warning-color: #f39c12;
-    --error-color: #e74c3c;
-    --info-color: #2980b9;
-    --debug-color: #7f8c8d;
-    
-    /* Component Colors */
-    --sidebar-bg: #2c3e50;
-    --sidebar-text: #ecf0f1;
-    --sidebar-item-hover: #34495e;
-    --sidebar-item-active: #3498db;
-    --topbar-bg: var(--bg-secondary);
-    --card-bg: var(--bg-secondary);
-    --switch-bg: #cbd2d9;
-    --switch-active: #3498db;
-    
-    /* Button Colors */
-    --button-primary-bg: #3498db;
-    --button-primary-text: #ffffff;
-    --button-primary-hover: #2980b9;
-    --button-danger-bg: #e74c3c;
-    --button-danger-hover: #c0392b;
-    --button-success-bg: #27ae60;
-    --button-success-hover: #219955;
-    
-    /* Status Colors */
-    --status-connected: #27ae60;
-    --status-not-connected: #e74c3c;
-    
-    /* Logs Colors */
-    --log-bg: var(--bg-secondary);
-    --log-border: var(--border-color);
+    /* ── Background Scale ─────────────────────────────────────── */
+    --bg-primary:   #0f172a;   /* slate-900  — page / body        */
+    --bg-secondary: #111827;   /* gray-900   — cards / panels     */
+    --bg-tertiary:  #1e293b;   /* slate-800  — elevated surfaces  */
+    --bg-hover:     #334155;   /* slate-700  — hover states       */
+
+    /* ── Text Scale ───────────────────────────────────────────── */
+    --text-primary:   #f8fafc; /* slate-50   */
+    --text-secondary: #e2e8f0; /* slate-200  */
+    --text-muted:     #94a3b8; /* slate-400  */
+    --text-dim:       #64748b; /* slate-500  */
+
+    /* ── Accent ───────────────────────────────────────────────── */
+    --accent-color:     #6366f1; /* indigo-500 */
+    --accent-hover:     #818cf8; /* indigo-400 */
+    --accent-secondary: #a5b4fc; /* indigo-300 — links, subtle     */
+    --accent-glow:      rgba(99, 102, 241, 0.35);
+
+    /* ── Semantic Status ──────────────────────────────────────── */
+    --success-color: #22c55e;
+    --warning-color: #f59e0b;
+    --error-color:   #ef4444;
+    --info-color:    #6366f1;
+    --debug-color:   #64748b;
+
+    /* ── Borders ──────────────────────────────────────────────── */
+    --border-color:       rgba(71, 85, 105, 0.35);  /* slate-600 @ 35% */
+    --border-color-light: rgba(99, 102, 241, 0.1);  /* indigo tint     */
+
+    /* ── Component Surfaces ───────────────────────────────────── */
+    --sidebar-bg:          rgba(15, 23, 42, 0.98);
+    --sidebar-text:        #e2e8f0;
+    --sidebar-item-hover:  rgba(99, 102, 241, 0.08);
+    --sidebar-item-active: #6366f1;
+    --topbar-bg:           #111827;
+    --card-bg:             #111827;
+    --switch-bg:           #334155;
+    --switch-active:       #6366f1;
+
+    /* ── Buttons ──────────────────────────────────────────────── */
+    --button-primary-bg:    #6366f1;
+    --button-primary-text:  #ffffff;
+    --button-primary-hover: #818cf8;
+    --button-danger-bg:     #ef4444;
+    --button-danger-hover:  #f87171;
+    --button-success-bg:    #22c55e;
+    --button-success-hover: #4ade80;
+
+    /* ── Status ───────────────────────────────────────────────── */
+    --status-connected:     #22c55e;
+    --status-not-connected: #ef4444;
+
+    /* ── Logs ─────────────────────────────────────────────────── */
+    --log-bg:     #111827;
+    --log-border: rgba(71, 85, 105, 0.35);
+
+    /* ── Radius Scale ─────────────────────────────────────────── */
+    --radius-sm:  6px;
+    --radius-md:  8px;
+    --radius-lg:  12px;
+    --radius-xl:  16px;
+
+    /* ── Shadow Scale ─────────────────────────────────────────── */
+    --shadow-sm:  0 2px 8px  rgba(15, 23, 42, 0.25);
+    --shadow-md:  0 4px 16px rgba(15, 23, 42, 0.35);
+    --shadow-lg:  0 8px 32px rgba(15, 23, 42, 0.5);
+
+    /* ── Transition ───────────────────────────────────────────── */
+    --transition-fast: 0.15s ease;
+    --transition-base: 0.2s ease;
+    --transition-slow: 0.3s ease;
 }
 
+/* Keep .dark-theme as an alias so existing JS classList.add('dark-theme') still works */
 .dark-theme {
-    --bg-primary: #1a1d24;
-    --bg-secondary: #252a34;
-    --bg-tertiary: #2d3748;
-    --text-primary: #f8f9fa;
-    --text-secondary: #e9ecef;
-    --text-muted: #adb5bd;
-    --border-color: #4a5568;
-    --accent-color: #3498db;
-    --accent-hover: #2980b9;
-    
-    /* Component Colors */
-    --sidebar-bg: #121212;
-    --sidebar-text: #ecf0f1;
-    --sidebar-item-hover: #2d3748;
-    --sidebar-item-active: #3498db;
-    --topbar-bg: #252a34;
-    --card-bg: #252a34;
-    --switch-bg: #4a5568;
-    
-    /* Logs Colors */
-    --log-bg: #252a34;
-    --log-border: #4a5568;
+    /* intentionally empty — :root already holds the dark values */
 }

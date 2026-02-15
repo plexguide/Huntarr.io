@@ -6,23 +6,21 @@
     const preloadImg = new Image();
     preloadImg.src = LOGO_URL;
     
-    // Always enforce dark theme
+    // Huntarr is always dark — apply class for any legacy selectors
     document.documentElement.classList.add('dark-theme');
-    localStorage.setItem('huntarr-dark-mode', 'true');
     
-    // Add inline style to immediately set background color
-    // This prevents flash before the CSS files load
+    // Flash-prevention: set background before CSS loads
     const style = document.createElement('style');
     style.textContent = `
         body, html { 
-            background-color: #1a1d24 !important; 
-            color: #f8f9fa !important;
+            background-color: #0f172a !important; 
+            color: #f8fafc !important;
         }
         .sidebar {
-            background-color: #121212 !important;
+            background-color: rgba(15, 23, 42, 0.98) !important;
         }
         .top-bar {
-            background-color: #252a34 !important;
+            background-color: #111827 !important;
         }
     `;
     document.head.appendChild(style);

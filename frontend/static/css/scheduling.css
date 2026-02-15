@@ -72,8 +72,8 @@
 }
 
 .sched-icon-blue {
-    background: rgba(59, 130, 246, 0.15);
-    color: #60a5fa;
+    background: rgba(99, 102, 241, 0.15);
+    color: #a5b4fc;
 }
 
 .sched-icon-slate {
@@ -92,8 +92,8 @@
     align-items: center;
     gap: 6px;
     padding: 6px 14px;
-    background: rgba(59, 130, 246, 0.08);
-    border: 1px solid rgba(59, 130, 246, 0.18);
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.18);
     border-radius: 8px;
     color: #93bbfc;
     font-size: 0.8rem;
@@ -166,8 +166,8 @@
 
 .sched-time-select:focus {
     outline: none;
-    border-color: rgba(59, 130, 246, 0.5);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
 }
 
 .sched-time-colon {
@@ -194,8 +194,8 @@
 
 .sched-form-group select:not(.sched-time-select):focus {
     outline: none;
-    border-color: rgba(59, 130, 246, 0.5);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
 }
 
 .sched-form-group select:disabled {
@@ -252,14 +252,14 @@
 }
 
 .sched-day-pill:hover span {
-    border-color: rgba(59, 130, 246, 0.3);
+    border-color: rgba(99, 102, 241, 0.3);
     color: #cbd5e1;
 }
 
 .sched-day-pill input:checked + span {
-    background: rgba(59, 130, 246, 0.15);
-    border-color: rgba(59, 130, 246, 0.45);
-    color: #60a5fa;
+    background: rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.45);
+    color: #a5b4fc;
 }
 
 .sched-day-daily span {
@@ -303,16 +303,16 @@
 }
 
 .sched-btn-primary {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    background: linear-gradient(135deg, #6366f1 0%, #2563eb 100%);
     color: #fff;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
     width: 100%;
     justify-content: center;
 }
 
 .sched-btn-primary:hover:not(:disabled) {
-    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
-    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+    background: linear-gradient(135deg, #a5b4fc 0%, #6366f1 100%);
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
     transform: translateY(-1px);
 }
 
@@ -362,7 +362,7 @@
     color: #e2e8f0;
     text-align: center;
     padding: 6px 0;
-    background: rgba(59, 130, 246, 0.08);
+    background: rgba(99, 102, 241, 0.08);
     border-radius: 6px;
 }
 

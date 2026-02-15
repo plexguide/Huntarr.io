@@ -617,9 +617,9 @@ button.reqset-back-btn {
 #instanceEditorSection .connection-status.checking,
 #movieHuntInstanceEditorSection .connection-status.checking,
 #mediaHuntInstanceEditorSection .connection-status.checking {
-    background: rgba(59, 130, 246, 0.1);
-    color: #60a5fa;
-    border: 1px solid rgba(59, 130, 246, 0.2);
+    background: rgba(99, 102, 241, 0.1);
+    color: #a5b4fc;
+    border: 1px solid rgba(99, 102, 241, 0.2);
 }
 
 #instanceEditorSection .connection-status.success,

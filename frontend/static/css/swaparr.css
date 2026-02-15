@@ -10,7 +10,7 @@
 }
 
 .swaparr-config h3 {
-    color: #3498db;
+    color: #6366f1;
     margin: 0 0 15px 0;
     font-size: 18px;
     font-weight: 600;
@@ -20,7 +20,7 @@
 }
 
 .swaparr-config h3 i {
-    color: #e74c3c;
+    color: #ef4444;
 }
 
 .swaparr-badge {
@@ -34,7 +34,7 @@
 }
 
 .swaparr-badge-warning {
-    background-color: #f39c12;
+    background-color: #f59e0b;
     color: #fff;
 }
 
@@ -53,7 +53,7 @@
 }
 
 .config-item i {
-    color: #3498db;
+    color: #6366f1;
     width: 16px;
     text-align: center;
 }
@@ -83,13 +83,13 @@
 .stat-item {
     text-align: center;
     padding: 12px 8px;
-    background: rgba(52, 152, 219, 0.1);
+    background: rgba(99, 102, 241, 0.1);
     border-radius: 6px;
-    border: 1px solid rgba(52, 152, 219, 0.3);
+    border: 1px solid rgba(99, 102, 241, 0.3);
 }
 
 .stat-item i {
-    color: #3498db;
+    color: #6366f1;
     font-size: 14px;
     margin-bottom: 5px;
     display: block;
@@ -151,7 +151,7 @@
 }
 
 .swaparr-table-header h4 {
-    color: #3498db;
+    color: #6366f1;
     margin: 0;
     font-size: 16px;
     font-weight: 600;
@@ -178,7 +178,7 @@
 
 .swaparr-downloads-table thead th i {
     margin-right: 5px;
-    color: #3498db;
+    color: #6366f1;
 }
 
 .swaparr-downloads-table tbody tr {
@@ -187,7 +187,7 @@
 }
 
 .swaparr-downloads-table tbody tr:hover {
-    background: rgba(52, 152, 219, 0.1);
+    background: rgba(99, 102, 241, 0.1);
 }
 
 .swaparr-downloads-table tbody td {
@@ -203,12 +203,12 @@
 /* Status-specific row styling */
 .swaparr-status-striked {
     background: rgba(243, 156, 18, 0.1);
-    border-left: 3px solid #f39c12;
+    border-left: 3px solid #f59e0b;
 }
 
 .swaparr-status-removed {
     background: rgba(231, 76, 60, 0.1);
-    border-left: 3px solid #e74c3c;
+    border-left: 3px solid #ef4444;
 }
 
 .swaparr-status-pending {
@@ -233,7 +233,7 @@
 
 /* Badge styling */
 .strikes-badge {
-    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    background: linear-gradient(135deg, #ef4444, #f87171);
     color: white;
     padding: 4px 8px;
     border-radius: 12px;
@@ -250,12 +250,12 @@
 }
 
 .status-striked {
-    background: #f39c12;
+    background: #f59e0b;
     color: white;
 }
 
 .status-removed {
-    background: #e74c3c;
+    background: #ef4444;
     color: white;
 }
 
@@ -288,7 +288,7 @@
 
 .swaparr-empty-state i {
     font-size: 48px;
-    color: #3498db;
+    color: #6366f1;
     margin-bottom: 15px;
     display: block;
 }
