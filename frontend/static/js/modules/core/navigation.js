@@ -270,23 +270,23 @@ window.HuntarrNavigation = {
         }
         const collectionSections = ['movie-hunt-home', 'movie-hunt-collection', 'media-hunt-collection', 'settings-import-media', 'movie-hunt-calendar'];
         const activitySections = ['activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-media-hunt', 'logs-tv-hunt', 'tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist'];
-        const settingsSections = ['movie-hunt-settings', 'media-hunt-settings', 'settings-instance-management', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'profile-editor', 'settings-custom-formats', 'settings-import-lists', 'settings-root-folders', 'instance-editor'];
+        const configSections = ['media-hunt-settings', 'movie-hunt-settings', 'settings-instance-management', 'indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history', 'settings-clients', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'profile-editor', 'settings-custom-formats', 'settings-import-lists', 'settings-root-folders', 'instance-editor'];
         const indexMasterSections = ['indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history'];
         const onCollection = collectionSections.indexOf(currentSection) !== -1;
         const onActivity = activitySections.indexOf(sectionForNav) !== -1;
-        const onSettings = settingsSections.indexOf(currentSection) !== -1;
+        const onConfig = configSections.indexOf(sectionForNav) !== -1;
         const onIndexMaster = indexMasterSections.indexOf(sectionForNav) !== -1;
 
         const colSub = document.getElementById('movie-hunt-collection-sub');
         const actSub = document.getElementById('movie-hunt-activity-sub');
-        const setSub = document.getElementById('movie-hunt-settings-sub');
+        const cfgSub = document.getElementById('media-hunt-config-sub');
         const idxMasterSub = document.getElementById('index-master-sub');
         if (colSub) colSub.classList.toggle('expanded', onCollection);
         if (actSub) actSub.classList.toggle('expanded', onActivity);
-        if (setSub) setSub.classList.toggle('expanded', onSettings);
+        if (cfgSub) cfgSub.classList.toggle('expanded', onConfig);
         if (idxMasterSub) idxMasterSub.classList.toggle('expanded', onIndexMaster);
 
-        // Highlight the active item within #sidebar (unified)
+        // Highlight the active item within Media Hunt sidebar
         const items = document.querySelectorAll('#sidebar-group-media-hunt .nav-item');
         const isActivitySub = activitySections.indexOf(sectionForNav) !== -1;
         var tvToMovieNav = { 'tv-hunt-activity-queue': 'activity-queue', 'tv-hunt-activity-history': 'activity-history', 'tv-hunt-activity-blocklist': 'activity-blocklist', 'logs-tv-hunt': 'logs-media-hunt' };
