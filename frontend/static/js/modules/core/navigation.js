@@ -221,127 +221,41 @@ window.HuntarrNavigation = {
         });
     },
 
-    // Sidebar management functions
-    showMainSidebar: function() {
-        const mainSidebar = document.getElementById('sidebar');
-        const appsSidebar = document.getElementById('apps-sidebar');
-        const settingsSidebar = document.getElementById('settings-sidebar');
-        const requestarrSidebar = document.getElementById('requestarr-sidebar');
-        const movieHuntSidebar = document.getElementById('movie-hunt-sidebar');
-        
-        if (movieHuntSidebar) movieHuntSidebar.style.display = 'none';
-        if (mainSidebar) mainSidebar.style.display = 'block';
-        if (appsSidebar) appsSidebar.style.display = 'none';
-        if (settingsSidebar) settingsSidebar.style.display = 'none';
-        if (requestarrSidebar) requestarrSidebar.style.display = 'none';
+    // ─── Sidebar management ───────────────────────────────────
+    // With the unified sidebar there is only one #sidebar element.
+    // The show*Sidebar() API is preserved so app.js callers don't change.
+    // Each function now expands the relevant accordion group instead
+    // of toggling display on separate sidebar divs.
 
-        // When on System (Hunt Manager, Logs, About), hide Apps, Requestarr, Settings in main sidebar on mobile only; desktop keeps all visible
-        // When on Settings (Main, Scheduling, etc.), hide Apps, Requestarr, System in main sidebar
-        var section = window.huntarrUI && window.huntarrUI.currentSection;
-        var onSystem = section === 'system' || section === 'hunt-manager' || section === 'logs' || section === 'about';
-        var onSettings = ['settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user'].indexOf(section) !== -1;
-        var isDesktop = window.innerWidth > 768;
-        var settingsNav = document.getElementById('settingsNav');
-        var requestarrNav = document.getElementById('requestarrNav');
-        var appsNav = document.getElementById('appsNav');
-        var systemNav = document.getElementById('systemNav');
-        var settingsSubGroup = document.getElementById('settings-sub');
-        var systemSubGroup = document.getElementById('system-sub');
-        if (onSystem && isDesktop) {
-            if (settingsNav) settingsNav.style.display = '';
-            if (settingsSubGroup) { settingsSubGroup.style.display = 'none'; settingsSubGroup.classList.remove('expanded'); }
-            if (requestarrNav) requestarrNav.style.display = '';
-            if (appsNav) appsNav.style.display = '';
-            if (systemNav) systemNav.style.display = '';
-            if (systemSubGroup) { systemSubGroup.style.display = 'block'; systemSubGroup.classList.add('expanded'); }
-        } else if (onSettings && isDesktop) {
-            if (settingsNav) settingsNav.style.display = '';
-            if (settingsSubGroup) { settingsSubGroup.style.display = 'block'; settingsSubGroup.classList.add('expanded'); }
-            if (requestarrNav) requestarrNav.style.display = '';
-            if (appsNav) appsNav.style.display = '';
-            if (systemNav) systemNav.style.display = '';
-            if (systemSubGroup) { systemSubGroup.style.display = 'none'; systemSubGroup.classList.remove('expanded'); }
-        } else {
-            if (settingsNav) settingsNav.style.display = onSystem ? 'none' : '';
-            if (settingsSubGroup) { settingsSubGroup.style.display = onSystem ? 'none' : (onSettings ? 'block' : 'none'); settingsSubGroup.classList.toggle('expanded', onSettings); }
-            if (requestarrNav) requestarrNav.style.display = (onSystem || onSettings) ? 'none' : '';
-            if (appsNav) appsNav.style.display = (onSystem || onSettings) ? 'none' : '';
-            if (systemNav) systemNav.style.display = onSettings ? 'none' : '';
-            if (systemSubGroup) { systemSubGroup.style.display = onSettings ? 'none' : (onSystem ? 'block' : 'none'); systemSubGroup.classList.toggle('expanded', onSystem); }
+    showMainSidebar: function() {
+        // Home page — collapse all groups
+        if (typeof expandSidebarGroup === 'function') {
+            // Let setActiveNavItem handle it via hashchange
         }
-        if (window.huntarrUI && typeof window.huntarrUI._updateMainSidebarBetaVisibility === 'function') {
-            window.huntarrUI._updateMainSidebarBetaVisibility();
-        }
+        if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
 
     showAppsSidebar: function() {
-        const mainSidebar = document.getElementById('sidebar');
-        const appsSidebar = document.getElementById('apps-sidebar');
-        const settingsSidebar = document.getElementById('settings-sidebar');
-        const requestarrSidebar = document.getElementById('requestarr-sidebar');
-        const movieHuntSidebar = document.getElementById('movie-hunt-sidebar');
-        
-        if (movieHuntSidebar) movieHuntSidebar.style.display = 'none';
-        if (mainSidebar) mainSidebar.style.display = 'none';
-        if (appsSidebar) appsSidebar.style.display = 'block';
-        if (settingsSidebar) settingsSidebar.style.display = 'none';
-        if (requestarrSidebar) requestarrSidebar.style.display = 'none';
-        
-        // Update active state
-        this.updateAppsSidebarActive();
+        if (typeof expandSidebarGroup === 'function') expandSidebarGroup('sidebar-group-apps');
+        if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
 
     showSettingsSidebar: function() {
-        const mainSidebar = document.getElementById('sidebar');
-        const appsSidebar = document.getElementById('apps-sidebar');
-        const settingsSidebar = document.getElementById('settings-sidebar');
-        const requestarrSidebar = document.getElementById('requestarr-sidebar');
-        const movieHuntSidebar = document.getElementById('movie-hunt-sidebar');
-        
-        if (movieHuntSidebar) movieHuntSidebar.style.display = 'none';
-        if (mainSidebar) mainSidebar.style.display = 'none';
-        if (appsSidebar) appsSidebar.style.display = 'none';
-        if (settingsSidebar) settingsSidebar.style.display = 'block';
-        if (requestarrSidebar) requestarrSidebar.style.display = 'none';
-        
-        // Update active state
-        this.updateSettingsSidebarActive();
+        if (typeof expandSidebarGroup === 'function') expandSidebarGroup('sidebar-group-settings');
+        if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
 
     showRequestarrSidebar: function() {
-        const mainSidebar = document.getElementById('sidebar');
-        const appsSidebar = document.getElementById('apps-sidebar');
-        const settingsSidebar = document.getElementById('settings-sidebar');
-        const requestarrSidebar = document.getElementById('requestarr-sidebar');
-        const movieHuntSidebar = document.getElementById('movie-hunt-sidebar');
-        
-        if (mainSidebar) mainSidebar.style.display = 'none';
-        if (appsSidebar) appsSidebar.style.display = 'none';
-        if (settingsSidebar) settingsSidebar.style.display = 'none';
-        if (movieHuntSidebar) movieHuntSidebar.style.display = 'none';
-        if (requestarrSidebar) requestarrSidebar.style.display = 'block';
-        
-        this.updateRequestarrSidebarActive();
+        if (typeof expandSidebarGroup === 'function') expandSidebarGroup('sidebar-group-requests');
+        if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
 
     showMovieHuntSidebar: function() {
-        const mainSidebar = document.getElementById('sidebar');
-        const appsSidebar = document.getElementById('apps-sidebar');
-        const settingsSidebar = document.getElementById('settings-sidebar');
-        const requestarrSidebar = document.getElementById('requestarr-sidebar');
-        const movieHuntSidebar = document.getElementById('movie-hunt-sidebar');
-        
-        if (mainSidebar) mainSidebar.style.display = 'none';
-        if (appsSidebar) appsSidebar.style.display = 'none';
-        if (settingsSidebar) settingsSidebar.style.display = 'none';
-        if (requestarrSidebar) requestarrSidebar.style.display = 'none';
-        if (movieHuntSidebar) movieHuntSidebar.style.display = 'flex';
-        
+        if (typeof expandSidebarGroup === 'function') expandSidebarGroup('sidebar-group-media-hunt');
         this.updateMovieHuntSidebarActive();
     },
 
     showTVHuntSidebar: function() {
-        // TV Hunt menu removed; use Media Hunt (movie-hunt) sidebar for all media-hunt sections
         this.showMovieHuntSidebar();
     },
 
@@ -372,7 +286,8 @@ window.HuntarrNavigation = {
         if (setSub) setSub.classList.toggle('expanded', onSettings);
         if (idxMasterSub) idxMasterSub.classList.toggle('expanded', onIndexMaster);
 
-        const items = document.querySelectorAll('#movie-hunt-sidebar .nav-item');
+        // Highlight the active item within #sidebar (unified)
+        const items = document.querySelectorAll('#sidebar-group-media-hunt .nav-item');
         const isActivitySub = activitySections.indexOf(sectionForNav) !== -1;
         var tvToMovieNav = { 'tv-hunt-activity-queue': 'activity-queue', 'tv-hunt-activity-history': 'activity-history', 'tv-hunt-activity-blocklist': 'activity-blocklist', 'logs-tv-hunt': 'logs-media-hunt' };
         var navTarget = tvToMovieNav[sectionForNav] || sectionForNav;
@@ -392,96 +307,30 @@ window.HuntarrNavigation = {
     },
 
     updateAppsSidebarActive: function() {
-        if (!window.huntarrUI) return;
-        
-        const currentSection = window.huntarrUI.currentSection;
-        const appsSidebarItems = document.querySelectorAll('#apps-sidebar .nav-item');
-        
-        appsSidebarItems.forEach(item => {
-            item.classList.remove('active');
-            const href = (item.getAttribute && item.getAttribute('href')) || '';
-            if (href === `#${currentSection}` || (href && href.endsWith('#' + currentSection))) {
-                item.classList.add('active');
-            }
-        });
+        // Active state is handled by setActiveNavItem() in the inline script
+        if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
 
     updateSettingsSidebarActive: function() {
-        if (!window.huntarrUI) return;
-        
-        const currentSection = window.huntarrUI.currentSection;
-        const settingsSidebarItems = document.querySelectorAll('#settings-sidebar .nav-item');
-        
-        settingsSidebarItems.forEach(item => {
-            item.classList.remove('active');
-            const href = item.getAttribute && item.getAttribute('href') || (item.querySelector('a') && item.querySelector('a').getAttribute('href'));
-            if (href && (href === '#' + currentSection || href.endsWith('#' + currentSection))) {
-                item.classList.add('active');
-            }
-        });
+        if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
 
     updateRequestarrSidebarActive: function() {
-        if (!window.huntarrUI) return;
-        
-        const currentSection = window.huntarrUI.currentSection;
-        const requestarrSidebarItems = document.querySelectorAll('#requestarr-sidebar .nav-item');
-        
-        requestarrSidebarItems.forEach(item => {
-            item.classList.remove('active');
-            const link = item.querySelector('a');
-            if (link) {
-                const href = link.getAttribute('href');
-                if (href === `#${currentSection}`) {
-                    item.classList.add('active');
-                }
-            }
-        });
+        if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
 
     setupAppsNavigation: function() {
-        console.log('[Navigation] Setting up apps navigation');
-        
-        const appsNavItems = document.querySelectorAll('#apps-sidebar .nav-item a');
-        appsNavItems.forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.preventDefault();
-                const href = item.getAttribute('href');
-                if (href) {
-                    window.location.hash = href;
-                }
-            });
-        });
+        // Navigation is handled by hash links — no extra click listeners needed with unified sidebar
     },
 
     setupSettingsNavigation: function() {
-        console.log('[Navigation] Setting up settings navigation');
-        
-        const settingsNavItems = document.querySelectorAll('#settings-sidebar .nav-item a');
-        settingsNavItems.forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.preventDefault();
-                const href = item.getAttribute('href');
-                if (href) {
-                    window.location.hash = href;
-                }
-            });
-        });
+        // Navigation is handled by hash links
     },
 
     // setupRequestarrNavigation: handled by HuntarrRequestarr.setupRequestarrNavigation() in requestarr-controller.js
 
     setupMovieHuntNavigation: function() {
-        const movieHuntNavItems = document.querySelectorAll('#movie-hunt-sidebar .nav-item a');
-        movieHuntNavItems.forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.preventDefault();
-                const href = item.getAttribute('href') || '';
-                const hashIdx = href.indexOf('#');
-                const fragment = hashIdx >= 0 ? href.substring(hashIdx + 1) : href.replace(/^\.?\/*/, '');
-                if (fragment) window.location.hash = fragment;
-            });
-        });
+        // Navigation is handled by hash links
     },
 
     setupTVHuntNavigation: function() {
@@ -489,18 +338,7 @@ window.HuntarrNavigation = {
     },
 
     setupNzbHuntNavigation: function() {
-        const nzbHuntNavItems = document.querySelectorAll('#nzb-hunt-sidebar .nav-item');
-        nzbHuntNavItems.forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.preventDefault();
-                const link = item.tagName === 'A' ? item : item.querySelector('a');
-                if (!link) return;
-                const href = link.getAttribute('href') || '';
-                const hashIdx = href.indexOf('#');
-                const fragment = hashIdx >= 0 ? href.substring(hashIdx + 1) : href.replace(/^\.?\/*/, '');
-                if (fragment) window.location.hash = fragment;
-            });
-        });
+        // Navigation is handled by hash links
     },
 
     updateRequestarrNavigation: function(view) {

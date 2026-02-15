@@ -122,21 +122,6 @@
     flex-grow: 1;
 }
 
-/* ===== SPONSOR LINK ===== */
-.nav-menu > a.nav-item:first-child {
-    margin: 4px 10px 6px;
-    padding: 8px 12px;
-    border-radius: 8px;
-    background: linear-gradient(135deg, rgba(231, 76, 60, 0.06) 0%, rgba(255, 77, 109, 0.06) 100%);
-    border: 1px solid rgba(231, 76, 60, 0.1);
-}
-
-.nav-menu > a.nav-item:first-child:hover {
-    background: linear-gradient(135deg, rgba(231, 76, 60, 0.12) 0%, rgba(255, 77, 109, 0.12) 100%);
-    border-color: rgba(231, 76, 60, 0.2);
-    transform: none;
-}
-
 /* Heart icon */
 .heart-icon {
     color: #e74c3c !important;
@@ -148,12 +133,18 @@
     color: #ff4d6d;
 }
 
+/* ===== HOME STANDALONE ITEM ===== */
+.nav-item-home {
+    margin: 6px 10px 2px !important;
+}
+
 /* ===== NAV GROUPS ===== */
 .nav-group {
-    margin: 0 0 4px 0;
+    margin: 0 0 2px 0;
     padding: 0;
 }
 
+/* Static group title (Partner Projects) */
 .nav-group-title {
     font-size: 10px;
     font-weight: 700;
@@ -163,6 +154,88 @@
     padding: 12px 20px 6px;
     margin: 0;
     user-select: none;
+}
+
+/* ===== COLLAPSIBLE GROUP HEADERS ===== */
+.nav-group-header {
+    display: flex;
+    align-items: center;
+    padding: 7px 12px;
+    margin: 1px 10px;
+    border-radius: 8px;
+    color: rgba(148, 163, 184, 0.7);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+}
+
+.nav-group-header:hover {
+    background: rgba(99, 102, 241, 0.06);
+    color: rgba(203, 213, 225, 0.9);
+}
+
+.nav-group-header .nav-group-icon {
+    font-size: 12px;
+    width: 20px;
+    margin-right: 8px;
+    text-align: center;
+    opacity: 0.6;
+    transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.nav-group-header:hover .nav-group-icon {
+    opacity: 0.9;
+}
+
+.nav-group-header span {
+    flex: 1;
+}
+
+/* Chevron arrow — rotates when expanded */
+.nav-group-chevron {
+    font-size: 10px;
+    opacity: 0.4;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+}
+
+.nav-group-header:hover .nav-group-chevron {
+    opacity: 0.7;
+}
+
+.nav-group-header.expanded .nav-group-chevron {
+    transform: rotate(90deg);
+    opacity: 0.8;
+}
+
+/* Expanded header gets accent tint */
+.nav-group-header.expanded {
+    color: rgba(165, 180, 252, 0.8);
+    background: rgba(99, 102, 241, 0.04);
+}
+
+.nav-group-header.expanded .nav-group-icon {
+    color: rgba(165, 180, 252, 0.8);
+    opacity: 0.8;
+}
+
+/* ===== COLLAPSIBLE GROUP BODY ===== */
+.nav-group-body {
+    overflow: hidden;
+    max-height: 800px; /* large enough for fully expanded content */
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.25s ease;
+    opacity: 1;
+    padding: 2px 0;
+}
+
+.nav-group-body.collapsed {
+    max-height: 0;
+    opacity: 0;
+    padding: 0;
 }
 
 /* ===== NAV ITEMS ===== */
@@ -298,9 +371,6 @@
 #movie-hunt-collection-sub,
 #movie-hunt-settings-sub,
 #movie-hunt-activity-sub,
-#system-sub,
-#settings-sub,
-#nzb-hunt-settings-sub,
 #index-master-sub {
     display: none;
     margin-top: 0;
@@ -309,9 +379,6 @@
 #movie-hunt-collection-sub.expanded,
 #movie-hunt-settings-sub.expanded,
 #movie-hunt-activity-sub.expanded,
-#system-sub.expanded,
-#settings-sub.expanded,
-#nzb-hunt-settings-sub.expanded,
 #index-master-sub.expanded {
     display: block;
 }
@@ -319,10 +386,7 @@
 #movie-hunt-collection-sub .nav-item-sub,
 #movie-hunt-settings-sub .nav-item-sub,
 #movie-hunt-activity-sub .nav-item-sub,
-#nzb-hunt-settings-sub .nav-item-sub,
-#index-master-sub .nav-item-sub,
-#system-sub .nav-item-sub,
-#settings-sub .nav-item-sub {
+#index-master-sub .nav-item-sub {
     margin-top: 0;
     margin-bottom: 0;
 }

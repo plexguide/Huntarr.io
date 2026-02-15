@@ -150,17 +150,11 @@ let huntarrUI = {
         // Check which sidebar should be shown based on current section
         console.log(`[huntarrUI] Initialization - current section: ${this.currentSection}`);
         if (this.currentSection === 'settings' || this.currentSection === 'scheduling' || this.currentSection === 'notifications' || this.currentSection === 'backup-restore' || this.currentSection === 'user' || this.currentSection === 'settings-logs') {
-            console.log('[huntarrUI] Initialization - showing main sidebar (settings sub-menu)');
-            localStorage.removeItem('huntarr-settings-sidebar');
-            this.showMainSidebar();
-            var settingsSub = document.getElementById('settings-sub');
-            if (settingsSub) { settingsSub.classList.add('expanded'); settingsSub.style.display = 'block'; }
+            console.log('[huntarrUI] Initialization - showing settings group');
+            this.showSettingsSidebar();
         } else if (this.currentSection === 'system' || this.currentSection === 'hunt-manager' || this.currentSection === 'logs' || this.currentSection === 'about') {
-            console.log('[huntarrUI] Initialization - showing main sidebar (system sub-menu)');
-            localStorage.removeItem('huntarr-settings-sidebar');
+            console.log('[huntarrUI] Initialization - showing system group');
             this.showMainSidebar();
-            var systemSub = document.getElementById('system-sub');
-            if (systemSub) { systemSub.classList.add('expanded'); systemSub.style.display = 'block'; }
         } else if (this.currentSection === 'nzb-hunt-home' || this.currentSection === 'nzb-hunt-activity' || this.currentSection === 'nzb-hunt-server-editor' || this.currentSection === 'nzb-hunt-folders' || this.currentSection === 'nzb-hunt-servers' || this.currentSection === 'nzb-hunt-advanced' || (this.currentSection && this.currentSection.startsWith('nzb-hunt-settings'))) {
             console.log('[huntarrUI] Initialization - showing Media Hunt sidebar for NZB Hunt');
             this.showMovieHuntSidebar();
@@ -185,10 +179,8 @@ let huntarrUI = {
             console.log('[huntarrUI] Initialization - showing apps sidebar');
             this.showAppsSidebar();
         } else {
-            // Show main sidebar by default and clear settings sidebar preference
+            // Default: show main sidebar (Home)
             console.log('[huntarrUI] Initialization - showing main sidebar (default)');
-            localStorage.removeItem('huntarr-settings-sidebar');
-            localStorage.removeItem('huntarr-apps-sidebar');
             this.showMainSidebar();
         }
         
@@ -275,8 +267,8 @@ let huntarrUI = {
     setupEventListeners: function() {
         // Navigation
         document.addEventListener('click', (e) => {
-            // Main sidebar: hash links use client-side navigation so Media Hunt etc. switch correctly
-            const sidebarNavItem = e.target.closest('#sidebar .nav-item, #movie-hunt-sidebar .nav-item, #nzb-hunt-sidebar .nav-item');
+            // Sidebar: hash links use client-side navigation
+            const sidebarNavItem = e.target.closest('#sidebar .nav-item');
             if (sidebarNavItem) {
                 const link = sidebarNavItem.tagName === 'A' ? sidebarNavItem : sidebarNavItem.querySelector('a');
                 const href = link && link.getAttribute('href');
@@ -676,8 +668,7 @@ let huntarrUI = {
             newTitle = 'Home';
             this.currentSection = 'home';
             
-            // Show main sidebar when returning to home and clear settings sidebar preference
-            localStorage.removeItem('huntarr-settings-sidebar');
+            // Show main sidebar when returning to home
             this.showMainSidebar();
             
             // Disconnect logs if switching away from logs
@@ -753,26 +744,9 @@ let huntarrUI = {
             newTitle = tabTitles[activeTab] || 'System';
             this.currentSection = section === 'system' ? 'hunt-manager' : section;
             
-            localStorage.removeItem('huntarr-settings-sidebar');
-            this.showMainSidebar();
-            
-            // Mark the correct sidebar sub-item active (AFTER showMainSidebar)
-            var subNavMap = { 'hunt-manager': 'mainSystemHuntManagerNav', 'logs': 'mainSystemLogsNav', 'about': 'mainSystemAboutNav' };
-            var activeSubNav = document.getElementById(subNavMap[activeTab]);
-            if (activeSubNav) activeSubNav.classList.add('active');
-            
-            // Expand the system sub-group in sidebar (set inline to override CSS)
-            var systemSubGroup = document.getElementById('system-sub');
-            if (systemSubGroup) {
-                systemSubGroup.classList.add('expanded');
-                systemSubGroup.style.display = 'block';
-            }
-            // Collapse settings sub-group
-            var settingsSubGroup = document.getElementById('settings-sub');
-            if (settingsSubGroup) {
-                settingsSubGroup.classList.remove('expanded');
-                settingsSubGroup.style.display = 'none';
-            }
+            // Expand System group in unified sidebar
+            if (typeof expandSidebarGroup === 'function') expandSidebarGroup('sidebar-group-system');
+            if (typeof setActiveNavItem === 'function') setActiveNavItem();
             
             // Initialize the active tab's module
             if (activeTab === 'hunt-manager') {
@@ -1347,10 +1321,10 @@ let huntarrUI = {
             try { fromMovieSearch = sessionStorage.getItem('requestarr-from-movie-search'); sessionStorage.removeItem('requestarr-from-movie-search'); } catch (err) {}
             
             if (fromMovieSearch) {
-                // Keep Movie Hunt sidebar active with Movie Search highlighted
+                // Keep Movie Hunt sidebar group active with Movie Search highlighted
                 this.showMovieHuntSidebar();
-                // Clear all Movie Hunt nav items first
-                var movieHuntNavItems = document.querySelectorAll('#movie-hunt-sidebar .nav-item');
+                // Clear all Media Hunt nav items first
+                var movieHuntNavItems = document.querySelectorAll('#sidebar-group-media-hunt .nav-item');
                 if (movieHuntNavItems.length) movieHuntNavItems.forEach(function(el) { el.classList.remove('active'); });
                 // Then highlight only Movie Search
                 if (document.getElementById('movieHuntMovieSearchNav')) document.getElementById('movieHuntMovieSearchNav').classList.add('active');
@@ -1561,10 +1535,7 @@ let huntarrUI = {
             document.getElementById('settingsSection').style.display = 'block';
             newTitle = 'Settings';
             this.currentSection = 'settings';
-            localStorage.removeItem('huntarr-settings-sidebar');
-            this.showMainSidebar();
-            var settingsSub = document.getElementById('settings-sub');
-            if (settingsSub) settingsSub.classList.add('expanded');
+            this.showSettingsSidebar();
             this.initializeSettings();
         } else if (section === 'settings-instance-management' && document.getElementById('mediaHuntInstanceManagementSection')) {
             document.getElementById('mediaHuntInstanceManagementSection').classList.add('active');
@@ -1897,20 +1868,14 @@ let huntarrUI = {
             document.getElementById('settingsLogsSection').style.display = 'block';
             newTitle = 'Log Settings';
             this.currentSection = 'settings-logs';
-            localStorage.removeItem('huntarr-settings-sidebar');
-            this.showMainSidebar();
-            var settingsSub = document.getElementById('settings-sub');
-            if (settingsSub) settingsSub.classList.add('expanded');
+            this.showSettingsSidebar();
             this.initializeLogsSettings();
         } else if (section === 'scheduling' && document.getElementById('schedulingSection')) {
             document.getElementById('schedulingSection').classList.add('active');
             document.getElementById('schedulingSection').style.display = 'block';
             newTitle = 'Scheduling';
             this.currentSection = 'scheduling';
-            localStorage.removeItem('huntarr-settings-sidebar');
-            this.showMainSidebar();
-            var settingsSub = document.getElementById('settings-sub');
-            if (settingsSub) settingsSub.classList.add('expanded');
+            this.showSettingsSidebar();
             if (typeof window.refreshSchedulingInstances === 'function') {
                 window.refreshSchedulingInstances();
             }
@@ -1919,20 +1884,14 @@ let huntarrUI = {
             document.getElementById('notificationsSection').style.display = 'block';
             newTitle = 'Notifications';
             this.currentSection = 'notifications';
-            localStorage.removeItem('huntarr-settings-sidebar');
-            this.showMainSidebar();
-            var settingsSub = document.getElementById('settings-sub');
-            if (settingsSub) settingsSub.classList.add('expanded');
+            this.showSettingsSidebar();
             this.initializeNotifications();
         } else if (section === 'backup-restore' && document.getElementById('backupRestoreSection')) {
             document.getElementById('backupRestoreSection').classList.add('active');
             document.getElementById('backupRestoreSection').style.display = 'block';
             newTitle = 'Backup / Restore';
             this.currentSection = 'backup-restore';
-            localStorage.removeItem('huntarr-settings-sidebar');
-            this.showMainSidebar();
-            var settingsSub = document.getElementById('settings-sub');
-            if (settingsSub) settingsSub.classList.add('expanded');
+            this.showSettingsSidebar();
             this.initializeBackupRestore();
         } else if (section === 'prowlarr' && document.getElementById('prowlarrSection')) {
             document.getElementById('prowlarrSection').classList.add('active');
@@ -1951,10 +1910,7 @@ let huntarrUI = {
             document.getElementById('userSection').style.display = 'block';
             newTitle = 'User';
             this.currentSection = 'user';
-            localStorage.removeItem('huntarr-settings-sidebar');
-            this.showMainSidebar();
-            var settingsSub = document.getElementById('settings-sub');
-            if (settingsSub) settingsSub.classList.add('expanded');
+            this.showSettingsSidebar();
             this.initializeUser();
         } else if (section === 'instance-editor' && document.getElementById('instanceEditorSection')) {
             document.getElementById('instanceEditorSection').classList.add('active');
@@ -1991,8 +1947,7 @@ let huntarrUI = {
             newTitle = 'Home';
             this.currentSection = 'home';
             
-            // Show main sidebar and clear settings sidebar preference
-            localStorage.removeItem('huntarr-settings-sidebar');
+            // Show main sidebar
             this.showMainSidebar();
         }
 
@@ -2014,100 +1969,52 @@ let huntarrUI = {
         }
     },
     
-    // Sidebar switching functions
+    // ─── Sidebar switching (unified sidebar — expand groups) ───
+    // With the unified sidebar, there's only one #sidebar element.
+    // These functions now delegate to the sidebar.html inline expandSidebarGroup().
+
     _hideAllSidebars: function() {
-        document.getElementById('sidebar').style.display = 'none';
-        document.getElementById('apps-sidebar').style.display = 'none';
-        document.getElementById('settings-sidebar').style.display = 'none';
-        document.getElementById('requestarr-sidebar').style.display = 'none';
-        var mh = document.getElementById('movie-hunt-sidebar');
-        if (mh) mh.style.display = 'none';
+        // No-op: only one sidebar now, always visible
     },
 
     showMainSidebar: function() {
-        this._hideAllSidebars();
-        document.getElementById('sidebar').style.display = 'flex';
-        // When on System (Hunt Manager, Logs, About), hide Settings, Requestarr, Apps in main sidebar (mobile only; desktop keeps all visible)
-        var section = this.currentSection;
-        var onSystem = section === 'system' || section === 'hunt-manager' || section === 'logs' || section === 'about';
-        var onSettings = ['settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user'].indexOf(section) !== -1;
-        var isDesktop = window.innerWidth > 768;
-        var settingsNav = document.getElementById('settingsNav');
-        var settingsSubGroup = document.getElementById('settings-sub');
-        var requestarrNav = document.getElementById('requestarrNav');
-        var appsNav = document.getElementById('appsNav');
-        var systemNav = document.getElementById('systemNav');
-        var systemSubGroup = document.getElementById('system-sub');
-        if (onSystem && isDesktop) {
-            // Desktop: keep Apps, Requests, Settings visible when on System
-            if (settingsNav) settingsNav.style.display = '';
-            if (settingsSubGroup) { settingsSubGroup.style.display = 'none'; settingsSubGroup.classList.remove('expanded'); }
-            if (requestarrNav) requestarrNav.style.display = '';
-            if (appsNav) appsNav.style.display = '';
-            if (systemNav) systemNav.style.display = '';
-            if (systemSubGroup) { systemSubGroup.style.display = 'block'; systemSubGroup.classList.add('expanded'); }
-        } else if (onSettings && isDesktop) {
-            // Desktop: keep System, Apps, Requests visible when on Settings
-            if (settingsNav) settingsNav.style.display = '';
-            if (settingsSubGroup) { settingsSubGroup.style.display = 'block'; settingsSubGroup.classList.add('expanded'); }
-            if (requestarrNav) requestarrNav.style.display = '';
-            if (appsNav) appsNav.style.display = '';
-            if (systemNav) systemNav.style.display = '';
-            if (systemSubGroup) { systemSubGroup.style.display = 'none'; systemSubGroup.classList.remove('expanded'); }
-        } else {
-            if (settingsNav) settingsNav.style.display = onSystem ? 'none' : '';
-            if (settingsSubGroup) settingsSubGroup.style.display = onSystem ? 'none' : (onSettings ? 'block' : 'none');
-            if (requestarrNav) requestarrNav.style.display = (onSystem || onSettings) ? 'none' : '';
-            if (appsNav) appsNav.style.display = (onSystem || onSettings) ? 'none' : '';
-            if (systemNav) systemNav.style.display = onSettings ? 'none' : '';
-            if (systemSubGroup) systemSubGroup.style.display = onSettings ? 'none' : (onSystem ? 'block' : 'none');
-            if (settingsSubGroup) settingsSubGroup.classList.toggle('expanded', onSettings);
-            if (systemSubGroup) systemSubGroup.classList.toggle('expanded', onSystem);
-        }
-        this._updateMainSidebarBetaVisibility();
+        // Let setActiveNavItem handle group expansion based on hash
+        if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
 
-    /** When on Settings (main, scheduling, notifications, backup-restore, logs, user) or System (hunt-manager, logs, about), hide Partner Projects in main sidebar. */
     _updateMainSidebarBetaVisibility: function() {
-        var hideBetaSections = ['settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'system', 'hunt-manager', 'logs', 'about'];
-        var hide = hideBetaSections.indexOf(this.currentSection) !== -1;
-        var partnerGroup = document.getElementById('main-sidebar-partner-projects-group');
-        if (partnerGroup) partnerGroup.style.display = hide ? 'none' : '';
+        // Partner Projects always visible in unified sidebar
     },
     
     showAppsSidebar: function() {
-        this._hideAllSidebars();
-        document.getElementById('apps-sidebar').style.display = 'flex';
+        if (typeof expandSidebarGroup === 'function') expandSidebarGroup('sidebar-group-apps');
+        if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
     
     showSettingsSidebar: function() {
-        this._hideAllSidebars();
-        document.getElementById('settings-sidebar').style.display = 'flex';
+        if (typeof expandSidebarGroup === 'function') expandSidebarGroup('sidebar-group-settings');
+        if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
     
     showRequestarrSidebar: function() {
-        this._hideAllSidebars();
-        document.getElementById('requestarr-sidebar').style.display = 'flex';
+        if (typeof expandSidebarGroup === 'function') expandSidebarGroup('sidebar-group-requests');
+        if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
 
     showTVHuntSidebar: function() {
-        // TV Hunt sidebar removed; use Media Hunt sidebar for all media-hunt/tv-hunt sections
         this.showMovieHuntSidebar();
     },
 
     showMovieHuntSidebar: function() {
-        this._hideAllSidebars();
-        var mh = document.getElementById('movie-hunt-sidebar');
-        if (mh) mh.style.display = 'flex';
+        if (typeof expandSidebarGroup === 'function') expandSidebarGroup('sidebar-group-media-hunt');
         if (window.HuntarrNavigation && typeof window.HuntarrNavigation.updateMovieHuntSidebarActive === 'function') {
             window.HuntarrNavigation.updateMovieHuntSidebarActive();
         }
-        this._updateMovieHuntSidebarSettingsOnlyVisibility();
     },
 
     showNzbHuntSidebar: function() {
-        // NZB Hunt sidebar merged into Media Hunt sidebar; redirect
-        this.showMovieHuntSidebar();
+        if (typeof expandSidebarGroup === 'function') expandSidebarGroup('sidebar-group-nzb-hunt');
+        if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
 
     /** Fetch NZB Hunt client-configured status and show/hide the sidebar group accordingly. */
@@ -2127,14 +2034,14 @@ let huntarrUI = {
     /** Keep all Movie Hunt sidebar icons visible - no hiding when navigating between sections. */
     _updateMovieHuntSidebarSettingsOnlyVisibility: function() {
         // All navigation items remain visible for easier navigation
-        // User requested: don't hide icons when selecting menu options
     },
 
     /** When in instance-editor for indexer/client, keep Index Master or Clients nav item highlighted. */
     _highlightMovieHuntNavForEditor: function(appType) {
         var subGroup = document.getElementById('index-master-sub');
         if (subGroup) subGroup.classList.add('expanded');
-        var items = document.querySelectorAll('#movie-hunt-sidebar .nav-item');
+        // Query from unified sidebar
+        var items = document.querySelectorAll('#sidebar-group-media-hunt .nav-item');
         for (var i = 0; i < items.length; i++) items[i].classList.remove('active');
         var nav = appType === 'indexer' ? document.getElementById('movieHuntIndexMasterNav') : document.getElementById('movieHuntIndexMasterClientsNav');
         if (nav) nav.classList.add('active');
@@ -2142,8 +2049,7 @@ let huntarrUI = {
 
     /** Legacy: was used to show/hide Movie Hunt in Core by dev_mode. Movie Hunt is now in Beta and always visible. */
     updateMovieHuntNavVisibility: function() {
-        const mhNav = document.getElementById('movieHuntNav');
-        if (mhNav) mhNav.style.display = 'none'; // Core Movie Hunt removed; Beta Movie Hunt is always visible
+        // No-op in unified sidebar
     },
     
     // Simple event source disconnection for compatibility

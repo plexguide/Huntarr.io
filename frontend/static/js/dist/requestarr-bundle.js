@@ -6088,20 +6088,11 @@ window.HuntarrRequestarr = {
     },
 
     /**
-     * Show the Requestarr sidebar and hide others
+     * Expand the Requests group in the unified sidebar
      */
     showRequestarrSidebar: function() {
-        const mainSidebar = document.getElementById('sidebar');
-        const requestarrSidebar = document.getElementById('requestarr-sidebar');
-        const settingsSidebar = document.getElementById('settings-sidebar');
-        const appsSidebar = document.getElementById('apps-sidebar');
-        
-        if (mainSidebar) mainSidebar.style.display = 'none';
-        if (settingsSidebar) settingsSidebar.style.display = 'none';
-        if (appsSidebar) appsSidebar.style.display = 'none';
-        if (requestarrSidebar) requestarrSidebar.style.display = 'block';
-        
-        this.updateRequestarrSidebarActive();
+        if (typeof expandSidebarGroup === 'function') expandSidebarGroup('sidebar-group-requests');
+        if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
 
     /**
@@ -6114,20 +6105,10 @@ window.HuntarrRequestarr = {
     },
 
     /**
-     * Update the active state of items in the Requestarr sidebar
+     * Update the active state of items in the Requests group
      */
     updateRequestarrSidebarActive: function() {
-        if (!window.huntarrUI) return;
-        const currentSection = window.huntarrUI.currentSection;
-        const requestarrSidebarItems = document.querySelectorAll('#requestarr-sidebar .nav-item');
-        
-        requestarrSidebarItems.forEach(item => {
-            item.classList.remove('active');
-            const link = item.querySelector('a');
-            if (link && link.getAttribute('href') === `#${currentSection}`) {
-                item.classList.add('active');
-            }
-        });
+        if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
 
     /**
@@ -6140,17 +6121,10 @@ window.HuntarrRequestarr = {
     },
 
     /**
-     * Set up click handlers for Requestarr sidebar items
+     * Set up click handlers for Requestarr nav items (unified sidebar, hash links handle it)
      */
     setupRequestarrNavigation: function() {
-        const requestarrNavItems = document.querySelectorAll('#requestarr-sidebar .nav-item a');
-        requestarrNavItems.forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.preventDefault();
-                const href = item.getAttribute('href');
-                if (href) window.location.hash = href;
-            });
-        });
+        // Navigation handled by hash links in the unified sidebar
     }
 };
 
