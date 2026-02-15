@@ -6974,6 +6974,7 @@ window.HuntarrStats = {
 
         // Also fetch NZB Hunt home stats (separate from main stats pipeline)
         self._fetchNzbHuntHomeStats();
+        self._checkNzbHuntWarning();
         self._initNzbHomePauseBtn();
     },
 
@@ -7674,6 +7675,30 @@ window.HuntarrStats = {
 
     // ─── NZB Hunt Home Status Bar ──────────────────────────────────
     _nzbHomePollTimer: null,
+
+    _checkNzbHuntWarning: function() {
+        var banner = document.getElementById('nzb-hunt-home-warning');
+        if (!banner) return;
+        // Banner is visible by default in HTML; only hide when API confirms servers exist
+        fetch('./api/nzb-hunt/home-stats?t=' + Date.now())
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                banner.style.display = (data.show_nzb_warning === true || data.has_servers !== true) ? 'flex' : 'none';
+            })
+            .catch(function() {
+                /* keep visible on error - user has no servers until we know otherwise */
+            });
+        // Retry after 1.5s in case API was not ready
+        setTimeout(function() {
+            if (!banner) return;
+            fetch('./api/nzb-hunt/home-stats?t=' + Date.now())
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    banner.style.display = (data.show_nzb_warning === true || data.has_servers !== true) ? 'flex' : 'none';
+                })
+                .catch(function() {});
+        }, 1500);
+    },
 
     _fetchNzbHuntHomeStats: function() {
         var card = document.getElementById('nzb-hunt-home-card');

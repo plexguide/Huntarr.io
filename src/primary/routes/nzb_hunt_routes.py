@@ -980,10 +980,18 @@ def nzb_hunt_home_stats():
     try:
         cfg = _load_config()
         show_on_home = cfg.get("universal", {}).get("show_on_home", True)
-        if not show_on_home:
-            return jsonify({"visible": False})
+        has_servers = has_nzb_servers()
+        # Show warning whenever no NZB servers configured (NZB Hunt feature exists in app)
+        show_nzb_warning = not has_servers
 
-        # Live status from download manager
+        if not show_on_home:
+            return jsonify({
+                "visible": False,
+                "has_servers": has_servers,
+                "show_nzb_warning": show_nzb_warning,
+            })
+
+        # Live status from download manager (for visible card)
         speed_bps = 0
         active_count = 0
         queued_count = 0
@@ -1018,6 +1026,8 @@ def nzb_hunt_home_stats():
             "queued_count": queued_count,
             "completed": completed,
             "failed": failed,
+            "has_servers": has_servers,
+            "show_nzb_warning": show_nzb_warning,
         })
     except Exception as e:
         logger.exception("NZB Hunt home stats error")

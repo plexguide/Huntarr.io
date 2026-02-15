@@ -7,6 +7,45 @@
    MODERN REDESIGN OVERRIDES — matches Logs/Hunt Manager design
    ═══════════════════════════════════════════════════════════════════ */
 
+/* ── NZB Hunt home warning (configured as client or queue has items, no servers) ────────── */
+#homeSection .nzb-hunt-home-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    border-radius: 12px;
+    color: #94a3b8;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+.nzb-hunt-home-warning i {
+    flex-shrink: 0;
+    font-size: 1.25rem;
+    color: #f59e0b;
+    margin-top: 2px;
+}
+.nzb-hunt-home-warning-content {
+    flex: 1;
+}
+.nzb-hunt-home-warning-content strong {
+    color: #e2e8f0;
+    font-weight: 600;
+}
+.nzb-hunt-home-warning-link {
+    color: #fbbf24;
+    font-weight: 500;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(251, 191, 36, 0.5);
+    transition: color 0.15s, border-color 0.15s;
+}
+.nzb-hunt-home-warning-link:hover {
+    color: #fcd34d;
+    border-bottom-color: #fbbf24;
+}
+
 /* ── Section Bar (replaces old card-header) ─────────────────────── */
 .home-section-bar {
     display: flex;
