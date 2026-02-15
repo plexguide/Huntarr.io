@@ -918,10 +918,11 @@
     // === Setup wizard banner ===
     function updateClientsSetupBanner() {
         var banner = document.getElementById('clients-setup-wizard-continue-banner');
-        // Only show if user navigated here from the setup wizard
+        // Show if user navigated here from the setup wizard.
+        // Don't remove the flag — it needs to persist across re-renders during the wizard flow.
+        // The flag is cleared when the user clicks "Continue to Setup Guide" or completes/skips the wizard.
         var fromWizard = false;
         try { fromWizard = sessionStorage.getItem('setup-wizard-active-nav') === '1'; } catch (e) {}
-        if (fromWizard) { try { sessionStorage.removeItem('setup-wizard-active-nav'); } catch (e) {} }
         if (banner) banner.style.display = fromWizard ? 'flex' : 'none';
     }
 

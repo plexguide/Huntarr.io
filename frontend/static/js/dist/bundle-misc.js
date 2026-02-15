@@ -3694,11 +3694,11 @@
             }
             var editorBanner = document.getElementById('nzb-server-editor-wizard-banner');
             if (editorBanner) editorBanner.style.display = (editorFromWizard || this._fromSetupWizard) ? 'flex' : 'none';
-            // Hide breadcrumb bar during wizard flow
+            // Hide back/breadcrumb during wizard flow (keep save button visible)
             if (editorFromWizard || this._fromSetupWizard) {
                 var editorSection = document.getElementById('nzb-hunt-server-editor-section');
-                var hdr = editorSection && editorSection.querySelector('.page-header-bar');
-                if (hdr) hdr.style.display = 'none';
+                var toolbarLeft = editorSection && editorSection.querySelector('.page-header-bar .reqset-toolbar-left');
+                if (toolbarLeft) toolbarLeft.style.display = 'none';
             }
 
             // Auto-test connection when editing an existing server

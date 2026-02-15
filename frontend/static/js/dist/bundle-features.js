@@ -7536,9 +7536,13 @@ window.HuntarrProwlarr = {
             var forceShow = false;
             try { forceShow = sessionStorage.getItem('setup-wizard-force-show') === '1'; } catch (e) {}
 
+            // If user is actively navigating within the wizard flow, always show
+            var activeNav = false;
+            try { activeNav = sessionStorage.getItem('setup-wizard-active-nav') === '1'; } catch (e) {}
+
             _checkAllSteps(function() {
                 var allDone = _allStepsComplete();
-                if (allDone && !forceShow) {
+                if (allDone && !forceShow && !activeNav) {
                     // Auto-mark complete so it never shows again
                     _markComplete();
                     cb(false);
@@ -7589,7 +7593,10 @@ window.HuntarrProwlarr = {
             _checkAllSteps(function() {
                 _refreshing = false;
                 var allDone = _allStepsComplete();
-                if (allDone) {
+                // Don't auto-complete while user is actively in the wizard flow
+                var activeNav = false;
+                try { activeNav = sessionStorage.getItem('setup-wizard-active-nav') === '1'; } catch (e) {}
+                if (allDone && !activeNav) {
                     _markComplete();
                     if (cb) cb();
                     return;
@@ -7852,15 +7859,17 @@ window.HuntarrProwlarr = {
                 } else if (section) {
                     window.location.hash = '#' + section;
                 }
-                // Hide the breadcrumb/page-header-bar in the target section
+                // Hide the back/breadcrumb in the target section's header bar
                 // (redundant during setup — the "Continue to Setup Guide" banner
                 // provides all the navigation the user needs)
+                // NOTE: Only hide .reqset-toolbar-left, NOT the entire .page-header-bar,
+                // because the save button lives in .reqset-toolbar-right and must stay visible.
                 setTimeout(function() {
                     var allSections = document.querySelectorAll('.content-section');
                     for (var i = 0; i < allSections.length; i++) {
                         if (allSections[i].style.display !== 'none' && allSections[i].offsetParent !== null) {
-                            var hdr = allSections[i].querySelector('.page-header-bar');
-                            if (hdr) hdr.style.display = 'none';
+                            var toolbarLeft = allSections[i].querySelector('.page-header-bar .reqset-toolbar-left');
+                            if (toolbarLeft) toolbarLeft.style.display = 'none';
                         }
                     }
                 }, 150);
