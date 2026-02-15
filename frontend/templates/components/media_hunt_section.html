@@ -3,6 +3,7 @@
     <link rel="stylesheet" href="./static/css/media-hunt.css?v=1.3.0">
     <link rel="stylesheet" href="./static/css/media-hunt-detail.css?v=1.5.0">
     <link rel="stylesheet" href="./static/css/media-hunt-tv.css?v=1.0.0">
+    <link rel="stylesheet" href="./static/css/home.css">
     <div class="requestarr-content media-hunt-content">
         {% from 'components/page_header_partial.html' import page_header %}
         {{ page_header(back_href='./#home', parent_icon='fas fa-film', parent_name='Media Hunt', current_name='Discover', sponsor_section_id='media-hunt') }}
@@ -47,30 +48,142 @@
         </div>
     </div>
 
+    <!-- ===== MEDIA HUNT SETUP WIZARD (full-takeover, shown when setup incomplete) ===== -->
+    <div id="media-hunt-setup-wizard-view" style="display: none; padding: 20px;">
+        {% from 'components/page_header_partial.html' import page_header %}
+        {{ page_header(back_href='./#home', parent_icon='fas fa-folder-open', parent_name='Media Hunt', current_name='Setup Guide', sponsor_section_id='media-hunt-collection') }}
+
+        <div class="setup-wizard" id="media-hunt-setup-wizard" style="max-width: 640px; margin: 30px auto 0;">
+            <div class="setup-wizard-header">
+                <div class="setup-wizard-icon">
+                    <img src="./static/logo/256.png" alt="Huntarr Logo" style="width: 48px; height: 48px;">
+                </div>
+                <div>
+                    <h2 class="setup-wizard-title">Media Hunt Setup</h2>
+                    <p class="setup-wizard-desc">Complete the steps below to get Media Hunt fully configured.</p>
+                </div>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="setup-wizard-progress">
+                <div class="setup-wizard-progress-fill" id="setup-wizard-progress-fill" style="width: 0%;"></div>
+            </div>
+
+            <!-- Step 1: Instances -->
+            <div class="setup-wizard-step" id="setup-step-1" data-step="1">
+                <div class="setup-wizard-step-header" data-step-toggle="1">
+                    <div class="setup-wizard-step-indicator" id="setup-step-indicator-1">
+                        <span class="step-number">1</span>
+                    </div>
+                    <div class="setup-wizard-step-info">
+                        <span class="setup-wizard-step-title">Add an Instance</span>
+                        <span class="setup-wizard-step-subtitle">Connect Movie Hunt or TV Hunt to your media server</span>
+                    </div>
+                    <i class="fas fa-chevron-down setup-wizard-step-chevron"></i>
+                </div>
+                <div class="setup-wizard-step-body" id="setup-step-body-1">
+                    <p>Configure at least one Movie Hunt or TV Hunt instance to connect Huntarr to your media library.</p>
+                    <button type="button" class="setup-wizard-action-btn" data-wizard-nav="media-hunt-instances">
+                        <i class="fas fa-layer-group"></i> Configure Instances
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: Indexers -->
+            <div class="setup-wizard-step" id="setup-step-2" data-step="2">
+                <div class="setup-wizard-step-header" data-step-toggle="2">
+                    <div class="setup-wizard-step-indicator" id="setup-step-indicator-2">
+                        <span class="step-number">2</span>
+                    </div>
+                    <div class="setup-wizard-step-info">
+                        <span class="setup-wizard-step-title">Add Indexers</span>
+                        <span class="setup-wizard-step-subtitle">Configure search indexers for finding media</span>
+                    </div>
+                    <i class="fas fa-chevron-down setup-wizard-step-chevron"></i>
+                </div>
+                <div class="setup-wizard-step-body" id="setup-step-body-2">
+                    <p>Add at least one indexer to the Index Master Pool so Huntarr can search for media.</p>
+                    <button type="button" class="setup-wizard-action-btn" data-wizard-nav="indexer-hunt">
+                        <i class="fas fa-search-plus"></i> Add Indexer
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 3: Root Folders -->
+            <div class="setup-wizard-step" id="setup-step-3" data-step="3">
+                <div class="setup-wizard-step-header" data-step-toggle="3">
+                    <div class="setup-wizard-step-indicator" id="setup-step-indicator-3">
+                        <span class="step-number">3</span>
+                    </div>
+                    <div class="setup-wizard-step-info">
+                        <span class="setup-wizard-step-title">Root Folders</span>
+                        <span class="setup-wizard-step-subtitle">Set where your media files are stored</span>
+                    </div>
+                    <i class="fas fa-chevron-down setup-wizard-step-chevron"></i>
+                </div>
+                <div class="setup-wizard-step-body" id="setup-step-body-3">
+                    <p>Configure root folders so Huntarr knows where your media library is located.</p>
+                    <button type="button" class="setup-wizard-action-btn" data-wizard-nav="settings-root-folders">
+                        <i class="fas fa-folder-open"></i> Configure Root Folders
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 4: Download Client -->
+            <div class="setup-wizard-step" id="setup-step-4" data-step="4">
+                <div class="setup-wizard-step-header" data-step-toggle="4">
+                    <div class="setup-wizard-step-indicator" id="setup-step-indicator-4">
+                        <span class="step-number">4</span>
+                    </div>
+                    <div class="setup-wizard-step-info">
+                        <span class="setup-wizard-step-title">Download Client</span>
+                        <span class="setup-wizard-step-subtitle">Configure a download client (NZB Hunt, SABnzbd, NZBGet)</span>
+                    </div>
+                    <i class="fas fa-chevron-down setup-wizard-step-chevron"></i>
+                </div>
+                <div class="setup-wizard-step-body" id="setup-step-body-4">
+                    <p>Add a download client so Huntarr can send downloads. Choose NZB Hunt (built-in), SABnzbd, or NZBGet.</p>
+                    <button type="button" class="setup-wizard-action-btn" data-wizard-nav="settings-clients">
+                        <i class="fas fa-cloud-download-alt"></i> Add Client
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 5: NZB Servers (conditional — only if NZB Hunt is the client) -->
+            <div class="setup-wizard-step" id="setup-step-5" data-step="5" style="display: none;">
+                <div class="setup-wizard-step-header" data-step-toggle="5">
+                    <div class="setup-wizard-step-indicator" id="setup-step-indicator-5">
+                        <span class="step-number">5</span>
+                    </div>
+                    <div class="setup-wizard-step-info">
+                        <span class="setup-wizard-step-title">Usenet Servers</span>
+                        <span class="setup-wizard-step-subtitle">Configure Usenet servers for NZB Hunt downloads</span>
+                    </div>
+                    <i class="fas fa-chevron-down setup-wizard-step-chevron"></i>
+                </div>
+                <div class="setup-wizard-step-body" id="setup-step-body-5">
+                    <p>NZB Hunt is your download client. Add at least one Usenet server so it can download NZBs.</p>
+                    <button type="button" class="setup-wizard-action-btn" data-wizard-nav="nzb-hunt-servers">
+                        <i class="fas fa-server"></i> Configure Servers
+                    </button>
+                </div>
+            </div>
+
+            <!-- Skip button -->
+            <div style="text-align: center; padding: 18px 20px;">
+                <button type="button" id="setup-wizard-skip" class="setup-wizard-skip-btn">
+                    <i class="fas fa-forward"></i> Skip Setup Guide
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Media Hunt Collection: Movie Hunt + TV Hunt instance dropdowns, combined library view -->
     <div id="media-hunt-collection-view" class="media-hunt-collection-view" style="display: none;">
         <div style="padding: 0 0 20px 0;">
         {% from 'components/page_header_partial.html' import page_header %}
         {{ page_header(back_href='./#home', parent_icon='fas fa-folder-open', parent_name='Media Hunt', current_name='Collections', sponsor_section_id='media-hunt-collection') }}
 
-        <div id="media-hunt-collection-no-instances" class="media-hunt-collection-no-instances" style="display: none;">
-            <i class="fas fa-cube" aria-hidden="true"></i>
-            <p class="no-instances-title">No instances configured</p>
-            <p class="no-instances-desc">Configure a Movie Hunt or TV Hunt instance to view your collection.</p>
-            <a href="./#media-hunt-instances" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure instances</a>
-        </div>
-        <div id="media-hunt-collection-no-indexers" class="media-hunt-collection-no-indexers" style="display: none;">
-            <i class="fas fa-satellite-dish" aria-hidden="true"></i>
-            <p class="no-instances-title">No indexers configured</p>
-            <p class="no-instances-desc">Configure at least one indexer in the Index Master Pool to use this section.</p>
-            <a href="./#indexer-hunt" class="no-instances-action-btn"><i class="fas fa-plus"></i> Add Indexer</a>
-        </div>
-        <div id="media-hunt-collection-no-clients" class="media-hunt-collection-no-clients" style="display: none;">
-            <i class="fas fa-download" aria-hidden="true"></i>
-            <p class="no-instances-title">No clients configured</p>
-            <p class="no-instances-desc">Configure at least one download client in Settings → Clients to use this section.</p>
-            <a href="./#settings-clients" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure Clients</a>
-        </div>
         <div id="media-hunt-collection-content-wrapper" style="display: none;">
         <div class="global-search-bar" style="margin-bottom: 12px;">
             <i class="fas fa-search"></i>

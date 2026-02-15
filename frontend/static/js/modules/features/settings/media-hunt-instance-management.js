@@ -172,9 +172,19 @@
         }
     }
 
+    function updateSetupWizardBanner() {
+        var banner = document.getElementById('setup-wizard-continue-banner');
+        if (!banner) return;
+        var show = window.SetupWizard && typeof window.SetupWizard.isComplete === 'function' && !window.SetupWizard.isComplete();
+        banner.style.display = show ? 'flex' : 'none';
+    }
+
     window.MediaHuntInstanceManagement.init = function() {
         initModals();
         initGridListeners();
+        updateSetupWizardBanner();
+        document.addEventListener('huntarr:instances-changed', updateSetupWizardBanner);
+        document.addEventListener('huntarr:tv-hunt-instances-changed', updateSetupWizardBanner);
         if (window.MovieHuntInstanceEditor && typeof window.MovieHuntInstanceEditor.loadInstanceList === 'function') {
             window.MovieHuntInstanceEditor.loadInstanceList();
         }

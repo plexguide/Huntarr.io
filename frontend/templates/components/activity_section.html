@@ -3,25 +3,6 @@
     <div class="app-content-panel" style="padding: 20px;">
     {% from 'components/page_header_partial.html' import page_header %}
     {{ page_header(back_href='./#media-hunt-collection', parent_icon='fas fa-clock', parent_name='Activity', current_name='Queue', sponsor_section_id='activity') }}
-    <!-- No-instances warning box (same style as Media Management) -->
-    <div id="activity-no-instances" class="activity-no-instances" style="display: none;">
-        <i class="fas fa-cube" aria-hidden="true"></i>
-        <p class="no-instances-title">No instances configured</p>
-        <p class="no-instances-desc">Configure a Movie Hunt or TV Hunt instance to view activity.</p>
-        <a href="./#media-hunt-instances" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure instances</a>
-    </div>
-    <div id="activity-no-indexers" class="activity-no-indexers" style="display: none;">
-        <i class="fas fa-satellite-dish" aria-hidden="true"></i>
-        <p class="no-instances-title">No indexers configured</p>
-        <p class="no-instances-desc">Configure at least one indexer in the Index Master Pool to use this section.</p>
-        <a href="./#indexer-hunt" class="no-instances-action-btn"><i class="fas fa-plus"></i> Add Indexer</a>
-    </div>
-    <div id="activity-no-clients" class="activity-no-clients" style="display: none;">
-        <i class="fas fa-download" aria-hidden="true"></i>
-        <p class="no-instances-title">No clients configured</p>
-        <p class="no-instances-desc">Configure at least one download client in Settings → Clients to use this section.</p>
-        <a href="./#settings-clients" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure Clients</a>
-    </div>
     <div id="activity-unable-to-load" class="activity-unable-to-load" style="display: none;">
         <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
         <p class="no-instances-title">Unable to load</p>

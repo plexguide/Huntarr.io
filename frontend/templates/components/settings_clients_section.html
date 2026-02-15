@@ -1,20 +1,7 @@
 <section id="settingsClientsSection" class="content-section" style="display: none;">
     {% with section_id='settings-clients' %}{% include 'components/sponsor_banners_partial.html' %}{% endwith %}
     <div id="clientManagementContainer" class="app-content-panel">
-        <!-- No-instances warning box (same style as Media Management) -->
-        <div id="settings-clients-no-instances" class="settings-no-instances" style="display: none;">
-            <i class="fas fa-cube" aria-hidden="true"></i>
-            <p class="no-instances-title">No instances configured</p>
-            <p class="no-instances-desc">Configure a Movie Hunt or TV Hunt instance to manage download clients.</p>
-            <a href="./#media-hunt-instances" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure instances</a>
-        </div>
-        <div id="settings-clients-no-indexers" class="settings-no-indexers" style="display: none;">
-            <i class="fas fa-satellite-dish" aria-hidden="true"></i>
-            <p class="no-instances-title">No indexers configured</p>
-            <p class="no-instances-desc">Configure at least one indexer in the Index Master Pool to use this section.</p>
-            <a href="./#indexer-hunt" class="no-instances-action-btn"><i class="fas fa-plus"></i> Add Indexer</a>
-        </div>
-        <div id="settings-clients-content-wrapper" style="display: none;">
+        <div id="settings-clients-content-wrapper">
         <div class="settings-group client-settings-group">
             <h3>Client Management</h3>
             <div class="instance-card-grid" id="client-instances-grid">

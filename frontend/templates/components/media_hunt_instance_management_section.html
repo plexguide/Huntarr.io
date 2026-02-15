@@ -1,9 +1,19 @@
 <!-- Media Hunt Instance Management – Movie and TV instances in separate Profiles-style sections -->
 <section id="mediaHuntInstanceManagementSection" class="content-section" style="display: none;">
     <link rel="stylesheet" href="./static/css/instance-editor.css?v=1.0.2">
+    <link rel="stylesheet" href="./static/css/home.css">
     <div class="app-content-panel" style="width:100%;padding:20px;margin:0;background:transparent;box-shadow:none;border:none;">
         {% from 'components/page_header_partial.html' import page_header %}
         {{ page_header(back_href='./#media-hunt-collection', parent_icon='fas fa-folder-open', parent_name='Media Hunt', current_name='Instances', sponsor_section_id='media-hunt-settings') }}
+
+        <!-- Continue to Setup Guide banner (shown when wizard incomplete) -->
+        <div id="setup-wizard-continue-banner" class="setup-wizard-continue-banner" style="display: none; margin-bottom: 20px;">
+            <i class="fas fa-arrow-right"></i>
+            <span>Done adding instances? Continue to the next step in the Setup Guide.</span>
+            <button type="button" class="setup-wizard-continue-btn" data-wizard-nav="media-hunt-collection">
+                <i class="fas fa-forward"></i> Continue to Setup Guide
+            </button>
+        </div>
 
         <!-- Movie Instances – Profiles-style box -->
         <div class="settings-group instances-settings-group">

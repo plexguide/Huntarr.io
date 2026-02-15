@@ -109,50 +109,8 @@
                 emptyOpt.value = '';
                 emptyOpt.textContent = 'No Movie or TV Hunt instances';
                 selectEl.appendChild(emptyOpt);
-                var noInstEl = document.getElementById('media-hunt-profiles-no-instances');
-                var noIdxEl = document.getElementById('media-hunt-profiles-no-indexers');
-                var noCliEl = document.getElementById('media-hunt-profiles-no-clients');
                 var wrapperEl = document.getElementById('media-hunt-profiles-content-wrapper');
-                if (noInstEl) noInstEl.style.display = '';
-                if (noIdxEl) noIdxEl.style.display = 'none';
-                if (noCliEl) noCliEl.style.display = 'none';
-                if (wrapperEl) wrapperEl.style.display = 'none';
-                M._combinedDropdownPopulated = true;
-                return;
-            }
-            var indexerCount = (results[4].indexers || []).length;
-            if (indexerCount === 0) {
-                selectEl.innerHTML = '';
-                var emptyOpt = document.createElement('option');
-                emptyOpt.value = '';
-                emptyOpt.textContent = 'No indexers configured';
-                selectEl.appendChild(emptyOpt);
-                var noInstEl = document.getElementById('media-hunt-profiles-no-instances');
-                var noIdxEl = document.getElementById('media-hunt-profiles-no-indexers');
-                var noCliEl = document.getElementById('media-hunt-profiles-no-clients');
-                var wrapperEl = document.getElementById('media-hunt-profiles-content-wrapper');
-                if (noInstEl) noInstEl.style.display = 'none';
-                if (noIdxEl) noIdxEl.style.display = '';
-                if (noCliEl) noCliEl.style.display = 'none';
-                if (wrapperEl) wrapperEl.style.display = 'none';
-                M._combinedDropdownPopulated = true;
-                return;
-            }
-            var hasClients = results[5].has_clients === true;
-            if (!hasClients) {
-                selectEl.innerHTML = '';
-                var emptyOpt = document.createElement('option');
-                emptyOpt.value = '';
-                emptyOpt.textContent = 'No clients configured';
-                selectEl.appendChild(emptyOpt);
-                var noInstEl = document.getElementById('media-hunt-profiles-no-instances');
-                var noIdxEl = document.getElementById('media-hunt-profiles-no-indexers');
-                var noCliEl = document.getElementById('media-hunt-profiles-no-clients');
-                var wrapperEl = document.getElementById('media-hunt-profiles-content-wrapper');
-                if (noInstEl) noInstEl.style.display = 'none';
-                if (noIdxEl) noIdxEl.style.display = 'none';
-                if (noCliEl) noCliEl.style.display = '';
-                if (wrapperEl) wrapperEl.style.display = 'none';
+                if (wrapperEl) wrapperEl.style.display = '';
                 M._combinedDropdownPopulated = true;
                 return;
             }
@@ -181,13 +139,7 @@
             }
             selectEl.value = selected;
             M._combinedDropdownPopulated = true;
-            var noInstEl = document.getElementById('media-hunt-profiles-no-instances');
-            var noIdxEl = document.getElementById('media-hunt-profiles-no-indexers');
-            var noCliEl = document.getElementById('media-hunt-profiles-no-clients');
             var wrapperEl = document.getElementById('media-hunt-profiles-content-wrapper');
-            if (noInstEl) noInstEl.style.display = 'none';
-            if (noIdxEl) noIdxEl.style.display = 'none';
-            if (noCliEl) noCliEl.style.display = 'none';
             if (wrapperEl) wrapperEl.style.display = '';
             var parts = (selected || '').split(':');
             if (parts.length === 2) {
@@ -197,14 +149,8 @@
             }
         }).catch(function() {
             selectEl.innerHTML = '<option value="">Failed to load instances</option>';
-            var noInstEl = document.getElementById('media-hunt-profiles-no-instances');
-            var noIdxEl = document.getElementById('media-hunt-profiles-no-indexers');
-            var noCliEl = document.getElementById('media-hunt-profiles-no-clients');
             var wrapperEl = document.getElementById('media-hunt-profiles-content-wrapper');
-            if (noInstEl) noInstEl.style.display = 'none';
-            if (noIdxEl) noIdxEl.style.display = 'none';
-            if (noCliEl) noCliEl.style.display = '';
-            if (wrapperEl) wrapperEl.style.display = 'none';
+            if (wrapperEl) wrapperEl.style.display = '';
             M._combinedDropdownPopulated = true;
         });
     }

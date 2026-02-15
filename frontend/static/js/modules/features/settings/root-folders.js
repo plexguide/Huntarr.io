@@ -432,6 +432,9 @@
                         }
                         window.RootFolders.refreshList();
                         if (window.updateMovieHuntSettingsVisibility) window.updateMovieHuntSettingsVisibility();
+                        if (window.SetupWizard && typeof window.SetupWizard.maybeReturnToCollection === 'function') {
+                            window.SetupWizard.maybeReturnToCollection();
+                        }
                     } else {
                         var msg = (result.data && result.data.message) ? result.data.message : 'Add failed';
                         if (window.huntarrUI && window.huntarrUI.showNotification) {

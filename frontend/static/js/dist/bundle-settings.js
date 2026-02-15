@@ -4963,50 +4963,8 @@ document.head.appendChild(styleEl);
                 emptyOpt.value = '';
                 emptyOpt.textContent = 'No Movie or TV Hunt instances';
                 selectEl.appendChild(emptyOpt);
-                var noInstEl = document.getElementById('media-hunt-profiles-no-instances');
-                var noIdxEl = document.getElementById('media-hunt-profiles-no-indexers');
-                var noCliEl = document.getElementById('media-hunt-profiles-no-clients');
                 var wrapperEl = document.getElementById('media-hunt-profiles-content-wrapper');
-                if (noInstEl) noInstEl.style.display = '';
-                if (noIdxEl) noIdxEl.style.display = 'none';
-                if (noCliEl) noCliEl.style.display = 'none';
-                if (wrapperEl) wrapperEl.style.display = 'none';
-                M._combinedDropdownPopulated = true;
-                return;
-            }
-            var indexerCount = (results[4].indexers || []).length;
-            if (indexerCount === 0) {
-                selectEl.innerHTML = '';
-                var emptyOpt = document.createElement('option');
-                emptyOpt.value = '';
-                emptyOpt.textContent = 'No indexers configured';
-                selectEl.appendChild(emptyOpt);
-                var noInstEl = document.getElementById('media-hunt-profiles-no-instances');
-                var noIdxEl = document.getElementById('media-hunt-profiles-no-indexers');
-                var noCliEl = document.getElementById('media-hunt-profiles-no-clients');
-                var wrapperEl = document.getElementById('media-hunt-profiles-content-wrapper');
-                if (noInstEl) noInstEl.style.display = 'none';
-                if (noIdxEl) noIdxEl.style.display = '';
-                if (noCliEl) noCliEl.style.display = 'none';
-                if (wrapperEl) wrapperEl.style.display = 'none';
-                M._combinedDropdownPopulated = true;
-                return;
-            }
-            var hasClients = results[5].has_clients === true;
-            if (!hasClients) {
-                selectEl.innerHTML = '';
-                var emptyOpt = document.createElement('option');
-                emptyOpt.value = '';
-                emptyOpt.textContent = 'No clients configured';
-                selectEl.appendChild(emptyOpt);
-                var noInstEl = document.getElementById('media-hunt-profiles-no-instances');
-                var noIdxEl = document.getElementById('media-hunt-profiles-no-indexers');
-                var noCliEl = document.getElementById('media-hunt-profiles-no-clients');
-                var wrapperEl = document.getElementById('media-hunt-profiles-content-wrapper');
-                if (noInstEl) noInstEl.style.display = 'none';
-                if (noIdxEl) noIdxEl.style.display = 'none';
-                if (noCliEl) noCliEl.style.display = '';
-                if (wrapperEl) wrapperEl.style.display = 'none';
+                if (wrapperEl) wrapperEl.style.display = '';
                 M._combinedDropdownPopulated = true;
                 return;
             }
@@ -5035,13 +4993,7 @@ document.head.appendChild(styleEl);
             }
             selectEl.value = selected;
             M._combinedDropdownPopulated = true;
-            var noInstEl = document.getElementById('media-hunt-profiles-no-instances');
-            var noIdxEl = document.getElementById('media-hunt-profiles-no-indexers');
-            var noCliEl = document.getElementById('media-hunt-profiles-no-clients');
             var wrapperEl = document.getElementById('media-hunt-profiles-content-wrapper');
-            if (noInstEl) noInstEl.style.display = 'none';
-            if (noIdxEl) noIdxEl.style.display = 'none';
-            if (noCliEl) noCliEl.style.display = 'none';
             if (wrapperEl) wrapperEl.style.display = '';
             var parts = (selected || '').split(':');
             if (parts.length === 2) {
@@ -5051,14 +5003,8 @@ document.head.appendChild(styleEl);
             }
         }).catch(function() {
             selectEl.innerHTML = '<option value="">Failed to load instances</option>';
-            var noInstEl = document.getElementById('media-hunt-profiles-no-instances');
-            var noIdxEl = document.getElementById('media-hunt-profiles-no-indexers');
-            var noCliEl = document.getElementById('media-hunt-profiles-no-clients');
             var wrapperEl = document.getElementById('media-hunt-profiles-content-wrapper');
-            if (noInstEl) noInstEl.style.display = 'none';
-            if (noIdxEl) noIdxEl.style.display = 'none';
-            if (noCliEl) noCliEl.style.display = '';
-            if (wrapperEl) wrapperEl.style.display = 'none';
+            if (wrapperEl) wrapperEl.style.display = '';
             M._combinedDropdownPopulated = true;
         });
     }
@@ -6694,8 +6640,15 @@ document.head.appendChild(styleEl);
                 if (window.SettingsForms && window.SettingsForms.refreshClientsList) {
                     window.SettingsForms.refreshClientsList();
                 }
+                // Refresh NZB Hunt sidebar group visibility (may have added/removed NZB Hunt client)
+                if (window.huntarrUI && typeof window.huntarrUI._refreshNzbHuntSidebarGroup === 'function') {
+                    window.huntarrUI._refreshNzbHuntSidebarGroup();
+                }
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
                     window.huntarrUI.showNotification(isAdd ? 'Client added.' : 'Client updated.', 'success');
+                }
+                if (window.SetupWizard && typeof window.SetupWizard.maybeReturnToCollection === 'function') {
+                    window.SetupWizard.maybeReturnToCollection();
                 }
                 if (window.SettingsForms && window.SettingsForms._currentEditing) {
                     window.SettingsForms._currentEditing.isAdd = false;
@@ -6825,41 +6778,13 @@ document.head.appendChild(styleEl);
     };
 
     Forms.refreshClientsList = function() {
+        // Refresh NZB Hunt sidebar group visibility whenever client list changes
+        if (window.huntarrUI && typeof window.huntarrUI._refreshNzbHuntSidebarGroup === 'function') {
+            window.huntarrUI._refreshNzbHuntSidebarGroup();
+        }
         const grid = document.getElementById('client-instances-grid');
-        const noInstEl = document.getElementById('settings-clients-no-instances');
-        const wrapperEl = document.getElementById('settings-clients-content-wrapper');
         if (!grid) return;
-        var noIdxEl = document.getElementById('settings-clients-no-indexers');
-        Promise.all([
-            fetch('./api/movie-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/tv-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/indexer-hunt/indexers', { cache: 'no-store' }).then(function(r) { return r.json(); })
-        ]).then(function(results) {
-            var movieCount = (results[0].instances || []).length;
-            var tvCount = (results[1].instances || []).length;
-            var indexerCount = (results[2].indexers || []).length;
-            if (movieCount === 0 && tvCount === 0) {
-                if (noInstEl) noInstEl.style.display = '';
-                if (noIdxEl) noIdxEl.style.display = 'none';
-                if (wrapperEl) wrapperEl.style.display = 'none';
-                return;
-            }
-            if (indexerCount === 0) {
-                if (noInstEl) noInstEl.style.display = 'none';
-                if (noIdxEl) noIdxEl.style.display = '';
-                if (wrapperEl) wrapperEl.style.display = 'none';
-                return;
-            }
-            if (noInstEl) noInstEl.style.display = 'none';
-            if (noIdxEl) noIdxEl.style.display = 'none';
-            if (wrapperEl) wrapperEl.style.display = '';
-            _doRefreshClientsList(grid);
-        }).catch(function() {
-            if (noInstEl) noInstEl.style.display = 'none';
-            if (noIdxEl) noIdxEl.style.display = 'none';
-            if (wrapperEl) wrapperEl.style.display = '';
-            _doRefreshClientsList(grid);
-        });
+        _doRefreshClientsList(grid);
     };
 
     function _doRefreshClientsList(grid) {
@@ -8030,43 +7955,24 @@ document.head.appendChild(styleEl);
                     opts.push({ value: 'tv:' + inst.id, label: 'TV - ' + (inst.name || 'Instance ' + inst.id), mode: 'tv' });
                 });
 
-                var noInstEl = document.getElementById(PREFIX + '-no-instances');
-                var noIdxEl = document.getElementById(PREFIX + '-no-indexers');
-                var noCliEl = document.getElementById(PREFIX + '-no-clients');
                 var wrapperEl = document.getElementById(PREFIX + '-content-wrapper');
+                if (wrapperEl) wrapperEl.style.display = '';
 
                 if (opts.length === 0) {
                     select.innerHTML = '';
                     select.appendChild(document.createElement('option')).value = ''; select.options[0].textContent = 'No instances';
-                    if (noInstEl) noInstEl.style.display = '';
-                    if (noIdxEl) noIdxEl.style.display = 'none';
-                    if (noCliEl) noCliEl.style.display = 'none';
-                    if (wrapperEl) wrapperEl.style.display = 'none';
                     return;
                 }
                 if (indexerCount === 0) {
                     select.innerHTML = '';
                     select.appendChild(document.createElement('option')).value = ''; select.options[0].textContent = 'No indexers configured';
-                    if (noInstEl) noInstEl.style.display = 'none';
-                    if (noIdxEl) noIdxEl.style.display = '';
-                    if (noCliEl) noCliEl.style.display = 'none';
-                    if (wrapperEl) wrapperEl.style.display = 'none';
                     return;
                 }
                 if (!hasClients) {
                     select.innerHTML = '';
                     select.appendChild(document.createElement('option')).value = ''; select.options[0].textContent = 'No clients configured';
-                    if (noInstEl) noInstEl.style.display = 'none';
-                    if (noIdxEl) noIdxEl.style.display = 'none';
-                    if (noCliEl) noCliEl.style.display = '';
-                    if (wrapperEl) wrapperEl.style.display = 'none';
                     return;
                 }
-
-                if (noInstEl) noInstEl.style.display = 'none';
-                if (noIdxEl) noIdxEl.style.display = 'none';
-                if (noCliEl) noCliEl.style.display = 'none';
-                if (wrapperEl) wrapperEl.style.display = '';
 
                 select.innerHTML = '';
                 opts.forEach(function(opt) {
@@ -8085,14 +7991,8 @@ document.head.appendChild(styleEl);
                 self.applySelectedInstance();
             }).catch(function() {
                 select.innerHTML = '<option value="">Failed to load</option>';
-                var noInstEl = document.getElementById(PREFIX + '-no-instances');
-                var noIdxEl = document.getElementById(PREFIX + '-no-indexers');
-                var noCliEl = document.getElementById(PREFIX + '-no-clients');
                 var wrapperEl = document.getElementById(PREFIX + '-content-wrapper');
-                if (noInstEl) noInstEl.style.display = 'none';
-                if (noIdxEl) noIdxEl.style.display = 'none';
-                if (noCliEl) noCliEl.style.display = '';
-                if (wrapperEl) wrapperEl.style.display = 'none';
+                if (wrapperEl) wrapperEl.style.display = '';
             });
 
             select.addEventListener('change', function() {
@@ -9066,6 +8966,9 @@ document.head.appendChild(styleEl);
                         }
                         window.RootFolders.refreshList();
                         if (window.updateMovieHuntSettingsVisibility) window.updateMovieHuntSettingsVisibility();
+                        if (window.SetupWizard && typeof window.SetupWizard.maybeReturnToCollection === 'function') {
+                            window.SetupWizard.maybeReturnToCollection();
+                        }
                     } else {
                         var msg = (result.data && result.data.message) ? result.data.message : 'Add failed';
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
@@ -10757,9 +10660,19 @@ document.head.appendChild(styleEl);
         }
     }
 
+    function updateSetupWizardBanner() {
+        var banner = document.getElementById('setup-wizard-continue-banner');
+        if (!banner) return;
+        var show = window.SetupWizard && typeof window.SetupWizard.isComplete === 'function' && !window.SetupWizard.isComplete();
+        banner.style.display = show ? 'flex' : 'none';
+    }
+
     window.MediaHuntInstanceManagement.init = function() {
         initModals();
         initGridListeners();
+        updateSetupWizardBanner();
+        document.addEventListener('huntarr:instances-changed', updateSetupWizardBanner);
+        document.addEventListener('huntarr:tv-hunt-instances-changed', updateSetupWizardBanner);
         if (window.MovieHuntInstanceEditor && typeof window.MovieHuntInstanceEditor.loadInstanceList === 'function') {
             window.MovieHuntInstanceEditor.loadInstanceList();
         }

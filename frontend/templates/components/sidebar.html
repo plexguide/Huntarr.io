@@ -237,44 +237,7 @@
             </script>
         </div>
 
-        <div class="nav-group">
-            <div class="nav-group-title">Internal Clients</div>
-            <a href="./#nzb-hunt-home" class="nav-item" id="movieHuntNzbHuntNav">
-                <div class="nav-icon-wrapper"><i class="fas fa-download"></i></div>
-                <span>NZB Hunt</span>
-            </a>
-        </div>
-    </nav>
-    <div class="sidebar-footer">
-        <a href="https://plexguide.github.io/Huntarr.io/donate.html" class="sidebar-footer-sponsor" target="_blank" rel="noopener noreferrer">
-            <i class="fas fa-heart"></i><span>Become a Sponsor</span>
-        </a>
-        <div class="dev-mode-indicator" id="sidebar-dev-indicator-movie-hunt">
-            <i class="fas fa-code"></i>
-            <span><a href="https://github.com/Admin9705/" target="_blank" rel="noopener" id="sidebar-dev-username-movie-hunt">Admin9705</a></span>
-        </div>
-    </div>
-</div>
-
-<!-- ===== NZB HUNT SIDEBAR ===== -->
-<div class="sidebar nzb-hunt-sidebar" id="nzb-hunt-sidebar" style="display: none;">
-    <div class="logo-container">
-        <a href="https://huntarr.io" target="_blank" rel="noopener noreferrer"
-            style="display: flex; align-items: center; text-decoration: none; color: inherit;">
-            <img src="./static/logo/256.png" alt="Huntarr Logo" class="logo logo-large">
-            <img src="./static/logo/32.png" alt="Huntarr Logo" class="logo logo-small">
-            <h1>Huntarr</h1>
-        </a>
-    </div>
-    <nav class="nav-menu">
-        <div class="nav-group">
-            <div class="nav-group-title">MEDIA HUNT</div>
-            <a href="./#media-hunt-collection" class="nav-item" id="nzbHuntMainHomeNav">
-                <div class="nav-icon-wrapper"><i class="fas fa-arrow-left"></i></div>
-                <span>Back</span>
-            </a>
-        </div>
-        <div class="nav-group">
+        <div class="nav-group" id="nzb-hunt-sidebar-group" style="display: none;">
             <div class="nav-group-title">NZB Hunt</div>
             <a href="./#nzb-hunt-home" class="nav-item" id="nzbHuntHomeNav">
                 <div class="nav-icon-wrapper"><i class="fas fa-download"></i></div>
@@ -298,9 +261,9 @@
         <a href="https://plexguide.github.io/Huntarr.io/donate.html" class="sidebar-footer-sponsor" target="_blank" rel="noopener noreferrer">
             <i class="fas fa-heart"></i><span>Become a Sponsor</span>
         </a>
-        <div class="dev-mode-indicator" id="sidebar-dev-indicator-nzb-hunt">
+        <div class="dev-mode-indicator" id="sidebar-dev-indicator-movie-hunt">
             <i class="fas fa-code"></i>
-            <span><a href="https://github.com/Admin9705/" target="_blank" rel="noopener" id="sidebar-dev-username-nzb-hunt">Admin9705</a></span>
+            <span><a href="https://github.com/Admin9705/" target="_blank" rel="noopener" id="sidebar-dev-username-movie-hunt">Admin9705</a></span>
         </div>
     </div>
 </div>
@@ -612,7 +575,8 @@
             selector = '#movieHuntImportMediaNav';
             expandSub('movie-hunt-collection-sub');
         }
-        // NZB Hunt (Folders, Servers, Advanced are top-level; no sub-group)
+        // NZB Hunt (items are now inside Media Hunt sidebar)
+        else if (currentHash === '#nzb-hunt-home' || currentHash === '#nzb-hunt-server-editor') selector = '#nzbHuntHomeNav';
         else if (currentHash === '#nzb-hunt-folders') selector = '#nzbHuntFoldersNav';
         else if (currentHash === '#nzb-hunt-servers') selector = '#nzbHuntServersNav';
         else if (currentHash === '#nzb-hunt-advanced') selector = '#nzbHuntAdvancedNav';

@@ -1374,36 +1374,7 @@
                 var hasInstances = (movieInstances || []).length > 0 || (tvInstances || []).length > 0;
                 var hasIndexers = (indexers || []).length > 0;
 
-                var noInstEl = document.getElementById('media-hunt-collection-no-instances');
-                var noIdxEl = document.getElementById('media-hunt-collection-no-indexers');
-                var noCliEl = document.getElementById('media-hunt-collection-no-clients');
                 var contentWrapper = document.getElementById('media-hunt-collection-content-wrapper');
-
-                if (!hasInstances) {
-                    if (noInstEl) noInstEl.style.display = '';
-                    if (noIdxEl) noIdxEl.style.display = 'none';
-                    if (noCliEl) noCliEl.style.display = 'none';
-                    if (contentWrapper) contentWrapper.style.display = 'none';
-                    return;
-                }
-                if (!hasIndexers) {
-                    if (noInstEl) noInstEl.style.display = 'none';
-                    if (noIdxEl) noIdxEl.style.display = '';
-                    if (noCliEl) noCliEl.style.display = 'none';
-                    if (contentWrapper) contentWrapper.style.display = 'none';
-                    return;
-                }
-                if (!hasClients) {
-                    if (noInstEl) noInstEl.style.display = 'none';
-                    if (noIdxEl) noIdxEl.style.display = 'none';
-                    if (noCliEl) noCliEl.style.display = '';
-                    if (contentWrapper) contentWrapper.style.display = 'none';
-                    return;
-                }
-
-                if (noInstEl) noInstEl.style.display = 'none';
-                if (noIdxEl) noIdxEl.style.display = 'none';
-                if (noCliEl) noCliEl.style.display = 'none';
                 if (contentWrapper) contentWrapper.style.display = '';
 
                 if (pendingTmdbId && window.TVHuntCollection && window.TVHuntCollection.openSeriesDetail) {

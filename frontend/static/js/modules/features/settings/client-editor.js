@@ -293,8 +293,15 @@
                 if (window.SettingsForms && window.SettingsForms.refreshClientsList) {
                     window.SettingsForms.refreshClientsList();
                 }
+                // Refresh NZB Hunt sidebar group visibility (may have added/removed NZB Hunt client)
+                if (window.huntarrUI && typeof window.huntarrUI._refreshNzbHuntSidebarGroup === 'function') {
+                    window.huntarrUI._refreshNzbHuntSidebarGroup();
+                }
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
                     window.huntarrUI.showNotification(isAdd ? 'Client added.' : 'Client updated.', 'success');
+                }
+                if (window.SetupWizard && typeof window.SetupWizard.maybeReturnToCollection === 'function') {
+                    window.SetupWizard.maybeReturnToCollection();
                 }
                 if (window.SettingsForms && window.SettingsForms._currentEditing) {
                     window.SettingsForms._currentEditing.isAdd = false;

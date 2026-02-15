@@ -4744,6 +4744,9 @@
                     msg += ' Updated in ' + data.linked_instances_updated + ' Movie Hunt instance(s).';
                 }
                 if (window.huntarrUI) window.huntarrUI.showNotification(msg, 'success');
+                if (window.SetupWizard && typeof window.SetupWizard.maybeReturnToCollection === 'function') {
+                    window.SetupWizard.maybeReturnToCollection();
+                }
                 var searchInput = document.getElementById('ih-search-input');
                 if (searchInput) searchInput.value = '';
                 _loadIndexers();

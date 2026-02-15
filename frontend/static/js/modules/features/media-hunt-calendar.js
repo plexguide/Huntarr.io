@@ -433,54 +433,10 @@
                 empty.value = '';
                 empty.textContent = 'No instances configured';
                 sel.appendChild(empty);
-                var noInst = document.getElementById('media-hunt-calendar-no-instances');
-                var noIdx = document.getElementById('media-hunt-calendar-no-indexers');
-                var noCli = document.getElementById('media-hunt-calendar-no-clients');
-                var wrapper = document.getElementById('media-hunt-calendar-content-wrapper');
-                if (noInst) noInst.style.display = '';
-                if (noIdx) noIdx.style.display = 'none';
-                if (noCli) noCli.style.display = 'none';
-                if (wrapper) wrapper.style.display = 'none';
                 _collectionLoaded = false;
                 _upcomingLoaded = false;
                 return;
             }
-            var indexerCount = (results[4].indexers || []).length;
-            if (indexerCount === 0) {
-                var noInst = document.getElementById('media-hunt-calendar-no-instances');
-                var noIdx = document.getElementById('media-hunt-calendar-no-indexers');
-                var noCli = document.getElementById('media-hunt-calendar-no-clients');
-                var wrapper = document.getElementById('media-hunt-calendar-content-wrapper');
-                if (noInst) noInst.style.display = 'none';
-                if (noIdx) noIdx.style.display = '';
-                if (noCli) noCli.style.display = 'none';
-                if (wrapper) wrapper.style.display = 'none';
-                _collectionLoaded = false;
-                _upcomingLoaded = false;
-                return;
-            }
-            var hasClients = results[5].has_clients === true;
-            if (!hasClients) {
-                var noInst = document.getElementById('media-hunt-calendar-no-instances');
-                var noIdx = document.getElementById('media-hunt-calendar-no-indexers');
-                var noCli = document.getElementById('media-hunt-calendar-no-clients');
-                var wrapper = document.getElementById('media-hunt-calendar-content-wrapper');
-                if (noInst) noInst.style.display = 'none';
-                if (noIdx) noIdx.style.display = 'none';
-                if (noCli) noCli.style.display = '';
-                if (wrapper) wrapper.style.display = 'none';
-                _collectionLoaded = false;
-                _upcomingLoaded = false;
-                return;
-            }
-            var noInst = document.getElementById('media-hunt-calendar-no-instances');
-            var noIdx = document.getElementById('media-hunt-calendar-no-indexers');
-            var noCli = document.getElementById('media-hunt-calendar-no-clients');
-            var wrapper = document.getElementById('media-hunt-calendar-content-wrapper');
-            if (noInst) noInst.style.display = 'none';
-            if (noIdx) noIdx.style.display = 'none';
-            if (noCli) noCli.style.display = 'none';
-            if (wrapper) wrapper.style.display = '';
             if (preferred) {
                 sel.value = preferred;
             } else {
@@ -498,14 +454,6 @@
             }
         }).catch(function() {
             sel.innerHTML = '<option value="">Failed to load instances</option>';
-            var noInst = document.getElementById('media-hunt-calendar-no-instances');
-            var noIdx = document.getElementById('media-hunt-calendar-no-indexers');
-            var noCli = document.getElementById('media-hunt-calendar-no-clients');
-            var wrapper = document.getElementById('media-hunt-calendar-content-wrapper');
-            if (noInst) noInst.style.display = 'none';
-            if (noIdx) noIdx.style.display = 'none';
-            if (noCli) noCli.style.display = '';
-            if (wrapper) wrapper.style.display = 'none';
         });
     }
 

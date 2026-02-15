@@ -86,8 +86,9 @@ let huntarrUI = {
                     var onSettings = ['settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user'].indexOf(this.currentSection) !== -1;
                     nav.style.display = (onSystem || onSettings) ? 'none' : '';
                 }
-                // NZB Hunt: always visible, no dev key required (accessed via Media Hunt sidebar)
+                // NZB Hunt: always enabled, visibility of sidebar group depends on client config
                 this._enableNzbHunt = true;
+                this._refreshNzbHuntSidebarGroup();
                 
                 // Initialize originalSettings early
                 this.originalSettings = all || {};
@@ -161,8 +162,8 @@ let huntarrUI = {
             var systemSub = document.getElementById('system-sub');
             if (systemSub) { systemSub.classList.add('expanded'); systemSub.style.display = 'block'; }
         } else if (this.currentSection === 'nzb-hunt-home' || this.currentSection === 'nzb-hunt-activity' || this.currentSection === 'nzb-hunt-server-editor' || this.currentSection === 'nzb-hunt-folders' || this.currentSection === 'nzb-hunt-servers' || this.currentSection === 'nzb-hunt-advanced' || (this.currentSection && this.currentSection.startsWith('nzb-hunt-settings'))) {
-            console.log('[huntarrUI] Initialization - showing nzb hunt sidebar');
-            this.showNzbHuntSidebar();
+            console.log('[huntarrUI] Initialization - showing Media Hunt sidebar for NZB Hunt');
+            this.showMovieHuntSidebar();
         } else if (this.currentSection === 'indexer-hunt' || this.currentSection === 'indexer-hunt-stats' || this.currentSection === 'indexer-hunt-history') {
             console.log('[huntarrUI] Initialization - showing Media Hunt sidebar for Index Master');
             this.showMovieHuntSidebar();
@@ -800,7 +801,7 @@ let huntarrUI = {
             document.getElementById('nzb-hunt-section').style.display = 'block';
             newTitle = 'NZB Hunt';
             this.currentSection = 'nzb-hunt-home';
-            this.showNzbHuntSidebar();
+            this.showMovieHuntSidebar();
             if (window.NzbHunt && typeof window.NzbHunt.init === 'function') {
                 window.NzbHunt.init();
             }
@@ -810,7 +811,7 @@ let huntarrUI = {
             document.getElementById('nzb-hunt-activity-section').style.display = 'block';
             newTitle = 'NZB Hunt – Activity';
             this.currentSection = 'nzb-hunt-activity';
-            this.showNzbHuntSidebar();
+            this.showMovieHuntSidebar();
         } else if ((section === 'nzb-hunt-folders' || section === 'nzb-hunt-servers' || section === 'nzb-hunt-advanced' || section.startsWith('nzb-hunt-settings')) && document.getElementById('nzb-hunt-settings-section')) {
             if (!this._enableNzbHunt) { this.switchSection('home'); return; }
             document.getElementById('nzb-hunt-settings-section').classList.add('active');
@@ -820,7 +821,7 @@ let huntarrUI = {
             else if (section === 'nzb-hunt-advanced' || section === 'nzb-hunt-settings-advanced') tab = 'advanced';
             newTitle = 'NZB Hunt – ' + (tab.charAt(0).toUpperCase() + tab.slice(1));
             this.currentSection = section;
-            this.showNzbHuntSidebar();
+            this.showMovieHuntSidebar();
             if (window.NzbHunt && typeof window.NzbHunt.initSettings === 'function') {
                 window.NzbHunt.initSettings();
             }
@@ -833,7 +834,7 @@ let huntarrUI = {
             document.getElementById('nzb-hunt-server-editor-section').style.display = 'block';
             newTitle = 'NZB Hunt – Usenet Server';
             this.currentSection = 'nzb-hunt-server-editor';
-            this.showNzbHuntSidebar();
+            this.showMovieHuntSidebar();
             if (window.NzbHunt) {
                 if (typeof window.NzbHunt.initSettings === 'function') window.NzbHunt.initSettings();
                 if (typeof window.NzbHunt._populateServerEditorForm === 'function') window.NzbHunt._populateServerEditorForm();
@@ -929,23 +930,43 @@ let huntarrUI = {
             }
             var mainContent = document.querySelector('#mediaHuntSection .requestarr-content');
             var collectionView = document.getElementById('media-hunt-collection-view');
+            var wizardView = document.getElementById('media-hunt-setup-wizard-view');
             if (mainContent) mainContent.style.display = 'none';
-            if (collectionView) collectionView.style.display = 'block';
-            newTitle = 'Media Hunt Collection';
+            if (collectionView) collectionView.style.display = 'none';
+            if (wizardView) wizardView.style.display = 'none';
+            newTitle = 'Media Hunt';
             this.currentSection = 'media-hunt-collection';
-            var hash = window.location.hash || '';
-            if (!/\/tv\/\d+$/.test(hash)) {
-                if (window.TVHuntCollection && typeof window.TVHuntCollection.showMainView === 'function') {
-                    window.TVHuntCollection.showMainView();
-                }
-            }
             if (this._pendingMediaHuntSidebar === 'tv') { this.showTVHuntSidebar(); }
             else if (this._pendingMediaHuntSidebar === 'movie') { this.showMovieHuntSidebar(); }
             else { this.showMovieHuntSidebar(); }
             this._pendingMediaHuntSidebar = undefined;
             if (typeof setActiveNavItem === 'function') setActiveNavItem();
-            if (window.MediaHuntCollection && typeof window.MediaHuntCollection.init === 'function') {
-                window.MediaHuntCollection.init();
+
+            // ── Setup Wizard gate — show wizard if setup is incomplete ──
+            var _hash = window.location.hash || '';
+            if (window.SetupWizard && typeof window.SetupWizard.check === 'function') {
+                window.SetupWizard.check(function(needsWizard) {
+                    if (needsWizard) {
+                        window.SetupWizard.show();
+                    } else {
+                        if (wizardView) wizardView.style.display = 'none';
+                        if (collectionView) collectionView.style.display = 'block';
+                        if (!/\/tv\/\d+$/.test(_hash)) {
+                            if (window.TVHuntCollection && typeof window.TVHuntCollection.showMainView === 'function') {
+                                window.TVHuntCollection.showMainView();
+                            }
+                        }
+                        if (window.MediaHuntCollection && typeof window.MediaHuntCollection.init === 'function') {
+                            window.MediaHuntCollection.init();
+                        }
+                    }
+                });
+            } else {
+                // Fallback if SetupWizard not loaded
+                if (collectionView) collectionView.style.display = 'block';
+                if (window.MediaHuntCollection && typeof window.MediaHuntCollection.init === 'function') {
+                    window.MediaHuntCollection.init();
+                }
             }
         } else if (section === 'tv-hunt-calendar' && document.getElementById('mediaHuntCalendarSection')) {
             if (document.getElementById('mediaHuntSection')) {
@@ -2001,8 +2022,6 @@ let huntarrUI = {
         document.getElementById('requestarr-sidebar').style.display = 'none';
         var mh = document.getElementById('movie-hunt-sidebar');
         if (mh) mh.style.display = 'none';
-        var nh = document.getElementById('nzb-hunt-sidebar');
-        if (nh) nh.style.display = 'none';
     },
 
     showMainSidebar: function() {
@@ -2087,26 +2106,22 @@ let huntarrUI = {
     },
 
     showNzbHuntSidebar: function() {
-        this._hideAllSidebars();
-        var nh = document.getElementById('nzb-hunt-sidebar');
-        if (nh) nh.style.display = 'flex';
-        // Update active nav item
-        var items = document.querySelectorAll('#nzb-hunt-sidebar .nav-item');
-        for (var i = 0; i < items.length; i++) items[i].classList.remove('active');
-        var section = this.currentSection;
-        if (section === 'nzb-hunt-home') {
-            var n = document.getElementById('nzbHuntHomeNav');
-            if (n) n.classList.add('active');
-        } else if (section === 'nzb-hunt-activity') {
-            var n = document.getElementById('nzbHuntActivityNav');
-            if (n) n.classList.add('active');
-        } else if (section === 'nzb-hunt-folders' || section === 'nzb-hunt-servers' || section === 'nzb-hunt-advanced' || section.startsWith('nzb-hunt-settings') || section === 'nzb-hunt-server-editor') {
-            var navId = 'nzbHuntFoldersNav';
-            if (section === 'nzb-hunt-servers' || section === 'nzb-hunt-settings-servers' || section === 'nzb-hunt-server-editor') navId = 'nzbHuntServersNav';
-            else if (section === 'nzb-hunt-advanced' || section === 'nzb-hunt-settings-advanced') navId = 'nzbHuntAdvancedNav';
-            var n = document.getElementById(navId);
-            if (n) n.classList.add('active');
-        }
+        // NZB Hunt sidebar merged into Media Hunt sidebar; redirect
+        this.showMovieHuntSidebar();
+    },
+
+    /** Fetch NZB Hunt client-configured status and show/hide the sidebar group accordingly. */
+    _refreshNzbHuntSidebarGroup: function() {
+        var group = document.getElementById('nzb-hunt-sidebar-group');
+        if (!group) return;
+        fetch('./api/nzb-hunt/is-client-configured', { cache: 'no-store' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                group.style.display = data.configured ? '' : 'none';
+            })
+            .catch(function() {
+                // On error, keep hidden
+            });
     },
 
     /** Keep all Movie Hunt sidebar icons visible - no hiding when navigating between sections. */

@@ -582,27 +582,18 @@
     }
 
     function _updateActivityVisibility(selectId, state) {
-        var noInstEl, noIdxEl, noCliEl, unableEl, wrapperEl;
+        var unableEl, wrapperEl;
         if (selectId === 'activity-combined-instance-select') {
-            noInstEl = document.getElementById('activity-no-instances');
-            noIdxEl = document.getElementById('activity-no-indexers');
-            noCliEl = document.getElementById('activity-no-clients');
             unableEl = document.getElementById('activity-unable-to-load');
             wrapperEl = document.getElementById('activity-content-wrapper');
         } else if (selectId === 'tv-activity-combined-instance-select') {
-            noInstEl = document.getElementById('tv-activity-no-instances');
-            noIdxEl = document.getElementById('tv-activity-no-indexers');
-            noCliEl = document.getElementById('tv-activity-no-clients');
             unableEl = document.getElementById('tv-activity-unable-to-load');
             wrapperEl = document.getElementById('tv-activity-content-wrapper');
         } else {
             return;
         }
-        if (noInstEl) noInstEl.style.display = (state === 'no-instances') ? '' : 'none';
-        if (noIdxEl) noIdxEl.style.display = (state === 'no-indexers') ? '' : 'none';
-        if (noCliEl) noCliEl.style.display = (state === 'no-clients') ? '' : 'none';
         if (unableEl) unableEl.style.display = (state === 'unable-to-load') ? '' : 'none';
-        if (wrapperEl) wrapperEl.style.display = (state === 'ok') ? '' : 'none';
+        if (wrapperEl) wrapperEl.style.display = (state === 'ok' || state === 'no-instances' || state === 'no-indexers' || state === 'no-clients') ? '' : 'none';
     }
 
     function attachActivityCombined(selectId, onChanged, preferMode) {
@@ -5370,36 +5361,7 @@
                 var hasInstances = (movieInstances || []).length > 0 || (tvInstances || []).length > 0;
                 var hasIndexers = (indexers || []).length > 0;
 
-                var noInstEl = document.getElementById('media-hunt-collection-no-instances');
-                var noIdxEl = document.getElementById('media-hunt-collection-no-indexers');
-                var noCliEl = document.getElementById('media-hunt-collection-no-clients');
                 var contentWrapper = document.getElementById('media-hunt-collection-content-wrapper');
-
-                if (!hasInstances) {
-                    if (noInstEl) noInstEl.style.display = '';
-                    if (noIdxEl) noIdxEl.style.display = 'none';
-                    if (noCliEl) noCliEl.style.display = 'none';
-                    if (contentWrapper) contentWrapper.style.display = 'none';
-                    return;
-                }
-                if (!hasIndexers) {
-                    if (noInstEl) noInstEl.style.display = 'none';
-                    if (noIdxEl) noIdxEl.style.display = '';
-                    if (noCliEl) noCliEl.style.display = 'none';
-                    if (contentWrapper) contentWrapper.style.display = 'none';
-                    return;
-                }
-                if (!hasClients) {
-                    if (noInstEl) noInstEl.style.display = 'none';
-                    if (noIdxEl) noIdxEl.style.display = 'none';
-                    if (noCliEl) noCliEl.style.display = '';
-                    if (contentWrapper) contentWrapper.style.display = 'none';
-                    return;
-                }
-
-                if (noInstEl) noInstEl.style.display = 'none';
-                if (noIdxEl) noIdxEl.style.display = 'none';
-                if (noCliEl) noCliEl.style.display = 'none';
                 if (contentWrapper) contentWrapper.style.display = '';
 
                 if (pendingTmdbId && window.TVHuntCollection && window.TVHuntCollection.openSeriesDetail) {
@@ -6227,54 +6189,10 @@
                 empty.value = '';
                 empty.textContent = 'No instances configured';
                 sel.appendChild(empty);
-                var noInst = document.getElementById('media-hunt-calendar-no-instances');
-                var noIdx = document.getElementById('media-hunt-calendar-no-indexers');
-                var noCli = document.getElementById('media-hunt-calendar-no-clients');
-                var wrapper = document.getElementById('media-hunt-calendar-content-wrapper');
-                if (noInst) noInst.style.display = '';
-                if (noIdx) noIdx.style.display = 'none';
-                if (noCli) noCli.style.display = 'none';
-                if (wrapper) wrapper.style.display = 'none';
                 _collectionLoaded = false;
                 _upcomingLoaded = false;
                 return;
             }
-            var indexerCount = (results[4].indexers || []).length;
-            if (indexerCount === 0) {
-                var noInst = document.getElementById('media-hunt-calendar-no-instances');
-                var noIdx = document.getElementById('media-hunt-calendar-no-indexers');
-                var noCli = document.getElementById('media-hunt-calendar-no-clients');
-                var wrapper = document.getElementById('media-hunt-calendar-content-wrapper');
-                if (noInst) noInst.style.display = 'none';
-                if (noIdx) noIdx.style.display = '';
-                if (noCli) noCli.style.display = 'none';
-                if (wrapper) wrapper.style.display = 'none';
-                _collectionLoaded = false;
-                _upcomingLoaded = false;
-                return;
-            }
-            var hasClients = results[5].has_clients === true;
-            if (!hasClients) {
-                var noInst = document.getElementById('media-hunt-calendar-no-instances');
-                var noIdx = document.getElementById('media-hunt-calendar-no-indexers');
-                var noCli = document.getElementById('media-hunt-calendar-no-clients');
-                var wrapper = document.getElementById('media-hunt-calendar-content-wrapper');
-                if (noInst) noInst.style.display = 'none';
-                if (noIdx) noIdx.style.display = 'none';
-                if (noCli) noCli.style.display = '';
-                if (wrapper) wrapper.style.display = 'none';
-                _collectionLoaded = false;
-                _upcomingLoaded = false;
-                return;
-            }
-            var noInst = document.getElementById('media-hunt-calendar-no-instances');
-            var noIdx = document.getElementById('media-hunt-calendar-no-indexers');
-            var noCli = document.getElementById('media-hunt-calendar-no-clients');
-            var wrapper = document.getElementById('media-hunt-calendar-content-wrapper');
-            if (noInst) noInst.style.display = 'none';
-            if (noIdx) noIdx.style.display = 'none';
-            if (noCli) noCli.style.display = 'none';
-            if (wrapper) wrapper.style.display = '';
             if (preferred) {
                 sel.value = preferred;
             } else {
@@ -6292,14 +6210,6 @@
             }
         }).catch(function() {
             sel.innerHTML = '<option value="">Failed to load instances</option>';
-            var noInst = document.getElementById('media-hunt-calendar-no-instances');
-            var noIdx = document.getElementById('media-hunt-calendar-no-indexers');
-            var noCli = document.getElementById('media-hunt-calendar-no-clients');
-            var wrapper = document.getElementById('media-hunt-calendar-content-wrapper');
-            if (noInst) noInst.style.display = 'none';
-            if (noIdx) noIdx.style.display = 'none';
-            if (noCli) noCli.style.display = '';
-            if (wrapper) wrapper.style.display = 'none';
         });
     }
 
@@ -7332,6 +7242,9 @@
                             window.huntarrUI.showNotification('TV Hunt root folder added.', 'success');
                         }
                         window.TVHuntRootFolders.refreshList();
+                        if (window.SetupWizard && typeof window.SetupWizard.maybeReturnToCollection === 'function') {
+                            window.SetupWizard.maybeReturnToCollection();
+                        }
                     } else {
                         var msg = (result.data && result.data.message) ? result.data.message : 'Add failed';
                         if (window.huntarrUI && window.huntarrUI.showNotification) {

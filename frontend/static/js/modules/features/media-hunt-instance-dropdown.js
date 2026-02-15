@@ -271,27 +271,18 @@
     }
 
     function _updateActivityVisibility(selectId, state) {
-        var noInstEl, noIdxEl, noCliEl, unableEl, wrapperEl;
+        var unableEl, wrapperEl;
         if (selectId === 'activity-combined-instance-select') {
-            noInstEl = document.getElementById('activity-no-instances');
-            noIdxEl = document.getElementById('activity-no-indexers');
-            noCliEl = document.getElementById('activity-no-clients');
             unableEl = document.getElementById('activity-unable-to-load');
             wrapperEl = document.getElementById('activity-content-wrapper');
         } else if (selectId === 'tv-activity-combined-instance-select') {
-            noInstEl = document.getElementById('tv-activity-no-instances');
-            noIdxEl = document.getElementById('tv-activity-no-indexers');
-            noCliEl = document.getElementById('tv-activity-no-clients');
             unableEl = document.getElementById('tv-activity-unable-to-load');
             wrapperEl = document.getElementById('tv-activity-content-wrapper');
         } else {
             return;
         }
-        if (noInstEl) noInstEl.style.display = (state === 'no-instances') ? '' : 'none';
-        if (noIdxEl) noIdxEl.style.display = (state === 'no-indexers') ? '' : 'none';
-        if (noCliEl) noCliEl.style.display = (state === 'no-clients') ? '' : 'none';
         if (unableEl) unableEl.style.display = (state === 'unable-to-load') ? '' : 'none';
-        if (wrapperEl) wrapperEl.style.display = (state === 'ok') ? '' : 'none';
+        if (wrapperEl) wrapperEl.style.display = (state === 'ok' || state === 'no-instances' || state === 'no-indexers' || state === 'no-clients') ? '' : 'none';
     }
 
     function attachActivityCombined(selectId, onChanged, preferMode) {

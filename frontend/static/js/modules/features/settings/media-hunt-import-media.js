@@ -65,43 +65,24 @@
                     opts.push({ value: 'tv:' + inst.id, label: 'TV - ' + (inst.name || 'Instance ' + inst.id), mode: 'tv' });
                 });
 
-                var noInstEl = document.getElementById(PREFIX + '-no-instances');
-                var noIdxEl = document.getElementById(PREFIX + '-no-indexers');
-                var noCliEl = document.getElementById(PREFIX + '-no-clients');
                 var wrapperEl = document.getElementById(PREFIX + '-content-wrapper');
+                if (wrapperEl) wrapperEl.style.display = '';
 
                 if (opts.length === 0) {
                     select.innerHTML = '';
                     select.appendChild(document.createElement('option')).value = ''; select.options[0].textContent = 'No instances';
-                    if (noInstEl) noInstEl.style.display = '';
-                    if (noIdxEl) noIdxEl.style.display = 'none';
-                    if (noCliEl) noCliEl.style.display = 'none';
-                    if (wrapperEl) wrapperEl.style.display = 'none';
                     return;
                 }
                 if (indexerCount === 0) {
                     select.innerHTML = '';
                     select.appendChild(document.createElement('option')).value = ''; select.options[0].textContent = 'No indexers configured';
-                    if (noInstEl) noInstEl.style.display = 'none';
-                    if (noIdxEl) noIdxEl.style.display = '';
-                    if (noCliEl) noCliEl.style.display = 'none';
-                    if (wrapperEl) wrapperEl.style.display = 'none';
                     return;
                 }
                 if (!hasClients) {
                     select.innerHTML = '';
                     select.appendChild(document.createElement('option')).value = ''; select.options[0].textContent = 'No clients configured';
-                    if (noInstEl) noInstEl.style.display = 'none';
-                    if (noIdxEl) noIdxEl.style.display = 'none';
-                    if (noCliEl) noCliEl.style.display = '';
-                    if (wrapperEl) wrapperEl.style.display = 'none';
                     return;
                 }
-
-                if (noInstEl) noInstEl.style.display = 'none';
-                if (noIdxEl) noIdxEl.style.display = 'none';
-                if (noCliEl) noCliEl.style.display = 'none';
-                if (wrapperEl) wrapperEl.style.display = '';
 
                 select.innerHTML = '';
                 opts.forEach(function(opt) {
@@ -120,14 +101,8 @@
                 self.applySelectedInstance();
             }).catch(function() {
                 select.innerHTML = '<option value="">Failed to load</option>';
-                var noInstEl = document.getElementById(PREFIX + '-no-instances');
-                var noIdxEl = document.getElementById(PREFIX + '-no-indexers');
-                var noCliEl = document.getElementById(PREFIX + '-no-clients');
                 var wrapperEl = document.getElementById(PREFIX + '-content-wrapper');
-                if (noInstEl) noInstEl.style.display = 'none';
-                if (noIdxEl) noIdxEl.style.display = 'none';
-                if (noCliEl) noCliEl.style.display = '';
-                if (wrapperEl) wrapperEl.style.display = 'none';
+                if (wrapperEl) wrapperEl.style.display = '';
             });
 
             select.addEventListener('change', function() {
