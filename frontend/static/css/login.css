@@ -62,10 +62,12 @@
     z-index: 2;
     width: 420px;
     max-width: 92%;
-    background: #111827;
+    background: rgba(11, 15, 25, 0.72);
+    backdrop-filter: blur(20px) saturate(1.1);
+    -webkit-backdrop-filter: blur(20px) saturate(1.1);
     border-radius: 20px;
-    border: 1px solid rgba(99, 102, 241, 0.1);
-    box-shadow: 0 12px 48px rgba(15, 23, 42, 0.6), 0 0 0 1px rgba(17, 24, 39, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.06);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35);
     overflow: hidden;
     animation: loginCardIn 0.4s ease;
 }
@@ -80,7 +82,7 @@
     padding: 32px 0 20px;
     text-align: center;
     background: transparent;
-    border-bottom: 1px solid rgba(99, 102, 241, 0.08);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.06);
 }
 
 .login-logo {
@@ -142,8 +144,8 @@
 .form-group input[type="number"] {
     width: 100%;
     padding: 12px 14px;
-    background: rgba(15, 23, 42, 0.8);
-    border: 1px solid rgba(71, 85, 105, 0.35);
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.1);
     border-radius: 10px;
     color: #f1f5f9;
     font-size: 0.95rem;
@@ -273,9 +275,10 @@
     background: linear-gradient(90deg, transparent, rgba(71, 85, 105, 0.25), transparent);
 }
 .auth-divider span {
-    background: #111827;
+    background: rgba(11, 15, 25, 0.85);
     padding: 0 14px;
     position: relative;
+    border-radius: 8px;
 }
 
 .plex-login-button {
@@ -340,13 +343,15 @@
 
 .plex-modal-content {
     position: relative;
-    background: rgba(17, 24, 39, 0.98);
-    border: 1px solid rgba(99, 102, 241, 0.1);
+    background: rgba(11, 15, 25, 0.85);
+    backdrop-filter: blur(20px) saturate(1.1);
+    -webkit-backdrop-filter: blur(20px) saturate(1.1);
+    border: 1px solid rgba(148, 163, 184, 0.06);
     border-radius: 16px;
     padding: 28px;
     width: 420px;
     max-width: 92%;
-    box-shadow: 0 25px 50px rgba(15, 23, 42, 0.6);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35);
     color: #e2e8f0;
 }
 
