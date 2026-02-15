@@ -358,6 +358,9 @@
                 if (window.SettingsForms && window.SettingsForms.refreshIndexersList) {
                     window.SettingsForms.refreshIndexersList();
                 }
+                if (window.IndexerHunt && window.IndexerHunt._refreshIndexerInstanceStatus) {
+                    window.IndexerHunt._refreshIndexerInstanceStatus();
+                }
                 // Go back to indexer list
                 if (window.SettingsForms && window.SettingsForms.cancelInstanceEditor) {
                     window.SettingsForms.cancelInstanceEditor();
@@ -737,6 +740,9 @@
             .then(function(data) {
                 if (window.SettingsForms && window.SettingsForms.refreshIndexersList) {
                     window.SettingsForms.refreshIndexersList();
+                }
+                if (window.IndexerHunt && window.IndexerHunt._refreshIndexerInstanceStatus) {
+                    window.IndexerHunt._refreshIndexerInstanceStatus();
                 }
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
                     window.huntarrUI.showNotification(isAdd ? 'Indexer added.' : 'Indexer updated.', 'success');

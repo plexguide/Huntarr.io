@@ -778,10 +778,10 @@
         var banner = document.getElementById('root-folders-setup-wizard-continue-banner');
         var callout = document.getElementById('root-folders-instance-setup-callout');
         var statusArea = document.getElementById('root-folders-instance-status-area');
-        // Only show if user navigated here from the setup wizard
+        // Show if user navigated here from the setup wizard.
+        // Don't remove the flag — it needs to persist across re-renders during the wizard flow.
         var fromWizard = false;
         try { fromWizard = sessionStorage.getItem('setup-wizard-active-nav') === '1'; } catch (e) {}
-        if (fromWizard) { try { sessionStorage.removeItem('setup-wizard-active-nav'); } catch (e) {} }
         var showSetup = fromWizard;
         if (banner) banner.style.display = showSetup ? 'flex' : 'none';
         if (callout) callout.style.display = showSetup ? 'flex' : 'none';

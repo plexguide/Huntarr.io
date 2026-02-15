@@ -17,13 +17,89 @@
     function _updateSetupWizardBanner() {
         var banner = document.getElementById('indexer-setup-wizard-continue-banner');
         var callout = document.getElementById('indexer-instance-setup-callout');
-        // Only show if user navigated here from the setup wizard
+        // Show if user navigated here from the setup wizard.
+        // Don't remove the flag — it needs to persist across re-renders during the wizard flow.
         var fromWizard = false;
         try { fromWizard = sessionStorage.getItem('setup-wizard-active-nav') === '1'; } catch (e) {}
-        if (fromWizard) { try { sessionStorage.removeItem('setup-wizard-active-nav'); } catch (e) {} }
         if (banner) banner.style.display = fromWizard ? 'flex' : 'none';
         if (callout) callout.style.display = fromWizard ? 'flex' : 'none';
     }
+
+    // ── Instance indexer status checklist ────────────────────────────
+    function _refreshIndexerInstanceStatus() {
+        var gridEl = document.getElementById('indexer-instance-status-grid');
+        var statusArea = document.getElementById('indexer-instance-status-area');
+        if (!gridEl) return;
+        gridEl.innerHTML = '<div style="padding: 12px; color: #94a3b8;"><i class="fas fa-spinner fa-spin"></i> Checking instances...</div>';
+        var ts = '?t=' + Date.now();
+        Promise.all([
+            fetch('./api/movie-hunt/instances' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
+            fetch('./api/tv-hunt/instances' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
+        ]).then(function(results) {
+            var movieInstances = (results[0].instances || []).map(function(i) { return { value: 'movie:' + i.id, label: 'Movie - ' + (i.name || 'Instance ' + i.id), id: i.id, type: 'movie' }; });
+            var tvInstances = (results[1].instances || []).map(function(i) { return { value: 'tv:' + i.id, label: 'TV - ' + (i.name || 'Instance ' + i.id), id: i.id, type: 'tv' }; });
+            var all = movieInstances.concat(tvInstances);
+            if (all.length === 0) {
+                gridEl.innerHTML = '';
+                if (statusArea) statusArea.style.display = 'none';
+                return;
+            }
+            var fetches = all.map(function(inst) {
+                var url = inst.type === 'tv' ? './api/tv-hunt/indexers' : './api/indexers';
+                url += '?instance_id=' + encodeURIComponent(inst.id) + '&t=' + Date.now();
+                return fetch(url, { cache: 'no-store' }).then(function(r) { return r.json(); }).then(function(d) {
+                    var indexers = d.indexers || [];
+                    return { label: inst.label, value: inst.value, hasIndexers: indexers.length > 0 };
+                }).catch(function() {
+                    return { label: inst.label, value: inst.value, hasIndexers: false };
+                });
+            });
+            Promise.all(fetches).then(function(statuses) {
+                var allGood = statuses.every(function(s) { return s.hasIndexers; });
+                // Hide the status area if all instances have indexers
+                if (allGood) {
+                    gridEl.innerHTML = '';
+                    if (statusArea) statusArea.style.display = 'none';
+                    return;
+                }
+                if (statusArea) statusArea.style.display = 'block';
+                var html = '';
+                for (var i = 0; i < statuses.length; i++) {
+                    var s = statuses[i];
+                    var cardClass = s.hasIndexers ? 'instance-complete' : 'instance-not-setup';
+                    var iconClass = s.hasIndexers ? 'fa-check-circle' : 'fa-search-plus';
+                    var badgeText = s.hasIndexers ? 'Indexers Assigned' : 'No Indexers';
+                    var nameEsc = (s.label || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                    html += '<div class="root-folders-instance-status-card ' + cardClass + '" data-value="' + (s.value || '').replace(/"/g, '&quot;') + '">' +
+                        '<div class="instance-status-icon"><i class="fas ' + iconClass + '" aria-hidden="true"></i></div>' +
+                        '<div class="instance-status-body">' +
+                        '<div class="instance-status-name">' + nameEsc + '</div>' +
+                        '<span class="instance-status-badge">' + badgeText + '</span>' +
+                        '</div></div>';
+                }
+                gridEl.innerHTML = html;
+                // Click to switch instance dropdown
+                gridEl.querySelectorAll('.root-folders-instance-status-card').forEach(function(card) {
+                    var val = card.getAttribute('data-value');
+                    if (val) {
+                        card.style.cursor = 'pointer';
+                        card.addEventListener('click', function() {
+                            var sel = document.getElementById('settings-indexers-instance-select');
+                            if (sel && val) {
+                                sel.value = val;
+                                sel.dispatchEvent(new Event('change'));
+                            }
+                        });
+                    }
+                });
+            });
+        }).catch(function() {
+            gridEl.innerHTML = '';
+            if (statusArea) statusArea.style.display = 'none';
+        });
+    }
+    // Expose for refresh after import/delete
+    IH._refreshIndexerInstanceStatus = _refreshIndexerInstanceStatus;
 
     IH.init = function() {
         var searchInput = document.getElementById('ih-search-input');
@@ -52,6 +128,7 @@
             _loadPresets(function() {
                 _loadIndexers();
             });
+            _refreshIndexerInstanceStatus();
         }).catch(function() {
             if (noInstEl) noInstEl.style.display = 'none';
             if (wrapperEl) wrapperEl.style.display = '';
@@ -59,6 +136,7 @@
             _loadPresets(function() {
                 _loadIndexers();
             });
+            _refreshIndexerInstanceStatus();
         });
     };
 
@@ -209,6 +287,7 @@
                                     if (window.huntarrUI && window.huntarrUI.showNotification) {
                                         window.huntarrUI.showNotification('Indexer removed.', 'success');
                                     }
+                                    _refreshIndexerInstanceStatus();
                                 } else {
                                     if (window.huntarrUI && window.huntarrUI.showNotification) {
                                         window.huntarrUI.showNotification(data.error || 'Failed to remove indexer.', 'error');
@@ -262,6 +341,7 @@
                 if (window.SettingsForms && window.SettingsForms.refreshIndexersList) {
                     window.SettingsForms.refreshIndexersList();
                 }
+                _refreshIndexerInstanceStatus();
             } else {
                 if (window.huntarrUI) window.huntarrUI.showNotification(data.error || 'Import failed.', 'error');
             }
@@ -699,6 +779,7 @@
                                         notice += ' Removed from ' + res.instances_cleaned + ' instance(s).';
                                     }
                                     if (window.huntarrUI) window.huntarrUI.showNotification(notice, 'success');
+                                    _refreshIndexerInstanceStatus();
                                 } else {
                                     if (window.huntarrUI) window.huntarrUI.showNotification(res.error || 'Delete failed.', 'error');
                                 }

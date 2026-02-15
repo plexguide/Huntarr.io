@@ -250,6 +250,9 @@
                                     if (window.huntarrUI && window.huntarrUI.showNotification) {
                                         window.huntarrUI.showNotification('Indexer removed.', 'success');
                                     }
+                                    if (window.IndexerHunt && window.IndexerHunt._refreshIndexerInstanceStatus) {
+                                        window.IndexerHunt._refreshIndexerInstanceStatus();
+                                    }
                                 } else {
                                     if (window.huntarrUI && window.huntarrUI.showNotification) {
                                         window.huntarrUI.showNotification(data.error || 'Failed to remove indexer.', 'error');

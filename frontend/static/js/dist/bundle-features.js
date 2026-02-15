@@ -7622,6 +7622,8 @@ window.HuntarrProwlarr = {
 
     function _markComplete() {
         HuntarrUtils.setUIPreference(PREF_KEY, true);
+        // Clear the wizard navigation flag so banners stop showing
+        try { sessionStorage.removeItem('setup-wizard-active-nav'); } catch (e) {}
     }
 
     function _totalSteps() {

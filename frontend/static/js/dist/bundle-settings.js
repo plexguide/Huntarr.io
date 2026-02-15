@@ -4170,6 +4170,9 @@ document.head.appendChild(styleEl);
                 if (window.SettingsForms && window.SettingsForms.refreshIndexersList) {
                     window.SettingsForms.refreshIndexersList();
                 }
+                if (window.IndexerHunt && window.IndexerHunt._refreshIndexerInstanceStatus) {
+                    window.IndexerHunt._refreshIndexerInstanceStatus();
+                }
                 // Go back to indexer list
                 if (window.SettingsForms && window.SettingsForms.cancelInstanceEditor) {
                     window.SettingsForms.cancelInstanceEditor();
@@ -4550,6 +4553,9 @@ document.head.appendChild(styleEl);
                 if (window.SettingsForms && window.SettingsForms.refreshIndexersList) {
                     window.SettingsForms.refreshIndexersList();
                 }
+                if (window.IndexerHunt && window.IndexerHunt._refreshIndexerInstanceStatus) {
+                    window.IndexerHunt._refreshIndexerInstanceStatus();
+                }
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
                     window.huntarrUI.showNotification(isAdd ? 'Indexer added.' : 'Indexer updated.', 'success');
                 }
@@ -4822,6 +4828,9 @@ document.head.appendChild(styleEl);
                                     }
                                     if (window.huntarrUI && window.huntarrUI.showNotification) {
                                         window.huntarrUI.showNotification('Indexer removed.', 'success');
+                                    }
+                                    if (window.IndexerHunt && window.IndexerHunt._refreshIndexerInstanceStatus) {
+                                        window.IndexerHunt._refreshIndexerInstanceStatus();
                                     }
                                 } else {
                                     if (window.huntarrUI && window.huntarrUI.showNotification) {
@@ -9314,10 +9323,10 @@ document.head.appendChild(styleEl);
         var banner = document.getElementById('root-folders-setup-wizard-continue-banner');
         var callout = document.getElementById('root-folders-instance-setup-callout');
         var statusArea = document.getElementById('root-folders-instance-status-area');
-        // Only show if user navigated here from the setup wizard
+        // Show if user navigated here from the setup wizard.
+        // Don't remove the flag — it needs to persist across re-renders during the wizard flow.
         var fromWizard = false;
         try { fromWizard = sessionStorage.getItem('setup-wizard-active-nav') === '1'; } catch (e) {}
-        if (fromWizard) { try { sessionStorage.removeItem('setup-wizard-active-nav'); } catch (e) {} }
         var showSetup = fromWizard;
         if (banner) banner.style.display = showSetup ? 'flex' : 'none';
         if (callout) callout.style.display = showSetup ? 'flex' : 'none';
@@ -10874,10 +10883,11 @@ document.head.appendChild(styleEl);
     function updateSetupWizardBanner() {
         var banner = document.getElementById('setup-wizard-continue-banner');
         if (!banner) return;
-        // Only show if user navigated here from the setup wizard
+        // Show if user navigated here from the setup wizard
+        // Don't remove the flag — it needs to persist across instance add/edit re-renders.
+        // The flag is cleared when the user clicks "Continue to Setup Guide" or leaves the wizard flow.
         var fromWizard = false;
         try { fromWizard = sessionStorage.getItem('setup-wizard-active-nav') === '1'; } catch (e) {}
-        if (fromWizard) { try { sessionStorage.removeItem('setup-wizard-active-nav'); } catch (e) {} }
         banner.style.display = fromWizard ? 'flex' : 'none';
     }
 

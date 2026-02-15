@@ -175,10 +175,11 @@
     function updateSetupWizardBanner() {
         var banner = document.getElementById('setup-wizard-continue-banner');
         if (!banner) return;
-        // Only show if user navigated here from the setup wizard
+        // Show if user navigated here from the setup wizard
+        // Don't remove the flag — it needs to persist across instance add/edit re-renders.
+        // The flag is cleared when the user clicks "Continue to Setup Guide" or leaves the wizard flow.
         var fromWizard = false;
         try { fromWizard = sessionStorage.getItem('setup-wizard-active-nav') === '1'; } catch (e) {}
-        if (fromWizard) { try { sessionStorage.removeItem('setup-wizard-active-nav'); } catch (e) {} }
         banner.style.display = fromWizard ? 'flex' : 'none';
     }
 

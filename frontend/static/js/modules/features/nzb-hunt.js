@@ -1232,11 +1232,11 @@
         _updateNzbServersSetupBanner: function () {
             var banner = document.getElementById('nzb-servers-setup-wizard-continue-banner');
             if (!banner) return;
-            // Only show if user navigated here from the setup wizard (not on direct page load)
+            // Show if user navigated here from the setup wizard.
+            // Don't remove the flag — it needs to persist across re-renders during the wizard flow.
             var fromWizard = false;
             try { fromWizard = sessionStorage.getItem('setup-wizard-active-nav') === '1'; } catch (e) {}
             if (fromWizard) {
-                try { sessionStorage.removeItem('setup-wizard-active-nav'); } catch (e) {}
                 this._fromSetupWizard = true;
             }
             banner.style.display = (fromWizard || this._fromSetupWizard) ? 'flex' : 'none';
