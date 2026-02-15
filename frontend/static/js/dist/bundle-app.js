@@ -86,7 +86,7 @@ let huntarrUI = {
                 this._enableRequestarr = true;
                 const nav = document.getElementById('requestarrNav');
                 if (nav) {
-                    var onSystem = this.currentSection === 'system' || this.currentSection === 'hunt-manager' || this.currentSection === 'logs' || this.currentSection === 'about';
+                    var onSystem = this.currentSection === 'system' || this.currentSection === 'hunt-manager' || this.currentSection === 'logs';
                     var onSettings = ['settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user'].indexOf(this.currentSection) !== -1;
                     nav.style.display = (onSystem || onSettings) ? 'none' : '';
                 }
@@ -162,7 +162,7 @@ let huntarrUI = {
         if (this.currentSection === 'settings' || this.currentSection === 'scheduling' || this.currentSection === 'notifications' || this.currentSection === 'backup-restore' || this.currentSection === 'user' || this.currentSection === 'settings-logs') {
             console.log('[huntarrUI] Initialization - showing settings group');
             this.showSettingsSidebar();
-        } else if (this.currentSection === 'system' || this.currentSection === 'hunt-manager' || this.currentSection === 'logs' || this.currentSection === 'about') {
+        } else if (this.currentSection === 'system' || this.currentSection === 'hunt-manager' || this.currentSection === 'logs') {
             console.log('[huntarrUI] Initialization - showing system group');
             this.showMainSidebar();
         } else if (this.currentSection === 'nzb-hunt-home' || this.currentSection === 'nzb-hunt-activity' || this.currentSection === 'nzb-hunt-server-editor' || this.currentSection === 'nzb-hunt-folders' || this.currentSection === 'nzb-hunt-servers' || this.currentSection === 'nzb-hunt-advanced' || (this.currentSection && this.currentSection.startsWith('nzb-hunt-settings'))) {
@@ -756,8 +756,11 @@ let huntarrUI = {
                     else { window.LogsModule.init(); }
                 } catch (error) { console.error('[huntarrUI] Error during LogsModule calls:', error); }
             }
-        } else if ((section === 'system' || section === 'hunt-manager' || section === 'logs' || section === 'about') && document.getElementById('systemSection')) {
-            // System section with sidebar sub-navigation (Hunt Manager, Logs, About)
+        } else if (section === 'about') {
+            // About removed — redirect to home
+            this.switchSection('home'); return;
+        } else if ((section === 'system' || section === 'hunt-manager' || section === 'logs') && document.getElementById('systemSection')) {
+            // System section with sidebar sub-navigation (Hunt Manager, Logs)
             var systemSection = document.getElementById('systemSection');
             systemSection.classList.add('active');
             systemSection.style.display = 'block';
@@ -767,7 +770,7 @@ let huntarrUI = {
             if (window.HuntarrNavigation) window.HuntarrNavigation.switchSystemTab(activeTab);
             
             // Set title based on active tab
-            var tabTitles = { 'hunt-manager': 'Hunt Manager', 'logs': 'Logs', 'about': 'About' };
+            var tabTitles = { 'hunt-manager': 'Hunt Manager', 'logs': 'Logs' };
             newTitle = tabTitles[activeTab] || 'System';
             this.currentSection = section === 'system' ? 'hunt-manager' : section;
             
@@ -2017,7 +2020,8 @@ let huntarrUI = {
     },
     
     showSettingsSidebar: function() {
-        if (typeof expandSidebarGroup === 'function') expandSidebarGroup('sidebar-group-settings');
+        // Settings now lives under System group
+        if (typeof expandSidebarGroup === 'function') expandSidebarGroup('sidebar-group-system');
         if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
     

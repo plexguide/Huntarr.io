@@ -246,29 +246,6 @@
                 <i class="fas fa-chevron-right nav-group-chevron"></i>
             </div>
             <div class="nav-group-body collapsed" id="sidebar-group-system">
-                <a href="./#hunt-manager" class="nav-item nav-item-sub" id="mainSystemHuntManagerNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-crosshairs"></i></div>
-                    <span>Hunt Manager</span>
-                </a>
-                <a href="./#logs" class="nav-item nav-item-sub" id="mainSystemLogsNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-list-alt"></i></div>
-                    <span>Logs</span>
-                </a>
-                <a href="./#about" class="nav-item nav-item-sub" id="mainSystemAboutNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-info-circle"></i></div>
-                    <span>About</span>
-                </a>
-            </div>
-        </div>
-
-        <!-- ── SETTINGS ───────────────────────────────────────── -->
-        <div class="nav-group" id="nav-group-settings">
-            <div class="nav-group-header" data-group="sidebar-group-settings">
-                <i class="fas fa-cog nav-group-icon"></i>
-                <span>Settings</span>
-                <i class="fas fa-chevron-right nav-group-chevron"></i>
-            </div>
-            <div class="nav-group-body collapsed" id="sidebar-group-settings">
                 <a href="./#settings" class="nav-item nav-item-sub" id="mainSettingsMainNav">
                     <div class="nav-icon-wrapper"><i class="fas fa-sliders-h"></i></div>
                     <span>General</span>
@@ -285,9 +262,17 @@
                     <div class="nav-icon-wrapper"><i class="fas fa-database"></i></div>
                     <span>Backup / Restore</span>
                 </a>
+                <a href="./#hunt-manager" class="nav-item nav-item-sub" id="mainSystemHuntManagerNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-crosshairs"></i></div>
+                    <span>Hunt Manager</span>
+                </a>
+                <a href="./#logs" class="nav-item nav-item-sub" id="mainSystemLogsNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-list-alt"></i></div>
+                    <span>Logs</span>
+                </a>
                 <a href="./#settings-logs" class="nav-item nav-item-sub" id="mainSettingsLogsNav">
                     <div class="nav-icon-wrapper"><i class="fas fa-file-alt"></i></div>
-                    <span>Logs</span>
+                    <span>Settings Logs</span>
                 </a>
                 <a href="./#user" class="nav-item nav-item-sub" id="mainSettingsUserNav">
                     <div class="nav-icon-wrapper"><i class="fas fa-user"></i></div>
@@ -345,8 +330,7 @@ var ALL_GROUP_IDS = [
     'sidebar-group-requests',
     'sidebar-group-apps',
     'sidebar-group-nzb-hunt',
-    'sidebar-group-system',
-    'sidebar-group-settings'
+    'sidebar-group-system'
 ];
 
 // ── All sub-group IDs (within Media Hunt) ──
@@ -495,18 +479,15 @@ function setActiveNavItem() {
     else if (h === '#nzb-hunt-advanced' || h === '#nzb-hunt-settings-advanced') { selector = '#nzbHuntAdvancedNav'; group = 'sidebar-group-nzb-hunt'; }
     else if (h.indexOf('#nzb-hunt') === 0) { selector = '#nzbHuntHomeNav'; group = 'sidebar-group-nzb-hunt'; }
 
-    // ── System ────────────────────────────────────
+    // ── System (includes settings) ─────────────────
     else if (h === '#system' || h === '#hunt-manager') { selector = '#mainSystemHuntManagerNav'; group = 'sidebar-group-system'; }
     else if (h === '#logs') { selector = '#mainSystemLogsNav'; group = 'sidebar-group-system'; }
-    else if (h === '#about') { selector = '#mainSystemAboutNav'; group = 'sidebar-group-system'; }
-
-    // ── Settings ──────────────────────────────────
-    else if (h === '#settings') { selector = '#mainSettingsMainNav'; group = 'sidebar-group-settings'; }
-    else if (h === '#scheduling') { selector = '#mainSettingsSchedulingNav'; group = 'sidebar-group-settings'; }
-    else if (h === '#notifications') { selector = '#mainSettingsNotificationsNav'; group = 'sidebar-group-settings'; }
-    else if (h === '#backup-restore') { selector = '#mainSettingsBackupRestoreNav'; group = 'sidebar-group-settings'; }
-    else if (h === '#settings-logs') { selector = '#mainSettingsLogsNav'; group = 'sidebar-group-settings'; }
-    else if (h === '#user') { selector = '#mainSettingsUserNav'; group = 'sidebar-group-settings'; }
+    else if (h === '#settings') { selector = '#mainSettingsMainNav'; group = 'sidebar-group-system'; }
+    else if (h === '#scheduling') { selector = '#mainSettingsSchedulingNav'; group = 'sidebar-group-system'; }
+    else if (h === '#notifications') { selector = '#mainSettingsNotificationsNav'; group = 'sidebar-group-system'; }
+    else if (h === '#backup-restore') { selector = '#mainSettingsBackupRestoreNav'; group = 'sidebar-group-system'; }
+    else if (h === '#settings-logs') { selector = '#mainSettingsLogsNav'; group = 'sidebar-group-system'; }
+    else if (h === '#user') { selector = '#mainSettingsUserNav'; group = 'sidebar-group-system'; }
 
     // Fallback
     else { selector = '#homeNav'; group = null; }
