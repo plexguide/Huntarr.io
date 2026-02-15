@@ -148,26 +148,16 @@
     gap: 4px;
 }
 
+/* Visual properties enforced by components.css — only layout kept here */
 .sched-time-select {
     width: 70px;
     padding: 10px 8px;
-    background: rgba(15, 23, 42, 0.5);
-    border: 1px solid rgba(148, 163, 184, 0.15);
-    border-radius: 8px;
-    color: #f1f5f9;
     font-size: 1rem;
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
     text-align: center;
     appearance: none;
     -webkit-appearance: none;
     cursor: pointer;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.sched-time-select:focus {
-    outline: none;
-    border-color: rgba(99, 102, 241, 0.5);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
 }
 
 .sched-time-colon {
@@ -177,25 +167,12 @@
     padding: 0 2px;
 }
 
-/* ---- Select inputs ---- */
+/* ---- Select inputs — visual via components.css ---- */
 .sched-form-group select:not(.sched-time-select) {
     width: 100%;
     padding: 10px 14px;
-    background: rgba(15, 23, 42, 0.5);
-    border: 1px solid rgba(148, 163, 184, 0.15);
-    border-radius: 8px;
-    color: #f1f5f9;
     font-size: 0.875rem;
-    font-family: inherit;
     cursor: pointer;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    box-sizing: border-box;
-}
-
-.sched-form-group select:not(.sched-time-select):focus {
-    outline: none;
-    border-color: rgba(99, 102, 241, 0.5);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
 }
 
 .sched-form-group select:disabled {

@@ -138,13 +138,18 @@
     flex-shrink: 0;
 }
 
+/* Override global enforcement — input is inside styled container */
 .logs-search-bar input {
-    background: transparent;
-    border: none;
-    color: #e2e8f0;
+    background: transparent !important;
+    background-image: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    color: #e2e8f0 !important;
     font-size: 0.78rem;
     outline: none;
     width: 100%;
+    height: auto;
     padding: 0;
 }
 

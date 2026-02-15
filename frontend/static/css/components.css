@@ -209,10 +209,12 @@
 }
 
 .instance-item {
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--glass-border, rgba(99, 102, 241, 0.08));
     border-radius: 8px;
     margin-bottom: 16px;
-    background-color: var(--card-bg);
+    background: var(--glass-bg, rgba(17, 24, 39, 0.65));
+    backdrop-filter: blur(var(--glass-blur, 12px));
+    -webkit-backdrop-filter: blur(var(--glass-blur, 12px));
 }
 
 .instance-header {
@@ -220,8 +222,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--border-color);
-    background-color: var(--card-header-bg);
+    border-bottom: 1px solid var(--glass-border, rgba(99, 102, 241, 0.08));
+    background: rgba(15, 23, 42, 0.3);
     border-radius: 8px 8px 0 0;
 }
 
@@ -278,7 +280,7 @@
     background-color: var(--delete-color);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 12px;
     transition: background-color 0.2s;
@@ -293,7 +295,7 @@
     background-color: var(--accent-color);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
     transition: background-color 0.2s;
 }
@@ -481,22 +483,25 @@
    Use these as the base. Page-specific CSS should only ADD, not override.
    ========================================================================== */
 
-/* ── Inputs & Textareas ── */
+/* ── Inputs & Textareas ──
+   Visual properties use !important to enforce design-system consistency
+   across all page-specific overrides. Layout (width, height, padding)
+   is left flexible so pages can customise sizing.                    */
 .huntarr-input,
 input[type="text"],
 input[type="number"],
 input[type="password"],
 input[type="url"],
 input[type="email"],
-textarea,
-select {
+textarea {
     width: 100%;
     height: var(--input-height, 42px);
     padding: 10px 14px;
-    border-radius: var(--input-radius, 8px);
-    border: 1px solid var(--input-border, rgba(71, 85, 105, 0.4));
-    background: var(--input-bg, rgba(15, 23, 42, 0.6));
-    color: var(--input-text, #e2e8f0);
+    border-radius: var(--input-radius, 8px) !important;
+    border: 1px solid var(--input-border, rgba(71, 85, 105, 0.4)) !important;
+    background-color: var(--input-bg, rgba(15, 23, 42, 0.6)) !important;
+    background-image: none !important;
+    color: var(--input-text, #e2e8f0) !important;
     font-size: 0.9rem;
     font-family: inherit;
     line-height: 1.4;
@@ -511,6 +516,39 @@ textarea {
     resize: vertical;
 }
 
+/* ── Selects / Dropdowns ── */
+select:not(.styled-select):not(.chip-select),
+.huntarr-select {
+    width: 100%;
+    height: var(--input-height, 42px);
+    padding: 10px 14px;
+    padding-right: 38px;
+    border-radius: var(--input-radius, 8px) !important;
+    border: 1px solid var(--input-border, rgba(71, 85, 105, 0.4)) !important;
+    background-color: var(--input-bg, rgba(15, 23, 42, 0.6)) !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 14px center !important;
+    color: var(--input-text, #e2e8f0) !important;
+    font-size: 0.9rem;
+    font-family: inherit;
+    line-height: 1.4;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    box-sizing: border-box;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+select option {
+    background: var(--bg-secondary, #111827);
+    color: var(--text-primary, #f8fafc);
+    padding: 8px 12px;
+}
+
+/* ── Focus States ── */
 .huntarr-input:focus,
 input[type="text"]:focus,
 input[type="number"]:focus,
@@ -518,35 +556,16 @@ input[type="password"]:focus,
 input[type="url"]:focus,
 input[type="email"]:focus,
 textarea:focus,
-select:focus {
-    border-color: var(--input-focus-border, rgba(99, 102, 241, 0.5));
-    box-shadow: var(--input-focus-glow, 0 0 0 3px rgba(99, 102, 241, 0.1));
-    background: rgba(15, 23, 42, 0.75);
+select:not(.styled-select):not(.chip-select):focus {
+    border-color: var(--input-focus-border, rgba(99, 102, 241, 0.5)) !important;
+    box-shadow: var(--input-focus-glow, 0 0 0 3px rgba(99, 102, 241, 0.1)) !important;
+    background-color: rgba(15, 23, 42, 0.75) !important;
 }
 
 .huntarr-input::placeholder,
 input::placeholder,
 textarea::placeholder {
-    color: var(--input-placeholder, #64748b);
-}
-
-/* ── Selects / Dropdowns ── */
-select,
-.huntarr-select {
-    cursor: pointer;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 14px center;
-    padding-right: 38px;
-}
-
-select option {
-    background: var(--bg-secondary, #111827);
-    color: var(--text-primary, #f8fafc);
-    padding: 8px 12px;
+    color: var(--input-placeholder, #64748b) !important;
 }
 
 /* ── Floating Label Groups ── */
@@ -590,53 +609,9 @@ select option {
     line-height: 1.5;
 }
 
-/* ── Toggle Switches ── */
-.toggle-switch {
-    position: relative;
-    display: inline-flex;
-    width: 44px;
-    height: 24px;
-    flex-shrink: 0;
-}
-
-.toggle-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-    position: absolute;
-}
-
-.toggle-slider {
-    position: absolute;
-    cursor: pointer;
-    inset: 0;
-    background: var(--switch-bg, #334155);
-    border-radius: 24px;
-    border: 1px solid rgba(71, 85, 105, 0.3);
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.toggle-slider::before {
-    content: '';
-    position: absolute;
-    height: 18px;
-    width: 18px;
-    left: 2px;
-    bottom: 2px;
-    background: #e2e8f0;
-    border-radius: 50%;
-    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-input:checked + .toggle-slider {
-    background: var(--accent-color, #6366f1);
-    border-color: rgba(99, 102, 241, 0.5);
-}
-
-input:checked + .toggle-slider::before {
-    transform: translateX(20px);
-}
+/* ── Toggle Switches ──
+   Single source of truth is in style.css.
+   Only overrides (if any) belong here. */
 
 /* ── Buttons (unified) ── */
 .btn-primary,

@@ -29,9 +29,9 @@
 #movieHuntInstanceEditorContainer,
 #mediaHuntInstanceEditorContainer {
     width: 100%;
-    max-width: var(--content-max-width, 1200px);
+    max-width: 100%;
     margin: 0 auto;
-    padding: 30px 24px;
+    padding: 30px var(--page-gap, 15px);
     padding-bottom: 150px;
     min-height: 100%;
 }
@@ -67,9 +67,9 @@
     gap: 8px;
 }
 
-/* Sponsor inside header bar — no extra margin */
+/* Sponsor inside header bar — hidden (sponsors in sidebar only) */
 .page-header-bar .app-banners-row {
-    margin: 0;
+    display: none !important;
 }
 
 a.reqset-back-btn {

@@ -1212,11 +1212,7 @@
     box-sizing: border-box;
 }
 
-.global-search-bar input:focus {
-    border-color: rgba(245, 158, 11, 0.5);
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.08), 0 4px 20px rgba(0, 0, 0, 0.2);
-    background: rgba(15, 23, 42, 0.8);
-}
+/* Focus styles enforced by components.css — indigo ring */
 
 .global-search-bar i {
     position: absolute;

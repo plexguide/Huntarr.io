@@ -137,26 +137,13 @@
     color: #cbd5e1;
 }
 
+/* Visual properties enforced by components.css — only layout kept here */
 .br-field input[type="number"],
 .br-field input[type="text"],
 .br-field select {
     width: 100%;
     padding: 10px 14px;
-    background: rgba(15, 23, 42, 0.5);
-    border: 1px solid rgba(148, 163, 184, 0.15);
-    border-radius: 8px;
-    color: #f1f5f9;
     font-size: 0.875rem;
-    font-family: inherit;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    box-sizing: border-box;
-}
-
-.br-field input:focus,
-.br-field select:focus {
-    outline: none;
-    border-color: rgba(99, 102, 241, 0.5);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
 }
 
 .br-input-danger {

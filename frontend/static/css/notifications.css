@@ -423,6 +423,7 @@
     margin-left: 2px;
 }
 
+/* Visual properties enforced by components.css — only layout kept here */
 .notif-form-group input[type="text"],
 .notif-form-group input[type="password"],
 .notif-form-group input[type="number"],
@@ -431,19 +432,6 @@
     width: 100%;
     padding: 9px 11px;
     font-size: 13px;
-    border-radius: 7px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(15, 17, 26, 0.6);
-    color: var(--text-primary, #e2e8f0);
-    transition: border-color 0.15s ease;
-    box-sizing: border-box;
-}
-
-.notif-form-group input:focus,
-.notif-form-group select:focus,
-.notif-form-group textarea:focus {
-    outline: none;
-    border-color: rgba(129, 140, 248, 0.5);
 }
 
 .notif-form-group textarea {

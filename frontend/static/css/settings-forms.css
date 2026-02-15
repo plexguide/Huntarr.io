@@ -233,36 +233,21 @@
     opacity: 1;
 }
 
-/* Selects and inputs */
+/* Selects and inputs — visual properties enforced by components.css.
+   Only layout, font, and spacing kept here. */
 .mset-select, .mset-input {
     width: 100%;
     max-width: 100% !important;
     padding: 11px 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(148, 163, 184, 0.12);
-    background: rgba(15, 23, 42, 0.5);
-    color: #f1f5f9;
     font-size: 0.925rem;
     transition: all 0.2s ease;
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
     margin: 0 !important;
     line-height: 1.4;
 }
 
 .mset-select {
     cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 14px center;
     padding-right: 38px;
-}
-
-.mset-select:focus, .mset-input:focus {
-    border-color: rgba(99, 102, 241, 0.45);
-    outline: none;
-    background: rgba(15, 23, 42, 0.7);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08), inset 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 @media (max-width: 768px) {
@@ -418,10 +403,12 @@
     display: block;
 }
 
-/* Settings Groups */
+/* Settings Groups — glass surface */
 .settings-group {
-    background: rgba(15, 23, 42, 0.4);
-    border: 1px solid rgba(148, 163, 184, 0.08);
+    background: var(--glass-bg, rgba(17, 24, 39, 0.65));
+    backdrop-filter: blur(var(--glass-blur, 12px));
+    -webkit-backdrop-filter: blur(var(--glass-blur, 12px));
+    border: 1px solid var(--glass-border, rgba(99, 102, 241, 0.08));
     border-radius: 12px;
     padding: 24px;
     margin-bottom: 20px;
@@ -492,29 +479,15 @@
     transform: scale(1.1);
 }
 
-/* Enhanced input fields */
+/* Setting inputs & selects — visual properties enforced by components.css.
+   Only layout-specific overrides (width) kept here. */
 .setting-item input[type="text"],
 .setting-item input[type="number"],
 .setting-item input[type="password"] {
     width: 300px;
     padding: 12px 15px;
-    border: 1px solid rgba(90, 109, 137, 0.2);
-    border-radius: 8px;
-    background: linear-gradient(145deg, rgba(15, 23, 36, 0.7), rgba(22, 30, 45, 0.5));
-    color: var(--text-primary);
     font-size: 14px;
     font-weight: 500;
-    transition: all 0.2s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 0 rgba(255, 255, 255, 0.05) inset;
-    backdrop-filter: blur(5px);
-}
-
-.setting-item input[type="text"]:focus,
-.setting-item input[type="number"]:focus,
-.setting-item input[type="password"]:focus {
-    border-color: rgba(99, 102, 241, 0.5);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), 0 1px 0 rgba(255, 255, 255, 0.1) inset;
-    outline: none;
 }
 
 .setting-item input:disabled {
@@ -522,56 +495,11 @@
     cursor: not-allowed;
 }
 
-/* Enhanced select boxes */
 .setting-item select {
     width: 300px;
     padding: 12px 15px;
-    border: 1px solid rgba(90, 109, 137, 0.2);
-    border-radius: 8px;
-    background: linear-gradient(145deg, rgba(15, 23, 36, 0.7), rgba(22, 30, 45, 0.5));
-    color: var(--text-primary);
     font-size: 14px;
     font-weight: 500;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235A6D89' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'%3E%3C/path%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 15px center;
-    transition: all 0.2s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 0 rgba(255, 255, 255, 0.05) inset;
-    backdrop-filter: blur(5px);
-}
-
-.setting-item select:focus {
-    border-color: rgba(99, 102, 241, 0.5);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), 0 1px 0 rgba(255, 255, 255, 0.1) inset;
-    outline: none;
-}
-
-.setting-item select:hover {
-    border-color: rgba(90, 109, 137, 0.4);
-    background: linear-gradient(145deg, rgba(15, 23, 36, 0.8), rgba(22, 30, 45, 0.6));
-}
-
-.setting-item select option {
-    background-color: rgba(22, 30, 45, 0.95);
-    color: var(--text-primary);
-    padding: 10px 15px;
-    border: none;
-    font-size: 14px;
-}
-
-.setting-item select option:hover,
-.setting-item select option:focus {
-    background-color: rgba(99, 102, 241, 0.8);
-    color: #ffffff;
-}
-
-.setting-item select option:checked {
-    background-color: rgba(99, 102, 241, 0.9);
-    color: #ffffff;
-    font-weight: 600;
 }
 
 /* Help text */

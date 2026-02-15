@@ -1,9 +1,9 @@
 /* Requestarr Module Styles */
 
 .requestarr-container {
-    max-width: 1200px;
+    max-width: 100%;
     margin: 0 auto;
-    padding: 20px;
+    padding: 20px var(--page-gap, 15px);
 }
 
 .requestarr-header {
@@ -224,9 +224,9 @@
 }
 
 .status-requestable {
-    background: rgba(33, 150, 243, 0.2);
-    color: #2196F3;
-    border: 1px solid rgba(33, 150, 243, 0.3);
+    background: rgba(99, 102, 241, 0.2);
+    color: #818cf8;
+    border: 1px solid rgba(99, 102, 241, 0.3);
 }
 
 .status-missing-episodes {
@@ -494,7 +494,7 @@
 }
 
 .notification.info {
-    background: linear-gradient(135deg, #2196F3, #1976D2);
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
 }
 
 @keyframes slideIn {

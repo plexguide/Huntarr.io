@@ -104,7 +104,7 @@
     background-color: var(--button-danger-bg);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     gap: 5px;
@@ -359,7 +359,7 @@
 .history-dropdown-btn {
     background-color: var(--bg-tertiary);
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: 8px;
     padding: 8px 15px;
     display: flex;
     align-items: center;
@@ -432,7 +432,7 @@
     height: calc(85vh - 160px);
     overflow-y: auto;
     background-color: var(--bg-secondary);
-    border-radius: 4px;
+    border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
@@ -505,12 +505,10 @@
     margin-right: auto;
 }
 
+/* Override enforcement for connected input+button pattern */
 .history-search input {
     padding: 8px 15px;
-    border: 1px solid var(--border-color);
-    border-radius: 4px 0 0 4px;
-    background-color: var(--bg-tertiary);
-    color: var(--text-primary);
+    border-radius: 4px 0 0 4px !important;
     width: 200px;
 }
 
@@ -533,12 +531,9 @@
     gap: 8px;
 }
 
+/* Visual via components.css — only layout kept */
 .history-page-size select {
     padding: 7px 10px;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    background-color: var(--bg-tertiary);
-    color: var(--text-primary);
 }
 
 /* Pagination Controls */
@@ -553,7 +548,7 @@
 .pagination-button {
     padding: 8px 15px;
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: 8px;
     background-color: var(--bg-tertiary);
     color: var(--text-primary);
     cursor: pointer;

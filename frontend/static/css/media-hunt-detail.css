@@ -97,7 +97,7 @@
     display: flex;
     gap: 36px;
     align-items: flex-start;
-    max-width: 1200px;
+    max-width: 100%;
     margin: 0 auto;
 }
 
@@ -512,8 +512,8 @@
 
 /* ── Body Sections ─────────────────────────────────────── */
 .mh-detail-body {
-    padding: 24px 48px 60px;
-    max-width: 1200px;
+    padding: 24px var(--page-gap, 15px) 60px;
+    max-width: 100%;
     margin: 0 auto;
 }
 .mh-section {

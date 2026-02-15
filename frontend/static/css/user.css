@@ -69,22 +69,11 @@
     font-size: 14px;
 }
 
+/* Visual properties enforced by components.css — only layout kept here */
 .uset-container .form-control {
     width: 100%;
     padding: 9px 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    background-color: rgba(15, 23, 42, 0.6);
-    color: #d1d5db;
     font-size: 13px;
-    transition: border-color 0.15s ease;
-    box-sizing: border-box;
-}
-
-.uset-container .form-control:focus {
-    border-color: rgba(99, 102, 241, 0.5);
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
-    outline: none;
 }
 
 /* Action buttons */
