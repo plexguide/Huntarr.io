@@ -5630,7 +5630,12 @@ class RequestarrDiscover {
         document.querySelectorAll('.requestarr-view-header').forEach(el => {
             el.style.display = 'none';
         });
-        if (view !== 'settings' && view !== 'smarthunt-settings') {
+        // Hide the entire header bar when settings/smarthunt-settings have their own toolbar
+        const headerBar = document.querySelector('.requestarr-header-bar');
+        if (view === 'settings' || view === 'smarthunt-settings') {
+            if (headerBar) headerBar.style.display = 'none';
+        } else {
+            if (headerBar) headerBar.style.display = '';
             const headerEl = document.getElementById(`requestarr-header-${view}`);
             if (headerEl) {
                 headerEl.style.display = '';
