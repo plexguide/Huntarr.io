@@ -1292,9 +1292,14 @@ def clear_setup_progress():
     """Clear setup progress (called when setup is complete)"""
     try:
         from src.primary.utils.database import get_database
+        from src.primary.auth import invalidate_auth_cache
         db = get_database()
         
         success = db.clear_setup_progress()
+        
+        # Bust the auth middleware cache so it immediately picks up
+        # that setup is no longer in progress (prevents double-login)
+        invalidate_auth_cache()
         
         return jsonify({
             'success': success,

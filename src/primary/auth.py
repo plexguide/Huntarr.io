@@ -538,7 +538,7 @@ def authenticate_request():
     else:
         logger.debug(f"No valid session for path '{request.path}', session_id: {session_id}")
     
-    # For API calls, return 401 Unauthorized
+    # For API calls, return 401 Unauthorized as proper JSON
     if request.path.startswith("/api/"):
         # Return 401 with less verbose logging for polling endpoints
         if is_polling_endpoint:
@@ -546,7 +546,8 @@ def authenticate_request():
             pass
         else:
             logger.debug(f"Returning 401 for API path '{request.path}'")
-        return {"error": "Unauthorized"}, 401
+        from flask import jsonify as _jsonify
+        return _jsonify({"error": "Unauthorized"}), 401
     
     # No valid session, redirect to login
     if not is_polling_endpoint:

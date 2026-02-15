@@ -54,6 +54,18 @@ const HuntarrUtils = {
         return fetch(processedUrl, fetchOptions)
             .then(response => {
                 clearTimeout(timeoutId);
+                // If 401 on an API call, the session is invalid — redirect to login
+                // instead of letting every module fail with JSON parse errors
+                if (response.status === 401 && processedUrl.includes('/api/')) {
+                    // Only redirect if we're not already on the login page
+                    if (!window.location.pathname.endsWith('/login') &&
+                        !window.location.pathname.endsWith('/setup')) {
+                        console.warn('[HuntarrUtils] Session expired, redirecting to login');
+                        window.location.href = (window.HUNTARR_BASE_URL || '') + '/login';
+                        // Return a never-resolving promise to stop further processing
+                        return new Promise(() => {});
+                    }
+                }
                 return response;
             })
             .catch(error => {
