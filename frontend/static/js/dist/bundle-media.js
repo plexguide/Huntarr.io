@@ -3197,6 +3197,9 @@
 
             if (status === 'available') card.classList.add('in-library');
 
+            var moviePct = status === 'available' ? 100 : 0;
+            var movieBarClass = 'episode-progress-bar' + (moviePct >= 100 ? ' complete' : ' empty');
+
             card.innerHTML = '<div class="media-card-poster">' +
                 '<div class="media-card-status-badge ' + statusClass + '"><i class="fas fa-' + statusIcon + '"></i></div>' +
                 '<img src="' + posterUrl + '" alt="' + title + '" onerror="this.src=\'./static/images/blackout.jpg\'">' +
@@ -3205,6 +3208,9 @@
                 '<div class="media-card-overlay-content">' +
                 '<div class="media-card-overlay-year">' + year + '</div>' +
                 '</div></div>' +
+                '</div>' +
+                '<div class="' + movieBarClass + '">' +
+                '<div class="episode-progress-fill" style="width:' + moviePct + '%"></div>' +
                 '</div>' +
                 '<div class="media-card-info">' +
                 '<div class="media-card-title" title="' + title + '">' + titleRaw + '</div>' +
@@ -3693,15 +3699,14 @@
                 var title = series.title || 'Unknown';
                 var year = (series.first_air_date || '').substring(0, 4);
                 var episodeCount = 0;
+                var availableCount = 0;
                 var seasonCount = (series.seasons || []).length;
                 (series.seasons || []).forEach(function(s) {
-                    episodeCount += (s.episodes || []).length;
-                });
-
-                var availableCount = 0;
-                (series.seasons || []).forEach(function(s) {
                     (s.episodes || []).forEach(function(ep) {
-                        if (ep.status === 'available' || ep.file_path) availableCount++;
+                        episodeCount++;
+                        if (ep.status === 'available' || ep.file_path) {
+                            availableCount++;
+                        }
                     });
                 });
                 var pct = episodeCount > 0 ? Math.round((availableCount / episodeCount) * 100) : 0;

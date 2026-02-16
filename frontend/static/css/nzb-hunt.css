@@ -356,8 +356,7 @@
 #nzb-hunt-section .nzb-status-with-tooltip {
     position: relative;
     cursor: help;
-    display: inline-flex;
-    align-items: center;
+    display: block;
 }
 #nzb-hunt-section .nzb-cell-tooltip {
     position: absolute;
@@ -2660,20 +2659,30 @@
 .nzb-queue-row.nzb-item-completed .nzb-col-status  { color: #22c55e; }
 
 .nzb-queue-table .nzb-col-status {
-    min-width: 95px;
+    min-width: 110px;
 }
 .nzb-queue-table .nzb-col-status i {
     margin-right: 4px;
     font-size: 0.7rem;
 }
+.nzb-status-label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.78rem;
+    line-height: 1.3;
+    white-space: nowrap;
+}
 .nzb-status-sub {
     display: block;
-    font-size: 0.68rem;
-    color: #64748b;
-    margin-top: 2px;
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: #94a3b8;
+    margin-top: 1px;
+    line-height: 1.2;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: 160px;
 }
 .nzb-status-msg-warn { color: #f59e0b !important; }
 

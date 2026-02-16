@@ -1611,20 +1611,25 @@
                 // Update Request Season button: icon, color state, disabled when full
                 const btn = seasonItem && seasonItem.querySelector('.request-season-btn');
                 if (btn) {
-                    btn.querySelector('i').className = 'fas ' + seasonIcon;
-                    btn.classList.remove('request-season-btn-unknown', 'request-season-btn-empty', 'request-season-btn-partial', 'request-season-btn-complete');
+                    btn.classList.remove('request-season-btn-unknown', 'request-season-btn-empty', 'request-season-btn-partial', 'request-season-btn-complete', 'request-season-btn-upgrade');
                     if (total === 0) {
+                        btn.querySelector('i').className = 'fas fa-download';
                         btn.classList.add('request-season-btn-unknown');
                         btn.disabled = true;
                     } else if (available >= total) {
-                        btn.classList.add('request-season-btn-complete');
-                        btn.disabled = true;
-                    } else if (available > 0) {
-                        btn.classList.add('request-season-btn-partial');
+                        btn.querySelector('i').className = 'fas fa-arrow-up';
+                        btn.classList.add('request-season-btn-upgrade');
                         btn.disabled = false;
+                        btn.title = "Upgrade entire season";
                     } else {
-                        btn.classList.add('request-season-btn-empty');
+                        btn.querySelector('i').className = 'fas fa-download';
+                        if (available > 0) {
+                            btn.classList.add('request-season-btn-partial');
+                        } else {
+                            btn.classList.add('request-season-btn-empty');
+                        }
                         btn.disabled = false;
+                        btn.title = "Request missing episodes";
                     }
                 }
             });
@@ -1759,14 +1764,14 @@
                                 statusBadge = '<span class="mh-ep-status mh-ep-status-warn">Missing</span>';
                             }
                             const epReqClass = isFutureAirDate ? 'ep-request-btn ep-request-notreleased' : 'ep-request-btn ep-request-missing';
-                            const requestBtn = !available ? `<button class="${epReqClass}" data-season="${seasonNum}" data-episode="${epNum}" title="Request episode"><i class="fas fa-download"></i></button>` : '<span class="ep-request-inlibrary"><i class="fas fa-download"></i></span>';
+                            const requestBtn = !available ? `<button class="${epReqClass}" data-season="${seasonNum}" data-episode="${epNum}" title="Request episode"><i class="fas fa-download"></i></button>` : `<button class="ep-upgrade-btn" data-season="${seasonNum}" data-episode="${epNum}" title="Upgrade episode"><i class="fas fa-arrow-up"></i></button>`;
                             const monCell = isTVHunt ? '<td><button type="button" class="mh-monitor-btn mh-monitor-episode" data-season="' + seasonNum + '" data-episode="' + epNum + '" title="Toggle monitor"><i class="' + (epMonitoredMap[epNum] ? 'fas' : 'far') + ' fa-bookmark"></i></button></td>' : '';
                             tbl += `<tr>${monCell}<td>${epNum || ''}</td><td>${this.escapeHtml(title)}</td><td>${ad}</td><td>${statusBadge}</td><td>${requestBtn}</td></tr>`;
                         });
                         tbl += '</tbody></table>';
                         episodesEl.innerHTML = tbl;
                         episodesEl.classList.add('expanded');
-                        episodesEl.querySelectorAll('.ep-request-btn').forEach(btn => {
+                        episodesEl.querySelectorAll('.ep-request-btn, .ep-upgrade-btn').forEach(btn => {
                             btn.addEventListener('click', (ev) => {
                                 ev.stopPropagation();
                                 this.requestEpisode(item.dataset.tmdbId, parseInt(btn.dataset.season, 10), parseInt(btn.dataset.episode, 10));
@@ -1914,6 +1919,7 @@
                         seriesMonitorBtn.classList.toggle('mh-monitor-off', !monitored);
                         seriesMonitorBtn.querySelector('i').className = monitored ? 'fas fa-bookmark' : 'far fa-bookmark';
                     }
+                    // Build path: root_folder + series title
                     let displayPath = data.path || data.root_folder_path || '-';
                     if (displayPath && displayPath !== '-' && this.currentSeries) {
                         const seriesTitle = this.currentSeries.name || this.currentSeries.title || '';
@@ -1939,6 +1945,7 @@
                     statusEl.innerHTML = `<span class="mh-badge ${statusClass}"><i class="fas ${statusIcon}"></i> ${statusLabel}</span>`;
                     if (episodesEl) episodesEl.textContent = `${avail} / ${total}`;
 
+                    // Show toolbar buttons for items in collection
                     if (editBtnEl && isTVHunt) editBtnEl.style.display = '';
                     if (deleteBtnEl && isTVHunt) deleteBtnEl.style.display = '';
                     if (searchMonBtnEl && isTVHunt) searchMonBtnEl.style.display = '';
@@ -1952,6 +1959,7 @@
                     statusEl.innerHTML = '<span class="mh-badge mh-badge-warn">Not in Collection</span>';
                     if (episodesEl) episodesEl.textContent = '-';
 
+                    // Hide toolbar buttons when not in collection
                     if (editBtnEl) editBtnEl.style.display = 'none';
                     if (deleteBtnEl) deleteBtnEl.style.display = 'none';
                     if (searchMonBtnEl) searchMonBtnEl.style.display = 'none';
@@ -2028,6 +2036,10 @@
                 return;
             }
             if (decoded.appType === 'sonarr') {
+                // Grey out the button immediately
+                const btn = document.querySelector(`.season-action-btn[data-season="${seasonNum}"]`);
+                if (btn) btn.classList.add('pressed');
+
                 try {
                     const r = await fetch('./api/requestarr/sonarr/season-search', {
                         method: 'POST',
@@ -2055,6 +2067,11 @@
             }
             const title = (this.currentSeries && (this.currentSeries.title || this.currentSeries.name)) || '';
             if (!title) return;
+
+            // Grey out the button immediately
+            const btn = document.querySelector(`.season-action-btn[data-season="${seasonNum}"]`);
+            if (btn) btn.classList.add('pressed');
+
             try {
                 const r = await fetch(`./api/tv-hunt/request?instance_id=${instanceId}`, {
                     method: 'POST',
@@ -2175,6 +2192,10 @@
                 return;
             }
             if (decoded.appType === 'sonarr') {
+                // Grey out the button immediately
+                const btn = document.querySelector(`.ep-request-btn[data-season="${seasonNum}"][data-episode="${episodeNum}"], .ep-upgrade-btn[data-season="${seasonNum}"][data-episode="${episodeNum}"]`);
+                if (btn) btn.classList.add('pressed');
+
                 try {
                     const r = await fetch('./api/requestarr/sonarr/episode-search', {
                         method: 'POST',
@@ -2202,6 +2223,11 @@
             }
             const title = (this.currentSeries && (this.currentSeries.title || this.currentSeries.name)) || '';
             if (!title) return;
+
+            // Grey out the button immediately
+            const btn = document.querySelector(`.ep-request-btn[data-season="${seasonNum}"][data-episode="${episodeNum}"], .ep-upgrade-btn[data-season="${seasonNum}"][data-episode="${episodeNum}"]`);
+            if (btn) btn.classList.add('pressed');
+
             try {
                 const r = await fetch(`./api/tv-hunt/request?instance_id=${instanceId}`, {
                     method: 'POST',
@@ -2673,25 +2699,24 @@
                 var name = self._escHtml(item.name || 'Unknown');
                 var catLabel = item.category ? self._escHtml(String(item.category)) : '—';
 
-                // Build status display
+                // Build status display — label on top, detail message below
                 var failedSegs = item.failed_segments || 0;
                 var tooltipText = '';
-                var statusHtml = '<i class="' + stateIcon + '"></i> ';
+                var statusHtml = '<span class="nzb-status-label"><i class="' + stateIcon + '"></i> ';
 
                 if (item.state === 'assembling') {
-                    // Compact: "Assembling 3/49"
                     var cf = item.completed_files || 0;
                     var tf = item.total_files || 0;
-                    statusHtml += 'Assembling <span class="nzb-status-sub nzb-status-msg">' + cf + '/' + tf + ' files</span>';
+                    statusHtml += 'Assembling</span><span class="nzb-status-sub nzb-status-msg">' + cf + '/' + tf + ' files</span>';
                     if (failedSegs > 0) tooltipText = 'par2 repair will be needed (' + failedSegs + ' missing segments)';
                 } else if (item.state === 'extracting') {
-                    statusHtml += stateLabel;
+                    statusHtml += stateLabel + '</span>';
                     if (item.status_message) {
                         statusHtml += '<span class="nzb-status-sub nzb-status-msg">' + self._escHtml(item.status_message) + '</span>';
                         tooltipText = item.status_message;
                     }
                 } else {
-                    statusHtml += stateLabel;
+                    statusHtml += stateLabel + '</span>';
                     if (item.status_message && item.state !== 'downloading') {
                         var msgClass = failedSegs > 0 ? ' nzb-status-msg-warn' : ' nzb-status-msg';
                         statusHtml += '<span class="nzb-status-sub' + msgClass + '">' + self._escHtml(item.status_message) + '</span>';
@@ -3301,21 +3326,39 @@
                     ? (dateVal ? new Date(dateVal).toLocaleString() : '—')
                     : self._timeAgo(dateVal);
 
-                // Result — same styling as Queue STATUS column
+                // Result — label on top, detail below (matches queue layout)
                 var resultHtml;
                 if (isSuccess) {
-                    resultHtml = '<i class="fas fa-check-circle nzb-icon-completed"></i> <span class="nzb-hist-result-ok">Completed</span>';
+                    resultHtml =
+                        '<span class="nzb-status-label"><i class="fas fa-check-circle nzb-icon-completed"></i> Completed</span>';
                 } else {
-                    var shortErr = 'Aborted';
-                    if (item.error_message && !/missing article/i.test(item.error_message)) {
-                        shortErr = item.error_message.length > 26
-                            ? self._escHtml(item.error_message.substring(0, 24)) + '…'
-                            : self._escHtml(item.error_message);
+                    var errMsg = item.error_message || '';
+                    var failLabel = 'Failed';
+                    var failDetail = '';
+
+                    if (/missing article/i.test(errMsg) || /DMCA/i.test(errMsg)) {
+                        failLabel = 'Aborted';
+                        failDetail = 'Missing articles';
+                    } else if (/extraction failed/i.test(errMsg)) {
+                        failLabel = 'Failed';
+                        failDetail = 'Extraction error';
+                    } else if (/timed out/i.test(errMsg)) {
+                        failLabel = 'Failed';
+                        failDetail = 'Timed out';
+                    } else if (errMsg) {
+                        failDetail = errMsg.length > 30
+                            ? self._escHtml(errMsg.substring(0, 28)) + '…'
+                            : self._escHtml(errMsg);
                     }
-                    resultHtml = '<i class="fas fa-times-circle nzb-icon-failed"></i> <span class="nzb-hist-result-fail">' + shortErr + '</span>';
-                    if (item.error_message) {
+
+                    resultHtml =
+                        '<span class="nzb-status-label"><i class="fas fa-times-circle nzb-icon-failed"></i> ' + failLabel + '</span>';
+                    if (failDetail) {
+                        resultHtml += '<span class="nzb-status-sub nzb-status-msg">' + failDetail + '</span>';
+                    }
+                    if (errMsg) {
                         resultHtml = '<span class="nzb-status-with-tooltip" title="">' + resultHtml +
-                            '<div class="nzb-cell-tooltip">' + self._escHtml(item.error_message) + '</div></span>';
+                            '<div class="nzb-cell-tooltip">' + self._escHtml(errMsg) + '</div></span>';
                     }
                 }
 

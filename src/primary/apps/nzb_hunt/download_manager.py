@@ -1071,28 +1071,12 @@ class NZBHuntDownloadManager:
             self._warnings = [w for w in self._warnings if w["id"] != warning_id]
     
     def _check_warnings(self, connection_stats: list):
-        """Run warning detectors and update the warnings list."""
-        # 1. Too many connections – server may reject or throttle
-        servers = self._get_servers()
-        for srv in servers:
-            if not srv.get("enabled", True):
-                continue
-            name = srv.get("name", srv.get("host", "Server"))
-            max_conns = int(srv.get("connections", 8))
-            host = srv.get("host", "")
-            wid = f"too_many_conns_{host}"
-            if max_conns > 50:
-                self._add_warning(wid, "warning",
-                    f"High connection count: {name}",
-                    f"{max_conns} connections configured for {name} ({host}). "
-                    f"Most Usenet providers allow 20-50 connections per account. "
-                    f"Too many connections can cause throttling, disconnects, or account suspension. "
-                    f"Check your provider's limit."
-                )
-            else:
-                self._remove_warning(wid)
+        """Run warning detectors and update the warnings list.
         
-        # 2. Connection failures in stats
+        Only raises warnings based on actual server errors/behaviour,
+        not superficial heuristics like configured connection counts.
+        """
+        # 1. Connection failures in stats
         for stat in connection_stats:
             host = stat.get("host", "")
             active = stat.get("active", 0)

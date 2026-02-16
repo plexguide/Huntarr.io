@@ -248,25 +248,24 @@
                 var name = self._escHtml(item.name || 'Unknown');
                 var catLabel = item.category ? self._escHtml(String(item.category)) : '—';
 
-                // Build status display
+                // Build status display — label on top, detail message below
                 var failedSegs = item.failed_segments || 0;
                 var tooltipText = '';
-                var statusHtml = '<i class="' + stateIcon + '"></i> ';
+                var statusHtml = '<span class="nzb-status-label"><i class="' + stateIcon + '"></i> ';
 
                 if (item.state === 'assembling') {
-                    // Compact: "Assembling 3/49"
                     var cf = item.completed_files || 0;
                     var tf = item.total_files || 0;
-                    statusHtml += 'Assembling <span class="nzb-status-sub nzb-status-msg">' + cf + '/' + tf + ' files</span>';
+                    statusHtml += 'Assembling</span><span class="nzb-status-sub nzb-status-msg">' + cf + '/' + tf + ' files</span>';
                     if (failedSegs > 0) tooltipText = 'par2 repair will be needed (' + failedSegs + ' missing segments)';
                 } else if (item.state === 'extracting') {
-                    statusHtml += stateLabel;
+                    statusHtml += stateLabel + '</span>';
                     if (item.status_message) {
                         statusHtml += '<span class="nzb-status-sub nzb-status-msg">' + self._escHtml(item.status_message) + '</span>';
                         tooltipText = item.status_message;
                     }
                 } else {
-                    statusHtml += stateLabel;
+                    statusHtml += stateLabel + '</span>';
                     if (item.status_message && item.state !== 'downloading') {
                         var msgClass = failedSegs > 0 ? ' nzb-status-msg-warn' : ' nzb-status-msg';
                         statusHtml += '<span class="nzb-status-sub' + msgClass + '">' + self._escHtml(item.status_message) + '</span>';
@@ -876,21 +875,39 @@
                     ? (dateVal ? new Date(dateVal).toLocaleString() : '—')
                     : self._timeAgo(dateVal);
 
-                // Result — same styling as Queue STATUS column
+                // Result — label on top, detail below (matches queue layout)
                 var resultHtml;
                 if (isSuccess) {
-                    resultHtml = '<i class="fas fa-check-circle nzb-icon-completed"></i> <span class="nzb-hist-result-ok">Completed</span>';
+                    resultHtml =
+                        '<span class="nzb-status-label"><i class="fas fa-check-circle nzb-icon-completed"></i> Completed</span>';
                 } else {
-                    var shortErr = 'Aborted';
-                    if (item.error_message && !/missing article/i.test(item.error_message)) {
-                        shortErr = item.error_message.length > 26
-                            ? self._escHtml(item.error_message.substring(0, 24)) + '…'
-                            : self._escHtml(item.error_message);
+                    var errMsg = item.error_message || '';
+                    var failLabel = 'Failed';
+                    var failDetail = '';
+
+                    if (/missing article/i.test(errMsg) || /DMCA/i.test(errMsg)) {
+                        failLabel = 'Aborted';
+                        failDetail = 'Missing articles';
+                    } else if (/extraction failed/i.test(errMsg)) {
+                        failLabel = 'Failed';
+                        failDetail = 'Extraction error';
+                    } else if (/timed out/i.test(errMsg)) {
+                        failLabel = 'Failed';
+                        failDetail = 'Timed out';
+                    } else if (errMsg) {
+                        failDetail = errMsg.length > 30
+                            ? self._escHtml(errMsg.substring(0, 28)) + '…'
+                            : self._escHtml(errMsg);
                     }
-                    resultHtml = '<i class="fas fa-times-circle nzb-icon-failed"></i> <span class="nzb-hist-result-fail">' + shortErr + '</span>';
-                    if (item.error_message) {
+
+                    resultHtml =
+                        '<span class="nzb-status-label"><i class="fas fa-times-circle nzb-icon-failed"></i> ' + failLabel + '</span>';
+                    if (failDetail) {
+                        resultHtml += '<span class="nzb-status-sub nzb-status-msg">' + failDetail + '</span>';
+                    }
+                    if (errMsg) {
                         resultHtml = '<span class="nzb-status-with-tooltip" title="">' + resultHtml +
-                            '<div class="nzb-cell-tooltip">' + self._escHtml(item.error_message) + '</div></span>';
+                            '<div class="nzb-cell-tooltip">' + self._escHtml(errMsg) + '</div></span>';
                     }
                 }
 

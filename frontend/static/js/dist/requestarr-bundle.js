@@ -1897,7 +1897,7 @@ class RequestarrSettings {
         
         const posterUrl = item.poster_path || './static/images/blackout.jpg';
         
-        const hiddenTypeBadge = item.media_type === 'tv' ? 'TV' : 'Movie';
+        const typeBadgeLabel = item.media_type === 'tv' ? 'TV' : 'Movie';
 
         card.innerHTML = `
             <div class="media-card-poster">
@@ -1905,7 +1905,7 @@ class RequestarrSettings {
                     <i class="fas fa-eye"></i>
                 </button>
                 <img src="${posterUrl}" alt="${item.title}" onerror="this.src='./static/images/blackout.jpg'">
-                <span class="media-type-badge">${hiddenTypeBadge}</span>
+                <span class="media-type-badge">${typeBadgeLabel}</span>
             </div>
         `;
         
@@ -5461,6 +5461,7 @@ class RequestarrModal {
             const appType = decoded.appType;
 
             requestBtn.disabled = true;
+            requestBtn.classList.add('pressed');
             const isHuntApp = appType === 'movie_hunt' || appType === 'tv_hunt';
             requestBtn.textContent = isHuntApp ? 'Adding...' : 'Requesting...';
             
