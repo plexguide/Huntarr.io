@@ -42,7 +42,7 @@
             return '<div class="media-card-status-badge complete"><i class="fas fa-check"></i></div>';
         }
         if (partial) {
-            return '<div class="media-card-status-badge partial"><i class="fas fa-exclamation"></i></div>';
+            return '<div class="media-card-status-badge partial"><i class="fas fa-bookmark"></i></div>';
         }
         return '<div class="media-card-status-badge available"><i class="fas fa-download"></i></div>';
     }

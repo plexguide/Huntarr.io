@@ -73,11 +73,11 @@
             '<p class="editor-help-text movie-mgmt-colon-demo" id="movie-mgmt-colon-demo"></p></div>' +
             '<div class="editor-field-group">' +
             '<span class="movie-mgmt-label-inline"><label for="movie-mgmt-standard-format">Standard Movie Format</label> <a href="https://trash-guides.info/Radarr/Radarr-recommended-naming-scheme/#standard-movie-format" target="_blank" rel="noopener noreferrer" class="movie-mgmt-doc-link" title="Recommended naming scheme (TRaSH Guides)"><i class="fas fa-question-circle"></i></a></span>' +
-            '<input type="text" id="movie-mgmt-standard-format" value="' + standardFormat + '" placeholder="{Movie Title} ({Release Year}) {Quality Full}">' +
-            '<p class="editor-help-text">Example: Movie: The Movie - Title (2010) Bluray-1080p Proper</p></div>' +
+            '<div class="movie-mgmt-input-wrap"><input type="text" id="movie-mgmt-standard-format" value="' + standardFormat + '" placeholder="{Movie Title} ({Release Year}) {Quality Full}"><button type="button" class="token-builder-btn" data-target="movie-mgmt-standard-format" data-builder="file" title="Open Token Builder"><i class="fas fa-puzzle-piece"></i></button></div>' +
+            '<p class="editor-help-text">Example: The Movie - Title (2010) Bluray-1080p Proper</p></div>' +
             '<div class="editor-field-group">' +
             '<span class="movie-mgmt-label-inline"><label for="movie-mgmt-folder-format">Movie Folder Format</label> <a href="https://trash-guides.info/Radarr/Radarr-recommended-naming-scheme/#movie-folder-format" target="_blank" rel="noopener noreferrer" class="movie-mgmt-doc-link" title="Recommended naming scheme – Movie Folder Format (TRaSH Guides)"><i class="fas fa-question-circle"></i></a></span>' +
-            '<input type="text" id="movie-mgmt-folder-format" value="' + folderFormat + '" placeholder="{Movie Title} ({Release Year})">' +
+            '<div class="movie-mgmt-input-wrap"><input type="text" id="movie-mgmt-folder-format" value="' + folderFormat + '" placeholder="{Movie Title} ({Release Year})"><button type="button" class="token-builder-btn" data-target="movie-mgmt-folder-format" data-builder="folder" title="Open Token Builder"><i class="fas fa-puzzle-piece"></i></button></div>' +
             '<p class="editor-help-text">Used when adding a new movie or moving movies via the movie editor. Example: The Movie - Title (2010)</p></div>' +
             '</div>' +
             '<div class="editor-section">' +
@@ -204,6 +204,7 @@
                 _movieManagementData = data;
                 contentEl.innerHTML = generateFormHtml(data);
                 setupChangeDetection();
+                attachTokenBuilderButtons();
                 if (saveBtn) {
                     saveBtn.onclick = function() { window.MovieManagement.save(); };
                 }
@@ -220,6 +221,7 @@
                 _movieManagementData = defaults();
                 contentEl.innerHTML = generateFormHtml(_movieManagementData);
                 setupChangeDetection();
+                attachTokenBuilderButtons();
                 if (saveBtn) saveBtn.onclick = function() { window.MovieManagement.save(); };
                 if (backBtn) backBtn.onclick = function() {
                     confirmLeaveMovieManagement(function(result) {
@@ -464,6 +466,216 @@
             document.addEventListener('huntarr:instances-changed', function() { if (_mgmtMode === 'movie') populateCombinedInstanceDropdown('movie'); });
             document.addEventListener('huntarr:tv-hunt-instances-changed', function() { if (_mgmtMode === 'tv') populateCombinedInstanceDropdown('tv'); });
         }
+    }
+
+    /* ── Token Builder Modal ──────────────────────────────────────── */
+
+    var FILE_NAME_PRESETS = [
+        { name: 'Standard', format: '{Movie CleanTitle} ({Release Year}) - {Edition Tags} {[Custom Formats]}{[Quality Full]}{[MediaInfo AudioCodec} {MediaInfo AudioChannels]}{[MediaInfo VideoDynamicRangeType]}{[MediaInfo VideoCodec]}{-Release Group}',
+          example: 'The Movie Title (2010) - Ultimate Extended Edition [Surround Sound x264][Bluray-1080p Proper][DTS 5.1][DV HDR10][x264]-RlsGrp' },
+        { name: 'Minimal', format: '{Movie Title} ({Release Year}) {Quality Full}',
+          example: 'The Movie Title (2010) Bluray-1080p Proper' },
+        { name: 'Scene Style', format: '{Movie.CleanTitle}.{Release.Year}.{Edition.Tags}.{Quality.Full}.{MediaInfo.VideoCodec}{-Release Group}',
+          example: 'The.Movie.Title.2010.Ultimate.Extended.Edition.Bluray-1080p.x264-RlsGrp' },
+    ];
+
+    var FOLDER_PRESETS = [
+        { name: 'Standard', format: '{Movie CleanTitle} ({Release Year})',
+          example: 'The Movie Title (2010)' },
+        { name: 'With IMDb', format: '{Movie CleanTitle} ({Release Year}) {imdb-{ImdbId}}',
+          example: 'The Movie Title (2010) {imdb-tt1520211}' },
+        { name: 'With TMDb', format: '{Movie CleanTitle} ({Release Year}) {tmdb-{TmdbId}}',
+          example: 'The Movie Title (2010) {tmdb-1520211}' },
+    ];
+
+    var FILE_TOKEN_CATEGORIES = [
+        { name: 'Movie Title', icon: 'fa-film', tokens: [
+            { token: '{Movie Title}', example: "The Movie's Title" },
+            { token: '{Movie CleanTitle}', example: 'The Movies Title' },
+            { token: '{Movie TitleThe}', example: "Movie's Title, The" },
+            { token: '{Movie OriginalTitle}', example: 'Original Title' },
+            { token: '{Movie TitleFirstCharacter}', example: 'M' },
+            { token: '{Movie Collection}', example: 'The Movie Collection' },
+            { token: '{Movie Certification}', example: 'R' },
+        ]},
+        { name: 'Movie ID', icon: 'fa-fingerprint', tokens: [
+            { token: '{ImdbId}', example: 'tt12345' },
+            { token: '{TmdbId}', example: '123456' },
+        ]},
+        { name: 'Date', icon: 'fa-calendar', tokens: [
+            { token: '{Release Year}', example: '2009' },
+        ]},
+        { name: 'Quality', icon: 'fa-star', tokens: [
+            { token: '{Quality Full}', example: 'HDTV-720p Proper' },
+            { token: '{Quality Title}', example: 'HDTV-720p' },
+        ]},
+        { name: 'Media Info', icon: 'fa-info-circle', tokens: [
+            { token: '{MediaInfo Simple}', example: 'x264 DTS' },
+            { token: '{MediaInfo Full}', example: 'x264 DTS [EN+DE]' },
+            { token: '{MediaInfo AudioCodec}', example: 'DTS' },
+            { token: '{MediaInfo AudioChannels}', example: '5.1' },
+            { token: '{MediaInfo AudioLanguages}', example: '[EN+DE]' },
+            { token: '{MediaInfo VideoCodec}', example: 'x264' },
+            { token: '{MediaInfo VideoBitDepth}', example: '10' },
+            { token: '{MediaInfo VideoDynamicRange}', example: 'HDR' },
+            { token: '{MediaInfo VideoDynamicRangeType}', example: 'DV HDR10' },
+            { token: '{MediaInfo 3D}', example: '3D' },
+            { token: '{MediaInfo SubtitleLanguages}', example: '[DE]' },
+        ]},
+        { name: 'Release', icon: 'fa-tag', tokens: [
+            { token: '{Release Group}', example: 'Rls Grp' },
+            { token: '{Edition Tags}', example: 'IMAX' },
+        ]},
+        { name: 'Custom', icon: 'fa-sliders-h', tokens: [
+            { token: '{Custom Formats}', example: 'Surround Sound x264' },
+            { token: '{Custom Format:FormatName}', example: 'AMZN' },
+        ]},
+        { name: 'Original', icon: 'fa-file', tokens: [
+            { token: '{Original Title}', example: 'Movie.Title.HDTV.x264-EVOLVE' },
+            { token: '{Original Filename}', example: 'movie title hdtv.x264-Evolve' },
+        ]},
+    ];
+
+    var FOLDER_TOKEN_CATEGORIES = [
+        { name: 'Movie Title', icon: 'fa-film', tokens: [
+            { token: '{Movie Title}', example: "The Movie's Title" },
+            { token: '{Movie CleanTitle}', example: 'The Movies Title' },
+            { token: '{Movie TitleThe}', example: "Movie's Title, The" },
+            { token: '{Movie TitleFirstCharacter}', example: 'M' },
+            { token: '{Movie Collection}', example: 'The Movie Collection' },
+            { token: '{Movie Certification}', example: 'R' },
+        ]},
+        { name: 'Movie ID', icon: 'fa-fingerprint', tokens: [
+            { token: '{ImdbId}', example: 'tt12345' },
+            { token: '{TmdbId}', example: '123456' },
+        ]},
+        { name: 'Date', icon: 'fa-calendar', tokens: [
+            { token: '{Release Year}', example: '2009' },
+        ]},
+    ];
+
+    function openTokenBuilder(targetInputId, builderType) {
+        var existing = document.getElementById('token-builder-modal');
+        if (existing) existing.remove();
+
+        var isFolder = builderType === 'folder';
+        var categories = isFolder ? FOLDER_TOKEN_CATEGORIES : FILE_TOKEN_CATEGORIES;
+        var presets = isFolder ? FOLDER_PRESETS : FILE_NAME_PRESETS;
+        var modalTitle = isFolder ? 'Folder Name Builder' : 'File Name Builder';
+        var modalIcon = isFolder ? 'fa-folder-open' : 'fa-file-video';
+
+        var targetInput = document.getElementById(targetInputId);
+        var currentValue = targetInput ? targetInput.value : '';
+
+        var html = '<div class="tkb-overlay" id="token-builder-modal">' +
+            '<div class="tkb-modal">' +
+            '<div class="tkb-header">' +
+            '<div class="tkb-header-left"><i class="fas ' + modalIcon + '"></i><span>' + modalTitle + '</span></div>' +
+            '<button class="tkb-close" id="tkb-close-btn"><i class="fas fa-times"></i></button>' +
+            '</div>' +
+            '<div class="tkb-body">';
+
+        // Presets section
+        html += '<div class="tkb-presets-section">' +
+            '<div class="tkb-cat-header"><i class="fas fa-magic"></i> Quick Presets</div>' +
+            '<div class="tkb-presets">';
+        presets.forEach(function(p, idx) {
+            html += '<button type="button" class="tkb-preset" data-preset-idx="' + idx + '">' +
+                '<div class="tkb-preset-name">' + escapeHtml(p.name) + '</div>' +
+                '<div class="tkb-preset-format">' + escapeHtml(p.format) + '</div>' +
+                '<div class="tkb-preset-example">' + escapeHtml(p.example) + '</div>' +
+                '</button>';
+        });
+        html += '</div></div>';
+
+        // Token categories
+        categories.forEach(function(cat) {
+            html += '<div class="tkb-category">' +
+                '<div class="tkb-cat-header"><i class="fas ' + cat.icon + '"></i> ' + escapeHtml(cat.name) + '</div>' +
+                '<div class="tkb-tokens">';
+            cat.tokens.forEach(function(t) {
+                html += '<button type="button" class="tkb-token" data-token="' + escapeHtml(t.token) + '">' +
+                    '<span class="tkb-token-name">' + escapeHtml(t.token) + '</span>' +
+                    '<span class="tkb-token-example">' + escapeHtml(t.example) + '</span>' +
+                    '</button>';
+            });
+            html += '</div></div>';
+        });
+
+        html += '</div>' +
+            '<div class="tkb-footer">' +
+            '<div class="tkb-preview-label">Current Format</div>' +
+            '<input type="text" class="tkb-preview-input" id="tkb-preview-input" value="' + escapeHtml(currentValue) + '" readonly>' +
+            '<div class="tkb-footer-actions">' +
+            '<button type="button" class="tkb-btn tkb-btn-clear" id="tkb-clear-btn"><i class="fas fa-eraser"></i> Clear</button>' +
+            '<button type="button" class="tkb-btn tkb-btn-done" id="tkb-done-btn"><i class="fas fa-check"></i> Done</button>' +
+            '</div>' +
+            '</div>' +
+            '</div></div>';
+
+        document.body.insertAdjacentHTML('beforeend', html);
+        var modal = document.getElementById('token-builder-modal');
+
+        document.getElementById('tkb-close-btn').addEventListener('click', function() { modal.remove(); });
+        modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
+
+        // Preset click -> replace entire format
+        modal.querySelectorAll('.tkb-preset').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var idx = parseInt(btn.getAttribute('data-preset-idx'), 10);
+                var preset = presets[idx];
+                if (!preset) return;
+                var input = document.getElementById(targetInputId);
+                var preview = document.getElementById('tkb-preview-input');
+                if (input) { input.value = preset.format; markDirty(); }
+                if (preview) preview.value = preset.format;
+                // Highlight active preset
+                modal.querySelectorAll('.tkb-preset').forEach(function(b) { b.classList.remove('tkb-preset-active'); });
+                btn.classList.add('tkb-preset-active');
+            });
+        });
+
+        // Token click -> append to input
+        modal.querySelectorAll('.tkb-token').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var token = btn.getAttribute('data-token');
+                var input = document.getElementById(targetInputId);
+                var preview = document.getElementById('tkb-preview-input');
+                if (input) {
+                    var val = input.value;
+                    var needsSpace = val.length > 0 && val[val.length - 1] !== ' ' && val[val.length - 1] !== '(' && val[val.length - 1] !== '[' && val[val.length - 1] !== '{';
+                    input.value = val + (needsSpace ? ' ' : '') + token;
+                    markDirty();
+                }
+                if (preview && input) preview.value = input.value;
+                btn.classList.add('tkb-token-added');
+                setTimeout(function() { btn.classList.remove('tkb-token-added'); }, 400);
+            });
+        });
+
+        document.getElementById('tkb-clear-btn').addEventListener('click', function() {
+            var input = document.getElementById(targetInputId);
+            var preview = document.getElementById('tkb-preview-input');
+            if (input) { input.value = ''; markDirty(); }
+            if (preview) preview.value = '';
+            modal.querySelectorAll('.tkb-preset').forEach(function(b) { b.classList.remove('tkb-preset-active'); });
+        });
+
+        document.getElementById('tkb-done-btn').addEventListener('click', function() { modal.remove(); });
+
+        function escHandler(e) { if (e.key === 'Escape') { modal.remove(); document.removeEventListener('keydown', escHandler); } }
+        document.addEventListener('keydown', escHandler);
+    }
+
+    function attachTokenBuilderButtons() {
+        document.querySelectorAll('.token-builder-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                var target = btn.getAttribute('data-target');
+                var builder = btn.getAttribute('data-builder') || 'file';
+                if (target) openTokenBuilder(target, builder);
+            });
+        });
     }
 
     window.MovieManagement = {

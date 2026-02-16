@@ -199,10 +199,286 @@
         border-left: 3px solid rgba(99, 102, 241, 0.4);
         font-family: inherit;
     }
+    /* Input wrap with inline builder button */
+    .movie-mgmt-input-wrap {
+        display: flex;
+        align-items: stretch;
+        gap: 0;
+        width: 100%;
+    }
+    .movie-mgmt-input-wrap input[type="text"] {
+        flex: 1;
+        min-width: 0;
+        border-top-right-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+        border-right: none !important;
+    }
+    .token-builder-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        flex-shrink: 0;
+        padding: 0;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-left: none;
+        border-radius: 0 8px 8px 0;
+        background: rgba(99, 102, 241, 0.12);
+        color: #818cf8;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .token-builder-btn:hover {
+        background: rgba(99, 102, 241, 0.25);
+        color: #a5b4fc;
+    }
+
+    /* ── Token Builder Modal ───────────────────────────── */
+    .tkb-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        animation: tkbFadeIn 0.2s ease;
+    }
+    @keyframes tkbFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes tkbSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    .tkb-modal {
+        width: 92%;
+        max-width: 900px;
+        height: 90vh;
+        display: flex;
+        flex-direction: column;
+        background: #0f172a;
+        border: 1px solid rgba(148, 163, 184, 0.15);
+        border-radius: 16px;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+        animation: tkbSlideUp 0.25s ease;
+        overflow: hidden;
+    }
+
+    .tkb-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 28px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        background: rgba(30, 41, 59, 0.5);
+        flex-shrink: 0;
+    }
+    .tkb-header-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #f1f5f9;
+    }
+    .tkb-header-left i { color: #818cf8; font-size: 1.15rem; }
+    .tkb-close {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 8px;
+        background: rgba(148, 163, 184, 0.1);
+        color: #94a3b8;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .tkb-close:hover { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+
+    .tkb-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 24px 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+    .tkb-body::-webkit-scrollbar { width: 6px; }
+    .tkb-body::-webkit-scrollbar-track { background: transparent; }
+    .tkb-body::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.2); border-radius: 3px; }
+
+    /* Presets */
+    .tkb-presets-section { margin-bottom: 4px; }
+    .tkb-presets {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 10px;
+    }
+    .tkb-preset {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 14px 16px;
+        border: 1px solid rgba(148, 163, 184, 0.12);
+        border-radius: 10px;
+        background: rgba(30, 41, 59, 0.5);
+        cursor: pointer;
+        transition: all 0.15s;
+        text-align: left;
+    }
+    .tkb-preset:hover {
+        border-color: rgba(99, 102, 241, 0.4);
+        background: rgba(99, 102, 241, 0.08);
+    }
+    .tkb-preset-active {
+        border-color: rgba(34, 197, 94, 0.5) !important;
+        background: rgba(34, 197, 94, 0.08) !important;
+    }
+    .tkb-preset-name {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #e2e8f0;
+    }
+    .tkb-preset-format {
+        font-size: 0.72rem;
+        color: #94a3b8;
+        font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+        line-height: 1.4;
+        word-break: break-all;
+    }
+    .tkb-preset-example {
+        font-size: 0.7rem;
+        color: #475569;
+        line-height: 1.3;
+        word-break: break-all;
+    }
+
+    /* Token categories */
+    .tkb-cat-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #64748b;
+        margin-bottom: 10px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+    }
+    .tkb-cat-header i { font-size: 0.75rem; color: #818cf8; }
+
+    .tkb-tokens {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .tkb-token {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+        padding: 8px 14px;
+        border: 1px solid rgba(148, 163, 184, 0.12);
+        border-radius: 10px;
+        background: rgba(30, 41, 59, 0.6);
+        cursor: pointer;
+        transition: all 0.15s;
+        text-align: left;
+        min-width: 0;
+    }
+    .tkb-token:hover {
+        border-color: rgba(99, 102, 241, 0.4);
+        background: rgba(99, 102, 241, 0.1);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+    }
+    .tkb-token:active { transform: translateY(0); }
+    .tkb-token-added {
+        border-color: rgba(34, 197, 94, 0.5) !important;
+        background: rgba(34, 197, 94, 0.15) !important;
+    }
+    .tkb-token-name {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #e2e8f0;
+        font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    }
+    .tkb-token-example {
+        font-size: 0.75rem;
+        color: #64748b;
+    }
+
+    .tkb-footer {
+        padding: 16px 28px;
+        border-top: 1px solid rgba(148, 163, 184, 0.1);
+        background: rgba(30, 41, 59, 0.5);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+    .tkb-preview-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+    }
+    .tkb-preview-input {
+        width: 100%;
+        padding: 10px 14px;
+        border-radius: 8px;
+        border: 1px solid rgba(148, 163, 184, 0.15);
+        background: rgba(15, 23, 42, 0.8);
+        color: #a5b4fc;
+        font-size: 0.85rem;
+        font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+        box-sizing: border-box;
+    }
+    .tkb-footer-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+    .tkb-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 18px;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .tkb-btn-clear {
+        background: rgba(148, 163, 184, 0.1);
+        color: #94a3b8;
+    }
+    .tkb-btn-clear:hover { background: rgba(148, 163, 184, 0.2); color: #e2e8f0; }
+    .tkb-btn-done {
+        background: rgba(99, 102, 241, 0.2);
+        color: #818cf8;
+        border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+    .tkb-btn-done:hover { background: rgba(99, 102, 241, 0.35); color: #a5b4fc; }
+
     @media (max-width: 768px) {
         #movieManagementContainer { padding: 20px 0 100px 0; }
         #movie-management-content .editor-grid {
             grid-template-columns: 1fr;
         }
+        .tkb-modal { width: 96%; height: 95vh; border-radius: 12px; }
+        .tkb-body { padding: 16px; gap: 18px; }
+        .tkb-header, .tkb-footer { padding: 14px 16px; }
+        .tkb-presets { grid-template-columns: 1fr; }
+        .tkb-tokens { gap: 6px; }
+        .tkb-token { padding: 6px 10px; }
     }
 </style>
