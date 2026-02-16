@@ -1582,13 +1582,8 @@
 }
 
 @media (max-width: 600px) {
-    .reqset-toolbar {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
     .reqset-toolbar-right {
-        width: 100%;
+        width: auto;
         justify-content: flex-end;
     }
 }
@@ -2008,6 +2003,28 @@
 @media (max-width: 768px) {
     .requestarr-content {
         padding: 0;
+    }
+
+    /* Force left alignment and reduce height by 35% */
+    .reqset-toolbar.requestarr-header-bar {
+        padding: 6px 12px !important;
+        justify-content: flex-start !important;
+        min-height: unset !important;
+        height: auto !important;
+    }
+
+    .reqset-toolbar-left {
+        justify-content: flex-start !important;
+        width: 100% !important;
+    }
+
+    .requestarr-view-header {
+        justify-content: flex-start !important;
+        width: 100% !important;
+    }
+
+    .reqset-back-btn {
+        margin-left: 0 !important;
     }
     
     .view-header {
