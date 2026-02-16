@@ -1099,7 +1099,7 @@ class NZBHuntDownloadManager:
             "bandwidth_by_server": bandwidth_stats,
             "connection_stats": connection_stats,
             "servers_configured": self.has_servers(),
-            "connection_ok": self._has_working_connection(),
+            "connection_ok": self._connection_ok or self._running,
             "worker_running": self._running,
             "warnings": warnings,
             "warnings_count": len(warnings),
@@ -1163,6 +1163,7 @@ class NZBHuntDownloadManager:
             logger.error(f"Worker loop error: {e}")
         finally:
             self._running = False
+            self._nntp._reset_active()
             self._nntp.close_all()
             logger.info("NZB Hunt download worker stopped")
     
@@ -1255,6 +1256,7 @@ class NZBHuntDownloadManager:
                             with pool._lock:
                                 if conn in pool._connections:
                                     pool._connections.remove(conn)
+                            self._nntp._dec_active(pool.host)
                         conn, pool = self._nntp.acquire_connection(timeout=15.0)
                         if conn is None:
                             self._worker_conns.conn = None
@@ -1287,6 +1289,7 @@ class NZBHuntDownloadManager:
             for conn, pool in self._held_conns:
                 try:
                     pool.release_connection(conn)
+                    self._nntp._dec_active(pool.host)
                 except Exception:
                     pass
             self._held_conns.clear()
@@ -1752,6 +1755,7 @@ class NZBHuntDownloadManager:
         self._running = False
         if self._worker_thread and self._worker_thread.is_alive():
             self._worker_thread.join(timeout=10)
+        self._nntp._reset_active()
         self._nntp.close_all()
 
 

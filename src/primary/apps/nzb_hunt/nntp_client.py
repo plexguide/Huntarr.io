@@ -335,12 +335,40 @@ class NNTPManager:
     Same-priority servers work together: connection requests are distributed
     round-robin across same-priority pools so all connections are used in parallel
     (like SABnzbd), rather than saturating one server before using the next.
+    
+    Active connection tracking (SABnzbd-inspired):
+    Per-server active counts are tracked at manager level so they survive
+    pool reconfiguration. This ensures the UI always reflects reality.
     """
     
     def __init__(self):
         self._pools: List[NNTPConnectionPool] = []
         self._lock = threading.Lock()
         self._round_robin_index = 0  # For distributing across same-priority pools
+        # SABnzbd-style active connection tracking: {server_host: count}
+        # Lives at manager level so pool reconfiguration doesn't reset it.
+        self._active_counts: Dict[str, int] = {}
+        self._active_lock = threading.Lock()
+    
+    def _inc_active(self, host: str):
+        """Increment active connection count for a server."""
+        with self._active_lock:
+            self._active_counts[host] = self._active_counts.get(host, 0) + 1
+    
+    def _dec_active(self, host: str):
+        """Decrement active connection count for a server."""
+        with self._active_lock:
+            self._active_counts[host] = max(0, self._active_counts.get(host, 0) - 1)
+    
+    def _get_active(self, host: str) -> int:
+        """Get active connection count for a server."""
+        with self._active_lock:
+            return self._active_counts.get(host, 0)
+    
+    def _reset_active(self):
+        """Reset all active counts (only when no downloads are running)."""
+        with self._active_lock:
+            self._active_counts.clear()
     
     def configure(self, servers: List[dict]):
         """Configure server pools from server config list."""
@@ -410,6 +438,7 @@ class NNTPManager:
                 
                 conn = pool.get_connection(timeout=per_pool_timeout)
                 if conn:
+                    self._inc_active(pool.host)
                     return conn, pool
         
         return None, None
@@ -536,15 +565,19 @@ class NNTPManager:
         return sum(pool.max_connections for pool in self._pools)
     
     def get_connection_stats(self) -> List[Dict[str, Any]]:
-        """Get per-server connection stats: name, active, max, host."""
+        """Get per-server connection stats: name, active, max, host.
+        
+        Uses the manager-level active counts (SABnzbd-inspired) so the
+        count survives pool reconfiguration and always reflects reality.
+        """
         result = []
         for pool in self._pools:
-            active, max_conn = pool.get_connection_stats()
+            active = self._get_active(pool.host)
             result.append({
                 "name": pool.server_name,
                 "host": pool.host,
                 "active": active,
-                "max": max_conn,
+                "max": pool.max_connections,
             })
         return result
     
