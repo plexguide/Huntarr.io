@@ -46,13 +46,47 @@ def decode_yenc(data: bytes) -> Tuple[bytes, dict]:
 # sabyenc3 decoder (C extension, releases GIL, ~100x faster)
 # ─────────────────────────────────────────────────────────────────────
 
+def _extract_yenc_positions(data: bytes) -> dict:
+    """Quick extraction of yEnc part positions from raw article data.
+
+    Scans the first 1 KB for =ybegin size= and =ypart begin=/end= headers.
+    This runs before the C decoder so direct-write can seek to the correct
+    file offset.  Cost is negligible (~microseconds for a 1 KB scan).
+    """
+    info: dict = {}
+    area = data[:1024]
+
+    idx = area.find(b"=ybegin ")
+    if idx >= 0:
+        m = re.search(rb'size=(\d+)', area[idx:idx + 200])
+        if m:
+            info["size"] = int(m.group(1))
+
+    idx = area.find(b"=ypart ")
+    if idx >= 0:
+        m = re.search(rb'begin=(\d+)', area[idx:idx + 200])
+        if m:
+            info["begin"] = int(m.group(1))
+        m = re.search(rb'end=(\d+)', area[idx:idx + 200])
+        if m:
+            info["end"] = int(m.group(1))
+    elif "size" in info:
+        # Single-part article: whole file is one segment
+        info["begin"] = 1
+        info["end"] = info["size"]
+
+    return info
+
+
 def _decode_sabyenc3(data: bytes) -> Tuple[bytes, dict]:
     """Decode using sabyenc3 C extension (same decoder SABnzbd uses)."""
     try:
+        # Pre-extract yEnc positions for direct-write support
+        header = _extract_yenc_positions(data)
+
         decoded, output_filename, crc, crc_expected, crc_correct = (
             _sabyenc3.decode_usenet_chunks([data], 0)
         )
-        header = {}
         if output_filename:
             header["name"] = output_filename
         if crc:

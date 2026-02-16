@@ -100,22 +100,19 @@ class NNTPConnection:
     
     @property
     def connected(self) -> bool:
-        if not self._conn:
-            return False
-        try:
-            self._conn.getwelcome()
-            return True
-        except Exception:
-            return False
+        """Check if the connection object exists (no server round-trip).
+        
+        Avoids calling getwelcome() which sends a command to the server on
+        every check — wasteful when called from the connection pool's hot path.
+        Actual liveness is verified when an NNTP command fails and triggers
+        reconnection.
+        """
+        return self._conn is not None
     
     def _ensure_connected(self) -> bool:
-        """Reconnect if needed."""
-        if self._conn:
-            try:
-                # Simple connectivity check
-                return True
-            except Exception:
-                self._conn = None
+        """Reconnect if the connection object is gone."""
+        if self._conn is not None:
+            return True
         return self.connect()
     
     def select_group(self, group: str) -> bool:
@@ -194,12 +191,14 @@ class NNTPConnection:
                     if terminator in tail[-min(len(tail), 10):]:
                         break
             
-            # Single join (one allocation)
+            # Single join (one allocation), then free chunk list
             raw = b"".join(chunks)
+            del chunks
             
             # Strip trailing ".\r\n" terminator
             end = raw.rfind(terminator)
             body = raw[:end] if end != -1 else raw
+            del raw  # Free the joined bytes — only body slice is needed
             
             # Handle dot-stuffing (lines starting with ".." → ".")
             # This is rare in yEnc data, so the 'in' check is almost always False.
