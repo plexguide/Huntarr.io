@@ -208,9 +208,11 @@
 
 #media-hunt-collection-view .media-grid {
     display: grid;
-    /* auto-fit + capped max: empty columns collapse; columns don't stretch past 200px */
-    grid-template-columns: repeat(auto-fit, minmax(160px, 200px));
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 20px;
+    padding: 0;
+    width: 100%;
+    box-sizing: border-box;
     justify-items: start;
 }
 
