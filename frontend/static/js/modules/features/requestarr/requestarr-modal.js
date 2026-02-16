@@ -749,6 +749,7 @@ class RequestarrModal {
             const appType = decoded.appType;
 
             requestBtn.disabled = true;
+            requestBtn.classList.add('pressed');
             const isHuntApp = appType === 'movie_hunt' || appType === 'tv_hunt';
             requestBtn.textContent = isHuntApp ? 'Adding...' : 'Requesting...';
             

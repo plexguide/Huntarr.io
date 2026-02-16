@@ -760,6 +760,16 @@
     cursor: not-allowed;
 }
 
+.modal-request-btn.pressed {
+    opacity: 0.4 !important;
+    background: rgba(148, 163, 184, 0.2) !important;
+    border-color: rgba(148, 163, 184, 0.3) !important;
+    color: #94a3b8 !important;
+    cursor: default !important;
+    pointer-events: none !important;
+    box-shadow: none !important;
+}
+
 .modal-status {
     margin-top: 15px;
     padding: 10px;
@@ -1144,22 +1154,61 @@
 .requestarr-tv-season-item .season-action-btn.request-season-btn-partial:hover:not(:disabled) {
     background: rgba(234, 179, 8, 0.35);
 }
+.requestarr-tv-season-item .season-action-btn.request-season-btn-upgrade {
+    color: #facc15;
+    background: rgba(234, 179, 8, 0.2);
+    border-color: rgba(234, 179, 8, 0.3);
+}
+.requestarr-tv-season-item .season-action-btn.request-season-btn-upgrade:hover:not(:disabled) {
+    background: rgba(234, 179, 8, 0.35);
+}
 .requestarr-tv-season-item .season-action-btn.request-season-btn-complete {
     color: #94a3b8;
     background: rgba(148, 163, 184, 0.2);
 }
 /* Episode request: download icon. Red=missing, yellow=not released, grey=in library */
 .requestarr-tv-season-episodes .episode-table .ep-request-btn,
-.requestarr-tv-season-episodes .episode-table .ep-request-inlibrary {
+.requestarr-tv-season-episodes .episode-table .ep-request-inlibrary,
+.requestarr-tv-season-episodes .episode-table .ep-upgrade-btn {
     padding: 6px 10px;
     border-radius: 6px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    transition: all 0.2s ease;
 }
-.requestarr-tv-season-episodes .episode-table .ep-request-btn {
+
+.requestarr-tv-season-episodes .episode-table .ep-request-btn,
+.requestarr-tv-season-episodes .episode-table .ep-upgrade-btn {
     cursor: pointer;
-    transition: background 0.2s;
+}
+
+.requestarr-tv-season-episodes .episode-table .ep-upgrade-btn {
+    color: #facc15;
+    background: rgba(234, 179, 8, 0.15);
+    border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+.requestarr-tv-season-episodes .episode-table .ep-upgrade-btn:hover {
+    background: rgba(234, 179, 8, 0.25);
+    border-color: rgba(234, 179, 8, 0.5);
+}
+
+.requestarr-tv-season-episodes .episode-table .ep-request-btn.pressed,
+.requestarr-tv-season-episodes .episode-table .ep-upgrade-btn.pressed,
+.requestarr-tv-season-item .season-action-btn.pressed {
+    opacity: 0.4 !important;
+    background: rgba(148, 163, 184, 0.2) !important;
+    border-color: rgba(148, 163, 184, 0.3) !important;
+    color: #94a3b8 !important;
+    cursor: default !important;
+    pointer-events: none !important;
+}
+
+.requestarr-tv-season-episodes .episode-table .ep-request-inlibrary {
+    color: #94a3b8;
+    opacity: 0.6;
+    cursor: default;
 }
 .requestarr-tv-season-episodes .episode-table .ep-request-btn.ep-request-missing {
     color: #f87171;

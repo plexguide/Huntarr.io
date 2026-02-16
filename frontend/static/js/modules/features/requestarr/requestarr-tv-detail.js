@@ -364,20 +364,25 @@
                 // Update Request Season button: icon, color state, disabled when full
                 const btn = seasonItem && seasonItem.querySelector('.request-season-btn');
                 if (btn) {
-                    btn.querySelector('i').className = 'fas ' + seasonIcon;
-                    btn.classList.remove('request-season-btn-unknown', 'request-season-btn-empty', 'request-season-btn-partial', 'request-season-btn-complete');
+                    btn.classList.remove('request-season-btn-unknown', 'request-season-btn-empty', 'request-season-btn-partial', 'request-season-btn-complete', 'request-season-btn-upgrade');
                     if (total === 0) {
+                        btn.querySelector('i').className = 'fas fa-download';
                         btn.classList.add('request-season-btn-unknown');
                         btn.disabled = true;
                     } else if (available >= total) {
-                        btn.classList.add('request-season-btn-complete');
-                        btn.disabled = true;
-                    } else if (available > 0) {
-                        btn.classList.add('request-season-btn-partial');
+                        btn.querySelector('i').className = 'fas fa-arrow-up';
+                        btn.classList.add('request-season-btn-upgrade');
                         btn.disabled = false;
+                        btn.title = "Upgrade entire season";
                     } else {
-                        btn.classList.add('request-season-btn-empty');
+                        btn.querySelector('i').className = 'fas fa-download';
+                        if (available > 0) {
+                            btn.classList.add('request-season-btn-partial');
+                        } else {
+                            btn.classList.add('request-season-btn-empty');
+                        }
                         btn.disabled = false;
+                        btn.title = "Request missing episodes";
                     }
                 }
             });
@@ -512,14 +517,14 @@
                                 statusBadge = '<span class="mh-ep-status mh-ep-status-warn">Missing</span>';
                             }
                             const epReqClass = isFutureAirDate ? 'ep-request-btn ep-request-notreleased' : 'ep-request-btn ep-request-missing';
-                            const requestBtn = !available ? `<button class="${epReqClass}" data-season="${seasonNum}" data-episode="${epNum}" title="Request episode"><i class="fas fa-download"></i></button>` : '<span class="ep-request-inlibrary"><i class="fas fa-download"></i></span>';
+                            const requestBtn = !available ? `<button class="${epReqClass}" data-season="${seasonNum}" data-episode="${epNum}" title="Request episode"><i class="fas fa-download"></i></button>` : `<button class="ep-upgrade-btn" data-season="${seasonNum}" data-episode="${epNum}" title="Upgrade episode"><i class="fas fa-arrow-up"></i></button>`;
                             const monCell = isTVHunt ? '<td><button type="button" class="mh-monitor-btn mh-monitor-episode" data-season="' + seasonNum + '" data-episode="' + epNum + '" title="Toggle monitor"><i class="' + (epMonitoredMap[epNum] ? 'fas' : 'far') + ' fa-bookmark"></i></button></td>' : '';
                             tbl += `<tr>${monCell}<td>${epNum || ''}</td><td>${this.escapeHtml(title)}</td><td>${ad}</td><td>${statusBadge}</td><td>${requestBtn}</td></tr>`;
                         });
                         tbl += '</tbody></table>';
                         episodesEl.innerHTML = tbl;
                         episodesEl.classList.add('expanded');
-                        episodesEl.querySelectorAll('.ep-request-btn').forEach(btn => {
+                        episodesEl.querySelectorAll('.ep-request-btn, .ep-upgrade-btn').forEach(btn => {
                             btn.addEventListener('click', (ev) => {
                                 ev.stopPropagation();
                                 this.requestEpisode(item.dataset.tmdbId, parseInt(btn.dataset.season, 10), parseInt(btn.dataset.episode, 10));
@@ -784,6 +789,10 @@
                 return;
             }
             if (decoded.appType === 'sonarr') {
+                // Grey out the button immediately
+                const btn = document.querySelector(`.season-action-btn[data-season="${seasonNum}"]`);
+                if (btn) btn.classList.add('pressed');
+
                 try {
                     const r = await fetch('./api/requestarr/sonarr/season-search', {
                         method: 'POST',
@@ -811,6 +820,11 @@
             }
             const title = (this.currentSeries && (this.currentSeries.title || this.currentSeries.name)) || '';
             if (!title) return;
+
+            // Grey out the button immediately
+            const btn = document.querySelector(`.season-action-btn[data-season="${seasonNum}"]`);
+            if (btn) btn.classList.add('pressed');
+
             try {
                 const r = await fetch(`./api/tv-hunt/request?instance_id=${instanceId}`, {
                     method: 'POST',
@@ -931,6 +945,10 @@
                 return;
             }
             if (decoded.appType === 'sonarr') {
+                // Grey out the button immediately
+                const btn = document.querySelector(`.ep-request-btn[data-season="${seasonNum}"][data-episode="${episodeNum}"], .ep-upgrade-btn[data-season="${seasonNum}"][data-episode="${episodeNum}"]`);
+                if (btn) btn.classList.add('pressed');
+
                 try {
                     const r = await fetch('./api/requestarr/sonarr/episode-search', {
                         method: 'POST',
@@ -958,6 +976,11 @@
             }
             const title = (this.currentSeries && (this.currentSeries.title || this.currentSeries.name)) || '';
             if (!title) return;
+
+            // Grey out the button immediately
+            const btn = document.querySelector(`.ep-request-btn[data-season="${seasonNum}"][data-episode="${episodeNum}"], .ep-upgrade-btn[data-season="${seasonNum}"][data-episode="${episodeNum}"]`);
+            if (btn) btn.classList.add('pressed');
+
             try {
                 const r = await fetch(`./api/tv-hunt/request?instance_id=${instanceId}`, {
                     method: 'POST',
