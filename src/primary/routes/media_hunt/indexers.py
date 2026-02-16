@@ -149,8 +149,18 @@ def _resolve_indexer_api_url(indexer_dict):
 def resolve_tv_indexer_api_url(indexer):
     """Resolve full API URL for TV indexer. Used by tv_hunt discovery."""
     url = (indexer.get('api_url') or indexer.get('url') or '').strip().rstrip('/')
-    if url and '/api' not in url.lower():
-        url = url + '/api'
+    if not url:
+        return ''
+    # Check if /api is already in the URL path (not in the hostname)
+    try:
+        from urllib.parse import urlparse
+        parsed = urlparse(url)
+        path = parsed.path or ''
+        if '/api' not in path.lower():
+            url = url + '/api'
+    except Exception:
+        if '/api' not in url.split('://', 1)[-1].split('/', 1)[-1:]:
+            url = url + '/api'
     return url
 
 

@@ -30,11 +30,59 @@ TMDB_BASE = "https://api.themoviedb.org/3"
 # TV Newznab categories (5000-series)
 TV_HUNT_DEFAULT_CATEGORIES = [5000, 5010, 5020, 5030, 5040, 5045, 5050, 5060, 5070]
 
+# Cache for TMDB→TVDB ID lookups (avoids repeated API calls in the same request)
+_tvdb_id_cache = {}
+
+
+def _lookup_tvdb_id_from_tmdb(tmdb_id):
+    """Look up the TVDB ID for a TV series using its TMDB ID via TMDB external_ids API."""
+    if not tmdb_id:
+        return None
+    try:
+        tmdb_id = int(tmdb_id)
+    except (TypeError, ValueError):
+        return None
+    if tmdb_id in _tvdb_id_cache:
+        return _tvdb_id_cache[tmdb_id]
+    try:
+        from src.primary.settings_manager import get_ssl_verify_setting
+        verify_ssl = get_ssl_verify_setting()
+        url = f"{TMDB_BASE}/tv/{tmdb_id}/external_ids?api_key={TMDB_API_KEY}"
+        r = requests.get(url, timeout=10, verify=verify_ssl)
+        if r.status_code == 200:
+            data = r.json()
+            tvdb_id = data.get('tvdb_id')
+            if tvdb_id:
+                _tvdb_id_cache[tmdb_id] = tvdb_id
+                tv_hunt_logger.debug("Resolved TMDB %d → TVDB %s", tmdb_id, tvdb_id)
+                return tvdb_id
+    except Exception as e:
+        tv_hunt_logger.debug("TVDB ID lookup failed for TMDB %d: %s", tmdb_id, e)
+    return None
+
 
 # --- Newznab search ---
 
-def _search_newznab_tv(base_url, api_key, query, categories=None, timeout=15):
-    """Search a Newznab indexer for TV NZBs. Returns list of {title, nzb_url, size}."""
+def _clean_tv_search_title(title):
+    """Clean a TV series title for Newznab search — strip problematic characters."""
+    import re as _re
+    cleaned = title.strip()
+    cleaned = cleaned.replace('&', 'and')
+    cleaned = _re.sub(r'[:\-!\'",.]', ' ', cleaned)
+    cleaned = _re.sub(r'\s{2,}', ' ', cleaned).strip()
+    return cleaned
+
+
+def _search_newznab_tv(base_url, api_key, query, categories=None, timeout=15,
+                       season=None, episode=None, tvdbid=None):
+    """
+    Search a Newznab indexer for TV NZBs.
+
+    Uses t=tvsearch (structured TV search) first with season/ep params,
+    then falls back to t=search (free text) if no results.
+
+    Returns list of {title, nzb_url, size}.
+    """
     if not (base_url and api_key and query and query.strip()):
         return []
     base_url = base_url.rstrip('/')
@@ -46,10 +94,68 @@ def _search_newznab_tv(base_url, api_key, query, categories=None, timeout=15):
         cat_str = ','.join(str(c) for c in categories)
     else:
         cat_str = str(categories).strip() or '5000,5010,5020,5030,5040,5045'
-    url = f'{base_url}?t=search&apikey={requests.utils.quote(api_key)}&q={requests.utils.quote(query)}&cat={cat_str}&limit=10'
+
+    cleaned_title = _clean_tv_search_title(query)
+
+    urls_to_try = []
+
+    # Strategy 1: t=tvsearch with structured params (most reliable)
+    tvsearch_url = f'{base_url}?t=tvsearch&apikey={requests.utils.quote(api_key)}&q={requests.utils.quote(cleaned_title)}&cat={cat_str}&limit=20'
+    if season is not None:
+        tvsearch_url += f'&season={int(season)}'
+    if episode is not None:
+        tvsearch_url += f'&ep={int(episode)}'
+    if tvdbid:
+        tvsearch_url += f'&tvdbid={tvdbid}'
+    urls_to_try.append(tvsearch_url)
+
+    # Strategy 2: t=tvsearch with TVDB ID only (no title — avoids title mismatch)
+    if tvdbid and (season is not None or episode is not None):
+        tvdb_url = f'{base_url}?t=tvsearch&apikey={requests.utils.quote(api_key)}&tvdbid={tvdbid}&cat={cat_str}&limit=20'
+        if season is not None:
+            tvdb_url += f'&season={int(season)}'
+        if episode is not None:
+            tvdb_url += f'&ep={int(episode)}'
+        urls_to_try.append(tvdb_url)
+
+    # Strategy 3: t=search with SxxExx appended (free text fallback)
+    fallback_query = cleaned_title
+    if season is not None and episode is not None:
+        fallback_query += f' S{int(season):02d}E{int(episode):02d}'
+    elif season is not None:
+        fallback_query += f' S{int(season):02d}'
+    fallback_url = f'{base_url}?t=search&apikey={requests.utils.quote(api_key)}&q={requests.utils.quote(fallback_query)}&cat={cat_str}&limit=20'
+    urls_to_try.append(fallback_url)
+
+    # Strategy 4: t=search with original (un-cleaned) title + SxxExx
+    original_query = query
+    if season is not None and episode is not None:
+        original_query = f'{query} S{int(season):02d}E{int(episode):02d}'
+    elif season is not None:
+        original_query = f'{query} S{int(season):02d}'
+    original_url = f'{base_url}?t=search&apikey={requests.utils.quote(api_key)}&q={requests.utils.quote(original_query)}&cat={cat_str}&limit=10'
+    if original_url not in urls_to_try:
+        urls_to_try.append(original_url)
+
+    from src.primary.settings_manager import get_ssl_verify_setting
+    verify_ssl = get_ssl_verify_setting()
+
+    for url in urls_to_try:
+        try:
+            results = _parse_newznab_response(url, timeout, verify_ssl)
+            if results:
+                tv_hunt_logger.debug("TV search got %d results from: %s", len(results), url.split('&apikey=')[0])
+                return results
+        except Exception as e:
+            tv_hunt_logger.debug("TV search attempt failed: %s", e)
+            continue
+
+    return []
+
+
+def _parse_newznab_response(url, timeout=15, verify_ssl=True):
+    """Parse a Newznab API response and return list of {title, nzb_url, size}."""
     try:
-        from src.primary.settings_manager import get_ssl_verify_setting
-        verify_ssl = get_ssl_verify_setting()
         r = requests.get(url, timeout=timeout, verify=verify_ssl)
         if r.status_code != 200:
             return []
@@ -121,7 +227,7 @@ def _search_newznab_tv(base_url, api_key, query, categories=None, timeout=15):
                 pass
         return results
     except Exception as e:
-        tv_hunt_logger.debug("Newznab TV search error for %s: %s", base_url, e)
+        tv_hunt_logger.debug("Newznab TV parse error: %s", e)
         return []
 
 
@@ -354,14 +460,40 @@ def perform_tv_hunt_request(
     except (TypeError, ValueError):
         return False, "Invalid instance_id"
 
-    # Build search query
+    # Prepare search parameters
     title_clean = series_title.strip()
-    if search_type == "season" and season_number is not None:
-        query = f"{title_clean} S{int(season_number):02d}"
-    elif season_number is not None and episode_number is not None:
-        query = f"{title_clean} S{int(season_number):02d}E{int(episode_number):02d}"
+    search_season = int(season_number) if season_number is not None else None
+    search_episode = int(episode_number) if episode_number is not None else None
+
+    # If search_type is "season", don't pass episode so we get season packs
+    if search_type == "season":
+        search_episode = None
+
+    # Resolve TVDB ID for structured Newznab search
+    resolved_tvdbid = tvdb_id
+    if not resolved_tvdbid:
+        # Check if the collection stores a TVDB ID for this series
+        collection = _get_collection_config(instance_id)
+        for s in collection:
+            if s.get('title', '').strip().lower() == title_clean.lower():
+                resolved_tvdbid = s.get('tvdb_id') or s.get('tvdbid')
+                if not resolved_tvdbid:
+                    # Try to lookup via TMDB external IDs
+                    s_tmdb = s.get('tmdb_id')
+                    if s_tmdb:
+                        resolved_tvdbid = _lookup_tvdb_id_from_tmdb(s_tmdb)
+                break
+
+    # Build display query for error messages
+    if search_type == "season" and search_season is not None:
+        display_query = f"{title_clean} S{search_season:02d}"
+    elif search_season is not None and search_episode is not None:
+        display_query = f"{title_clean} S{search_season:02d}E{search_episode:02d}"
     else:
-        query = title_clean
+        display_query = title_clean
+
+    tv_hunt_logger.debug("TV request: title='%s', S%sE%s, tvdbid=%s",
+                         title_clean, search_season, search_episode, resolved_tvdbid)
 
     # Get indexers
     indexers = get_tv_indexers_config(instance_id)
@@ -390,7 +522,12 @@ def perform_tv_hunt_request(
         if not base_url or not api_key:
             continue
         cats = idx.get('categories') or TV_HUNT_DEFAULT_CATEGORIES
-        results = _search_newznab_tv(base_url, api_key, query, cats)
+        results = _search_newznab_tv(
+            base_url, api_key, title_clean, cats,
+            season=search_season,
+            episode=search_episode,
+            tvdbid=resolved_tvdbid,
+        )
 
         # Track indexer event for Indexer Hunt stats
         try:
@@ -411,7 +548,7 @@ def perform_tv_hunt_request(
             all_results.append(r)
 
     if not all_results:
-        return False, f"No results found for '{query}'"
+        return False, f"No results found for '{display_query}'"
 
     # Runtime for size filtering: episode ~45 min, season pack ~450 min (10 eps)
     runtime_minutes = 450 if search_type == "season" else 45
@@ -425,11 +562,11 @@ def perform_tv_hunt_request(
         best = all_results[0] if all_results else None
 
     if not best:
-        return False, f"No matching results for '{query}' after profile filtering"
+        return False, f"No matching results for '{display_query}' after profile filtering"
 
     # Send to download client
     nzb_url = best.get('nzb_url', '')
-    nzb_title = best.get('title', query)
+    nzb_title = best.get('title', display_query)
     if not nzb_url:
         return False, "Best result has no NZB URL"
 
@@ -902,10 +1039,15 @@ def register_tv_discovery_routes(bp):
             series_title = (data.get('series_title') or data.get('title') or '').strip()
             season_number = data.get('season_number')
             episode_number = data.get('episode_number')
-            tvdb_id = data.get('tvdb_id') or data.get('tmdb_id')
+            tmdb_id = data.get('tmdb_id')
+            tvdb_id = data.get('tvdb_id')
             root_folder = data.get('root_folder')
             quality_profile = data.get('quality_profile')
             search_type = data.get('search_type', 'episode')
+
+            # Resolve TVDB ID from TMDB if not provided
+            if not tvdb_id and tmdb_id:
+                tvdb_id = _lookup_tvdb_id_from_tmdb(tmdb_id)
             
             if search_type == 'monitored':
                 collection = _get_collection_config(instance_id)
@@ -914,8 +1056,8 @@ def register_tv_discovery_routes(bp):
                 series = None
                 search_tmdb_id = None
                 try:
-                    if tvdb_id is not None:
-                        search_tmdb_id = int(tvdb_id)
+                    if tmdb_id is not None:
+                        search_tmdb_id = int(tmdb_id)
                 except (TypeError, ValueError):
                     pass
                 
