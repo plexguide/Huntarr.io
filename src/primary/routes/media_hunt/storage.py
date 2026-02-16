@@ -409,8 +409,60 @@ def register_movie_storage_routes(bp, get_instance_id):
 
 # --- Register TV Hunt storage routes ---
 def register_tv_storage_routes(bp, get_instance_id):
-    """Register TV Hunt root folders on tv_hunt_bp."""
+    """Register TV Hunt root folders and TV management on tv_hunt_bp."""
     _gid = get_instance_id
+
+    def _tv_management_defaults():
+        return {
+            'rename_episodes': True, 'replace_illegal_characters': True, 'colon_replacement': 'Smart Replace',
+            'standard_episode_format': "{Series TitleYear} - S{season:00}E{episode:00} - {Episode CleanTitle} {Quality Full}",
+            'daily_episode_format': "{Series TitleYear} - {Air-Date} - {Episode CleanTitle} {Quality Full}",
+            'anime_episode_format': "{Series TitleYear} - S{season:00}E{episode:00} - {absolute:000} - {Episode CleanTitle} {Quality Full}",
+            'series_folder_format': '{Series TitleYear}',
+            'season_folder_format': 'Season {season:00}',
+            'specials_folder_format': 'Specials',
+            'multi_episode_style': 'Prefixed Range',
+            'minimum_free_space_gb': 10,
+        }
+
+    def _get_tv_management_config(instance_id):
+        from src.primary.utils.database import get_database
+        db = get_database()
+        config = db.get_app_config_for_instance('tv_management', instance_id)
+        defaults = _tv_management_defaults()
+        if not config or not isinstance(config, dict):
+            return dict(defaults)
+        out = dict(defaults)
+        for k, v in config.items():
+            if k in out:
+                out[k] = v
+        return out
+
+    @bp.route('/api/tv-hunt/settings/tv-management', methods=['GET'])
+    def api_tv_management_get():
+        try:
+            instance_id = _gid()
+            return jsonify(_get_tv_management_config(instance_id)), 200
+        except Exception:
+            return jsonify(_tv_management_defaults()), 200
+
+    @bp.route('/api/tv-hunt/settings/tv-management', methods=['PATCH'])
+    def api_tv_management_patch():
+        try:
+            instance_id = _gid()
+            data = request.get_json() or {}
+            current = _get_tv_management_config(instance_id)
+            allowed = set(_tv_management_defaults().keys())
+            for k, v in data.items():
+                if k in allowed:
+                    current[k] = v
+            from src.primary.utils.database import get_database
+            db = get_database()
+            db.save_app_config_for_instance('tv_management', instance_id, current)
+            return jsonify(_get_tv_management_config(instance_id)), 200
+        except Exception as e:
+            logger.exception('TV management patch error')
+            return jsonify({'error': str(e)}), 500
 
     @bp.route('/api/tv-hunt/root-folders', methods=['GET'])
     def api_tv_hunt_root_folders_list():

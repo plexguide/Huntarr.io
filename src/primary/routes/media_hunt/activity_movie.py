@@ -186,6 +186,8 @@ def _check_and_import_completed(client_name, queue_item, instance_id):
             movie_hunt_logger.warning("Import: queue item %s has no title, skipping import", queue_id)
             return
 
+        release_name = ''
+
         # ── NZB Hunt (built-in) ──
         if client_type in ('nzbhunt', 'nzb_hunt'):
             movie_hunt_logger.info(
@@ -231,6 +233,10 @@ def _check_and_import_completed(client_name, queue_item, instance_id):
             if not download_path:
                 return
 
+            release_name = (nzb_hunt_history.get('name') or '').strip()
+            if release_name and release_name.endswith('.nzb'):
+                release_name = release_name[:-4]
+
         # ── SABnzbd ──
         elif client_type == 'sabnzbd':
             movie_hunt_logger.info(
@@ -272,6 +278,10 @@ def _check_and_import_completed(client_name, queue_item, instance_id):
                 movie_hunt_logger.error("Import: no storage path in history for '%s' (%s). Cannot import.", title, year)
                 return
 
+            release_name = (history_item.get('name') or history_item.get('nzb_name') or '').strip()
+            if release_name and release_name.endswith('.nzb'):
+                release_name = release_name[:-4]
+
         # ── Unsupported client type ──
         else:
             movie_hunt_logger.debug("Import: unsupported client type: %s", client_type)
@@ -288,7 +298,8 @@ def _check_and_import_completed(client_name, queue_item, instance_id):
                     title=title,
                     year=year,
                     download_path=download_path,
-                    instance_id=instance_id
+                    instance_id=instance_id,
+                    release_name=release_name,
                 )
                 if success:
                     movie_hunt_logger.info("Import: successfully imported '%s' (%s)", title, year)

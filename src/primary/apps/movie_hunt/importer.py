@@ -340,7 +340,8 @@ def _cleanup_source_folder(local_path: str, root_folder: str, title: str, year: 
         _mh_log().warning("Import: could not remove source folder %s: %s", local_path, e)
 
 
-def import_movie(client: Dict[str, Any], title: str, year: str, download_path: str, instance_id: int = None) -> bool:
+def import_movie(client: Dict[str, Any], title: str, year: str, download_path: str,
+                  instance_id: int = None, release_name: str = '') -> bool:
     """
     Import a completed movie download to its root folder.
     
@@ -350,6 +351,7 @@ def import_movie(client: Dict[str, Any], title: str, year: str, download_path: s
         year: Movie year
         download_path: Path where download client stored the file
         instance_id: Movie Hunt instance ID (for per-instance collection/root folder lookup)
+        release_name: Original release/NZB name for quality parsing (optional)
     
     Returns:
         True if import succeeded, False otherwise
@@ -393,23 +395,33 @@ def import_movie(client: Dict[str, Any], title: str, year: str, download_path: s
             _mh_log().error("Import: no video file found in %s", local_path)
             return False
         
-        # 4. Create movie folder
-        folder_name = f"{title} ({year})" if year else title
-        # Sanitize folder name (remove invalid characters)
-        folder_name = "".join(c for c in folder_name if c not in r'<>:"/\|?*')
+        # 4. Create movie folder and filename using format settings
+        ext = os.path.splitext(video_file)[1]
+        try:
+            from src.primary.apps.media_rename import format_movie_filename
+            folder_name, file_name = format_movie_filename(
+                title=title, year=year, ext=ext,
+                collection_item=collection_item,
+                release_name=release_name,
+                instance_id=instance_id,
+            )
+            _mh_log().info("Import: format engine -> folder='%s', file='%s'", folder_name, file_name)
+        except Exception as fmt_err:
+            _mh_log().warning(
+                "Import: format engine failed (%s), using fallback naming", fmt_err)
+            folder_name = f"{title} ({year})" if year else title
+            folder_name = "".join(c for c in folder_name if c not in r'<>:"/\\|?*')
+            file_name = f"{title} ({year}){ext}" if year else f"{title}{ext}"
+            file_name = "".join(c for c in file_name if c not in r'<>:"/\\|?*')
+
         dest_folder = os.path.join(root_folder, folder_name)
-        
+
         try:
             os.makedirs(dest_folder, exist_ok=True)
         except Exception as e:
             _mh_log().error("Import: failed to create folder %s: %s", dest_folder, e)
             return False
-        
-        # 5. Generate filename
-        ext = os.path.splitext(video_file)[1]
-        file_name = f"{title} ({year}){ext}" if year else f"{title}{ext}"
-        # Sanitize filename
-        file_name = "".join(c for c in file_name if c not in r'<>:"/\|?*')
+
         dest_file = os.path.join(dest_folder, file_name)
         
         # 6. Check if file already exists

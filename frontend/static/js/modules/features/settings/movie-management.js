@@ -1,11 +1,9 @@
 /**
- * Management settings – single view for Movie Hunt and TV Hunt. Combined instance dropdown
- * (Movie - X / TV - X). Movie: naming + importing; TV: placeholder until TV management is implemented.
+ * Movie Management settings – Movie Hunt instances only.
+ * Handles movie naming, folder format, and token builders.
  */
 (function() {
     'use strict';
-
-    var _mgmtMode = 'movie';
 
     function escapeHtml(s) {
         if (s == null) return '';
@@ -178,20 +176,6 @@
         var backBtn = document.getElementById('movie-management-back');
         if (!contentEl) return;
 
-        if (_mgmtMode === 'tv') {
-            contentEl.innerHTML = tvPlaceholderHtml();
-            if (saveBtn) { saveBtn.disabled = true; saveBtn.classList.remove('enabled'); saveBtn.style.display = 'none'; }
-            if (backBtn) backBtn.style.display = '';
-            if (backBtn) {
-                backBtn.onclick = function() {
-                    if (window.huntarrUI && window.huntarrUI.switchSection) {
-                        window.huntarrUI.switchSection('media-hunt-instances');
-                    }
-                };
-            }
-            return;
-        }
-
         if (saveBtn) { saveBtn.disabled = true; saveBtn.classList.remove('enabled'); saveBtn.style.display = ''; }
         if (backBtn) backBtn.style.display = '';
 
@@ -233,7 +217,6 @@
     }
 
     function save(optionalNextSection) {
-        if (_mgmtMode === 'tv') return;
         var nextSection = optionalNextSection || 'media-hunt-instances';
         var body = collectFormData();
         var instId = getInstanceId();
@@ -281,7 +264,7 @@
     }
 
     function getApiBase() {
-        return _mgmtMode === 'tv' ? './api/tv-hunt/settings/tv-management' : './api/settings/movie-management';
+        return './api/settings/movie-management';
     }
 
     function getInstanceId() {
@@ -297,20 +280,11 @@
         return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'instance_id=' + encodeURIComponent(id);
     }
 
-    function tvPlaceholderHtml() {
-        return '<div class="editor-grid"><div class="editor-section">' +
-            '<div class="editor-section-title">TV Management</div>' +
-            '<div style="text-align:center;padding:40px 20px;color:#64748b;">' +
-            '<i class="fas fa-tv" style="font-size:2rem;margin-bottom:12px;display:block;opacity:0.5;"></i>' +
-            '<p style="margin:0;font-size:0.95rem;">TV management settings (naming, folder structure, episode handling) will be available in a future update.</p>' +
-            '</div></div></div>';
-    }
-
     function safeJsonFetch(url, fallback) {
         return fetch(url, { cache: 'no-store' }).then(function(r) { return r.json(); }).catch(function() { return fallback || {}; });
     }
 
-    function populateCombinedInstanceDropdown(preferMode) {
+    function populateInstanceDropdown() {
         var selectEl = document.getElementById('movie-management-instance-select');
         if (!selectEl) return;
         selectEl.innerHTML = '<option value="">Loading...</option>';
@@ -319,7 +293,6 @@
             safeJsonFetch('./api/movie-hunt/instances?t=' + ts, { instances: [] }),
             safeJsonFetch('./api/tv-hunt/instances?t=' + ts, { instances: [] }),
             safeJsonFetch('./api/movie-hunt/instances/current?t=' + ts, { current_instance_id: null }),
-            safeJsonFetch('./api/tv-hunt/instances/current?t=' + ts, { current_instance_id: null }),
             safeJsonFetch('./api/indexer-hunt/indexers?t=' + ts, { indexers: [] }),
             safeJsonFetch('./api/movie-hunt/has-clients?t=' + ts, { has_clients: false })
         ]).then(function(results) {
@@ -332,82 +305,72 @@
             var combined = movieList.concat(tvList);
             combined.sort(function(a, b) { return (a.label || '').localeCompare(b.label || '', undefined, { sensitivity: 'base' }); });
             var currentMovie = results[2].current_instance_id != null ? Number(results[2].current_instance_id) : null;
-            var currentTv = results[3].current_instance_id != null ? Number(results[3].current_instance_id) : null;
             selectEl.innerHTML = '';
-                if (combined.length === 0) {
-                    var emptyOpt = document.createElement('option');
-                    emptyOpt.value = '';
-                    emptyOpt.textContent = 'No Movie or TV Hunt instances';
-                    selectEl.appendChild(emptyOpt);
-                    var noInstEl = document.getElementById('movie-management-no-instances');
-                    var noIdxEl = document.getElementById('movie-management-no-indexers');
-                    var noCliEl = document.getElementById('movie-management-no-clients');
-                    var wrapperEl = document.getElementById('movie-management-content-wrapper');
-                    if (noInstEl) noInstEl.style.display = '';
-                    if (noIdxEl) noIdxEl.style.display = 'none';
-                    if (noCliEl) noCliEl.style.display = 'none';
-                    if (wrapperEl) wrapperEl.style.display = 'none';
-                    return;
-                }
-                var indexerCount = (results[4].indexers || []).length;
-                if (indexerCount === 0) {
-                    selectEl.innerHTML = '';
-                    var emptyOpt = document.createElement('option');
-                    emptyOpt.value = '';
-                    emptyOpt.textContent = 'No indexers configured';
-                    selectEl.appendChild(emptyOpt);
-                    var noInstEl = document.getElementById('movie-management-no-instances');
-                    var noIdxEl = document.getElementById('movie-management-no-indexers');
-                    var noCliEl = document.getElementById('movie-management-no-clients');
-                    var wrapperEl = document.getElementById('movie-management-content-wrapper');
-                    if (noInstEl) noInstEl.style.display = 'none';
-                    if (noIdxEl) noIdxEl.style.display = '';
-                    if (noCliEl) noCliEl.style.display = 'none';
-                    if (wrapperEl) wrapperEl.style.display = 'none';
-                    return;
-                }
-                var hasClients = results[5].has_clients === true;
-                if (!hasClients) {
-                    selectEl.innerHTML = '';
-                    var emptyOpt = document.createElement('option');
-                    emptyOpt.value = '';
-                    emptyOpt.textContent = 'No clients configured';
-                    selectEl.appendChild(emptyOpt);
-                    var noInstEl = document.getElementById('movie-management-no-instances');
-                    var noIdxEl = document.getElementById('movie-management-no-indexers');
-                    var noCliEl = document.getElementById('movie-management-no-clients');
-                    var wrapperEl = document.getElementById('movie-management-content-wrapper');
-                    if (noInstEl) noInstEl.style.display = 'none';
-                    if (noIdxEl) noIdxEl.style.display = 'none';
-                    if (noCliEl) noCliEl.style.display = '';
-                    if (wrapperEl) wrapperEl.style.display = 'none';
-                    return;
-                }
-                combined.forEach(function(item) {
+            if (combined.length === 0) {
+                var emptyOpt = document.createElement('option');
+                emptyOpt.value = '';
+                emptyOpt.textContent = 'No Movie or TV Hunt instances';
+                selectEl.appendChild(emptyOpt);
+                var noInstEl = document.getElementById('movie-management-no-instances');
+                var noIdxEl = document.getElementById('movie-management-no-indexers');
+                var noCliEl = document.getElementById('movie-management-no-clients');
+                var wrapperEl = document.getElementById('movie-management-content-wrapper');
+                if (noInstEl) noInstEl.style.display = '';
+                if (noIdxEl) noIdxEl.style.display = 'none';
+                if (noCliEl) noCliEl.style.display = 'none';
+                if (wrapperEl) wrapperEl.style.display = 'none';
+                return;
+            }
+            var indexerCount = (results[3].indexers || []).length;
+            if (indexerCount === 0) {
+                selectEl.innerHTML = '';
+                var emptyOpt = document.createElement('option');
+                emptyOpt.value = '';
+                emptyOpt.textContent = 'No indexers configured';
+                selectEl.appendChild(emptyOpt);
+                var noInstEl = document.getElementById('movie-management-no-instances');
+                var noIdxEl = document.getElementById('movie-management-no-indexers');
+                var noCliEl = document.getElementById('movie-management-no-clients');
+                var wrapperEl = document.getElementById('movie-management-content-wrapper');
+                if (noInstEl) noInstEl.style.display = 'none';
+                if (noIdxEl) noIdxEl.style.display = '';
+                if (noCliEl) noCliEl.style.display = 'none';
+                if (wrapperEl) wrapperEl.style.display = 'none';
+                return;
+            }
+            var hasClients = results[4].has_clients === true;
+            if (!hasClients) {
+                selectEl.innerHTML = '';
+                var emptyOpt = document.createElement('option');
+                emptyOpt.value = '';
+                emptyOpt.textContent = 'No clients configured';
+                selectEl.appendChild(emptyOpt);
+                var noInstEl = document.getElementById('movie-management-no-instances');
+                var noIdxEl = document.getElementById('movie-management-no-indexers');
+                var noCliEl = document.getElementById('movie-management-no-clients');
+                var wrapperEl = document.getElementById('movie-management-content-wrapper');
+                if (noInstEl) noInstEl.style.display = 'none';
+                if (noIdxEl) noIdxEl.style.display = 'none';
+                if (noCliEl) noCliEl.style.display = '';
+                if (wrapperEl) wrapperEl.style.display = 'none';
+                return;
+            }
+            combined.forEach(function(item) {
                 var opt = document.createElement('option');
                 opt.value = item.value;
                 opt.textContent = item.label;
                 selectEl.appendChild(opt);
             });
-            var saved = (typeof localStorage !== 'undefined' && localStorage.getItem('media-hunt-management-last-instance')) || '';
+            var saved = (typeof localStorage !== 'undefined' && localStorage.getItem('media-mgmt-last-instance')) || '';
             var selected = '';
-            if (preferMode === 'movie' && currentMovie != null) {
-                selected = 'movie:' + currentMovie;
-                if (!combined.some(function(i) { return i.value === selected; })) selected = combined[0].value;
-            } else if (preferMode === 'tv' && currentTv != null) {
-                selected = 'tv:' + currentTv;
-                if (!combined.some(function(i) { return i.value === selected; })) selected = combined[0].value;
-            } else if (saved && combined.some(function(i) { return i.value === saved; })) {
+            if (saved && combined.some(function(i) { return i.value === saved; })) {
                 selected = saved;
             } else if (currentMovie != null && combined.some(function(i) { return i.value === 'movie:' + currentMovie; })) {
                 selected = 'movie:' + currentMovie;
-            } else if (currentTv != null && combined.some(function(i) { return i.value === 'tv:' + currentTv; })) {
-                selected = 'tv:' + currentTv;
             } else {
                 selected = combined[0].value;
             }
             selectEl.value = selected;
-            var parts = (selected || '').split(':');
             var noInstEl = document.getElementById('movie-management-no-instances');
             var noIdxEl = document.getElementById('movie-management-no-indexers');
             var noCliEl = document.getElementById('movie-management-no-clients');
@@ -416,11 +379,8 @@
             if (noIdxEl) noIdxEl.style.display = 'none';
             if (noCliEl) noCliEl.style.display = 'none';
             if (wrapperEl) wrapperEl.style.display = '';
-            if (parts.length === 2) {
-                _mgmtMode = parts[0] === 'tv' ? 'tv' : 'movie';
-                if (typeof localStorage !== 'undefined') localStorage.setItem('media-hunt-management-last-instance', selected);
-                load();
-            }
+            if (typeof localStorage !== 'undefined') localStorage.setItem('media-mgmt-last-instance', selected);
+            handleInstanceChange(selected);
         }).catch(function() {
             selectEl.innerHTML = '<option value="">Failed to load instances</option>';
             var noInstEl = document.getElementById('movie-management-no-instances');
@@ -434,37 +394,38 @@
         });
     }
 
-    function onCombinedInstanceChange() {
-        var selectEl = document.getElementById('movie-management-instance-select');
-        if (!selectEl) return;
-        var val = selectEl.value || '';
+    function handleInstanceChange(val) {
+        if (!val || val.indexOf(':') < 0) return;
         var parts = val.split(':');
-        if (parts.length === 2) {
-            _mgmtMode = parts[0] === 'tv' ? 'tv' : 'movie';
-            if (typeof localStorage !== 'undefined') localStorage.setItem('media-hunt-management-last-instance', val);
+        var type = parts[0];
+        if (type === 'tv') {
+            if (typeof localStorage !== 'undefined') localStorage.setItem('media-mgmt-last-instance', val);
+            if (window.huntarrUI && window.huntarrUI.switchSection) {
+                window.huntarrUI.switchSection('tv-hunt-settings-tv-management');
+            }
+        } else {
             load();
         }
     }
 
-    function initOrRefresh(preferMode) {
-        _mgmtMode = (preferMode === 'tv') ? 'tv' : 'movie';
+    function initOrRefresh() {
         var selectEl = document.getElementById('movie-management-instance-select');
         if (selectEl && selectEl.options.length <= 1) {
-            populateCombinedInstanceDropdown(preferMode);
+            populateInstanceDropdown();
         } else {
-            var val = selectEl.value || '';
-            var parts = val.split(':');
-            if (parts.length === 2) _mgmtMode = parts[0] === 'tv' ? 'tv' : 'movie';
             load();
         }
         if (selectEl && !selectEl._mgmtChangeBound) {
             selectEl._mgmtChangeBound = true;
-            selectEl.addEventListener('change', function() { onCombinedInstanceChange(); });
+            selectEl.addEventListener('change', function() {
+                var val = selectEl.value;
+                if (typeof localStorage !== 'undefined') localStorage.setItem('media-mgmt-last-instance', val);
+                handleInstanceChange(val);
+            });
         }
         if (!window.MovieManagement._eventsBound) {
             window.MovieManagement._eventsBound = true;
-            document.addEventListener('huntarr:instances-changed', function() { if (_mgmtMode === 'movie') populateCombinedInstanceDropdown('movie'); });
-            document.addEventListener('huntarr:tv-hunt-instances-changed', function() { if (_mgmtMode === 'tv') populateCombinedInstanceDropdown('tv'); });
+            document.addEventListener('huntarr:instances-changed', function() { populateInstanceDropdown(); });
         }
     }
 
@@ -679,7 +640,6 @@
     }
 
     window.MovieManagement = {
-        _mgmtMode: function() { return _mgmtMode; },
         getApiBase: getApiBase,
         getInstanceId: getInstanceId,
         load: load,
@@ -687,7 +647,6 @@
         cancel: cancel,
         isDirty: function() { return _movieManagementDirty; },
         confirmLeave: confirmLeaveMovieManagement,
-        populateCombinedInstanceDropdown: populateCombinedInstanceDropdown,
         initOrRefresh: initOrRefresh
     };
 })();

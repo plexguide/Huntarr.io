@@ -374,21 +374,43 @@ def _add_requested_queue_id(client_name, queue_id, instance_id, title=None, year
 
 
 # --- TV Hunt requested queue ---
-def _add_tv_requested_queue_id(instance_id, queue_id):
+def _add_tv_requested_queue_id(instance_id, queue_id, series_title='', year='',
+                                season=None, episode=None, episode_title='',
+                                client_name=''):
     if not queue_id:
         return
     from src.primary.utils.database import get_database
     db = get_database()
     config = db.get_app_config_for_instance('tv_hunt_requested_queue_ids', instance_id)
     if not config or not isinstance(config, dict):
-        config = {'ids': []}
+        config = {'ids': [], 'items': {}}
     ids = config.get('ids') or []
+    items = config.get('items') or {}
     if queue_id not in ids:
         ids.append(queue_id)
         if len(ids) > 200:
             ids = ids[-200:]
+    items[str(queue_id)] = {
+        'series_title': (series_title or '').strip(),
+        'year': (year or '').strip(),
+        'season': season,
+        'episode': episode,
+        'episode_title': (episode_title or '').strip(),
+        'client_name': (client_name or '').strip(),
+    }
     config['ids'] = ids
+    config['items'] = items
     db.save_app_config_for_instance('tv_hunt_requested_queue_ids', instance_id, config)
+
+
+def _get_tv_requested_queue_ids(instance_id):
+    """Return (ids_list, items_dict) for TV Hunt requested queue."""
+    from src.primary.utils.database import get_database
+    db = get_database()
+    config = db.get_app_config_for_instance('tv_hunt_requested_queue_ids', instance_id)
+    if not config or not isinstance(config, dict):
+        return [], {}
+    return config.get('ids') or [], config.get('items') or {}
 
 
 # TV Hunt constant

@@ -54,6 +54,7 @@ BUNDLES = [
             "modules/features/settings/media-hunt-profiles.js",
             "modules/features/settings/profile-editor.js",
             "modules/features/settings/movie-management.js",
+            "modules/features/settings/tv-management.js",
             "modules/features/settings/client-editor.js",
             "modules/features/settings/clients.js",
             "modules/features/settings/import-lists.js",

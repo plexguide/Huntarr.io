@@ -455,7 +455,15 @@ def perform_tv_hunt_request(
 
         if success:
             if queue_id:
-                _add_tv_requested_queue_id(instance_id, queue_id)
+                _add_tv_requested_queue_id(
+                    instance_id, queue_id,
+                    series_title=title_clean,
+                    year='',
+                    season=int(season_number) if season_number is not None else None,
+                    episode=int(episode_number) if episode_number is not None else None,
+                    episode_title='',
+                    client_name=(client.get('name') or '').strip(),
+                )
             # Track grab event for Indexer Hunt
             try:
                 from ...routes.indexer_hunt.stats import record_indexer_event
