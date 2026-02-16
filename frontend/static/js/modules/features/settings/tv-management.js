@@ -34,7 +34,9 @@
             season_folder_format: 'Season {season:00}',
             specials_folder_format: 'Specials',
             multi_episode_style: 'Prefixed Range',
-            minimum_free_space_gb: 10
+            minimum_free_space_gb: 10,
+            rss_sync_enabled: true,
+            rss_sync_interval_minutes: 15
         };
     }
 
@@ -52,6 +54,8 @@
         var specialsFolderFmt = escapeHtml(String(d.specials_folder_format || '').trim() || defaults().specials_folder_format);
         var multiStyle = escapeHtml(String(d.multi_episode_style || 'Prefixed Range').trim());
         var minSpace = typeof d.minimum_free_space_gb === 'number' ? d.minimum_free_space_gb : 10;
+        var rssEnabled = d.rss_sync_enabled !== false;
+        var rssInterval = typeof d.rss_sync_interval_minutes === 'number' ? d.rss_sync_interval_minutes : 15;
 
         var colonOptionList = ['Smart Replace', 'Delete', 'Replace with Dash', 'Replace with Space Dash', 'Replace with Space Dash Space'];
         var colonOptions = colonOptionList.map(function(opt) {
@@ -127,6 +131,26 @@
             '<label for="tv-mgmt-min-space">Minimum Free Space (GB)</label>' +
             '<input type="number" id="tv-mgmt-min-space" value="' + minSpace + '" min="0" max="10000" step="1">' +
             '<p class="editor-help-text">Prevent import if it would leave less than this amount of disk space available (in GB)</p></div>' +
+            '</div>' +
+            '<div class="editor-section">' +
+            '<div class="editor-section-title">Media Hunt Scheduler</div>' +
+            '<div class="editor-field-group">' +
+            '<div class="editor-setting-item flex-row">' +
+            '<label for="tv-mgmt-rss-enabled">Enable RSS Sync</label>' +
+            '<label class="toggle-switch"><input type="checkbox" id="tv-mgmt-rss-enabled"' + (rssEnabled ? ' checked' : '') + '><span class="toggle-slider"></span></label>' +
+            '</div><p class="editor-help-text">Periodically check indexers for new releases matching your collection</p></div>' +
+            '<div class="editor-field-group">' +
+            '<label for="tv-mgmt-rss-interval">RSS Sync Interval (minutes)</label>' +
+            '<input type="number" id="tv-mgmt-rss-interval" value="' + rssInterval + '" min="15" max="60" step="1">' +
+            '<p class="editor-help-text">How often to check for new releases (15\u201360 minutes)</p></div>' +
+            '<div class="editor-field-group">' +
+            '<label>Last Sync</label>' +
+            '<div id="tv-mgmt-rss-last-sync" class="editor-help-text" style="color: #94a3b8; padding: 6px 0;">Loading\u2026</div>' +
+            '</div>' +
+            '<div class="editor-field-group">' +
+            '<label>Next Sync</label>' +
+            '<div id="tv-mgmt-rss-next-sync" class="editor-help-text" style="color: #94a3b8; padding: 6px 0;">Loading\u2026</div>' +
+            '</div>' +
             '</div></div>';
     }
 
@@ -156,6 +180,13 @@
                 if (!el) return 10;
                 var n = parseInt(el.value, 10);
                 return isNaN(n) || n < 0 ? 10 : Math.min(10000, n);
+            })(),
+            rss_sync_enabled: document.getElementById('tv-mgmt-rss-enabled') ? document.getElementById('tv-mgmt-rss-enabled').checked : true,
+            rss_sync_interval_minutes: (function() {
+                var el = document.getElementById('tv-mgmt-rss-interval');
+                if (!el) return 15;
+                var n = parseInt(el.value, 10);
+                return isNaN(n) || n < 15 ? 15 : Math.min(60, n);
             })()
         };
     }
@@ -179,7 +210,7 @@
             'tv-mgmt-rename', 'tv-mgmt-replace-illegal', 'tv-mgmt-colon',
             'tv-mgmt-standard-format', 'tv-mgmt-daily-format', 'tv-mgmt-anime-format',
             'tv-mgmt-series-folder', 'tv-mgmt-season-folder', 'tv-mgmt-specials-folder',
-            'tv-mgmt-multi-episode', 'tv-mgmt-min-space'
+            'tv-mgmt-multi-episode', 'tv-mgmt-min-space', 'tv-mgmt-rss-enabled', 'tv-mgmt-rss-interval'
         ];
         ids.forEach(function(id) {
             var el = document.getElementById(id);
@@ -229,6 +260,33 @@
         return fetch(url, { cache: 'no-store' }).then(function(r) { return r.json(); }).catch(function() { return fallback || {}; });
     }
 
+    function formatSyncTime(isoStr) {
+        if (!isoStr) return 'Never';
+        try {
+            var d = new Date(isoStr);
+            if (isNaN(d.getTime())) return 'Unknown';
+            return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+        } catch (e) { return 'Unknown'; }
+    }
+
+    function loadRssSyncStatus() {
+        var statusUrl = appendInstanceParam('./api/tv-hunt/settings/rss-sync-status');
+        fetch(statusUrl, { cache: 'no-store' })
+            .then(function(r) { return r.json(); })
+            .then(function(status) {
+                var lastEl = document.getElementById('tv-mgmt-rss-last-sync');
+                var nextEl = document.getElementById('tv-mgmt-rss-next-sync');
+                if (lastEl) lastEl.textContent = formatSyncTime(status.last_sync_time);
+                if (nextEl) nextEl.textContent = formatSyncTime(status.next_sync_time);
+            })
+            .catch(function() {
+                var lastEl = document.getElementById('tv-mgmt-rss-last-sync');
+                var nextEl = document.getElementById('tv-mgmt-rss-next-sync');
+                if (lastEl) lastEl.textContent = 'Unable to load';
+                if (nextEl) nextEl.textContent = 'Unable to load';
+            });
+    }
+
     function load() {
         _dirty = false;
         _data = null;
@@ -247,6 +305,7 @@
                 contentEl.innerHTML = generateFormHtml(data);
                 setupChangeDetection();
                 attachTokenBuilderButtons();
+                loadRssSyncStatus();
                 if (saveBtn) saveBtn.onclick = function() { window.TVManagement.save(); };
             })
             .catch(function() {

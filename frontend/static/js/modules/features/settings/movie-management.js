@@ -31,7 +31,9 @@
             movie_folder_format: '{Movie Title} ({Release Year})',
             minimum_free_space_gb: 10,
             import_using_script: false,
-            import_extra_files: false
+            import_extra_files: false,
+            rss_sync_enabled: true,
+            rss_sync_interval_minutes: 15
         };
     }
 
@@ -43,6 +45,8 @@
         var standardFormat = escapeHtml(String(d.standard_movie_format || '').trim() || '{Movie Title} ({Release Year}) {Quality Full}');
         var folderFormat = escapeHtml(String(d.movie_folder_format || '').trim() || '{Movie Title} ({Release Year})');
         var minSpace = typeof d.minimum_free_space_gb === 'number' ? d.minimum_free_space_gb : 10;
+        var rssEnabled = d.rss_sync_enabled !== false;
+        var rssInterval = typeof d.rss_sync_interval_minutes === 'number' ? d.rss_sync_interval_minutes : 15;
 
         var colonOptionList = ['Smart Replace', 'Delete', 'Replace with Dash', 'Replace with Space Dash', 'Replace with Space Dash Space'];
         var colonOptions = colonOptionList.map(function(opt) {
@@ -84,6 +88,26 @@
             '<label for="movie-mgmt-min-space">Minimum Free Space (GB)</label>' +
             '<input type="number" id="movie-mgmt-min-space" value="' + minSpace + '" min="0" max="10000" step="1">' +
             '<p class="editor-help-text">Prevent import if it would leave less than this amount of disk space available (in GB)</p></div>' +
+            '</div>' +
+            '<div class="editor-section">' +
+            '<div class="editor-section-title">Media Hunt Scheduler</div>' +
+            '<div class="editor-field-group">' +
+            '<div class="editor-setting-item flex-row">' +
+            '<label for="movie-mgmt-rss-enabled">Enable RSS Sync</label>' +
+            '<label class="toggle-switch"><input type="checkbox" id="movie-mgmt-rss-enabled"' + (rssEnabled ? ' checked' : '') + '><span class="toggle-slider"></span></label>' +
+            '</div><p class="editor-help-text">Periodically check indexers for new releases matching your collection</p></div>' +
+            '<div class="editor-field-group">' +
+            '<label for="movie-mgmt-rss-interval">RSS Sync Interval (minutes)</label>' +
+            '<input type="number" id="movie-mgmt-rss-interval" value="' + rssInterval + '" min="15" max="60" step="1">' +
+            '<p class="editor-help-text">How often to check for new releases (15\u201360 minutes)</p></div>' +
+            '<div class="editor-field-group">' +
+            '<label>Last Sync</label>' +
+            '<div id="movie-mgmt-rss-last-sync" class="editor-help-text" style="color: #94a3b8; padding: 6px 0;">Loading\u2026</div>' +
+            '</div>' +
+            '<div class="editor-field-group">' +
+            '<label>Next Sync</label>' +
+            '<div id="movie-mgmt-rss-next-sync" class="editor-help-text" style="color: #94a3b8; padding: 6px 0;">Loading\u2026</div>' +
+            '</div>' +
             '</div></div>';
     }
 
@@ -108,6 +132,13 @@
                 if (!el) return 10;
                 var n = parseInt(el.value, 10);
                 return isNaN(n) || n < 0 ? 10 : Math.min(10000, n);
+            })(),
+            rss_sync_enabled: document.getElementById('movie-mgmt-rss-enabled') ? document.getElementById('movie-mgmt-rss-enabled').checked : true,
+            rss_sync_interval_minutes: (function() {
+                var el = document.getElementById('movie-mgmt-rss-interval');
+                if (!el) return 15;
+                var n = parseInt(el.value, 10);
+                return isNaN(n) || n < 15 ? 15 : Math.min(60, n);
             })()
         };
     }
@@ -127,7 +158,7 @@
     }
 
     function setupChangeDetection() {
-        var ids = ['movie-mgmt-rename', 'movie-mgmt-replace-illegal', 'movie-mgmt-colon', 'movie-mgmt-standard-format', 'movie-mgmt-folder-format', 'movie-mgmt-min-space'];
+        var ids = ['movie-mgmt-rename', 'movie-mgmt-replace-illegal', 'movie-mgmt-colon', 'movie-mgmt-standard-format', 'movie-mgmt-folder-format', 'movie-mgmt-min-space', 'movie-mgmt-rss-enabled', 'movie-mgmt-rss-interval'];
         ids.forEach(function(id) {
             var el = document.getElementById(id);
             if (el) {
@@ -168,6 +199,33 @@
         }
     }
 
+    function formatSyncTime(isoStr) {
+        if (!isoStr) return 'Never';
+        try {
+            var d = new Date(isoStr);
+            if (isNaN(d.getTime())) return 'Unknown';
+            return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+        } catch (e) { return 'Unknown'; }
+    }
+
+    function loadRssSyncStatus() {
+        var statusUrl = appendInstanceParam('./api/settings/rss-sync-status');
+        fetch(statusUrl, { cache: 'no-store' })
+            .then(function(r) { return r.json(); })
+            .then(function(status) {
+                var lastEl = document.getElementById('movie-mgmt-rss-last-sync');
+                var nextEl = document.getElementById('movie-mgmt-rss-next-sync');
+                if (lastEl) lastEl.textContent = formatSyncTime(status.last_sync_time);
+                if (nextEl) nextEl.textContent = formatSyncTime(status.next_sync_time);
+            })
+            .catch(function() {
+                var lastEl = document.getElementById('movie-mgmt-rss-last-sync');
+                var nextEl = document.getElementById('movie-mgmt-rss-next-sync');
+                if (lastEl) lastEl.textContent = 'Unable to load';
+                if (nextEl) nextEl.textContent = 'Unable to load';
+            });
+    }
+
     function load() {
         _movieManagementDirty = false;
         _movieManagementData = null;
@@ -189,6 +247,7 @@
                 contentEl.innerHTML = generateFormHtml(data);
                 setupChangeDetection();
                 attachTokenBuilderButtons();
+                loadRssSyncStatus();
                 if (saveBtn) {
                     saveBtn.onclick = function() { window.MovieManagement.save(); };
                 }

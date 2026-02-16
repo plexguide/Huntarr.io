@@ -1102,6 +1102,16 @@ def shutdown_threads():
         else:
             logger.info("Prowlarr stats refresher stopped")
 
+    # Stop the RSS Sync thread
+    global _rss_sync_thread
+    if _rss_sync_thread and _rss_sync_thread.is_alive():
+        logger.info("Waiting for RSS Sync thread to stop...")
+        _rss_sync_thread.join(timeout=5.0)
+        if _rss_sync_thread.is_alive():
+            logger.warning("RSS Sync thread did not stop gracefully")
+        else:
+            logger.info("RSS Sync thread stopped")
+
     # Stop the Swaparr processing thread
     global swaparr_thread
     if swaparr_thread and swaparr_thread.is_alive():
@@ -1435,6 +1445,118 @@ def _start_import_media_scan_thread():
 
 
 # ---------------------------------------------------------------------------
+# RSS Sync background thread — periodic RSS sync for Movie/TV Hunt instances
+# ---------------------------------------------------------------------------
+_rss_sync_thread = None
+
+
+def _rss_sync_loop():
+    """Background loop: check all Movie/TV Hunt instances for scheduled RSS sync."""
+    rss_logger = get_logger("huntarr")
+    rss_logger.info("RSS Sync background thread started")
+    # Wait 30 seconds after startup before first check
+    stop_event.wait(30)
+    while not stop_event.is_set():
+        try:
+            _run_rss_sync_cycle(rss_logger)
+        except Exception as e:
+            rss_logger.error("RSS Sync cycle error: %s", e)
+        # Check every 60 seconds whether any instance is due
+        stop_event.wait(60)
+    rss_logger.info("RSS Sync background thread stopped")
+
+
+def _run_rss_sync_cycle(rss_logger):
+    """Check all Movie/TV Hunt instances; run RSS sync for those that are due."""
+    from src.primary.utils.database import get_database
+    import datetime as _dt
+
+    db = get_database()
+
+    for hunt_type, instances_func_path, mgmt_key, status_key in [
+        ('movie_hunt', 'src.primary.apps.movie_hunt.api', 'movie_management', 'rss_sync_status'),
+        ('tv_hunt', 'src.primary.apps.tv_hunt.api', 'tv_management', 'tv_rss_sync_status'),
+    ]:
+        try:
+            import importlib
+            app_module = importlib.import_module(instances_func_path)
+            get_instances = getattr(app_module, 'get_configured_instances', None)
+            if not get_instances:
+                continue
+            instances = get_instances(quiet=True)
+        except Exception:
+            continue
+
+        if not instances:
+            continue
+
+        for inst in instances:
+            if stop_event.is_set():
+                return
+
+            try:
+                instance_id = int(inst.get('instance_id') or inst.get('id', 0))
+            except (TypeError, ValueError):
+                continue
+
+            if not instance_id:
+                continue
+
+            # Load management config for this instance
+            mgmt_config = db.get_app_config_for_instance(mgmt_key, instance_id) or {}
+            if not mgmt_config.get('rss_sync_enabled', True):
+                continue
+
+            interval_minutes = mgmt_config.get('rss_sync_interval_minutes', 15)
+            try:
+                interval_minutes = max(15, min(60, int(interval_minutes)))
+            except (TypeError, ValueError):
+                interval_minutes = 15
+
+            # Check if this instance is due
+            status = db.get_app_config_for_instance(status_key, instance_id) or {}
+            next_sync_str = status.get('next_sync_time')
+
+            now = _dt.datetime.utcnow()
+
+            if next_sync_str:
+                try:
+                    next_sync = _dt.datetime.fromisoformat(next_sync_str.replace('Z', '+00:00'))
+                    if next_sync.tzinfo:
+                        next_sync = next_sync.replace(tzinfo=None)
+                    if now < next_sync:
+                        continue  # Not due yet
+                except (ValueError, TypeError):
+                    pass  # If parse fails, run sync
+
+            # Instance is due — run RSS sync
+            try:
+                hunt_logger = get_logger(hunt_type)
+                hunt_logger.info("[RSS Sync] Triggering scheduled RSS sync for %s instance %s",
+                                 "Movie Hunt" if hunt_type == 'movie_hunt' else "TV Hunt", instance_id)
+                from src.primary.apps.media_hunt.rss_decision import process_rss_sync
+                process_rss_sync(instance_id, hunt_type)
+            except Exception as e:
+                hunt_logger = get_logger(hunt_type)
+                hunt_logger.error("[RSS Sync] Error for %s instance %s: %s", hunt_type, instance_id, e)
+
+
+def _start_rss_sync_thread():
+    """Start the RSS Sync background thread."""
+    global _rss_sync_thread
+    if _rss_sync_thread and _rss_sync_thread.is_alive():
+        logger.info("RSS Sync thread already running")
+        return
+    _rss_sync_thread = threading.Thread(
+        target=_rss_sync_loop,
+        name="RssSyncLoop",
+        daemon=True,
+    )
+    _rss_sync_thread.start()
+    logger.info("RSS Sync background thread started")
+
+
+# ---------------------------------------------------------------------------
 # Media Probe background thread — auto-probe collection items with files
 # ---------------------------------------------------------------------------
 _media_probe_thread = None
@@ -1670,6 +1792,13 @@ def start_huntarr():
         logger.info("Media probe sweep thread started successfully")
     except Exception as e:
         logger.error(f"Failed to start Media probe sweep thread: {e}")
+
+    # Start RSS Sync background thread
+    try:
+        _start_rss_sync_thread()
+        logger.info("RSS Sync background thread started successfully")
+    except Exception as e:
+        logger.error(f"Failed to start RSS Sync background thread: {e}")
 
     # Configuration logging has been disabled to reduce log spam
     # Settings are loaded and used internally without verbose logging

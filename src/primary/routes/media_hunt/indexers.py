@@ -313,6 +313,7 @@ def register_movie_indexers_routes(bp, get_instance_id):
                 out.append({
                     'index': i, 'name': idx.get('name') or 'Unnamed', 'display_name': idx.get('display_name', ''),
                     'preset': idx.get('preset') or 'manual', 'enabled': idx.get('enabled', True),
+                    'enable_rss': idx.get('enable_rss', True),
                     'api_key_last4': last4, 'categories': cats, 'url': idx.get('url', ''),
                     'api_path': idx.get('api_path', '/api'), 'priority': idx.get('priority', 50),
                     'indexer_hunt_id': idx.get('indexer_hunt_id', ''),
@@ -348,8 +349,10 @@ def register_movie_indexers_routes(bp, get_instance_id):
             indexer_hunt_id = (data.get('indexer_hunt_id') or '').strip() or None
             instance_id = get_instance_id()
             indexers = _get_indexers_config(instance_id)
+            enable_rss = data.get('enable_rss', True)
             new_idx = {
                 'name': name, 'preset': preset, 'api_key': api_key, 'enabled': enabled,
+                'enable_rss': enable_rss,
                 'categories': categories, 'url': url, 'api_path': api_path, 'priority': priority,
             }
             if indexer_hunt_id:
@@ -388,8 +391,10 @@ def register_movie_indexers_routes(bp, get_instance_id):
                 priority = max(1, min(99, int(priority)))
             except (TypeError, ValueError):
                 priority = existing.get('priority', 50)
+            enable_rss = data.get('enable_rss', existing.get('enable_rss', True))
             updated = {
                 'name': name, 'preset': preset, 'api_key': api_key, 'enabled': enabled,
+                'enable_rss': enable_rss,
                 'categories': categories, 'url': url, 'api_path': api_path, 'priority': priority,
             }
             if existing.get('indexer_hunt_id'):
@@ -452,6 +457,7 @@ def register_tv_indexers_routes(bp, get_instance_id):
                     'name': idx.get('name') or idx.get('display_name') or 'Unnamed',
                     'display_name': idx.get('display_name') or idx.get('name') or '',
                     'preset': idx.get('preset') or 'manual', 'enabled': idx.get('enabled', True),
+                    'enable_rss': idx.get('enable_rss', True),
                     'api_key_last4': last4, 'categories': cats, 'url': idx.get('url', ''),
                     'api_path': idx.get('api_path', '/api'), 'priority': idx.get('priority', 50),
                     'indexer_hunt_id': idx.get('indexer_hunt_id', ''),
@@ -488,6 +494,7 @@ def register_tv_indexers_routes(bp, get_instance_id):
                 'categories': cats,
                 'priority': _safe_int(data.get('priority'), 25),
                 'enabled': data.get('enabled', True),
+                'enable_rss': data.get('enable_rss', True),
             }
             if indexer_hunt_id:
                 new_indexer['indexer_hunt_id'] = indexer_hunt_id
@@ -509,7 +516,7 @@ def register_tv_indexers_routes(bp, get_instance_id):
             indexers = _get_config(instance_id)
             for idx in indexers:
                 if idx.get('id') == indexer_id:
-                    for key in ('name', 'display_name', 'preset', 'url', 'api_url', 'api_path', 'protocol', 'enabled'):
+                    for key in ('name', 'display_name', 'preset', 'url', 'api_url', 'api_path', 'protocol', 'enabled', 'enable_rss'):
                         if key in data:
                             idx[key] = data[key]
                     if 'api_key' in data and data['api_key']:

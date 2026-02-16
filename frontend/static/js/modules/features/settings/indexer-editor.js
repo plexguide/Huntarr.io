@@ -280,6 +280,8 @@
             if (catSection) catSection.style.display = '';
             var enableGroup = document.getElementById('editor-enable-group');
             if (enableGroup) enableGroup.style.display = '';
+            var enableRssGroup = document.getElementById('editor-enable-rss-group');
+            if (enableRssGroup) enableRssGroup.style.display = '';
 
             // Populate categories
             var defaultCats = Forms.getIndexerDefaultIdsForPreset(val);
@@ -491,6 +493,17 @@
                 enableIcon.style.color = isEnabled ? '#10b981' : '#ef4444';
             });
         }
+
+        // Enable RSS toggle
+        var enableRssSelect = document.getElementById('editor-enable-rss');
+        var rssIcon = document.getElementById('indexer-rss-status-icon');
+        if (enableRssSelect && rssIcon) {
+            enableRssSelect.addEventListener('change', function() {
+                var isRssEnabled = enableRssSelect.value === 'true';
+                rssIcon.className = isRssEnabled ? 'fas fa-rss' : 'fas fa-minus-circle';
+                rssIcon.style.color = isRssEnabled ? '#f59e0b' : '#ef4444';
+            });
+        }
     };
 
     // ── Generate HTML ──────────────────────────────────────────────────
@@ -501,6 +514,7 @@
         var preset = hasPreset ? rawPreset : '';
         var isManual = preset === 'manual';
         var enabled = instance.enabled !== false;
+        var enableRss = instance.enable_rss !== false;
         var isEdit = !isAdd;
         var isSynced = !!(instance.indexer_hunt_id);
         var keyLast4 = instance.api_key_last4 || '';
@@ -603,6 +617,19 @@
                             '</select>' +
                         '</div>' +
                         '<p class="editor-help-text">Enable or disable this indexer</p>' +
+                    '</div>' +
+                    '<div class="editor-field-group" id="editor-enable-rss-group"' + hideStyle + '>' +
+                        '<div class="editor-setting-item">' +
+                            '<label style="display: flex; align-items: center;">' +
+                                '<span>Enable RSS</span>' +
+                                '<i id="indexer-rss-status-icon" class="fas ' + (enableRss ? 'fa-rss' : 'fa-minus-circle') + '" style="color: ' + (enableRss ? '#f59e0b' : '#ef4444') + '; font-size: 1.1rem; margin-left: 8px;"></i>' +
+                            '</label>' +
+                            '<select id="editor-enable-rss">' +
+                                '<option value="true"' + (enableRss ? ' selected' : '') + '>Enabled</option>' +
+                                '<option value="false"' + (!enableRss ? ' selected' : '') + '>Disabled</option>' +
+                            '</select>' +
+                        '</div>' +
+                        '<p class="editor-help-text">Will be used when Media Hunt periodically looks for releases via RSS Sync</p>' +
                     '</div>' +
                     '<div class="editor-field-group"' + hideStyle + '>' +
                         '<label for="editor-name">Name</label>' +
@@ -782,7 +809,9 @@
         if (priority > 99) priority = 99;
         var indexerHuntId = ihIdEl ? ihIdEl.value.trim() : '';
 
-        var body = { name: name || 'Unnamed', preset: preset, enabled: enabled, categories: categories, url: indexerUrl, api_path: apiPath, priority: priority };
+        var enableRssEl = document.getElementById('editor-enable-rss');
+        var enableRss = enableRssEl ? enableRssEl.value === 'true' : true;
+        var body = { name: name || 'Unnamed', preset: preset, enabled: enabled, enable_rss: enableRss, categories: categories, url: indexerUrl, api_path: apiPath, priority: priority };
         if (indexerHuntId) {
             body.indexer_hunt_id = indexerHuntId;
         } else {

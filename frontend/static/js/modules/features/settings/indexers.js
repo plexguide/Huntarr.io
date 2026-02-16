@@ -38,6 +38,9 @@
             urlDisplay = '<div class="instance-detail"><i class="fas fa-link"></i><span>' + shortUrl.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span></div>';
         }
         var ihBadge = isIH ? '<span style="font-size:0.65rem;background:rgba(99,102,241,0.15);color:#818cf8;padding:2px 6px;border-radius:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-left:6px;">Synced</span>' : '';
+        var rssEnabled = indexer.enable_rss !== false;
+        var rssBadgeColor = rssEnabled ? '#22c55e' : '#6b7280';
+        var rssBadgeText = rssEnabled ? 'RSS' : 'No RSS';
 
         return '<div class="instance-card" data-instance-index="' + index + '"' + indexerIdAttr + ' data-app-type="indexer" data-preset="' + preset + '" data-enabled="' + enabled + '" data-ih="' + (isIH ? '1' : '0') + '">' +
             '<div class="instance-card-header">' +
@@ -48,6 +51,7 @@
             urlDisplay +
             '<div class="instance-detail"><i class="fas fa-key"></i><span>\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022' + last4 + '</span></div>' +
             '<div class="instance-detail"><i class="fas fa-sort-numeric-down"></i><span>Priority: ' + (indexer.priority || 50) + '</span></div>' +
+            '<div class="instance-detail"><i class="fas fa-rss" style="color:' + rssBadgeColor + '"></i><span style="color:' + rssBadgeColor + '">' + rssBadgeText + '</span></div>' +
             '</div>' +
             '<div class="instance-card-footer">' +
             '<button type="button" class="btn-card edit" data-app-type="indexer" data-instance-index="' + index + '"><i class="fas fa-edit"></i> Edit</button>' +

@@ -4094,6 +4094,8 @@ document.head.appendChild(styleEl);
             if (catSection) catSection.style.display = '';
             var enableGroup = document.getElementById('editor-enable-group');
             if (enableGroup) enableGroup.style.display = '';
+            var enableRssGroup = document.getElementById('editor-enable-rss-group');
+            if (enableRssGroup) enableRssGroup.style.display = '';
 
             // Populate categories
             var defaultCats = Forms.getIndexerDefaultIdsForPreset(val);
@@ -4305,6 +4307,17 @@ document.head.appendChild(styleEl);
                 enableIcon.style.color = isEnabled ? '#10b981' : '#ef4444';
             });
         }
+
+        // Enable RSS toggle
+        var enableRssSelect = document.getElementById('editor-enable-rss');
+        var rssIcon = document.getElementById('indexer-rss-status-icon');
+        if (enableRssSelect && rssIcon) {
+            enableRssSelect.addEventListener('change', function() {
+                var isRssEnabled = enableRssSelect.value === 'true';
+                rssIcon.className = isRssEnabled ? 'fas fa-rss' : 'fas fa-minus-circle';
+                rssIcon.style.color = isRssEnabled ? '#f59e0b' : '#ef4444';
+            });
+        }
     };
 
     // ── Generate HTML ──────────────────────────────────────────────────
@@ -4315,6 +4328,7 @@ document.head.appendChild(styleEl);
         var preset = hasPreset ? rawPreset : '';
         var isManual = preset === 'manual';
         var enabled = instance.enabled !== false;
+        var enableRss = instance.enable_rss !== false;
         var isEdit = !isAdd;
         var isSynced = !!(instance.indexer_hunt_id);
         var keyLast4 = instance.api_key_last4 || '';
@@ -4417,6 +4431,19 @@ document.head.appendChild(styleEl);
                             '</select>' +
                         '</div>' +
                         '<p class="editor-help-text">Enable or disable this indexer</p>' +
+                    '</div>' +
+                    '<div class="editor-field-group" id="editor-enable-rss-group"' + hideStyle + '>' +
+                        '<div class="editor-setting-item">' +
+                            '<label style="display: flex; align-items: center;">' +
+                                '<span>Enable RSS</span>' +
+                                '<i id="indexer-rss-status-icon" class="fas ' + (enableRss ? 'fa-rss' : 'fa-minus-circle') + '" style="color: ' + (enableRss ? '#f59e0b' : '#ef4444') + '; font-size: 1.1rem; margin-left: 8px;"></i>' +
+                            '</label>' +
+                            '<select id="editor-enable-rss">' +
+                                '<option value="true"' + (enableRss ? ' selected' : '') + '>Enabled</option>' +
+                                '<option value="false"' + (!enableRss ? ' selected' : '') + '>Disabled</option>' +
+                            '</select>' +
+                        '</div>' +
+                        '<p class="editor-help-text">Will be used when Media Hunt periodically looks for releases via RSS Sync</p>' +
                     '</div>' +
                     '<div class="editor-field-group"' + hideStyle + '>' +
                         '<label for="editor-name">Name</label>' +
@@ -4596,7 +4623,9 @@ document.head.appendChild(styleEl);
         if (priority > 99) priority = 99;
         var indexerHuntId = ihIdEl ? ihIdEl.value.trim() : '';
 
-        var body = { name: name || 'Unnamed', preset: preset, enabled: enabled, categories: categories, url: indexerUrl, api_path: apiPath, priority: priority };
+        var enableRssEl = document.getElementById('editor-enable-rss');
+        var enableRss = enableRssEl ? enableRssEl.value === 'true' : true;
+        var body = { name: name || 'Unnamed', preset: preset, enabled: enabled, enable_rss: enableRss, categories: categories, url: indexerUrl, api_path: apiPath, priority: priority };
         if (indexerHuntId) {
             body.indexer_hunt_id = indexerHuntId;
         } else {
@@ -4676,6 +4705,9 @@ document.head.appendChild(styleEl);
             urlDisplay = '<div class="instance-detail"><i class="fas fa-link"></i><span>' + shortUrl.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span></div>';
         }
         var ihBadge = isIH ? '<span style="font-size:0.65rem;background:rgba(99,102,241,0.15);color:#818cf8;padding:2px 6px;border-radius:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-left:6px;">Synced</span>' : '';
+        var rssEnabled = indexer.enable_rss !== false;
+        var rssBadgeColor = rssEnabled ? '#22c55e' : '#6b7280';
+        var rssBadgeText = rssEnabled ? 'RSS' : 'No RSS';
 
         return '<div class="instance-card" data-instance-index="' + index + '"' + indexerIdAttr + ' data-app-type="indexer" data-preset="' + preset + '" data-enabled="' + enabled + '" data-ih="' + (isIH ? '1' : '0') + '">' +
             '<div class="instance-card-header">' +
@@ -4686,6 +4718,7 @@ document.head.appendChild(styleEl);
             urlDisplay +
             '<div class="instance-detail"><i class="fas fa-key"></i><span>\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022' + last4 + '</span></div>' +
             '<div class="instance-detail"><i class="fas fa-sort-numeric-down"></i><span>Priority: ' + (indexer.priority || 50) + '</span></div>' +
+            '<div class="instance-detail"><i class="fas fa-rss" style="color:' + rssBadgeColor + '"></i><span style="color:' + rssBadgeColor + '">' + rssBadgeText + '</span></div>' +
             '</div>' +
             '<div class="instance-card-footer">' +
             '<button type="button" class="btn-card edit" data-app-type="indexer" data-instance-index="' + index + '"><i class="fas fa-edit"></i> Edit</button>' +
@@ -5960,7 +5993,9 @@ document.head.appendChild(styleEl);
             movie_folder_format: '{Movie Title} ({Release Year})',
             minimum_free_space_gb: 10,
             import_using_script: false,
-            import_extra_files: false
+            import_extra_files: false,
+            rss_sync_enabled: true,
+            rss_sync_interval_minutes: 15
         };
     }
 
@@ -5972,6 +6007,8 @@ document.head.appendChild(styleEl);
         var standardFormat = escapeHtml(String(d.standard_movie_format || '').trim() || '{Movie Title} ({Release Year}) {Quality Full}');
         var folderFormat = escapeHtml(String(d.movie_folder_format || '').trim() || '{Movie Title} ({Release Year})');
         var minSpace = typeof d.minimum_free_space_gb === 'number' ? d.minimum_free_space_gb : 10;
+        var rssEnabled = d.rss_sync_enabled !== false;
+        var rssInterval = typeof d.rss_sync_interval_minutes === 'number' ? d.rss_sync_interval_minutes : 15;
 
         var colonOptionList = ['Smart Replace', 'Delete', 'Replace with Dash', 'Replace with Space Dash', 'Replace with Space Dash Space'];
         var colonOptions = colonOptionList.map(function(opt) {
@@ -6013,6 +6050,26 @@ document.head.appendChild(styleEl);
             '<label for="movie-mgmt-min-space">Minimum Free Space (GB)</label>' +
             '<input type="number" id="movie-mgmt-min-space" value="' + minSpace + '" min="0" max="10000" step="1">' +
             '<p class="editor-help-text">Prevent import if it would leave less than this amount of disk space available (in GB)</p></div>' +
+            '</div>' +
+            '<div class="editor-section">' +
+            '<div class="editor-section-title">Media Hunt Scheduler</div>' +
+            '<div class="editor-field-group">' +
+            '<div class="editor-setting-item flex-row">' +
+            '<label for="movie-mgmt-rss-enabled">Enable RSS Sync</label>' +
+            '<label class="toggle-switch"><input type="checkbox" id="movie-mgmt-rss-enabled"' + (rssEnabled ? ' checked' : '') + '><span class="toggle-slider"></span></label>' +
+            '</div><p class="editor-help-text">Periodically check indexers for new releases matching your collection</p></div>' +
+            '<div class="editor-field-group">' +
+            '<label for="movie-mgmt-rss-interval">RSS Sync Interval (minutes)</label>' +
+            '<input type="number" id="movie-mgmt-rss-interval" value="' + rssInterval + '" min="15" max="60" step="1">' +
+            '<p class="editor-help-text">How often to check for new releases (15\u201360 minutes)</p></div>' +
+            '<div class="editor-field-group">' +
+            '<label>Last Sync</label>' +
+            '<div id="movie-mgmt-rss-last-sync" class="editor-help-text" style="color: #94a3b8; padding: 6px 0;">Loading\u2026</div>' +
+            '</div>' +
+            '<div class="editor-field-group">' +
+            '<label>Next Sync</label>' +
+            '<div id="movie-mgmt-rss-next-sync" class="editor-help-text" style="color: #94a3b8; padding: 6px 0;">Loading\u2026</div>' +
+            '</div>' +
             '</div></div>';
     }
 
@@ -6037,6 +6094,13 @@ document.head.appendChild(styleEl);
                 if (!el) return 10;
                 var n = parseInt(el.value, 10);
                 return isNaN(n) || n < 0 ? 10 : Math.min(10000, n);
+            })(),
+            rss_sync_enabled: document.getElementById('movie-mgmt-rss-enabled') ? document.getElementById('movie-mgmt-rss-enabled').checked : true,
+            rss_sync_interval_minutes: (function() {
+                var el = document.getElementById('movie-mgmt-rss-interval');
+                if (!el) return 15;
+                var n = parseInt(el.value, 10);
+                return isNaN(n) || n < 15 ? 15 : Math.min(60, n);
             })()
         };
     }
@@ -6056,7 +6120,7 @@ document.head.appendChild(styleEl);
     }
 
     function setupChangeDetection() {
-        var ids = ['movie-mgmt-rename', 'movie-mgmt-replace-illegal', 'movie-mgmt-colon', 'movie-mgmt-standard-format', 'movie-mgmt-folder-format', 'movie-mgmt-min-space'];
+        var ids = ['movie-mgmt-rename', 'movie-mgmt-replace-illegal', 'movie-mgmt-colon', 'movie-mgmt-standard-format', 'movie-mgmt-folder-format', 'movie-mgmt-min-space', 'movie-mgmt-rss-enabled', 'movie-mgmt-rss-interval'];
         ids.forEach(function(id) {
             var el = document.getElementById(id);
             if (el) {
@@ -6097,6 +6161,33 @@ document.head.appendChild(styleEl);
         }
     }
 
+    function formatSyncTime(isoStr) {
+        if (!isoStr) return 'Never';
+        try {
+            var d = new Date(isoStr);
+            if (isNaN(d.getTime())) return 'Unknown';
+            return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+        } catch (e) { return 'Unknown'; }
+    }
+
+    function loadRssSyncStatus() {
+        var statusUrl = appendInstanceParam('./api/settings/rss-sync-status');
+        fetch(statusUrl, { cache: 'no-store' })
+            .then(function(r) { return r.json(); })
+            .then(function(status) {
+                var lastEl = document.getElementById('movie-mgmt-rss-last-sync');
+                var nextEl = document.getElementById('movie-mgmt-rss-next-sync');
+                if (lastEl) lastEl.textContent = formatSyncTime(status.last_sync_time);
+                if (nextEl) nextEl.textContent = formatSyncTime(status.next_sync_time);
+            })
+            .catch(function() {
+                var lastEl = document.getElementById('movie-mgmt-rss-last-sync');
+                var nextEl = document.getElementById('movie-mgmt-rss-next-sync');
+                if (lastEl) lastEl.textContent = 'Unable to load';
+                if (nextEl) nextEl.textContent = 'Unable to load';
+            });
+    }
+
     function load() {
         _movieManagementDirty = false;
         _movieManagementData = null;
@@ -6118,6 +6209,7 @@ document.head.appendChild(styleEl);
                 contentEl.innerHTML = generateFormHtml(data);
                 setupChangeDetection();
                 attachTokenBuilderButtons();
+                loadRssSyncStatus();
                 if (saveBtn) {
                     saveBtn.onclick = function() { window.MovieManagement.save(); };
                 }
@@ -6618,7 +6710,9 @@ document.head.appendChild(styleEl);
             season_folder_format: 'Season {season:00}',
             specials_folder_format: 'Specials',
             multi_episode_style: 'Prefixed Range',
-            minimum_free_space_gb: 10
+            minimum_free_space_gb: 10,
+            rss_sync_enabled: true,
+            rss_sync_interval_minutes: 15
         };
     }
 
@@ -6636,6 +6730,8 @@ document.head.appendChild(styleEl);
         var specialsFolderFmt = escapeHtml(String(d.specials_folder_format || '').trim() || defaults().specials_folder_format);
         var multiStyle = escapeHtml(String(d.multi_episode_style || 'Prefixed Range').trim());
         var minSpace = typeof d.minimum_free_space_gb === 'number' ? d.minimum_free_space_gb : 10;
+        var rssEnabled = d.rss_sync_enabled !== false;
+        var rssInterval = typeof d.rss_sync_interval_minutes === 'number' ? d.rss_sync_interval_minutes : 15;
 
         var colonOptionList = ['Smart Replace', 'Delete', 'Replace with Dash', 'Replace with Space Dash', 'Replace with Space Dash Space'];
         var colonOptions = colonOptionList.map(function(opt) {
@@ -6711,6 +6807,26 @@ document.head.appendChild(styleEl);
             '<label for="tv-mgmt-min-space">Minimum Free Space (GB)</label>' +
             '<input type="number" id="tv-mgmt-min-space" value="' + minSpace + '" min="0" max="10000" step="1">' +
             '<p class="editor-help-text">Prevent import if it would leave less than this amount of disk space available (in GB)</p></div>' +
+            '</div>' +
+            '<div class="editor-section">' +
+            '<div class="editor-section-title">Media Hunt Scheduler</div>' +
+            '<div class="editor-field-group">' +
+            '<div class="editor-setting-item flex-row">' +
+            '<label for="tv-mgmt-rss-enabled">Enable RSS Sync</label>' +
+            '<label class="toggle-switch"><input type="checkbox" id="tv-mgmt-rss-enabled"' + (rssEnabled ? ' checked' : '') + '><span class="toggle-slider"></span></label>' +
+            '</div><p class="editor-help-text">Periodically check indexers for new releases matching your collection</p></div>' +
+            '<div class="editor-field-group">' +
+            '<label for="tv-mgmt-rss-interval">RSS Sync Interval (minutes)</label>' +
+            '<input type="number" id="tv-mgmt-rss-interval" value="' + rssInterval + '" min="15" max="60" step="1">' +
+            '<p class="editor-help-text">How often to check for new releases (15\u201360 minutes)</p></div>' +
+            '<div class="editor-field-group">' +
+            '<label>Last Sync</label>' +
+            '<div id="tv-mgmt-rss-last-sync" class="editor-help-text" style="color: #94a3b8; padding: 6px 0;">Loading\u2026</div>' +
+            '</div>' +
+            '<div class="editor-field-group">' +
+            '<label>Next Sync</label>' +
+            '<div id="tv-mgmt-rss-next-sync" class="editor-help-text" style="color: #94a3b8; padding: 6px 0;">Loading\u2026</div>' +
+            '</div>' +
             '</div></div>';
     }
 
@@ -6740,6 +6856,13 @@ document.head.appendChild(styleEl);
                 if (!el) return 10;
                 var n = parseInt(el.value, 10);
                 return isNaN(n) || n < 0 ? 10 : Math.min(10000, n);
+            })(),
+            rss_sync_enabled: document.getElementById('tv-mgmt-rss-enabled') ? document.getElementById('tv-mgmt-rss-enabled').checked : true,
+            rss_sync_interval_minutes: (function() {
+                var el = document.getElementById('tv-mgmt-rss-interval');
+                if (!el) return 15;
+                var n = parseInt(el.value, 10);
+                return isNaN(n) || n < 15 ? 15 : Math.min(60, n);
             })()
         };
     }
@@ -6763,7 +6886,7 @@ document.head.appendChild(styleEl);
             'tv-mgmt-rename', 'tv-mgmt-replace-illegal', 'tv-mgmt-colon',
             'tv-mgmt-standard-format', 'tv-mgmt-daily-format', 'tv-mgmt-anime-format',
             'tv-mgmt-series-folder', 'tv-mgmt-season-folder', 'tv-mgmt-specials-folder',
-            'tv-mgmt-multi-episode', 'tv-mgmt-min-space'
+            'tv-mgmt-multi-episode', 'tv-mgmt-min-space', 'tv-mgmt-rss-enabled', 'tv-mgmt-rss-interval'
         ];
         ids.forEach(function(id) {
             var el = document.getElementById(id);
@@ -6813,6 +6936,33 @@ document.head.appendChild(styleEl);
         return fetch(url, { cache: 'no-store' }).then(function(r) { return r.json(); }).catch(function() { return fallback || {}; });
     }
 
+    function formatSyncTime(isoStr) {
+        if (!isoStr) return 'Never';
+        try {
+            var d = new Date(isoStr);
+            if (isNaN(d.getTime())) return 'Unknown';
+            return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+        } catch (e) { return 'Unknown'; }
+    }
+
+    function loadRssSyncStatus() {
+        var statusUrl = appendInstanceParam('./api/tv-hunt/settings/rss-sync-status');
+        fetch(statusUrl, { cache: 'no-store' })
+            .then(function(r) { return r.json(); })
+            .then(function(status) {
+                var lastEl = document.getElementById('tv-mgmt-rss-last-sync');
+                var nextEl = document.getElementById('tv-mgmt-rss-next-sync');
+                if (lastEl) lastEl.textContent = formatSyncTime(status.last_sync_time);
+                if (nextEl) nextEl.textContent = formatSyncTime(status.next_sync_time);
+            })
+            .catch(function() {
+                var lastEl = document.getElementById('tv-mgmt-rss-last-sync');
+                var nextEl = document.getElementById('tv-mgmt-rss-next-sync');
+                if (lastEl) lastEl.textContent = 'Unable to load';
+                if (nextEl) nextEl.textContent = 'Unable to load';
+            });
+    }
+
     function load() {
         _dirty = false;
         _data = null;
@@ -6831,6 +6981,7 @@ document.head.appendChild(styleEl);
                 contentEl.innerHTML = generateFormHtml(data);
                 setupChangeDetection();
                 attachTokenBuilderButtons();
+                loadRssSyncStatus();
                 if (saveBtn) saveBtn.onclick = function() { window.TVManagement.save(); };
             })
             .catch(function() {

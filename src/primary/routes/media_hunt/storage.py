@@ -190,6 +190,7 @@ def register_movie_storage_routes(bp, get_instance_id):
             'standard_movie_format': '{Movie Title} ({Release Year}) {Quality Full}',
             'movie_folder_format': '{Movie Title} ({Release Year})',
             'minimum_free_space_gb': 10, 'import_using_script': False, 'import_extra_files': False,
+            'rss_sync_enabled': True, 'rss_sync_interval_minutes': 15,
         }
 
     def _get_movie_management_config(instance_id):
@@ -230,6 +231,19 @@ def register_movie_storage_routes(bp, get_instance_id):
         except Exception as e:
             logger.exception('Movie management patch error')
             return jsonify({'error': str(e)}), 500
+
+    @bp.route('/api/settings/rss-sync-status', methods=['GET'])
+    def api_rss_sync_status():
+        try:
+            instance_id = _gid()
+            from src.primary.utils.database import get_database
+            db = get_database()
+            status = db.get_app_config_for_instance('rss_sync_status', instance_id)
+            if not status or not isinstance(status, dict):
+                status = {'last_sync_time': None, 'next_sync_time': None}
+            return jsonify(status), 200
+        except Exception:
+            return jsonify({'last_sync_time': None, 'next_sync_time': None}), 200
 
     # Root folders
     @bp.route('/api/movie-hunt/root-folders', methods=['GET'])
@@ -423,6 +437,7 @@ def register_tv_storage_routes(bp, get_instance_id):
             'specials_folder_format': 'Specials',
             'multi_episode_style': 'Prefixed Range',
             'minimum_free_space_gb': 10,
+            'rss_sync_enabled': True, 'rss_sync_interval_minutes': 15,
         }
 
     def _get_tv_management_config(instance_id):
@@ -463,6 +478,19 @@ def register_tv_storage_routes(bp, get_instance_id):
         except Exception as e:
             logger.exception('TV management patch error')
             return jsonify({'error': str(e)}), 500
+
+    @bp.route('/api/tv-hunt/settings/rss-sync-status', methods=['GET'])
+    def api_tv_rss_sync_status():
+        try:
+            instance_id = _gid()
+            from src.primary.utils.database import get_database
+            db = get_database()
+            status = db.get_app_config_for_instance('tv_rss_sync_status', instance_id)
+            if not status or not isinstance(status, dict):
+                status = {'last_sync_time': None, 'next_sync_time': None}
+            return jsonify(status), 200
+        except Exception:
+            return jsonify({'last_sync_time': None, 'next_sync_time': None}), 200
 
     @bp.route('/api/tv-hunt/root-folders', methods=['GET'])
     def api_tv_hunt_root_folders_list():
