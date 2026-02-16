@@ -3270,6 +3270,10 @@ class RequestarrContent {
         // Hidden media tracking
         this.hiddenMediaSet = new Set();
 
+        // Track whether movie/TV dropdowns have been populated (prevents race with _loadServerDefaults)
+        this._movieInstancesPopulated = false;
+        this._tvInstancesPopulated = false;
+
         // Auto-refresh dropdowns when any instance is added/deleted/renamed anywhere in the app
         document.addEventListener('huntarr:instances-changed', () => {
             this.refreshInstanceSelectors();
@@ -3297,6 +3301,8 @@ class RequestarrContent {
     async refreshInstanceSelectors() {
         // Allow _loadServerDefaults to re-fetch (instance selection may have changed)
         this._serverDefaultsLoaded = false;
+        this._movieInstancesPopulated = false;
+        this._tvInstancesPopulated = false;
         await this._loadServerDefaults();
         await Promise.all([
             this._populateDiscoverMovieInstances(),
@@ -3592,6 +3598,12 @@ class RequestarrContent {
         const select = document.getElementById('movies-instance-select');
         if (!select) return;
 
+        // Already populated? Just sync the selection and return.
+        if (this._movieInstancesPopulated) {
+            this._syncAllMovieSelectors();
+            return;
+        }
+
         // Prevent concurrent calls (race condition protection)
         if (this._loadingMovieInstances) {
             console.log('[RequestarrContent] loadMovieInstances already in progress, skipping');
@@ -3722,9 +3734,11 @@ class RequestarrContent {
                     // Reconnect infinite scroll after load completes
                     this.setupMoviesInfiniteScroll();
                 });
+                this._movieInstancesPopulated = true;
             } else {
                 select.innerHTML = '<option value="">No movie instances configured</option>';
                 this.selectedMovieInstance = null;
+                this._movieInstancesPopulated = true;
             }
         } catch (error) {
             console.error('[RequestarrContent] Error loading movie instances:', error);
@@ -3737,6 +3751,12 @@ class RequestarrContent {
     async loadTVInstances() {
         const select = document.getElementById('tv-instance-select');
         if (!select) return;
+
+        // Already populated? Just sync the selection and return.
+        if (this._tvInstancesPopulated) {
+            this._syncAllTVSelectors();
+            return;
+        }
 
         // Prevent concurrent calls (race condition protection)
         if (this._loadingTVInstances) {
@@ -3873,9 +3893,11 @@ class RequestarrContent {
                     // Reconnect infinite scroll after load completes
                     this.setupTVInfiniteScroll();
                 });
+                this._tvInstancesPopulated = true;
             } else {
                 select.innerHTML = '<option value="">No TV instances configured</option>';
                 this.selectedTVInstance = null;
+                this._tvInstancesPopulated = true;
             }
         } catch (error) {
             console.error('[RequestarrContent] Error loading TV instances:', error);
@@ -5804,40 +5826,23 @@ class RequestarrDiscover {
                 this.content.loadDiscoverContent();
                 break;
             case 'movies':
-                // Setup instance selector if not done yet
-                if (!this.content.selectedMovieInstance) {
-                    this.content.setupInstanceSelectors().then(() => {
-                        // Reset movies page state and load
-                        this.content.moviesPage = 1;
-                        this.content.moviesHasMore = true;
-                        this.content.loadMovies();
-                        this.content.setupMoviesInfiniteScroll();
-                    });
-                } else {
-                    // Reset movies page state and load
+                // Always ensure instance selectors are populated before loading.
+                // setupInstanceSelectors → loadMovieInstances short-circuits if already populated.
+                this.content.setupInstanceSelectors().then(() => {
                     this.content.moviesPage = 1;
                     this.content.moviesHasMore = true;
                     this.content.loadMovies();
                     this.content.setupMoviesInfiniteScroll();
-                }
+                });
                 break;
             case 'tv':
-                // Setup instance selector if not done yet
-                if (!this.content.selectedTVInstance) {
-                    this.content.setupInstanceSelectors().then(() => {
-                        // Reset TV page state and load
-                        this.content.tvPage = 1;
-                        this.content.tvHasMore = true;
-                        this.content.loadTV();
-                        this.content.setupTVInfiniteScroll();
-                    });
-                } else {
-                    // Reset TV page state and load
+                // Always ensure instance selectors are populated before loading.
+                this.content.setupInstanceSelectors().then(() => {
                     this.content.tvPage = 1;
                     this.content.tvHasMore = true;
                     this.content.loadTV();
                     this.content.setupTVInfiniteScroll();
-                }
+                });
                 break;
             case 'hidden':
                 this.settings.loadHiddenMedia();

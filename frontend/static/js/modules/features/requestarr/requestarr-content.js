@@ -28,6 +28,10 @@ export class RequestarrContent {
         // Hidden media tracking
         this.hiddenMediaSet = new Set();
 
+        // Track whether movie/TV dropdowns have been populated (prevents race with _loadServerDefaults)
+        this._movieInstancesPopulated = false;
+        this._tvInstancesPopulated = false;
+
         // Auto-refresh dropdowns when any instance is added/deleted/renamed anywhere in the app
         document.addEventListener('huntarr:instances-changed', () => {
             this.refreshInstanceSelectors();
@@ -55,6 +59,8 @@ export class RequestarrContent {
     async refreshInstanceSelectors() {
         // Allow _loadServerDefaults to re-fetch (instance selection may have changed)
         this._serverDefaultsLoaded = false;
+        this._movieInstancesPopulated = false;
+        this._tvInstancesPopulated = false;
         await this._loadServerDefaults();
         await Promise.all([
             this._populateDiscoverMovieInstances(),
@@ -350,6 +356,12 @@ export class RequestarrContent {
         const select = document.getElementById('movies-instance-select');
         if (!select) return;
 
+        // Already populated? Just sync the selection and return.
+        if (this._movieInstancesPopulated) {
+            this._syncAllMovieSelectors();
+            return;
+        }
+
         // Prevent concurrent calls (race condition protection)
         if (this._loadingMovieInstances) {
             console.log('[RequestarrContent] loadMovieInstances already in progress, skipping');
@@ -480,9 +492,11 @@ export class RequestarrContent {
                     // Reconnect infinite scroll after load completes
                     this.setupMoviesInfiniteScroll();
                 });
+                this._movieInstancesPopulated = true;
             } else {
                 select.innerHTML = '<option value="">No movie instances configured</option>';
                 this.selectedMovieInstance = null;
+                this._movieInstancesPopulated = true;
             }
         } catch (error) {
             console.error('[RequestarrContent] Error loading movie instances:', error);
@@ -495,6 +509,12 @@ export class RequestarrContent {
     async loadTVInstances() {
         const select = document.getElementById('tv-instance-select');
         if (!select) return;
+
+        // Already populated? Just sync the selection and return.
+        if (this._tvInstancesPopulated) {
+            this._syncAllTVSelectors();
+            return;
+        }
 
         // Prevent concurrent calls (race condition protection)
         if (this._loadingTVInstances) {
@@ -631,9 +651,11 @@ export class RequestarrContent {
                     // Reconnect infinite scroll after load completes
                     this.setupTVInfiniteScroll();
                 });
+                this._tvInstancesPopulated = true;
             } else {
                 select.innerHTML = '<option value="">No TV instances configured</option>';
                 this.selectedTVInstance = null;
+                this._tvInstancesPopulated = true;
             }
         } catch (error) {
             console.error('[RequestarrContent] Error loading TV instances:', error);

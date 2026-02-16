@@ -1221,18 +1221,18 @@ let huntarrUI = {
                 window.ImportLists.initOrRefresh('tv');
             }
         } else if (section && section.startsWith('tv-hunt-activity') && document.getElementById('tvHuntActivitySection')) {
-            // TV Hunt Activity - dedicated section (Queue, History, Blocklist unique to TV Hunt; separate from Movie Hunt)
+            // TV Hunt Activity - dedicated section (History, Blocklist unique to TV Hunt; separate from Movie Hunt)
+            // Redirect queue to history (queue is now in NZB Hunt)
+            if (section === 'tv-hunt-activity-queue') section = 'tv-hunt-activity-history';
             if (document.getElementById('activitySection')) {
                 document.getElementById('activitySection').classList.remove('active');
                 document.getElementById('activitySection').style.display = 'none';
             }
             document.getElementById('tvHuntActivitySection').classList.add('active');
             document.getElementById('tvHuntActivitySection').style.display = 'block';
-            // Update sidebar nav links so Queue/History/Blocklist stay in TV Hunt Activity
-            var qNav = document.getElementById('movieHuntActivityQueueNav');
+            // Update sidebar nav links so History/Blocklist stay in TV Hunt Activity
             var hNav = document.getElementById('movieHuntActivityHistoryNav');
             var bNav = document.getElementById('movieHuntActivityBlocklistNav');
-            if (qNav) qNav.setAttribute('href', './#tv-hunt-activity-queue');
             if (hNav) hNav.setAttribute('href', './#tv-hunt-activity-history');
             if (bNav) bNav.setAttribute('href', './#tv-hunt-activity-blocklist');
             // Hide all TV Hunt settings/main sections
@@ -1240,7 +1240,7 @@ let huntarrUI = {
                 var el = document.getElementById(id);
                 if (el) { el.classList.remove('active'); el.style.display = 'none'; }
             });
-            var view = section === 'tv-hunt-activity-queue' ? 'queue' : section === 'tv-hunt-activity-history' ? 'history' : 'blocklist';
+            var view = section === 'tv-hunt-activity-history' ? 'history' : 'blocklist';
             newTitle = 'TV Hunt ' + view.charAt(0).toUpperCase() + view.slice(1);
             this.currentSection = section;
             this.showTVHuntSidebar();
@@ -1267,6 +1267,8 @@ let huntarrUI = {
                 window.MediaHuntCalendar.init();
             }
         } else if ((section === 'activity-queue' || section === 'activity-history' || section === 'activity-blocklist' || section === 'activity-logs') && document.getElementById('activitySection')) {
+            // Redirect queue to history (queue is now in NZB Hunt)
+            if (section === 'activity-queue') section = 'activity-history';
             if (document.getElementById('tvHuntActivitySection')) {
                 document.getElementById('tvHuntActivitySection').classList.remove('active');
                 document.getElementById('tvHuntActivitySection').style.display = 'none';
@@ -1274,10 +1276,8 @@ let huntarrUI = {
             document.getElementById('activitySection').classList.add('active');
             document.getElementById('activitySection').style.display = 'block';
             // Restore sidebar nav links to Movie Hunt Activity
-            var qNav = document.getElementById('movieHuntActivityQueueNav');
             var hNav = document.getElementById('movieHuntActivityHistoryNav');
             var bNav = document.getElementById('movieHuntActivityBlocklistNav');
-            if (qNav) qNav.setAttribute('href', './#activity-queue');
             if (hNav) hNav.setAttribute('href', './#activity-history');
             if (bNav) bNav.setAttribute('href', './#activity-blocklist');
             if (document.getElementById('mediaHuntSection')) {
@@ -1288,8 +1288,8 @@ let huntarrUI = {
                 document.getElementById('mediaHuntCalendarSection').classList.remove('active');
                 document.getElementById('mediaHuntCalendarSection').style.display = 'none';
             }
-            var view = section === 'activity-queue' ? 'queue' : section === 'activity-history' ? 'history' : section === 'activity-blocklist' ? 'blocklist' : 'logs';
-            newTitle = section === 'activity-queue' ? 'Activity – Queue' : section === 'activity-history' ? 'Activity – History' : section === 'activity-blocklist' ? 'Activity – Blocklist' : 'Activity – Logs';
+            var view = section === 'activity-history' ? 'history' : section === 'activity-blocklist' ? 'blocklist' : 'logs';
+            newTitle = section === 'activity-history' ? 'Activity – History' : section === 'activity-blocklist' ? 'Activity – Blocklist' : 'Activity – Logs';
             this.currentSection = section;
             this.showMovieHuntSidebar();
             if (window.ActivityModule && typeof window.ActivityModule.init === 'function') {

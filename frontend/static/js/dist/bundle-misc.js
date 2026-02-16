@@ -6039,7 +6039,13 @@ window.HuntarrIndexerHuntHome = {
                 + '<td>' + typeBadge + '</td>'
                 + '<td>' + _esc(ev.indexer_name || '\u2014') + '</td>'
                 + '<td>' + _esc(ev.query || '\u2014') + '</td>'
-                + '<td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' + _esc(ev.result_title || '\u2014') + '</td>'
+                + '<td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">'
+                + (ev.result_title
+                    ? '<span title="' + _esc(ev.result_title).replace(/"/g, '&quot;') + '" style="cursor: default;">'
+                      + (rawType === 'grab' ? 'Fetched' : 'Found')
+                      + '</span>'
+                    : '\u2014')
+                + '</td>'
                 + '<td>' + (ev.response_time_ms || 0) + 'ms</td>'
                 + '<td>' + statusIcon + '</td>'
                 + '</tr>';

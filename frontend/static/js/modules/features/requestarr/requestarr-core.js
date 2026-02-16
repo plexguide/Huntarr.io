@@ -197,40 +197,23 @@ export class RequestarrDiscover {
                 this.content.loadDiscoverContent();
                 break;
             case 'movies':
-                // Setup instance selector if not done yet
-                if (!this.content.selectedMovieInstance) {
-                    this.content.setupInstanceSelectors().then(() => {
-                        // Reset movies page state and load
-                        this.content.moviesPage = 1;
-                        this.content.moviesHasMore = true;
-                        this.content.loadMovies();
-                        this.content.setupMoviesInfiniteScroll();
-                    });
-                } else {
-                    // Reset movies page state and load
+                // Always ensure instance selectors are populated before loading.
+                // setupInstanceSelectors → loadMovieInstances short-circuits if already populated.
+                this.content.setupInstanceSelectors().then(() => {
                     this.content.moviesPage = 1;
                     this.content.moviesHasMore = true;
                     this.content.loadMovies();
                     this.content.setupMoviesInfiniteScroll();
-                }
+                });
                 break;
             case 'tv':
-                // Setup instance selector if not done yet
-                if (!this.content.selectedTVInstance) {
-                    this.content.setupInstanceSelectors().then(() => {
-                        // Reset TV page state and load
-                        this.content.tvPage = 1;
-                        this.content.tvHasMore = true;
-                        this.content.loadTV();
-                        this.content.setupTVInfiniteScroll();
-                    });
-                } else {
-                    // Reset TV page state and load
+                // Always ensure instance selectors are populated before loading.
+                this.content.setupInstanceSelectors().then(() => {
                     this.content.tvPage = 1;
                     this.content.tvHasMore = true;
                     this.content.loadTV();
                     this.content.setupTVInfiniteScroll();
-                }
+                });
                 break;
             case 'hidden':
                 this.settings.loadHiddenMedia();
