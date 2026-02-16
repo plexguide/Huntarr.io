@@ -276,11 +276,11 @@ def run_web_server():
             web_logger.info("Running with Waitress production server.")
             
             # Read configurable web server thread count from settings
-            web_threads = 8  # default
+            web_threads = 16  # default (raised from 8 for download-heavy workloads)
             try:
                 from primary.settings_manager import load_settings
                 general_settings = load_settings('general')
-                web_threads = max(4, min(int(general_settings.get('web_server_threads', 8)), 32))
+                web_threads = max(8, min(int(general_settings.get('web_server_threads', 16)), 48))
             except Exception:
                 pass
             web_logger.info(f"Waitress configured with {web_threads} worker threads")

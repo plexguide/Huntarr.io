@@ -728,13 +728,35 @@ def _nzb_hunt_configured_as_client() -> bool:
         return False
 
 
+@nzb_hunt_bp.route("/api/nzb-hunt/poll", methods=["GET"])
+def nzb_hunt_poll():
+    """Combined queue + status endpoint.  Returns both in one request to
+    cut polling traffic by 2/3 (frontend no longer needs three separate calls)."""
+    try:
+        mgr = _get_download_manager()
+        status = mgr.get_status()
+        if not isinstance(status, dict):
+            status = dict(status) if hasattr(status, 'items') else {}
+        bandwidth = status.get("bandwidth_by_server", {})
+        if bandwidth:
+            try:
+                from src.primary.apps.nzb_hunt.bandwidth_history import get_bandwidth_history
+                get_bandwidth_history(_config_dir()).flush(bandwidth)
+            except Exception:
+                pass
+        status["nzb_hunt_configured_as_client"] = _nzb_hunt_configured_as_client()
+        return jsonify({"status": status, "queue": mgr.get_queue()})
+    except Exception as e:
+        logger.exception("NZB Hunt poll error")
+        return jsonify({"status": {}, "queue": [], "error": str(e)}), 500
+
+
 @nzb_hunt_bp.route("/api/nzb-hunt/status", methods=["GET"])
 def nzb_hunt_status():
     """Get overall NZB Hunt download status."""
     try:
         mgr = _get_download_manager()
         status = mgr.get_status()
-        # Ensure we have a plain dict so we can add our key
         if not isinstance(status, dict):
             status = dict(status) if hasattr(status, 'items') else {}
         bandwidth = status.get("bandwidth_by_server", {})

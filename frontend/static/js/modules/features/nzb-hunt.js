@@ -85,32 +85,23 @@
         ────────────────────────────────────────────── */
         _fetchQueueAndStatus: function () {
             var self = this;
-            var ts = '?t=' + Date.now();
-            // Fetch queue, status, and is-client-configured (fallback if status omits it)
-            Promise.all([
-                fetch('./api/nzb-hunt/queue' + ts).then(function (r) { return r.ok ? r.json() : Promise.resolve({ queue: [] }); }),
-                fetch('./api/nzb-hunt/status' + ts).then(function (r) { return r.ok ? r.json() : Promise.resolve({}); }),
-                fetch('./api/nzb-hunt/is-client-configured' + ts).then(function (r) { return r.ok ? r.json() : Promise.resolve({}); })
-            ]).then(function (results) {
-                var queueData = results[0];
-                var statusData = results[1];
-                var configuredData = results[2];
-                if (statusData.nzb_hunt_configured_as_client === undefined && configuredData && typeof configuredData.configured === 'boolean') {
-                    statusData.nzb_hunt_configured_as_client = configuredData.configured;
-                }
-                self._lastStatus = statusData;
-                self._lastQueue = queueData.queue || [];
-                self._renderQueue(self._lastQueue);
-                self._updateStatusBar(statusData);
-                self._updateQueueBadge(queueData.queue || []);
-                // Update history count from status
-                var hBadge = document.getElementById('nzb-history-count');
-                if (hBadge) hBadge.textContent = statusData.history_count || 0;
-                // Update warnings tab
-                self._updateWarnings(statusData.warnings || []);
-            }).catch(function (err) {
-                console.error('[NzbHunt] Poll error:', err);
-            });
+            // Single combined request instead of 3 separate ones
+            fetch('./api/nzb-hunt/poll?t=' + Date.now())
+                .then(function (r) { return r.ok ? r.json() : Promise.resolve({ status: {}, queue: [] }); })
+                .then(function (data) {
+                    var statusData = data.status || {};
+                    var queueList = data.queue || [];
+                    self._lastStatus = statusData;
+                    self._lastQueue = queueList;
+                    self._renderQueue(queueList);
+                    self._updateStatusBar(statusData);
+                    self._updateQueueBadge(queueList);
+                    var hBadge = document.getElementById('nzb-history-count');
+                    if (hBadge) hBadge.textContent = statusData.history_count || 0;
+                    self._updateWarnings(statusData.warnings || []);
+                }).catch(function (err) {
+                    console.error('[NzbHunt] Poll error:', err);
+                });
         },
 
         _updateStatusBar: function (status) {
@@ -583,7 +574,7 @@
             var self = this;
             // Queue poll timer
             if (this._pollTimer) clearInterval(this._pollTimer);
-            var qRate = (this._displayPrefs.queue.refreshRate || 3) * 1000;
+            var qRate = Math.max(5, this._displayPrefs.queue.refreshRate || 5) * 1000;
             this._pollTimer = setInterval(function () { self._fetchQueueAndStatus(); }, qRate);
 
             // History poll timer

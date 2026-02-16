@@ -348,6 +348,23 @@ class NZBHuntDownloadManager:
         # State save throttling
         self._state_dirty = False
         self._state_saver_running = False
+
+        # ── Response caching ──
+        # Cache get_status()/get_queue() results to avoid recomputing on
+        # every poll (frontend polls every 3-5 seconds).
+        self._cached_status: Optional[dict] = None
+        self._cached_status_time: float = 0.0
+        self._status_cache_ttl: float = 1.5  # seconds
+
+        self._cached_queue: Optional[List[dict]] = None
+        self._cached_queue_time: float = 0.0
+        self._queue_cache_ttl: float = 1.5  # seconds
+
+        # Cache disk_usage (filesystem I/O) separately - very slow-changing
+        self._cached_disk_free: int = 0
+        self._cached_disk_free_human: str = "--"
+        self._cached_disk_time: float = 0.0
+        self._disk_cache_ttl: float = 15.0  # seconds
         
         # yEnc decoding now runs in-thread using sabyenc3 (C extension,
         # releases GIL) or a fast bytes.translate() decoder.  No more
@@ -553,6 +570,9 @@ class NZBHuntDownloadManager:
         NZB content is stored in separate files, so the main state file stays
         small and all saves are fast (~1ms instead of seconds).
         """
+        # Invalidate API response caches on any queue mutation
+        self._invalidate_cache()
+
         if force:
             self._do_save_state()
         else:
@@ -958,9 +978,15 @@ class NZBHuntDownloadManager:
         return True, f"Added to NZB Hunt queue", nzb_id
     
     def get_queue(self) -> List[dict]:
-        """Get current download queue."""
+        """Get current download queue (cached for responsiveness)."""
+        now = time.monotonic()
+        if self._cached_queue is not None and (now - self._cached_queue_time) < self._queue_cache_ttl:
+            return self._cached_queue
         with self._queue_lock:
-            return [item.to_dict() for item in self._queue]
+            result = [item.to_dict() for item in self._queue]
+        self._cached_queue = result
+        self._cached_queue_time = now
+        return result
     
     def get_history(self, limit: int = 50) -> List[dict]:
         """Get download history."""
@@ -1141,44 +1167,65 @@ class NZBHuntDownloadManager:
                 self._dismissed_warnings.add(w["id"])
             self._warnings.clear()
 
-    def get_status(self) -> dict:
-        """Get overall download status."""
-        with self._queue_lock:
-            active = [i for i in self._queue if i.state in (STATE_DOWNLOADING, STATE_ASSEMBLING)]
-            queued = [i for i in self._queue if i.state == STATE_QUEUED]
-            paused = [i for i in self._queue if i.state == STATE_PAUSED]
-        
-        # Use rolling speed when actually downloading; 0 when only assembling/extracting
-        _actually_downloading = [i for i in active if getattr(i, 'progress_pct', 0) < 100]
-        total_speed = self._get_rolling_speed() if _actually_downloading else 0
-        
-        # Calculate remaining bytes and ETA
-        total_remaining = 0
-        with self._queue_lock:
-            for i in self._queue:
-                if i.state in (STATE_DOWNLOADING, STATE_ASSEMBLING, STATE_QUEUED):
-                    total_remaining += max(0, i.total_bytes - i.downloaded_bytes)
-        
-        eta_seconds = int(total_remaining / total_speed) if total_speed > 0 else 0
-        
-        # Free disk space (use complete base derived from temp)
-        free_space = 0
-        free_space_human = "--"
+    def _invalidate_cache(self):
+        """Invalidate cached status/queue after mutations."""
+        self._cached_status = None
+        self._cached_queue = None
+
+    def _get_disk_usage_cached(self) -> Tuple[int, str]:
+        """Return (free_bytes, free_human) with caching to avoid repeated I/O."""
+        now = time.monotonic()
+        if now - self._cached_disk_time < self._disk_cache_ttl:
+            return self._cached_disk_free, self._cached_disk_free_human
         try:
             folders = self._get_folders()
             temp_folder = folders.get("temp_folder", "/downloads/incomplete")
             dl_folder = self._temp_to_complete_base(temp_folder)
             if os.path.isdir(dl_folder):
                 usage = shutil.disk_usage(dl_folder)
-                free_space = usage.free
-                free_space_human = _format_bytes(free_space)
+                self._cached_disk_free = usage.free
+                self._cached_disk_free_human = _format_bytes(usage.free)
         except Exception:
             pass
-        
-        # Per-server bandwidth and connection stats
+        self._cached_disk_time = now
+        return self._cached_disk_free, self._cached_disk_free_human
+
+    def get_status(self) -> dict:
+        """Get overall download status (cached for responsiveness)."""
+        now = time.monotonic()
+        if self._cached_status and (now - self._cached_status_time) < self._status_cache_ttl:
+            return self._cached_status
+
+        # Single lock acquisition — snapshot everything at once
+        with self._queue_lock:
+            active_count = 0
+            queued_count = 0
+            paused_count = 0
+            total_remaining = 0
+            has_downloading = False
+            for i in self._queue:
+                if i.state in (STATE_DOWNLOADING, STATE_ASSEMBLING):
+                    active_count += 1
+                    total_remaining += max(0, i.total_bytes - i.downloaded_bytes)
+                    if i.state == STATE_DOWNLOADING and getattr(i, 'progress_pct', 0) < 100:
+                        has_downloading = True
+                elif i.state == STATE_QUEUED:
+                    queued_count += 1
+                    total_remaining += max(0, i.total_bytes - i.downloaded_bytes)
+                elif i.state == STATE_PAUSED:
+                    paused_count += 1
+            total_count = len(self._queue)
+            history_count = len(self._history)
+
+        total_speed = self._get_rolling_speed() if has_downloading else 0
+        eta_seconds = int(total_remaining / total_speed) if total_speed > 0 else 0
+
+        # Cached disk usage — avoids filesystem I/O on every poll
+        free_space, free_space_human = self._get_disk_usage_cached()
+
+        # NNTP stats (in-memory, fast)
         bandwidth_stats = self._nntp.get_bandwidth_stats()
         connection_stats = self._nntp.get_connection_stats()
-        # When worker hasn't run yet, pools are empty - show server config with 0 active
         if not connection_stats and self.has_servers():
             for srv in self._get_servers():
                 if srv.get("enabled", True):
@@ -1188,17 +1235,18 @@ class NZBHuntDownloadManager:
                         "active": 0,
                         "max": int(srv.get("connections", 8)),
                     })
-        
-        # Run warning detectors
+
+        # Warnings (lightweight, in-memory)
         self._check_warnings(connection_stats)
         warnings = self.get_warnings()
-        
-        return {
-            "active_count": len(active),
-            "queued_count": len(queued),
-            "paused_count": len(paused),
-            "total_count": len(self._queue),
-            "history_count": len(self._history),
+
+        speed_limit = self.get_speed_limit()
+        result = {
+            "active_count": active_count,
+            "queued_count": queued_count,
+            "paused_count": paused_count,
+            "total_count": total_count,
+            "history_count": history_count,
             "speed_bps": total_speed,
             "speed_human": _format_speed(total_speed),
             "remaining_bytes": total_remaining,
@@ -1207,8 +1255,8 @@ class NZBHuntDownloadManager:
             "eta_human": _format_eta(eta_seconds),
             "free_space": free_space,
             "free_space_human": free_space_human,
-            "speed_limit_bps": self.get_speed_limit(),
-            "speed_limit_human": _format_speed(self.get_speed_limit()) if self.get_speed_limit() > 0 else "Unlimited",
+            "speed_limit_bps": speed_limit,
+            "speed_limit_human": _format_speed(speed_limit) if speed_limit > 0 else "Unlimited",
             "paused_global": self._paused_global,
             "bandwidth_by_server": bandwidth_stats,
             "connection_stats": connection_stats,
@@ -1218,6 +1266,9 @@ class NZBHuntDownloadManager:
             "warnings": warnings,
             "warnings_count": len(warnings),
         }
+        self._cached_status = result
+        self._cached_status_time = now
+        return result
     
     # ── Worker Thread ─────────────────────────────────────────────
     

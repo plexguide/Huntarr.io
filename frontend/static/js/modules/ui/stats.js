@@ -1019,10 +1019,10 @@ window.HuntarrStats = {
     _startNzbHomePoll: function() {
         if (this._nzbHomePollTimer) return; // already polling
         var self = this;
-        // Poll every 3 seconds (same as NZB Home default)
+        // Poll every 5 seconds for home page status
         this._nzbHomePollTimer = setInterval(function() {
             self._fetchNzbHuntStatus();
-        }, 3000);
+        }, 5000);
     },
 
     _stopNzbHomePoll: function() {
