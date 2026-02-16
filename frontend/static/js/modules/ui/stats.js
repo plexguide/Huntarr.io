@@ -1039,7 +1039,7 @@ window.HuntarrStats = {
         btn.addEventListener('click', function() {
             var icon = btn.querySelector('i');
             var isPaused = icon && icon.classList.contains('fa-play');
-            var endpoint = isPaused ? './api/nzb-hunt/resume' : './api/nzb-hunt/pause';
+            var endpoint = isPaused ? './api/nzb-hunt/queue/resume-all' : './api/nzb-hunt/queue/pause-all';
             fetch(endpoint, { method: 'POST' })
                 .then(function(r) { return r.json(); })
                 .then(function() {

@@ -781,7 +781,7 @@ window.SettingsForms = {
                 ssl_verify: getVal('ssl_verify', true),
                 base_url: getVal('base_url', ''),
                 dev_key: getVal('dev_key', ''),
-                web_server_threads: parseInt(container.querySelector('#web_server_threads')?.value || '8'),
+                web_server_threads: parseInt(container.querySelector('#web_server_threads')?.value || '32'),
             };
         }
         if (section === 'notifications') {
@@ -14326,7 +14326,7 @@ document.head.appendChild(styleEl);
                         <div class="setting-item flex-row" style="margin-top: 15px;" id="show_trending_setting_item">
                             <label for="show_trending">Show Smart Hunt on Home:</label>
                             <label class="toggle-switch">
-                                <input type="checkbox" id="show_trending" ${settings.show_trending === true ? "checked" : ""}>
+                                <input type="checkbox" id="show_trending" ${settings.show_trending !== false ? "checked" : ""}>
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
@@ -14397,12 +14397,12 @@ document.head.appendChild(styleEl);
                         <div class="setting-item" style="margin-top: 15px;">
                             <label for="web_server_threads">Web Server Threads:</label>
                             <select id="web_server_threads" class="mset-select">
-                                <option value="4" ${settings.web_server_threads === 4 ? "selected" : ""}>4 (Light)</option>
-                                <option value="8" ${(settings.web_server_threads === 8 || !settings.web_server_threads) ? "selected" : ""}>8 (Default)</option>
-                                <option value="12" ${settings.web_server_threads === 12 ? "selected" : ""}>12 (Moderate)</option>
-                                <option value="16" ${settings.web_server_threads === 16 ? "selected" : ""}>16 (Heavy)</option>
-                                <option value="24" ${settings.web_server_threads === 24 ? "selected" : ""}>24 (High Load)</option>
-                                <option value="32" ${settings.web_server_threads === 32 ? "selected" : ""}>32 (Maximum)</option>
+                                <option value="8" ${settings.web_server_threads === 8 ? "selected" : ""}>8 (Light)</option>
+                                <option value="16" ${settings.web_server_threads === 16 ? "selected" : ""}>16 (Moderate)</option>
+                                <option value="32" ${(settings.web_server_threads === 32 || !settings.web_server_threads) ? "selected" : ""}>32 (Default)</option>
+                                <option value="48" ${settings.web_server_threads === 48 ? "selected" : ""}>48 (Heavy)</option>
+                                <option value="64" ${settings.web_server_threads === 64 ? "selected" : ""}>64 (High Load)</option>
+                                <option value="96" ${settings.web_server_threads === 96 ? "selected" : ""}>96 (Maximum)</option>
                             </select>
                             <p class="setting-help">Number of web server worker threads for handling concurrent requests. Increase if using many apps/instances. Requires restart.</p>
                         </div>

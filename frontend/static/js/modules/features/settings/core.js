@@ -779,7 +779,7 @@ window.SettingsForms = {
                 ssl_verify: getVal('ssl_verify', true),
                 base_url: getVal('base_url', ''),
                 dev_key: getVal('dev_key', ''),
-                web_server_threads: parseInt(container.querySelector('#web_server_threads')?.value || '8'),
+                web_server_threads: parseInt(container.querySelector('#web_server_threads')?.value || '32'),
             };
         }
         if (section === 'notifications') {

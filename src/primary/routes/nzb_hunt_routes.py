@@ -1095,58 +1095,26 @@ def save_nzb_universal_settings():
 
 @nzb_hunt_bp.route("/api/nzb-hunt/home-stats", methods=["GET"])
 def nzb_hunt_home_stats():
-    """Return aggregated NZB Hunt stats for the home page activity card."""
+    """Return NZB Hunt visibility and stats for the home page card.
+    
+    The card auto-shows whenever NZB Hunt has servers configured —
+    no manual toggle needed.
+    """
     try:
-        cfg = _load_config()
-        show_on_home = cfg.get("universal", {}).get("show_on_home", True)
         has_servers = has_nzb_servers()
-        # Show warning whenever no NZB servers configured (NZB Hunt feature exists in app)
         show_nzb_warning = not has_servers
 
-        if not show_on_home:
+        if not has_servers:
             return jsonify({
                 "visible": False,
-                "has_servers": has_servers,
+                "has_servers": False,
                 "show_nzb_warning": show_nzb_warning,
             })
 
-        # Live status from download manager (for visible card)
-        speed_bps = 0
-        active_count = 0
-        queued_count = 0
-        try:
-            mgr = _get_download_manager()
-            status = mgr.get_status()
-            speed_bps = status.get("speed_bps", 0)
-            active_count = status.get("active_count", 0)
-            queued_count = status.get("queued_count", 0)
-        except Exception:
-            pass
-
-        # Cumulative stats from history
-        completed = 0
-        failed = 0
-        try:
-            mgr = _get_download_manager()
-            history = mgr.get_history(limit=50000)
-            for item in history:
-                state = item.get("state", "")
-                if state == "completed":
-                    completed += 1
-                elif state == "failed":
-                    failed += 1
-        except Exception:
-            pass
-
         return jsonify({
             "visible": True,
-            "speed_bps": speed_bps,
-            "active_count": active_count,
-            "queued_count": queued_count,
-            "completed": completed,
-            "failed": failed,
-            "has_servers": has_servers,
-            "show_nzb_warning": show_nzb_warning,
+            "has_servers": True,
+            "show_nzb_warning": False,
         })
     except Exception as e:
         logger.exception("NZB Hunt home stats error")
