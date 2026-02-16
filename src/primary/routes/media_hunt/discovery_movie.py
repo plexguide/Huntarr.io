@@ -813,6 +813,7 @@ def register_movie_discovery_routes(bp):
             best_score = current_score
             best_breakdown = ''
             best_indexer = None
+            _best_ih_id = ''
 
             blocklist_titles = _get_blocklist_source_titles(instance_id)
 
@@ -824,7 +825,23 @@ def register_movie_discovery_routes(bp):
                 if not api_key:
                     continue
                 categories = idx.get('categories') or [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2070]
+                ih_id = idx.get('indexer_hunt_id', '')
+                _search_start = _time.time()
                 results = _search_newznab_movie(base_url, api_key, query, categories, timeout=15)
+                _search_ms = int((_time.time() - _search_start) * 1000)
+                # Record search event for Indexer Hunt stats
+                if ih_id:
+                    try:
+                        from src.primary.utils.database import get_database as _get_db
+                        _get_db().record_indexer_hunt_event(
+                            indexer_id=ih_id, indexer_name=idx.get('name', ''),
+                            event_type='search', query=query,
+                            response_time_ms=_search_ms,
+                            success=bool(results),
+                            instance_id=instance_id, instance_name='',
+                        )
+                    except Exception:
+                        pass
                 if not results:
                     continue
                 if blocklist_titles:
@@ -839,6 +856,7 @@ def register_movie_discovery_routes(bp):
                     best_score = chosen_score
                     best_breakdown = chosen_breakdown
                     best_indexer = idx.get('name') or idx.get('preset', 'Unknown')
+                    _best_ih_id = ih_id
 
             if not best_result:
                 movie_hunt_logger.info(
@@ -862,6 +880,19 @@ def register_movie_discovery_routes(bp):
             )
             if not ok:
                 return jsonify({'success': False, 'message': f'Download client error: {msg}'}), 500
+
+            # Record grab event for Indexer Hunt stats
+            if _best_ih_id:
+                try:
+                    from src.primary.utils.database import get_database as _get_db
+                    _get_db().record_indexer_hunt_event(
+                        indexer_id=_best_ih_id, indexer_name=best_indexer or '',
+                        event_type='grab', query=query,
+                        result_title=nzb_title,
+                        instance_id=instance_id, instance_name='',
+                    )
+                except Exception:
+                    pass
 
             movie_hunt_logger.info(
                 "Upgrade: '%s' (%s) upgrading from score %s → %s. Release: %s. Indexer: %s",

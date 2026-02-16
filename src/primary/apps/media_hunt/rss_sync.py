@@ -9,6 +9,7 @@ Falls back to t=search with only cat param if t=movie/t=tvsearch fails.
 """
 
 import logging
+import time as _time
 import requests
 import xml.etree.ElementTree as ET
 
@@ -180,7 +181,10 @@ def fetch_rss_releases(indexer, hunt_type, logger_inst=None):
         f'&extended=1&apikey={requests.utils.quote(api_key)}&limit=100'
     )
 
+    ih_id = indexer.get('indexer_hunt_id', '')
     releases = []
+    _rss_start = _time.time()
+    _rss_success = False
     try:
         log.debug("[RSS Sync] Fetching RSS from %s using t=%s", indexer_name, t_param)
         r = requests.get(rss_url, timeout=30, verify=verify_ssl)
@@ -188,6 +192,7 @@ def fetch_rss_releases(indexer, hunt_type, logger_inst=None):
             releases = _parse_xml_rss_releases(r.text, indexer_name)
             if releases:
                 log.info("[RSS Sync] Fetched %d releases from %s (t=%s)", len(releases), indexer_name, t_param)
+                _rss_success = True
         else:
             log.warning("[RSS Sync] HTTP %d from %s (t=%s)", r.status_code, indexer_name, t_param)
     except requests.RequestException as e:
@@ -206,8 +211,23 @@ def fetch_rss_releases(indexer, hunt_type, logger_inst=None):
                 releases = _parse_xml_rss_releases(r.text, indexer_name)
                 if releases:
                     log.info("[RSS Sync] Fetched %d releases from %s (fallback t=search)", len(releases), indexer_name)
+                    _rss_success = True
         except requests.RequestException as e:
             log.warning("[RSS Sync] Fallback request error for %s: %s", indexer_name, e)
+
+    # Record RSS fetch as a search event for Indexer Hunt stats
+    _rss_ms = int((_time.time() - _rss_start) * 1000)
+    if ih_id:
+        try:
+            from src.primary.utils.database import get_database as _get_db
+            _get_db().record_indexer_hunt_event(
+                indexer_id=ih_id, indexer_name=indexer_name,
+                event_type='search', query='[RSS Sync]',
+                response_time_ms=_rss_ms,
+                success=_rss_success,
+            )
+        except Exception:
+            pass
 
     return releases
 
