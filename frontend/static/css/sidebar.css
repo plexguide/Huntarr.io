@@ -658,7 +658,7 @@
     transition: all 0.2s ease;
     vertical-align: middle;
     position: relative;
-    top: -0.5px;
+    top: 1.5px;
 }
 
 .sidebar-footer-upgrade:hover {
