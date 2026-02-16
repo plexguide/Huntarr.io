@@ -5262,7 +5262,7 @@
                 var linked = data.linked || [];
                 var msg = 'Are you sure you want to delete "' + name + '"?';
                 if (linked.length > 0) {
-                    msg += '\n\nThis will also remove it from ' + linked.length + ' Movie Hunt instance(s).';
+                    msg += '\n\nThis will also remove it from ' + linked.length + ' linked instance(s).';
                 }
                 window.HuntarrConfirm.show({
                     title: 'Delete Indexer',

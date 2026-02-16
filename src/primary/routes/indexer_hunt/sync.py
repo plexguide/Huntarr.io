@@ -1,4 +1,4 @@
-"""Indexer Hunt — Sync logic between Indexer Hunt (global) and Movie Hunt instances."""
+"""Indexer Hunt — Sync logic between Indexer Hunt (global) and Movie/TV Hunt instances."""
 
 import json
 from flask import request, jsonify
@@ -26,7 +26,19 @@ def _get_all_movie_hunt_instance_ids():
             rows = conn.execute('SELECT id FROM movie_hunt_instances ORDER BY id').fetchall()
             return [r[0] for r in rows]
     except Exception:
-        return [1]  # fallback to legacy single instance
+        return [1]
+
+
+def _get_all_tv_hunt_instance_ids():
+    """Return list of all TV Hunt instance IDs."""
+    from src.primary.utils.database import get_database
+    db = get_database()
+    try:
+        with db.get_connection() as conn:
+            rows = conn.execute('SELECT id FROM tv_hunt_instances ORDER BY id').fetchall()
+            return [r[0] for r in rows]
+    except Exception:
+        return [1]
 
 
 def _get_indexers_for_instance(instance_id):
@@ -41,8 +53,20 @@ def _save_indexers_for_instance(indexers_list, instance_id):
     _save_indexers_list(indexers_list, instance_id)
 
 
+def _get_tv_indexers_for_instance(instance_id):
+    """Get TV Hunt indexer list for an instance."""
+    from src.primary.routes.media_hunt.indexers import get_tv_indexers_config
+    return get_tv_indexers_config(instance_id)
+
+
+def _save_tv_indexers_for_instance(indexers_list, instance_id):
+    """Save TV Hunt indexer list for an instance."""
+    from src.primary.routes.media_hunt.indexers import save_tv_indexers_list
+    save_tv_indexers_list(indexers_list, instance_id)
+
+
 def _push_edit_to_instances(indexer_hunt_id, changes):
-    """Push API key / enabled changes to all linked Movie Hunt instances.
+    """Push API key / enabled / name changes to all linked Movie AND TV Hunt instances.
     Returns count of instances updated."""
     count = 0
     for inst_id in _get_all_movie_hunt_instance_ids():
@@ -56,11 +80,22 @@ def _push_edit_to_instances(indexer_hunt_id, changes):
         if modified:
             _save_indexers_for_instance(indexers, inst_id)
             count += 1
+    for inst_id in _get_all_tv_hunt_instance_ids():
+        indexers = _get_tv_indexers_for_instance(inst_id)
+        modified = False
+        for idx in indexers:
+            if idx.get('indexer_hunt_id') == indexer_hunt_id:
+                for k, v in changes.items():
+                    idx[k] = v
+                modified = True
+        if modified:
+            _save_tv_indexers_for_instance(indexers, inst_id)
+            count += 1
     return count
 
 
 def _cascade_delete_from_instances(indexer_hunt_id):
-    """Delete all Movie Hunt indexers linked to this Indexer Hunt id.
+    """Delete all Movie AND TV Hunt indexers linked to this Indexer Hunt id.
     Returns count of instances affected."""
     count = 0
     for inst_id in _get_all_movie_hunt_instance_ids():
@@ -70,12 +105,19 @@ def _cascade_delete_from_instances(indexer_hunt_id):
         if len(indexers) < before:
             _save_indexers_for_instance(indexers, inst_id)
             count += 1
+    for inst_id in _get_all_tv_hunt_instance_ids():
+        indexers = _get_tv_indexers_for_instance(inst_id)
+        before = len(indexers)
+        indexers = [idx for idx in indexers if idx.get('indexer_hunt_id') != indexer_hunt_id]
+        if len(indexers) < before:
+            _save_tv_indexers_for_instance(indexers, inst_id)
+            count += 1
     return count
 
 
 def _read_instance_priorities(indexer_hunt_id):
-    """Read current priority values from Movie Hunt instances for an Indexer Hunt indexer.
-    Returns list of {instance_id, instance_name, priority}."""
+    """Read current priority values from all Movie AND TV Hunt instances for an Indexer Hunt indexer.
+    Returns list of {instance_id, instance_name, priority, mode}."""
     results = []
     from src.primary.utils.database import get_database
     db = get_database()
@@ -83,19 +125,37 @@ def _read_instance_priorities(indexer_hunt_id):
         indexers = _get_indexers_for_instance(inst_id)
         for idx in indexers:
             if idx.get('indexer_hunt_id') == indexer_hunt_id:
-                # Get instance name
-                inst_name = f'Instance {inst_id}'
+                inst_name = f'Movie Instance {inst_id}'
                 try:
                     with db.get_connection() as conn:
                         row = conn.execute('SELECT name FROM movie_hunt_instances WHERE id = ?', (inst_id,)).fetchone()
                         if row:
-                            inst_name = row[0]
+                            inst_name = f'Movie - {row[0]}'
                 except Exception:
                     pass
                 results.append({
                     'instance_id': inst_id,
                     'instance_name': inst_name,
                     'priority': idx.get('priority', 50),
+                    'mode': 'movie',
+                })
+    for inst_id in _get_all_tv_hunt_instance_ids():
+        indexers = _get_tv_indexers_for_instance(inst_id)
+        for idx in indexers:
+            if idx.get('indexer_hunt_id') == indexer_hunt_id:
+                inst_name = f'TV Instance {inst_id}'
+                try:
+                    with db.get_connection() as conn:
+                        row = conn.execute('SELECT name FROM tv_hunt_instances WHERE id = ?', (inst_id,)).fetchone()
+                        if row:
+                            inst_name = f'TV - {row[0]}'
+                except Exception:
+                    pass
+                results.append({
+                    'instance_id': inst_id,
+                    'instance_name': inst_name,
+                    'priority': idx.get('priority', 50),
+                    'mode': 'tv',
                 })
     return results
 
@@ -223,7 +283,7 @@ def api_ih_sync():
 
 @indexer_hunt_bp.route('/api/indexer-hunt/linked-instances/<idx_id>', methods=['GET'])
 def api_ih_linked(idx_id):
-    """Return which Movie Hunt instances use this Indexer Hunt indexer."""
+    """Return which Movie and TV Hunt instances use this Indexer Hunt indexer."""
     try:
         priorities = _read_instance_priorities(idx_id)
         return jsonify({'linked': priorities}), 200

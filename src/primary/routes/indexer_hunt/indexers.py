@@ -210,7 +210,7 @@ def api_ih_update(idx_id):
 
 @indexer_hunt_bp.route('/api/indexer-hunt/indexers/<idx_id>', methods=['DELETE'])
 def api_ih_delete(idx_id):
-    """Delete an Indexer Hunt indexer and cascade to Movie Hunt instances."""
+    """Delete an Indexer Hunt indexer and cascade to all linked Movie and TV Hunt instances."""
     try:
         from src.primary.utils.database import get_database
         db = get_database()
