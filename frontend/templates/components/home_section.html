@@ -4,6 +4,48 @@
     
     <!-- Add initially hidden class to prevent flickering before JS initializes -->  
     <div class="dashboard-grid stack-layout mobile-scrollable" style="opacity: 0; transition: opacity 0.15s ease;">
+        <!-- NZB Hunt Home Status Card (auto-shown when NZB Hunt has servers) -->
+        <div class="card nzb-home-card" id="nzb-hunt-home-card" style="display: none;">
+            <div class="home-section-bar">
+                <div class="home-section-bar-left">
+                    <i class="fas fa-download home-section-icon" style="color: #60a5fa;"></i>
+                    <span class="home-section-title">NZB Hunt</span>
+                </div>
+                <div class="home-section-bar-right">
+                    <button id="nzb-home-pause-btn" class="home-section-btn" title="Pause/Resume all downloads" style="min-width: auto; padding: 4px 10px;">
+                        <i class="fas fa-pause"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="nzb-home-status-bar">
+                <div class="nzb-home-stat">
+                    <i class="fas fa-plug"></i>
+                    <span id="nzb-home-connections">0</span>
+                    <span class="nzb-home-stat-label">Connections</span>
+                </div>
+                <div class="nzb-home-stat">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span id="nzb-home-speed">0 B/s</span>
+                    <span class="nzb-home-stat-label">Speed</span>
+                </div>
+                <div class="nzb-home-stat">
+                    <i class="fas fa-clock"></i>
+                    <span id="nzb-home-eta">--</span>
+                    <span class="nzb-home-stat-label">ETA</span>
+                </div>
+                <div class="nzb-home-stat">
+                    <i class="fas fa-arrow-down"></i>
+                    <span id="nzb-home-remaining">0 B</span>
+                    <span class="nzb-home-stat-label">Remaining</span>
+                </div>
+                <div class="nzb-home-stat">
+                    <i class="fas fa-hdd"></i>
+                    <span id="nzb-home-space">--</span>
+                    <span class="nzb-home-stat-label">Space</span>
+                </div>
+            </div>
+        </div>
+
         <div class="card requestarr-home-card">
             <div class="requestarr-home-content">
                 <div class="global-search-bar">
@@ -57,48 +99,6 @@
                 </div>
             </div>
         </div>
-        <!-- NZB Hunt Home Status Card (auto-shown when NZB Hunt has servers) -->
-        <div class="card nzb-home-card" id="nzb-hunt-home-card" style="display: none;">
-            <div class="home-section-bar">
-                <div class="home-section-bar-left">
-                    <i class="fas fa-download home-section-icon" style="color: #60a5fa;"></i>
-                    <span class="home-section-title">NZB Hunt</span>
-                </div>
-                <div class="home-section-bar-right">
-                    <button id="nzb-home-pause-btn" class="home-section-btn" title="Pause/Resume all downloads" style="min-width: auto; padding: 4px 10px;">
-                        <i class="fas fa-pause"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="nzb-home-status-bar">
-                <div class="nzb-home-stat">
-                    <i class="fas fa-plug"></i>
-                    <span id="nzb-home-connections">0</span>
-                    <span class="nzb-home-stat-label">Connections</span>
-                </div>
-                <div class="nzb-home-stat">
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span id="nzb-home-speed">0 B/s</span>
-                    <span class="nzb-home-stat-label">Speed</span>
-                </div>
-                <div class="nzb-home-stat">
-                    <i class="fas fa-clock"></i>
-                    <span id="nzb-home-eta">--</span>
-                    <span class="nzb-home-stat-label">ETA</span>
-                </div>
-                <div class="nzb-home-stat">
-                    <i class="fas fa-arrow-down"></i>
-                    <span id="nzb-home-remaining">0 B</span>
-                    <span class="nzb-home-stat-label">Remaining</span>
-                </div>
-                <div class="nzb-home-stat">
-                    <i class="fas fa-hdd"></i>
-                    <span id="nzb-home-space">--</span>
-                    <span class="nzb-home-stat-label">Space</span>
-                </div>
-            </div>
-        </div>
-
         <!-- Hunt Activity -->
         <div class="card stats-card">
             <div class="home-section-bar">
