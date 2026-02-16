@@ -267,6 +267,10 @@
             var deleteBtn = document.getElementById('requestarr-detail-delete');
             if (deleteBtn) deleteBtn.addEventListener('click', () => this.openDeleteModalForMovieHunt());
 
+            // Monitor toggle
+            var monitorBtn = document.getElementById('requestarr-movie-monitor-btn');
+            if (monitorBtn) monitorBtn.addEventListener('click', function() { self.toggleMovieMonitor(); });
+
             // Search Movie (request) — for items NOT in collection
             var searchMovieBtn = document.getElementById('requestarr-detail-search-movie');
             if (searchMovieBtn) searchMovieBtn.addEventListener('click', function() {
@@ -490,7 +494,7 @@
             }
 
             // ── Update toolbar and action buttons ──
-            this._updateToolbarForStatus(true, isDownloaded, isMovieHunt);
+            this._updateToolbarForStatus(true, isDownloaded, isMovieHunt, data);
         },
 
         /** Helper: set info bar to "Not in Collection" */
@@ -522,7 +526,7 @@
          *   Toolbar-right: Edit, Delete (trash)
          *   Action area:   empty (status bar shows state)
          */
-        _updateToolbarForStatus(isFound, isDownloaded, isMovieHunt) {
+        _updateToolbarForStatus(isFound, isDownloaded, isMovieHunt, statusData) {
             var self = this;
 
             // ── Toolbar management buttons ──
@@ -534,6 +538,20 @@
             if (editBtn) editBtn.style.display = (isFound && isMovieHunt) ? '' : 'none';
             if (deleteBtn) deleteBtn.style.display = (isFound && isMovieHunt) ? '' : 'none';
             if (refreshBtn) refreshBtn.style.display = (isFound && isMovieHunt) ? '' : 'none';
+
+            // ── Monitor toggle — show only when movie is in collection (Movie Hunt) ──
+            var monitorWrap = document.getElementById('requestarr-movie-monitor-wrap');
+            var monitorBtn = document.getElementById('requestarr-movie-monitor-btn');
+            if (monitorWrap && monitorBtn) {
+                if (isFound && isMovieHunt) {
+                    monitorWrap.style.display = '';
+                    var monitored = statusData ? statusData.monitored !== false : true;
+                    var icon = monitorBtn.querySelector('i');
+                    if (icon) icon.className = monitored ? 'fas fa-bookmark' : 'far fa-bookmark';
+                } else {
+                    monitorWrap.style.display = 'none';
+                }
+            }
 
             // ── Hide button (eye-slash) — only when NOT in collection ──
             var hideBtn = document.getElementById('requestarr-detail-hide');
@@ -609,6 +627,43 @@
             window.MovieHuntDetail.currentMovieStatus = this.currentMovieStatusForMH || null;
             await window.MovieHuntDetail.handleForceUpgrade();
             this.updateDetailInfoBar();
+        },
+
+        async toggleMovieMonitor() {
+            var decoded = _decodeInstanceValue(this.selectedInstanceName || '');
+            if (decoded.appType !== 'movie_hunt') return;
+            var inst = this.movieInstances.find(i => i.compoundValue === this.selectedInstanceName);
+            var instanceId = inst && inst.id != null ? inst.id : null;
+            if (instanceId == null) return;
+            var tmdbId = this.currentMovie && (this.currentMovie.tmdb_id || this.currentMovie.id);
+            if (!tmdbId) return;
+
+            var btn = document.getElementById('requestarr-movie-monitor-btn');
+            if (!btn) return;
+            var icon = btn.querySelector('i');
+            var currentMonitored = icon && icon.classList.contains('fas');
+            var newMonitored = !currentMonitored;
+
+            // Optimistic UI
+            if (icon) icon.className = newMonitored ? 'fas fa-bookmark' : 'far fa-bookmark';
+
+            try {
+                var resp = await fetch('./api/movie-hunt/collection/' + tmdbId + '/monitor?instance_id=' + instanceId, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ monitored: newMonitored })
+                });
+                var data = await resp.json();
+                if (!resp.ok || data.error) throw new Error(data.error || 'Failed');
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification(newMonitored ? 'Monitor on' : 'Monitor off', 'success');
+                }
+            } catch (e) {
+                if (icon) icon.className = currentMonitored ? 'fas fa-bookmark' : 'far fa-bookmark';
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('Failed to update monitor: ' + e.message, 'error');
+                }
+            }
         },
 
         renderMovieDetail(details, originalMovie) {
@@ -730,7 +785,14 @@
                                 <img src="${posterUrl}" alt="${this.escapeHtml(details.title)}" onerror="this.src='./static/images/blackout.jpg'">
                             </div>
                             <div class="mh-hero-info">
-                                <h1 class="mh-hero-title">${this.escapeHtml(details.title)}</h1>
+                                <div class="mh-hero-title-row">
+                                    <h1 class="mh-hero-title">${this.escapeHtml(details.title)}</h1>
+                                    <div class="mh-hero-movie-monitor" id="requestarr-movie-monitor-wrap" style="display:none;">
+                                        <button type="button" class="mh-monitor-btn" id="requestarr-movie-monitor-btn" title="Toggle monitor movie">
+                                            <i class="fas fa-bookmark"></i>
+                                        </button>
+                                    </div>
+                                </div>
                                 <div class="mh-hero-meta">
                                     ${certification !== 'Not Rated' ? `<span class="mh-cert">${this.escapeHtml(certification)}</span>` : ''}
                                     <span><i class="fas fa-calendar-alt"></i> ${year}</span>

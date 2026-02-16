@@ -194,6 +194,8 @@
     font-size: 13px;
     cursor: pointer;
     outline: none;
+    width: auto;
+    max-width: 100%;
 }
 .mh-hero-instance select:focus,
 #mh-detail-instance-select:focus {

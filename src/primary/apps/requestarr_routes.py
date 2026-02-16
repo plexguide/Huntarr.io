@@ -283,6 +283,7 @@ def request_media():
                     return jsonify({'success': False, 'message': f'Invalid quality profile. For TV Hunt, select a TV Hunt instance (not Sonarr).'}), 400
         
         monitor = (data.get('monitor') or '').strip() or None
+        movie_monitor = (data.get('movie_monitor') or '').strip() or None
         result = requestarr_api.request_media(
             tmdb_id=data['tmdb_id'],
             media_type=media_type,
@@ -298,7 +299,8 @@ def request_media():
             quality_profile_name=quality_profile_name,
             start_search=start_search,
             minimum_availability=minimum_availability,
-            monitor=monitor
+            monitor=monitor,
+            movie_monitor=movie_monitor
         )
         
         logger.info(f"[Requestarr] Request result: {result}")

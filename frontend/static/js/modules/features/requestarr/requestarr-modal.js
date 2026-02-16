@@ -601,6 +601,7 @@ class RequestarrModal {
         const wrapMin = document.getElementById('requestarr-modal-min-availability-wrap');
         const wrapStart = document.getElementById('requestarr-modal-start-search-wrap');
         const wrapMonitor = document.getElementById('requestarr-modal-monitor-wrap');
+        const wrapMovieMonitor = document.getElementById('requestarr-modal-movie-monitor-wrap');
         const minSelect = document.getElementById('modal-minimum-availability');
         const startCb = document.getElementById('modal-start-search');
         const decoded = instanceValue ? decodeInstanceValue(instanceValue, isTVShow ? 'sonarr' : 'radarr') : {};
@@ -610,6 +611,7 @@ class RequestarrModal {
         if (wrapMin) wrapMin.classList.toggle('mh-hidden', !isMovieHunt);
         if (wrapStart) wrapStart.classList.toggle('mh-hidden', !isMovieHunt);
         if (wrapMonitor) wrapMonitor.classList.toggle('mh-hidden', !isTVHunt);
+        if (wrapMovieMonitor) wrapMovieMonitor.classList.toggle('mh-hidden', !isMovieHunt);
         
         // Use loaded preferences or defaults
         if (minSelect) minSelect.value = this.preferences?.minimum_availability || 'released';
@@ -750,8 +752,10 @@ class RequestarrModal {
             if (appType === 'movie_hunt') {
                 const startCb = document.getElementById('modal-start-search');
                 const minSelect = document.getElementById('modal-minimum-availability');
+                const movieMonitorSelect = document.getElementById('modal-movie-monitor');
                 requestData.start_search = startCb ? startCb.checked : true;
                 requestData.minimum_availability = (minSelect && minSelect.value) ? minSelect.value : 'released';
+                requestData.movie_monitor = (movieMonitorSelect && movieMonitorSelect.value) ? movieMonitorSelect.value : 'movie_only';
             }
             if (appType === 'tv_hunt') {
                 const monitorSelect = document.getElementById('modal-monitor');

@@ -2420,7 +2420,7 @@ class RequestarrAPI:
                      app_type: str, instance_name: str, quality_profile_id: int = None,
                      root_folder_path: str = None, quality_profile_name: str = None,
                      start_search: bool = True, minimum_availability: str = 'released',
-                     monitor: str = None) -> Dict[str, Any]:
+                     monitor: str = None, movie_monitor: str = None) -> Dict[str, Any]:
         """Request media through the specified app instance"""
         try:
             # Movie Hunt has its own request pipeline (add to library, optionally start search)
@@ -2431,7 +2431,8 @@ class RequestarrAPI:
                     backdrop_path=backdrop_path, instance_name=instance_name,
                     quality_profile_name=quality_profile_name,
                     root_folder_path=root_folder_path, media_type=media_type,
-                    start_search=start_search, minimum_availability=minimum_availability or 'released'
+                    start_search=start_search, minimum_availability=minimum_availability or 'released',
+                    movie_monitor=movie_monitor
                 )
             
             # TV Hunt has its own request pipeline (add to collection, optionally start search)
@@ -2631,7 +2632,8 @@ class RequestarrAPI:
                                       overview: str, poster_path: str, backdrop_path: str,
                                       instance_name: str, quality_profile_name: str = None,
                                       root_folder_path: str = None, media_type: str = 'movie',
-                                      start_search: bool = True, minimum_availability: str = 'released') -> Dict[str, Any]:
+                                      start_search: bool = True, minimum_availability: str = 'released',
+                                      movie_monitor: str = None) -> Dict[str, Any]:
         """Add movie to Movie Hunt library; optionally start search (indexers -> download client)."""
         try:
             # Resolve instance ID
@@ -2660,12 +2662,14 @@ class RequestarrAPI:
             
             # Add to library only (no search): append to collection and return
             if not start_search:
-                from src.primary.routes.media_hunt.discovery_movie import _collection_append
+                from src.primary.routes.media_hunt.discovery_movie import _collection_append, _get_collection_config, _save_collection_config
                 _collection_append(
                     title=title, year=year_str, instance_id=instance_id,
                     tmdb_id=tmdb_id, poster_path=poster_path_str, root_folder=root_folder,
                     quality_profile=quality_profile, minimum_availability=min_avail
                 )
+                # Apply movie_monitor setting
+                self._apply_movie_monitor(movie_monitor, tmdb_id, instance_id, root_folder, quality_profile, min_avail)
                 return {
                     'success': True,
                     'message': f'"{title}" added to Movie Hunt \u2013 {instance_name}.',
@@ -2841,6 +2845,9 @@ class RequestarrAPI:
                 quality_profile=quality_profile, minimum_availability=min_avail
             )
             
+            # Apply movie_monitor setting
+            self._apply_movie_monitor(movie_monitor, tmdb_id, instance_id, root_folder, quality_profile, min_avail)
+            
             # Save request to Requestarr's DB for cooldown tracking
             self.db.add_request(
                 tmdb_id, media_type, title, year, overview,
@@ -2860,6 +2867,98 @@ class RequestarrAPI:
                 'message': f'Error requesting {title} via Movie Hunt: {str(e)}',
                 'status': 'error'
             }
+
+    def _apply_movie_monitor(self, movie_monitor, tmdb_id, instance_id, root_folder, quality_profile, min_avail):
+        """Apply movie monitor option: set monitored flag and handle collection auto-add."""
+        if not movie_monitor:
+            return
+        
+        from src.primary.routes.media_hunt.discovery_movie import (
+            _get_collection_config, _save_collection_config, _collection_append,
+            _get_tmdb_api_key_movie_hunt
+        )
+        
+        # If 'none', unmonitor the just-added movie
+        if movie_monitor == 'none':
+            items = _get_collection_config(instance_id)
+            for item in items:
+                try:
+                    if int(item.get('tmdb_id', 0)) == int(tmdb_id):
+                        item['monitored'] = False
+                        break
+                except (TypeError, ValueError):
+                    continue
+            _save_collection_config(items, instance_id)
+            logger.info(f"Movie Hunt: set movie TMDB {tmdb_id} to unmonitored")
+        
+        # If 'movie_and_collection', fetch TMDB collection and add all movies
+        elif movie_monitor == 'movie_and_collection':
+            try:
+                import requests as _requests
+                api_key = _get_tmdb_api_key_movie_hunt()
+                if not api_key:
+                    logger.warning("Movie Hunt: no TMDB API key for collection fetch")
+                    return
+                
+                # Fetch movie details to get belongs_to_collection
+                resp = _requests.get(
+                    f'https://api.themoviedb.org/3/movie/{tmdb_id}',
+                    params={'api_key': api_key},
+                    timeout=10
+                )
+                if resp.status_code != 200:
+                    logger.warning(f"Movie Hunt: TMDB movie fetch failed ({resp.status_code})")
+                    return
+                
+                movie_data = resp.json()
+                collection_info = movie_data.get('belongs_to_collection')
+                if not collection_info or not collection_info.get('id'):
+                    logger.info(f"Movie Hunt: movie TMDB {tmdb_id} has no collection")
+                    return
+                
+                collection_id = collection_info['id']
+                collection_name = collection_info.get('name', 'Unknown Collection')
+                logger.info(f"Movie Hunt: fetching collection '{collection_name}' (ID {collection_id})")
+                
+                # Fetch collection details
+                col_resp = _requests.get(
+                    f'https://api.themoviedb.org/3/collection/{collection_id}',
+                    params={'api_key': api_key},
+                    timeout=10
+                )
+                if col_resp.status_code != 200:
+                    logger.warning(f"Movie Hunt: TMDB collection fetch failed ({col_resp.status_code})")
+                    return
+                
+                col_data = col_resp.json()
+                parts = col_data.get('parts', [])
+                added_count = 0
+                for part in parts:
+                    part_tmdb_id = part.get('id')
+                    part_title = (part.get('title') or '').strip()
+                    if not part_tmdb_id or not part_title:
+                        continue
+                    # Skip the movie we already added
+                    if int(part_tmdb_id) == int(tmdb_id):
+                        continue
+                    part_year = ''
+                    if part.get('release_date'):
+                        try:
+                            part_year = part['release_date'][:4]
+                        except Exception:
+                            pass
+                    part_poster = part.get('poster_path') or ''
+                    _collection_append(
+                        title=part_title, year=part_year, instance_id=instance_id,
+                        tmdb_id=part_tmdb_id, poster_path=part_poster,
+                        root_folder=root_folder, quality_profile=quality_profile,
+                        minimum_availability=min_avail
+                    )
+                    added_count += 1
+                
+                logger.info(f"Movie Hunt: added {added_count} movies from collection '{collection_name}'")
+            except Exception as e:
+                logger.error(f"Movie Hunt: error fetching TMDB collection: {e}", exc_info=True)
     
     def _request_media_via_tv_hunt(self, tmdb_id: int, title: str, overview: str = '',
                                   poster_path: str = '', backdrop_path: str = '',
