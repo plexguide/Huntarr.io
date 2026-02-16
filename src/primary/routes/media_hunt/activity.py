@@ -469,11 +469,174 @@ def register_tv_activity_routes(bp, get_instance_id):
             logger.debug("SABnzbd TV queue error: %s", e)
             return []
 
+    # ── Background Poller (detect completed downloads → auto-import) ──
+
+    _tv_hunt_poller_started = False
+    _tv_hunt_poller_lock = threading.Lock()
+    _TV_HUNT_POLL_INTERVAL_SEC = 90
+
+    def _tv_hunt_poll_all_instances():
+        """Poll queue for ALL TV Hunt instances to trigger prune/import check."""
+        try:
+            db = get_database()
+            instances = db.get_tv_hunt_instances() or []
+            for inst in instances:
+                inst_id = inst.get('id')
+                if not inst_id:
+                    continue
+                try:
+                    clients = get_tv_clients_config(inst_id)
+                    for client in clients:
+                        if not client.get('enabled', True):
+                            continue
+                        client_type = (client.get('type') or 'nzb_hunt').strip().lower()
+                        if client_type in ('nzbhunt', 'nzb_hunt'):
+                            _get_nzb_hunt_tv_queue(client, inst_id)
+                        elif client_type == 'sabnzbd':
+                            _get_sabnzbd_tv_queue(client, inst_id)
+                except Exception as e:
+                    tv_hunt_logger.debug("TV Hunt poll instance %s: %s", inst_id, e)
+        except Exception as e:
+            tv_hunt_logger.debug("TV Hunt background poll: %s", e)
+
+    def _ensure_tv_hunt_poller_started():
+        nonlocal _tv_hunt_poller_started
+        if _tv_hunt_poller_started:
+            return
+        with _tv_hunt_poller_lock:
+            if _tv_hunt_poller_started:
+                return
+            _tv_hunt_poller_started = True
+
+        def _run():
+            import time
+            while True:
+                time.sleep(_TV_HUNT_POLL_INTERVAL_SEC)
+                try:
+                    _tv_hunt_poll_all_instances()
+                except Exception:
+                    pass
+
+        t = threading.Thread(target=_run, daemon=True)
+        t.start()
+        tv_hunt_logger.info("TV Hunt: background import poller started (every %ds)", _TV_HUNT_POLL_INTERVAL_SEC)
+
+    def _catchup_unimported_tv_downloads():
+        """One-time startup scan: find completed TV downloads in NZB Hunt history
+        that were never imported and trigger import for each."""
+        import re
+        try:
+            from src.primary.apps.nzb_hunt.download_manager import get_manager
+            mgr = get_manager()
+            history = mgr.get_history()
+            if not history:
+                return
+
+            db = get_database()
+            instances = db.get_tv_hunt_instances() or []
+            if not instances:
+                return
+
+            for hist_item in history:
+                if hist_item.get('state') != 'completed':
+                    continue
+                cat = (hist_item.get('category') or '').strip()
+                if not cat.startswith('TV-'):
+                    continue
+
+                queue_id = hist_item.get('id', '')
+                nzb_name = hist_item.get('name', '')
+
+                # Check if already imported via history
+                try:
+                    from src.primary.history_manager import get_history
+                    tv_history = get_history('tv_hunt', page=1, page_size=500)
+                    entries = tv_history.get('entries') or []
+                    already_imported = any(
+                        nzb_name and nzb_name[:40] in (e.get('name') or '')
+                        for e in entries
+                        if e.get('operation_type') == 'import'
+                    )
+                    if already_imported:
+                        continue
+                except Exception:
+                    pass
+
+                # Parse series/season/episode from NZB name
+                match = re.search(r'^(.+?)[.\s]S(\d{1,2})E(\d{1,2})', nzb_name, re.IGNORECASE)
+                if not match:
+                    match = re.search(r'^(.+?)[.\s]S(\d{1,2})', nzb_name, re.IGNORECASE)
+                if not match:
+                    continue
+
+                series_title = match.group(1).replace('.', ' ').strip()
+                season = int(match.group(2))
+                episode = int(match.group(3)) if match.lastindex >= 3 else 1
+
+                # Find instance from category (e.g. "TV-TV2" -> instance named "TV2")
+                inst_name_from_cat = cat.replace('TV-', '', 1)
+                target_inst = None
+                for inst in instances:
+                    iname = inst.get('name', '')
+                    if iname == inst_name_from_cat:
+                        target_inst = inst
+                        break
+                if not target_inst and instances:
+                    target_inst = instances[0]
+                if not target_inst:
+                    continue
+
+                inst_id = target_inst.get('id')
+
+                # Check if download path still exists
+                download_path = _get_nzb_hunt_completed_path(queue_id, series_title, inst_id)
+                if not download_path:
+                    continue
+
+                # Check if the path actually has files
+                if not os.path.exists(download_path):
+                    tv_hunt_logger.debug("Catchup: path does not exist for '%s': %s", series_title, download_path)
+                    continue
+
+                tv_hunt_logger.info("Catchup: importing unimported TV download '%s' S%02dE%02d from %s",
+                                    series_title, season, episode, download_path)
+
+                clients = get_tv_clients_config(inst_id)
+                client = clients[0] if clients else {'type': 'nzb_hunt', 'name': 'NZB Hunt'}
+
+                meta = {
+                    'series_title': series_title,
+                    'season': season,
+                    'episode': episode,
+                    'client_name': (client.get('name') or 'NZB Hunt').strip(),
+                }
+                _check_and_import_completed_tv(queue_id, meta, inst_id)
+
+        except Exception as e:
+            tv_hunt_logger.debug("TV Hunt catchup scan: %s", e)
+
+    def _auto_start_tv_poller():
+        def _delayed():
+            import time
+            time.sleep(35)
+            _ensure_tv_hunt_poller_started()
+            # Run one-time catch-up for unimported downloads
+            time.sleep(10)
+            try:
+                _catchup_unimported_tv_downloads()
+            except Exception:
+                pass
+        t = threading.Thread(target=_delayed, daemon=True)
+        t.start()
+
+    _auto_start_tv_poller()
+
     # ── Flask Routes ──
 
     @bp.route('/api/tv-hunt/queue', methods=['GET'])
     def api_tv_hunt_queue():
         try:
+            _ensure_tv_hunt_poller_started()
             instance_id = get_instance_id()
             if not instance_id:
                 return jsonify({'queue': []}), 200
