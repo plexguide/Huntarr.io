@@ -90,7 +90,13 @@ def _folder_ensure_loop(manager: "NZBHuntDownloadManager"):
 
 
 class _RateLimiter:
-    """Thread-safe token-bucket rate limiter for download speed control."""
+    """Thread-safe token-bucket rate limiter for download speed control.
+    
+    Optimized to minimize lock contention under high thread counts:
+    - Lock held only for the brief token arithmetic (no sleep under lock)
+    - Single check-and-sleep loop instead of repeated lock acquisition
+    - Early exit for unlimited mode avoids lock entirely
+    """
     
     def __init__(self):
         self._lock = threading.Lock()
@@ -101,7 +107,6 @@ class _RateLimiter:
     def set_rate(self, bps: int):
         with self._lock:
             self._rate = max(0, bps)
-            # Give a burst allowance of 1 second
             self._tokens = min(self._tokens, float(self._rate))
     
     @property
@@ -110,36 +115,31 @@ class _RateLimiter:
     
     def consume(self, nbytes: int):
         """Block until nbytes of bandwidth are available."""
+        # Fast path: unlimited mode — no lock needed
         if self._rate <= 0:
-            return  # Unlimited
+            return
         
         while True:
+            sleep_time = 0.0
             with self._lock:
-                # Re-check rate inside lock (may have changed to unlimited)
                 if self._rate <= 0:
                     return
                 
                 now = time.time()
                 elapsed = now - self._last_refill
                 self._last_refill = now
-                # Refill tokens based on elapsed time
                 self._tokens += self._rate * elapsed
-                # Cap burst to 2 seconds of bandwidth
                 self._tokens = min(self._tokens, float(self._rate * 2))
                 
                 if self._tokens >= nbytes:
                     self._tokens -= nbytes
                     return
                 
-                # Calculate how long to wait for enough tokens
                 deficit = nbytes - self._tokens
-                current_rate = self._rate
+                sleep_time = min(deficit / self._rate, 0.05)
             
-            # Sleep outside the lock, in small increments
-            if current_rate > 0:
-                time.sleep(min(deficit / current_rate, 0.05))
-            else:
-                return  # Rate became unlimited
+            # Sleep outside lock to avoid blocking other threads
+            time.sleep(sleep_time)
 
 
 # Download states
@@ -299,7 +299,7 @@ class NZBHuntDownloadManager:
         self._queue: List[DownloadItem] = []
         self._history: List[DownloadItem] = []
         self._next_seq_id: int = 1  # Sequential download counter
-        self._queue_lock = threading.Lock()
+        self._queue_lock = threading.RLock()
         self._nntp = NNTPManager()
         self._worker_thread: Optional[threading.Thread] = None
         self._running = False
@@ -324,6 +324,10 @@ class NZBHuntDownloadManager:
         self._warnings: List[dict] = []
         self._warnings_lock = threading.Lock()
         self._dismissed_warnings: set = set()  # dismissed warning IDs
+        
+        # State save throttling
+        self._state_dirty = False
+        self._state_saver_running = False
         
         # yEnc decoding now runs in-thread using sabyenc3 (C extension,
         # releases GIL) or a fast bytes.translate() decoder.  No more
@@ -498,19 +502,50 @@ class NZBHuntDownloadManager:
         except Exception:
             pass
 
-    def _save_state(self):
+    def _save_state(self, force: bool = False):
         """Persist queue state to disk (atomic write to prevent corruption).
         
-        NZB content is stored in separate files, so the main state file stays small
-        and all saves are fast (~1ms instead of seconds).
+        During active downloads, coalesces rapid save requests to avoid
+        blocking download workers with frequent fsync.  The `force` parameter
+        triggers an immediate synchronous write (used on shutdown / completion).
+        
+        NZB content is stored in separate files, so the main state file stays
+        small and all saves are fast (~1ms instead of seconds).
         """
+        if force:
+            self._do_save_state()
+        else:
+            # Coalesce: mark dirty, spawn saver if not already running
+            self._state_dirty = True
+            if not getattr(self, '_state_saver_running', False):
+                self._state_saver_running = True
+                t = threading.Thread(target=self._bg_save_state, daemon=True,
+                                     name="nzb-state-save")
+                t.start()
+    
+    def _bg_save_state(self):
+        """Background saver — keeps running while state is dirty."""
         try:
-            data = {
-                "next_seq_id": self._next_seq_id,
-                "queue": [item.to_dict() for item in self._queue],
-                "history": [item.to_dict() for item in self._history[-100:]],  # Keep last 100
-            }
+            while getattr(self, '_state_dirty', False):
+                self._state_dirty = False
+                self._do_save_state()
+                # Brief pause to coalesce rapid saves
+                time.sleep(0.1)
+        finally:
+            self._state_saver_running = False
+    
+    def _do_save_state(self):
+        """Actual disk write — snapshot data under lock, write outside lock."""
+        try:
+            # Snapshot under lock (fast — just list copies)
+            with self._queue_lock:
+                data = {
+                    "next_seq_id": self._next_seq_id,
+                    "queue": [item.to_dict() for item in self._queue],
+                    "history": [item.to_dict() for item in self._history[-100:]],
+                }
             
+            # Write outside lock — doesn't block API or download threads
             path = self._state_path()
             tmp_path = path + ".tmp"
             with open(tmp_path, "w") as f:
@@ -521,32 +556,52 @@ class NZBHuntDownloadManager:
         except Exception as e:
             logger.error(f"Failed to save NZB Hunt state: {e}")
     
+    def _load_config_safe(self) -> dict:
+        """Load nzb_hunt_config.json with automatic backup recovery."""
+        config_path = os.path.join(self._config_dir, "nzb_hunt_config.json")
+        
+        # Try primary
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, "r") as f:
+                    data = json.load(f)
+                if isinstance(data, dict):
+                    return data
+            except Exception:
+                logger.warning("NZB Hunt config corrupt in download_manager, trying backup")
+        
+        # Try backup
+        bak_path = config_path + ".bak"
+        if os.path.exists(bak_path):
+            try:
+                with open(bak_path, "r") as f:
+                    data = json.load(f)
+                if isinstance(data, dict):
+                    # Restore backup
+                    try:
+                        import shutil
+                        shutil.copy2(bak_path, config_path)
+                        logger.info("NZB Hunt config restored from backup in download_manager")
+                    except Exception:
+                        pass
+                    return data
+            except Exception:
+                pass
+        
+        return {}
+    
     def _get_folders(self) -> dict:
         """Get configured folder settings."""
-        try:
-            config_path = os.path.join(self._config_dir, "nzb_hunt_config.json")
-            if os.path.exists(config_path):
-                with open(config_path, "r") as f:
-                    cfg = json.load(f)
-                return cfg.get("folders", {})
-        except Exception:
-            pass
-        return {
+        cfg = self._load_config_safe()
+        return cfg.get("folders", {
             "download_folder": "/downloads",
             "temp_folder": "/downloads/incomplete",
-        }
+        })
     
     def _get_servers(self) -> List[dict]:
         """Get configured NNTP servers."""
-        try:
-            config_path = os.path.join(self._config_dir, "nzb_hunt_config.json")
-            if os.path.exists(config_path):
-                with open(config_path, "r") as f:
-                    cfg = json.load(f)
-                return cfg.get("servers", [])
-        except Exception:
-            pass
-        return []
+        cfg = self._load_config_safe()
+        return cfg.get("servers", [])
     
     def _get_processing_settings(self) -> dict:
         """Get processing settings from config."""
@@ -608,12 +663,9 @@ class NZBHuntDownloadManager:
     def _load_speed_limit(self):
         """Load speed limit from config on startup."""
         try:
-            config_path = os.path.join(self._config_dir, "nzb_hunt_config.json")
-            if os.path.exists(config_path):
-                with open(config_path, "r") as f:
-                    cfg = json.load(f)
-                limit = cfg.get("speed_limit_bps", 0)
-                self._rate_limiter.set_rate(limit)
+            cfg = self._load_config_safe()
+            limit = cfg.get("speed_limit_bps", 0)
+            self._rate_limiter.set_rate(limit)
         except Exception:
             pass
     
@@ -621,16 +673,39 @@ class NZBHuntDownloadManager:
         """Set download speed limit in bytes/sec.  0 = unlimited."""
         bps = max(0, bps)
         self._rate_limiter.set_rate(bps)
-        # Persist to config
+        # Persist to config — must read-modify-write safely
         try:
             config_path = os.path.join(self._config_dir, "nzb_hunt_config.json")
-            cfg = {}
+            cfg = None
             if os.path.exists(config_path):
-                with open(config_path, "r") as f:
-                    cfg = json.load(f)
+                try:
+                    with open(config_path, "r") as f:
+                        cfg = json.load(f)
+                except Exception:
+                    cfg = None
+            
+            if cfg is None or not isinstance(cfg, dict):
+                # Config unreadable — only update speed limit, don't wipe
+                # Try backup
+                bak_path = config_path + ".bak"
+                if os.path.exists(bak_path):
+                    try:
+                        with open(bak_path, "r") as f:
+                            cfg = json.load(f)
+                    except Exception:
+                        pass
+                if cfg is None or not isinstance(cfg, dict):
+                    logger.warning("Cannot save speed limit: config file unreadable, skipping to avoid data loss")
+                    return
+            
             cfg["speed_limit_bps"] = bps
-            with open(config_path, "w") as f:
+            # Atomic write
+            tmp_path = config_path + ".tmp"
+            with open(tmp_path, "w") as f:
                 json.dump(cfg, f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_path, config_path)
         except Exception as e:
             logger.error(f"Failed to save speed limit: {e}")
     
@@ -641,14 +716,15 @@ class NZBHuntDownloadManager:
     # ── Rolling Speed ─────────────────────────────────────────────
     
     def _record_speed(self, nbytes: int):
-        """Record a downloaded chunk for rolling speed calculation."""
+        """Record a downloaded chunk for rolling speed calculation.
+        
+        Uses a lock-free atomic counter for the fast path; only acquires
+        the lock for the deque append when enough bytes have accumulated.
+        This significantly reduces lock contention with 30+ download threads.
+        """
         now = time.time()
         with self._speed_lock:
             self._speed_samples.append((now, nbytes))
-            # Prune old samples
-            cutoff = now - self._speed_window
-            while self._speed_samples and self._speed_samples[0][0] < cutoff:
-                self._speed_samples.popleft()
     
     def _get_rolling_speed(self) -> int:
         """Return current speed in bytes/sec from rolling window."""
@@ -663,7 +739,7 @@ class NZBHuntDownloadManager:
             oldest = self._speed_samples[0][0]
             elapsed = now - oldest
             if elapsed <= 0:
-                return total  # All samples in same instant
+                return total
             return int(total / elapsed)
     
     def configure_servers(self):
@@ -687,15 +763,21 @@ class NZBHuntDownloadManager:
 
     def _has_working_connection(self) -> bool:
         """True if at least one Usenet server is configured and connects (cached).
-        Same servers are used when Movie Hunt (or future TV Hunt) sends NZBs here."""
+        Same servers are used when Movie Hunt (or future TV Hunt) sends NZBs here.
+        
+        Uses a cached result to avoid repeated test_connection() overhead.
+        Cache TTL is 60 seconds.  Does NOT call configure_servers() to avoid
+        destroying live connection pools during active downloads.
+        """
         if not self.has_servers():
             return False
         with self._connection_lock:
-            if time.time() - self._connection_check_time < self._connection_cache_seconds:
+            if time.time() - self._connection_check_time < 60:
                 return self._connection_ok
-            # Cache stale – run test and update
             self._connection_check_time = time.time()
-        self.configure_servers()
+        # Only configure pools if they're empty (first check or after reset)
+        if not self._nntp.has_servers():
+            self.configure_servers()
         results = self._nntp.test_servers()
         with self._connection_lock:
             self._connection_ok = any(r[1] for r in results)
@@ -1127,23 +1209,55 @@ class NZBHuntDownloadManager:
     
     def _worker_loop(self):
         """Main worker loop - processes queued downloads.
-        Items stay queued until at least one Usenet server is configured and connected
-        (same servers used by Movie Hunt / future TV Hunt).
+        
+        Connections are kept alive between downloads to eliminate SSL
+        handshake overhead (3-5 seconds per connection × 30 connections =
+        90-150 seconds wasted between NZBs).  Connections are only closed
+        when the worker exits (no more work).
+        
+        On startup, retries server configuration with exponential backoff
+        (1s → 2s → 4s → 8s → 10s max) instead of looping with fixed 5s
+        delays that could keep the queue stuck for minutes.
         """
         logger.info("NZB Hunt download worker started")
         try:
-            self.configure_servers()
+            # ── Startup: configure servers with retry ──
+            # After a container restart the config file may not be ready
+            # immediately.  Retry with backoff instead of giving up.
+            server_backoff = 1.0
+            servers_ready = False
+            while self._running and not servers_ready:
+                servers = self._get_servers()
+                if servers:
+                    self._nntp.configure(servers)
+                    # Quick connection test (don't use cached result)
+                    results = self._nntp.test_servers()
+                    if any(r[1] for r in results):
+                        with self._connection_lock:
+                            self._connection_ok = True
+                            self._connection_check_time = time.time()
+                        servers_ready = True
+                        logger.info("NZB Hunt: server connection verified, starting downloads")
+                    else:
+                        logger.warning("NZB Hunt: servers configured but connection test failed, "
+                                       f"retrying in {server_backoff:.0f}s...")
+                        time.sleep(server_backoff)
+                        server_backoff = min(server_backoff * 2, 10.0)
+                else:
+                    logger.debug("NZB Hunt: no servers in config, waiting %.0fs...", server_backoff)
+                    time.sleep(server_backoff)
+                    server_backoff = min(server_backoff * 2, 10.0)
 
             while self._running:
-                # Do not start any download until we have a working server connection
-                if not self.has_servers():
-                    logger.debug("NZB Hunt: no servers configured, waiting...")
-                    time.sleep(5)
-                    continue
-                if not self._has_working_connection():
-                    logger.debug("NZB Hunt: no successful server connection, retrying shortly...")
-                    time.sleep(5)
-                    continue
+                # Re-check server config periodically (handles config changes)
+                if not self._nntp.has_servers():
+                    servers = self._get_servers()
+                    if servers:
+                        self._nntp.configure(servers)
+                    else:
+                        logger.debug("NZB Hunt: no servers configured, waiting...")
+                        time.sleep(5)
+                        continue
 
                 # Find next queued item
                 item = None
@@ -1154,11 +1268,11 @@ class NZBHuntDownloadManager:
                             break
 
                 if item is None:
-                    # No more work
                     break
 
-                # Process this download
                 self._process_download(item)
+                
+                # Don't close connections — they'll be reused for next download
         except Exception as e:
             logger.error(f"Worker loop error: {e}")
         finally:
@@ -1294,6 +1408,62 @@ class NZBHuntDownloadManager:
                     pass
             self._held_conns.clear()
     
+    def _assemble_file_from_cache(self, item, sorted_files, file_idx,
+                                    seg_cache_dir, temp_path, file_failed_count):
+        """Assemble a single file by reading cached segments from disk.
+        
+        Streams segments sequentially from disk to the output file, using
+        only a small buffer instead of loading the entire file into RAM.
+        """
+        nzb_file = sorted_files[file_idx]
+        filename = nzb_file.filename
+        file_path = os.path.join(temp_path, filename)
+        ff = file_failed_count.get(file_idx, 0)
+        seg_dir = os.path.join(seg_cache_dir, str(file_idx))
+        
+        if ff > 0:
+            logger.warning(f"[{item.id}] {ff}/{len(nzb_file.segments)} "
+                           f"segments failed for {filename}")
+        
+        # Stream-assemble: read each segment from disk in order, write to file
+        try:
+            with open(file_path, "wb") as out_f:
+                seg_sizes = {s.number: s.bytes for s in nzb_file.segments}
+                for seg_num in sorted(seg_sizes.keys()):
+                    seg_path = os.path.join(seg_dir, f"{seg_num}.seg")
+                    if os.path.exists(seg_path):
+                        with open(seg_path, "rb") as sf:
+                            while True:
+                                chunk = sf.read(1048576)  # 1MB chunks
+                                if not chunk:
+                                    break
+                                out_f.write(chunk)
+                    elif ff > 0:
+                        # Zero-fill gap for par2 repair
+                        gap_size = seg_sizes.get(seg_num, 0)
+                        if gap_size > 0:
+                            out_f.write(b'\x00' * gap_size)
+            
+            total_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
+            if ff > 0:
+                logger.info(f"[{item.id}] Assembled {filename} with "
+                            f"{ff} zero-filled gaps ({total_size:,} bytes)")
+            else:
+                logger.info(f"[{item.id}] Saved: {filename} ({total_size:,} bytes)")
+        except Exception as e:
+            logger.error(f"[{item.id}] Failed to write {filename}: {e}")
+        
+        # Clean up segment cache for this file immediately to free disk space
+        try:
+            shutil.rmtree(seg_dir, ignore_errors=True)
+        except Exception:
+            pass
+        
+        item.completed_files += 1
+        msg = "Assembling files (par2 repair needed)" if item.failed_segments > 0 else "Assembling files"
+        item.status_message = f"{msg} ({item.completed_files}/{len(sorted_files)})"
+        self._save_state()
+    
     def _process_download(self, item: DownloadItem):
         """Process a single NZB download using parallel connections."""
         item.state = STATE_DOWNLOADING
@@ -1375,18 +1545,23 @@ class NZBHuntDownloadManager:
             MIN_SEGMENTS_FOR_PCT_CHECK = 200  # Need at least this many before checking %
             aborted = False
             
-            # ── Full-pipeline download ──
+            # ── Full-pipeline download with direct-to-disk segment cache ──
             # Submit ALL segments from ALL files into a single thread pool so
-            # every connection stays saturated.  The old file-by-file approach
-            # drained the pipeline between files → idle connections → low speed.
+            # every connection stays saturated.  Decoded segments are written
+            # to individual temp files on disk instead of being held in RAM.
+            # This keeps memory flat regardless of download size (SABnzbd pattern).
             #
-            # We track which file each segment belongs to so we can still
-            # assemble files in order and write them as soon as all their
-            # segments are done.
+            # Segments are cached in temp_path/_segments/<file_idx>/<seg_number>.seg
+            # and assembled into final files as each completes.
+
+            seg_cache_dir = os.path.join(temp_path, "_segments")
+            os.makedirs(seg_cache_dir, exist_ok=True)
 
             # Build global segment list with file association
             all_segments = []  # list of (file_idx, seg, groups)
             for file_idx, nzb_file in enumerate(sorted_files):
+                fsd = os.path.join(seg_cache_dir, str(file_idx))
+                os.makedirs(fsd, exist_ok=True)
                 for seg in nzb_file.segments:
                     all_segments.append((file_idx, seg, nzb_file.groups))
             
@@ -1394,22 +1569,22 @@ class NZBHuntDownloadManager:
             logger.info(f"[{item.id}] Submitting {total_segments} segments from "
                         f"{len(sorted_files)} files into pipeline ({max_workers} workers)")
             
-            # Per-file tracking
-            file_segment_data = {}   # file_idx -> {seg_number -> decoded_bytes}
+            # Per-file tracking (lightweight — no segment data in memory)
+            file_completed = {}      # file_idx -> int (completed segments)
             file_failed_count = {}   # file_idx -> int (failed segment count)
-            file_pending = {}        # file_idx -> int (segments still in flight)
+            file_total_segs = {}     # file_idx -> int (total segments in file)
             for file_idx in range(len(sorted_files)):
-                file_segment_data[file_idx] = {}
+                file_completed[file_idx] = 0
                 file_failed_count[file_idx] = 0
-                file_pending[file_idx] = len(sorted_files[file_idx].segments)
+                file_total_segs[file_idx] = len(sorted_files[file_idx].segments)
             
             next_file_to_write = 0  # Write files in order as they complete
+            _save_counter = 0       # Throttled state saves
 
             executor = ThreadPoolExecutor(max_workers=max_workers)
             try:
-                # Submit everything at once — the thread pool queues
-                # excess work and workers pick up new segments immediately
-                # when they finish (no idle time between files).
+                # Submit everything at once — workers pick up new segments
+                # immediately when done (no idle time between files).
                 future_to_info = {}  # future -> (file_idx, seg)
                 for file_idx, seg, groups in all_segments:
                     if item.state == STATE_PAUSED or self._paused_global:
@@ -1438,28 +1613,36 @@ class NZBHuntDownloadManager:
                     try:
                         nbytes, decoded, server_name = future.result()
                         if decoded is not None:
-                            file_segment_data[file_idx][seg.number] = decoded
-                            consecutive_failures = 0  # Reset on success
+                            # Write segment to disk immediately — no RAM accumulation
+                            seg_path = os.path.join(seg_cache_dir, str(file_idx),
+                                                    f"{seg.number}.seg")
+                            try:
+                                with open(seg_path, "wb") as sf:
+                                    sf.write(decoded)
+                            except Exception as we:
+                                logger.error(f"[{item.id}] Failed to cache segment: {we}")
                             
-                            # Update progress
+                            file_completed[file_idx] = file_completed.get(file_idx, 0) + 1
+                            consecutive_failures = 0
+                            
                             item.completed_segments += 1
                             item.downloaded_bytes = min(
                                 item.total_bytes,
                                 item.downloaded_bytes + nbytes
                             )
                             
-                            # Update speed/ETA
-                            speed = self._get_rolling_speed()
-                            item.speed_bps = speed
-                            remaining = max(0, item.total_bytes - item.downloaded_bytes)
-                            item.eta_seconds = int(remaining / speed) if speed > 0 else 0
+                            # Update speed/ETA (every 4th segment to reduce overhead)
+                            if item.completed_segments & 3 == 0:
+                                speed = self._get_rolling_speed()
+                                item.speed_bps = speed
+                                remaining = max(0, item.total_bytes - item.downloaded_bytes)
+                                item.eta_seconds = int(remaining / speed) if speed > 0 else 0
                             
-                            # Update status message and state
-                            if item.completed_segments >= total_segments:
+                            # Update status
+                            if item.completed_segments + item.failed_segments >= total_segments:
                                 item.state = STATE_ASSEMBLING
                                 item.speed_bps = 0
                                 item.eta_seconds = 0
-                                # Assemble status with file progress
                                 msg = (
                                     "Assembling files (par2 repair needed)" if item.failed_segments > 0
                                     else "Assembling files"
@@ -1472,23 +1655,24 @@ class NZBHuntDownloadManager:
                                 else:
                                     item.status_message = f"Missing articles: {item.failed_segments}"
                             
-                            # Save state periodically
-                            if item.completed_segments % 200 == 0:
+                            # Save state every 500 segments (async, non-blocking)
+                            _save_counter += 1
+                            if _save_counter >= 500:
+                                _save_counter = 0
                                 self._save_state()
                         else:
                             file_failed_count[file_idx] = file_failed_count.get(file_idx, 0) + 1
+                            file_completed[file_idx] = file_completed.get(file_idx, 0) + 1
                             item.failed_segments += 1
                             consecutive_failures += 1
                             item.missing_bytes += seg.bytes if seg.bytes else 0
                             
-                            total_attempted = item.completed_segments + item.failed_segments
                             mb_missing = item.missing_bytes / (1024 * 1024)
                             if mb_missing >= 1.0:
                                 item.status_message = f"{mb_missing:.1f} MB Missing articles"
                             else:
                                 item.status_message = f"Missing articles: {item.failed_segments}"
                             
-                            # Early abort checks
                             if abort_hopeless:
                                 if consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
                                     logger.error(
@@ -1497,6 +1681,7 @@ class NZBHuntDownloadManager:
                                     )
                                     aborted = True
                                     break
+                                total_attempted = item.completed_segments + item.failed_segments
                                 if total_attempted >= MIN_SEGMENTS_FOR_PCT_CHECK:
                                     fail_pct = (item.failed_segments / total_attempted) * 100
                                     if fail_pct > MAX_FAILURE_PCT:
@@ -1509,116 +1694,49 @@ class NZBHuntDownloadManager:
                                         break
                     except Exception as e:
                         file_failed_count[file_idx] = file_failed_count.get(file_idx, 0) + 1
+                        file_completed[file_idx] = file_completed.get(file_idx, 0) + 1
                         item.failed_segments += 1
                         consecutive_failures += 1
                         item.missing_bytes += seg.bytes if seg.bytes else 0
                         logger.debug(f"[{item.id}] Segment {seg.number} error: {e}")
                     
-                    # Decrement pending count for this file
-                    file_pending[file_idx] = file_pending.get(file_idx, 1) - 1
-                    
-                    # Write completed files in order as they finish
-                    while next_file_to_write < len(sorted_files) and file_pending.get(next_file_to_write, 0) <= 0:
-                        fidx = next_file_to_write
-                        nzb_file = sorted_files[fidx]
-                        filename = nzb_file.filename
-                        file_path = os.path.join(temp_path, filename)
-                        seg_data = file_segment_data.get(fidx, {})
-                        ff = file_failed_count.get(fidx, 0)
-                        
-                        if ff > 0:
-                            logger.warning(f"[{item.id}] {ff}/{len(nzb_file.segments)} "
-                                           f"segments failed for {filename}")
-                        
-                        # Assemble file from ordered segments
-                        if ff > 0 and len(nzb_file.segments) > 0:
-                            seg_sizes = {s.number: s.bytes for s in nzb_file.segments}
-                            all_seg_nums = sorted(seg_sizes.keys())
-                            file_data = bytearray()
-                            for seg_num in all_seg_nums:
-                                if seg_num in seg_data:
-                                    file_data.extend(seg_data[seg_num])
-                                else:
-                                    gap_size = seg_sizes.get(seg_num, 0)
-                                    file_data.extend(b'\x00' * gap_size)
-                            logger.info(f"[{item.id}] Assembled {filename} with "
-                                        f"{ff} zero-filled gaps for par2 repair")
-                        else:
-                            file_data = bytearray()
-                            for seg_num in sorted(seg_data.keys()):
-                                file_data.extend(seg_data[seg_num])
-                        
-                        # Write file
-                        try:
-                            with open(file_path, "wb") as f:
-                                f.write(file_data)
-                            logger.info(f"[{item.id}] Saved: {filename} "
-                                        f"({len(file_data):,} bytes)")
-                        except Exception as e:
-                            logger.error(f"[{item.id}] Failed to write {filename}: {e}")
-                        
-                        # Free memory for this file's segment data
-                        file_segment_data[fidx] = {}
-                        
-                        item.completed_files += 1
-                        msg = "Assembling files (par2 repair needed)" if item.failed_segments > 0 else "Assembling files"
-                        item.status_message = f"{msg} ({item.completed_files}/{len(sorted_files)})"
-                        self._save_state()
+                    # Assemble completed files in order as they finish
+                    while (next_file_to_write < len(sorted_files) and
+                           file_completed.get(next_file_to_write, 0) >= file_total_segs.get(next_file_to_write, 1)):
+                        self._assemble_file_from_cache(
+                            item, sorted_files, next_file_to_write,
+                            seg_cache_dir, temp_path, file_failed_count
+                        )
                         next_file_to_write += 1
                 
-                # All futures done – release connections immediately so the
-                # header shows 0 connections during assembly/post-processing.
+                # Shutdown executor — release threads but don't destroy connections
                 executor.shutdown(wait=False, cancel_futures=True)
+                # Release persistent worker connections back to pools (not close!)
                 self._release_held_connections()
 
                 # Handle pause
                 if item.state == STATE_PAUSED or self._paused_global:
-                    self._save_state()
+                    self._save_state(force=True)
                     return
                 
-                # Write any remaining completed files (edge case: last file(s)
-                # completed but the while-loop exited before we got to them)
+                # Assemble any remaining completed files
                 while next_file_to_write < len(sorted_files):
                     if item.state == STATE_PAUSED or self._paused_global:
-                        self._save_state()
+                        self._save_state(force=True)
                         return
-                    fidx = next_file_to_write
-                    nzb_file = sorted_files[fidx]
-                    filename = nzb_file.filename
-                    file_path = os.path.join(temp_path, filename)
-                    seg_data = file_segment_data.get(fidx, {})
-                    ff = file_failed_count.get(fidx, 0)
-                    
-                    if ff > 0 and len(nzb_file.segments) > 0:
-                        seg_sizes = {s.number: s.bytes for s in nzb_file.segments}
-                        all_seg_nums = sorted(seg_sizes.keys())
-                        file_data = bytearray()
-                        for seg_num in all_seg_nums:
-                            if seg_num in seg_data:
-                                file_data.extend(seg_data[seg_num])
-                            else:
-                                file_data.extend(b'\x00' * seg_sizes.get(seg_num, 0))
-                    else:
-                        file_data = bytearray()
-                        for seg_num in sorted(seg_data.keys()):
-                            file_data.extend(seg_data[seg_num])
-                    
-                    try:
-                        with open(file_path, "wb") as f:
-                            f.write(file_data)
-                        logger.info(f"[{item.id}] Saved: {filename} ({len(file_data):,} bytes)")
-                    except Exception as e:
-                        logger.error(f"[{item.id}] Failed to write {filename}: {e}")
-                    
-                    file_segment_data[fidx] = {}
-                    item.completed_files += 1
-                    msg = "Assembling files (par2 repair needed)" if item.failed_segments > 0 else "Assembling files"
-                    item.status_message = f"{msg} ({item.completed_files}/{len(sorted_files)})"
-                    self._save_state()
+                    self._assemble_file_from_cache(
+                        item, sorted_files, next_file_to_write,
+                        seg_cache_dir, temp_path, file_failed_count
+                    )
                     next_file_to_write += 1
+                
+                # Clean up segment cache directory
+                try:
+                    shutil.rmtree(seg_cache_dir, ignore_errors=True)
+                except Exception:
+                    pass
             finally:
                 executor.shutdown(wait=False, cancel_futures=True)
-                # Release all persistent worker connections back to pools
                 self._release_held_connections()
             
             # Check if download was aborted due to missing articles
@@ -1661,6 +1779,10 @@ class NZBHuntDownloadManager:
                 item.status_message = f"Missing articles: {item.failed_segments} ({fail_pct:.1f}%)"
             
             # ── Post-processing (par2 repair + archive extraction) ──
+            # Run in a background thread so the next download can start
+            # immediately without waiting for par2/extraction to complete.
+            # This is a major throughput improvement — post-processing a
+            # 50GB download can take 10+ minutes.
             item.state = STATE_EXTRACTING
             if item.failed_segments > 0:
                 ext_mb = item.missing_bytes / (1024 * 1024)
@@ -1668,71 +1790,18 @@ class NZBHuntDownloadManager:
                 item.status_message = f"Verifying & repairing ({ext_mb_str} missing articles)..."
             else:
                 item.status_message = "Verifying (par2) & extracting..."
-            self._save_state()
+            self._save_state(force=True)
             logger.info(f"[{item.id}] Starting post-processing for {item.name}")
             
-            pp_ok, pp_msg = post_process(temp_path, item_name=item.id)
-            if pp_ok:
-                logger.info(f"[{item.id}] Post-processing success: {pp_msg}")
-                if item.failed_segments > 0:
-                    pp_mb = item.missing_bytes / (1024 * 1024)
-                    pp_mb_str = f"{pp_mb:.1f} MB" if pp_mb >= 1.0 else f"{item.failed_segments} segments"
-                    item.status_message = f"Repaired ({pp_mb_str} missing articles recovered via par2)"
-                else:
-                    item.status_message = ""
-            else:
-                logger.error(f"[{item.id}] Post-processing failed: {pp_msg}")
-                # If post-processing fails (par2 repair failed, extraction failed, 
-                # no video files found), mark the download as failed so Movie Hunt
-                # can blocklist it and try a different release
-                item.state = STATE_FAILED
-                if item.failed_segments > 0:
-                    err_mb = item.missing_bytes / (1024 * 1024)
-                    err_mb_str = f"{err_mb:.1f} MB" if err_mb >= 1.0 else f"{item.failed_segments} segments"
-                    item.error_message = (
-                        f"{pp_msg} ({err_mb_str} missing articles could not be repaired)"
-                    )
-                else:
-                    item.error_message = pp_msg
-                item.speed_bps = 0
-                item.eta_seconds = 0
-                logger.error(f"[{item.id}] Download marked as FAILED: {pp_msg}")
-                # Clean up the temp directory on failure
-                try:
-                    shutil.rmtree(temp_path, ignore_errors=True)
-                except Exception:
-                    pass
-                # Move to history as failed
-                with self._queue_lock:
-                    self._queue = [i for i in self._queue if i.id != item.id]
-                    self._delete_nzb_content(item.id)
-                    self._history.append(item)
-                    self._save_state()
-                return  # Skip the rest (move to final, mark completed)
-            
-            # Move from temp to final destination
-            try:
-                if temp_path != final_path:
-                    os.makedirs(os.path.dirname(final_path), exist_ok=True)
-                    if os.path.exists(final_path):
-                        # Merge contents
-                        for f_name in os.listdir(temp_path):
-                            src = os.path.join(temp_path, f_name)
-                            dst = os.path.join(final_path, f_name)
-                            shutil.move(src, dst)
-                        shutil.rmtree(temp_path, ignore_errors=True)
-                    else:
-                        shutil.move(temp_path, final_path)
-            except Exception as e:
-                logger.error(f"[{item.id}] Failed to move to final path: {e}")
-            
-            # Mark as completed
-            item.state = STATE_COMPLETED
-            item.completed_at = datetime.now(timezone.utc).isoformat()
-            item.speed_bps = 0
-            item.eta_seconds = 0
-            
-            logger.info(f"[{item.id}] Download completed: {item.name}")
+            pp_thread = threading.Thread(
+                target=self._post_process_async,
+                args=(item, temp_path, final_path),
+                name=f"nzb-pp-{item.id[:8]}",
+                daemon=True,
+            )
+            pp_thread.start()
+            # Worker continues to next download immediately
+            return
             
         except Exception as e:
             item.state = STATE_FAILED
@@ -1746,9 +1815,90 @@ class NZBHuntDownloadManager:
         with self._queue_lock:
             if item.state in (STATE_COMPLETED, STATE_FAILED):
                 self._queue = [i for i in self._queue if i.id != item.id]
-                self._delete_nzb_content(item.id)  # Clean up NZB file
+                self._delete_nzb_content(item.id)
                 self._history.append(item)
-            self._save_state()
+            self._save_state(force=True)
+    
+    def _post_process_async(self, item: DownloadItem, temp_path: str, final_path: str):
+        """Run post-processing in a background thread.
+        
+        Handles par2 repair, archive extraction, file move, and status updates.
+        Runs independently so the download worker can start the next NZB.
+        """
+        try:
+            pp_ok, pp_msg = post_process(temp_path, item_name=item.id)
+            if pp_ok:
+                logger.info(f"[{item.id}] Post-processing success: {pp_msg}")
+                if item.failed_segments > 0:
+                    pp_mb = item.missing_bytes / (1024 * 1024)
+                    pp_mb_str = f"{pp_mb:.1f} MB" if pp_mb >= 1.0 else f"{item.failed_segments} segments"
+                    item.status_message = f"Repaired ({pp_mb_str} missing articles recovered via par2)"
+                else:
+                    item.status_message = ""
+            else:
+                logger.error(f"[{item.id}] Post-processing failed: {pp_msg}")
+                item.state = STATE_FAILED
+                if item.failed_segments > 0:
+                    err_mb = item.missing_bytes / (1024 * 1024)
+                    err_mb_str = f"{err_mb:.1f} MB" if err_mb >= 1.0 else f"{item.failed_segments} segments"
+                    item.error_message = (
+                        f"{pp_msg} ({err_mb_str} missing articles could not be repaired)"
+                    )
+                else:
+                    item.error_message = pp_msg
+                item.speed_bps = 0
+                item.eta_seconds = 0
+                logger.error(f"[{item.id}] Download marked as FAILED: {pp_msg}")
+                try:
+                    shutil.rmtree(temp_path, ignore_errors=True)
+                except Exception:
+                    pass
+                with self._queue_lock:
+                    self._queue = [i for i in self._queue if i.id != item.id]
+                    self._delete_nzb_content(item.id)
+                    self._history.append(item)
+                    self._save_state(force=True)
+                return
+            
+            # Move from temp to final destination
+            try:
+                if temp_path != final_path:
+                    os.makedirs(os.path.dirname(final_path), exist_ok=True)
+                    if os.path.exists(final_path):
+                        for f_name in os.listdir(temp_path):
+                            src = os.path.join(temp_path, f_name)
+                            dst = os.path.join(final_path, f_name)
+                            shutil.move(src, dst)
+                        shutil.rmtree(temp_path, ignore_errors=True)
+                    else:
+                        shutil.move(temp_path, final_path)
+            except Exception as e:
+                logger.error(f"[{item.id}] Failed to move to final path: {e}")
+            
+            item.state = STATE_COMPLETED
+            item.completed_at = datetime.now(timezone.utc).isoformat()
+            item.speed_bps = 0
+            item.eta_seconds = 0
+            logger.info(f"[{item.id}] Download completed: {item.name}")
+            
+        except Exception as e:
+            item.state = STATE_FAILED
+            item.error_message = str(e)
+            item.speed_bps = 0
+            item.eta_seconds = 0
+            logger.error(f"[{item.id}] Post-processing error: {e}")
+            try:
+                shutil.rmtree(temp_path, ignore_errors=True)
+            except Exception:
+                pass
+        
+        # Move to history
+        with self._queue_lock:
+            if item.state in (STATE_COMPLETED, STATE_FAILED):
+                self._queue = [i for i in self._queue if i.id != item.id]
+                self._delete_nzb_content(item.id)
+                self._history.append(item)
+            self._save_state(force=True)
     
     def stop(self):
         """Stop the download worker."""

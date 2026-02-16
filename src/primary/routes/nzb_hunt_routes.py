@@ -40,13 +40,41 @@ def _nzb_config_path():
 
 
 def _load_config():
+    """Load NZB Hunt config with automatic backup recovery.
+    
+    If the primary config file is missing or corrupt, automatically
+    recovers from the .bak backup to prevent server config loss.
+    """
     path = _nzb_config_path()
+    
+    # Try primary config file
     if os.path.exists(path):
         try:
             with open(path, "r") as f:
-                return json.load(f)
+                data = json.load(f)
+            if isinstance(data, dict):
+                return data
+        except Exception as e:
+            logger.warning(f"NZB Hunt config corrupt, trying backup: {e}")
+    
+    # Primary missing or corrupt — try backup
+    bak_path = path + ".bak"
+    if os.path.exists(bak_path):
+        try:
+            with open(bak_path, "r") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                # Restore backup as primary
+                try:
+                    import shutil
+                    shutil.copy2(bak_path, path)
+                    logger.info("NZB Hunt config restored from backup")
+                except Exception:
+                    pass
+                return data
         except Exception:
             pass
+    
     return {}
 
 
@@ -56,10 +84,45 @@ def has_nzb_servers() -> bool:
 
 
 def _save_config(cfg):
+    """Save NZB Hunt config with atomic write and safety checks.
+    
+    Protections against data loss:
+    1. Never writes an empty/stripped config if a valid one exists on disk
+    2. Uses atomic tmp+rename to prevent partial writes
+    3. Creates a .bak backup before every write
+    """
     path = _nzb_config_path()
     try:
-        with open(path, "w") as f:
+        # Safety: refuse to write config without servers if the existing
+        # file already has servers — this prevents wipe on transient errors
+        if os.path.exists(path) and not cfg.get("servers"):
+            try:
+                with open(path, "r") as f:
+                    existing = json.load(f)
+                if existing.get("servers"):
+                    # Existing config has servers but new one doesn't — merge
+                    cfg["servers"] = existing["servers"]
+                    logger.warning("NZB Hunt config save: preserved existing servers "
+                                   "(new config had none)")
+            except Exception:
+                pass
+        
+        # Create backup before writing
+        if os.path.exists(path):
+            bak_path = path + ".bak"
+            try:
+                import shutil
+                shutil.copy2(path, bak_path)
+            except Exception:
+                pass
+        
+        # Atomic write: write to tmp, fsync, then rename
+        tmp_path = path + ".tmp"
+        with open(tmp_path, "w") as f:
             json.dump(cfg, f, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, path)
     except Exception as e:
         logger.error(f"Failed to save NZB Hunt config: {e}")
 

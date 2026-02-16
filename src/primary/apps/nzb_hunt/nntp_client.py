@@ -40,12 +40,18 @@ class NNTPConnection:
         self._current_group = None
     
     def connect(self) -> bool:
-        """Establish connection to the NNTP server with optimized buffers."""
+        """Establish connection to the NNTP server with optimized buffers and SSL."""
         try:
             if self.use_ssl:
-                ctx = ssl.create_default_context()
+                ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
                 ctx.check_hostname = False
                 ctx.verify_mode = ssl.CERT_NONE
+                # Disable SSL compression (saves CPU, SABnzbd pattern)
+                ctx.options |= ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3
+                try:
+                    ctx.options |= ssl.OP_NO_COMPRESSION
+                except AttributeError:
+                    pass
                 self._conn = nntplib.NNTP_SSL(
                     self.host, self.port, 
                     user=self.username or None,
@@ -61,14 +67,17 @@ class NNTPConnection:
                     timeout=self.timeout
                 )
             
-            # Increase socket receive buffer for high-throughput downloading.
-            # Default is typically 8-64KB; 1MB reduces syscalls significantly
-            # for large articles and helps saturate fast connections.
+            # Socket-level optimizations for high-throughput downloading.
             try:
                 sock = self._conn.sock
                 if sock:
-                    sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1048576)  # 1MB
-                    sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 262144)   # 256KB
+                    # 2MB receive buffer — reduces syscalls significantly
+                    # for large articles and helps saturate gigabit connections
+                    sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 2097152)
+                    sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 262144)
+                    # Disable Nagle's algorithm — send BODY commands immediately
+                    # instead of waiting to coalesce small writes
+                    sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             except Exception:
                 pass
             
@@ -164,12 +173,15 @@ class NNTPConnection:
             chunks = []
             total = 0
             terminator = b"\r\n.\r\n"
+            _READ_SIZE = 524288  # 512KB — larger reads reduce syscall overhead
             
             while True:
-                # read1() returns whatever is in the buffer (up to CHUNK),
+                # read1() returns whatever is in the buffer (up to _READ_SIZE),
                 # avoiding blocking for the full amount.  On SSL sockets
-                # this typically returns one TLS record (~16KB).
-                chunk = file.read1(262144) if hasattr(file, 'read1') else file.read(262144)
+                # this typically returns one TLS record (~16KB), but a large
+                # request size ensures we drain the kernel buffer in one call
+                # when multiple records are available.
+                chunk = file.read1(_READ_SIZE) if hasattr(file, 'read1') else file.read(_READ_SIZE)
                 if not chunk:
                     break
                 chunks.append(chunk)
