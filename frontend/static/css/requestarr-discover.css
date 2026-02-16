@@ -155,8 +155,9 @@
 
 /* Carousel Sections (8px spacing to match app pages) */
 .carousel-section {
+    position: relative; /* Positioning context for arrows */
     margin-bottom: 8px;
-    padding-top: 8px;
+    padding: 8px 44px 0; /* Top + horizontal room for 38px arrows + 6px buffer */
 }
 
 .section-title {
@@ -167,13 +168,13 @@
 }
 
 .carousel-container {
-    position: relative;
+    position: static; /* Arrows position relative to .carousel-section instead */
     width: 100%;
     max-width: 100%;
     overflow: visible; /* Allow cards to extend outside on hover */
 }
 
-/* Carousel Arrows - Fixed at container edges within viewport */
+/* Carousel Arrows — positioned relative to .carousel-section (has the padding) */
 .carousel-arrow {
     position: absolute;
     top: 50%;
@@ -204,14 +205,14 @@
 
 /* Left arrow hidden at start; JS shows it after user scrolls right (then it stays visible) */
 .carousel-arrow.left {
-    left: 10px;
+    left: 3px;
     opacity: 0;
     pointer-events: none;
 }
 
 /* Right arrow always visible by default so users know the carousel scrolls (no trackpad/touch needed) */
 .carousel-arrow.right {
-    right: 10px;
+    right: 3px;
     opacity: 0.8;
 }
 
@@ -2029,12 +2030,17 @@
         font-size: 16px;
     }
     
+    .carousel-section {
+        padding-left: 34px;
+        padding-right: 34px;
+    }
+    
     .carousel-arrow.left {
-        left: 5px;
+        left: 0;
     }
     
     .carousel-arrow.right {
-        right: 5px;
+        right: 0;
     }
     
     .media-card {
@@ -3576,7 +3582,7 @@
 .requestarr-view {
     width: 100%;
     max-width: 100%;
-    overflow-x: hidden;
+    overflow: visible;
 }
 
 .movies-controls {
