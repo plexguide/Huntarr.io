@@ -4316,9 +4316,12 @@ document.head.appendChild(styleEl);
         var isManual = preset === 'manual';
         var enabled = instance.enabled !== false;
         var isEdit = !isAdd;
-        var keyPlaceholder = isEdit && (instance.api_key_last4 || '')
-            ? ('Enter new key or leave blank to keep existing (\u2022\u2022\u2022\u2022' + (instance.api_key_last4 || '') + ')')
+        var isSynced = !!(instance.indexer_hunt_id);
+        var keyLast4 = instance.api_key_last4 || '';
+        var keyPlaceholder = isEdit && keyLast4
+            ? ('Enter new key or leave blank to keep existing (\u2022\u2022\u2022\u2022' + keyLast4 + ')')
             : 'Your API Key';
+        var keyMasked = keyLast4 ? ('\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022' + keyLast4) : '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022****';
 
         // URL & API Path
         var meta = PRESET_META[preset] || TV_PRESET_META[preset] || {};
@@ -4422,8 +4425,11 @@ document.head.appendChild(styleEl);
                     '</div>' +
                     '<div class="editor-field-group" id="editor-key-group"' + hideStyle + '>' +
                         '<label for="editor-key">API Key</label>' +
-                        '<input type="text" id="editor-key" placeholder="' + keyPlaceholder.replace(/"/g, '&quot;') + '">' +
-                        '<p class="editor-help-text">Only the last 4 characters will be shown on the card after saving.</p>' +
+                        (isSynced
+                            ? '<input type="text" id="editor-key" value="' + keyMasked.replace(/"/g, '&quot;') + '" readonly class="editor-readonly">' +
+                              '<p class="editor-help-text">API key is managed by Index Master and cannot be changed here.</p>'
+                            : '<input type="text" id="editor-key" placeholder="' + keyPlaceholder.replace(/"/g, '&quot;') + '">' +
+                              '<p class="editor-help-text">Only the last 4 characters will be shown on the card after saving.</p>') +
                     '</div>' +
                     '<div class="editor-field-group" id="editor-priority-group"' + hideStyle + '>' +
                         '<label for="editor-priority">Indexer Priority</label>' +
@@ -4485,6 +4491,14 @@ document.head.appendChild(styleEl);
         if (!container || !presetEl || !keyEl) return;
         container.style.display = 'flex';
         container.style.justifyContent = 'flex-end';
+
+        // Synced indexers: API key is managed by Index Master, show synced status
+        var ihIdEl = document.getElementById('editor-indexer-hunt-id');
+        if (ihIdEl && ihIdEl.value.trim()) {
+            container.innerHTML = '<span class="connection-status" style="background: rgba(99,102,241,0.1); color: #818cf8; border: 1px solid rgba(99,102,241,0.2);"><i class="fas fa-check-circle"></i><span>API key synced from Index Master.</span></span>';
+            return;
+        }
+
         var preset = (presetEl.value || '').trim().toLowerCase();
         var apiKey = (keyEl.value || '').trim();
         var hasSavedKey = this._currentEditing && this._currentEditing.originalInstance && (this._currentEditing.originalInstance.api_key_last4 || '');
@@ -4582,8 +4596,12 @@ document.head.appendChild(styleEl);
         if (priority > 99) priority = 99;
         var indexerHuntId = ihIdEl ? ihIdEl.value.trim() : '';
 
-        var body = { name: name || 'Unnamed', preset: preset, api_key: apiKey, enabled: enabled, categories: categories, url: indexerUrl, api_path: apiPath, priority: priority };
-        if (indexerHuntId) body.indexer_hunt_id = indexerHuntId;
+        var body = { name: name || 'Unnamed', preset: preset, enabled: enabled, categories: categories, url: indexerUrl, api_path: apiPath, priority: priority };
+        if (indexerHuntId) {
+            body.indexer_hunt_id = indexerHuntId;
+        } else {
+            body.api_key = apiKey;
+        }
         var apiBase = (window.SettingsForms && window.SettingsForms.getIndexersApiBase) ? window.SettingsForms.getIndexersApiBase() : './api/indexers';
         var editId = (window.SettingsForms && window.SettingsForms._currentEditing && window.SettingsForms._currentEditing.indexerId) ? window.SettingsForms._currentEditing.indexerId : index;
         var endpoint = isAdd ? apiBase : apiBase + '/' + editId;
@@ -4637,7 +4655,6 @@ document.head.appendChild(styleEl);
     };
 
     Forms.renderIndexerCard = function(indexer, index) {
-        const isDefault = index === 0;
         const isTV = Forms._indexersMode === 'tv';
         const indexerIdAttr = (isTV && indexer.id) ? ' data-indexer-id="' + String(indexer.id).replace(/"/g, '&quot;') + '"' : '';
         const headerName = indexer.name || 'Unnamed';
@@ -4658,12 +4675,11 @@ document.head.appendChild(styleEl);
             if (shortUrl.length > 30) shortUrl = shortUrl.substring(0, 28) + '\u2026';
             urlDisplay = '<div class="instance-detail"><i class="fas fa-link"></i><span>' + shortUrl.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span></div>';
         }
-        // IH linked badge (movie only)
-        var ihBadge = isIH && !isTV ? '<span style="font-size:0.65rem;background:rgba(99,102,241,0.15);color:#818cf8;padding:2px 6px;border-radius:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-left:6px;">Synced</span>' : '';
+        var ihBadge = isIH ? '<span style="font-size:0.65rem;background:rgba(99,102,241,0.15);color:#818cf8;padding:2px 6px;border-radius:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-left:6px;">Synced</span>' : '';
 
-        return '<div class="instance-card ' + (isDefault ? 'default-instance' : '') + '" data-instance-index="' + index + '"' + indexerIdAttr + ' data-app-type="indexer" data-preset="' + preset + '" data-enabled="' + enabled + '" data-ih="' + (isIH ? '1' : '0') + '">' +
+        return '<div class="instance-card" data-instance-index="' + index + '"' + indexerIdAttr + ' data-app-type="indexer" data-preset="' + preset + '" data-enabled="' + enabled + '" data-ih="' + (isIH ? '1' : '0') + '">' +
             '<div class="instance-card-header">' +
-            '<div class="instance-name instance-name-with-priority"><i class="fas fa-server"></i><span>' + name + '</span>' + (isDefault ? '<span class="default-badge">Default</span>' : '') + ihBadge + '</div>' +
+            '<div class="instance-name instance-name-with-priority"><i class="fas fa-server"></i><span>' + name + '</span>' + ihBadge + '</div>' +
             '<div class="instance-status-icon ' + statusClass + '"><i class="fas ' + statusIcon + '"></i></div>' +
             '</div>' +
             '<div class="instance-card-body">' +
