@@ -243,7 +243,6 @@
             if (isMovieHunt) {
                 return '<div class="mh-toolbar" id="requestarr-detail-toolbar">' +
                     '<div class="mh-toolbar-left">' +
-                        '<button class="mh-tb" id="requestarr-detail-back"><i class="fas fa-arrow-left"></i> <span>Back</span></button>' +
                         // Shown when IN collection:
                         '<button class="mh-tb" id="requestarr-detail-refresh" title="Refresh" style="display:none"><i class="fas fa-redo-alt"></i><span>Refresh</span></button>' +
                         '<span id="requestarr-detail-force-container"></span>' +
@@ -260,7 +259,6 @@
             }
             return '<div class="mh-toolbar" id="requestarr-detail-toolbar">' +
                 '<div class="mh-toolbar-left">' +
-                '<button class="mh-tb" id="requestarr-detail-back"><i class="fas fa-arrow-left"></i> <span>Back</span></button>' +
                 '</div><div class="mh-toolbar-right"></div></div>';
         },
 
@@ -933,7 +931,6 @@
                 toolbarHTML = `
                 <div class="mh-toolbar" id="requestarr-detail-toolbar">
                     <div class="mh-toolbar-left">
-                        <button class="mh-tb" id="requestarr-detail-back"><i class="fas fa-arrow-left"></i> <span>Back</span></button>
                         <button class="mh-tb" id="requestarr-detail-refresh" title="Refresh" style="display:none"><i class="fas fa-redo-alt"></i><span>Refresh</span></button>
                         <span id="requestarr-detail-force-container"></span>
                         <button class="mh-tb" id="requestarr-detail-search-movie" title="Search Movie" style="display:none"><i class="fas fa-search"></i><span>Search Movie</span></button>
@@ -947,9 +944,7 @@
             } else {
                 toolbarHTML = `
                 <div class="mh-toolbar" id="requestarr-detail-toolbar">
-                    <div class="mh-toolbar-left">
-                        <button class="mh-tb" id="requestarr-detail-back"><i class="fas fa-arrow-left"></i> <span>Back</span></button>
-                    </div>
+                    <div class="mh-toolbar-left"></div>
                     <div class="mh-toolbar-right"></div>
                 </div>`;
             }
@@ -1217,11 +1212,6 @@
         getLoadingHTML() {
             return `
                 <div class="mh-toolbar">
-                    <div class="mh-toolbar-left">
-                        <button class="mh-tb" id="requestarr-detail-back-loading"><i class="fas fa-arrow-left"></i> <span>Back</span></button>
-                    </div>
-                    <div class="mh-toolbar-right"></div>
-                </div>
                 <div class="movie-detail-loading">
                     <i class="fas fa-spinner fa-spin"></i>
                     <p>Loading movie details...</p>
@@ -1231,12 +1221,6 @@
 
         getErrorHTML(message) {
             return `
-                <div class="mh-toolbar">
-                    <div class="mh-toolbar-left">
-                        <button class="mh-tb" id="requestarr-detail-back-error"><i class="fas fa-arrow-left"></i> <span>Back</span></button>
-                    </div>
-                    <div class="mh-toolbar-right"></div>
-                </div>
                 <div class="movie-detail-loading">
                     <i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i>
                     <p style="color: #ef4444;">${this.escapeHtml(message)}</p>
@@ -1502,7 +1486,6 @@
             const toolbarHTML = `
                 <div class="mh-toolbar" id="requestarr-tv-detail-toolbar">
                     <div class="mh-toolbar-left">
-                        <button class="mh-tb" id="requestarr-tv-detail-back"><i class="fas fa-arrow-left"></i> <span>Back</span></button>
                         ${isTVHunt ? '<button class="mh-tb" id="requestarr-tv-search-monitored" style="display:none"><i class="fas fa-search"></i> <span>Search Monitored</span></button>' : ''}
                     </div>
                     <div class="mh-toolbar-right">
@@ -2414,12 +2397,6 @@
 
         getLoadingHTML() {
             return `
-                <div class="mh-toolbar">
-                    <div class="mh-toolbar-left">
-                        <button class="mh-tb" id="requestarr-tv-detail-back-loading"><i class="fas fa-arrow-left"></i> <span>Back</span></button>
-                    </div>
-                    <div class="mh-toolbar-right"></div>
-                </div>
                 <div class="movie-detail-loading">
                     <i class="fas fa-spinner fa-spin"></i>
                     <p>Loading series details...</p>
@@ -2429,12 +2406,6 @@
 
         getErrorHTML(message) {
             return `
-                <div class="mh-toolbar">
-                    <div class="mh-toolbar-left">
-                        <button class="mh-tb" id="requestarr-tv-detail-back-error"><i class="fas fa-arrow-left"></i> <span>Back</span></button>
-                    </div>
-                    <div class="mh-toolbar-right"></div>
-                </div>
                 <div class="movie-detail-loading">
                     <i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i>
                     <p style="color: #ef4444;">${this.escapeHtml(message)}</p>

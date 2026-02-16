@@ -193,7 +193,7 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
     padding: 0 10px;
-    height: 29px;
+    height: 36px;
     min-width: 160px;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -209,13 +209,18 @@
     flex-shrink: 0;
 }
 
+/* Override global enforcement — input is inside styled container */
 .hm-search-bar input {
-    background: transparent;
-    border: none;
-    color: #e2e8f0;
+    background: transparent !important;
+    background-image: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    color: #e2e8f0 !important;
     font-size: 0.78rem;
     outline: none;
     width: 100%;
+    height: auto;
     padding: 0;
 }
 

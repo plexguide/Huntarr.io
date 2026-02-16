@@ -122,7 +122,7 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
     padding: 0 10px;
-    height: 29px;
+    height: 36px;
     min-width: 160px;
     transition: border-color 0.2s, box-shadow 0.2s;
 }

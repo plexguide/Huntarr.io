@@ -56,7 +56,7 @@
     display: none;
     flex: 1; /* Take all remaining space after top-bar */
     overflow-y: auto;
-    padding: 0 var(--page-gap, 15px) 15px;
+    padding: 15px var(--page-gap, 15px) 15px;
     box-sizing: border-box;
     height: 0; /* Force flex to calculate height */
     background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.85) 100%) !important;

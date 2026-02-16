@@ -517,7 +517,7 @@ textarea {
 }
 
 /* ── Selects / Dropdowns ── */
-select:not(.styled-select):not(.chip-select),
+select:not(.styled-select):not(.chip-select):not(.hm-chip-select),
 .huntarr-select {
     width: 100%;
     height: var(--input-height, 42px);
@@ -556,7 +556,7 @@ input[type="password"]:focus,
 input[type="url"]:focus,
 input[type="email"]:focus,
 textarea:focus,
-select:not(.styled-select):not(.chip-select):focus {
+select:not(.styled-select):not(.chip-select):not(.hm-chip-select):focus {
     border-color: var(--input-focus-border, rgba(99, 102, 241, 0.5)) !important;
     box-shadow: var(--input-focus-glow, 0 0 0 3px rgba(99, 102, 241, 0.1)) !important;
     background-color: rgba(15, 23, 42, 0.75) !important;
