@@ -733,11 +733,11 @@ class SmartHuntEngine:
         except Exception as e:
             logger.warning(f"[SmartHunt] Hidden media filter failed: {e}")
 
-        # Recombine and filter out in-library / in-cooldown items
+        # Recombine and filter out in-library items
         all_items = movie_items + tv_items
         filtered = [
             i for i in all_items
-            if not i.get("in_library") and not i.get("in_cooldown")
+            if not i.get("in_library")
         ]
 
         # Shuffle so movies and TV are mixed randomly (not movie-block then TV-block)

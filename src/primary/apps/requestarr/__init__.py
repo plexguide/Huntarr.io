@@ -479,10 +479,7 @@ class RequestarrAPI:
     def get_series_status_from_sonarr(self, tmdb_id: int, instance_name: str) -> Dict[str, Any]:
         """Get series status from Sonarr - missing episodes, available, etc."""
         try:
-            # Check cooldown status (configurable cooldown period)
-            cooldown_hours = self.get_cooldown_hours()
-            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'tv', 'sonarr', instance_name, cooldown_hours)
-            already_requested_in_db = cooldown_status['last_requested_at'] is not None
+            already_requested_in_db = self.db.is_already_requested(tmdb_id, 'tv', 'sonarr', instance_name)
             
             # Get Sonarr instance config
             app_config = self.db.get_app_config('sonarr')
@@ -674,7 +671,7 @@ class RequestarrAPI:
                         # Not in Requestarr DB but in Sonarr with no episodes = requested elsewhere
                         previously_requested = True
                     
-                    logger.info(f"Found series in Sonarr: {series.get('title')} - {available_episodes}/{total_episodes} episodes, missing: {missing_episodes}, previously_requested: {previously_requested}, cooldown: {cooldown_status['in_cooldown']}")
+                    logger.info(f"Found series in Sonarr: {series.get('title')} - {available_episodes}/{total_episodes} episodes, missing: {missing_episodes}, previously_requested: {previously_requested}")
                     
                     path_val = (series.get('path') or series.get('Path') or series.get('rootFolderPath') or series.get('RootFolderPath') or '').strip()
                     return {
@@ -686,28 +683,20 @@ class RequestarrAPI:
                         'available_episodes': available_episodes,
                         'missing_episodes': missing_episodes,
                         'previously_requested': previously_requested,
-                        'cooldown_status': cooldown_status,
                         'seasons': seasons_with_episodes,
                     }
             
             logger.info(f"Series with TMDB ID {tmdb_id} not found in Sonarr")
-            logger.info(f"Series with TMDB ID {tmdb_id} not found in Sonarr")
             return {
                 'exists': False,
                 'previously_requested': already_requested_in_db,
-                'cooldown_status': cooldown_status
             }
             
         except Exception as e:
             logger.error(f"Error getting series status from Sonarr: {e}")
-            # Still check cooldown even if Sonarr check fails
-            cooldown_hours = self.get_cooldown_hours()
-            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'tv', 'sonarr', instance_name, cooldown_hours)
-            already_requested_in_db = cooldown_status['last_requested_at'] is not None
             return {
                 'exists': False,
-                'previously_requested': already_requested_in_db,
-                'cooldown_status': cooldown_status
+                'previously_requested': False,
             }
 
     def trigger_sonarr_season_search(self, tmdb_id: int, instance_name: str, season_number: int) -> Dict[str, Any]:
@@ -787,13 +776,11 @@ class RequestarrAPI:
     def get_series_status_from_tv_hunt(self, tmdb_id: int, instance_name: str) -> Dict[str, Any]:
         """Get series status from TV Hunt collection - exists, missing episodes, etc."""
         try:
-            cooldown_hours = self.get_cooldown_hours()
-            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'tv', 'tv_hunt', instance_name, cooldown_hours)
-            already_requested_in_db = cooldown_status['last_requested_at'] is not None
+            already_requested_in_db = self.db.is_already_requested(tmdb_id, 'tv', 'tv_hunt', instance_name)
 
             instance_id = self._resolve_tv_hunt_instance_id(instance_name)
             if instance_id is None:
-                return {'exists': False, 'previously_requested': already_requested_in_db, 'cooldown_status': cooldown_status}
+                return {'exists': False, 'previously_requested': already_requested_in_db}
 
             from src.primary.routes.media_hunt.discovery_tv import _get_collection_config
             from src.primary.routes.media_hunt.helpers import _extract_quality_from_filename
@@ -830,16 +817,13 @@ class RequestarrAPI:
                         'available_episodes': available_eps,
                         'missing_episodes': missing_eps,
                         'previously_requested': previously_requested,
-                        'cooldown_status': cooldown_status,
                         'seasons': seasons,
                         'monitored': s.get('monitored', True)
                     }
-            return {'exists': False, 'previously_requested': already_requested_in_db, 'cooldown_status': cooldown_status}
+            return {'exists': False, 'previously_requested': already_requested_in_db}
         except Exception as e:
             logger.error(f"Error getting series status from TV Hunt: {e}")
-            cooldown_hours = self.get_cooldown_hours()
-            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'tv', 'tv_hunt', instance_name, cooldown_hours)
-            return {'exists': False, 'previously_requested': False, 'cooldown_status': cooldown_status}
+            return {'exists': False, 'previously_requested': False}
 
     def check_seasons_in_sonarr(self, tmdb_id: int, instance_name: str) -> List[int]:
         """Check which seasons of a TV show are already in Sonarr"""
@@ -852,10 +836,7 @@ class RequestarrAPI:
     def get_movie_status_from_radarr(self, tmdb_id: int, instance_name: str) -> Dict[str, Any]:
         """Get movie status from Radarr - in library, previously requested, etc."""
         try:
-            # Check cooldown status (configurable cooldown period)
-            cooldown_hours = self.get_cooldown_hours()
-            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'movie', 'radarr', instance_name, cooldown_hours)
-            already_requested_in_db = cooldown_status['last_requested_at'] is not None
+            already_requested_in_db = self.db.is_already_requested(tmdb_id, 'movie', 'radarr', instance_name)
             
             # Get Radarr instance config
             app_config = self.db.get_app_config('radarr')
@@ -910,26 +891,19 @@ class RequestarrAPI:
                         'in_library': has_file,
                         'previously_requested': previously_requested,
                         'monitored': movie.get('monitored', False),
-                        'cooldown_status': cooldown_status
                     }
             
             logger.info(f"Movie with TMDB ID {tmdb_id} not found in Radarr")
             return {
                 'in_library': False,
                 'previously_requested': already_requested_in_db,
-                'cooldown_status': cooldown_status
             }
             
         except Exception as e:
             logger.error(f"Error getting movie status from Radarr: {e}")
-            # Still check cooldown even if Radarr check fails
-            cooldown_hours = self.get_cooldown_hours()
-            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'movie', 'radarr', instance_name, cooldown_hours)
-            already_requested_in_db = cooldown_status['last_requested_at'] is not None
             return {
                 'in_library': False,
-                'previously_requested': already_requested_in_db,
-                'cooldown_status': cooldown_status
+                'previously_requested': False,
             }
 
     def get_radarr_movie_detail_status(self, tmdb_id: int, instance_name: str) -> Dict[str, Any]:
@@ -998,10 +972,7 @@ class RequestarrAPI:
     def get_movie_status_from_movie_hunt(self, tmdb_id: int, instance_name: str) -> Dict[str, Any]:
         """Get movie status from Movie Hunt's collection - in library, previously requested, etc."""
         try:
-            # Check cooldown status
-            cooldown_hours = self.get_cooldown_hours()
-            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'movie', 'movie_hunt', instance_name, cooldown_hours)
-            already_requested_in_db = cooldown_status['last_requested_at'] is not None
+            already_requested_in_db = self.db.is_already_requested(tmdb_id, 'movie', 'movie_hunt', instance_name)
             
             # Resolve Movie Hunt instance ID
             instance_id = self._resolve_movie_hunt_instance_id(instance_name)
@@ -1009,7 +980,6 @@ class RequestarrAPI:
                 return {
                     'in_library': False,
                     'previously_requested': already_requested_in_db,
-                    'cooldown_status': cooldown_status
                 }
             
             # Check Movie Hunt's collection for this movie
@@ -1038,7 +1008,6 @@ class RequestarrAPI:
                 return {
                     'in_library': False,
                     'previously_requested': already_requested_in_db,
-                    'cooldown_status': cooldown_status
                 }
             
             # Determine status
@@ -1056,18 +1025,13 @@ class RequestarrAPI:
                 'in_library': has_file,
                 'previously_requested': already_requested_in_db or status_raw == 'requested',
                 'monitored': True,
-                'cooldown_status': cooldown_status
             }
             
         except Exception as e:
             logger.error(f"Error getting movie status from Movie Hunt: {e}")
-            cooldown_hours = self.get_cooldown_hours()
-            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'movie', 'movie_hunt', instance_name, cooldown_hours)
-            already_requested_in_db = cooldown_status['last_requested_at'] is not None
             return {
                 'in_library': False,
-                'previously_requested': already_requested_in_db,
-                'cooldown_status': cooldown_status
+                'previously_requested': False,
             }
     
     def check_library_status_batch(self, items: List[Dict[str, Any]], app_type: str = None, instance_name: str = None) -> List[Dict[str, Any]]:
@@ -1076,7 +1040,6 @@ class RequestarrAPI:
         Adds status flags to each item:
         - 'in_library': Complete (all episodes for TV, has file for movies)
         - 'partial': TV shows with some but not all episodes
-        - 'in_cooldown': Recently requested (within 12 hours)
         
         Args:
             items: List of media items to check
@@ -1092,7 +1055,6 @@ class RequestarrAPI:
                 for item in items:
                     item['in_library'] = False
                     item['partial'] = False
-                    item['in_cooldown'] = False
                 return items
             
             # Filter instances based on app_type and instance_name if provided
@@ -1279,7 +1241,6 @@ class RequestarrAPI:
                     logger.error(f"Error checking Sonarr instance {instance['name']}: {e}")
             
             # Mark each item with status
-            cooldown_hours = self.get_cooldown_hours()
             for item in items:
                 tmdb_id = item.get('tmdb_id')
                 # Normalize to int for consistent set lookups
@@ -1288,44 +1249,6 @@ class RequestarrAPI:
                 except (TypeError, ValueError):
                     pass
                 media_type = item.get('media_type')
-                
-                # Check cooldown status for the specified instance or all instances
-                item['in_cooldown'] = False
-                
-                if app_type and instance_name:
-                    # Check only the specified instance
-                    cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, app_type, instance_name, cooldown_hours)
-                    item['in_cooldown'] = cooldown_status['in_cooldown']
-                else:
-                    # Check ALL instances for cooldown (old behavior)
-                    if media_type == 'movie':
-                        # Check Radarr instances
-                        for instance in instances['radarr']:
-                            instance_name_check = instance['name']
-                            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, 'radarr', instance_name_check, cooldown_hours)
-                            if cooldown_status['in_cooldown']:
-                                item['in_cooldown'] = True
-                                break
-                        # Also check Movie Hunt instances
-                        if not item['in_cooldown']:
-                            for mh_inst in instances.get('movie_hunt', []):
-                                cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, 'movie_hunt', mh_inst['name'], cooldown_hours)
-                                if cooldown_status['in_cooldown']:
-                                    item['in_cooldown'] = True
-                                    break
-                    elif media_type == 'tv':
-                        for instance in instances.get('sonarr', []):
-                            instance_name_check = instance['name']
-                            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, 'sonarr', instance_name_check, cooldown_hours)
-                            if cooldown_status['in_cooldown']:
-                                item['in_cooldown'] = True
-                                break
-                        if not item['in_cooldown']:
-                            for th_inst in instances.get('tv_hunt', []):
-                                cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, 'tv_hunt', th_inst['name'], cooldown_hours)
-                                if cooldown_status['in_cooldown']:
-                                    item['in_cooldown'] = True
-                                    break
                 
                 # Set library status
                 if media_type == 'movie':
@@ -1347,7 +1270,6 @@ class RequestarrAPI:
             for item in items:
                 item['in_library'] = False
                 item['partial'] = False
-                item['in_cooldown'] = False
             return items
     
     def filter_available_media(self, items: List[Dict[str, Any]], media_type: str) -> List[Dict[str, Any]]:
@@ -1580,29 +1502,6 @@ class RequestarrAPI:
         except Exception as e:
             logger.error(f"Error resolving TV Hunt instance '{instance_name}': {e}")
             return None
-    
-    def get_cooldown_hours(self) -> int:
-        """Get cooldown period in hours from database (default: 24 hours / 1 day)"""
-        try:
-            requestarr_config = self.db.get_app_config('requestarr')
-            if requestarr_config and 'cooldown_hours' in requestarr_config:
-                return int(requestarr_config['cooldown_hours'])
-            return 24  # Default to 1 day
-        except Exception as e:
-            logger.error(f"Error getting cooldown hours: {e}")
-            return 24
-    
-    def set_cooldown_hours(self, hours: int):
-        """Set cooldown period in hours in database"""
-        try:
-            # Get existing config or create new one
-            requestarr_config = self.db.get_app_config('requestarr') or {}
-            requestarr_config['cooldown_hours'] = hours
-            self.db.save_app_config('requestarr', requestarr_config)
-            logger.info(f"Set cooldown hours to {hours}")
-        except Exception as e:
-            logger.error(f"Error setting cooldown hours: {e}")
-            raise
     
     def get_discover_filters(self) -> dict:
         """Get discover filter settings from database"""
@@ -1977,16 +1876,6 @@ class RequestarrAPI:
         except Exception as e:
             logger.error(f"Error getting watch providers: {e}")
             return []
-    
-    def reset_cooldowns(self) -> int:
-        """Reset all cooldowns with 25+ hours remaining. Returns count of reset items."""
-        try:
-            count = self.db.reset_cooldowns_over_threshold(25)
-            logger.info(f"Reset {count} cooldowns with 25+ hours remaining")
-            return count
-        except Exception as e:
-            logger.error(f"Error resetting cooldowns: {e}")
-            raise
     
     def get_genres(self, media_type: str) -> List[Dict[str, Any]]:
         """Get genre list from TMDB"""
@@ -2492,34 +2381,6 @@ class RequestarrAPI:
             # Check if media exists and get detailed info
             exists_result = self._check_media_exists(tmdb_id, media_type, target_instance, app_type)
             
-            # Check configurable cooldown period
-            cooldown_hours = self.get_cooldown_hours()
-            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, media_type, app_type, instance_name, cooldown_hours)
-            
-            if cooldown_status['in_cooldown']:
-                hours_remaining = cooldown_status['hours_remaining']
-                
-                # Format time display based on duration
-                if hours_remaining <= 24:
-                    # 24 hours or less: show as hours and minutes (12h 23m)
-                    hours = int(hours_remaining)
-                    minutes = int((hours_remaining - hours) * 60)
-                    time_msg = f"{hours}h {minutes}m" if hours > 0 else f"{minutes}m"
-                else:
-                    # More than 24 hours: show as days, hours, minutes (1d 1h 5m)
-                    days = int(hours_remaining / 24)
-                    remaining_hours = hours_remaining - (days * 24)
-                    hours = int(remaining_hours)
-                    minutes = int((remaining_hours - hours) * 60)
-                    time_msg = f"{days}d {hours}h {minutes}m"
-                
-                return {
-                    'success': False,
-                    'message': f'{title} was recently requested. Please wait {time_msg} before requesting again',
-                    'status': 'in_cooldown',
-                    'hours_remaining': hours_remaining
-                }
-            
             if exists_result.get('exists'):
                 if app_type == 'sonarr' and 'series_id' in exists_result:
                     # Series exists in Sonarr - check if we should request missing episodes
@@ -2695,28 +2556,6 @@ class RequestarrAPI:
                     'status': 'added'
                 }
             
-            # Check cooldown before starting search
-            cooldown_hours = self.get_cooldown_hours()
-            cooldown_status = self.db.get_request_cooldown_status(tmdb_id, 'movie', 'movie_hunt', instance_name, cooldown_hours)
-            if cooldown_status['in_cooldown']:
-                hours_remaining = cooldown_status['hours_remaining']
-                if hours_remaining <= 24:
-                    hours = int(hours_remaining)
-                    minutes = int((hours_remaining - hours) * 60)
-                    time_msg = f"{hours}h {minutes}m" if hours > 0 else f"{minutes}m"
-                else:
-                    days = int(hours_remaining / 24)
-                    remaining_hours = hours_remaining - (days * 24)
-                    hours = int(remaining_hours)
-                    minutes = int((remaining_hours - hours) * 60)
-                    time_msg = f"{days}d {hours}h {minutes}m"
-                return {
-                    'success': False,
-                    'message': f'{title} was recently requested. Please wait {time_msg} before searching again.',
-                    'status': 'in_cooldown',
-                    'hours_remaining': hours_remaining
-                }
-            
             # Build request data for Movie Hunt's internal search+download pipeline
             # We call the discovery module's internal functions directly
             from src.primary.routes.media_hunt.discovery_movie import _get_collection_config
@@ -2867,7 +2706,7 @@ class RequestarrAPI:
             # Apply movie_monitor setting
             self._apply_movie_monitor(movie_monitor, tmdb_id, instance_id, root_folder, quality_profile, min_avail)
             
-            # Save request to Requestarr's DB for cooldown tracking
+            # Save request to Requestarr's DB for tracking
             self.db.add_request(
                 tmdb_id, media_type, title, year, overview,
                 poster_path, backdrop_path, 'movie_hunt', instance_name

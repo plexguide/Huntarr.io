@@ -476,14 +476,10 @@ def check_minimum_availability(item):
 
 
 def _movie_hunt_collection_lookups(instance_id):
-    """Build sets for in_library and in_cooldown from Movie Hunt collection."""
+    """Build sets for in_library from Movie Hunt collection."""
     items = _get_collection_config(instance_id)
     available_tmdb_ids = set()
     available_title_year = set()
-    cooldown_tmdb_ids = set()
-    cooldown_title_year = set()
-    now = datetime.utcnow()
-    cooldown_cutoff = now - timedelta(hours=12)
     for it in items:
         if not isinstance(it, dict):
             continue
@@ -502,20 +498,7 @@ def _movie_hunt_collection_lookups(instance_id):
                 available_tmdb_ids.add(tmdb_id)
             if key_title_year:
                 available_title_year.add(key_title_year)
-        requested_at = it.get('requested_at') or ''
-        try:
-            if requested_at:
-                dt = datetime.strptime(requested_at.replace('Z', '+00:00')[:19], '%Y-%m-%dT%H:%M:%S')
-                if dt.tzinfo:
-                    dt = dt.replace(tzinfo=None)
-                if dt >= cooldown_cutoff:
-                    if tmdb_id is not None:
-                        cooldown_tmdb_ids.add(tmdb_id)
-                    if key_title_year:
-                        cooldown_title_year.add(key_title_year)
-        except (ValueError, TypeError):
-            pass
-    return available_tmdb_ids, available_title_year, cooldown_tmdb_ids, cooldown_title_year
+    return available_tmdb_ids, available_title_year
 
 
 def _normalize_title_for_key(title):
@@ -1236,7 +1219,7 @@ def register_movie_discovery_routes(bp):
 
     @bp.route('/api/movie-hunt/discover/movies', methods=['GET'])
     def api_movie_hunt_discover_movies():
-        """Movie Hunt–only discover: TMDB discover/movie with in_library and in_cooldown from Movie Hunt collection."""
+        """Movie Hunt–only discover: TMDB discover/movie with in_library from Movie Hunt collection."""
         try:
             instance_id = _get_movie_hunt_instance_id_from_request()
             page = max(1, request.args.get('page', 1, type=int))
@@ -1266,7 +1249,7 @@ def register_movie_discovery_routes(bp):
             r = requests.get(url, params=params, timeout=10)
             r.raise_for_status()
             rdata = r.json()
-            available_tmdb_ids, available_title_year, cooldown_tmdb_ids, cooldown_title_year = _movie_hunt_collection_lookups(instance_id)
+            available_tmdb_ids, available_title_year = _movie_hunt_collection_lookups(instance_id)
             results = []
             for item in rdata.get('results', []):
                 release_date = item.get('release_date') or ''
@@ -1286,9 +1269,6 @@ def register_movie_discovery_routes(bp):
                 in_library = (tmdb_id is not None and tmdb_id in available_tmdb_ids) or (
                     (title.lower(), year_str) in available_title_year
                 )
-                in_cooldown = (tmdb_id is not None and tmdb_id in cooldown_tmdb_ids) or (
-                    (title.lower(), year_str) in cooldown_title_year
-                )
                 results.append({
                     'tmdb_id': tmdb_id,
                     'id': tmdb_id,
@@ -1301,7 +1281,6 @@ def register_movie_discovery_routes(bp):
                     'vote_average': item.get('vote_average', 0),
                     'popularity': item.get('popularity', 0),
                     'in_library': in_library,
-                    'in_cooldown': in_cooldown,
                     'partial': False,
                 })
             if hide_available:

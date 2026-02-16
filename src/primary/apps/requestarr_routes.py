@@ -668,29 +668,6 @@ def get_quality_profiles(app_type, instance_name):
         logger.error(f"Error getting quality profiles: {e}")
         return jsonify({'success': False, 'error': 'Failed to get quality profiles'}), 500
 
-@requestarr_bp.route('/settings/cooldown', methods=['GET'])
-def get_cooldown_settings():
-    """Get cooldown period setting"""
-    try:
-        cooldown_hours = requestarr_api.get_cooldown_hours()
-        return jsonify({'success': True, 'cooldown_hours': cooldown_hours})
-    except Exception as e:
-        logger.error(f"Error getting cooldown settings: {e}")
-        return jsonify({'success': False, 'error': 'Failed to get cooldown settings'}), 500
-
-@requestarr_bp.route('/settings/cooldown', methods=['POST'])
-def set_cooldown_settings():
-    """Set cooldown period setting"""
-    try:
-        data = request.get_json() or {}
-        cooldown_hours = data.get('cooldown_hours', 24)
-        
-        requestarr_api.set_cooldown_hours(cooldown_hours)
-        return jsonify({'success': True})
-    except Exception as e:
-        logger.error(f"Error setting cooldown settings: {e}")
-        return jsonify({'success': False, 'error': 'Failed to set cooldown settings'}), 500
-
 @requestarr_bp.route('/settings/filters', methods=['GET'])
 def get_discover_filters():
     """Get discover filter settings"""
@@ -847,16 +824,6 @@ def set_blacklisted_genres():
     except Exception as e:
         logger.error(f"Error setting blacklisted genres: {e}")
         return jsonify({'success': False, 'error': 'Failed to set blacklisted genres'}), 500
-
-@requestarr_bp.route('/reset-cooldowns', methods=['POST'])
-def reset_cooldowns():
-    """Reset all cooldowns with 25+ hours remaining"""
-    try:
-        count = requestarr_api.reset_cooldowns()
-        return jsonify({'success': True, 'count': count})
-    except Exception as e:
-        logger.error(f"Error resetting cooldowns: {e}")
-        return jsonify({'success': False, 'error': 'Failed to reset cooldowns'}), 500
 
 @requestarr_bp.route('/genres/<media_type>', methods=['GET'])
 def get_genres(media_type):
