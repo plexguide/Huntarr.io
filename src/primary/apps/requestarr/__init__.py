@@ -818,7 +818,10 @@ class RequestarrAPI:
                         'missing_episodes': missing_eps,
                         'previously_requested': previously_requested,
                         'seasons': seasons,
-                        'monitored': s.get('monitored', True)
+                        'monitored': s.get('monitored', True),
+                        'path': s.get('root_folder', ''),
+                        'root_folder_path': s.get('root_folder', ''),
+                        'quality_profile': s.get('quality_profile', ''),
                     }
             return {'exists': False, 'previously_requested': already_requested_in_db}
         except Exception as e:

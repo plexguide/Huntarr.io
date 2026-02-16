@@ -964,6 +964,36 @@ def register_tv_discovery_routes(bp):
             return jsonify({'error': str(e)}), 500
     
     
+    @bp.route('/api/tv-hunt/collection/update', methods=['POST'])
+    def api_tv_hunt_collection_update():
+        """Update a TV series' editable fields (root_folder, quality_profile)."""
+        try:
+            instance_id = _get_tv_hunt_instance_id_from_request()
+            if not instance_id:
+                return jsonify({'error': 'No instance selected'}), 400
+            data = request.get_json() or {}
+            tmdb_id = data.get('tmdb_id')
+            if not tmdb_id:
+                return jsonify({'error': 'tmdb_id required'}), 400
+            collection = _get_collection_config(instance_id)
+            found = False
+            for series in collection:
+                if series.get('tmdb_id') == tmdb_id:
+                    if 'root_folder' in data:
+                        series['root_folder'] = data['root_folder']
+                    if 'quality_profile' in data:
+                        series['quality_profile'] = data['quality_profile']
+                    found = True
+                    break
+            if not found:
+                return jsonify({'error': 'Series not found in collection'}), 404
+            _save_collection_config(collection, instance_id)
+            return jsonify({'success': True}), 200
+        except Exception as e:
+            logger.exception('TV Hunt collection update error')
+            return jsonify({'error': str(e)}), 500
+
+
     @bp.route('/api/tv-hunt/collection/<int:tmdb_id>/monitor', methods=['PUT'])
     def api_tv_hunt_collection_monitor(tmdb_id):
         """Update monitoring settings for a series, season, or episode."""

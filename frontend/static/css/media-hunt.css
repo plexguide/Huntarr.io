@@ -1355,8 +1355,8 @@
 /* ── Media Type Badge (TV / Movie) ── */
 .media-card .media-type-badge {
     position: absolute;
-    top: 6px;
-    left: 6px;
+    top: 8px;
+    left: 8px;
     z-index: 3;
     padding: 1px 8px;
     border-radius: 3px;

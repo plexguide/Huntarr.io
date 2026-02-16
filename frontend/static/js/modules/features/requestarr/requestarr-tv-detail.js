@@ -240,9 +240,11 @@
                 <div class="mh-toolbar" id="requestarr-tv-detail-toolbar">
                     <div class="mh-toolbar-left">
                         <button class="mh-tb" id="requestarr-tv-detail-back"><i class="fas fa-arrow-left"></i> <span>Back</span></button>
+                        ${isTVHunt ? '<button class="mh-tb" id="requestarr-tv-search-monitored" style="display:none"><i class="fas fa-search"></i> <span>Search Monitored</span></button>' : ''}
                     </div>
                     <div class="mh-toolbar-right">
-                        ${isTVHunt ? '<button class="mh-tb" id="requestarr-tv-search-monitored"><i class="fas fa-search"></i> <span>Search Monitored</span></button>' : ''}
+                        ${isTVHunt ? '<button class="mh-tb" id="requestarr-tv-detail-edit" title="Edit" style="display:none"><i class="fas fa-wrench"></i><span>Edit</span></button>' : ''}
+                        ${isTVHunt ? '<button class="mh-tb mh-tb-danger" id="requestarr-tv-detail-delete" title="Delete" style="display:none"><i class="fas fa-trash-alt"></i></button>' : ''}
                     </div>
                 </div>`;
 
@@ -440,6 +442,12 @@
                     await this.searchMonitoredEpisodes();
                 };
             }
+
+            const editBtn = document.getElementById('requestarr-tv-detail-edit');
+            if (editBtn) editBtn.addEventListener('click', () => this.openEditModalForTVHunt());
+
+            const deleteBtn = document.getElementById('requestarr-tv-detail-delete');
+            if (deleteBtn) deleteBtn.addEventListener('click', () => this.openDeleteModalForTVHunt());
 
             // Must load series status first so buildEpisodeStatusMap has Sonarr/TV Hunt data for episode status and resolution
             await this.updateDetailInfoBar();
@@ -642,20 +650,33 @@
 
                 const actionsEl = document.getElementById('requestarr-tv-detail-actions');
 
+                const isTVHunt = decoded.appType === 'tv_hunt';
+                const editBtnEl = document.getElementById('requestarr-tv-detail-edit');
+                const deleteBtnEl = document.getElementById('requestarr-tv-detail-delete');
+                const searchMonBtnEl = document.getElementById('requestarr-tv-search-monitored');
+
                 if (data.exists) {
-                    if (actionsEl && decoded.appType !== 'tv_hunt') {
+                    if (actionsEl && !isTVHunt) {
                         actionsEl.style.display = 'none';
                     }
                     const seriesMonitorWrap = document.getElementById('requestarr-tv-series-monitor-wrap');
                     const seriesMonitorBtn = document.getElementById('requestarr-tv-series-monitor-btn');
-                    if (decoded.appType === 'tv_hunt' && seriesMonitorWrap && seriesMonitorBtn) {
+                    if (isTVHunt && seriesMonitorWrap && seriesMonitorBtn) {
                         seriesMonitorWrap.style.display = '';
                         const monitored = !!data.monitored;
                         seriesMonitorBtn.classList.toggle('mh-monitor-on', monitored);
                         seriesMonitorBtn.classList.toggle('mh-monitor-off', !monitored);
                         seriesMonitorBtn.querySelector('i').className = monitored ? 'fas fa-bookmark' : 'far fa-bookmark';
                     }
-                    pathEl.textContent = data.path || data.root_folder_path || '-';
+                    // Build path: root_folder + series title
+                    let displayPath = data.path || data.root_folder_path || '-';
+                    if (displayPath && displayPath !== '-' && this.currentSeries) {
+                        const seriesTitle = this.currentSeries.name || this.currentSeries.title || '';
+                        if (seriesTitle && !displayPath.includes(seriesTitle)) {
+                            displayPath = displayPath.replace(/\/+$/, '') + '/' + seriesTitle;
+                        }
+                    }
+                    pathEl.textContent = displayPath;
                     const avail = data.available_episodes ?? 0;
                     const total = data.total_episodes ?? 0;
                     const missing = data.missing_episodes ?? 0;
@@ -672,14 +693,26 @@
                     }
                     statusEl.innerHTML = `<span class="mh-badge ${statusClass}"><i class="fas ${statusIcon}"></i> ${statusLabel}</span>`;
                     if (episodesEl) episodesEl.textContent = `${avail} / ${total}`;
+
+                    // Show toolbar buttons for items in collection
+                    if (editBtnEl && isTVHunt) editBtnEl.style.display = '';
+                    if (deleteBtnEl && isTVHunt) deleteBtnEl.style.display = '';
+                    if (searchMonBtnEl && isTVHunt) searchMonBtnEl.style.display = '';
+
                     this.updateSeasonCountBadges();
                     this.updateEpisodeMonitorIcons();
                 } else {
-                    if (actionsEl && decoded.appType !== 'tv_hunt') actionsEl.style.display = '';
+                    if (actionsEl && !isTVHunt) actionsEl.style.display = '';
                     if (seriesMonitorWrap) seriesMonitorWrap.style.display = 'none';
                     pathEl.textContent = '-';
                     statusEl.innerHTML = '<span class="mh-badge mh-badge-warn">Not in Collection</span>';
                     if (episodesEl) episodesEl.textContent = '-';
+
+                    // Hide toolbar buttons when not in collection
+                    if (editBtnEl) editBtnEl.style.display = 'none';
+                    if (deleteBtnEl) deleteBtnEl.style.display = 'none';
+                    if (searchMonBtnEl) searchMonBtnEl.style.display = 'none';
+
                     this.updateSeasonCountBadges();
                     this.updateEpisodeMonitorIcons();
                 }
@@ -954,6 +987,169 @@
         setupErrorBackButton() {
             const btn = document.getElementById('requestarr-tv-detail-back-error');
             if (btn) btn.addEventListener('click', () => this.closeDetail());
+        },
+
+        async openEditModalForTVHunt() {
+            const decoded = _decodeInstanceValue(this.selectedInstanceName || '');
+            if (decoded.appType !== 'tv_hunt' || !decoded.name) return;
+            const instanceId = this.getTVHuntInstanceId();
+            if (!instanceId) return;
+
+            const series = this.currentSeries;
+            const status = this.seriesStatus || null;
+            if (!series) return;
+
+            const title = this.escapeHtml(series.name || series.title || '');
+            const tmdbId = series.tmdb_id || series.id;
+
+            let profiles = [], rootFolders = [];
+            try {
+                const [profResp, rfResp] = await Promise.all([
+                    fetch(`./api/tv-hunt/profiles?instance_id=${instanceId}`),
+                    fetch(`./api/tv-hunt/root-folders?instance_id=${instanceId}`)
+                ]);
+                const profData = await profResp.json();
+                profiles = profData.profiles || profData || [];
+                const rfData = await rfResp.json();
+                rootFolders = rfData.root_folders || rfData || [];
+            } catch (err) {
+                console.error('[RequestarrTVDetail] Edit modal fetch error:', err);
+            }
+
+            const currentProfile = (status && status.quality_profile) || '';
+            const currentRoot = (status && (status.path || status.root_folder_path)) || '';
+
+            const profileOpts = (Array.isArray(profiles) ? profiles : []).map(p => {
+                const name = p.name || 'Unknown';
+                const sel = name === currentProfile ? ' selected' : '';
+                return `<option value="${this.escapeHtml(name)}"${sel}>${this.escapeHtml(name)}${p.is_default ? ' (Default)' : ''}</option>`;
+            }).join('');
+
+            const rfOpts = (Array.isArray(rootFolders) ? rootFolders : []).map(rf => {
+                const path = rf.path || '';
+                const sel = path === currentRoot ? ' selected' : '';
+                return `<option value="${this.escapeHtml(path)}"${sel}>${this.escapeHtml(path)}${rf.is_default ? ' (Default)' : ''}</option>`;
+            }).join('');
+
+            const html =
+                '<div class="mh-modal-backdrop" id="mh-edit-modal">' +
+                    '<div class="mh-modal">' +
+                        '<div class="mh-modal-header">' +
+                            '<h3><i class="fas fa-wrench"></i> Edit \u2014 ' + title + '</h3>' +
+                            '<button class="mh-modal-x" id="mh-edit-close">&times;</button>' +
+                        '</div>' +
+                        '<div class="mh-modal-body">' +
+                            '<div class="mh-form-row"><label>Root Folder</label><select id="mh-edit-root-folder" class="mh-select">' + rfOpts + '</select></div>' +
+                            '<div class="mh-form-row"><label>Quality Profile</label><select id="mh-edit-quality-profile" class="mh-select">' + profileOpts + '</select></div>' +
+                        '</div>' +
+                        '<div class="mh-modal-footer">' +
+                            '<button class="mh-btn mh-btn-secondary" id="mh-edit-cancel">Cancel</button>' +
+                            '<button class="mh-btn mh-btn-primary" id="mh-edit-save">Save</button>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+
+            const existing = document.getElementById('mh-edit-modal');
+            if (existing) existing.remove();
+
+            document.body.insertAdjacentHTML('beforeend', html);
+
+            const self = this;
+            document.getElementById('mh-edit-close').addEventListener('click', () => { document.getElementById('mh-edit-modal').remove(); });
+            document.getElementById('mh-edit-cancel').addEventListener('click', () => { document.getElementById('mh-edit-modal').remove(); });
+            document.getElementById('mh-edit-modal').addEventListener('click', (e) => {
+                if (e.target.id === 'mh-edit-modal') document.getElementById('mh-edit-modal').remove();
+            });
+            document.getElementById('mh-edit-save').addEventListener('click', async () => {
+                const rootFolder = document.getElementById('mh-edit-root-folder').value;
+                const qualityProfile = document.getElementById('mh-edit-quality-profile').value;
+                const saveBtn = document.getElementById('mh-edit-save');
+                if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
+                try {
+                    const resp = await fetch(`./api/tv-hunt/collection/update?instance_id=${instanceId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ tmdb_id: tmdbId, root_folder: rootFolder, quality_profile: qualityProfile })
+                    });
+                    const data = await resp.json();
+                    if (data.success) {
+                        const modal = document.getElementById('mh-edit-modal');
+                        if (modal) modal.remove();
+                        self.updateDetailInfoBar();
+                        if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Series updated successfully.', 'success');
+                    } else {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Save failed: ' + (data.error || 'Unknown error'), 'error');
+                        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save'; }
+                    }
+                } catch (err) {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Save failed: ' + err.message, 'error');
+                    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save'; }
+                }
+            });
+        },
+
+        openDeleteModalForTVHunt() {
+            const decoded = _decodeInstanceValue(this.selectedInstanceName || '');
+            if (decoded.appType !== 'tv_hunt' || !decoded.name) return;
+            const instanceId = this.getTVHuntInstanceId();
+            if (!instanceId) return;
+
+            const series = this.currentSeries;
+            if (!series) return;
+            const tmdbId = series.tmdb_id || series.id;
+            const title = this.escapeHtml(series.name || series.title || '');
+            const self = this;
+
+            const html =
+                '<div class="mh-modal-backdrop" id="mh-delete-modal">' +
+                    '<div class="mh-modal">' +
+                        '<div class="mh-modal-header">' +
+                            '<h3><i class="fas fa-trash-alt" style="color:#ef4444;"></i> Delete \u2014 ' + title + '</h3>' +
+                            '<button class="mh-modal-x" id="mh-delete-close">&times;</button>' +
+                        '</div>' +
+                        '<div class="mh-modal-body">' +
+                            '<p>Are you sure you want to remove <strong>' + title + '</strong> from your TV Hunt collection?</p>' +
+                            '<p style="color:#94a3b8;font-size:13px;">This will not delete any downloaded files.</p>' +
+                        '</div>' +
+                        '<div class="mh-modal-footer">' +
+                            '<button class="mh-btn mh-btn-secondary" id="mh-delete-cancel">Cancel</button>' +
+                            '<button class="mh-btn mh-btn-danger" id="mh-delete-confirm">Delete</button>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+
+            const existing = document.getElementById('mh-delete-modal');
+            if (existing) existing.remove();
+
+            document.body.insertAdjacentHTML('beforeend', html);
+
+            document.getElementById('mh-delete-close').addEventListener('click', () => { document.getElementById('mh-delete-modal').remove(); });
+            document.getElementById('mh-delete-cancel').addEventListener('click', () => { document.getElementById('mh-delete-modal').remove(); });
+            document.getElementById('mh-delete-modal').addEventListener('click', (e) => {
+                if (e.target.id === 'mh-delete-modal') document.getElementById('mh-delete-modal').remove();
+            });
+            document.getElementById('mh-delete-confirm').addEventListener('click', async () => {
+                const confirmBtn = document.getElementById('mh-delete-confirm');
+                if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = 'Deleting...'; }
+                try {
+                    const resp = await fetch(`./api/tv-hunt/collection/${tmdbId}?instance_id=${instanceId}`, {
+                        method: 'DELETE'
+                    });
+                    const data = await resp.json();
+                    if (data.success) {
+                        const modal = document.getElementById('mh-delete-modal');
+                        if (modal) modal.remove();
+                        if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(title + ' removed from collection.', 'success');
+                        self.closeDetail();
+                    } else {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Delete failed: ' + (data.error || 'Unknown error'), 'error');
+                        if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Delete'; }
+                    }
+                } catch (err) {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Delete failed: ' + err.message, 'error');
+                    if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Delete'; }
+                }
+            });
         },
 
         getLoadingHTML() {
