@@ -71,10 +71,10 @@ def _safe_float(val, default):
         return default
 
 
-def _cache_key(settings: dict, movie_instance: str, tv_instance: str, movie_app_type: str) -> str:
+def _cache_key(settings: dict, movie_instance: str, tv_instance: str, movie_app_type: str, tv_app_type: str = "sonarr") -> str:
     """Produce a deterministic hash of the settings + instance combo."""
     blob = json.dumps(
-        {"s": settings, "mi": movie_instance, "ti": tv_instance, "mat": movie_app_type},
+        {"s": settings, "mi": movie_instance, "ti": tv_instance, "mat": movie_app_type, "tat": tv_app_type},
         sort_keys=True,
     )
     return hashlib.md5(blob.encode()).hexdigest()
@@ -110,6 +110,7 @@ class SmartHuntEngine:
         movie_instance: str,
         tv_instance: str,
         movie_app_type: str = "radarr",
+        tv_app_type: str = "sonarr",
         discover_filters: Optional[dict] = None,
         blacklisted_genres: Optional[dict] = None,
     ) -> List[Dict[str, Any]]:
@@ -126,13 +127,13 @@ class SmartHuntEngine:
         ttl_minutes = _safe_int(settings.get("cache_ttl_minutes"), SMARTHUNT_DEFAULTS["cache_ttl_minutes"])
         ttl_seconds = CACHE_TTL_OPTIONS.get(ttl_minutes, ttl_minutes * 60)
 
-        ck = _cache_key(settings, movie_instance, tv_instance, movie_app_type)
+        ck = _cache_key(settings, movie_instance, tv_instance, movie_app_type, tv_app_type)
         cached = _result_cache.get(ck)
         if ttl_seconds > 0 and cached and time.time() - cached["ts"] < ttl_seconds:
             items = cached["results"]
         else:
             items = self._generate_all(
-                settings, movie_instance, tv_instance, movie_app_type,
+                settings, movie_instance, tv_instance, movie_app_type, tv_app_type,
                 discover_filters or {}, blacklisted_genres or {},
             )
             if ttl_seconds > 0:
@@ -155,6 +156,7 @@ class SmartHuntEngine:
         movie_instance: str,
         tv_instance: str,
         movie_app_type: str,
+        tv_app_type: str,
         discover_filters: dict,
         blacklisted_genres: dict,
     ) -> List[Dict[str, Any]]:
@@ -315,7 +317,7 @@ class SmartHuntEngine:
         hide_library = settings.get("hide_library_items", True)
         if hide_library:
             deduped = self._filter_library_items(
-                deduped, movie_instance, tv_instance, movie_app_type,
+                deduped, movie_instance, tv_instance, movie_app_type, tv_app_type,
             )
 
         return deduped
@@ -692,6 +694,7 @@ class SmartHuntEngine:
         movie_instance: str,
         tv_instance: str,
         movie_app_type: str,
+        tv_app_type: str = "sonarr",
     ) -> List[dict]:
         """Remove items that are already in the user's library, requested, or hidden."""
         from src.primary.apps.requestarr import requestarr_api
@@ -712,7 +715,7 @@ class SmartHuntEngine:
 
         if tv_items and tv_instance:
             tv_items = requestarr_api.check_library_status_batch(
-                tv_items, app_type="sonarr", instance_name=tv_instance,
+                tv_items, app_type=tv_app_type, instance_name=tv_instance,
             )
         elif tv_items:
             tv_items = requestarr_api.check_library_status_batch(tv_items)
@@ -725,7 +728,7 @@ class SmartHuntEngine:
                 )
             if tv_items and tv_instance:
                 tv_items = requestarr_api.filter_hidden_media(
-                    tv_items, app_type="sonarr", instance_name=tv_instance,
+                    tv_items, app_type=tv_app_type, instance_name=tv_instance,
                 )
         except Exception as e:
             logger.warning(f"[SmartHunt] Hidden media filter failed: {e}")

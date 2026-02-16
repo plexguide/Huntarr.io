@@ -122,11 +122,23 @@ class SmartHunt {
             movieName = movieInst || '';
         }
 
+        let tvAppType = '';
+        let tvName = '';
+        if (tvInst && tvInst.includes(':')) {
+            const idx = tvInst.indexOf(':');
+            tvAppType = tvInst.substring(0, idx);
+            tvName = tvInst.substring(idx + 1);
+        } else {
+            tvAppType = 'sonarr';
+            tvName = tvInst || '';
+        }
+
         const params = new URLSearchParams({
             page: String(page),
             movie_app_type: movieAppType,
             movie_instance_name: movieName,
-            tv_instance_name: tvInst || '',
+            tv_app_type: tvAppType,
+            tv_instance_name: tvName,
         });
 
         const resp = await fetch(`./api/requestarr/smarthunt?${params.toString()}`);

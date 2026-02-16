@@ -1155,6 +1155,11 @@ class RequestarrAPI:
                             tmdb_id = ci.get('tmdb_id')
                             if not tmdb_id:
                                 continue
+                            # Normalize to int for consistent set lookups
+                            try:
+                                tmdb_id = int(tmdb_id)
+                            except (TypeError, ValueError):
+                                continue
                             status_raw = (ci.get('status') or '').lower()
                             file_path = (ci.get('file_path') or '').strip()
                             has_file = False
@@ -1214,6 +1219,12 @@ class RequestarrAPI:
                             tmdb_id = s.get('tmdb_id')
                             if not tmdb_id:
                                 continue
+                            # Normalize to int for consistent set lookups
+                            try:
+                                tmdb_id = int(tmdb_id)
+                            except (TypeError, ValueError):
+                                continue
+                            # In collection = at minimum partial (exists in library)
                             # Check if complete (all episodes available) or partial
                             seasons = s.get('seasons') or []
                             total_eps = 0
@@ -1229,8 +1240,10 @@ class RequestarrAPI:
                             elif available_eps > 0:
                                 tv_hunt_partial_tmdb_ids.add(tmdb_id)
                             else:
-                                tv_hunt_tmdb_ids.add(tmdb_id)  # In collection = in library
-                        logger.info(f"Found {len(tv_hunt_tmdb_ids)} series in TV Hunt instance {th_inst['name']}")
+                                # In collection but no episodes downloaded yet — mark as partial
+                                # so the card shows the bookmark icon (not download)
+                                tv_hunt_partial_tmdb_ids.add(tmdb_id)
+                        logger.info(f"Found {len(tv_hunt_tmdb_ids)} complete + {len(tv_hunt_partial_tmdb_ids)} partial series in TV Hunt instance {th_inst['name']} (IDs: complete={tv_hunt_tmdb_ids}, partial={tv_hunt_partial_tmdb_ids})")
                     except Exception as e:
                         logger.error(f"Error checking TV Hunt instance {th_inst.get('name', '?')}: {e}")
             
@@ -1257,8 +1270,9 @@ class RequestarrAPI:
                             # Mark as in_library if all episodes are available
                             if total_episodes > 0 and available_episodes == total_episodes:
                                 sonarr_tmdb_ids.add(tmdb_id)
-                            # Mark as partial if some episodes are available
-                            elif available_episodes > 0 and available_episodes < total_episodes:
+                            # Mark as partial if some but not all episodes are available,
+                            # or if the series exists but has no episodes downloaded yet
+                            elif total_episodes > 0:
                                 sonarr_partial_tmdb_ids.add(tmdb_id)
                         logger.info(f"Found {len(sonarr_tmdb_ids)} complete series and {len(sonarr_partial_tmdb_ids)} partial series in Sonarr instance {instance['name']}")
                 except Exception as e:
@@ -1268,6 +1282,11 @@ class RequestarrAPI:
             cooldown_hours = self.get_cooldown_hours()
             for item in items:
                 tmdb_id = item.get('tmdb_id')
+                # Normalize to int for consistent set lookups
+                try:
+                    tmdb_id = int(tmdb_id)
+                except (TypeError, ValueError):
+                    pass
                 media_type = item.get('media_type')
                 
                 # Check cooldown status for the specified instance or all instances

@@ -514,7 +514,11 @@ class RequestarrModal {
             const requestBtn = document.getElementById('modal-request-btn');
 
             if (status.exists) {
-                if (status.missing_episodes === 0 && status.total_episodes > 0) {
+                const isComplete = status.missing_episodes === 0 && status.total_episodes > 0;
+                // Sync discover card badge — show may have been added after the card rendered
+                this._syncCardBadge(this.core.currentModalData.tmdb_id, isComplete, true);
+
+                if (isComplete) {
                     container.innerHTML = `<span class="mh-req-badge mh-req-badge-lib"><i class="fas fa-check-circle"></i> Complete (${status.available_episodes}/${status.total_episodes} episodes)</span>`;
                     if (requestBtn) { requestBtn.disabled = true; requestBtn.classList.add('disabled'); requestBtn.textContent = 'Complete'; }
                 } else if (status.missing_episodes > 0) {
@@ -846,6 +850,7 @@ class RequestarrModal {
                 } else if (requested) {
                     badge.className = 'media-card-status-badge partial';
                     badge.innerHTML = '<i class="fas fa-bookmark"></i>';
+                    card.classList.add('in-library');
                 }
             }
             // If now in collection (either state), swap eye-slash → trash

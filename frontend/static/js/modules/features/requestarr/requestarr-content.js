@@ -1260,12 +1260,12 @@ export class RequestarrContent {
         // Determine status badge (shared utility)
         const statusBadgeHTML = window.MediaUtils ? window.MediaUtils.getStatusBadge(inLibrary, partial, hasInstance) : '';
         
-        if (inLibrary) {
+        if (inLibrary || partial) {
             card.classList.add('in-library');
         }
         
-        // Only show Request button when not in library
-        const showRequestBtn = !inLibrary;
+        // Only show Request button when not in library or collection
+        const showRequestBtn = !inLibrary && !partial;
         const overlayActionHTML = showRequestBtn
             ? '<button class="media-card-request-btn"><i class="fas fa-download"></i> Request</button>'
             : '';
@@ -1339,47 +1339,34 @@ export class RequestarrContent {
                 return;
             }
             
-            // For movies: always open Requestarr detail (toolbar and data depend on selected instance: Movie Hunt or Radarr)
+            // Check live card state — badge may have been updated by _syncCardBadge
+            // after initial render (e.g. modal detected show exists in collection)
+            const liveInLibrary = card.classList.contains('in-library');
+            const liveBadge = card.querySelector('.media-card-status-badge');
+            const livePartial = liveBadge ? liveBadge.classList.contains('partial') : false;
+            const shouldOpenModal = !liveInLibrary && !livePartial;
+
             if (item.media_type === 'movie') {
-                if (window.RequestarrDetail && window.RequestarrDetail.openDetail) {
-                    const movieData = {
-                        tmdb_id: item.tmdb_id,
-                        id: item.tmdb_id,
-                        title: item.title,
-                        year: item.year,
-                        poster_path: item.poster_path,
-                        backdrop_path: item.backdrop_path,
-                        overview: item.overview,
-                        vote_average: item.vote_average,
-                        in_library: inLibrary
-                    };
-                    window.RequestarrDetail.openDetail(movieData, {
-                        suggestedInstance: card.suggestedInstance
-                    });
+                if (!shouldOpenModal && window.RequestarrDetail && window.RequestarrDetail.openDetail) {
+                    window.RequestarrDetail.openDetail({
+                        tmdb_id: item.tmdb_id, id: item.tmdb_id,
+                        title: item.title, year: item.year,
+                        poster_path: item.poster_path, backdrop_path: item.backdrop_path,
+                        overview: item.overview, vote_average: item.vote_average,
+                        in_library: liveInLibrary
+                    }, { suggestedInstance: card.suggestedInstance });
                 } else {
                     this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
                 }
             } else {
-                // For TV shows (Sonarr + TV Hunt): modal when not requested and not in library; detail page when requested or in library
-                const shouldOpenModal = !inLibrary && !partial;
-                if (shouldOpenModal) {
-                    this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
-                } else if (window.RequestarrTVDetail && window.RequestarrTVDetail.openDetail) {
-                    const seriesData = {
-                        tmdb_id: item.tmdb_id,
-                        id: item.tmdb_id,
-                        title: item.title,
-                        name: item.title,
-                        year: item.year,
-                        poster_path: item.poster_path,
-                        backdrop_path: item.backdrop_path,
-                        overview: item.overview,
-                        vote_average: item.vote_average,
-                        in_library: inLibrary
-                    };
-                    window.RequestarrTVDetail.openDetail(seriesData, {
-                        suggestedInstance: card.suggestedInstance
-                    });
+                if (!shouldOpenModal && window.RequestarrTVDetail && window.RequestarrTVDetail.openDetail) {
+                    window.RequestarrTVDetail.openDetail({
+                        tmdb_id: item.tmdb_id, id: item.tmdb_id,
+                        title: item.title, name: item.title, year: item.year,
+                        poster_path: item.poster_path, backdrop_path: item.backdrop_path,
+                        overview: item.overview, vote_average: item.vote_average,
+                        in_library: liveInLibrary
+                    }, { suggestedInstance: card.suggestedInstance });
                 } else {
                     this.core.modal.openModal(item.tmdb_id, item.media_type, card.suggestedInstance);
                 }

@@ -98,9 +98,6 @@ def get_unified_collection():
     Params: movie_instance_id, tv_instance_id (optional), sort (default title.asc), page, page_size, q (search).
     Returns: { items: [...], total, page, page_size } with media_type on each item.
     """
-    from flask import current_app
-    from urllib.parse import urlencode
-
     try:
         movie_instance_id = request.args.get('movie_instance_id', '').strip()
         tv_instance_id = request.args.get('tv_instance_id', '').strip()
@@ -113,7 +110,7 @@ def get_unified_collection():
         except (TypeError, ValueError):
             page = 1
         try:
-            page_size = max(1, min(100, int(request.args.get('page_size', 20))))
+            page_size = max(1, min(10000, int(request.args.get('page_size', 20))))
         except (TypeError, ValueError):
             page_size = 20
         q = request.args.get('q', '').strip()
@@ -121,57 +118,53 @@ def get_unified_collection():
         movie_items = []
         tv_items = []
 
-        # Fetch movie collection
+        # Fetch movie collection directly from database (test_client is unreliable)
         if movie_instance_id:
             try:
-                params = {
-                    'instance_id': movie_instance_id,
-                    'page': 1,
-                    'page_size': 9999,
-                    'sort': sort,
-                }
-                if q:
-                    params['q'] = q
-                path = '/api/movie-hunt/collection?' + urlencode(params)
-                with current_app.test_client() as client:
-                    r = client.get(path)
-                    if r.status_code == 200:
-                        data = r.get_json()
-                        for m in (data.get('items') or []):
-                            m['media_type'] = 'movie'
-                            m['_sortTitle'] = (m.get('title') or '').lower()
-                            m['_year'] = str(m.get('year') or '')
-                            movie_items.append(m)
+                from src.primary.routes.media_hunt.discovery_movie import _get_collection_config as _get_movie_collection
+                try:
+                    mv_id_int = int(movie_instance_id)
+                except (TypeError, ValueError):
+                    mv_id_int = 0
+                if mv_id_int:
+                    collection_items = _get_movie_collection(mv_id_int)
+                    for m in collection_items:
+                        m['media_type'] = 'movie'
+                        m['_sortTitle'] = (m.get('title') or '').lower()
+                        m['_year'] = str(m.get('year') or '')
+                        movie_items.append(m)
             except Exception as e:
                 logger.warning(f"[Requestarr] Movie collection fetch error: {e}")
 
-        # Fetch TV collection
+        # Fetch TV collection directly from database (test_client is unreliable)
         if tv_instance_id:
             try:
-                path = f'/api/tv-hunt/collection?instance_id={tv_instance_id}'
-                with current_app.test_client() as client:
-                    r = client.get(path)
-                    if r.status_code == 200:
-                        data = r.get_json()
-                        for s in (data.get('series') or []):
-                            title = s.get('title') or s.get('name') or ''
-                            year = (s.get('first_air_date') or '')[:4]
-                            tv_items.append({
-                                'media_type': 'tv',
-                                'tmdb_id': s.get('tmdb_id'),
-                                'title': title,
-                                'name': title,
-                                'year': year,
-                                'first_air_date': s.get('first_air_date'),
-                                'poster_path': s.get('poster_path'),
-                                'status': s.get('status'),
-                                'seasons': s.get('seasons'),
-                                'overview': s.get('overview'),
-                                'vote_average': s.get('vote_average'),
-                                '_sortTitle': title.lower(),
-                                '_year': year,
-                                '_raw': s,
-                            })
+                from src.primary.routes.media_hunt.discovery_tv import _get_collection_config
+                try:
+                    tv_id_int = int(tv_instance_id)
+                except (TypeError, ValueError):
+                    tv_id_int = 0
+                if tv_id_int:
+                    series_list = _get_collection_config(tv_id_int)
+                    for s in series_list:
+                        title = s.get('title') or s.get('name') or ''
+                        year = (s.get('first_air_date') or '')[:4]
+                        tv_items.append({
+                            'media_type': 'tv',
+                            'tmdb_id': s.get('tmdb_id'),
+                            'title': title,
+                            'name': title,
+                            'year': year,
+                            'first_air_date': s.get('first_air_date'),
+                            'poster_path': s.get('poster_path'),
+                            'status': s.get('status'),
+                            'seasons': s.get('seasons'),
+                            'overview': s.get('overview'),
+                            'vote_average': s.get('vote_average'),
+                            '_sortTitle': title.lower(),
+                            '_year': year,
+                            '_raw': s,
+                        })
             except Exception as e:
                 logger.warning(f"[Requestarr] TV collection fetch error: {e}")
 
@@ -1061,6 +1054,7 @@ def get_smarthunt():
         page (int): 1-5, default 1 (20 items per page)
         movie_app_type (str): radarr or movie_hunt
         movie_instance_name (str): movie instance name
+        tv_app_type (str): sonarr or tv_hunt
         tv_instance_name (str): TV instance name
     """
     try:
@@ -1069,13 +1063,15 @@ def get_smarthunt():
         page, _ = _safe_pagination()
         movie_app_type = request.args.get('movie_app_type', '')
         movie_instance_name = request.args.get('movie_instance_name', '')
+        tv_app_type = request.args.get('tv_app_type', '')
         tv_instance_name = request.args.get('tv_instance_name', '')
 
         # Fall back to saved default instances if not provided
+        default_instances = requestarr_api.get_default_instances()
+        raw_movie = default_instances.get('movie_instance', '')
+        raw_tv = default_instances.get('tv_instance', '')
+
         if not movie_instance_name or not movie_app_type:
-            default_instances = requestarr_api.get_default_instances()
-            raw_movie = default_instances.get('movie_instance', '')
-            tv_instance_name = tv_instance_name or default_instances.get('tv_instance', '')
             if raw_movie and ':' in raw_movie:
                 parts = raw_movie.split(':', 1)
                 movie_app_type = movie_app_type or parts[0]
@@ -1083,6 +1079,15 @@ def get_smarthunt():
             else:
                 movie_app_type = movie_app_type or 'radarr'
                 movie_instance_name = movie_instance_name or raw_movie
+
+        if not tv_instance_name or not tv_app_type:
+            if raw_tv and ':' in raw_tv:
+                parts = raw_tv.split(':', 1)
+                tv_app_type = tv_app_type or parts[0]
+                tv_instance_name = tv_instance_name or parts[1]
+            else:
+                tv_app_type = tv_app_type or 'sonarr'
+                tv_instance_name = tv_instance_name or raw_tv
 
         settings = get_smarthunt_settings()
 
@@ -1096,16 +1101,24 @@ def get_smarthunt():
             movie_instance=movie_instance_name,
             tv_instance=tv_instance_name,
             movie_app_type=movie_app_type or 'radarr',
+            tv_app_type=tv_app_type or 'sonarr',
             discover_filters=discover_filters,
             blacklisted_genres=blacklisted_genres,
         )
 
-        # Strip library status fields — they come from the cached generation run
-        # and may be stale. The frontend determines status badges from live instance data.
+        # Re-check library status with live data (cached results may be stale)
+        movie_items = [r for r in results if r.get('media_type') == 'movie']
+        tv_items = [r for r in results if r.get('media_type') == 'tv']
+        if movie_items:
+            requestarr_api.check_library_status_batch(
+                movie_items, app_type=movie_app_type or 'radarr', instance_name=movie_instance_name
+            )
+        if tv_items:
+            requestarr_api.check_library_status_batch(
+                tv_items, app_type=tv_app_type or 'sonarr', instance_name=tv_instance_name
+            )
+        # Strip internal scoring field only
         for r in results:
-            r.pop('in_library', None)
-            r.pop('partial', None)
-            r.pop('in_cooldown', None)
             r.pop('_score', None)
 
         has_more = page < 5 and len(results) > 0
