@@ -113,11 +113,11 @@ window.HuntarrIndexerHuntHome = {
 
                 content.innerHTML =
                     '<div class="stat-card">' +
-                        '<div class="stat-label">TOTAL QUERIES</div>' +
+                        '<div class="stat-label">QUERIES (24H)</div>' +
                         '<div class="stat-value success">' + queries + '</div>' +
                     '</div>' +
                     '<div class="stat-card">' +
-                        '<div class="stat-label">TOTAL GRABS</div>' +
+                        '<div class="stat-label">GRABS (24H)</div>' +
                         '<div class="stat-value success">' + grabs + '</div>' +
                     '</div>' +
                     '<div class="stat-card">' +
@@ -129,8 +129,8 @@ window.HuntarrIndexerHuntHome = {
                         '<div class="stat-value' + (failRate > 10 ? ' error' : ' success') + '">' + failRate.toFixed(1) + '%</div>' +
                     '</div>' +
                     '<div class="stat-card">' +
-                        '<div class="stat-label">FAILURES</div>' +
-                        '<div class="stat-value error">' + failures + '</div>' +
+                        '<div class="stat-label">FAILURES (24H)</div>' +
+                        '<div class="stat-value' + (Number(failures) > 0 ? ' error' : ' success') + '">' + failures + '</div>' +
                     '</div>';
             })
             .catch(function() {

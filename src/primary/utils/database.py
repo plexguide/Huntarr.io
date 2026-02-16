@@ -3549,6 +3549,103 @@ class HuntarrDatabase:
                     rows = c.execute('SELECT * FROM indexer_hunt_stats ORDER BY indexer_id').fetchall()
             return [dict(r) for r in rows]
 
+    def get_indexer_hunt_stats_24h(self, indexer_id: str = None) -> Dict[str, Any]:
+        """Get rolling 24-hour Indexer Hunt stats from history table.
+        
+        Returns aggregated counts for the last 24 hours:
+        searches, grabs, failures, avg_response_ms, per-indexer breakdown.
+        """
+        with self.get_connection() as conn:
+            params = []
+            indexer_filter = ''
+            if indexer_id:
+                indexer_filter = 'AND indexer_id = ?'
+                params.append(indexer_id)
+
+            # Aggregate counts by event type in last 24 hours
+            rows = conn.execute(f'''
+                SELECT event_type, COUNT(*) as cnt
+                FROM indexer_hunt_history
+                WHERE created_at >= datetime('now', '-24 hours')
+                {indexer_filter}
+                GROUP BY event_type
+            ''', params).fetchall()
+
+            counts = {}
+            for r in rows:
+                counts[r[0]] = r[1]
+
+            # Average response time for searches in last 24 hours
+            avg_row = conn.execute(f'''
+                SELECT AVG(response_time_ms) as avg_ms
+                FROM indexer_hunt_history
+                WHERE created_at >= datetime('now', '-24 hours')
+                AND event_type = 'search'
+                AND response_time_ms > 0
+                {indexer_filter}
+            ''', params).fetchone()
+            avg_ms = round(avg_row[0], 1) if avg_row and avg_row[0] else 0
+
+            # Failure count (searches with success=0)
+            fail_row = conn.execute(f'''
+                SELECT COUNT(*) as cnt
+                FROM indexer_hunt_history
+                WHERE created_at >= datetime('now', '-24 hours')
+                AND event_type = 'search'
+                AND success = 0
+                {indexer_filter}
+            ''', params).fetchone()
+            failures = fail_row[0] if fail_row else 0
+
+            return {
+                'searches': counts.get('search', 0),
+                'grabs': counts.get('grab', 0),
+                'failures': failures,
+                'avg_response_ms': avg_ms,
+                'health_checks': counts.get('health_check', 0),
+                'tests': counts.get('test', 0),
+            }
+
+    def get_indexer_hunt_stats_24h_per_indexer(self) -> List[Dict[str, Any]]:
+        """Get rolling 24-hour stats broken down by indexer."""
+        with self.get_connection() as conn:
+            rows = conn.execute('''
+                SELECT indexer_id, indexer_name, event_type,
+                       COUNT(*) as cnt,
+                       AVG(CASE WHEN response_time_ms > 0 THEN response_time_ms ELSE NULL END) as avg_ms,
+                       SUM(CASE WHEN success = 0 AND event_type = 'search' THEN 1 ELSE 0 END) as fail_cnt
+                FROM indexer_hunt_history
+                WHERE created_at >= datetime('now', '-24 hours')
+                GROUP BY indexer_id, event_type
+            ''').fetchall()
+
+            by_indexer = {}
+            for r in rows:
+                iid = r[0]
+                if iid not in by_indexer:
+                    by_indexer[iid] = {
+                        'id': iid,
+                        'name': r[1] or 'Unknown',
+                        'searches': 0,
+                        'grabs': 0,
+                        'failures': 0,
+                        'avg_response_ms': 0,
+                    }
+                etype = r[2]
+                if etype == 'search':
+                    by_indexer[iid]['searches'] = r[3]
+                    by_indexer[iid]['avg_response_ms'] = round(r[4], 1) if r[4] else 0
+                    by_indexer[iid]['failures'] = r[5]
+                elif etype == 'grab':
+                    by_indexer[iid]['grabs'] = r[3]
+
+            # Calculate failure rates
+            for idx_data in by_indexer.values():
+                s = idx_data['searches']
+                idx_data['failure_rate'] = round((idx_data['failures'] / s) * 100, 1) if s > 0 else 0
+
+            return list(by_indexer.values())
+
     def get_indexer_hunt_history(self, indexer_id: str = None, event_type: str = None,
                                  page: int = 1, page_size: int = 50) -> Dict[str, Any]:
         """Get paginated Indexer Hunt history with optional filters."""

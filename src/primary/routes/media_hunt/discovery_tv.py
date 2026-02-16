@@ -522,23 +522,35 @@ def perform_tv_hunt_request(
         if not base_url or not api_key:
             continue
         cats = idx.get('categories') or TV_HUNT_DEFAULT_CATEGORIES
+        ih_id = idx.get('indexer_hunt_id', '')
+        import time as _time
+        _search_start = _time.time()
         results = _search_newznab_tv(
             base_url, api_key, title_clean, cats,
             season=search_season,
             episode=search_episode,
             tvdbid=resolved_tvdbid,
         )
+        _search_ms = int((_time.time() - _search_start) * 1000)
 
-        # Track indexer event for Indexer Hunt stats
-        try:
-            from ...routes.indexer_hunt.stats import record_indexer_event
-            record_indexer_event(idx.get('name', 'Unknown'), 'query', success=bool(results))
-        except Exception:
-            pass
+        # Record search event for Indexer Hunt stats (if linked)
+        if ih_id:
+            try:
+                from src.primary.utils.database import get_database as _get_db
+                _get_db().record_indexer_hunt_event(
+                    indexer_id=ih_id, indexer_name=idx.get('name', ''),
+                    event_type='search', query=title_clean,
+                    response_time_ms=_search_ms,
+                    success=bool(results),
+                    instance_id=instance_id, instance_name='',
+                )
+            except Exception:
+                pass
 
         for r in results:
             r['indexer_name'] = idx.get('name', 'Unknown')
             r['indexer_priority'] = idx.get('priority', 50)
+            r['indexer_hunt_id'] = ih_id
             # Ensure size_bytes for size filtering (TV search returns 'size' in bytes)
             if 'size_bytes' not in r and r.get('size') is not None:
                 r['size_bytes'] = r.get('size')
@@ -601,12 +613,19 @@ def perform_tv_hunt_request(
                     episode_title='',
                     client_name=(client.get('name') or '').strip(),
                 )
-            # Track grab event for Indexer Hunt
-            try:
-                from ...routes.indexer_hunt.stats import record_indexer_event
-                record_indexer_event(best.get('indexer_name', 'Unknown'), 'grab', success=True)
-            except Exception:
-                pass
+            # Record grab event for Indexer Hunt stats
+            _grab_ih_id = best.get('indexer_hunt_id', '')
+            if _grab_ih_id:
+                try:
+                    from src.primary.utils.database import get_database as _get_db
+                    _get_db().record_indexer_hunt_event(
+                        indexer_id=_grab_ih_id, indexer_name=best.get('indexer_name', ''),
+                        event_type='grab', query=title_clean,
+                        result_title=nzb_title,
+                        instance_id=instance_id, instance_name='',
+                    )
+                except Exception:
+                    pass
             return True, f"Sent '{nzb_title}' to {client_type}"
 
     return False, "All download clients failed"
