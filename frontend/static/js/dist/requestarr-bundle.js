@@ -1897,12 +1897,15 @@ class RequestarrSettings {
         
         const posterUrl = item.poster_path || './static/images/blackout.jpg';
         
+        const hiddenTypeBadge = item.media_type === 'tv' ? 'TV' : 'Movie';
+
         card.innerHTML = `
             <div class="media-card-poster">
                 <button class="media-card-unhide-btn" title="Unhide this media">
                     <i class="fas fa-eye"></i>
                 </button>
                 <img src="${posterUrl}" alt="${item.title}" onerror="this.src='./static/images/blackout.jpg'">
+                <span class="media-type-badge">${hiddenTypeBadge}</span>
             </div>
         `;
         
@@ -4509,10 +4512,14 @@ class RequestarrContent {
             ? '<button class="media-card-request-btn"><i class="fas fa-download"></i> Request</button>'
             : '';
         
+        const typeBadgeLabel = item.media_type === 'tv' ? 'TV' : 'Movie';
+        const typeBadgeHTML = `<span class="media-type-badge">${typeBadgeLabel}</span>`;
+
         card.innerHTML = `
             <div class="media-card-poster">
                 ${statusBadgeHTML}
                 <img src="${posterUrl}" alt="${item.title}" onerror="this.src='./static/images/blackout.jpg'">
+                ${typeBadgeHTML}
                 <div class="media-card-overlay">
                     <div class="media-card-overlay-title">${item.title}</div>
                     <div class="media-card-overlay-content">

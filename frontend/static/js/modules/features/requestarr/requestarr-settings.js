@@ -414,12 +414,15 @@ export class RequestarrSettings {
         
         const posterUrl = item.poster_path || './static/images/blackout.jpg';
         
+        const typeBadgeLabel = item.media_type === 'tv' ? 'TV' : 'Movie';
+
         card.innerHTML = `
             <div class="media-card-poster">
                 <button class="media-card-unhide-btn" title="Unhide this media">
                     <i class="fas fa-eye"></i>
                 </button>
                 <img src="${posterUrl}" alt="${item.title}" onerror="this.src='./static/images/blackout.jpg'">
+                <span class="media-type-badge">${typeBadgeLabel}</span>
             </div>
         `;
         

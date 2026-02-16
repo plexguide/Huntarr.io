@@ -1108,6 +1108,7 @@
                 <div class="mh-similar-card media-card" data-tmdb-id="${movie.id}">
                     <div class="media-card-poster">
                         <img src="${posterUrl}" alt="${this.escapeHtml(movie.title)}" onerror="this.src='./static/images/blackout.jpg'">
+                        <span class="media-type-badge">Movie</span>
                         <div class="media-card-overlay">
                             <div class="media-card-overlay-title">${this.escapeHtml(movie.title)}</div>
                         </div>
