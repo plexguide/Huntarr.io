@@ -31,10 +31,23 @@
             });
 
             window.addEventListener('hashchange', () => {
-                if (!/^#requestarr-movie\//.test(window.location.hash || '')) {
+                const hash = window.location.hash || '';
+                const m = hash.match(/^#requestarr-movie\/(\d+)$/);
+                if (m) {
+                    const tmdbId = parseInt(m[1], 10);
+                    this.openDetail({ id: tmdbId, tmdb_id: tmdbId }, {}, true);
+                } else {
                     this.closeDetail(true);
                 }
             });
+
+            // Restore detail on refresh when URL has #requestarr-movie/ID
+            const hash = window.location.hash || '';
+            const m = hash.match(/^#requestarr-movie\/(\d+)$/);
+            if (m) {
+                const tmdbId = parseInt(m[1], 10);
+                this.openDetail({ id: tmdbId, tmdb_id: tmdbId }, {}, true);
+            }
         },
 
         async openDetail(movie, options = {}, fromHistory = false) {

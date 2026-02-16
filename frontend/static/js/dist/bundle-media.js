@@ -228,7 +228,7 @@
      * @param {Object} options
      *   - getTmdbId {function}    — returns the current movie's TMDB ID (called on each event)
      *   - refreshCallback {function} — called to refresh the detail page status/toolbar
-     *   - label {string}          — log label, e.g. 'MovieHuntDetail' or 'RequestarrDetail'
+     *   - label {string}          — log label, e.g. 'RequestarrDetail' or 'RequestarrTVDetail'
      * @returns {Object} handle — pass to teardownDetailRefreshListeners() on cleanup
      */
     function setupDetailRefreshListeners(options) {
@@ -2485,7 +2485,7 @@
 /**
  * Media Hunt Card Delete Modal – shared delete/remove modal for movie cards.
  * Used by: requestarr-content.js, media-hunt.js, media-hunt-collection.js,
- *          media-hunt-detail.js, requestarr-detail.js
+ *          requestarr-detail.js
  * Exposed as window.MovieCardDeleteModal for compatibility.
  *
  * Opens a modal with options:

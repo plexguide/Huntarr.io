@@ -226,7 +226,7 @@
      * @param {Object} options
      *   - getTmdbId {function}    — returns the current movie's TMDB ID (called on each event)
      *   - refreshCallback {function} — called to refresh the detail page status/toolbar
-     *   - label {string}          — log label, e.g. 'MovieHuntDetail' or 'RequestarrDetail'
+     *   - label {string}          — log label, e.g. 'RequestarrDetail' or 'RequestarrTVDetail'
      * @returns {Object} handle — pass to teardownDetailRefreshListeners() on cleanup
      */
     function setupDetailRefreshListeners(options) {
