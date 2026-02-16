@@ -97,7 +97,6 @@ BUNDLES = [
             "modules/features/media-hunt-instance-dropdown.js",
             "modules/features/media-hunt.js",
             "modules/features/media-hunt-filters.js",
-            "modules/features/media-hunt-detail.js",
             "modules/features/media-hunt-activity.js",
             "modules/features/media-hunt-card-delete-modal.js",
             "modules/features/media-hunt-collection.js",

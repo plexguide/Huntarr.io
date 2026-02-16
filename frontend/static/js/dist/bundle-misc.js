@@ -301,17 +301,123 @@
             });
         },
 
-        openEditModalForMovieHunt() {
+        async openEditModalForMovieHunt() {
             var decoded = _decodeInstanceValue(this.selectedInstanceName || '');
             if (decoded.appType !== 'movie_hunt' || !decoded.name) return;
             var inst = this.movieInstances.find(function(i) { return i.compoundValue === this.selectedInstanceName; }.bind(this));
             var instanceId = inst && inst.id != null ? inst.id : null;
             if (instanceId == null) return;
-            if (!window.MovieHuntDetail || typeof window.MovieHuntDetail.openEditModal !== 'function') return;
-            window.MovieHuntDetail.currentMovie = this.currentMovie;
-            window.MovieHuntDetail.selectedInstanceId = instanceId;
-            window.MovieHuntDetail.currentMovieStatus = this.currentMovieStatusForMH || null;
-            window.MovieHuntDetail.openEditModal();
+
+            var movie = this.currentMovie;
+            var status = this.currentMovieStatusForMH || null;
+            if (!movie) return;
+
+            var title = this.escapeHtml(movie.title || '');
+
+            var profiles = [], rootFolders = [];
+            try {
+                var [profResp, rfResp] = await Promise.all([
+                    fetch('./api/profiles?instance_id=' + instanceId),
+                    fetch('./api/movie-hunt/root-folders?instance_id=' + instanceId)
+                ]);
+                var profData = await profResp.json();
+                profiles = profData.profiles || profData || [];
+                var rfData = await rfResp.json();
+                rootFolders = rfData.root_folders || rfData || [];
+            } catch (err) {
+                console.error('[RequestarrDetail] Edit modal fetch error:', err);
+            }
+
+            var currentProfile = (status && status.quality_profile) || '';
+            var currentRoot = (status && status.root_folder_path) || '';
+            var currentAvail = (status && status.minimum_availability) || 'released';
+            var self = this;
+
+            var profileOpts = (Array.isArray(profiles) ? profiles : []).map(function(p) {
+                var name = p.name || 'Unknown';
+                var sel = name === currentProfile ? ' selected' : '';
+                return '<option value="' + self.escapeHtml(name) + '"' + sel + '>' + self.escapeHtml(name) + (p.is_default ? ' (Default)' : '') + '</option>';
+            }).join('');
+
+            var rfOpts = (Array.isArray(rootFolders) ? rootFolders : []).map(function(rf) {
+                var path = rf.path || '';
+                var sel = path === currentRoot ? ' selected' : '';
+                return '<option value="' + self.escapeHtml(path) + '"' + sel + '>' + self.escapeHtml(path) + (rf.is_default ? ' (Default)' : '') + '</option>';
+            }).join('');
+
+            var availOpts = [
+                { value: 'announced', label: 'Announced' },
+                { value: 'inCinemas', label: 'In Cinemas' },
+                { value: 'released', label: 'Released' }
+            ].map(function(a) {
+                var sel = a.value === currentAvail ? ' selected' : '';
+                return '<option value="' + a.value + '"' + sel + '>' + a.label + '</option>';
+            }).join('');
+
+            var html =
+                '<div class="mh-modal-backdrop" id="mh-edit-modal">' +
+                    '<div class="mh-modal">' +
+                        '<div class="mh-modal-header">' +
+                            '<h3><i class="fas fa-wrench"></i> Edit \u2014 ' + title + '</h3>' +
+                            '<button class="mh-modal-x" id="mh-edit-close">&times;</button>' +
+                        '</div>' +
+                        '<div class="mh-modal-body">' +
+                            '<div class="mh-form-row"><label>Root Folder</label><select id="mh-edit-root-folder" class="mh-select">' + rfOpts + '</select></div>' +
+                            '<div class="mh-form-row"><label>Quality Profile</label><select id="mh-edit-quality-profile" class="mh-select">' + profileOpts + '</select></div>' +
+                            '<div class="mh-form-row"><label>Minimum Availability</label><select id="mh-edit-min-availability" class="mh-select">' + availOpts + '</select></div>' +
+                        '</div>' +
+                        '<div class="mh-modal-footer">' +
+                            '<button class="mh-btn mh-btn-secondary" id="mh-edit-cancel">Cancel</button>' +
+                            '<button class="mh-btn mh-btn-primary" id="mh-edit-save">Save</button>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+
+            var existing = document.getElementById('mh-edit-modal');
+            if (existing) existing.remove();
+
+            document.body.insertAdjacentHTML('beforeend', html);
+
+            document.getElementById('mh-edit-close').addEventListener('click', function() { document.getElementById('mh-edit-modal').remove(); });
+            document.getElementById('mh-edit-cancel').addEventListener('click', function() { document.getElementById('mh-edit-modal').remove(); });
+            document.getElementById('mh-edit-modal').addEventListener('click', function(e) {
+                if (e.target.id === 'mh-edit-modal') document.getElementById('mh-edit-modal').remove();
+            });
+            document.getElementById('mh-edit-save').addEventListener('click', function() { self._handleSaveEdit(instanceId); });
+        },
+
+        async _handleSaveEdit(instanceId) {
+            var movie = this.currentMovie;
+            if (!movie) return;
+            var tmdbId = movie.tmdb_id || movie.id;
+            var rootFolder = document.getElementById('mh-edit-root-folder').value;
+            var qualityProfile = document.getElementById('mh-edit-quality-profile').value;
+            var minAvailability = document.getElementById('mh-edit-min-availability').value;
+            var saveBtn = document.getElementById('mh-edit-save');
+            if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
+            var self = this;
+
+            try {
+                var resp = await fetch('./api/movie-hunt/collection/update?instance_id=' + instanceId, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tmdb_id: tmdbId, root_folder: rootFolder, quality_profile: qualityProfile, minimum_availability: minAvailability })
+                });
+                var data = await resp.json();
+                if (data.success) {
+                    var modal = document.getElementById('mh-edit-modal');
+                    if (modal) modal.remove();
+                    self.updateDetailInfoBar();
+                    if (window.MediaUtils) window.MediaUtils.dispatchStatusChanged(tmdbId, 'edit');
+                } else {
+                    var msg = 'Save failed: ' + (data.error || 'Unknown error');
+                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(msg, 'error');
+                    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save'; }
+                }
+            } catch (err) {
+                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Save failed: ' + err.message, 'error');
+                if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save'; }
+            }
         },
 
         openDeleteModalForMovieHunt() {
@@ -601,34 +707,94 @@
             }
         },
 
-        /** Delegate Force Search to Movie Hunt Detail */
         async _handleForceSearch() {
             var decoded = _decodeInstanceValue(this.selectedInstanceName || '');
             if (decoded.appType !== 'movie_hunt' || !decoded.name) return;
             var inst = this.movieInstances.find(function(i) { return i.compoundValue === this.selectedInstanceName; }.bind(this));
             var instanceId = inst && inst.id != null ? inst.id : null;
-            if (instanceId == null || !window.MovieHuntDetail) return;
+            if (instanceId == null) return;
 
-            window.MovieHuntDetail.currentMovie = this.currentMovie;
-            window.MovieHuntDetail.selectedInstanceId = instanceId;
-            window.MovieHuntDetail.currentDetails = null;
-            await window.MovieHuntDetail.handleForceSearch();
+            var movie = this.currentMovie;
+            if (!movie) return;
+            var btn = document.getElementById('requestarr-detail-force-search');
+            if (btn) { btn.disabled = true; var icon = btn.querySelector('i'); if (icon) icon.className = 'fas fa-spinner fa-spin'; }
+
+            var notify = function(msg, type) {
+                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(msg, type);
+            };
+
+            try {
+                var resp = await fetch('./api/movie-hunt/request?instance_id=' + instanceId, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: movie.title || '',
+                        year: movie.year || '',
+                        tmdb_id: movie.tmdb_id || movie.id,
+                        poster_path: movie.poster_path || '',
+                        start_search: true,
+                        runtime: 90
+                    })
+                });
+                var data = await resp.json();
+                if (data.success) {
+                    notify('Search complete \u2014 ' + (data.message || 'Sent to download client.'), 'success');
+                } else {
+                    notify(data.message || 'No matching release found.', 'error');
+                }
+            } catch (err) {
+                notify('Search failed: ' + err.message, 'error');
+            }
+
+            if (btn) { btn.disabled = false; var icon = btn.querySelector('i'); if (icon) icon.className = 'fas fa-search'; }
             this.updateDetailInfoBar();
+            if (window.MediaUtils) window.MediaUtils.dispatchStatusChanged(movie.tmdb_id || movie.id, 'force-search');
         },
 
-        /** Delegate Force Upgrade to Movie Hunt Detail */
         async _handleForceUpgrade() {
             var decoded = _decodeInstanceValue(this.selectedInstanceName || '');
             if (decoded.appType !== 'movie_hunt' || !decoded.name) return;
             var inst = this.movieInstances.find(function(i) { return i.compoundValue === this.selectedInstanceName; }.bind(this));
             var instanceId = inst && inst.id != null ? inst.id : null;
-            if (instanceId == null || !window.MovieHuntDetail) return;
+            if (instanceId == null) return;
 
-            window.MovieHuntDetail.currentMovie = this.currentMovie;
-            window.MovieHuntDetail.selectedInstanceId = instanceId;
-            window.MovieHuntDetail.currentMovieStatus = this.currentMovieStatusForMH || null;
-            await window.MovieHuntDetail.handleForceUpgrade();
+            var movie = this.currentMovie;
+            var status = this.currentMovieStatusForMH || null;
+            if (!movie) return;
+            var btn = document.getElementById('requestarr-detail-force-upgrade');
+            if (btn) { btn.disabled = true; var icon = btn.querySelector('i'); if (icon) icon.className = 'fas fa-spinner fa-spin'; }
+
+            var notify = function(msg, type) {
+                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(msg, type);
+            };
+
+            try {
+                var currentScore = (status && status.file_score != null) ? status.file_score : 0;
+                var resp = await fetch('./api/movie-hunt/force-upgrade?instance_id=' + instanceId, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: movie.title || '',
+                        year: movie.year || '',
+                        tmdb_id: movie.tmdb_id || movie.id,
+                        current_score: currentScore,
+                        quality_profile: (status && status.quality_profile) || '',
+                        runtime: 90
+                    })
+                });
+                var data = await resp.json();
+                if (data.success) {
+                    notify(data.message || 'Upgrade sent to download client.', 'success');
+                } else {
+                    notify(data.message || 'No higher-scoring release available.', 'info');
+                }
+            } catch (err) {
+                notify('Upgrade search failed: ' + err.message, 'error');
+            }
+
+            if (btn) { btn.disabled = false; var icon = btn.querySelector('i'); if (icon) icon.className = 'fas fa-arrow-circle-up'; }
             this.updateDetailInfoBar();
+            if (window.MediaUtils) window.MediaUtils.dispatchStatusChanged(movie.tmdb_id || movie.id, 'force-upgrade');
         },
 
         async toggleMovieMonitor() {

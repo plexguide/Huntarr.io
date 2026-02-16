@@ -426,8 +426,8 @@
                 }
             };
             const openDetailPage = function() {
-                if (window.MovieHuntDetail && window.MovieHuntDetail.openDetail) {
-                    window.MovieHuntDetail.openDetail(item);
+                if (window.RequestarrDetail) {
+                    window.RequestarrDetail.openDetail(item);
                 } else {
                     openRequestModal();
                 }
@@ -512,8 +512,8 @@
                 });
             }
             card.addEventListener('click', function() {
-                if (window.MediaHuntCollection && typeof window.MediaHuntCollection.openSeriesDetail === 'function') {
-                    window.MediaHuntCollection.openSeriesDetail(show.id);
+                if (window.RequestarrTVDetail) {
+                    window.RequestarrTVDetail.openDetail({ tmdb_id: show.id, id: show.id, title: show.name || show.title, poster_path: show.poster_path });
                 }
             });
             return card;

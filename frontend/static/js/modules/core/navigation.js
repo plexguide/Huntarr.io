@@ -93,11 +93,18 @@ window.HuntarrNavigation = {
                 window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#media-hunt-collection');
             }
         }
-        // Media Hunt movie detail direct link: #movie/<tmdb_id> — switch to collection, keep hash for MovieHuntDetail.checkUrlForMovieDetail()
-        if (/^movie\/(\d+)$/.test(section)) {
-            if (window.huntarrUI) window.huntarrUI._pendingMediaHuntSidebar = 'movie';
-            section = 'media-hunt-collection';
-            // Do NOT replace the hash; leave #movie/<id> so MovieHuntDetail opens the movie
+        // Media Hunt movie detail direct link: #movie/<tmdb_id> — redirect to Requestarr detail
+        var movieMatch = /^movie\/(\d+)$/.exec(section);
+        if (movieMatch) {
+            var tmdbId = movieMatch[1];
+            window.location.hash = 'requestarr-movie/' + tmdbId;
+            return;
+        }
+        // Media Hunt TV detail direct link: #tv/<tmdb_id> — redirect to Requestarr TV detail
+        var tvMatch = /^tv\/(\d+)$/.exec(section);
+        if (tvMatch) {
+            window.location.hash = 'requestarr-tv/' + tvMatch[1];
+            return;
         }
         if (section === 'activity') {
             section = 'activity-queue';

@@ -215,8 +215,6 @@
                 var tmdbId = item.tmdb_id || item.id;
                 if (tmdbId && window.RequestarrDiscover && window.RequestarrDiscover.modal) {
                     window.RequestarrDiscover.modal.openModal(tmdbId, 'movie', suggestedInstance);
-                } else if (window.MovieHuntDetail && window.MovieHuntDetail.openDetail) {
-                    window.MovieHuntDetail.openDetail(item, { suggestedInstance: suggestedInstance });
                 }
             };
 
@@ -498,11 +496,10 @@
                 });
             }
 
-            // Click anywhere on card opens detail page
-            if (item.tmdb_id && window.MovieHuntDetail && window.MovieHuntDetail.openDetail) {
+            // Click anywhere on card opens Requestarr detail page
+            if (item.tmdb_id) {
                 card.style.cursor = 'pointer';
                 card.onclick = function(e) {
-                    // Don't open detail if clicking delete button
                     if (e.target.closest && e.target.closest('.media-card-delete-btn')) return;
                     var movieData = {
                         tmdb_id: item.tmdb_id,
@@ -512,7 +509,9 @@
                         poster_path: item.poster_path,
                         in_library: status === 'available'
                     };
-                    window.MovieHuntDetail.openDetail(movieData);
+                    if (window.RequestarrDetail) {
+                        window.RequestarrDetail.openDetail(movieData);
+                    }
                 };
             }
 
@@ -919,7 +918,9 @@
                     '<td>' + HuntarrUtils.escapeHtml(series.status || '') + '</td>' +
                     '<td>' + (series.first_air_date || '').substring(0, 4) + '</td>';
                 tr.addEventListener('click', function() {
-                    self.openSeriesDetail(series.tmdb_id, series);
+                    if (window.RequestarrTVDetail) {
+                        window.RequestarrTVDetail.openDetail({ tmdb_id: series.tmdb_id, id: series.tmdb_id, title: series.title, poster_path: series.poster_path });
+                    }
                 });
                 tbody.appendChild(tr);
             });
@@ -944,7 +945,9 @@
                     '<div><div style="font-weight:600;color:#e2e8f0;">' + HuntarrUtils.escapeHtml(series.title || '') + '</div>' +
                     '<div style="font-size:0.85rem;color:#94a3b8;">' + year + (series.status ? ' · ' + HuntarrUtils.escapeHtml(series.status) : '') + '</div></div>';
                 div.addEventListener('click', function() {
-                    self.openSeriesDetail(series.tmdb_id, series);
+                    if (window.RequestarrTVDetail) {
+                        window.RequestarrTVDetail.openDetail({ tmdb_id: series.tmdb_id, id: series.tmdb_id, title: series.title, poster_path: series.poster_path });
+                    }
                 });
                 listEl.appendChild(div);
             });
@@ -980,342 +983,24 @@
                     '</div>';
 
                 card.addEventListener('click', function() {
-                    self.openSeriesDetail(series.tmdb_id, series);
+                    if (window.RequestarrTVDetail) {
+                        window.RequestarrTVDetail.openDetail({ tmdb_id: series.tmdb_id, id: series.tmdb_id, title: series.title, poster_path: series.poster_path });
+                    }
                 });
                 grid.appendChild(card);
             });
         },
 
-        // ─── Series Detail View (Sonarr-style seasons/episodes) ───
+        // ─── Series Detail View (delegates to RequestarrTVDetail) ───
         openSeriesDetail: function(tmdbId, seriesData) {
-            var self = this;
-            var mainView = this.getEl('main-content');
-            var detailView = this.getEl('series-detail-view');
-            var searchView = this.getEl('search-results-view');
-            var content = this.getEl('series-detail-content');
-            if (mainView) mainView.style.display = 'none';
-            if (searchView) searchView.style.display = 'none';
-            if (detailView) detailView.style.display = 'block';
-            if (content) content.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading series...</p></div>';
-            if (window._mediaHuntCollectionUnified && tmdbId) {
-                var newHash = '#requestarr-tv/' + tmdbId;
-                if (window.location.hash !== newHash) {
-                    window.location.hash = newHash;
-                    return;
-                }
-            }
-
-            // Use local collection data if available
-            if (seriesData) {
-                self._renderSeriesDetail(content, seriesData);
-                return;
-            }
-
-            // Find in collection
-            var found = self.items.find(function(s) { return s.tmdb_id === tmdbId; });
-            if (found) {
-                self._renderSeriesDetail(content, found);
-                return;
-            }
-
-            // Fetch from TMDB
-            fetch('./api/tv-hunt/series/' + tmdbId)
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    self._renderSeriesDetail(content, data);
-                })
-                .catch(function() {
-                    if (content) content.innerHTML = '<p style="color:#f87171;">Failed to load series details.</p>';
-                });
-        },
-
-        _renderSeriesDetail: function(container, series) {
-            var self = this;
-            if (!container) return;
-            container.innerHTML = '';
-
-            // Series banner
-            var banner = document.createElement('div');
-            banner.className = 'series-info-banner';
-            var posterUrl = series.poster_path
-                ? 'https://image.tmdb.org/t/p/w300' + series.poster_path
-                : './static/images/no-poster.png';
-            var title = series.title || series.name || 'Unknown';
-            var year = (series.first_air_date || '').substring(0, 4);
-            var genres = (series.genres || []).map(function(g) { return g.name || g; }).join(', ');
-            var networks = (series.networks || []).map(function(n) { return n.name || n; }).join(', ');
-            var rating = series.vote_average ? parseFloat(series.vote_average).toFixed(1) : '';
-
-            banner.innerHTML =
-                '<div class="series-poster"><img src="' + posterUrl + '" alt="' + HuntarrUtils.escapeHtml(title) + '"></div>' +
-                '<div class="series-meta">' +
-                    '<h2>' + HuntarrUtils.escapeHtml(title) + '</h2>' +
-                    '<div class="series-meta-tags">' +
-                        (year ? '<span class="series-meta-tag"><i class="fas fa-calendar"></i> ' + year + '</span>' : '') +
-                        (rating ? '<span class="series-meta-tag"><i class="fas fa-star" style="color:#facc15;"></i> ' + rating + '%</span>' : '') +
-                        (genres ? '<span class="series-meta-tag"><i class="fas fa-tag"></i> ' + HuntarrUtils.escapeHtml(genres) + '</span>' : '') +
-                        (series.status ? '<span class="series-meta-tag"><i class="fas fa-circle"></i> ' + HuntarrUtils.escapeHtml(series.status) + '</span>' : '') +
-                        (networks ? '<span class="series-meta-tag"><i class="fas fa-tv"></i> ' + HuntarrUtils.escapeHtml(networks) + '</span>' : '') +
-                        (series.number_of_seasons ? '<span class="series-meta-tag"><i class="fas fa-layer-group"></i> ' + series.number_of_seasons + ' Seasons</span>' : '') +
-                        (series.number_of_episodes ? '<span class="series-meta-tag"><i class="fas fa-film"></i> ' + series.number_of_episodes + ' Episodes</span>' : '') +
-                    '</div>' +
-                    '<div class="series-overview">' + HuntarrUtils.escapeHtml(series.overview || '') + '</div>' +
-                '</div>';
-            container.appendChild(banner);
-
-            // Seasons accordion
-            var seasons = series.seasons || [];
-            // Sort seasons: specials (0) last, then by number descending (newest first)
-            seasons.sort(function(a, b) {
-                if (a.season_number === 0) return 1;
-                if (b.season_number === 0) return -1;
-                return b.season_number - a.season_number;
-            });
-
-            seasons.forEach(function(season) {
-                container.appendChild(self._createSeasonAccordion(series, season));
-            });
-        },
-
-        _createSeasonAccordion: function(series, season) {
-            var self = this;
-            var wrapper = document.createElement('div');
-            wrapper.className = 'season-accordion';
-
-            var episodes = season.episodes || [];
-            var totalEps = episodes.length;
-            var monitoredCount = episodes.filter(function(e) { return e.monitored !== false; }).length;
-            var now = new Date();
-
-            // Count statuses
-            var availCount = 0;
-            var unairedCount = 0;
-            episodes.forEach(function(ep) {
-                if (ep.status === 'available') availCount++;
-                var airDate = ep.air_date ? new Date(ep.air_date) : null;
-                if (airDate && airDate > now) unairedCount++;
-            });
-
-            var countClass = availCount === totalEps && totalEps > 0 ? 'all-available' : (availCount > 0 ? 'partial' : 'none-available');
-            var countText = availCount + ' / ' + totalEps;
-            var seasonName = season.name || ('Season ' + season.season_number);
-            var isSpecials = season.season_number === 0;
-            var isMonitored = season.monitored !== false;
-
-            // Header
-            var header = document.createElement('div');
-            header.className = 'season-accordion-header';
-            header.innerHTML =
-                '<span class="season-chevron"><i class="fas fa-chevron-right"></i></span>' +
-                '<span class="season-icon"><i class="fas fa-bookmark"></i></span>' +
-                '<span class="season-name">' + HuntarrUtils.escapeHtml(seasonName) + '</span>' +
-                '<span class="season-episode-count ' + countClass + '">' + countText + '</span>' +
-                '<span class="season-status-icon">' +
-                    (availCount === totalEps && totalEps > 0 ? '<i class="fas fa-check-circle" style="color:#4ade80;"></i>' : '') +
-                '</span>' +
-                '<div class="season-actions">' +
-                    '<button class="season-action-btn season-search-btn" title="Search Season"><i class="fas fa-search"></i></button>' +
-                '</div>';
-
-            // Episode body
-            var body = document.createElement('div');
-            body.className = 'season-episodes-body';
-
-            var table = document.createElement('table');
-            table.className = 'episode-table';
-            table.innerHTML = '<thead><tr>' +
-                '<th class="ep-monitor"></th>' +
-                '<th class="ep-number">#</th>' +
-                '<th class="ep-title">Title</th>' +
-                '<th class="ep-airdate">Air Date</th>' +
-                '<th class="ep-status">Status</th>' +
-                '<th class="ep-actions"></th>' +
-                '</tr></thead>';
-
-            var tbody = document.createElement('tbody');
-            episodes.forEach(function(ep) {
-                var tr = document.createElement('tr');
-                var epMonitored = ep.monitored !== false;
-                var airDate = ep.air_date || '';
-                var airDateObj = airDate ? new Date(airDate) : null;
-                var isUnaired = airDateObj && airDateObj > now;
-                var statusClass = isUnaired ? 'unaired' : (ep.status === 'available' ? 'available' : 'missing');
-                var statusText = isUnaired ? 'Unaired' : (ep.status === 'available' ? 'On Disk' : 'Missing');
-                var formattedDate = airDate ? self._formatDate(airDate) : '';
-
-                tr.innerHTML =
-                    '<td class="ep-monitor"><span class="monitor-checkbox ' + (epMonitored ? 'monitored' : '') + '" data-ep="' + ep.episode_number + '" data-season="' + season.season_number + '"><i class="fas fa-bookmark"></i></span></td>' +
-                    '<td class="ep-number">' + (ep.episode_number || '') + '</td>' +
-                    '<td class="ep-title">' + HuntarrUtils.escapeHtml(ep.title || 'Episode ' + ep.episode_number) + '</td>' +
-                    '<td class="ep-airdate">' + formattedDate + '</td>' +
-                    '<td class="ep-status"><span class="ep-status-badge ' + statusClass + '">' + statusText + '</span></td>' +
-                    '<td class="ep-actions">' +
-                        (!isUnaired && statusClass !== 'available' ? '<button class="ep-action-btn ep-search-btn" title="Search Episode" data-season="' + season.season_number + '" data-ep="' + ep.episode_number + '"><i class="fas fa-search"></i></button>' : '') +
-                    '</td>';
-                tbody.appendChild(tr);
-            });
-            table.appendChild(tbody);
-            body.appendChild(table);
-
-            // Toggle accordion
-            header.addEventListener('click', function(e) {
-                if (e.target.closest('.season-action-btn') || e.target.closest('.monitor-checkbox')) return;
-                header.classList.toggle('expanded');
-                body.classList.toggle('expanded');
-            });
-
-            // Season search button
-            var searchBtn = header.querySelector('.season-search-btn');
-            if (searchBtn) {
-                searchBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    self._searchSeason(series, season);
+            if (window.RequestarrTVDetail) {
+                window.RequestarrTVDetail.openDetail({
+                    tmdb_id: tmdbId,
+                    id: tmdbId,
+                    title: (seriesData && (seriesData.title || seriesData.name)) || '',
+                    poster_path: (seriesData && seriesData.poster_path) || ''
                 });
             }
-
-            // Episode search buttons
-            body.querySelectorAll('.ep-search-btn').forEach(function(btn) {
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    var sn = parseInt(btn.dataset.season);
-                    var en = parseInt(btn.dataset.ep);
-                    self._searchEpisode(series, sn, en);
-                });
-            });
-
-            // Monitor toggles
-            body.querySelectorAll('.monitor-checkbox').forEach(function(cb) {
-                cb.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    var sn = parseInt(cb.dataset.season);
-                    var en = parseInt(cb.dataset.ep);
-                    var newState = !cb.classList.contains('monitored');
-                    cb.classList.toggle('monitored');
-                    self._toggleEpisodeMonitor(series.tmdb_id, sn, en, newState);
-                });
-            });
-
-            wrapper.appendChild(header);
-            wrapper.appendChild(body);
-            return wrapper;
-        },
-
-        _formatDate: function(dateStr) {
-            if (!dateStr) return '';
-            try {
-                var d = new Date(dateStr);
-                var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                return months[d.getMonth()] + ' ' + d.getDate() + ' ' + d.getFullYear();
-            } catch (e) {
-                return dateStr;
-            }
-        },
-
-        _searchSeason: function(series, season) {
-            var instanceId = this.getCurrentInstanceId();
-            if (!instanceId) {
-                window.huntarrUI.showNotification('No instance selected.', 'error');
-                return;
-            }
-            window.huntarrUI.showNotification('Searching for ' + (series.title || '') + ' S' + String(season.season_number).padStart(2, '0') + '...', 'info');
-            fetch('./api/tv-hunt/request?instance_id=' + instanceId, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    series_title: series.title,
-                    season_number: season.season_number,
-                    tmdb_id: series.tmdb_id,
-                    search_type: 'season',
-                    instance_id: instanceId,
-                })
-            })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (data.success) {
-                        window.huntarrUI.showNotification(data.message || 'Season search sent!', 'success');
-                    } else {
-                        window.huntarrUI.showNotification(data.message || 'No results found.', 'error');
-                    }
-                })
-                .catch(function() {
-                    window.huntarrUI.showNotification('Search request failed.', 'error');
-                });
-        },
-
-        _searchEpisode: function(series, seasonNumber, episodeNumber) {
-            var instanceId = this.getCurrentInstanceId();
-            if (!instanceId) {
-                window.huntarrUI.showNotification('No instance selected.', 'error');
-                return;
-            }
-            var label = (series.title || '') + ' S' + String(seasonNumber).padStart(2, '0') + 'E' + String(episodeNumber).padStart(2, '0');
-            window.huntarrUI.showNotification('Searching for ' + label + '...', 'info');
-            fetch('./api/tv-hunt/request?instance_id=' + instanceId, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    series_title: series.title,
-                    season_number: seasonNumber,
-                    episode_number: episodeNumber,
-                    tmdb_id: series.tmdb_id,
-                    search_type: 'episode',
-                    instance_id: instanceId,
-                })
-            })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (data.success) {
-                        window.huntarrUI.showNotification(data.message || 'Episode search sent!', 'success');
-                    } else {
-                        window.huntarrUI.showNotification(data.message || 'No results found.', 'error');
-                    }
-                })
-                .catch(function() {
-                    window.huntarrUI.showNotification('Search request failed.', 'error');
-                });
-        },
-
-        _toggleEpisodeMonitor: function(tmdbId, seasonNumber, episodeNumber, monitored) {
-            var instanceId = this.getCurrentInstanceId();
-            if (!instanceId) return;
-            fetch('./api/tv-hunt/collection/' + tmdbId + '/monitor?instance_id=' + instanceId, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    season_number: seasonNumber,
-                    episode_number: episodeNumber,
-                    monitored: monitored,
-                    instance_id: instanceId,
-                })
-            }).catch(function() {});
-        },
-
-        // ─── Delete series ───
-        deleteSeries: function(tmdbId, title) {
-            var self = this;
-            var instanceId = self.getCurrentInstanceId();
-            if (!instanceId) return;
-            window.HuntarrConfirm.show({
-                title: 'Delete Series',
-                message: 'Are you sure you want to remove "' + (title || 'this series') + '" from your collection?',
-                confirmLabel: 'Delete',
-                onConfirm: function() {
-                    fetch('./api/tv-hunt/collection/' + tmdbId + '?instance_id=' + instanceId, { method: 'DELETE' })
-                        .then(function(r) { return r.json(); })
-                        .then(function(data) {
-                            if (data.success) {
-                                window.huntarrUI.showNotification('Series removed from collection.', 'success');
-                                self.loadCollection();
-                                self.showMainView();
-                            } else {
-                                window.huntarrUI.showNotification(data.error || 'Failed to delete.', 'error');
-                            }
-                        })
-                        .catch(function() {
-                            window.huntarrUI.showNotification('Failed to delete series.', 'error');
-                        });
-                }
-            });
         }
     };
 })();
@@ -1377,9 +1062,8 @@
                 var contentWrapper = document.getElementById('media-hunt-collection-content-wrapper');
                 if (contentWrapper) contentWrapper.style.display = '';
 
-                if (pendingTmdbId && window.TVHuntCollection && window.TVHuntCollection.openSeriesDetail) {
-                    window.TVHuntCollection._prefix = 'media-hunt-collection';
-                    window.TVHuntCollection.openSeriesDetail(pendingTmdbId, null);
+                if (pendingTmdbId && window.RequestarrTVDetail) {
+                    window.RequestarrTVDetail.openDetail({ tmdb_id: pendingTmdbId, id: pendingTmdbId });
                 }
 
                 movieSelect.innerHTML = '';
@@ -1733,11 +1417,10 @@
         },
 
         onCardClick: function(item) {
-            if (item.media_type === 'tv' && window.TVHuntCollection && window.TVHuntCollection.openSeriesDetail) {
-                window.TVHuntCollection._prefix = 'media-hunt-collection';
-                window.TVHuntCollection.openSeriesDetail(item.tmdb_id, item._raw || item);
-            } else if (item.media_type === 'movie' && window.MovieHuntDetail && window.MovieHuntDetail.openDetail) {
-                window.MovieHuntDetail.openDetail({
+            if (item.media_type === 'tv' && window.RequestarrTVDetail) {
+                window.RequestarrTVDetail.openDetail({ tmdb_id: item.tmdb_id, id: item.tmdb_id, title: item.title, poster_path: item.poster_path });
+            } else if (item.media_type === 'movie' && window.RequestarrDetail) {
+                window.RequestarrDetail.openDetail({
                     tmdb_id: item.tmdb_id,
                     id: item.tmdb_id,
                     title: item.title,
@@ -1757,9 +1440,8 @@
             if (m) m.style.display = 'block';
         },
         openSeriesDetail: function(tmdbId, seriesData) {
-            if (window.TVHuntCollection && typeof window.TVHuntCollection.openSeriesDetail === 'function') {
-                window.TVHuntCollection._prefix = 'media-hunt-collection';
-                window.TVHuntCollection.openSeriesDetail(tmdbId, seriesData);
+            if (window.RequestarrTVDetail) {
+                window.RequestarrTVDetail.openDetail({ tmdb_id: tmdbId, id: tmdbId, title: (seriesData && seriesData.title) || '', poster_path: (seriesData && seriesData.poster_path) || '' });
             }
         }
     };
