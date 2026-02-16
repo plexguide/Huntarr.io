@@ -50,19 +50,19 @@ MOVIE_INDEXER_CATEGORIES = [
 MOVIE_INDEXER_CATEGORIES_DEFAULT_IDS = [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2070]
 
 # TV presets/categories (Newznab standard)
-# Default TV cats: [5030,5040] (SD + HD).  Only NZBFinder adds 5045 (UHD).
+# Default TV cats: [5010,5030,5040,5045] (WEB-DL + SD + HD + UHD).
 TV_INDEXER_PRESETS = [
-    {"name": "DOGnzb",        "url": "https://api.dognzb.cr",        "api_path": "/api",         "protocol": "usenet", "default_categories": [5030, 5040]},
-    {"name": "DrunkenSlug",   "url": "https://drunkenslug.com",      "api_path": "/api",         "protocol": "usenet", "default_categories": [5030, 5040]},
-    {"name": "Nzb.life",      "url": "https://api.nzb.life",         "api_path": "/api",         "protocol": "usenet", "default_categories": [5030, 5040]},
-    {"name": "NZBCat",        "url": "https://nzb.cat",              "api_path": "/api",         "protocol": "usenet", "default_categories": [5030, 5040]},
-    {"name": "NZBFinder.ws",  "url": "https://nzbfinder.ws",         "api_path": "/api",         "protocol": "usenet", "default_categories": [5030, 5040, 5045]},
-    {"name": "NZBgeek",       "url": "https://api.nzbgeek.info",     "api_path": "/api",         "protocol": "usenet", "default_categories": [5030, 5040]},
-    {"name": "nzbplanet.net", "url": "https://api.nzbplanet.net",    "api_path": "/api",         "protocol": "usenet", "default_categories": [5030, 5040]},
-    {"name": "SimplyNZBs",    "url": "https://simplynzbs.com",       "api_path": "/api",         "protocol": "usenet", "default_categories": [5030, 5040]},
-    {"name": "Tabula Rasa",   "url": "https://www.tabula-rasa.pw",   "api_path": "/api/v1/api",  "protocol": "usenet", "default_categories": [5030, 5040]},
-    {"name": "altHUB",        "url": "https://api.althub.co.za",     "api_path": "/api",         "protocol": "usenet", "default_categories": [5030, 5040]},
-    {"name": "Custom Newznab","url": "",                              "api_path": "/api",         "protocol": "usenet", "default_categories": [5030, 5040]},
+    {"name": "DOGnzb",        "url": "https://api.dognzb.cr",        "api_path": "/api",         "protocol": "usenet", "default_categories": [5010, 5030, 5040, 5045]},
+    {"name": "DrunkenSlug",   "url": "https://drunkenslug.com",      "api_path": "/api",         "protocol": "usenet", "default_categories": [5010, 5030, 5040, 5045]},
+    {"name": "Nzb.life",      "url": "https://api.nzb.life",         "api_path": "/api",         "protocol": "usenet", "default_categories": [5010, 5030, 5040, 5045]},
+    {"name": "NZBCat",        "url": "https://nzb.cat",              "api_path": "/api",         "protocol": "usenet", "default_categories": [5010, 5030, 5040, 5045]},
+    {"name": "NZBFinder.ws",  "url": "https://nzbfinder.ws",         "api_path": "/api",         "protocol": "usenet", "default_categories": [5010, 5030, 5040, 5045]},
+    {"name": "NZBgeek",       "url": "https://api.nzbgeek.info",     "api_path": "/api",         "protocol": "usenet", "default_categories": [5010, 5030, 5040, 5045]},
+    {"name": "nzbplanet.net", "url": "https://api.nzbplanet.net",    "api_path": "/api",         "protocol": "usenet", "default_categories": [5010, 5030, 5040, 5045]},
+    {"name": "SimplyNZBs",    "url": "https://simplynzbs.com",       "api_path": "/api",         "protocol": "usenet", "default_categories": [5010, 5030, 5040, 5045]},
+    {"name": "Tabula Rasa",   "url": "https://www.tabula-rasa.pw",   "api_path": "/api/v1/api",  "protocol": "usenet", "default_categories": [5010, 5030, 5040, 5045]},
+    {"name": "altHUB",        "url": "https://api.althub.co.za",     "api_path": "/api",         "protocol": "usenet", "default_categories": [5010, 5030, 5040, 5045]},
+    {"name": "Custom Newznab","url": "",                              "api_path": "/api",         "protocol": "usenet", "default_categories": [5010, 5030, 5040, 5045]},
 ]
 TV_INDEXER_DEFAULT_CATEGORIES = [5000, 5010, 5020, 5030, 5040, 5045, 5050, 5060, 5070]
 
@@ -130,13 +130,12 @@ def _save_indexers_list(indexers_list, instance_id):
 
 
 def get_tv_indexers_config(instance_id):
-    """Get TV indexers list. Used by tv_hunt discovery."""
+    """Get TV indexers list. Used by tv_hunt discovery.
+    TV instances have their own config key ('tv_hunt_indexers') and never
+    fall back to the movie 'indexers' config – each mode is independent."""
     from src.primary.utils.database import get_database
     db = get_database()
     config = db.get_app_config_for_instance('tv_hunt_indexers', instance_id)
-    if config and isinstance(config.get('indexers'), list):
-        return config['indexers']
-    config = db.get_app_config_for_instance('indexers', instance_id)
     if config and isinstance(config.get('indexers'), list):
         return config['indexers']
     return []

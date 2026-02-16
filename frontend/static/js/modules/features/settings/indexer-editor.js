@@ -93,25 +93,25 @@
     var DEFAULT_CATEGORIES = [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2060];
 
     // ── TV preset metadata (Newznab standard) ──────────────────────────
-    // Default TV cats: [5030,5040] (SD + HD). Only NZBFinder adds 5045 (UHD).
+    // Default TV cats: [5010,5030,5040,5045] (WEB-DL + SD + HD + UHD).
     var TV_PRESET_META = {
-        dognzb:        { name: 'DOGnzb',         categories: [5030, 5040] },
-        drunkenslug:   { name: 'DrunkenSlug',     categories: [5030, 5040] },
-        'nzb.su':      { name: 'Nzb.su',          categories: [5030, 5040] },
-        nzbcat:        { name: 'NZBCat',          categories: [5030, 5040] },
-        'nzbfinder.ws':{ name: 'NZBFinder.ws',    categories: [5030, 5040, 5045] },
-        nzbgeek:       { name: 'NZBgeek',         categories: [5030, 5040] },
-        'nzbplanet.net':{ name: 'nzbplanet.net',  categories: [5030, 5040] },
-        simplynzbs:    { name: 'SimplyNZBs',      categories: [5030, 5040] },
-        tabularasa:    { name: 'Tabula Rasa',     categories: [5030, 5040] },
-        usenetcrawler: { name: 'Usenet Crawler',  categories: [5030, 5040] },
+        dognzb:        { name: 'DOGnzb',         categories: [5010, 5030, 5040, 5045] },
+        drunkenslug:   { name: 'DrunkenSlug',     categories: [5010, 5030, 5040, 5045] },
+        'nzb.su':      { name: 'Nzb.su',          categories: [5010, 5030, 5040, 5045] },
+        nzbcat:        { name: 'NZBCat',          categories: [5010, 5030, 5040, 5045] },
+        'nzbfinder.ws':{ name: 'NZBFinder.ws',    categories: [5010, 5030, 5040, 5045] },
+        nzbgeek:       { name: 'NZBgeek',         categories: [5010, 5030, 5040, 5045] },
+        'nzbplanet.net':{ name: 'nzbplanet.net',  categories: [5010, 5030, 5040, 5045] },
+        simplynzbs:    { name: 'SimplyNZBs',      categories: [5010, 5030, 5040, 5045] },
+        tabularasa:    { name: 'Tabula Rasa',     categories: [5010, 5030, 5040, 5045] },
+        usenetcrawler: { name: 'Usenet Crawler',  categories: [5010, 5030, 5040, 5045] },
     };
 
     // ── TV categories (5000 series only; never mix with 2000 movie series) ───
     var ALL_TV_CATEGORIES = [
-        { id: 5000, name: 'TV' }, { id: 5010, name: 'TV/Foreign' }, { id: 5020, name: 'TV/Other' },
+        { id: 5000, name: 'TV' }, { id: 5010, name: 'TV/WEB-DL' }, { id: 5020, name: 'TV/Foreign' },
         { id: 5030, name: 'TV/SD' }, { id: 5040, name: 'TV/HD' }, { id: 5045, name: 'TV/UHD' },
-        { id: 5050, name: 'TV/BluRay' }, { id: 5060, name: 'TV/3D' }, { id: 5070, name: 'TV/DVD' }
+        { id: 5050, name: 'TV/Other' }, { id: 5060, name: 'TV/Sport' }, { id: 5070, name: 'TV/Anime' }
     ];
     var DEFAULT_TV_CATEGORIES = [5000, 5010, 5020, 5030, 5040, 5045, 5050, 5060, 5070];
 
@@ -318,11 +318,19 @@
     // ── Import from Index Master ─────────────────────────────────────────
     Forms._loadIndexerHuntAvailable = function() {
         var self = this;
-        // Read instance ID synchronously from the instance select dropdown
+        // Read instance ID and mode from the instance select dropdown (value format: "movie:1" or "tv:2")
         var instanceId = 1;
+        var mode = 'movie';
         var sel = document.getElementById('settings-indexers-instance-select');
-        if (sel && sel.value) instanceId = parseInt(sel.value, 10) || 1;
-        fetch('./api/indexer-hunt/available/' + instanceId)
+        if (sel && sel.value) {
+            var parts = sel.value.split(':');
+            if (parts.length === 2) {
+                mode = parts[0] === 'tv' ? 'tv' : 'movie';
+                var parsed = parseInt(parts[1], 10);
+                if (!isNaN(parsed)) instanceId = parsed;
+            }
+        }
+        fetch('./api/indexer-hunt/available/' + instanceId + '?mode=' + mode)
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 var sel = document.getElementById('editor-ih-select');

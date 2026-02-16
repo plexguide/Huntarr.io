@@ -168,12 +168,12 @@ def api_ih_sync():
                 # Look up TV-specific preset data (categories, api_path)
                 tv_preset = TV_INDEXER_PRESETS_BY_KEY.get(preset)
                 if tv_preset:
-                    raw = list(tv_preset.get('default_categories', [5030, 5040]))
+                    raw = list(tv_preset.get('default_categories', [5010, 5030, 5040, 5045]))
                     api_path = tv_preset.get('api_path', '/api')
                 else:
-                    raw = [5030, 5040]
+                    raw = [5010, 5030, 5040, 5045]
                     api_path = ih_idx.get('api_path', '/api')
-                default_cats = _filter_categories_tv(raw) or [5030, 5040]
+                default_cats = _filter_categories_tv(raw) or [5010, 5030, 5040, 5045]
                 ih_name = ih_idx.get('name') or ih_idx.get('display_name') or 'Unnamed'
                 new_idx = {
                     'id': str(_uuid.uuid4())[:8],
