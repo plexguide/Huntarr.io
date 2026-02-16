@@ -6,7 +6,6 @@ format strings with token replacement — matching Radarr/Sonarr behaviour.
 """
 
 import re
-import os
 import logging
 import unicodedata
 
@@ -50,7 +49,7 @@ _RE_CODEC_AUDIO = re.compile(
     r')\b', re.IGNORECASE)
 
 _RE_AUDIO_CHANNELS = re.compile(
-    r'\b(\d[\.\s]?\d)\s*(?:ch)?\b', re.IGNORECASE)
+    r'(?<![0-9])([1-9][\.\s]?[0-1])\s*(?:ch)?\b', re.IGNORECASE)
 
 _RE_HDR = re.compile(
     r'\b('
@@ -256,7 +255,7 @@ def build_quality_title(parsed: dict) -> str:
 # ── Sanitisation ──────────────────────────────────────────────────────────────
 
 _ILLEGAL_FILE_CHARS = r'<>"/\|?*'
-_ILLEGAL_FOLDER_CHARS = r'<>"|?*'
+_ILLEGAL_FOLDER_CHARS = r'<>"/\|?*'
 
 _COLON_MODES = {
     'Smart Replace': lambda s: s.replace(': ', ' - ').replace(':', '-'),
@@ -326,19 +325,82 @@ def title_the(title: str) -> str:
 
 # ── Token Replacement Engine ──────────────────────────────────────────────────
 
-_TOKEN_RE = re.compile(r'\{([^}]+)\}')
+_TOKEN_RE = re.compile(r'\{([^{}]+)\}')
 
-_BRACKET_TOKEN_RE = re.compile(
-    r'\{(\[)([^]]*)\}|\{([^}]*?)(\])\}|\{(\[)([^]]*?)(\])\}'
-)
+
+def _resolve_token(raw_token: str, lower_map: dict) -> str:
+    """
+    Resolve a single token expression.
+
+    Supports:
+      - Basic:          {Movie Title}         -> "The Movie Title"
+      - Dot-separated:  {Movie.Title}         -> "The.Movie.Title"
+      - Underscore:     {Movie_Title}         -> "The_Movie_Title"
+      - Dash:           {Movie-Title}         -> "The-Movie-Title"
+      - Prefix char:    {-Release Group}      -> "-RlsGrp" (only if non-empty)
+      - Bracket wrap:   {[Quality Full]}      -> "[BluRay-1080p]" (only if non-empty)
+      - Open/close:     {[MediaInfo AudioCodec} {MediaInfo AudioChannels]}
+    """
+    prefix = ''
+    suffix = ''
+    token_name = raw_token
+
+    if token_name.startswith('[') and token_name.endswith(']'):
+        prefix = '['
+        suffix = ']'
+        token_name = token_name[1:-1]
+    elif token_name.startswith('['):
+        prefix = '['
+        token_name = token_name[1:]
+    elif token_name.endswith(']'):
+        suffix = ']'
+        token_name = token_name[:-1]
+
+    token_name = token_name.strip()
+
+    if not token_name:
+        return ''
+
+    prefix_char = ''
+    if len(token_name) > 1 and token_name[0] == '-' and token_name[1] != ' ':
+        prefix_char = '-'
+        token_name = token_name[1:].strip()
+
+    # Direct lookup first — if the exact token name exists, use it as-is
+    value = lower_map.get(token_name.lower(), '')
+    separator = ' '
+
+    if not value:
+        # Try separator-based lookup: {Movie.Title} → lookup "Movie Title", output with dots
+        for sep in ('.', '_', '-'):
+            if sep not in token_name:
+                continue
+            normalised = token_name.replace(sep, ' ')
+            if normalised.lower() in lower_map:
+                separator = sep
+                token_name = normalised
+                value = lower_map.get(token_name.lower(), '')
+                break
+
+    if not value:
+        return ''
+
+    if separator != ' ':
+        value = value.replace(' ', separator)
+
+    return f"{prefix}{prefix_char}{value}{suffix}"
 
 
 def apply_format(format_string: str, token_values: dict) -> str:
     """
     Replace {Token Name} placeholders in a format string.
 
-    Supports optional-bracket tokens like {[Quality Full]} where the brackets
-    are only included if the token resolves to a non-empty value.
+    Features:
+      - Case-insensitive token lookup
+      - Dot/underscore/dash separators: {Movie.Title} → "The.Movie.Title"
+      - Prefix characters: {-Release Group} → "-RlsGrp" (omitted when empty)
+      - Optional brackets: {[Quality Full]} → "[BluRay-1080p]" (omitted when empty)
+      - Nested meta-tokens: {imdb-{ImdbId}} → {imdb-tt1234}
 
     Token lookup is case-insensitive.
     """
@@ -347,34 +409,36 @@ def apply_format(format_string: str, token_values: dict) -> str:
 
     lower_map = {k.lower(): v for k, v in token_values.items()}
 
+    result = format_string
+
+    # Pass 1: resolve inner tokens in nested patterns like {imdb-{ImdbId}}
+    # These produce literal braces in the output (Plex/Emby metadata tags).
+    inner_re = re.compile(r'\{([^{}]*)\{([^{}]+)\}([^{}]*)\}')
+    for _ in range(3):
+        def _resolve_nested(m):
+            before = m.group(1)
+            inner_raw = m.group(2)
+            after = m.group(3)
+            inner_val = _resolve_token(inner_raw, lower_map)
+            if inner_val:
+                return '\x00' + before + inner_val + after + '\x01'
+            return ''
+        result, n = inner_re.subn(_resolve_nested, result)
+        if n == 0:
+            break
+
+    # Pass 2: resolve remaining simple tokens
     def _replace_match(m):
-        raw = m.group(1)
-        prefix = ''
-        suffix = ''
-        token_name = raw
+        return _resolve_token(m.group(1), lower_map)
 
-        if token_name.startswith('[') and token_name.endswith(']'):
-            prefix = '['
-            suffix = ']'
-            token_name = token_name[1:-1]
-        elif token_name.startswith('['):
-            prefix = '['
-            token_name = token_name[1:]
-        elif token_name.endswith(']'):
-            suffix = ']'
-            token_name = token_name[:-1]
+    result = _TOKEN_RE.sub(_replace_match, result)
 
-        token_name = token_name.strip()
-        value = lower_map.get(token_name.lower(), '')
+    # Restore literal braces from nested token resolution
+    result = result.replace('\x00', '{').replace('\x01', '}')
 
-        if value:
-            return f"{prefix}{value}{suffix}"
-        return ''
-
-    result = _TOKEN_RE.sub(_replace_match, format_string)
-
-    result = re.sub(r'\s{2,}', ' ', result)
+    # Cleanup
     result = re.sub(r'\[\s*\]', '', result)
+    result = re.sub(r'\s{2,}', ' ', result)
     result = result.strip(' -.')
     return result
 
