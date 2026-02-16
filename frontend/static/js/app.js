@@ -540,8 +540,7 @@ let huntarrUI = {
         var mediaHuntSections = ['media-hunt-collection', 'media-hunt-settings', 'media-hunt-instances', 'movie-hunt-calendar', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-media-hunt', 'indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history', 'settings-clients', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'settings-custom-formats', 'settings-import-lists', 'settings-import-media', 'settings-root-folders', 'settings-instance-management', 'movie-hunt-instance-editor', 'profile-editor'];
         var nzbHuntSections = ['nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-folders', 'nzb-hunt-servers', 'nzb-hunt-advanced', 'nzb-hunt-server-editor'];
         var thirdPartyAppSections = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr'];
-        var requestarrSections = ['requestarr', 'requestarr-discover', 'requestarr-movies', 'requestarr-tv', 'requestarr-hidden', 'requestarr-settings', 'requestarr-smarthunt-settings'];
-        if (this._enableMediaHunt === false && (mediaHuntSections.indexOf(section) !== -1 || nzbHuntSections.indexOf(section) !== -1 || requestarrSections.indexOf(section) !== -1 || (section && section.indexOf('nzb-hunt') === 0))) {
+        if (this._enableMediaHunt === false && (mediaHuntSections.indexOf(section) !== -1 || nzbHuntSections.indexOf(section) !== -1 || (section && section.indexOf('nzb-hunt') === 0))) {
             console.log('[huntarrUI] Media Hunt disabled - redirecting to home');
             this.switchSection('home'); return;
         }

@@ -53,11 +53,59 @@
             </div>
         </div>
 
+        <!-- ── SYSTEM ─────────────────────────────────────────── -->
+        <div class="nav-group" id="nav-group-system">
+            <div class="nav-group-header" data-group="sidebar-group-system">
+                <i class="fas fa-server nav-group-icon"></i>
+                <span>System</span>
+                <i class="fas fa-chevron-right nav-group-chevron"></i>
+            </div>
+            <div class="nav-group-body collapsed" id="sidebar-group-system">
+                <a href="./#settings" class="nav-item nav-item-sub" id="mainSettingsMainNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-sliders-h"></i></div>
+                    <span>General</span>
+                </a>
+                <a href="./#hunt-manager" class="nav-item nav-item-sub" id="mainSystemHuntManagerNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-crosshairs"></i></div>
+                    <span>Hunt Manager</span>
+                </a>
+                <a href="./#logs" class="nav-item nav-item-sub" id="mainSystemLogsNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-list-alt"></i></div>
+                    <span>Logs</span>
+                </a>
+                <a href="./#scheduling" class="nav-item nav-item-sub" id="mainSettingsSchedulingNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-calendar-alt"></i></div>
+                    <span>Scheduling</span>
+                </a>
+                <a href="./#notifications" class="nav-item nav-item-sub" id="mainSettingsNotificationsNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-bell"></i></div>
+                    <span>Notifications</span>
+                </a>
+                <a href="./#backup-restore" class="nav-item nav-item-sub" id="mainSettingsBackupRestoreNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-database"></i></div>
+                    <span>Backup / Restore</span>
+                </a>
+                <a href="./#settings-logs" class="nav-item nav-item-sub" id="mainSettingsLogsNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-file-alt"></i></div>
+                    <span>Settings Logs</span>
+                </a>
+                <a href="./#user" class="nav-item nav-item-sub" id="mainSettingsUserNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-user"></i></div>
+                    <span>User</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- ── APPS label header ───────────────────────────────── -->
+        <div class="nav-group" id="nav-group-apps-label">
+            <div class="nav-group-title">Apps</div>
+        </div>
+
         <!-- ── MEDIA HUNT ─────────────────────────────────────── -->
         <div class="nav-group" id="nav-group-media-hunt">
             <div class="nav-group-header" data-group="sidebar-group-media-hunt">
                 <i class="fas fa-film nav-group-icon"></i>
-                <span>Media Hunt (Beta)</span>
+                <span>Media Hunt</span>
                 <i class="fas fa-chevron-right nav-group-chevron"></i>
             </div>
             <div class="nav-group-body collapsed" id="sidebar-group-media-hunt">
@@ -74,16 +122,38 @@
                         <div class="nav-icon-wrapper"><i class="fas fa-calendar-alt"></i></div>
                         <span>Calendar</span>
                     </a>
-                    <a href="./#settings-import-media" class="nav-item nav-item-sub" id="movieHuntImportMediaNav">
-                        <div class="nav-icon-wrapper"><i class="fas fa-file-import"></i></div>
-                        <span>Import Media</span>
+                </div>
+                <a href="javascript:void(0)" class="nav-item nav-item-sub" id="movieHuntIndexMasterToggle">
+                    <div class="nav-icon-wrapper"><i class="fas fa-search-plus"></i></div>
+                    <span>Index Master</span>
+                </a>
+                <div class="nav-sub-group" id="index-master-view-sub">
+                    <a href="javascript:void(0)" class="nav-item nav-item-sub media-hunt-config-back" id="mediaHuntIndexMasterBackNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-arrow-left"></i></div>
+                        <span>Back</span>
+                    </a>
+                    <a href="./#indexer-hunt" class="nav-item nav-item-sub" id="movieHuntIndexMasterNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-search-plus"></i></div>
+                        <span>Indexers</span>
+                    </a>
+                    <a href="./#indexer-hunt-stats" class="nav-item nav-item-sub" id="movieHuntIndexMasterStatsNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-chart-bar"></i></div>
+                        <span>Stats</span>
+                    </a>
+                    <a href="./#indexer-hunt-history" class="nav-item nav-item-sub" id="movieHuntIndexMasterHistoryNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-history"></i></div>
+                        <span>History</span>
                     </a>
                 </div>
-                <a href="./#activity-queue" class="nav-item nav-item-sub" id="movieHuntActivityNav">
+                <a href="javascript:void(0)" class="nav-item nav-item-sub" id="movieHuntActivityToggle">
                     <div class="nav-icon-wrapper"><i class="fas fa-clock"></i></div>
                     <span>Activity</span>
                 </a>
                 <div class="nav-sub-group" id="movie-hunt-activity-sub">
+                    <a href="javascript:void(0)" class="nav-item nav-item-sub media-hunt-config-back" id="mediaHuntActivityBackNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-arrow-left"></i></div>
+                        <span>Back</span>
+                    </a>
                     <a href="./#activity-queue" class="nav-item nav-item-sub" id="movieHuntActivityQueueNav">
                         <div class="nav-icon-wrapper"><i class="fas fa-list-ul"></i></div>
                         <span>Queue</span>
@@ -101,32 +171,26 @@
                         <span>Logs</span>
                     </a>
                 </div>
-                <a href="./#media-hunt-settings" class="nav-item nav-item-sub" id="movieHuntConfigNav">
+                <a href="./#settings-import-media" class="nav-item nav-item-sub" id="movieHuntImportMediaNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-file-import"></i></div>
+                    <span>Import Media</span>
+                </a>
+                <a href="javascript:void(0)" class="nav-item nav-item-sub" id="movieHuntSettingsToggle">
                     <div class="nav-icon-wrapper"><i class="fas fa-cog"></i></div>
-                    <span>Configuration</span>
+                    <span>Settings</span>
                 </a>
                 <div class="nav-sub-group" id="media-hunt-config-sub">
-                    <a href="./#indexer-hunt" class="nav-item nav-item-sub" id="movieHuntIndexMasterNav">
-                        <div class="nav-icon-wrapper"><i class="fas fa-search-plus"></i></div>
-                        <span>Indexers</span>
-                    </a>
-                    <div class="nav-sub-group" id="index-master-sub">
-                        <a href="./#indexer-hunt-stats" class="nav-item nav-item-sub" id="movieHuntIndexMasterStatsNav">
-                            <div class="nav-icon-wrapper"><i class="fas fa-chart-bar"></i></div>
-                            <span>Stats</span>
-                        </a>
-                        <a href="./#indexer-hunt-history" class="nav-item nav-item-sub" id="movieHuntIndexMasterHistoryNav">
-                            <div class="nav-icon-wrapper"><i class="fas fa-history"></i></div>
-                            <span>History</span>
-                        </a>
-                    </div>
-                    <a href="./#settings-clients" class="nav-item nav-item-sub" id="movieHuntIndexMasterClientsNav">
-                        <div class="nav-icon-wrapper"><i class="fas fa-cloud-download-alt"></i></div>
-                        <span>Clients</span>
+                    <a href="javascript:void(0)" class="nav-item nav-item-sub media-hunt-config-back" id="mediaHuntConfigBackNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-arrow-left"></i></div>
+                        <span>Back</span>
                     </a>
                     <a href="./#settings-media-management" class="nav-item nav-item-sub" id="movieHuntSettingsMovieManagementNav">
                         <div class="nav-icon-wrapper"><i class="fas fa-film"></i></div>
                         <span>Media Management</span>
+                    </a>
+                    <a href="./#settings-clients" class="nav-item nav-item-sub" id="movieHuntIndexMasterClientsNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-cloud-download-alt"></i></div>
+                        <span>Clients</span>
                     </a>
                     <a href="./#settings-profiles" class="nav-item nav-item-sub" id="movieHuntSettingsProfilesNav">
                         <div class="nav-icon-wrapper"><i class="fas fa-id-card"></i></div>
@@ -156,7 +220,7 @@
         <div class="nav-group" id="nzb-hunt-sidebar-group" style="display: none;">
             <div class="nav-group-header" data-group="sidebar-group-nzb-hunt">
                 <i class="fas fa-download nav-group-icon"></i>
-                <span>NZB Hunt (Beta)</span>
+                <span>NZB Hunt</span>
                 <i class="fas fa-chevron-right nav-group-chevron"></i>
             </div>
             <div class="nav-group-body collapsed" id="sidebar-group-nzb-hunt">
@@ -179,7 +243,7 @@
             </div>
         </div>
 
-        <!-- ── APPS ───────────────────────────────────────────── -->
+        <!-- ── 3RD PARTY APPS ─────────────────────────────────── -->
         <div class="nav-group" id="nav-group-apps">
             <div class="nav-group-header" data-group="sidebar-group-apps">
                 <i class="fas fa-th-large nav-group-icon"></i>
@@ -234,49 +298,6 @@
                         <i class="fas fa-exchange-alt"></i>
                     </div>
                     <span>Swaparr</span>
-                </a>
-            </div>
-        </div>
-
-        <!-- ── SYSTEM ─────────────────────────────────────────── -->
-        <div class="nav-group" id="nav-group-system">
-            <div class="nav-group-header" data-group="sidebar-group-system">
-                <i class="fas fa-server nav-group-icon"></i>
-                <span>System</span>
-                <i class="fas fa-chevron-right nav-group-chevron"></i>
-            </div>
-            <div class="nav-group-body collapsed" id="sidebar-group-system">
-                <a href="./#settings" class="nav-item nav-item-sub" id="mainSettingsMainNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-sliders-h"></i></div>
-                    <span>General</span>
-                </a>
-                <a href="./#scheduling" class="nav-item nav-item-sub" id="mainSettingsSchedulingNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-calendar-alt"></i></div>
-                    <span>Scheduling</span>
-                </a>
-                <a href="./#notifications" class="nav-item nav-item-sub" id="mainSettingsNotificationsNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-bell"></i></div>
-                    <span>Notifications</span>
-                </a>
-                <a href="./#backup-restore" class="nav-item nav-item-sub" id="mainSettingsBackupRestoreNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-database"></i></div>
-                    <span>Backup / Restore</span>
-                </a>
-                <a href="./#hunt-manager" class="nav-item nav-item-sub" id="mainSystemHuntManagerNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-crosshairs"></i></div>
-                    <span>Hunt Manager</span>
-                </a>
-                <a href="./#logs" class="nav-item nav-item-sub" id="mainSystemLogsNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-list-alt"></i></div>
-                    <span>Logs</span>
-                </a>
-                <a href="./#settings-logs" class="nav-item nav-item-sub" id="mainSettingsLogsNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-file-alt"></i></div>
-                    <span>Settings Logs</span>
-                </a>
-                <a href="./#user" class="nav-item nav-item-sub" id="mainSettingsUserNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-user"></i></div>
-                    <span>User</span>
                 </a>
             </div>
         </div>
@@ -338,7 +359,8 @@ var ALL_SUB_GROUP_IDS = [
     'movie-hunt-collection-sub',
     'movie-hunt-activity-sub',
     'media-hunt-config-sub',
-    'index-master-sub'
+    'index-master-sub',
+    'index-master-view-sub'
 ];
 
 // ── Expand / collapse helpers ────────────────────────────────
@@ -420,6 +442,9 @@ function setActiveNavItem() {
 
     var h = window.location.hash || '#home';
     collapseAllSubs();
+    // Reset sub-view modes
+    var mhBody = document.getElementById('sidebar-group-media-hunt');
+    if (mhBody) { mhBody.classList.remove('config-view'); mhBody.classList.remove('activity-view'); mhBody.classList.remove('indexmaster-view'); }
 
     var selector = null;
     var group = null; // which group to expand
@@ -433,24 +458,24 @@ function setActiveNavItem() {
     }
     else if (h === '#media-hunt-instances') { selector = '#movieHuntInstancesNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-collection-sub'); }
     else if (h === '#movie-hunt-calendar') { selector = '#movieHuntCalendarNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-collection-sub'); }
-    else if (h === '#settings-import-media') { selector = '#movieHuntImportMediaNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-collection-sub'); }
-    else if (h === '#activity-queue') { selector = '#movieHuntActivityQueueNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-activity-sub'); }
-    else if (h === '#activity-history') { selector = '#movieHuntActivityHistoryNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-activity-sub'); }
-    else if (h === '#activity-blocklist') { selector = '#movieHuntActivityBlocklistNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-activity-sub'); }
-    else if (h === '#activity-logs' || h === '#logs-media-hunt' || h === '#logs-tv-hunt') { selector = '#movieHuntActivityLogsNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-activity-sub'); }
+    else if (h === '#settings-import-media') { selector = '#movieHuntImportMediaNav'; group = 'sidebar-group-media-hunt'; }
+    else if (h === '#activity-queue') { selector = '#movieHuntActivityQueueNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-activity-sub'); if (mhBody) mhBody.classList.add('activity-view'); }
+    else if (h === '#activity-history') { selector = '#movieHuntActivityHistoryNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-activity-sub'); if (mhBody) mhBody.classList.add('activity-view'); }
+    else if (h === '#activity-blocklist') { selector = '#movieHuntActivityBlocklistNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-activity-sub'); if (mhBody) mhBody.classList.add('activity-view'); }
+    else if (h === '#activity-logs' || h === '#logs-media-hunt' || h === '#logs-tv-hunt') { selector = '#movieHuntActivityLogsNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-activity-sub'); if (mhBody) mhBody.classList.add('activity-view'); }
 
     // ── Media Hunt > Configuration ──────────────────
-    else if (h === '#media-hunt-settings' || h === '#movie-hunt-settings' || h === '#settings-instance-management') { selector = '#movieHuntConfigNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); }
-    else if (h === '#indexer-hunt') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); expandSub('index-master-sub'); }
-    else if (h === '#indexer-hunt-stats') { selector = '#movieHuntIndexMasterStatsNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); expandSub('index-master-sub'); }
-    else if (h === '#indexer-hunt-history') { selector = '#movieHuntIndexMasterHistoryNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); expandSub('index-master-sub'); }
-    else if (h === '#settings-clients') { selector = '#movieHuntIndexMasterClientsNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); }
-    else if (h === '#settings-media-management') { selector = '#movieHuntSettingsMovieManagementNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); }
-    else if (h === '#settings-profiles') { selector = '#movieHuntSettingsProfilesNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); }
-    else if (h === '#settings-sizes') { selector = '#movieHuntSettingsSizesNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); }
-    else if (h === '#settings-custom-formats') { selector = '#movieHuntSettingsCustomFormatsNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); }
-    else if (h === '#settings-import-lists') { selector = '#movieHuntSettingsImportListsNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); }
-    else if (h === '#settings-root-folders') { selector = '#movieHuntSettingsRootFoldersNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); }
+    else if (h === '#media-hunt-settings' || h === '#movie-hunt-settings' || h === '#settings-instance-management') { selector = '#movieHuntSettingsMovieManagementNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }
+    else if (h === '#indexer-hunt') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; expandSub('index-master-view-sub'); if (mhBody) mhBody.classList.add('indexmaster-view'); }
+    else if (h === '#indexer-hunt-stats') { selector = '#movieHuntIndexMasterStatsNav'; group = 'sidebar-group-media-hunt'; expandSub('index-master-view-sub'); if (mhBody) mhBody.classList.add('indexmaster-view'); }
+    else if (h === '#indexer-hunt-history') { selector = '#movieHuntIndexMasterHistoryNav'; group = 'sidebar-group-media-hunt'; expandSub('index-master-view-sub'); if (mhBody) mhBody.classList.add('indexmaster-view'); }
+    else if (h === '#settings-clients') { selector = '#movieHuntIndexMasterClientsNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }
+    else if (h === '#settings-media-management') { selector = '#movieHuntSettingsMovieManagementNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }
+    else if (h === '#settings-profiles') { selector = '#movieHuntSettingsProfilesNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }
+    else if (h === '#settings-sizes') { selector = '#movieHuntSettingsSizesNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }
+    else if (h === '#settings-custom-formats') { selector = '#movieHuntSettingsCustomFormatsNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }
+    else if (h === '#settings-import-lists') { selector = '#movieHuntSettingsImportListsNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }
+    else if (h === '#settings-root-folders') { selector = '#movieHuntSettingsRootFoldersNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }
 
     // ── Requests ──────────────────────────────────
     else if (h === '#requestarr') { selector = '#requestarrDiscoverNav'; group = 'sidebar-group-requests'; }
@@ -503,6 +528,80 @@ function setActiveNavItem() {
     }
 }
 
+// ── Media Hunt "Activity" toggle → enter activity view ───────
+document.addEventListener('click', function(e) {
+    var activityBtn = e.target.closest('#movieHuntActivityToggle');
+    if (!activityBtn) return;
+    e.preventDefault();
+    var mhBody = document.getElementById('sidebar-group-media-hunt');
+    if (mhBody) mhBody.classList.add('activity-view');
+    expandSub('movie-hunt-activity-sub');
+    // Navigate to Queue by default
+    window.location.hash = '#activity-queue';
+});
+
+// ── Media Hunt Activity "Back" button ────────────────────────
+document.addEventListener('click', function(e) {
+    var backBtn = e.target.closest('#mediaHuntActivityBackNav');
+    if (!backBtn) return;
+    e.preventDefault();
+    collapseSub('movie-hunt-activity-sub');
+    var mhBody = document.getElementById('sidebar-group-media-hunt');
+    if (mhBody) mhBody.classList.remove('activity-view');
+    // Navigate back to Collections
+    window.location.hash = '#media-hunt-collection';
+});
+
+// ── Media Hunt "Index Master" toggle → enter indexmaster view ─
+document.addEventListener('click', function(e) {
+    var idxBtn = e.target.closest('#movieHuntIndexMasterToggle');
+    if (!idxBtn) return;
+    e.preventDefault();
+    var mhBody = document.getElementById('sidebar-group-media-hunt');
+    if (mhBody) mhBody.classList.add('indexmaster-view');
+    expandSub('index-master-view-sub');
+    // Navigate to Indexers by default
+    window.location.hash = '#indexer-hunt';
+});
+
+// ── Media Hunt Index Master "Back" button ────────────────────
+document.addEventListener('click', function(e) {
+    var backBtn = e.target.closest('#mediaHuntIndexMasterBackNav');
+    if (!backBtn) return;
+    e.preventDefault();
+    collapseSub('index-master-view-sub');
+    var mhBody = document.getElementById('sidebar-group-media-hunt');
+    if (mhBody) mhBody.classList.remove('indexmaster-view');
+    // Navigate back to Collections
+    window.location.hash = '#media-hunt-collection';
+});
+
+// ── Media Hunt "Settings" toggle → enter config view ─────────
+document.addEventListener('click', function(e) {
+    var settingsBtn = e.target.closest('#movieHuntSettingsToggle');
+    if (!settingsBtn) return;
+    e.preventDefault();
+    var mhBody = document.getElementById('sidebar-group-media-hunt');
+    if (mhBody) mhBody.classList.add('config-view');
+    expandSub('media-hunt-config-sub');
+    // Navigate to Media Management by default
+    window.location.hash = '#settings-media-management';
+});
+
+// ── Media Hunt Config "Back" button ──────────────────────────
+document.addEventListener('click', function(e) {
+    var backBtn = e.target.closest('#mediaHuntConfigBackNav');
+    if (!backBtn) return;
+    e.preventDefault();
+    // Collapse config sub-group and remove config-view
+    collapseSub('media-hunt-config-sub');
+    collapseSub('index-master-sub');
+    var mhBody = document.getElementById('sidebar-group-media-hunt');
+    if (mhBody) mhBody.classList.remove('config-view');
+    // Navigate back to Collections
+    window.location.hash = '#media-hunt-collection';
+});
+
 // ── Media Hunt sidebar: Import Media visibility ──────────────
 (function() {
     function updateMediaHuntSidebarVisibility() {
@@ -535,13 +634,15 @@ function setActiveNavItem() {
             .then(function(flags) {
                 var mediaHuntGroup = document.getElementById('nav-group-media-hunt');
                 var nzbHuntGroup = document.getElementById('nzb-hunt-sidebar-group');
-                var requestsGroup = document.getElementById('nav-group-requests');
                 var appsGroup = document.getElementById('nav-group-apps');
+                var appsLabel = document.getElementById('nav-group-apps-label');
                 var hideMedia = flags.enable_media_hunt === false;
+                var hideApps = flags.enable_third_party_apps === false;
                 if (mediaHuntGroup) mediaHuntGroup.style.display = hideMedia ? 'none' : '';
                 if (nzbHuntGroup) nzbHuntGroup.style.display = hideMedia ? 'none' : '';
-                if (requestsGroup) requestsGroup.style.display = hideMedia ? 'none' : '';
-                if (appsGroup) appsGroup.style.display = flags.enable_third_party_apps === false ? 'none' : '';
+                if (appsGroup) appsGroup.style.display = hideApps ? 'none' : '';
+                // Hide the "Apps" label if everything under it is hidden
+                if (appsLabel) appsLabel.style.display = (hideMedia && hideApps) ? 'none' : '';
             })
             .catch(function() { /* keep defaults visible on error */ });
     }

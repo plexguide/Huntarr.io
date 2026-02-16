@@ -13216,6 +13216,24 @@ document.head.appendChild(styleEl);
                             <select id="timezone" name="timezone" class="mset-select">${timezoneOptions}</select>
                             <p class="setting-help">Set your timezone for accurate time display in logs and scheduling. Changes are applied immediately.</p>
                         </div>
+                        <div class="setting-item" style="margin-top: 15px;">
+                            <label for="tmdb_image_cache_days">TMDB Image Cache:</label>
+                            <select id="tmdb_image_cache_days" class="mset-select">
+                                <option value="0" ${settings.tmdb_image_cache_days === 0 ? "selected" : ""}>Disabled (Always Load)</option>
+                                <option value="1" ${settings.tmdb_image_cache_days === 1 ? "selected" : ""}>1 Day</option>
+                                <option value="7" ${settings.tmdb_image_cache_days === 7 ? "selected" : ""}>7 Days</option>
+                                <option value="30" ${(settings.tmdb_image_cache_days === 30 || settings.tmdb_image_cache_days === undefined) ? "selected" : ""}>30 Days</option>
+                            </select>
+                            <p class="setting-help">Cache TMDB images to reduce load times and API usage. Missing images will still attempt to load.</p>
+                        </div>
+                        <div class="setting-item flex-row" style="margin-top: 15px;" id="show_trending_setting_item">
+                            <label for="show_trending">Show Smart Hunt on Home:</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="show_trending" ${settings.show_trending === true ? "checked" : ""}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <p class="setting-help">Display the Smart Hunt carousel on the Home page. Configure mix settings in Requestarr &gt; Smart Hunt.</p>
                     </div>
                 </div>
 
@@ -13301,33 +13319,6 @@ document.head.appendChild(styleEl);
                     </div>
                 </div>
 
-                <!-- Display Settings card -->
-                <div class="mset-card">
-                    <div class="mset-card-header">
-                        <div class="mset-card-icon mset-icon-teal"><i class="fas fa-tv"></i></div>
-                        <h3>Display Settings</h3>
-                    </div>
-                    <div class="mset-card-body">
-                        <div class="setting-item">
-                            <label for="tmdb_image_cache_days">TMDB Image Cache:</label>
-                            <select id="tmdb_image_cache_days" class="mset-select">
-                                <option value="0" ${settings.tmdb_image_cache_days === 0 ? "selected" : ""}>Disabled (Always Load)</option>
-                                <option value="1" ${settings.tmdb_image_cache_days === 1 ? "selected" : ""}>1 Day</option>
-                                <option value="7" ${settings.tmdb_image_cache_days === 7 ? "selected" : ""}>7 Days</option>
-                                <option value="30" ${(settings.tmdb_image_cache_days === 30 || settings.tmdb_image_cache_days === undefined) ? "selected" : ""}>30 Days</option>
-                            </select>
-                            <p class="setting-help">Cache TMDB images to reduce load times and API usage. Missing images will still attempt to load.</p>
-                        </div>
-                        <div class="setting-item flex-row" id="show_trending_setting_item">
-                            <label for="show_trending">Show Smart Hunt on Home:</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="show_trending" ${settings.show_trending === true ? "checked" : ""}>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        <p class="setting-help">Display the Smart Hunt carousel on the Home page. Configure mix settings in Requestarr &gt; Smart Hunt.</p>
-                    </div>
-                </div>
 
             </div>
         `;

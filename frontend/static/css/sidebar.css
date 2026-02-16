@@ -381,7 +381,8 @@
 #movie-hunt-collection-sub,
 #movie-hunt-activity-sub,
 #media-hunt-config-sub,
-#index-master-sub {
+#index-master-sub,
+#index-master-view-sub {
     display: none;
     margin-top: 0;
 }
@@ -389,16 +390,63 @@
 #movie-hunt-collection-sub.expanded,
 #movie-hunt-activity-sub.expanded,
 #media-hunt-config-sub.expanded,
-#index-master-sub.expanded {
+#index-master-sub.expanded,
+#index-master-view-sub.expanded {
     display: block;
 }
 
 #movie-hunt-collection-sub .nav-item-sub,
 #movie-hunt-activity-sub .nav-item-sub,
 #media-hunt-config-sub .nav-item-sub,
-#index-master-sub .nav-item-sub {
+#index-master-sub .nav-item-sub,
+#index-master-view-sub .nav-item-sub {
     margin-top: 0;
     margin-bottom: 0;
+}
+
+/* When config sub-group is expanded, hide main Media Hunt items + other toggles */
+#sidebar-group-media-hunt.config-view > #movieHuntCollectionNav,
+#sidebar-group-media-hunt.config-view > #movie-hunt-collection-sub,
+#sidebar-group-media-hunt.config-view > #movieHuntIndexMasterToggle,
+#sidebar-group-media-hunt.config-view > #index-master-view-sub,
+#sidebar-group-media-hunt.config-view > #movieHuntActivityToggle,
+#sidebar-group-media-hunt.config-view > #movie-hunt-activity-sub,
+#sidebar-group-media-hunt.config-view > #movieHuntImportMediaNav,
+#sidebar-group-media-hunt.config-view > #movieHuntSettingsToggle {
+    display: none !important;
+}
+
+/* When activity sub-group is expanded, hide main Media Hunt items + other toggles */
+#sidebar-group-media-hunt.activity-view > #movieHuntCollectionNav,
+#sidebar-group-media-hunt.activity-view > #movie-hunt-collection-sub,
+#sidebar-group-media-hunt.activity-view > #movieHuntIndexMasterToggle,
+#sidebar-group-media-hunt.activity-view > #index-master-view-sub,
+#sidebar-group-media-hunt.activity-view > #movieHuntActivityToggle,
+#sidebar-group-media-hunt.activity-view > #movieHuntImportMediaNav,
+#sidebar-group-media-hunt.activity-view > #movieHuntSettingsToggle,
+#sidebar-group-media-hunt.activity-view > #media-hunt-config-sub {
+    display: none !important;
+}
+
+/* When index master sub-group is expanded, hide main Media Hunt items + other toggles */
+#sidebar-group-media-hunt.indexmaster-view > #movieHuntCollectionNav,
+#sidebar-group-media-hunt.indexmaster-view > #movie-hunt-collection-sub,
+#sidebar-group-media-hunt.indexmaster-view > #movieHuntIndexMasterToggle,
+#sidebar-group-media-hunt.indexmaster-view > #movieHuntActivityToggle,
+#sidebar-group-media-hunt.indexmaster-view > #movie-hunt-activity-sub,
+#sidebar-group-media-hunt.indexmaster-view > #movieHuntImportMediaNav,
+#sidebar-group-media-hunt.indexmaster-view > #movieHuntSettingsToggle,
+#sidebar-group-media-hunt.indexmaster-view > #media-hunt-config-sub {
+    display: none !important;
+}
+
+/* Back button styling in config sub-group */
+.media-hunt-config-back {
+    opacity: 0.7;
+    font-size: 0.85em;
+}
+.media-hunt-config-back:hover {
+    opacity: 1;
 }
 
 /* ===== APP ICONS ===== */
@@ -590,6 +638,7 @@
     font-size: 10px;
     letter-spacing: 0.02em;
     transition: color 0.2s ease;
+    vertical-align: middle;
 }
 
 .sidebar-footer-upgrade {
@@ -602,11 +651,14 @@
     background: rgba(52, 211, 153, 0.08);
     border: 1px solid rgba(52, 211, 153, 0.2);
     border-radius: 10px;
-    padding: 1px 7px 1px 5px;
+    padding: 2px 7px 2px 5px;
     line-height: 1;
     white-space: nowrap;
     text-decoration: none;
     transition: all 0.2s ease;
+    vertical-align: middle;
+    position: relative;
+    top: -0.5px;
 }
 
 .sidebar-footer-upgrade:hover {
