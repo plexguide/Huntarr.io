@@ -99,7 +99,7 @@ body:has(.app-container) {
 @media (max-width: 768px) {
     .content-section {
         /* Flex approach handles height automatically */
-        padding: 0 15px 15px; /* No top gap on mobile either */
+        padding: 15px 15px 15px; /* Keep top gap on mobile */
     }
     
     .logs {

@@ -29,7 +29,14 @@
     overflow: auto !important;
     opacity: 1;
     z-index: 1;
-    padding: 0 var(--page-gap, 15px) 15px;
+    padding: 15px var(--page-gap, 15px) 15px;
+    padding-top: 15px !important; /* Universal top gap — single source of truth */
+}
+
+/* Prevent double-padding: pages with .app-content-panel already supply inner padding,
+   so reduce its top when the parent .content-section supplies the universal top gap. */
+.content-section > .app-content-panel {
+    padding-top: 5px !important;
 }
 
 /* Dashboard Cards */
