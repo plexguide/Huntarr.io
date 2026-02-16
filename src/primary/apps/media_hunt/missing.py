@@ -57,6 +57,9 @@ def process_missing_movies(
     for it in collection:
         if not isinstance(it, dict):
             continue
+        # Skip unmonitored movies
+        if not it.get("monitored", True):
+            continue
         status = (it.get("status") or "").strip().lower()
         if status == "available":
             continue

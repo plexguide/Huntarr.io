@@ -1913,7 +1913,14 @@
                             '<img src="' + posterUrl + '" alt="' + this.escapeHtml(details.title) + '" onerror="this.src=\'./static/images/blackout.jpg\'">' +
                         '</div>' +
                         '<div class="mh-hero-info">' +
-                            '<h1 class="mh-hero-title">' + this.escapeHtml(details.title) + '</h1>' +
+                            '<div class="mh-hero-title-row">' +
+                                '<h1 class="mh-hero-title">' + this.escapeHtml(details.title) + '</h1>' +
+                                '<div class="mh-hero-movie-monitor" id="mh-movie-monitor-wrap" style="display:none;">' +
+                                    '<button type="button" class="mh-monitor-btn" id="mh-movie-monitor-btn" title="Toggle monitor movie">' +
+                                        '<i class="fas fa-bookmark"></i>' +
+                                    '</button>' +
+                                '</div>' +
+                            '</div>' +
 
                             '<div class="mh-hero-meta">' +
                                 (certification ? '<span class="mh-cert">' + this.escapeHtml(certification) + '</span>' : '') +
@@ -2083,6 +2090,12 @@
                 });
             });
 
+            // Monitor toggle button
+            const monitorBtn = document.getElementById('mh-movie-monitor-btn');
+            if (monitorBtn) {
+                monitorBtn.addEventListener('click', () => this.toggleMovieMonitor());
+            }
+
             // Instance selector (Movie Hunt: refresh status; Radarr: switch to Requestarr detail)
             const instanceSelect = document.getElementById('mh-detail-instance-select');
             if (instanceSelect) {
@@ -2193,6 +2206,42 @@
                 }
             };
             document.addEventListener('keydown', escHandler);
+        },
+
+        /* ── Monitor Toggle ─────────────────────────────────────── */
+        async toggleMovieMonitor() {
+            if (!this.currentMovie || !this.selectedInstanceId) return;
+            const tmdbId = this.currentMovie.tmdb_id || this.currentMovie.id;
+            const btn = document.getElementById('mh-movie-monitor-btn');
+            if (!btn) return;
+
+            const icon = btn.querySelector('i');
+            const currentMonitored = icon && icon.classList.contains('fas');
+            const newMonitored = !currentMonitored;
+
+            // Optimistic UI update
+            if (icon) icon.className = newMonitored ? 'fas fa-bookmark' : 'far fa-bookmark';
+
+            try {
+                const resp = await fetch('./api/movie-hunt/collection/' + tmdbId + '/monitor?instance_id=' + this.selectedInstanceId, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ monitored: newMonitored })
+                });
+                const data = await resp.json();
+                if (!resp.ok || data.error) {
+                    throw new Error(data.error || 'Failed to toggle monitor');
+                }
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification(newMonitored ? 'Monitor on' : 'Monitor off', 'success');
+                }
+            } catch (e) {
+                // Revert on failure
+                if (icon) icon.className = currentMonitored ? 'fas fa-bookmark' : 'far fa-bookmark';
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('Failed to update monitor: ' + e.message, 'error');
+                }
+            }
         },
 
         /* ── Edit Modal ────────────────────────────────────────── */
@@ -2548,6 +2597,20 @@
             if (editBtn) editBtn.style.display = isFound ? '' : 'none';
             if (deleteBtn) deleteBtn.style.display = isFound ? '' : 'none';
             if (refreshBtn) refreshBtn.style.display = isFound ? '' : 'none';
+
+            // Monitor toggle — show only when movie is in the collection
+            const monitorWrap = document.getElementById('mh-movie-monitor-wrap');
+            const monitorBtn = document.getElementById('mh-movie-monitor-btn');
+            if (monitorWrap && monitorBtn) {
+                if (isFound) {
+                    monitorWrap.style.display = '';
+                    const monitored = data ? data.monitored !== false : true;
+                    const icon = monitorBtn.querySelector('i');
+                    if (icon) icon.className = monitored ? 'fas fa-bookmark' : 'far fa-bookmark';
+                } else {
+                    monitorWrap.style.display = 'none';
+                }
+            }
 
             // Not-in-collection buttons
             const searchMovieBtn = document.getElementById('mh-tb-search-movie');

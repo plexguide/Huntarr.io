@@ -305,7 +305,8 @@ def _collection_append(title, year, instance_id, tmdb_id=None, poster_path=None,
         'digital_release': release_dates.get('digital_release', ''),
         'physical_release': release_dates.get('physical_release', ''),
         'requested_at': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
-        'status': 'requested'
+        'status': 'requested',
+        'monitored': True
     })
     _save_collection_config(items, instance_id)
 
@@ -1225,6 +1226,7 @@ def register_movie_discovery_routes(bp):
                 'minimum_availability': min_availability,
                 'requested_at': movie.get('requested_at', ''),
                 'probe_status': probe_status,
+                'monitored': movie.get('monitored', True),
             })
 
         except Exception as e:
@@ -1365,6 +1367,7 @@ def register_movie_discovery_routes(bp):
                     'tmdb_id': tmdb_id,
                     'root_folder': req.get('root_folder') or '',
                     'requested_at': req.get('requested_at') or '',
+                    'monitored': req.get('monitored', True),
                 })
         
             # Persist status updates and cleanup duplicates in the background config
@@ -1496,6 +1499,34 @@ def register_movie_discovery_routes(bp):
         except Exception as e:
             logger.exception('Movie Hunt collection delete error')
             return jsonify({'success': False, 'message': str(e)}), 500
+
+
+    @bp.route('/api/movie-hunt/collection/<int:tmdb_id>/monitor', methods=['PUT'])
+    def api_movie_hunt_collection_monitor(tmdb_id):
+        """Toggle monitored status for a movie in the collection."""
+        try:
+            instance_id = _get_movie_hunt_instance_id_from_request()
+            if not instance_id:
+                return jsonify({'error': 'No instance selected'}), 400
+            data = request.get_json() or {}
+            monitored = bool(data.get('monitored', True))
+            items = _get_collection_config(instance_id)
+
+            for item in items:
+                try:
+                    item_tmdb_id = int(item.get('tmdb_id'))
+                except (TypeError, ValueError):
+                    continue
+                if item_tmdb_id == tmdb_id:
+                    item['monitored'] = monitored
+                    _save_collection_config(items, instance_id)
+                    logger.info("Movie Hunt: toggled monitor for TMDB %d to %s", tmdb_id, monitored)
+                    return jsonify({'success': True, 'monitored': monitored}), 200
+
+            return jsonify({'error': 'Movie not found in collection'}), 404
+        except Exception as e:
+            logger.exception('Movie Hunt monitor toggle error')
+            return jsonify({'error': str(e)}), 500
 
 
     @bp.route('/api/movie-hunt/collection/update', methods=['POST'])

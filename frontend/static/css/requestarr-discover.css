@@ -994,7 +994,8 @@
 .mh-hero-title-row .mh-hero-title {
     margin-bottom: 0;
 }
-.mh-hero-series-monitor {
+.mh-hero-series-monitor,
+.mh-hero-movie-monitor {
     flex-shrink: 0;
 }
 /* Series monitor button: larger icon, opaque background, right of title */
