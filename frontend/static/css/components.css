@@ -29,7 +29,7 @@
     overflow: auto !important;
     opacity: 1;
     z-index: 1;
-    padding: 15px var(--page-gap, 15px);
+    padding: 0 var(--page-gap, 15px) 15px;
 }
 
 /* Dashboard Cards */

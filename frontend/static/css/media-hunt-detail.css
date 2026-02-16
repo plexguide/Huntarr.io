@@ -5,7 +5,7 @@
 /* ── Container ─────────────────────────────────────────── */
 .movie-detail-view {
     position: fixed;
-    top: 48px;
+    top: 44px;
     left: 218px;
     right: 0;
     bottom: 0;
@@ -17,7 +17,7 @@
 .movie-detail-view.active { display: block; }
 
 @media (max-width: 768px) {
-    .movie-detail-view { left: 0; top: 48px; }
+    .movie-detail-view { left: 0; top: 44px; }
 }
 @media (min-width: 769px) {
     body.sidebar-collapsed .movie-detail-view { left: 60px; }
