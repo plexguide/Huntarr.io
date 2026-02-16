@@ -1062,6 +1062,11 @@ select.ih-input {
     color: #fbbf24;
 }
 
+.ih-event-health_check {
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+}
+
 /* Pagination */
 .ih-pagination {
     display: flex;

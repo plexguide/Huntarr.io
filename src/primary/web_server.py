@@ -56,6 +56,7 @@ from src.routes.backup_routes import backup_bp
 from src.primary.routes.log_routes import log_routes_bp
 from src.primary.routes.nzb_hunt_routes import nzb_hunt_bp
 from src.primary.routes.indexer_hunt import indexer_hunt_bp
+from src.primary.routes.indexer_hunt.health import start_health_check_thread
 
 # Import background module to trigger manual cycle resets
 from src.primary import background
@@ -314,6 +315,9 @@ app.register_blueprint(log_routes_bp)
 app.register_blueprint(nzb_hunt_bp)
 app.register_blueprint(indexer_hunt_bp)
 app.register_blueprint(backup_bp)
+
+# Start Indexer Hunt background health check (hourly + on startup)
+start_health_check_thread()
 
 # Register the authentication check to run before requests
 app.before_request(authenticate_request)

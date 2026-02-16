@@ -5005,35 +5005,60 @@
 
     function _testIndexerCardsConnectionStatus(indexerList) {
         if (!indexerList || indexerList.length === 0) return;
-        indexerList.forEach(function(idx) {
-            var card = document.querySelector('.ih-card[data-id="' + idx.id + '"]');
-            var statusEl = card ? card.querySelector('.ih-card-connection-status') : null;
-            if (!statusEl) return;
-            fetch('./api/indexer-hunt/indexers/' + idx.id + '/test', { method: 'POST' })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (!statusEl.parentNode) return;
-                    if (data.valid) {
+        fetch('./api/indexer-hunt/status')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var statuses = data.statuses || {};
+                indexerList.forEach(function(idx) {
+                    var card = document.querySelector('.ih-card[data-id="' + idx.id + '"]');
+                    var statusEl = card ? card.querySelector('.ih-card-connection-status') : null;
+                    if (!statusEl) return;
+                    var info = statuses[idx.id];
+                    if (!info) {
+                        statusEl.setAttribute('data-connection', 'pending');
+                        statusEl.innerHTML = '<i class="fas fa-clock"></i> Pending';
+                        statusEl.classList.add('ih-card-connection-pending');
+                        statusEl.classList.remove('ih-card-connection-ok', 'ih-card-connection-fail');
+                        return;
+                    }
+                    if (info.status === 'connected') {
                         statusEl.setAttribute('data-connection', 'connected');
-                        statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Connected';
+                        var timeAgo = info.last_checked ? _timeAgo(info.last_checked) : '';
+                        var label = 'Connected';
+                        if (timeAgo) label += ' \u00b7 ' + timeAgo;
+                        statusEl.innerHTML = '<i class="fas fa-check-circle"></i> ' + label;
                         statusEl.classList.add('ih-card-connection-ok');
                         statusEl.classList.remove('ih-card-connection-fail', 'ih-card-connection-pending');
+                    } else if (info.status === 'disabled') {
+                        statusEl.setAttribute('data-connection', 'disabled');
+                        statusEl.innerHTML = '<i class="fas fa-minus-circle"></i> Disabled';
+                        statusEl.classList.remove('ih-card-connection-ok', 'ih-card-connection-fail', 'ih-card-connection-pending');
                     } else {
                         statusEl.setAttribute('data-connection', 'error');
                         statusEl.innerHTML = '<i class="fas fa-times-circle"></i> Failed';
                         statusEl.classList.add('ih-card-connection-fail');
                         statusEl.classList.remove('ih-card-connection-ok', 'ih-card-connection-pending');
                     }
-                })
-                .catch(function() {
-                    if (statusEl.parentNode) {
-                        statusEl.setAttribute('data-connection', 'error');
-                        statusEl.innerHTML = '<i class="fas fa-times-circle"></i> Failed';
-                        statusEl.classList.add('ih-card-connection-fail');
-                        statusEl.classList.remove('ih-card-connection-ok', 'ih-card-connection-pending');
-                    }
                 });
-        });
+            })
+            .catch(function() {
+                // On error fetching status, leave cards as pending
+            });
+    }
+
+    function _timeAgo(utcStr) {
+        try {
+            var checked = new Date(utcStr + 'Z');
+            var now = new Date();
+            var diffMs = now - checked;
+            if (diffMs < 0) return '';
+            var mins = Math.floor(diffMs / 60000);
+            if (mins < 1) return 'just now';
+            if (mins < 60) return mins + 'm ago';
+            var hrs = Math.floor(mins / 60);
+            if (hrs < 24) return hrs + 'h ago';
+            return Math.floor(hrs / 24) + 'd ago';
+        } catch(e) { return ''; }
     }
 
     function _getPresetLabel(preset) {
@@ -5241,13 +5266,32 @@
     };
 
     IH.testIndexer = function(id) {
+        var card = document.querySelector('.ih-card[data-id="' + id + '"]');
+        var statusEl = card ? card.querySelector('.ih-card-connection-status') : null;
+        if (statusEl) {
+            statusEl.setAttribute('data-connection', 'checking');
+            statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
+            statusEl.classList.remove('ih-card-connection-ok', 'ih-card-connection-fail', 'ih-card-connection-pending');
+        }
         fetch('./api/indexer-hunt/indexers/' + id + '/test', { method: 'POST' })
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (data.valid) {
                     if (window.huntarrUI) window.huntarrUI.showNotification('Connection OK (' + (data.response_time_ms || 0) + 'ms)', 'success');
+                    if (statusEl) {
+                        statusEl.setAttribute('data-connection', 'connected');
+                        statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Connected \u00b7 just now';
+                        statusEl.classList.add('ih-card-connection-ok');
+                        statusEl.classList.remove('ih-card-connection-fail', 'ih-card-connection-pending');
+                    }
                 } else {
                     if (window.huntarrUI) window.huntarrUI.showNotification(data.message || 'Test failed.', 'error');
+                    if (statusEl) {
+                        statusEl.setAttribute('data-connection', 'error');
+                        statusEl.innerHTML = '<i class="fas fa-times-circle"></i> Failed';
+                        statusEl.classList.add('ih-card-connection-fail');
+                        statusEl.classList.remove('ih-card-connection-ok', 'ih-card-connection-pending');
+                    }
                 }
             })
             .catch(function(err) {
@@ -5782,8 +5826,11 @@ window.HuntarrIndexerHuntHome = {
                 }
             } catch(e) {}
 
-            var typeClass = 'ih-event-' + (ev.event_type || 'search');
-            var typeBadge = '<span class="ih-event-badge ' + typeClass + '">' + _esc(ev.event_type || 'unknown') + '</span>';
+            var rawType = ev.event_type || 'unknown';
+            var typeLabels = { search: 'Search', grab: 'Grab', failure: 'Failure', test: 'Connection Test', health_check: 'Hourly Check' };
+            var typeLabel = typeLabels[rawType] || rawType;
+            var typeClass = 'ih-event-' + rawType;
+            var typeBadge = '<span class="ih-event-badge ' + typeClass + '">' + _esc(typeLabel) + '</span>';
             var statusIcon = ev.success
                 ? '<i class="fas fa-check-circle" style="color: #10b981;"></i>'
                 : '<i class="fas fa-times-circle" style="color: #ef4444;"></i>';

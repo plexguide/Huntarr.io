@@ -179,8 +179,11 @@
                 }
             } catch(e) {}
 
-            var typeClass = 'ih-event-' + (ev.event_type || 'search');
-            var typeBadge = '<span class="ih-event-badge ' + typeClass + '">' + _esc(ev.event_type || 'unknown') + '</span>';
+            var rawType = ev.event_type || 'unknown';
+            var typeLabels = { search: 'Search', grab: 'Grab', failure: 'Failure', test: 'Connection Test', health_check: 'Hourly Check' };
+            var typeLabel = typeLabels[rawType] || rawType;
+            var typeClass = 'ih-event-' + rawType;
+            var typeBadge = '<span class="ih-event-badge ' + typeClass + '">' + _esc(typeLabel) + '</span>';
             var statusIcon = ev.success
                 ? '<i class="fas fa-check-circle" style="color: #10b981;"></i>'
                 : '<i class="fas fa-times-circle" style="color: #ef4444;"></i>';

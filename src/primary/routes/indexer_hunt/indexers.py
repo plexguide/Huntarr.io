@@ -218,9 +218,11 @@ def api_ih_delete(idx_id):
         if not existing:
             return jsonify({'success': False, 'error': 'Indexer not found'}), 404
 
-        # Cascade delete from all linked Movie Hunt instances
+        # Cascade delete from all linked instances
         from .sync import _cascade_delete_from_instances
+        from .health import remove_cached_status
         removed_count = _cascade_delete_from_instances(idx_id)
+        remove_cached_status(idx_id)
 
         db.delete_indexer_hunt_indexer(idx_id)
         return jsonify({'success': True, 'instances_cleaned': removed_count}), 200
@@ -229,13 +231,27 @@ def api_ih_delete(idx_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+# ── Cached connection status ─────────────────────────────────────────
+
+@indexer_hunt_bp.route('/api/indexer-hunt/status', methods=['GET'])
+def api_ih_status():
+    """Return cached connection status for all IH indexers (from hourly checks)."""
+    try:
+        from .health import get_cached_statuses
+        return jsonify({'statuses': get_cached_statuses()}), 200
+    except Exception as e:
+        logger.exception('Indexer Hunt status error')
+        return jsonify({'statuses': {}, 'error': str(e)}), 200
+
+
 # ── Test connection ──────────────────────────────────────────────────
 
 @indexer_hunt_bp.route('/api/indexer-hunt/indexers/<idx_id>/test', methods=['POST'])
 def api_ih_test(idx_id):
-    """Test connection to an Indexer Hunt indexer."""
+    """Test connection to an Indexer Hunt indexer (manual Connection Test)."""
     try:
         from src.primary.utils.database import get_database
+        from .health import update_cached_status
         db = get_database()
         idx = db.get_indexer_hunt_indexer(idx_id)
         if not idx:
@@ -243,6 +259,7 @@ def api_ih_test(idx_id):
 
         base_url = _resolve_indexer_api_url(idx)
         if not base_url:
+            update_cached_status(idx_id, 'failed', error_message='No URL configured')
             return jsonify({'valid': False, 'message': 'No URL configured'}), 200
 
         api_key = idx.get('api_key', '')
@@ -250,7 +267,11 @@ def api_ih_test(idx_id):
         valid, err_msg = _validate_newznab_api_key(base_url, api_key)
         elapsed_ms = int((time.time() - start) * 1000)
 
-        # Record event
+        # Update the cached status immediately
+        status = 'connected' if valid else 'failed'
+        update_cached_status(idx_id, status, elapsed_ms, err_msg or '')
+
+        # Record event as 'test' (Connection Test)
         db.record_indexer_hunt_event(
             indexer_id=idx_id,
             indexer_name=idx.get('name', ''),
