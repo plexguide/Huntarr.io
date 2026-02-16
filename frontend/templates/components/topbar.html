@@ -49,7 +49,7 @@
             0 4px 16px rgba(0, 0, 0, 0.25);
     }
 
-    /* ===== ANIMATED ACCENT LINE ===== */
+    /* ===== ACCENT LINE (static) ===== */
     .topbar-accent-line {
         position: absolute;
         bottom: -1px;
@@ -65,16 +65,8 @@
             rgba(99, 102, 241, 0.4) 85%, 
             rgba(99, 102, 241, 0) 100%
         );
-        background-size: 200% 100%;
         z-index: 10;
         opacity: 0.7;
-        animation: topbar-gradient-flow 8s ease infinite;
-    }
-    
-    @keyframes topbar-gradient-flow {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
     }
 
     /* ===== LAYOUT SECTIONS ===== */

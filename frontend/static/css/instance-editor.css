@@ -977,13 +977,8 @@ button.reqset-back-btn {
 /* ============================================================
    Animations
    ============================================================ */
-@keyframes ie-pulse-success {
-    0%, 100% { box-shadow: 0 0 10px rgba(16, 185, 129, 0.08); }
-    50% { box-shadow: 0 0 18px rgba(16, 185, 129, 0.15); }
-}
-
 #instanceEditorSection .connection-status.success {
-    animation: ie-pulse-success 3s ease-in-out infinite;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.1);
 }
 
 @keyframes ie-spin {
