@@ -114,6 +114,14 @@
                             </label>
                         </div>
                         <p class="setting-help">Display the Smart Hunt carousel on the Home page. Configure mix settings in Requestarr &gt; Smart Hunt.</p>
+                        <div class="setting-item flex-row" style="margin-top: 15px;">
+                            <label for="show_nzb_hunt_on_home">Show NZB Hunt on Home:</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="show_nzb_hunt_on_home" ${settings.show_nzb_hunt_on_home !== false ? "checked" : ""}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <p class="setting-help">Display the NZB Hunt status bar on the Home page with live speed, connections, and ETA when servers are configured.</p>
                     </div>
                 </div>
 

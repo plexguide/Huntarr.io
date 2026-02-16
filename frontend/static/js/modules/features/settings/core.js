@@ -774,6 +774,7 @@ window.SettingsForms = {
                 enable_requestarr: true, // Always enabled (required for Movie Hunt)
 
                 show_trending: getVal('show_trending', true),
+                show_nzb_hunt_on_home: getVal('show_nzb_hunt_on_home', true),
                 tmdb_image_cache_days: parseInt(container.querySelector('#tmdb_image_cache_days')?.value || '30'),
                 auth_mode: (container.querySelector('#auth_mode') && container.querySelector('#auth_mode').value) || 'login',
                 ssl_verify: getVal('ssl_verify', true),
