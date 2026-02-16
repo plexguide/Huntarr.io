@@ -32,9 +32,9 @@ SMARTHUNT_DEFAULTS = {
     "year_start": 2000,
     "year_end": datetime.now().year + 1,
     "percentages": {
-        "similar_library": 30,
-        "trending": 20,
-        "hidden_gems": 15,
+        "similar_library": 40,
+        "trending": 15,
+        "hidden_gems": 10,
         "new_releases": 10,
         "top_rated": 10,
         "genre_mix": 5,
@@ -559,6 +559,27 @@ class SmartHuntEngine:
                         library_items.append({
                             "tmdb_id": tmdb_id,
                             "media_type": "movie",
+                            "vote_average": 0,
+                            "added": "",
+                        })
+            except Exception:
+                pass
+
+        # Gather from TV Hunt instances
+        for inst in instances.get("tv_hunt", []):
+            try:
+                th_id = inst.get("id")
+                if th_id is None:
+                    continue
+                from src.primary.routes.media_hunt.discovery_tv import _get_collection_config as _get_tv_collection
+                collection = _get_tv_collection(th_id)
+                for si in collection:
+                    tmdb_id = si.get("tmdb_id")
+                    status = (si.get("status") or "").lower()
+                    if tmdb_id and status in ("available", "continuing", "ended"):
+                        library_items.append({
+                            "tmdb_id": tmdb_id,
+                            "media_type": "tv",
                             "vote_average": 0,
                             "added": "",
                         })
