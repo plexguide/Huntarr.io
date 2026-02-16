@@ -748,7 +748,7 @@ def get_quality_profiles(api_url: str, api_key: str, api_timeout: int) -> Option
         logger.debug("Fetching quality profiles from Readarr...")
         
         # Use the qualityProfile endpoint - this doesn't count toward API limits since it's configuration data
-        # Note: Readarr uses API v1, not v3 like Sonarr/Radarr
+        # Note: Readarr uses API v1, not v3
         profiles = arr_request("qualityProfile", api_url=api_url, api_key=api_key, api_timeout=api_timeout, count_api=False)
         
         if profiles is None:

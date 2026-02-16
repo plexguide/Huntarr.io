@@ -13,17 +13,19 @@
 
     const Forms = window.SettingsForms;
 
-    // ── Preset metadata (must match backend INDEXER_PRESETS) ────────────
+    // ── Preset metadata (Newznab standard) ──────────────────────────────
+    // Default movie cats: [2000,2010,2020,2030,2040,2045,2050,2060]
+    // Only NZBFinder has custom categories.
     var PRESET_META = {
         dognzb:        { name: 'DOGnzb',         url: 'https://api.dognzb.cr',            api_path: '/api', categories: [2000,2010,2020,2030,2040,2045,2050,2060] },
-        drunkenslug:   { name: 'DrunkenSlug',     url: 'https://drunkenslug.com',           api_path: '/api', categories: [2000,2010,2030,2040,2045,2050,2060] },
-        'nzb.su':      { name: 'Nzb.su',          url: 'https://api.nzb.su',                api_path: '/api', categories: [2000,2010,2020,2030,2040,2045] },
+        drunkenslug:   { name: 'DrunkenSlug',     url: 'https://drunkenslug.com',           api_path: '/api', categories: [2000,2010,2020,2030,2040,2045,2050,2060] },
+        'nzb.su':      { name: 'Nzb.su',          url: 'https://api.nzb.su',                api_path: '/api', categories: [2000,2010,2020,2030,2040,2045,2050,2060] },
         nzbcat:        { name: 'NZBCat',          url: 'https://nzb.cat',                   api_path: '/api', categories: [2000,2010,2020,2030,2040,2045,2050,2060] },
         'nzbfinder.ws':{ name: 'NZBFinder.ws',    url: 'https://nzbfinder.ws',              api_path: '/api', categories: [2030,2040,2045,2050,2060,2070] },
         nzbgeek:       { name: 'NZBgeek',         url: 'https://api.nzbgeek.info',          api_path: '/api', categories: [2000,2010,2020,2030,2040,2045,2050,2060] },
-        'nzbplanet.net':{ name: 'nzbplanet.net',  url: 'https://api.nzbplanet.net',         api_path: '/api', categories: [2000,2010,2020,2030,2040,2050,2060] },
+        'nzbplanet.net':{ name: 'nzbplanet.net',  url: 'https://api.nzbplanet.net',         api_path: '/api', categories: [2000,2010,2020,2030,2040,2045,2050,2060] },
         simplynzbs:    { name: 'SimplyNZBs',      url: 'https://simplynzbs.com',            api_path: '/api', categories: [2000,2010,2020,2030,2040,2045,2050,2060] },
-        tabularasa:    { name: 'Tabula Rasa',     url: 'https://www.tabula-rasa.pw',        api_path: '/api/v1/api', categories: [2000,2010,2030,2040,2045,2050,2060] },
+        tabularasa:    { name: 'Tabula Rasa',     url: 'https://www.tabula-rasa.pw',        api_path: '/api/v1/api', categories: [2000,2010,2020,2030,2040,2045,2050,2060] },
         usenetcrawler: { name: 'Usenet Crawler',  url: 'https://www.usenet-crawler.com',    api_path: '/api', categories: [2000,2010,2020,2030,2040,2045,2050,2060] },
     };
     window.INDEXER_PRESET_META = PRESET_META;
@@ -90,6 +92,21 @@
     ];
     var DEFAULT_CATEGORIES = [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2060];
 
+    // ── TV preset metadata (Newznab standard) ──────────────────────────
+    // Default TV cats: [5030,5040] (SD + HD). Only NZBFinder adds 5045 (UHD).
+    var TV_PRESET_META = {
+        dognzb:        { name: 'DOGnzb',         categories: [5030, 5040] },
+        drunkenslug:   { name: 'DrunkenSlug',     categories: [5030, 5040] },
+        'nzb.su':      { name: 'Nzb.su',          categories: [5030, 5040] },
+        nzbcat:        { name: 'NZBCat',          categories: [5030, 5040] },
+        'nzbfinder.ws':{ name: 'NZBFinder.ws',    categories: [5030, 5040, 5045] },
+        nzbgeek:       { name: 'NZBgeek',         categories: [5030, 5040] },
+        'nzbplanet.net':{ name: 'nzbplanet.net',  categories: [5030, 5040] },
+        simplynzbs:    { name: 'SimplyNZBs',      categories: [5030, 5040] },
+        tabularasa:    { name: 'Tabula Rasa',     categories: [5030, 5040] },
+        usenetcrawler: { name: 'Usenet Crawler',  categories: [5030, 5040] },
+    };
+
     // ── TV categories (5000 series only; never mix with 2000 movie series) ───
     var ALL_TV_CATEGORIES = [
         { id: 5000, name: 'TV' }, { id: 5010, name: 'TV/Foreign' }, { id: 5020, name: 'TV/Other' },
@@ -102,6 +119,7 @@
     Forms.getIndexerPresetLabel = function(preset) {
         var p = (preset || 'manual').toLowerCase().trim();
         if (PRESET_META[p]) return PRESET_META[p].name;
+        if (TV_PRESET_META[p]) return TV_PRESET_META[p].name;
         if (p === 'manual') return 'Custom (Manual)';
         return p;
     };
@@ -122,8 +140,13 @@
     };
     Forms.getIndexerDefaultIdsForPreset = function(preset) {
         var isTV = (Forms._indexersMode === 'tv');
-        if (isTV) return DEFAULT_TV_CATEGORIES.slice();  // TV: 5000 series only
         var p = (preset || 'manual').toLowerCase().trim();
+        if (isTV) {
+            if (TV_PRESET_META[p] && Array.isArray(TV_PRESET_META[p].categories)) {
+                return TV_PRESET_META[p].categories.slice();
+            }
+            return DEFAULT_TV_CATEGORIES.slice();
+        }
         if (PRESET_META[p] && Array.isArray(PRESET_META[p].categories)) {
             return PRESET_META[p].categories.slice();
         }
@@ -466,7 +489,7 @@
     Forms.generateIndexerEditorHtml = function(instance, isAdd) {
         var name = (instance.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         var rawPreset = (instance.preset || '').toLowerCase().replace(/[^a-z0-9.-]/g, '');
-        var hasPreset = !!(rawPreset && (PRESET_META[rawPreset] || rawPreset === 'manual'));
+        var hasPreset = !!(rawPreset && (PRESET_META[rawPreset] || TV_PRESET_META[rawPreset] || rawPreset === 'manual'));
         var preset = hasPreset ? rawPreset : '';
         var isManual = preset === 'manual';
         var enabled = instance.enabled !== false;
@@ -476,7 +499,7 @@
             : 'Your API Key';
 
         // URL & API Path
-        var meta = PRESET_META[preset] || {};
+        var meta = PRESET_META[preset] || TV_PRESET_META[preset] || {};
         var url = (instance.url || meta.url || '').replace(/"/g, '&quot;');
         var apiPath = (instance.api_path || meta.api_path || '/api').replace(/"/g, '&quot;');
         var urlReadonly = hasPreset && !isManual;

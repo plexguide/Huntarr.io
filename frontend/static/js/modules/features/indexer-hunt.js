@@ -581,7 +581,7 @@
 
         _showEditorView();
 
-        // Auto-test connection when URL or API key changes (like Sonarr/app settings)
+        // Auto-test connection when URL or API key changes
         var statusContainer = document.getElementById('ih-connection-status-container');
         if (statusContainer) statusContainer.style.display = 'flex';
         if (!window._ihConnectionListenersBound) {

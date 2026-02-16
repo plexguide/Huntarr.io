@@ -1,6 +1,5 @@
 """
-TRaSH Guides Sonarr custom formats: categories, subcategories, and format JSON.
-Data from https://trash-guides.info/Sonarr/sonarr-collection-of-custom-formats/
+TRaSH Guides TV custom formats: categories, subcategories, and format JSON.
 """
 import json
 import os

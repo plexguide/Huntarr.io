@@ -102,7 +102,7 @@ def get_movie_hunt_instance_settings_defaults() -> Dict[str, Any]:
     """
     base = get_default_instance_config("radarr")
     # Drop connection-related keys; keep search, stateful, additional.
-    # Movie Hunt instances default to enabled (unlike Radarr which defaults to false until API is set).
+    # Movie Hunt instances default to enabled.
     out = {
         "enabled": True,
         "hunt_missing_movies": base.get("hunt_missing_movies", 1),

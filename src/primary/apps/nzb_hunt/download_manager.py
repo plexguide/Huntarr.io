@@ -185,7 +185,7 @@ class DownloadItem:
         self.total_segments = 0
         self.completed_segments = 0
         self.failed_segments = 0  # Segments that couldn't be downloaded (missing articles)
-        self.missing_bytes = 0    # Estimated bytes of missing articles (like SABnzbd's mbmissing)
+        self.missing_bytes = 0    # Estimated bytes of missing articles
         self.total_files = 0
         self.completed_files = 0
         self.speed_bps = 0  # bytes per second
@@ -320,7 +320,7 @@ class NZBHuntDownloadManager:
         # Rate limiter (token-bucket, thread-safe)
         self._rate_limiter = _RateLimiter()
         
-        # Warnings system (like SABnzbd)
+        # Warnings system
         self._warnings: List[dict] = []
         self._warnings_lock = threading.Lock()
         self._dismissed_warnings: set = set()  # dismissed warning IDs
@@ -758,7 +758,7 @@ class NZBHuntDownloadManager:
         if not name:
             name = nzb.files[0].filename if nzb.files else "Unknown"
 
-        # Duplicate detection (SABnzbd-style)
+        # Duplicate detection
         proc = self._get_processing_settings()
         identical_on = (proc.get("identical_detection", "on") or "").lower() == "on"
         smart_on = (proc.get("smart_detection", "on") or "").lower() == "on"
@@ -1172,14 +1172,14 @@ class NZBHuntDownloadManager:
                            max_retries: int = 3) -> Tuple[int, Optional[bytes], str]:
         """Download and decode a single segment with retry logic.
         
-        Uses a persistent per-thread NNTP connection (SABnzbd/NZBGet model).
-        Each ThreadPoolExecutor worker holds its own dedicated connection for
-        the entire download session, keeping all connections active and
-        saturated instead of cycling get/release per article.
+        Uses a persistent per-thread NNTP connection. Each ThreadPoolExecutor
+        worker holds its own dedicated connection for the entire download
+        session, keeping all connections active and saturated instead of
+        cycling get/release per article.
         
         NNTP download runs in the calling thread (I/O bound, releases GIL).
         yEnc decode runs in a separate process (CPU bound, no GIL contention).
-        Retries up to max_retries times on failure (like SABnzbd's max_art_tries).
+        Retries up to max_retries times on failure.
         
         Returns:
             (decoded_length, decoded_bytes_or_None, server_name)
@@ -1191,7 +1191,7 @@ class NZBHuntDownloadManager:
         # ── Persistent per-thread connection ──
         # On first call, acquire a dedicated connection from the pool.
         # The connection stays checked out (shows as "active" in stats) for
-        # the entire download, just like SABnzbd/NZBGet do.
+        # the entire download.
         conn = getattr(self._worker_conns, 'conn', None)
         pool = getattr(self._worker_conns, 'pool', None)
         
@@ -1343,7 +1343,7 @@ class NZBHuntDownloadManager:
             final_path = os.path.join(download_dir, safe_name)
             os.makedirs(temp_path, exist_ok=True)
             
-            # Thread pool for NNTP I/O — one thread per connection (SABnzbd model).
+            # Thread pool for NNTP I/O — one thread per connection.
             # Each thread holds a persistent connection, so we need as many
             # workers as total connections.  Most time is spent in socket I/O
             # (releases GIL) and sabyenc3 decode (C extension, releases GIL),
@@ -1351,7 +1351,7 @@ class NZBHuntDownloadManager:
             max_workers = self._nntp.get_total_max_connections()
             max_workers = max(4, min(max_workers, 200))
             
-            # Sort files: data files first, par2 files last (like SABnzbd)
+            # Sort files: data files first, par2 files last
             # This ensures the actual content downloads before recovery data
             sorted_files = sorted(nzb.files, key=lambda f: (
                 1 if f.filename.lower().endswith('.par2') else 0,
@@ -1360,7 +1360,7 @@ class NZBHuntDownloadManager:
             
             logger.info(f"[{item.id}] Starting parallel download with {max_workers} workers")
             
-            # Persistent per-thread connection tracking (SABnzbd/NZBGet model).
+            # Persistent per-thread connection tracking.
             # Each worker thread acquires one NNTP connection on its first
             # segment and holds it for the entire download.  This keeps all
             # connections active and saturated instead of cycling per-article.
@@ -1375,7 +1375,7 @@ class NZBHuntDownloadManager:
             MIN_SEGMENTS_FOR_PCT_CHECK = 200  # Need at least this many before checking %
             aborted = False
             
-            # ── Full-pipeline download (SABnzbd/NZBGet approach) ──
+            # ── Full-pipeline download ──
             # Submit ALL segments from ALL files into a single thread pool so
             # every connection stays saturated.  The old file-by-file approach
             # drained the pipeline between files → idle connections → low speed.

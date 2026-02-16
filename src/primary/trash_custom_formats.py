@@ -1,6 +1,5 @@
 """
-TRaSH Guides Radarr custom formats: categories, subcategories, and format JSON.
-Data from https://trash-guides.info/Radarr/Radarr-collection-of-custom-formats/
+TRaSH Guides movie custom formats: categories, subcategories, and format JSON.
 """
 import json
 import os

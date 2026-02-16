@@ -304,7 +304,7 @@ def sanitize_name(name: str, replace_illegal: bool = True,
 # ── Clean Title ───────────────────────────────────────────────────────────────
 
 def clean_title(title: str) -> str:
-    """Remove diacritics, apostrophes, and non-alphanumeric chars (like Radarr CleanTitle)."""
+    """Remove diacritics, apostrophes, and non-alphanumeric chars."""
     if not title:
         return ''
     nfkd = unicodedata.normalize('NFKD', title)

@@ -769,7 +769,7 @@
         },
 
         /* ──────────────────────────────────────────────
-           History Rendering  (SABnzbd-inspired)
+           History Rendering
         ────────────────────────────────────────────── */
         _histPage: 1,
         _histPerPage: 20,

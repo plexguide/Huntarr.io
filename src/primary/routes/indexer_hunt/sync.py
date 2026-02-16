@@ -146,7 +146,7 @@ def api_ih_sync():
         from src.primary.utils.database import get_database
         from src.primary.routes.media_hunt.indexers import (
             INDEXER_PRESETS, INDEXER_DEFAULT_CATEGORIES,
-            TV_INDEXER_DEFAULT_CATEGORIES,
+            TV_INDEXER_PRESETS_BY_KEY,
             _filter_categories_movie, _filter_categories_tv,
         )
         import uuid as _uuid
@@ -165,15 +165,24 @@ def api_ih_sync():
 
             preset = ih_idx.get('preset', 'manual')
             if mode == 'tv':
-                raw = list(TV_INDEXER_DEFAULT_CATEGORIES)
-                default_cats = _filter_categories_tv(raw) or list(TV_INDEXER_DEFAULT_CATEGORIES)
+                # Look up TV-specific preset data (categories, api_path)
+                tv_preset = TV_INDEXER_PRESETS_BY_KEY.get(preset)
+                if tv_preset:
+                    raw = list(tv_preset.get('default_categories', [5030, 5040]))
+                    api_path = tv_preset.get('api_path', '/api')
+                else:
+                    raw = [5030, 5040]
+                    api_path = ih_idx.get('api_path', '/api')
+                default_cats = _filter_categories_tv(raw) or [5030, 5040]
                 ih_name = ih_idx.get('name') or ih_idx.get('display_name') or 'Unnamed'
                 new_idx = {
                     'id': str(_uuid.uuid4())[:8],
                     'name': ih_name,
                     'display_name': ih_name,
+                    'preset': preset,
                     'url': ih_idx.get('url', ''),
                     'api_url': ih_idx.get('url', ''),
+                    'api_path': api_path,
                     'api_key': ih_idx.get('api_key', ''),
                     'protocol': ih_idx.get('protocol', 'usenet'),
                     'categories': default_cats,

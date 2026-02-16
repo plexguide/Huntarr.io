@@ -130,9 +130,9 @@ class NNTPConnection:
         """Download a single article by Message-ID using fast chunk reads.
         
         Bypasses nntplib's line-by-line body() method (~1000 readline calls
-        per 750KB article) and reads in large chunks instead, similar to
-        SABnzbd's approach.  Uses a list-of-chunks pattern to avoid repeated
-        bytearray.extend() memory copies.
+        per 750KB article) and reads in large chunks instead.  Uses a
+        list-of-chunks pattern to avoid repeated bytearray.extend() memory
+        copies.
         
         Args:
             message_id: The Message-ID without angle brackets
@@ -244,8 +244,8 @@ class NNTPConnectionPool:
         
         Blocks up to `timeout` seconds waiting for a connection to become
         available.  If under the limit, opens a new one immediately.  On
-        connect failure it retries (with backoff) until the deadline — 
-        SABnzbd and NZBGet both keep trying rather than giving up instantly.
+        connect failure it retries (with backoff) until the deadline rather
+        than giving up instantly.
         """
         deadline = time.time() + timeout
         backoff = 0.05  # initial retry sleep
@@ -333,10 +333,9 @@ class NNTPManager:
     """Manages connections to multiple NNTP servers with priority-based fallback.
     
     Same-priority servers work together: connection requests are distributed
-    round-robin across same-priority pools so all connections are used in parallel
-    (like SABnzbd), rather than saturating one server before using the next.
+    round-robin across same-priority pools so all connections are used in parallel,
+    rather than saturating one server before using the next.
     
-    Active connection tracking (SABnzbd-inspired):
     Per-server active counts are tracked at manager level so they survive
     pool reconfiguration. This ensures the UI always reflects reality.
     """
@@ -345,7 +344,7 @@ class NNTPManager:
         self._pools: List[NNTPConnectionPool] = []
         self._lock = threading.Lock()
         self._round_robin_index = 0  # For distributing across same-priority pools
-        # SABnzbd-style active connection tracking: {server_host: count}
+        # Active connection tracking: {server_host: count}
         # Lives at manager level so pool reconfiguration doesn't reset it.
         self._active_counts: Dict[str, int] = {}
         self._active_lock = threading.Lock()
@@ -391,9 +390,9 @@ class NNTPManager:
         
         Returns (connection, pool).  The connection is checked out from the
         pool and will show as "active" in stats until explicitly released
-        via pool.release_connection().  This is the SABnzbd/NZBGet model:
-        each downloader thread holds its own connection for the entire
-        download session, keeping all connections saturated.
+        via pool.release_connection().  Each downloader thread holds its own
+        connection for the entire download session, keeping all connections
+        saturated.
         
         Uses priority/round-robin logic with a short per-pool timeout so
         threads quickly fall through to the next server if one pool is full
@@ -465,7 +464,7 @@ class NNTPManager:
         Uses a short connection timeout for parallel downloading so threads
         quickly fall through to the next available server when a pool is full.
         Same-priority servers are tried in round-robin order so connections
-        are distributed across all servers (maxing out total throughput like SABnzbd).
+        are distributed across all servers (maxing out total throughput).
         Also tracks bandwidth per server.
         
         Args:
@@ -567,8 +566,8 @@ class NNTPManager:
     def get_connection_stats(self) -> List[Dict[str, Any]]:
         """Get per-server connection stats: name, active, max, host.
         
-        Uses the manager-level active counts (SABnzbd-inspired) so the
-        count survives pool reconfiguration and always reflects reality.
+        Uses the manager-level active counts so the count survives pool
+        reconfiguration and always reflects reality.
         """
         result = []
         for pool in self._pools:

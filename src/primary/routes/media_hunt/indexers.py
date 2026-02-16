@@ -25,26 +25,21 @@ def _safe_int(val, default=0):
         return default
 
 
-# Movie presets/categories
+# Movie presets/categories (Newznab standard)
+# Default movie cats: [2000,2010,2020,2030,2040,2045,2050,2060]
+# Only NZBFinder has custom categories.
 MOVIE_INDEXER_PRESETS = {
-    'dognzb':         {'name': 'DOGnzb',         'url': 'https://api.dognzb.cr',      'api_path': '/api'},
-    'drunkenslug':    {'name': 'DrunkenSlug',     'url': 'https://drunkenslug.com',     'api_path': '/api',
-                       'categories': [2000, 2010, 2030, 2040, 2045, 2050, 2060]},
-    'nzb.su':         {'name': 'Nzb.su',          'url': 'https://api.nzb.su',          'api_path': '/api',
-                       'categories': [2000, 2010, 2020, 2030, 2040, 2045]},
-    'nzbcat':         {'name': 'NZBCat',          'url': 'https://nzb.cat',             'api_path': '/api',
-                       'categories': [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2060]},
-    'nzbfinder.ws':   {'name': 'NZBFinder.ws',    'url': 'https://nzbfinder.ws',        'api_path': '/api',
+    'dognzb':         {'name': 'DOGnzb',         'url': 'https://api.dognzb.cr',           'api_path': '/api'},
+    'drunkenslug':    {'name': 'DrunkenSlug',     'url': 'https://drunkenslug.com',         'api_path': '/api'},
+    'nzb.su':         {'name': 'Nzb.su',          'url': 'https://api.nzb.su',              'api_path': '/api'},
+    'nzbcat':         {'name': 'NZBCat',          'url': 'https://nzb.cat',                 'api_path': '/api'},
+    'nzbfinder.ws':   {'name': 'NZBFinder.ws',    'url': 'https://nzbfinder.ws',            'api_path': '/api',
                        'categories': [2030, 2040, 2045, 2050, 2060, 2070]},
-    'nzbgeek':        {'name': 'NZBgeek',         'url': 'https://api.nzbgeek.info',    'api_path': '/api'},
-    'nzbplanet.net':  {'name': 'nzbplanet.net',   'url': 'https://api.nzbplanet.net',   'api_path': '/api',
-                       'categories': [2000, 2010, 2020, 2030, 2040, 2050, 2060]},
-    'simplynzbs':     {'name': 'SimplyNZBs',      'url': 'https://simplynzbs.com',      'api_path': '/api',
-                       'categories': [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2060]},
-    'tabularasa':     {'name': 'Tabula Rasa',     'url': 'https://www.tabula-rasa.pw',  'api_path': '/api/v1/api',
-                       'categories': [2000, 2010, 2030, 2040, 2045, 2050, 2060]},
-    'usenetcrawler':  {'name': 'Usenet Crawler',  'url': 'https://www.usenet-crawler.com', 'api_path': '/api',
-                       'categories': [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2060]},
+    'nzbgeek':        {'name': 'NZBgeek',         'url': 'https://api.nzbgeek.info',        'api_path': '/api'},
+    'nzbplanet.net':  {'name': 'nzbplanet.net',   'url': 'https://api.nzbplanet.net',       'api_path': '/api'},
+    'simplynzbs':     {'name': 'SimplyNZBs',      'url': 'https://simplynzbs.com',          'api_path': '/api'},
+    'tabularasa':     {'name': 'Tabula Rasa',     'url': 'https://www.tabula-rasa.pw',      'api_path': '/api/v1/api'},
+    'usenetcrawler':  {'name': 'Usenet Crawler',  'url': 'https://www.usenet-crawler.com',  'api_path': '/api'},
 }
 MOVIE_INDEXER_DEFAULT_CATEGORIES = [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2060]
 MOVIE_INDEXER_CATEGORIES = [
@@ -54,17 +49,39 @@ MOVIE_INDEXER_CATEGORIES = [
 ]
 MOVIE_INDEXER_CATEGORIES_DEFAULT_IDS = [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2070]
 
-# TV presets/categories
+# TV presets/categories (Newznab standard)
+# Default TV cats: [5030,5040] (SD + HD).  Only NZBFinder adds 5045 (UHD).
 TV_INDEXER_PRESETS = [
-    {"name": "NZBgeek", "url": "https://api.nzbgeek.info", "protocol": "usenet", "default_categories": [5000, 5030, 5040, 5045]},
-    {"name": "DrunkenSlug", "url": "https://api.drunkenslug.com", "protocol": "usenet", "default_categories": [5000, 5030, 5040, 5045]},
-    {"name": "NZBFinder", "url": "https://nzbfinder.ws", "protocol": "usenet", "default_categories": [5000, 5030, 5040, 5045]},
-    {"name": "Tabula Rasa", "url": "https://www.tabula-rasa.pw", "protocol": "usenet", "default_categories": [5000, 5030, 5040, 5045]},
-    {"name": "altHUB", "url": "https://api.althub.co.za", "protocol": "usenet", "default_categories": [5000, 5030, 5040, 5045]},
-    {"name": "NZB.su", "url": "https://api.nzb.su", "protocol": "usenet", "default_categories": [5000, 5030, 5040, 5045]},
-    {"name": "Custom Newznab", "url": "", "protocol": "usenet", "default_categories": [5000, 5030, 5040, 5045]},
+    {"name": "DOGnzb",        "url": "https://api.dognzb.cr",        "api_path": "/api",         "protocol": "usenet", "default_categories": [5030, 5040]},
+    {"name": "DrunkenSlug",   "url": "https://drunkenslug.com",      "api_path": "/api",         "protocol": "usenet", "default_categories": [5030, 5040]},
+    {"name": "Nzb.life",      "url": "https://api.nzb.life",         "api_path": "/api",         "protocol": "usenet", "default_categories": [5030, 5040]},
+    {"name": "NZBCat",        "url": "https://nzb.cat",              "api_path": "/api",         "protocol": "usenet", "default_categories": [5030, 5040]},
+    {"name": "NZBFinder.ws",  "url": "https://nzbfinder.ws",         "api_path": "/api",         "protocol": "usenet", "default_categories": [5030, 5040, 5045]},
+    {"name": "NZBgeek",       "url": "https://api.nzbgeek.info",     "api_path": "/api",         "protocol": "usenet", "default_categories": [5030, 5040]},
+    {"name": "nzbplanet.net", "url": "https://api.nzbplanet.net",    "api_path": "/api",         "protocol": "usenet", "default_categories": [5030, 5040]},
+    {"name": "SimplyNZBs",    "url": "https://simplynzbs.com",       "api_path": "/api",         "protocol": "usenet", "default_categories": [5030, 5040]},
+    {"name": "Tabula Rasa",   "url": "https://www.tabula-rasa.pw",   "api_path": "/api/v1/api",  "protocol": "usenet", "default_categories": [5030, 5040]},
+    {"name": "altHUB",        "url": "https://api.althub.co.za",     "api_path": "/api",         "protocol": "usenet", "default_categories": [5030, 5040]},
+    {"name": "Custom Newznab","url": "",                              "api_path": "/api",         "protocol": "usenet", "default_categories": [5030, 5040]},
 ]
 TV_INDEXER_DEFAULT_CATEGORIES = [5000, 5010, 5020, 5030, 5040, 5045, 5050, 5060, 5070]
+
+# TV preset lookup keyed by movie-style preset slug (used by sync to map presets)
+TV_INDEXER_PRESETS_BY_KEY = {}
+for _tp in TV_INDEXER_PRESETS:
+    _key = (_tp.get('name') or '').strip().lower().replace(' ', '')
+    TV_INDEXER_PRESETS_BY_KEY[_key] = _tp
+# Explicit aliases matching movie preset keys to TV preset names
+for _alias, _name in [
+    ('dognzb', 'DOGnzb'), ('drunkenslug', 'DrunkenSlug'), ('nzb.su', 'Nzb.life'),
+    ('nzb.life', 'Nzb.life'), ('nzbcat', 'NZBCat'), ('nzbfinder.ws', 'NZBFinder.ws'),
+    ('nzbfinder', 'NZBFinder.ws'), ('nzbgeek', 'NZBgeek'), ('nzbplanet.net', 'nzbplanet.net'),
+    ('simplynzbs', 'SimplyNZBs'), ('tabularasa', 'Tabula Rasa'), ('usenetcrawler', 'Usenet Crawler'),
+    ('althub', 'altHUB'),
+]:
+    _match = next((p for p in TV_INDEXER_PRESETS if p.get('name') == _name), None)
+    if _match:
+        TV_INDEXER_PRESETS_BY_KEY[_alias] = _match
 
 # Backward-compat aliases for requestarr, indexer_hunt
 INDEXER_PRESETS = MOVIE_INDEXER_PRESETS
@@ -148,10 +165,31 @@ def _resolve_indexer_api_url(indexer_dict):
 
 def resolve_tv_indexer_api_url(indexer):
     """Resolve full API URL for TV indexer. Used by tv_hunt discovery."""
-    url = (indexer.get('api_url') or indexer.get('url') or '').strip().rstrip('/')
+    api_path = (indexer.get('api_path') or '').strip()
+    url = (indexer.get('url') or '').strip().rstrip('/')
+    api_url = (indexer.get('api_url') or '').strip().rstrip('/')
+
+    # Prefer explicit api_url if it already contains an API path
+    if api_url:
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(api_url)
+            if '/api' in (parsed.path or '').lower():
+                return api_url
+        except Exception:
+            pass
+        # api_url provided but no /api in path – use it as base
+        if not url:
+            url = api_url
+
     if not url:
         return ''
-    # Check if /api is already in the URL path (not in the hostname)
+
+    # If api_path is explicitly set (e.g. '/api/v1/api' for Tabula Rasa), use it
+    if api_path:
+        return url + api_path
+
+    # Auto-detect: append /api if not already in the URL path
     try:
         from urllib.parse import urlparse
         parsed = urlparse(url)
@@ -424,12 +462,15 @@ def register_tv_indexers_routes(bp, get_instance_id):
                 cats = _filter_categories_tv(cats) or TV_INDEXER_DEFAULT_CATEGORIES
             else:
                 cats = TV_INDEXER_DEFAULT_CATEGORIES
+            preset = (data.get('preset') or 'manual').strip().lower()
             new_indexer = {
                 'id': str(_uuid.uuid4())[:8],
                 'name': (data.get('name') or 'Unnamed').strip(),
                 'display_name': (data.get('display_name') or '').strip(),
+                'preset': preset,
                 'url': (data.get('url') or '').strip(),
                 'api_url': (data.get('api_url') or data.get('url') or '').strip(),
+                'api_path': (data.get('api_path') or '/api').strip(),
                 'api_key': (data.get('api_key') or '').strip(),
                 'protocol': (data.get('protocol') or 'usenet').strip().lower(),
                 'categories': cats,
@@ -454,7 +495,7 @@ def register_tv_indexers_routes(bp, get_instance_id):
             indexers = _get_config(instance_id)
             for idx in indexers:
                 if idx.get('id') == indexer_id:
-                    for key in ('name', 'display_name', 'url', 'api_url', 'api_key', 'protocol', 'enabled'):
+                    for key in ('name', 'display_name', 'preset', 'url', 'api_url', 'api_path', 'api_key', 'protocol', 'enabled'):
                         if key in data:
                             idx[key] = data[key]
                     if 'priority' in data:

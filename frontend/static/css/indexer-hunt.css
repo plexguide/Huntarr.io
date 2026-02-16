@@ -589,7 +589,7 @@
     margin-bottom: 0;
 }
 
-/* Connection status in editor: rounded pill like Sonarr/app settings */
+/* Connection status in editor: rounded pill */
 #indexer-hunt-section #ih-connection-status-container .connection-status {
     display: inline-flex;
     align-items: center;

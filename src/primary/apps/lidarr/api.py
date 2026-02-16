@@ -203,7 +203,7 @@ def get_tracks(api_url: str, api_key: str, api_timeout: int, album_id: Optional[
 
 def get_queue(api_url: str, api_key: str, api_timeout: int) -> List:
     """Get the current queue from Lidarr (handles pagination)."""
-    # Lidarr v1 queue endpoint supports pagination, unlike Sonarr v3's simple list
+    # Lidarr v1 queue endpoint supports pagination
     all_records = []
     page = 1
     page_size = 1000 # Request large page size
@@ -863,7 +863,7 @@ def get_quality_profiles(api_url: str, api_key: str, api_timeout: int) -> Option
         lidarr_logger.debug("Fetching quality profiles from Lidarr...")
         
         # Use the qualityProfile endpoint - this doesn't count toward API limits since it's configuration data
-        # Note: Lidarr uses API v1, not v3 like Sonarr/Radarr
+        # Note: Lidarr uses API v1, not v3
         profiles = arr_request(api_url, api_key, api_timeout, "qualityProfile", count_api=False)
         
         if profiles is None:

@@ -1,7 +1,7 @@
 """
 NZB Hunt Post-Processor - Handles extraction and cleanup after download.
 
-Implements the same post-processing pipeline as SABnzbd:
+Post-processing pipeline:
   1. par2 verification and repair (if par2 files exist)
   2. RAR extraction (if RAR files exist)
   3. Cleanup of source archives and par2 files
