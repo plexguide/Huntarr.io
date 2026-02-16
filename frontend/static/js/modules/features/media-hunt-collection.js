@@ -469,6 +469,9 @@
 
             if (status === 'available') card.classList.add('in-library');
 
+            var moviePct = status === 'available' ? 100 : 0;
+            var movieBarClass = 'episode-progress-bar' + (moviePct >= 100 ? ' complete' : ' empty');
+
             card.innerHTML = '<div class="media-card-poster">' +
                 '<div class="media-card-status-badge ' + statusClass + '"><i class="fas fa-' + statusIcon + '"></i></div>' +
                 '<img src="' + posterUrl + '" alt="' + title + '" onerror="this.src=\'./static/images/blackout.jpg\'">' +
@@ -477,6 +480,9 @@
                 '<div class="media-card-overlay-content">' +
                 '<div class="media-card-overlay-year">' + year + '</div>' +
                 '</div></div>' +
+                '</div>' +
+                '<div class="' + movieBarClass + '">' +
+                '<div class="episode-progress-fill" style="width:' + moviePct + '%"></div>' +
                 '</div>' +
                 '<div class="media-card-info">' +
                 '<div class="media-card-title" title="' + title + '">' + titleRaw + '</div>' +
@@ -965,10 +971,20 @@
                 var title = series.title || 'Unknown';
                 var year = (series.first_air_date || '').substring(0, 4);
                 var episodeCount = 0;
+                var availableCount = 0;
                 var seasonCount = (series.seasons || []).length;
                 (series.seasons || []).forEach(function(s) {
-                    episodeCount += (s.episodes || []).length;
+                    (s.episodes || []).forEach(function(ep) {
+                        episodeCount++;
+                        if (ep.status === 'available' || ep.file_path) {
+                            availableCount++;
+                        }
+                    });
                 });
+                var pct = episodeCount > 0 ? Math.round((availableCount / episodeCount) * 100) : 0;
+                var barClass = 'episode-progress-bar';
+                if (pct >= 100) barClass += ' complete';
+                else if (pct === 0) barClass += ' empty';
 
                 card.innerHTML =
                     '<div class="media-poster">' +
@@ -976,6 +992,10 @@
                         '<div class="media-overlay">' +
                             '<span style="font-size:0.85em;color:#ddd;">' + seasonCount + ' Season' + (seasonCount !== 1 ? 's' : '') + ' &middot; ' + episodeCount + ' Ep' + (episodeCount !== 1 ? 's' : '') + '</span>' +
                         '</div>' +
+                    '</div>' +
+                    '<div class="' + barClass + '"' +
+                        ' title="' + availableCount + ' / ' + episodeCount + ' episodes (' + pct + '%)">' +
+                        '<div class="episode-progress-fill" style="width:' + pct + '%"></div>' +
                     '</div>' +
                     '<div class="media-info">' +
                         '<div class="media-title">' + HuntarrUtils.escapeHtml(title) + '</div>' +
@@ -1403,11 +1423,33 @@
             var statusClass = status === 'available' ? 'complete' : 'partial';
             var statusIcon = status === 'available' ? 'check' : 'bookmark';
             if (status === 'available') card.classList.add('in-library');
+
+            // Progress bar for combined view
+            var combPct = 0;
+            var combTotal = 0;
+            var combAvail = 0;
+            if (item.media_type === 'tv' && item.seasons) {
+                (item.seasons || []).forEach(function(s) {
+                    (s.episodes || []).forEach(function(ep) {
+                        combTotal++;
+                        if (ep.status === 'available' || ep.file_path) combAvail++;
+                    });
+                });
+                combPct = combTotal > 0 ? Math.round((combAvail / combTotal) * 100) : 0;
+            } else {
+                combPct = status === 'available' ? 100 : 0;
+            }
+            var combBarClass = 'episode-progress-bar' + (combPct >= 100 ? ' complete' : (combPct === 0 ? ' empty' : ''));
+
             card.innerHTML = '<div class="media-card-poster">' +
                 '<div class="media-card-status-badge ' + statusClass + '"><i class="fas fa-' + statusIcon + '"></i></div>' +
                 '<img src="' + posterUrl + '" alt="' + title + '" onerror="this.src=\'./static/images/blackout.jpg\'">' +
                 '<div class="media-card-overlay"><div class="media-card-overlay-title">' + title + '</div><div class="media-card-overlay-content"><div class="media-card-overlay-year">' + year + '</div></div></div>' +
-                '</div><div class="media-card-info"><div class="media-card-title" title="' + title + '">' + title + '</div><div class="media-card-meta"><span class="media-card-year">' + year + '</span> ' + typeBadge + '</div></div>';
+                '</div>' +
+                '<div class="' + combBarClass + '"' + (item.media_type === 'tv' ? ' title="' + combAvail + ' / ' + combTotal + ' episodes (' + combPct + '%)"' : '') + '>' +
+                '<div class="episode-progress-fill" style="width:' + combPct + '%"></div>' +
+                '</div>' +
+                '<div class="media-card-info"><div class="media-card-title" title="' + title + '">' + title + '</div><div class="media-card-meta"><span class="media-card-year">' + year + '</span> ' + typeBadge + '</div></div>';
             card.style.cursor = 'pointer';
             card.onclick = function(e) {
                 if (e.target.closest('.media-card-delete-btn')) return;
