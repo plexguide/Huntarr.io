@@ -175,7 +175,7 @@
 
 /* Instance selector */
 .mh-hero-instance {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 8px;
     margin-bottom: 14px;
