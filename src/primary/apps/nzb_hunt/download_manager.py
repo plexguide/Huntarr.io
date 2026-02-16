@@ -18,7 +18,8 @@ import shutil
 import hashlib
 import threading
 from collections import deque
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from queue import Queue, Empty
+from concurrent.futures import ThreadPoolExecutor
 import requests
 from typing import Optional, List, Dict, Any, Tuple
 from datetime import datetime, timezone
@@ -326,14 +327,15 @@ class NZBHuntDownloadManager:
         self._connection_lock = threading.Lock()
         self._connection_cache_seconds = 120
 
-        # Speed tracking – rolling window with batched updates
+        # Speed tracking – rolling window with monotonic accumulator.
+        # Worker threads do lock-free += on _speed_accum_bytes (monotonic).
+        # The drain thread computes the delta since last flush — no read-
+        # then-clear race, so speed is never under-reported.
         self._speed_lock = threading.Lock()
         self._speed_samples: deque = deque()
         self._speed_window = 3.0  # seconds
-        # Accumulator for lock-free batching: worker threads add bytes here
-        # without locking; the main thread flushes to _speed_samples periodically.
-        self._speed_accum_bytes = 0
-        self._speed_accum_time = 0.0
+        self._speed_accum_bytes = 0       # monotonically increasing (workers +=)
+        self._speed_last_flushed = 0      # last value flushed (drain thread only)
         
         # Rate limiter (token-bucket, thread-safe)
         self._rate_limiter = _RateLimiter()
@@ -755,30 +757,24 @@ class NZBHuntDownloadManager:
     # ── Rolling Speed ─────────────────────────────────────────────
     
     def _record_speed(self, nbytes: int):
-        """Record a downloaded chunk for rolling speed calculation.
-        
-        Lock-free fast path: accumulates bytes in an integer that is
-        periodically flushed to the deque by _get_rolling_speed().
-        With 30+ download threads, this eliminates ~95% of lock acquisitions
-        compared to per-segment locking.
-        """
+        """Record downloaded bytes — lock-free, called from worker threads."""
         self._speed_accum_bytes += nbytes
-        self._speed_accum_time = time.time()
     
     def _get_rolling_speed(self) -> int:
         """Return current speed in bytes/sec from rolling window.
         
-        Also flushes the accumulated bytes from worker threads into the
-        rolling-window deque.  Called from the main drain loop (~every 4
-        segments) so contention is minimal.
+        Uses monotonic accumulator: reads the current total, computes
+        delta since last flush.  No read-then-clear race — speed is
+        never under-reported even under heavy thread contention.
         """
         now = time.time()
-        # Flush accumulated bytes into a single deque entry
-        accum = self._speed_accum_bytes
-        if accum > 0:
-            self._speed_accum_bytes = 0
+        # Delta since last flush (monotonic — never loses bytes)
+        current = self._speed_accum_bytes
+        delta = current - self._speed_last_flushed
+        if delta > 0:
+            self._speed_last_flushed = current
             with self._speed_lock:
-                self._speed_samples.append((now, accum))
+                self._speed_samples.append((now, delta))
         with self._speed_lock:
             cutoff = now - self._speed_window
             while self._speed_samples and self._speed_samples[0][0] < cutoff:
@@ -1381,21 +1377,21 @@ class NZBHuntDownloadManager:
                 return 0, None, "", None, None
             
             try:
-                # Select newsgroup on our persistent connection
+                # Select newsgroup — NNTPConnection caches current group
+                # so this is a no-op when already in the right group.
                 if groups:
                     for group in groups:
                         if conn.select_group(group):
                             break
                 
-                # Download article using our held connection (I/O bound, releases GIL)
                 data = conn.download_article(message_id)
                 
                 if data is not None:
                     if pool:
                         pool.add_bandwidth(len(data))
                     
-                    # Mark connection as OK
-                    with self._connection_lock:
+                    # Mark connection as OK (skip lock if already set)
+                    if not self._connection_ok:
                         self._connection_ok = True
                         self._connection_check_time = time.time()
                     
@@ -1584,7 +1580,7 @@ class NZBHuntDownloadManager:
             # (releases GIL) and sabyenc3 decode (C extension, releases GIL),
             # so many threads cause minimal GIL contention.
             max_workers = self._nntp.get_total_max_connections()
-            max_workers = max(4, min(max_workers, 200))
+            max_workers = max(4, min(max_workers, 500))
             
             # Sort files: data files first, par2 files last
             # This ensures the actual content downloads before recovery data
@@ -1610,97 +1606,106 @@ class NZBHuntDownloadManager:
             MIN_SEGMENTS_FOR_PCT_CHECK = 200  # Need at least this many before checking %
             aborted = False
             
-            # ── Direct-Write download pipeline with back-pressure ──
-            # Writes decoded segments directly to output files at their yEnc
-            # byte offset using seek()+write(), eliminating the intermediate
-            # segment-cache-file layer and the separate assembly step.
+            # ── High-performance Direct-Write pipeline ──
             #
-            # Benefits over segment-cache approach:
-            #   • Half the disk I/O (no write-to-cache then read-back-to-assemble)
-            #   • No thousands of small .seg files (reduces syscalls + inode usage)
-            #   • Output files are ready instantly when all segments complete
-            #   • Pre-allocated files get contiguous disk blocks (less fragmentation)
-            #   • Zero-filled gaps from pre-allocation are perfect for par2 repair
+            # Key design decisions for maximum throughput:
             #
-            # Falls back to segment-cache for the rare case where yEnc position
-            # headers are missing (non-yEnc articles or malformed headers).
-            #
-            # Memory is still bounded by max_inflight (back-pressure window).
+            # 1. Completion Queue (O(1) drain, no as_completed overhead)
+            # 2. os.pwrite() — single atomic syscall, no buffering layer
+            # 3. NO pre-allocation — posix_fallocate on FUSE/btrfs writes
+            #    zeros for the entire file (8GB = 8GB of zeros = 30s stall).
+            #    pwrite() extends the file automatically; sparse holes are
+            #    zero-filled by the OS and perfect for par2 repair.
+            # 4. Pre-open ALL fds before download — no mkdir/open in drain path
+            # 5. Batch drain — drain ALL available futures per cycle
+            # 6. O(1) file completion, list-based tracking, time-based saves
 
-            # Segment cache dir — only used as fallback when direct write unavailable
             seg_cache_dir = os.path.join(temp_path, "_segments")
 
-            # Build global segment iterator (lazy — not a list)
             def _segment_iter():
                 for fi, nzb_file in enumerate(sorted_files):
                     for seg in nzb_file.segments:
                         yield (fi, seg, nzb_file.groups)
 
+            n_files = len(sorted_files)
             total_segments = sum(len(f.segments) for f in sorted_files)
             logger.info(f"[{item.id}] Downloading {total_segments} segments from "
-                        f"{len(sorted_files)} files ({max_workers} workers) [DirectWrite]")
+                        f"{n_files} files ({max_workers} workers) [DirectWrite v3]")
 
-            # Per-file tracking (lightweight — no segment data in memory)
-            file_completed = {}      # file_idx -> int (completed segments)
-            file_failed_count = {}   # file_idx -> int (failed segment count)
-            file_total_segs = {}     # file_idx -> int (total segments in file)
-            for file_idx in range(len(sorted_files)):
-                file_completed[file_idx] = 0
-                file_failed_count[file_idx] = 0
-                file_total_segs[file_idx] = len(sorted_files[file_idx].segments)
+            # ── List-based per-file tracking ──
+            file_completed  = [0] * n_files
+            file_failed_cnt = [0] * n_files
+            file_total_segs = [len(sorted_files[i].segments) for i in range(n_files)]
+            file_handled    = [False] * n_files
 
-            _save_counter = 0       # Throttled state saves
+            _last_save_time = time.time()
+            _SAVE_INTERVAL  = 5.0
 
-            # ── Direct-Write file handles ──
-            # One pre-allocated output file per NZB file, opened lazily on
-            # first segment.  Segments seek() to their yEnc offset and write
-            # directly — no intermediate files.
-            _WRITE_BUF = 1 << 20  # 1 MB write buffer (reduces syscalls)
-            dw_handles = {}     # file_idx -> open file handle (buffered)
-            dw_allocated = {}   # file_idx -> bool (pre-allocated?)
-            dw_used = {}        # file_idx -> bool (at least one direct write succeeded)
-            dw_fallback = set() # file indices that fell back to segment cache
-            dw_written_bytes = {}  # file_idx -> int (actual bytes written, for truncation)
+            # ── Direct-Write via OS file descriptors ──
+            _has_pwrite = hasattr(os, 'pwrite')
+            dw_fds      = [None] * n_files  # raw OS fd (int) or None
+            dw_fhs      = [None] * n_files  # Python file obj (pwrite fallback)
+            dw_used     = [False] * n_files
+            dw_max_pos  = [0] * n_files
+            dw_fallback = set()
 
-            def _dw_open(fi, yenc_file_size):
-                """Open (or return existing) output file for direct write."""
-                if fi in dw_handles and dw_handles[fi] is not None:
-                    return dw_handles[fi]
-                fpath = os.path.join(temp_path, sorted_files[fi].filename)
-                os.makedirs(os.path.dirname(fpath) if os.path.dirname(fpath) != temp_path else temp_path, exist_ok=True)
-                fh = open(fpath, "wb+", buffering=_WRITE_BUF)
-                dw_handles[fi] = fh
-                dw_used[fi] = False
-                dw_written_bytes[fi] = 0
-                # Pre-allocate to the known decoded size (zero-filled gaps
-                # are ideal for par2 repair if segments are missing)
-                if yenc_file_size and yenc_file_size > 0:
-                    try:
-                        fh.truncate(yenc_file_size)
-                        dw_allocated[fi] = True
-                    except OSError:
-                        dw_allocated[fi] = False
+            # ── Pre-open ALL output files before download starts ──
+            # This moves all mkdir + open() syscalls OUT of the drain loop.
+            # No pre-allocation (no fallocate/truncate) — pwrite extends
+            # the file on demand; the OS handles sparse regions.
+            for _pre_fi in range(n_files):
+                try:
+                    fpath = os.path.join(temp_path, sorted_files[_pre_fi].filename)
+                    fdir = os.path.dirname(fpath)
+                    if fdir and fdir != temp_path:
+                        os.makedirs(fdir, exist_ok=True)
+                    if _has_pwrite:
+                        dw_fds[_pre_fi] = os.open(fpath, os.O_CREAT | os.O_RDWR, 0o644)
+                    else:
+                        dw_fhs[_pre_fi] = open(fpath, "wb+", buffering=1 << 20)
+                except Exception as _oe:
+                    logger.debug(f"[{item.id}] Pre-open failed for file {_pre_fi}: {_oe}")
+
+            def _dw_write(fi, offset, data):
+                """Write data at offset. pwrite = 1 syscall, no seek."""
+                fd = dw_fds[fi]
+                if fd is not None:
+                    os.pwrite(fd, data, offset)
                 else:
-                    dw_allocated[fi] = False
-                return fh
+                    fh = dw_fhs[fi]
+                    if fh is not None:
+                        fh.seek(offset)
+                        fh.write(data)
+
+            def _dw_finalize(fi):
+                """Close a direct-write file, truncate to actual written extent."""
+                fd = dw_fds[fi]
+                if fd is not None:
+                    try:
+                        max_pos = dw_max_pos[fi]
+                        if max_pos > 0:
+                            os.ftruncate(fd, max_pos)
+                        os.close(fd)
+                    except Exception:
+                        pass
+                    dw_fds[fi] = None
+                fh = dw_fhs[fi]
+                if fh is not None:
+                    try:
+                        max_pos = dw_max_pos[fi]
+                        if max_pos > 0:
+                            fh.truncate(max_pos)
+                        fh.close()
+                    except Exception:
+                        pass
+                    dw_fhs[fi] = None
 
             def _dw_close_all():
-                """Close all direct-write file handles."""
-                for fi, fh in dw_handles.items():
-                    if fh is not None:
-                        try:
-                            # Truncate to actual written extent if we tracked it
-                            # and didn't pre-allocate to the correct size
-                            wb = dw_written_bytes.get(fi, 0)
-                            if wb > 0 and not dw_allocated.get(fi):
-                                fh.truncate(wb)
-                            fh.close()
-                        except Exception:
-                            pass
-                dw_handles.clear()
+                for fi in range(n_files):
+                    _dw_finalize(fi)
 
             def _seg_cache_write(fi, seg_d, decoded):
-                """Fallback: write segment to cache file (old approach)."""
+                """Fallback: write segment to cache file."""
                 dw_fallback.add(fi)
                 fsd = os.path.join(seg_cache_dir, str(fi))
                 os.makedirs(fsd, exist_ok=True)
@@ -1708,52 +1713,54 @@ class NZBHuntDownloadManager:
                 with open(seg_path, "wb") as sf:
                     sf.write(decoded)
 
-            # Back-pressure: limit in-flight futures to bound memory usage.
-            # Each decoded segment is ~750KB, so 64 in-flight ≈ 48MB peak.
-            max_inflight = max(max_workers * 4, 64)
+            max_inflight = max(max_workers * 4, 128)
+
+            # ── Completion Queue ──
+            done_q: Queue = Queue()
+
+            def _on_done(fut):
+                done_q.put_nowait(fut)
 
             executor = ThreadPoolExecutor(max_workers=max_workers)
             try:
-                pending = {}  # future -> (file_idx, seg)  — bounded to max_inflight
+                pending = {}
                 seg_source = _segment_iter()
                 segments_exhausted = False
 
-                def _drain_one():
-                    """Wait for one future to complete and process it. Returns False if aborted."""
-                    nonlocal aborted, consecutive_failures, _save_counter
-                    done_iter = as_completed(pending)
-                    future = next(done_iter)
+                def _process_future(future):
+                    """Process one completed future. Returns False if aborted."""
+                    nonlocal aborted, consecutive_failures, _last_save_time
+
+                    if future not in pending:
+                        return True
                     file_idx_d, seg_d = pending.pop(future)
+
                     try:
                         nbytes, decoded, server_name, yenc_begin, yenc_size = future.result()
-                        # Free the future's internal result cache immediately
                         future._result = None
+
                         if decoded is not None:
-                            # ── Direct Write: seek to yEnc offset, write in place ──
                             if yenc_begin is not None and yenc_begin > 0:
                                 try:
-                                    fh = _dw_open(file_idx_d, yenc_size)
-                                    fh.seek(yenc_begin - 1)  # yEnc begin is 1-based
-                                    fh.write(decoded)
+                                    _dw_write(file_idx_d, yenc_begin - 1, decoded)
                                     dw_used[file_idx_d] = True
                                     end_pos = yenc_begin - 1 + len(decoded)
-                                    if end_pos > dw_written_bytes.get(file_idx_d, 0):
-                                        dw_written_bytes[file_idx_d] = end_pos
+                                    if end_pos > dw_max_pos[file_idx_d]:
+                                        dw_max_pos[file_idx_d] = end_pos
                                 except Exception as we:
-                                    logger.debug(f"[{item.id}] Direct write failed, using cache: {we}")
+                                    logger.debug(f"[{item.id}] pwrite failed, using cache: {we}")
                                     try:
                                         _seg_cache_write(file_idx_d, seg_d, decoded)
                                     except Exception as we2:
                                         logger.error(f"[{item.id}] Segment cache also failed: {we2}")
                             else:
-                                # No yEnc position — fall back to segment cache
                                 try:
                                     _seg_cache_write(file_idx_d, seg_d, decoded)
                                 except Exception as we:
                                     logger.error(f"[{item.id}] Failed to cache segment: {we}")
                             del decoded
 
-                            file_completed[file_idx_d] = file_completed.get(file_idx_d, 0) + 1
+                            file_completed[file_idx_d] += 1
                             consecutive_failures = 0
 
                             item.completed_segments += 1
@@ -1762,7 +1769,7 @@ class NZBHuntDownloadManager:
                                 item.downloaded_bytes + nbytes
                             )
 
-                            if item.completed_segments & 3 == 0:
+                            if item.completed_segments & 15 == 0:
                                 speed = self._get_rolling_speed()
                                 item.speed_bps = speed
                                 remaining = max(0, item.total_bytes - item.downloaded_bytes)
@@ -1776,7 +1783,7 @@ class NZBHuntDownloadManager:
                                     "Assembling files (par2 repair needed)" if item.failed_segments > 0
                                     else "Assembling files"
                                 )
-                                item.status_message = f"{msg} ({item.completed_files}/{len(sorted_files)})"
+                                item.status_message = f"{msg} ({item.completed_files}/{n_files})"
                             elif item.failed_segments > 0:
                                 mb_missing = item.missing_bytes / (1024 * 1024)
                                 if mb_missing >= 1.0:
@@ -1784,13 +1791,45 @@ class NZBHuntDownloadManager:
                                 else:
                                     item.status_message = f"Missing articles: {item.failed_segments}"
 
-                            _save_counter += 1
-                            if _save_counter >= 500:
-                                _save_counter = 0
+                            now = time.time()
+                            if now - _last_save_time >= _SAVE_INTERVAL:
+                                _last_save_time = now
                                 self._save_state()
+
+                            # O(1) file completion check
+                            if (not file_handled[file_idx_d] and
+                                    file_completed[file_idx_d] >= file_total_segs[file_idx_d]):
+                                file_handled[file_idx_d] = True
+                                if dw_used[file_idx_d] and file_idx_d not in dw_fallback:
+                                    _dw_finalize(file_idx_d)
+                                    item.completed_files += 1
+                                    ff = file_failed_cnt[file_idx_d]
+                                    fname = sorted_files[file_idx_d].filename
+                                    fpath = os.path.join(temp_path, fname)
+                                    fsize = os.path.getsize(fpath) if os.path.exists(fpath) else 0
+                                    if ff > 0:
+                                        logger.info(f"[{item.id}] DirectWrite: {fname} ({fsize:,} bytes, {ff} gaps)")
+                                    else:
+                                        logger.info(f"[{item.id}] DirectWrite: {fname} ({fsize:,} bytes)")
+                                    msg = "Assembling files (par2 repair needed)" if item.failed_segments > 0 else "Assembling files"
+                                    item.status_message = f"{msg} ({item.completed_files}/{n_files})"
+                                elif file_idx_d in dw_fallback:
+                                    _dw_finalize(file_idx_d)
+                                    if dw_used[file_idx_d]:
+                                        try:
+                                            p = os.path.join(temp_path, sorted_files[file_idx_d].filename)
+                                            if os.path.exists(p):
+                                                os.remove(p)
+                                        except Exception:
+                                            pass
+                                    self._assemble_file_from_cache(
+                                        item, sorted_files, file_idx_d,
+                                        seg_cache_dir, temp_path,
+                                        {file_idx_d: file_failed_cnt[file_idx_d]}
+                                    )
                         else:
-                            file_failed_count[file_idx_d] = file_failed_count.get(file_idx_d, 0) + 1
-                            file_completed[file_idx_d] = file_completed.get(file_idx_d, 0) + 1
+                            file_failed_cnt[file_idx_d] += 1
+                            file_completed[file_idx_d] += 1
                             item.failed_segments += 1
                             consecutive_failures += 1
                             item.missing_bytes += seg_d.bytes if seg_d.bytes else 0
@@ -1818,83 +1857,46 @@ class NZBHuntDownloadManager:
                                             f"- download cannot be completed"
                                         )
                                         aborted = True
+
+                            if (not file_handled[file_idx_d] and
+                                    file_completed[file_idx_d] >= file_total_segs[file_idx_d]):
+                                file_handled[file_idx_d] = True
+                                if dw_used[file_idx_d] and file_idx_d not in dw_fallback:
+                                    _dw_finalize(file_idx_d)
+                                    item.completed_files += 1
+                                    fname = sorted_files[file_idx_d].filename
+                                    logger.info(f"[{item.id}] DirectWrite: {fname} ({file_failed_cnt[file_idx_d]} failed segs)")
+                                    msg = "Assembling files (par2 repair needed)" if item.failed_segments > 0 else "Assembling files"
+                                    item.status_message = f"{msg} ({item.completed_files}/{n_files})"
+                                elif file_idx_d in dw_fallback:
+                                    _dw_finalize(file_idx_d)
+                                    self._assemble_file_from_cache(
+                                        item, sorted_files, file_idx_d,
+                                        seg_cache_dir, temp_path,
+                                        {file_idx_d: file_failed_cnt[file_idx_d]}
+                                    )
+
                     except MemoryError:
                         logger.error(f"[{item.id}] Out of memory — pausing downloads")
                         self._paused_global = True
                         aborted = True
                     except Exception as e:
-                        file_failed_count[file_idx_d] = file_failed_count.get(file_idx_d, 0) + 1
-                        file_completed[file_idx_d] = file_completed.get(file_idx_d, 0) + 1
+                        file_failed_cnt[file_idx_d] += 1
+                        file_completed[file_idx_d] += 1
                         item.failed_segments += 1
                         consecutive_failures += 1
                         item.missing_bytes += seg_d.bytes if seg_d.bytes else 0
                         logger.debug(f"[{item.id}] Segment {seg_d.number} error: {e}")
 
-                    # Null out local refs so GC can collect the future
                     future = None
-
-                    # For direct-write files that completed all segments:
-                    # flush + close the handle (file is immediately ready).
-                    # For fallback files: assemble from segment cache.
-                    for fi_check in list(range(len(sorted_files))):
-                        if file_completed.get(fi_check, 0) < file_total_segs.get(fi_check, 1):
-                            continue
-                        # File fi_check has all segments done
-                        if fi_check in dw_used and dw_used.get(fi_check) and fi_check not in dw_fallback:
-                            # Direct-write file — already complete on disk, just close
-                            fh = dw_handles.get(fi_check)
-                            if fh is not None:
-                                try:
-                                    fh.flush()
-                                    fh.close()
-                                except Exception:
-                                    pass
-                                dw_handles[fi_check] = None
-                            item.completed_files += 1
-                            ff = file_failed_count.get(fi_check, 0)
-                            fname = sorted_files[fi_check].filename
-                            fpath = os.path.join(temp_path, fname)
-                            fsize = os.path.getsize(fpath) if os.path.exists(fpath) else 0
-                            if ff > 0:
-                                logger.info(f"[{item.id}] DirectWrite: {fname} ({fsize:,} bytes, {ff} gaps zero-filled)")
-                            else:
-                                logger.info(f"[{item.id}] DirectWrite: {fname} ({fsize:,} bytes)")
-                            msg = "Assembling files (par2 repair needed)" if item.failed_segments > 0 else "Assembling files"
-                            item.status_message = f"{msg} ({item.completed_files}/{len(sorted_files)})"
-                            self._save_state()
-                            # Mark as handled so we don't process again
-                            file_total_segs[fi_check] = -1
-                        elif fi_check in dw_fallback:
-                            # Mixed or fallback file — close DW handle, assemble from cache
-                            fh = dw_handles.get(fi_check)
-                            if fh is not None:
-                                try:
-                                    fh.close()
-                                except Exception:
-                                    pass
-                                dw_handles[fi_check] = None
-                                # Remove the partial direct-write file so assembly
-                                # can create a clean one
-                                try:
-                                    p = os.path.join(temp_path, sorted_files[fi_check].filename)
-                                    if os.path.exists(p):
-                                        os.remove(p)
-                                except Exception:
-                                    pass
-                            self._assemble_file_from_cache(
-                                item, sorted_files, fi_check,
-                                seg_cache_dir, temp_path, file_failed_count
-                            )
-                            file_total_segs[fi_check] = -1
-
                     return not aborted
 
-                # Main download loop: submit segments with back-pressure
+                # ── Main download loop: batch-drain + batch-submit ──
                 while not segments_exhausted and not aborted:
                     if item.state == STATE_PAUSED or self._paused_global:
                         break
 
-                    # Fill submission window up to max_inflight
+                    # Fill submission window
                     while len(pending) < max_inflight and not segments_exhausted:
                         if item.state == STATE_PAUSED or self._paused_global:
                             break
@@ -1907,66 +1909,75 @@ class NZBHuntDownloadManager:
                                 seg.message_id, groups, item,
                                 max_retries
                             )
+                            future.add_done_callback(_on_done)
                             pending[future] = (file_idx, seg)
-                            future = None  # Don't hold extra ref
+                            future = None
                         except StopIteration:
                             segments_exhausted = True
                             break
 
-                    # Drain at least one completed future (back-pressure)
+                    # ── Batch drain: process ALL available completed futures ──
+                    # Block for the first one, then drain everything else
+                    # that's ready without blocking.  This catches up fast
+                    # after any stall and keeps workers fully saturated.
                     if pending:
-                        if not _drain_one():
+                        first = done_q.get()  # block for at least one
+                        if not _process_future(first):
                             break
+                        # Drain all others that are already done (non-blocking)
+                        while not done_q.empty() and pending:
+                            try:
+                                fut = done_q.get_nowait()
+                                if not _process_future(fut):
+                                    aborted = True
+                                    break
+                            except Empty:
+                                break
 
-                # Drain all remaining futures
+                # Drain remaining
                 while pending and not (item.state == STATE_PAUSED or self._paused_global):
-                    if not _drain_one():
+                    fut = done_q.get()
+                    if not _process_future(fut):
                         break
 
-                # Cancel anything still pending on abort/pause
+                # Cancel outstanding
                 if pending:
                     for f in pending:
                         f.cancel()
                     pending.clear()
 
-                # Shutdown executor — release threads but don't destroy connections
                 executor.shutdown(wait=False, cancel_futures=True)
-                # Release persistent worker connections back to pools (not close!)
                 self._release_held_connections()
-
-                # Close all remaining direct-write handles
                 _dw_close_all()
 
-                # Handle pause
                 if item.state == STATE_PAUSED or self._paused_global:
                     self._save_state(force=True)
                     return
 
-                # Assemble any remaining fallback files that haven't been handled
-                for fi_rem in range(len(sorted_files)):
-                    if file_total_segs.get(fi_rem, 0) == -1:
-                        continue  # Already handled
+                # Assemble any remaining fallback files
+                for fi_rem in range(n_files):
+                    if file_handled[fi_rem]:
+                        continue
                     if item.state == STATE_PAUSED or self._paused_global:
                         self._save_state(force=True)
                         return
                     if fi_rem in dw_fallback:
                         self._assemble_file_from_cache(
                             item, sorted_files, fi_rem,
-                            seg_cache_dir, temp_path, file_failed_count
+                            seg_cache_dir, temp_path,
+                            {fi_rem: file_failed_cnt[fi_rem]}
                         )
 
-                # Clean up segment cache directory (only created if fallback was used)
                 if dw_fallback:
                     try:
                         shutil.rmtree(seg_cache_dir, ignore_errors=True)
                     except Exception:
                         pass
 
-                dw_count = sum(1 for fi in range(len(sorted_files))
-                               if dw_used.get(fi) and fi not in dw_fallback)
-                fb_count = len(dw_fallback)
+                dw_count = sum(1 for fi in range(n_files)
+                               if dw_used[fi] and fi not in dw_fallback)
                 logger.info(f"[{item.id}] Write stats: {dw_count} direct-write, "
-                            f"{fb_count} fallback-assembled")
+                            f"{len(dw_fallback)} fallback-assembled")
             finally:
                 _dw_close_all()
                 executor.shutdown(wait=False, cancel_futures=True)

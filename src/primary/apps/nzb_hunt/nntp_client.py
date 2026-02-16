@@ -183,13 +183,17 @@ class NNTPConnection:
                     break
                 chunks.append(chunk)
                 total += len(chunk)
-                # Only check for terminator in the tail — the terminator is
-                # always at the very end so we only need to check the last chunk.
-                # Check last 5+ bytes across the boundary of last two chunks.
+                # Terminator is always the last 5 bytes.  endswith() is an
+                # O(1) pointer comparison — no scanning like 'in'.  For small
+                # TLS chunks (<5 bytes) we check across the chunk boundary.
                 if total >= 5:
-                    tail = chunk if len(chunk) >= 5 else (chunks[-2][-5:] + chunk if len(chunks) > 1 else chunk)
-                    if terminator in tail[-min(len(tail), 10):]:
-                        break
+                    if len(chunk) >= 5:
+                        if chunk.endswith(terminator):
+                            break
+                    elif len(chunks) > 1:
+                        boundary = chunks[-2][-(5 - len(chunk)):] + chunk
+                        if boundary.endswith(terminator):
+                            break
             
             # Single join (one allocation), then free chunk list
             raw = b"".join(chunks)
@@ -246,9 +250,10 @@ class NNTPConnectionPool:
         self._available: List[NNTPConnection] = []
         self._lock = threading.Lock()
         
-        # Bandwidth tracking (thread-safe)
+        # Bandwidth tracking — lock-free accumulator.  With 80 threads,
+        # a per-segment lock acquisition is significant contention.
+        # CPython's GIL makes simple int += atomic enough for counters.
         self._bandwidth_bytes = 0
-        self._bandwidth_lock = threading.Lock()
     
     def get_connection(self, timeout: float = 30.0) -> Optional[NNTPConnection]:
         """Get an available connection from the pool.
@@ -317,19 +322,16 @@ class NNTPConnectionPool:
         return False, f"Failed to connect to {self.host}:{self.port}"
     
     def add_bandwidth(self, nbytes: int):
-        """Record downloaded bytes for this server (thread-safe)."""
-        with self._bandwidth_lock:
-            self._bandwidth_bytes += nbytes
+        """Record downloaded bytes (lock-free, GIL-atomic)."""
+        self._bandwidth_bytes += nbytes
     
     def get_bandwidth(self) -> int:
         """Get total bytes downloaded through this server."""
-        with self._bandwidth_lock:
-            return self._bandwidth_bytes
+        return self._bandwidth_bytes
     
     def reset_bandwidth(self):
         """Reset bandwidth counter."""
-        with self._bandwidth_lock:
-            self._bandwidth_bytes = 0
+        self._bandwidth_bytes = 0
     
     def get_connection_stats(self) -> Tuple[int, int]:
         """Get (active_connections, max_connections) for this pool."""
