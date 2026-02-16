@@ -8328,6 +8328,11 @@ document.head.appendChild(styleEl);
                 _renderTypePicker();
             });
 
+            // Move modal to body so it sits outside .app-container (avoids being blurred)
+            if (modal.parentNode !== document.body) {
+                document.body.appendChild(modal);
+            }
+
             modal.style.display = 'flex';
             document.body.classList.add('modal-open');
         },
@@ -8459,6 +8464,10 @@ document.head.appendChild(styleEl);
                     intervalSelect.value = String(lst.sync_interval_hours || 12);
 
                     var modal = document.getElementById('import-list-edit-modal');
+                    // Move modal to body so it sits outside .app-container (avoids being blurred)
+                    if (modal && modal.parentNode !== document.body) {
+                        document.body.appendChild(modal);
+                    }
                     modal.style.display = 'flex';
                     document.body.classList.add('modal-open');
                 })

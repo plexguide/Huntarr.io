@@ -161,11 +161,15 @@
     align-items: center;
     justify-content: center;
 }
+body.modal-open .app-container {
+    filter: blur(10px);
+}
 .import-list-modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,.6);
-    backdrop-filter: blur(4px);
+    background: rgba(0,0,0,.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 .import-list-modal-content {
     position: relative;
