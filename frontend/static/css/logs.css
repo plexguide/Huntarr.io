@@ -513,13 +513,8 @@
    ═══════════════════════════════════════════════════════════════════════ */
 
 @media (max-width: 768px) {
-    /* Toolbar stacks vertically */
-    .logs-toolbar-row {
-        flex-wrap: wrap;
-        gap: 8px;
-        padding: 10px 12px;
-    }
-
+    /* Toolbar handles by Universal Mobile Header Truth in components.css */
+    
     .logs-filters {
         width: 100%;
         gap: 6px;

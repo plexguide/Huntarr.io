@@ -708,6 +708,104 @@ textarea::placeholder {
        slide-out (see mobile.css). Desktop sidebar stays full-width with text. */
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   Universal Mobile Header Truth
+   Left-align everything, reduce height by 35%, save button on right
+   ═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+    .reqset-toolbar,
+    .instance-editor-header,
+    .page-header-bar.reqset-toolbar,
+    .logs-toolbar-row,
+    .hm-toolbar-row {
+        padding: 6px 12px !important;
+        justify-content: flex-start !important;
+        min-height: unset !important;
+        height: auto !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 10px !important;
+        margin-bottom: 15px !important;
+    }
+
+    .reqset-toolbar-left,
+    .instance-editor-nav,
+    .logs-toolbar-left,
+    .hm-toolbar-left {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        flex: 1 !important;
+        gap: 10px !important;
+        width: auto !important;
+        min-width: 0 !important;
+    }
+
+    /* Save/Action buttons always on the right */
+    .reqset-toolbar-right,
+    .page-header-bar .reqset-toolbar-right,
+    .instance-editor-actions,
+    .logs-toolbar-right,
+    .hm-toolbar-right {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        flex-shrink: 0 !important;
+        margin-left: auto !important;
+        width: auto !important;
+    }
+
+    /* Standardised Back Button */
+    .reqset-back-btn,
+    .ie-btn-ghost,
+    .back-btn {
+        margin-left: 0 !important;
+        padding: 4px 10px !important;
+        font-size: 11px !important;
+        height: 28px !important;
+        white-space: nowrap !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* Standardised Breadcrumb/Text */
+    .reqset-breadcrumb,
+    .instance-editor-breadcrumb,
+    .page-title {
+        font-size: 11px !important;
+        font-weight: 600 !important;
+        white-space: nowrap !important;
+        display: flex !important;
+        align-items: center !important;
+        margin: 0 !important;
+    }
+    
+    .reqset-breadcrumb span,
+    .ie-breadcrumb-name,
+    .ie-breadcrumb-app {
+        max-width: 140px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .reqset-breadcrumb i,
+    .instance-editor-breadcrumb i {
+        font-size: 10px !important;
+    }
+
+    /* Standardised Save Button */
+    .reqset-save-btn,
+    .page-header-save,
+    .save-btn-dynamic {
+        padding: 4px 12px !important;
+        font-size: 11px !important;
+        height: 28px !important;
+        border-radius: 6px !important;
+    }
+}
+
 @media (max-width: 480px) {
     .action-buttons {
         flex-direction: column;

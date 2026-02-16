@@ -913,20 +913,15 @@ button.reqset-back-btn {
     #mediaHuntInstanceEditorSection .instance-editor-header,
     #movieManagementSection .instance-editor-header,
     #mediaHuntProfilesSection .instance-editor-header {
-        flex-direction: row !important;
-        justify-content: space-between !important;
-        gap: 12px;
-        padding: 12px 14px;
-        border-radius: 12px;
+        /* Handled by Universal Mobile Header Truth in components.css */
     }
 
     .instance-editor-nav {
-        width: auto !important;
-        justify-content: flex-start !important;
+        /* Handled by Universal Mobile Header Truth in components.css */
     }
 
     .instance-editor-breadcrumb {
-        display: none !important;
+        /* Handled by Universal Mobile Header Truth in components.css */
     }
 
     #instanceEditorSection .editor-section,
