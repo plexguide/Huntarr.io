@@ -4757,11 +4757,11 @@ class RequestarrModal {
         const qualitySelect = document.getElementById('modal-quality-profile');
 
         if (titleEl) titleEl.textContent = 'Loading...';
-        if (labelEl) labelEl.textContent = mediaType === 'tv' ? 'Request Series' : 'Request Movie';
+        if (labelEl) labelEl.textContent = mediaType === 'tv' ? 'Add Series' : 'Add Movie';
         if (metaEl) metaEl.textContent = '';
         if (statusContainer) statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-loading"><i class="fas fa-spinner fa-spin"></i> Loading...</span>';
         if (posterImg) posterImg.src = './static/images/blackout.jpg';
-        if (requestBtn) { requestBtn.disabled = true; requestBtn.textContent = 'Request'; requestBtn.classList.remove('disabled', 'success'); }
+        if (requestBtn) { requestBtn.disabled = true; requestBtn.textContent = 'Add to Library'; requestBtn.classList.remove('disabled', 'success'); }
         if (instanceSelect) instanceSelect.innerHTML = '<option value="">Loading...</option>';
         const instanceInfoIcon = document.getElementById('modal-instance-info-icon');
         if (instanceInfoIcon) instanceInfoIcon.style.display = 'none';
@@ -5223,6 +5223,8 @@ class RequestarrModal {
         container.innerHTML = '<span class="mh-req-badge mh-req-badge-loading"><i class="fas fa-spinner fa-spin"></i> Checking...</span>';
 
         const decoded = decodeInstanceValue(instanceName, 'sonarr');
+        const isTVHunt = decoded.appType === 'tv_hunt';
+        const addLabel = isTVHunt ? 'Add to Library' : 'Request';
 
         try {
             const response = await fetch(`./api/requestarr/series-status?tmdb_id=${this.core.currentModalData.tmdb_id}&instance=${encodeURIComponent(decoded.name)}&app_type=${encodeURIComponent(decoded.appType || 'sonarr')}`);
@@ -5235,20 +5237,24 @@ class RequestarrModal {
                     if (requestBtn) { requestBtn.disabled = true; requestBtn.classList.add('disabled'); requestBtn.textContent = 'Complete'; }
                 } else if (status.missing_episodes > 0) {
                     container.innerHTML = `<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-tv"></i> ${status.missing_episodes} missing episodes (${status.available_episodes}/${status.total_episodes})</span>`;
-                    if (requestBtn) { requestBtn.disabled = false; requestBtn.classList.remove('disabled'); requestBtn.textContent = 'Request'; }
+                    if (requestBtn) { requestBtn.disabled = false; requestBtn.classList.remove('disabled'); requestBtn.textContent = addLabel; }
                     this._updateRequestButtonFromRootFolder();
                 } else {
                     container.innerHTML = '<span class="mh-req-badge mh-req-badge-lib"><i class="fas fa-check-circle"></i> In Library</span>';
                     if (requestBtn) { requestBtn.disabled = true; requestBtn.classList.add('disabled'); requestBtn.textContent = 'In Library'; }
                 }
             } else {
-                container.innerHTML = '<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-check-circle"></i> Available to request</span>';
-                if (requestBtn) { requestBtn.disabled = false; requestBtn.classList.remove('disabled'); requestBtn.textContent = 'Request'; }
+                container.innerHTML = isTVHunt
+                    ? '<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-check-circle"></i> Available to add</span>'
+                    : '<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-check-circle"></i> Available to request</span>';
+                if (requestBtn) { requestBtn.disabled = false; requestBtn.classList.remove('disabled'); requestBtn.textContent = addLabel; }
                 this._updateRequestButtonFromRootFolder();
             }
         } catch (error) {
             console.error('[RequestarrModal] Error loading series status:', error);
-            container.innerHTML = '<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-check-circle"></i> Available to request</span>';
+            container.innerHTML = isTVHunt
+                ? '<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-check-circle"></i> Available to add</span>'
+                : '<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-check-circle"></i> Available to request</span>';
         }
     }
 
@@ -5312,8 +5318,8 @@ class RequestarrModal {
     }
 
     /**
-     * When selected instance is Movie Hunt (movies), show "Add to Library" and
-     * the Start search checkbox + Minimum Availability. Otherwise "Request Movie" / "Request".
+     * When selected instance is Movie Hunt or TV Hunt, show "Add to Library" and
+     * the Start search checkbox + relevant fields. Otherwise "Request Movie" / "Request".
      */
     _applyMovieHuntModalMode(instanceValue, isTVShow, labelEl, requestBtn) {
         const wrapMin = document.getElementById('requestarr-modal-min-availability-wrap');
@@ -5322,21 +5328,26 @@ class RequestarrModal {
         const wrapMovieMonitor = document.getElementById('requestarr-modal-movie-monitor-wrap');
         const minSelect = document.getElementById('modal-minimum-availability');
         const startCb = document.getElementById('modal-start-search');
+        const startLabel = wrapStart ? wrapStart.querySelector('span') : null;
         const decoded = instanceValue ? decodeInstanceValue(instanceValue, isTVShow ? 'sonarr' : 'radarr') : {};
         const isMovieHunt = !isTVShow && decoded.appType === 'movie_hunt';
         const isTVHunt = isTVShow && decoded.appType === 'tv_hunt';
+        const isHuntInstance = isMovieHunt || isTVHunt;
         // Use class toggle — .mh-req-field has display:grid!important which overrides inline styles
         if (wrapMin) wrapMin.classList.toggle('mh-hidden', !isMovieHunt);
-        if (wrapStart) wrapStart.classList.toggle('mh-hidden', !isMovieHunt);
+        if (wrapStart) wrapStart.classList.toggle('mh-hidden', !isHuntInstance);
         if (wrapMonitor) wrapMonitor.classList.toggle('mh-hidden', !isTVHunt);
         if (wrapMovieMonitor) wrapMovieMonitor.classList.toggle('mh-hidden', !isMovieHunt);
+        
+        // Update search label text for context
+        if (startLabel) startLabel.textContent = isTVHunt ? 'Start search for missing episodes' : 'Start search for missing movie';
         
         // Use loaded preferences or defaults
         if (minSelect) minSelect.value = this.preferences?.minimum_availability || 'released';
         if (startCb) startCb.checked = this.preferences?.hasOwnProperty('start_search') ? this.preferences.start_search : true;
         
-        if (labelEl) labelEl.textContent = isTVShow ? 'Request Series' : (isMovieHunt ? 'Add to Library' : 'Request Movie');
-        if (requestBtn && !requestBtn.disabled) requestBtn.textContent = isMovieHunt ? 'Add to Library' : 'Request';
+        if (labelEl) labelEl.textContent = isHuntInstance ? 'Add to Library' : (isTVShow ? 'Request Series' : 'Request Movie');
+        if (requestBtn && !requestBtn.disabled) requestBtn.textContent = isHuntInstance ? 'Add to Library' : 'Request';
     }
 
     instanceChanged(instanceName) {
@@ -5452,7 +5463,8 @@ class RequestarrModal {
             const appType = decoded.appType;
 
             requestBtn.disabled = true;
-            requestBtn.textContent = appType === 'movie_hunt' ? 'Adding...' : 'Requesting...';
+            const isHuntApp = appType === 'movie_hunt' || appType === 'tv_hunt';
+            requestBtn.textContent = isHuntApp ? 'Adding...' : 'Requesting...';
             
             const requestData = {
                 tmdb_id: this.core.currentModalData.tmdb_id,
@@ -5477,7 +5489,9 @@ class RequestarrModal {
             }
             if (appType === 'tv_hunt') {
                 const monitorSelect = document.getElementById('modal-monitor');
+                const startCbTV = document.getElementById('modal-start-search');
                 requestData.monitor = (monitorSelect && monitorSelect.value) ? monitorSelect.value : 'all_episodes';
+                requestData.start_search = startCbTV ? startCbTV.checked : true;
             }
 
             const response = await fetch('./api/requestarr/request', {
@@ -5489,10 +5503,10 @@ class RequestarrModal {
             const result = await response.json();
 
             if (result.success) {
-                requestBtn.textContent = appType === 'movie_hunt' ? 'Added \u2713' : 'Requested \u2713';
+                requestBtn.textContent = isHuntApp ? 'Added \u2713' : 'Requested \u2713';
                 requestBtn.classList.add('success');
 
-                const successMsg = result.message || (appType === 'movie_hunt' ? 'Successfully added to library.' : `${isTVShow ? 'Series' : 'Movie'} requested successfully!`);
+                const successMsg = result.message || (isHuntApp ? 'Successfully added to library.' : `${isTVShow ? 'Series' : 'Movie'} requested successfully!`);
                 this.core.showNotification(successMsg, 'success');
 
                 // Immediately sync card badge to "requested" state
@@ -5516,15 +5530,16 @@ class RequestarrModal {
                 this.core.showNotification(errorMsg, 'error');
                 requestBtn.disabled = false;
                 requestBtn.classList.remove('success');
-                requestBtn.textContent = appType === 'movie_hunt' ? 'Add to Library' : 'Request';
+                requestBtn.textContent = isHuntApp ? 'Add to Library' : 'Request';
             }
         } catch (error) {
             console.error('[RequestarrModal] Error submitting request:', error);
             this.core.showNotification(error.message || 'Request failed', 'error');
             requestBtn.disabled = false;
             requestBtn.classList.remove('success');
-            const decoded = !instanceSelect.value ? null : (isTVShow ? { appType: 'sonarr' } : decodeInstanceValue(instanceSelect.value));
-            requestBtn.textContent = (decoded && decoded.appType === 'movie_hunt') ? 'Add to Library' : 'Request';
+            const decoded = !instanceSelect.value ? null : (isTVShow ? decodeInstanceValue(instanceSelect.value, 'sonarr') : decodeInstanceValue(instanceSelect.value));
+            const isHuntFallback = decoded && (decoded.appType === 'movie_hunt' || decoded.appType === 'tv_hunt');
+            requestBtn.textContent = isHuntFallback ? 'Add to Library' : 'Request';
         }
     }
 
