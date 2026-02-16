@@ -247,8 +247,15 @@ def save_settings(app_name: str, settings_data: Dict[str, Any]) -> bool:
                             instance[field] = 0
                             settings_logger.warning(f"{field} for {app_name} instance {i+1} was {original_value}, automatically set to minimum allowed value of 0")
     
-    # Ensure every instance has a stable instance_id (so new instances get one on save, not only when they have API key)
+    # Ensure every instance has an explicit 'enabled' field so .get("enabled", True) never silently re-enables
     _apps_with_instances = ("sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros")
+    if app_name in _apps_with_instances and "instances" in settings_data and isinstance(settings_data["instances"], list):
+        for inst in settings_data["instances"]:
+            if isinstance(inst, dict) and "enabled" not in inst:
+                inst["enabled"] = False
+                settings_logger.info(f"Instance '{inst.get('name', 'Unnamed')}' in {app_name} missing 'enabled' field, defaulting to disabled")
+
+    # Ensure every instance has a stable instance_id (so new instances get one on save, not only when they have API key)
     if app_name in _apps_with_instances and "instances" in settings_data and isinstance(settings_data["instances"], list):
         try:
             from src.primary.utils.instance_id import generate_instance_id

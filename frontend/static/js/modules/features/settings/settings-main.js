@@ -275,7 +275,7 @@ window.HuntarrSettings = {
                         name: name?.value.trim() || `Instance ${index + 1}`,
                         api_url: window.HuntarrHelpers ? window.HuntarrHelpers.cleanUrlString(url.value) : url.value.trim(),
                         api_key: key.value.trim(),
-                        enabled: enabled ? enabled.checked : true
+                        enabled: enabled ? enabled.checked : (window.huntarrUI?.originalSettings?.[app]?.instances?.[index]?.enabled ?? true)
                     });
                 }
             });
@@ -290,9 +290,16 @@ window.HuntarrSettings = {
                      name: name?.value.trim() || `${app} Instance 1`,
                      api_url: window.HuntarrHelpers ? window.HuntarrHelpers.cleanUrlString(url.value) : url.value.trim(),
                      api_key: key.value.trim(),
-                     enabled: enabled ? enabled.checked : true
+                     enabled: enabled ? enabled.checked : (window.huntarrUI?.originalSettings?.[app]?.instances?.[0]?.enabled ?? true)
                  });
             }
+        }
+
+        // Safeguard: if we collected zero instances but the server has instances,
+        // preserve the server's instances to prevent accidental config wipe
+        if (settings.instances.length === 0 && window.huntarrUI?.originalSettings?.[app]?.instances?.length > 0) {
+            console.warn(`[HuntarrSettings] getFormSettings collected 0 instances for ${app} but server has ${window.huntarrUI.originalSettings[app].instances.length}. Preserving server instances to prevent data loss.`);
+            settings.instances = JSON.parse(JSON.stringify(window.huntarrUI.originalSettings[app].instances));
         }
 
         const allInputs = form.querySelectorAll('input, select');

@@ -99,6 +99,7 @@ def get_configured_instances(quiet=False):
         # Fallback to legacy single-instance config
         api_url = settings.get("api_url", "").strip()
         api_key = settings.get("api_key", "").strip()
+        is_enabled = settings.get("enabled", True)
         
         # Ensure URL has proper scheme for legacy config too
         if api_url and not (api_url.startswith('http://') or api_url.startswith('https://')):
@@ -107,8 +108,11 @@ def get_configured_instances(quiet=False):
             api_url = f"http://{api_url}"
             if not quiet:
                 radarr_logger.warning(f"Auto-correcting URL to: {api_url}")
-            
-        if api_url and api_key:
+        
+        if not is_enabled:
+            if not quiet:
+                radarr_logger.debug("Skipping disabled legacy Radarr instance")
+        elif api_url and api_key:
             settings_copy = settings.copy()
             settings_copy["api_url"] = api_url  # Use corrected URL
             settings_copy["instance_name"] = "Default"

@@ -110,6 +110,7 @@ def get_configured_instances(quiet=False):
         # Fallback to legacy single-instance config
         api_url = settings.get("api_url", "").strip()
         api_key = settings.get("api_key", "").strip()
+        is_enabled = settings.get("enabled", True)
 
         # Ensure URL has proper scheme
         if api_url and not (api_url.startswith('http://') or api_url.startswith('https://')):
@@ -119,7 +120,10 @@ def get_configured_instances(quiet=False):
             if not quiet:
                 lidarr_logger.warning(f"Auto-correcting URL to: {api_url}")
 
-        if api_url and api_key:
+        if not is_enabled:
+            if not quiet:
+                lidarr_logger.debug("Skipping disabled legacy Lidarr instance")
+        elif api_url and api_key:
             # Create a clean instance_data dict for the legacy instance
             instance_data = {
                 "instance_name": "Default",
