@@ -277,38 +277,53 @@ window.HuntarrNavigation = {
         }
         const collectionSections = ['movie-hunt-home', 'movie-hunt-collection', 'media-hunt-collection', 'media-hunt-instances', 'movie-hunt-calendar', 'settings-clients'];
         const activitySections = ['activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-media-hunt', 'logs-tv-hunt', 'tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist'];
-        const configSections = ['media-hunt-settings', 'movie-hunt-settings', 'settings-instance-management', 'indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'profile-editor', 'settings-custom-formats', 'settings-import-media', 'settings-import-lists', 'settings-root-folders', 'instance-editor'];
+        const configSections = ['media-hunt-settings', 'movie-hunt-settings', 'settings-instance-management', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'profile-editor', 'settings-custom-formats', 'settings-import-media', 'settings-import-lists', 'settings-root-folders', 'instance-editor'];
         const indexMasterSections = ['indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history'];
-        const onCollection = collectionSections.indexOf(currentSection) !== -1;
+        
         const onActivity = activitySections.indexOf(sectionForNav) !== -1;
         const onConfig = configSections.indexOf(sectionForNav) !== -1;
-        const onIndexMaster = indexMasterSections.indexOf(sectionForNav) !== -1;
 
+        // Keep Collections sub-menu (Instances/Calendar) expanded within Media Hunt
         const colSub = document.getElementById('movie-hunt-collection-sub');
+        if (colSub) colSub.classList.add('expanded');
+
         const actSub = document.getElementById('movie-hunt-activity-sub');
         const cfgSub = document.getElementById('media-hunt-config-sub');
-        const idxMasterSub = document.getElementById('index-master-sub');
-        if (colSub) colSub.classList.toggle('expanded', onCollection);
         if (actSub) actSub.classList.toggle('expanded', onActivity);
         if (cfgSub) cfgSub.classList.toggle('expanded', onConfig);
-        if (idxMasterSub) idxMasterSub.classList.toggle('expanded', onIndexMaster);
 
+        // Remove ALL view modes and other sub-group expansions
         const mhBody = document.getElementById('sidebar-group-media-hunt');
         if (mhBody) {
             mhBody.classList.toggle('config-view', onConfig);
             mhBody.classList.toggle('activity-view', onActivity);
-            mhBody.classList.toggle('indexmaster-view', onIndexMaster);
+            mhBody.classList.remove('indexmaster-view');
         }
 
         // Highlight the active item within Media Hunt sidebar
         const items = document.querySelectorAll('#sidebar-group-media-hunt .nav-item');
-        const isActivitySub = activitySections.indexOf(sectionForNav) !== -1;
-        var tvToMovieNav = { 'tv-hunt-activity-queue': 'activity-queue', 'tv-hunt-activity-history': 'activity-history', 'tv-hunt-activity-blocklist': 'activity-blocklist', 'logs-tv-hunt': 'logs-media-hunt' };
-        var navTarget = tvToMovieNav[sectionForNav] || sectionForNav;
+        
+        // Mapping for sub-pages to their main nav item for highlighting
+        var navMapping = {
+            'indexer-hunt-stats': 'indexer-hunt',
+            'indexer-hunt-history': 'indexer-hunt',
+            'activity-queue': 'activity-history',
+            'activity-blocklist': 'activity-history',
+            'activity-logs': 'activity-history',
+            'logs-media-hunt': 'activity-history',
+            'settings-profiles': 'settings-media-management',
+            'settings-sizes': 'settings-media-management',
+            'settings-custom-formats': 'settings-media-management',
+            'settings-import-media': 'settings-media-management',
+            'settings-import-lists': 'settings-media-management',
+            'settings-root-folders': 'settings-media-management'
+        };
+
+        var navTarget = navMapping[sectionForNav] || sectionForNav;
+
         items.forEach(item => {
             item.classList.remove('active');
-            if (isActivitySub && item.id === 'movieHuntActivityNav') return;
-            const href = item.getAttribute && item.getAttribute('href') || (item.querySelector('a') && item.querySelector('a').getAttribute('href'));
+            const href = item.getAttribute('href') || (item.querySelector('a') && item.querySelector('a').getAttribute('href'));
             var targetHash = (href || '').replace(/^[^#]*#/, '');
             if (targetHash && (targetHash === navTarget || targetHash === sectionForNav)) {
                 item.classList.add('active');

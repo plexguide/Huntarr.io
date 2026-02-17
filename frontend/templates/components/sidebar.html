@@ -128,28 +128,10 @@
                         <span>Calendar</span>
                     </a>
                 </div>
-                <a href="javascript:void(0)" class="nav-item nav-item-sub" id="movieHuntIndexMasterToggle">
+                <a href="./#indexer-hunt" class="nav-item nav-item-sub" id="movieHuntIndexMasterNav">
                     <div class="nav-icon-wrapper"><i class="fas fa-search-plus"></i></div>
                     <span>Index Master</span>
                 </a>
-                <div class="nav-sub-group" id="index-master-view-sub">
-                    <a href="javascript:void(0)" class="nav-item nav-item-sub media-hunt-config-back" id="mediaHuntIndexMasterBackNav">
-                        <div class="nav-icon-wrapper"><i class="fas fa-arrow-left"></i></div>
-                        <span>Back</span>
-                    </a>
-                    <a href="./#indexer-hunt" class="nav-item nav-item-sub" id="movieHuntIndexMasterNav">
-                        <div class="nav-icon-wrapper"><i class="fas fa-search-plus"></i></div>
-                        <span>Indexers</span>
-                    </a>
-                    <a href="./#indexer-hunt-stats" class="nav-item nav-item-sub" id="movieHuntIndexMasterStatsNav">
-                        <div class="nav-icon-wrapper"><i class="fas fa-chart-bar"></i></div>
-                        <span>Stats</span>
-                    </a>
-                    <a href="./#indexer-hunt-history" class="nav-item nav-item-sub" id="movieHuntIndexMasterHistoryNav">
-                        <div class="nav-icon-wrapper"><i class="fas fa-history"></i></div>
-                        <span>History</span>
-                    </a>
-                </div>
                 <a href="javascript:void(0)" class="nav-item nav-item-sub" id="movieHuntActivityToggle">
                     <div class="nav-icon-wrapper"><i class="fas fa-clock"></i></div>
                     <span>Activity</span>
@@ -218,6 +200,8 @@
                         <span>Root Folders</span>
                     </a>
                 </div>
+                <!-- Hidden sub-groups to avoid breaking existing JS references -->
+                <div id="index-master-view-sub" style="display:none;"></div>
             </div>
         </div>
 
@@ -474,9 +458,9 @@ function setActiveNavItem() {
 
     // ── Media Hunt > Configuration ──────────────────
     else if (h === '#media-hunt-settings' || h === '#movie-hunt-settings' || h === '#settings-instance-management') { selector = '#movieHuntSettingsMovieManagementNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }
-    else if (h === '#indexer-hunt') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; expandSub('index-master-view-sub'); if (mhBody) mhBody.classList.add('indexmaster-view'); }
-    else if (h === '#indexer-hunt-stats') { selector = '#movieHuntIndexMasterStatsNav'; group = 'sidebar-group-media-hunt'; expandSub('index-master-view-sub'); if (mhBody) mhBody.classList.add('indexmaster-view'); }
-    else if (h === '#indexer-hunt-history') { selector = '#movieHuntIndexMasterHistoryNav'; group = 'sidebar-group-media-hunt'; expandSub('index-master-view-sub'); if (mhBody) mhBody.classList.add('indexmaster-view'); }
+    else if (h === '#indexer-hunt') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; }
+    else if (h === '#indexer-hunt-stats') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; }
+    else if (h === '#indexer-hunt-history') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; }
     else if (h === '#settings-clients') { selector = '#movieHuntClientsMainNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-collection-sub'); }
     else if (h === '#settings-media-management') { selector = '#movieHuntSettingsMovieManagementNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }
     else if (h === '#settings-profiles') { selector = '#movieHuntSettingsProfilesNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }
@@ -560,30 +544,6 @@ document.addEventListener('click', function(e) {
     window.location.hash = '#media-hunt-collection';
 });
 
-// ── Media Hunt "Index Master" toggle → enter indexmaster view ─
-document.addEventListener('click', function(e) {
-    var idxBtn = e.target.closest('#movieHuntIndexMasterToggle');
-    if (!idxBtn) return;
-    e.preventDefault();
-    var mhBody = document.getElementById('sidebar-group-media-hunt');
-    if (mhBody) mhBody.classList.add('indexmaster-view');
-    expandSub('index-master-view-sub');
-    // Navigate to Indexers by default
-    window.location.hash = '#indexer-hunt';
-});
-
-// ── Media Hunt Index Master "Back" button ────────────────────
-document.addEventListener('click', function(e) {
-    var backBtn = e.target.closest('#mediaHuntIndexMasterBackNav');
-    if (!backBtn) return;
-    e.preventDefault();
-    collapseSub('index-master-view-sub');
-    var mhBody = document.getElementById('sidebar-group-media-hunt');
-    if (mhBody) mhBody.classList.remove('indexmaster-view');
-    // Navigate back to Collections
-    window.location.hash = '#media-hunt-collection';
-});
-
 // ── Media Hunt "Settings" toggle → enter config view ─────────
 document.addEventListener('click', function(e) {
     var settingsBtn = e.target.closest('#movieHuntSettingsToggle');
@@ -603,7 +563,6 @@ document.addEventListener('click', function(e) {
     e.preventDefault();
     // Collapse config sub-group and remove config-view
     collapseSub('media-hunt-config-sub');
-    collapseSub('index-master-sub');
     var mhBody = document.getElementById('sidebar-group-media-hunt');
     if (mhBody) mhBody.classList.remove('config-view');
     // Navigate back to Collections
