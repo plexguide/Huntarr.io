@@ -14478,7 +14478,7 @@ document.head.appendChild(styleEl);
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
-                        <p class="setting-help">When enabled, Media Hunt and NZB Hunt are fully off—no UI, logging, or background work. Saves compute.</p>
+                        <p class="setting-help">When enabled, Media Hunt, NZB Hunt, and Index Master are fully off—no UI, logging, or background work. Saves compute.</p>
                         <div class="setting-item flex-row" style="margin-top: 15px;">
                             <label for="disable_third_party_apps">Disable 3rd Party Apps:</label>
                             <label class="toggle-switch">
@@ -14716,6 +14716,14 @@ document.head.appendChild(styleEl);
                     if (typeof window.applyFeatureFlags === 'function') window.applyFeatureFlags();
                     if (window.HomeRequestarr && typeof window.HomeRequestarr.applyTrendingVisibility === 'function') {
                         window.HomeRequestarr.applyTrendingVisibility();
+                    }
+                    if (window.huntarrUI && window.huntarrUI.currentSection === 'home') {
+                        if (window.HuntarrStats && typeof window.HuntarrStats.loadMediaStats === 'function') {
+                            window.HuntarrStats.loadMediaStats(true);
+                        }
+                        if (window.HuntarrIndexerHuntHome && typeof window.HuntarrIndexerHuntHome.load === 'function') {
+                            window.HuntarrIndexerHuntHome.load();
+                        }
                     }
                 }).catch(function() {});
 

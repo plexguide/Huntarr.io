@@ -26,6 +26,10 @@ window.HuntarrIndexerHuntHome = {
     load: function() {
         var card = document.getElementById('indexerHuntStatusCard');
         if (!card) return;
+        if (window.huntarrUI && window.huntarrUI._enableMediaHunt === false) {
+            card.style.display = 'none';
+            return;
+        }
 
         var self = this;
 

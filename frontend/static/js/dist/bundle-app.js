@@ -83,15 +83,20 @@ let huntarrUI = {
             .then(all => {
                 var generalSettings = (all && all.general) || {};
                 this._enableRequestarr = generalSettings.enable_requestarr !== false;
-                const nav = document.getElementById('requestarrNav');
-                if (nav) {
-                    var onSystem = this.currentSection === 'system' || this.currentSection === 'hunt-manager' || this.currentSection === 'logs';
-                    var onSettings = ['settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user'].indexOf(this.currentSection) !== -1;
-                    nav.style.display = (onSystem || onSettings || !this._enableRequestarr) ? 'none' : '';
-                }
                 this._enableNzbHunt = true;
                 this._enableMediaHunt = generalSettings.enable_media_hunt !== false;
                 this._enableThirdPartyApps = generalSettings.enable_third_party_apps !== false;
+                // Update sidebar group visibility from database settings (nav-group-* IDs)
+                var requestsGroup = document.getElementById('nav-group-requests');
+                var mediaHuntGroup = document.getElementById('nav-group-media-hunt');
+                var nzbHuntGroup = document.getElementById('nzb-hunt-sidebar-group');
+                var appsGroup = document.getElementById('nav-group-apps');
+                var appsLabel = document.getElementById('nav-group-apps-label');
+                if (requestsGroup) requestsGroup.style.display = (generalSettings.enable_requestarr === false) ? 'none' : '';
+                if (mediaHuntGroup) mediaHuntGroup.style.display = (generalSettings.enable_media_hunt === false) ? 'none' : '';
+                if (nzbHuntGroup) nzbHuntGroup.style.display = (generalSettings.enable_media_hunt === false) ? 'none' : '';
+                if (appsGroup) appsGroup.style.display = (generalSettings.enable_third_party_apps === false) ? 'none' : '';
+                if (appsLabel) appsLabel.style.display = (generalSettings.enable_media_hunt === false && generalSettings.enable_third_party_apps === false) ? 'none' : '';
                 if (typeof window.applyFeatureFlags === 'function') window.applyFeatureFlags();
                 
                 // Initialize originalSettings early
@@ -113,10 +118,10 @@ let huntarrUI = {
                 // Settings are now loaded — re-initialize view toggle with correct preference
                 if (window.HuntarrStats && (this.currentSection === 'home' || !this.currentSection)) {
                     window.HuntarrStats.initViewToggle();
-                    // Re-render stats if they loaded before settings were ready
-                    if (window.mediaStats) {
-                        window.HuntarrStats.updateStatsDisplay(window.mediaStats);
-                    }
+                    window.HuntarrStats.loadMediaStats(true);
+                }
+                if ((this.currentSection === 'home' || !this.currentSection) && window.HuntarrIndexerHuntHome && typeof window.HuntarrIndexerHuntHome.load === 'function') {
+                    window.HuntarrIndexerHuntHome.load();
                 }
 
                 // Settings are loaded — now safe to check welcome preference

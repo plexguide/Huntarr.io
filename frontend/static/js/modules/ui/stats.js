@@ -262,10 +262,15 @@ window.HuntarrStats = {
 
         // Build a flat list of all cards to render: [{app, meta, inst}, ...]
         var allCards = [];
+        var ui = window.huntarrUI || {};
+        var mediaHuntApps = { movie_hunt: true, tv_hunt: true };
+        var thirdPartyApps = { sonarr: true, radarr: true, lidarr: true, readarr: true, whisparr: true, eros: true };
         groupOrder.forEach(function(app) {
             if (!stats[app]) return;
+            if (mediaHuntApps[app] && ui._enableMediaHunt === false) return;
+            if (thirdPartyApps[app] && ui._enableThirdPartyApps === false) return;
             var hasInstances = stats[app].instances && stats[app].instances.length > 0;
-            var isConfigured = window.huntarrUI && window.huntarrUI.configuredApps && window.huntarrUI.configuredApps[app];
+            var isConfigured = ui.configuredApps && ui.configuredApps[app];
             if (!hasInstances && !stats[app].hunted && !stats[app].upgraded && !isConfigured) return;
 
             var meta = self.APP_META[app] || { label: app, icon: '', accent: '#94a3b8' };
@@ -538,12 +543,16 @@ window.HuntarrStats = {
         var self = this;
         var groupOrder = this._getGroupOrder();
         var visibleApps = [];
-
+        var ui = window.huntarrUI || {};
+        var mediaHuntApps = { movie_hunt: true, tv_hunt: true };
+        var thirdPartyApps = { sonarr: true, radarr: true, lidarr: true, readarr: true, whisparr: true, eros: true };
         groupOrder.forEach(function(app) {
+            if (mediaHuntApps[app] && ui._enableMediaHunt === false) return;
+            if (thirdPartyApps[app] && ui._enableThirdPartyApps === false) return;
             if (stats[app] && (stats[app].instances && stats[app].instances.length > 0 ||
                 stats[app].hunted > 0 || stats[app].upgraded > 0)) {
                 visibleApps.push(app);
-            } else if (stats[app] && window.huntarrUI && window.huntarrUI.configuredApps && window.huntarrUI.configuredApps[app]) {
+            } else if (stats[app] && ui.configuredApps && ui.configuredApps[app]) {
                 visibleApps.push(app);
             }
         });
