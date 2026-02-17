@@ -22,11 +22,16 @@
         <div id="settings-sizes-content-wrapper" style="display: none;">
         {% from 'components/page_header_partial.html' import page_header %}
         {{ page_header(back_href='./#media-hunt-settings', parent_icon='fas fa-weight-hanging', parent_name='Media Hunt', current_name='Sizes', save_button_id='sizes-save-btn') }}
+        <div class="media-hunt-settings-instance-bar" style="margin-bottom: 16px;">
+            <select id="settings-sizes-instance-select" class="control-select" aria-label="Instance">
+                <option value="">Loading...</option>
+            </select>
+        </div>
         <div class="settings-group sizes-settings-group">
             <div class="sizes-header">
                 <div class="sizes-header-left">
                     <h3><i class="fas fa-weight-hanging"></i> Sizes</h3>
-                    <p class="sizes-subtitle">Set file size limits per quality. Values are in <strong>MB per minute</strong> of runtime. Limits are automatically adjusted for the movie length.</p>
+                    <p class="sizes-subtitle">Set file size limits per quality. Values are in <strong>MB per minute</strong> of runtime. Limits are automatically adjusted for the media length.</p>
                 </div>
                 <div class="sizes-header-actions">
                     <button type="button" class="btn-sizes-reset" id="sizes-reset-btn" title="Reset all to defaults">
@@ -400,7 +405,31 @@
 
     var _sizesData = [];
     var _sizesDirty = false;
-    var _sizesMax = 400; // max value on the slider scale
+    var _sizesMax = 400;
+    var _sizesMode = 'movie';
+    var _sizesInstanceId = null;
+
+    function _getSelectedInstance() {
+        var sel = document.getElementById('settings-sizes-instance-select');
+        if (!sel || !sel.value) return { mode: _sizesMode, id: null };
+        var parts = sel.value.split(':');
+        return { mode: parts[0] || 'movie', id: parts[1] || null };
+    }
+
+    function _getApiBase() {
+        var inst = _getSelectedInstance();
+        _sizesMode = inst.mode;
+        _sizesInstanceId = inst.id;
+        if (inst.mode === 'tv') return './api/tv-hunt/sizes';
+        return './api/sizes';
+    }
+
+    function _appendInstanceParam(url) {
+        var inst = _getSelectedInstance();
+        if (!inst.id) return url;
+        var sep = url.indexOf('?') === -1 ? '?' : '&';
+        return url + sep + 'instance_id=' + encodeURIComponent(inst.id);
+    }
 
     function markDirty() {
         _sizesDirty = true;
@@ -501,7 +530,6 @@
         if (!container) return;
         var html = '';
 
-        // Legend
         html += '<div class="sizes-legend">' +
             '<div class="sizes-legend-item"><span class="sizes-legend-dot sizes-legend-dot-range"></span> Accepted range</div>' +
             '<div class="sizes-legend-item"><span class="sizes-legend-dot sizes-legend-dot-preferred"></span> Preferred</div>' +
@@ -509,7 +537,6 @@
             '<div class="sizes-legend-item" style="color: #64748b; font-size: 0.72rem;">MB per minute of runtime &middot; Max scale: ' + _sizesMax + '</div>' +
             '</div>';
 
-        // Column labels
         html += '<div class="sizes-column-labels"><div></div><div class="sizes-column-labels-right">' +
             '<div class="sizes-column-label sizes-column-label-min">Min</div>' +
             '<div class="sizes-column-label sizes-column-label-slider">Range</div>' +
@@ -520,7 +547,6 @@
         var lastGroup = '';
         for (var i = 0; i < sizes.length; i++) {
             var s = sizes[i];
-            // Group header
             if (s.group && s.group !== lastGroup) {
                 lastGroup = s.group;
                 html += '<div class="sizes-group-header">' +
@@ -553,7 +579,6 @@
         }
         container.innerHTML = html;
 
-        // Attach drag + input handlers per row
         var rows = container.querySelectorAll('.sizes-quality-row');
         rows.forEach(function(row) {
             var idx = parseInt(row.getAttribute('data-index'), 10);
@@ -567,7 +592,6 @@
             var thumbPref = row.querySelector('.sizes-range-thumb-preferred');
             var thumbMax = row.querySelector('.sizes-range-thumb-max');
 
-            // Input change handlers
             function syncFromInputs() {
                 var mn = parseInt(minInput.value, 10); if (isNaN(mn)) mn = 0;
                 var pf = parseInt(prefInput.value, 10); if (isNaN(pf)) pf = 0;
@@ -585,7 +609,6 @@
                 if (inp) {
                     inp.addEventListener('change', syncFromInputs);
                     inp.addEventListener('input', function() {
-                        // live update visual while typing
                         var mn = parseInt(minInput.value, 10) || 0;
                         var pf = parseInt(prefInput.value, 10) || 0;
                         var mx = parseInt(maxInput.value, 10) || 1;
@@ -599,7 +622,6 @@
                 }
             });
 
-            // Draggable thumbs
             if (thumbMin) makeDraggable(thumbMin, item, 'min', row, minInput, prefInput, maxInput);
             if (thumbPref) makeDraggable(thumbPref, item, 'preferred', row, minInput, prefInput, maxInput);
             if (thumbMax) makeDraggable(thumbMax, item, 'max', row, minInput, prefInput, maxInput);
@@ -614,7 +636,87 @@
     function safeJsonFetch(url, fallback) {
         return fetch(url, { cache: 'no-store' }).then(function(r) { return r.json(); }).catch(function() { return fallback || {}; });
     }
-    function loadSizes() {
+
+    function populateCombinedInstanceDropdown(preferMode) {
+        var selectEl = document.getElementById('settings-sizes-instance-select');
+        if (!selectEl) return;
+        selectEl.innerHTML = '<option value="">Loading...</option>';
+        var ts = Date.now();
+        Promise.all([
+            safeJsonFetch('./api/movie-hunt/instances?t=' + ts, { instances: [] }),
+            safeJsonFetch('./api/tv-hunt/instances?t=' + ts, { instances: [] }),
+            safeJsonFetch('./api/movie-hunt/instances/current?t=' + ts, { current_instance_id: null }),
+            safeJsonFetch('./api/tv-hunt/instances/current?t=' + ts, { current_instance_id: null })
+        ]).then(function(results) {
+            var movieList = (results[0].instances || []).map(function(inst) {
+                return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
+            });
+            var tvList = (results[1].instances || []).map(function(inst) {
+                return { value: 'tv:' + inst.id, label: 'TV - ' + (inst.name || 'Instance ' + inst.id) };
+            });
+            var combined = movieList.concat(tvList);
+            combined.sort(function(a, b) { return (a.label || '').localeCompare(b.label || '', undefined, { sensitivity: 'base' }); });
+
+            var currentMovie = results[2].current_instance_id != null ? Number(results[2].current_instance_id) : null;
+            var currentTv = results[3].current_instance_id != null ? Number(results[3].current_instance_id) : null;
+
+            selectEl.innerHTML = '';
+            if (combined.length === 0) {
+                var emptyOpt = document.createElement('option');
+                emptyOpt.value = '';
+                emptyOpt.textContent = 'No Movie or TV Hunt instances';
+                selectEl.appendChild(emptyOpt);
+                return;
+            }
+            combined.forEach(function(item) {
+                var opt = document.createElement('option');
+                opt.value = item.value;
+                opt.textContent = item.label;
+                selectEl.appendChild(opt);
+            });
+
+            var saved = '';
+            try { saved = localStorage.getItem('media-hunt-sizes-last-instance') || ''; } catch (e) {}
+            var selected = '';
+            if (preferMode === 'movie' && currentMovie != null) {
+                selected = 'movie:' + currentMovie;
+                if (!combined.some(function(i) { return i.value === selected; })) selected = combined[0].value;
+            } else if (preferMode === 'tv' && currentTv != null) {
+                selected = 'tv:' + currentTv;
+                if (!combined.some(function(i) { return i.value === selected; })) selected = combined[0].value;
+            } else if (saved && combined.some(function(i) { return i.value === saved; })) {
+                selected = saved;
+            } else if (currentMovie != null && combined.some(function(i) { return i.value === 'movie:' + currentMovie; })) {
+                selected = 'movie:' + currentMovie;
+            } else if (currentTv != null && combined.some(function(i) { return i.value === 'tv:' + currentTv; })) {
+                selected = 'tv:' + currentTv;
+            } else {
+                selected = combined[0].value;
+            }
+            selectEl.value = selected;
+            selected = selectEl.value || selected;
+            try { localStorage.setItem('media-hunt-sizes-last-instance', selected); } catch (e) {}
+
+            var inst = _getSelectedInstance();
+            _sizesMode = inst.mode;
+            _sizesInstanceId = inst.id;
+            doLoadSizes();
+        });
+    }
+
+    function onInstanceChange() {
+        var sel = document.getElementById('settings-sizes-instance-select');
+        if (sel) {
+            try { localStorage.setItem('media-hunt-sizes-last-instance', sel.value); } catch (e) {}
+        }
+        var inst = _getSelectedInstance();
+        _sizesMode = inst.mode;
+        _sizesInstanceId = inst.id;
+        markClean();
+        doLoadSizes();
+    }
+
+    function loadSizes(preferMode) {
         var noInstEl = document.getElementById('settings-sizes-no-instances');
         var noIdxEl = document.getElementById('settings-sizes-no-indexers');
         var noCliEl = document.getElementById('settings-sizes-no-clients');
@@ -654,7 +756,7 @@
             if (noIdxEl) noIdxEl.style.display = 'none';
             if (noCliEl) noCliEl.style.display = 'none';
             if (wrapperEl) wrapperEl.style.display = '';
-            doLoadSizes();
+            populateCombinedInstanceDropdown(preferMode || 'movie');
         }).catch(function() {
             if (noInstEl) noInstEl.style.display = 'none';
             if (noIdxEl) noIdxEl.style.display = 'none';
@@ -662,13 +764,18 @@
             if (wrapperEl) wrapperEl.style.display = 'none';
         });
     }
+
     function doLoadSizes() {
-        fetch('./api/sizes')
+        var url = _appendInstanceParam(_getApiBase());
+        fetch(url, { cache: 'no-store' })
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (data.success && data.sizes) {
                     renderSizes(data.sizes);
                     markClean();
+                } else if (data.error) {
+                    var container = document.getElementById('sizes-quality-list');
+                    if (container) container.innerHTML = '<div class="sizes-loading" style="color:#ef4444;">' + escapeHtml(data.error) + '</div>';
                 }
             })
             .catch(function(err) {
@@ -682,7 +789,8 @@
     function saveSizes() {
         var btn = document.getElementById('sizes-save-btn');
         if (btn) btn.disabled = true;
-        fetch('./api/sizes', {
+        var url = _appendInstanceParam(_getApiBase());
+        fetch(url, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ sizes: _sizesData })
@@ -712,7 +820,8 @@
 
     function resetSizes() {
         function doReset() {
-            fetch('./api/sizes/reset', { method: 'POST' })
+            var url = _appendInstanceParam(_getApiBase() + '/reset');
+            fetch(url, { method: 'POST' })
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (data.success && data.sizes) {
@@ -732,28 +841,42 @@
         if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
             window.HuntarrConfirm.show({
                 title: 'Reset Size Limits',
-                message: 'Reset all size limits to defaults?',
+                message: 'Reset all size limits to defaults for this instance?',
                 confirmLabel: 'Reset',
                 onConfirm: doReset
             });
         } else {
-            if (!confirm('Reset all size limits to defaults?')) return;
+            if (!confirm('Reset all size limits to defaults for this instance?')) return;
             doReset();
         }
     }
 
-    // Init
     function initSizes() {
         var saveBtn = document.getElementById('sizes-save-btn');
         var resetBtn = document.getElementById('sizes-reset-btn');
-        if (saveBtn) saveBtn.addEventListener('click', saveSizes);
-        if (resetBtn) resetBtn.addEventListener('click', resetSizes);
+        if (saveBtn && !saveBtn._sizesBound) {
+            saveBtn._sizesBound = true;
+            saveBtn.addEventListener('click', saveSizes);
+        }
+        if (resetBtn && !resetBtn._sizesBound) {
+            resetBtn._sizesBound = true;
+            resetBtn.addEventListener('click', resetSizes);
+        }
+        var selectEl = document.getElementById('settings-sizes-instance-select');
+        if (selectEl && !selectEl._sizesChangeBound) {
+            selectEl._sizesChangeBound = true;
+            selectEl.addEventListener('change', onInstanceChange);
+        }
     }
 
-    // Expose for navigation
     window.SizesModule = {
         load: loadSizes,
-        init: initSizes
+        init: initSizes,
+        initOrRefresh: function(preferMode) {
+            _sizesMode = (preferMode === 'tv') ? 'tv' : 'movie';
+            initSizes();
+            loadSizes(preferMode);
+        }
     };
 
     if (document.readyState === 'loading') {

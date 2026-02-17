@@ -189,9 +189,8 @@ def get_profile_by_name_or_default(profile_name, instance_id, context):
 def get_size_limits_for_quality(quality_name, instance_id, context):
     """Return (min, preferred, max) MB/min for the given quality from Sizes config."""
     sizes_config_key = context['sizes_config_key']
-    sizes_instance_id = None if sizes_config_key == 'movie_hunt_sizes' else instance_id
     try:
-        sizes = _get_sizes_config(sizes_instance_id, sizes_config_key)
+        sizes = _get_sizes_config(instance_id, sizes_config_key)
     except Exception:
         return 0, 0, 400
     q = (quality_name or '').strip()

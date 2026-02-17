@@ -1,6 +1,6 @@
 """
 Media Hunt – consolidated size limits (min/preferred/max per quality).
-Single module for both Movie Hunt (global) and TV Hunt (per-instance).
+Single module for both Movie Hunt and TV Hunt (both per-instance).
 Routes are registered on movie_hunt_bp and tv_hunt_bp via register_*_sizes_routes().
 Values are MB per minute of runtime.
 """
@@ -41,26 +41,19 @@ SIZES_DEFAULT = [
 def get_sizes(instance_id, config_key):
     """
     Return stored sizes list or defaults.
-    config_key 'movie_hunt_sizes' => global config (instance_id ignored).
-    config_key 'tv_hunt_sizes' => per-instance config.
+    Both movie_hunt_sizes and tv_hunt_sizes are per-instance.
     """
     db = get_database()
-    if config_key == 'movie_hunt_sizes':
-        config = db.get_app_config('movie_hunt_sizes')
-    else:
-        config = db.get_app_config_for_instance(config_key, instance_id or 0)
+    config = db.get_app_config_for_instance(config_key, instance_id or 0)
     if config and isinstance(config, dict) and 'sizes' in config:
         return config['sizes']
     return [dict(s) for s in SIZES_DEFAULT]
 
 
 def save_sizes(instance_id, config_key, sizes):
-    """Save sizes. movie_hunt_sizes = global; tv_hunt_sizes = per-instance."""
+    """Save sizes. Both movie and TV sizes are per-instance."""
     db = get_database()
-    if config_key == 'movie_hunt_sizes':
-        db.save_app_config('movie_hunt_sizes', {'sizes': sizes})
-    else:
-        db.save_app_config_for_instance(config_key, instance_id, {'sizes': sizes})
+    db.save_app_config_for_instance(config_key, instance_id or 0, {'sizes': sizes})
 
 
 def merge_incoming_sizes(incoming):
@@ -101,27 +94,36 @@ MOVIE_CONFIG = 'movie_hunt_sizes'
 TV_CONFIG = 'tv_hunt_sizes'
 
 
-def register_movie_sizes_routes(bp):
-    """Register /api/sizes GET, PUT, POST reset on the given blueprint (movie_hunt_bp)."""
+def register_movie_sizes_routes(bp, get_instance_id):
+    """Register /api/sizes GET, PUT, POST reset on the given blueprint (movie_hunt_bp). Per-instance."""
     @bp.route('/api/sizes', methods=['GET'])
     def get_sizes_route():
-        return jsonify({'success': True, 'sizes': get_sizes(None, MOVIE_CONFIG)})
+        instance_id = get_instance_id()
+        if not instance_id:
+            return jsonify({'success': False, 'error': 'No instance selected'}), 400
+        return jsonify({'success': True, 'sizes': get_sizes(instance_id, MOVIE_CONFIG)})
 
     @bp.route('/api/sizes', methods=['PUT'])
     def update_sizes_route():
+        instance_id = get_instance_id()
+        if not instance_id:
+            return jsonify({'success': False, 'error': 'No instance selected'}), 400
         data = request.get_json(silent=True) or {}
         merged = merge_incoming_sizes(data.get('sizes'))
         if merged is None:
             return jsonify({'success': False, 'error': 'sizes must be a list'}), 400
-        save_sizes(None, MOVIE_CONFIG, merged)
-        logger.info("Movie Hunt sizes updated (%d qualities)", len(merged))
+        save_sizes(instance_id, MOVIE_CONFIG, merged)
+        logger.info("Movie Hunt sizes updated for instance %s (%d qualities)", instance_id, len(merged))
         return jsonify({'success': True, 'sizes': merged})
 
     @bp.route('/api/sizes/reset', methods=['POST'])
     def reset_sizes_route():
+        instance_id = get_instance_id()
+        if not instance_id:
+            return jsonify({'success': False, 'error': 'No instance selected'}), 400
         defaults = [dict(s) for s in SIZES_DEFAULT]
-        save_sizes(None, MOVIE_CONFIG, defaults)
-        logger.info("Movie Hunt sizes reset to defaults")
+        save_sizes(instance_id, MOVIE_CONFIG, defaults)
+        logger.info("Movie Hunt sizes reset to defaults for instance %s", instance_id)
         return jsonify({'success': True, 'sizes': defaults})
 
 

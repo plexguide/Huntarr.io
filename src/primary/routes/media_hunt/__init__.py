@@ -31,7 +31,7 @@ register_movie_discovery_routes(movie_hunt_bp)  # noqa: E402
 from .storage import register_movie_storage_routes
 register_movie_storage_routes(movie_hunt_bp, _get_movie_hunt_instance_id_from_request)  # noqa: E402
 from .sizes import register_movie_sizes_routes
-register_movie_sizes_routes(movie_hunt_bp)  # noqa: E402
+register_movie_sizes_routes(movie_hunt_bp, _get_movie_hunt_instance_id_from_request)  # noqa: E402
 from .import_lists_movie import register_movie_import_lists_routes
 register_movie_import_lists_routes(movie_hunt_bp)  # noqa: E402
 from .import_media_movie import register_movie_import_media_routes
