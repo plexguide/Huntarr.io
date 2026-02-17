@@ -1223,7 +1223,10 @@ let huntarrUI = {
         } else if (section && section.startsWith('tv-hunt-activity') && document.getElementById('tvHuntActivitySection')) {
             // TV Hunt Activity - dedicated section (History, Blocklist unique to TV Hunt; separate from Movie Hunt)
             // Redirect queue to history (queue is now in NZB Hunt)
-            if (section === 'tv-hunt-activity-queue') section = 'tv-hunt-activity-history';
+            if (section === 'tv-hunt-activity-queue') {
+                section = 'tv-hunt-activity-history';
+                history.replaceState(null, '', './#tv-hunt-activity-history');
+            }
             if (document.getElementById('activitySection')) {
                 document.getElementById('activitySection').classList.remove('active');
                 document.getElementById('activitySection').style.display = 'none';
@@ -1268,7 +1271,10 @@ let huntarrUI = {
             }
         } else if ((section === 'activity-queue' || section === 'activity-history' || section === 'activity-blocklist' || section === 'activity-logs') && document.getElementById('activitySection')) {
             // Redirect queue to history (queue is now in NZB Hunt)
-            if (section === 'activity-queue') section = 'activity-history';
+            if (section === 'activity-queue') {
+                section = 'activity-history';
+                history.replaceState(null, '', './#activity-history');
+            }
             if (document.getElementById('tvHuntActivitySection')) {
                 document.getElementById('tvHuntActivitySection').classList.remove('active');
                 document.getElementById('tvHuntActivitySection').style.display = 'none';

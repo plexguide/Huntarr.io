@@ -575,6 +575,12 @@
                 targetVal = 'tv:' + tvList[0].id;
             }
             select.value = targetVal;
+
+            // After population, fire the onChanged callback so data loads automatically
+            var wired = _activityCombinedWired[select.id];
+            if (wired && typeof wired.onChanged === 'function' && targetVal) {
+                wired.onChanged();
+            }
         }).catch(function() {
             select.innerHTML = '<option value="">Unable to load instances</option>';
             _updateActivityVisibility(select.id, 'unable-to-load');
