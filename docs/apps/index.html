@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>App Connections - Huntarr Docs</title>
+    <title>3rd Party Apps - Huntarr Docs</title>
     <link rel="icon" type="image/png" href="../images/huntarr-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../css/main.css">
@@ -30,6 +30,7 @@
         </a>
 
         <div class="sidebar-scroll">
+            <a href="https://plexguide.github.io/Huntarr.io/donate.html" target="_blank" rel="noopener" class="sidebar-donate-link"><i class="fas fa-heart"></i> Donate</a>
 
             <!-- Getting Started -->
             <div class="nav-group">
@@ -46,14 +47,7 @@
             <div class="nav-group">
                 <div class="nav-group-title">Apps</div>
                 <div class="nav-group-items">
-                    <a href="index.html" class="active"><i class="fas fa-th-large"></i> Overview</a>
-                    <a href="sonarr.html"><i class="fas fa-tv"></i> Sonarr</a>
-                    <a href="radarr.html"><i class="fas fa-film"></i> Radarr</a>
-                    <a href="lidarr.html"><i class="fas fa-music"></i> Lidarr</a>
-                    <a href="readarr.html"><i class="fas fa-book"></i> Readarr</a>
-                    <a href="whisparr.html"><i class="fas fa-mask"></i> Whisparr</a>
-                    <a href="prowlarr.html"><i class="fas fa-search"></i> Prowlarr</a>
-                    <a href="swaparr.html"><i class="fas fa-exchange-alt"></i> Swaparr</a>
+                    <a href="index.html" class="active"><i class="fas fa-plug"></i> 3rd Party Apps</a>
                 </div>
             </div>
 
@@ -131,97 +125,341 @@
     <main class="docs-main">
         <div class="docs-content">
 
-            <h1>App Connections</h1>
-            <p class="page-subtitle">Connect and manage your *arr instances with Huntarr.</p>
+            <h1>3rd Party Apps</h1>
+            <p class="page-subtitle">Connect your *arr instances to Huntarr for automated media hunting, quality upgrades, and download management.</p>
 
+            <!-- ══════════════════════════════════════════════ -->
             <h2>How App Connections Work</h2>
+            <p>Huntarr communicates with each *arr application through its REST API. You provide the app's URL and API key, and Huntarr takes care of the rest &mdash; monitoring your library for missing media, identifying files that can be upgraded, and triggering searches automatically on a schedule you control.</p>
             <ul>
-                <li>Huntarr communicates with each *arr app via its API</li>
-                <li>You provide the app URL and API key</li>
-                <li>Huntarr monitors missing/upgradeable media and triggers searches</li>
-                <li>Each instance is managed independently with its own settings</li>
+                <li><strong>API-driven:</strong> Huntarr never modifies your *arr databases directly. It uses the same API endpoints the apps' own UI uses.</li>
+                <li><strong>Independent instances:</strong> Each connection is managed separately with its own hunt settings, cycle counts, and schedules.</li>
+                <li><strong>Multiple instances:</strong> You can add multiple instances of the same app (e.g., a 1080p Radarr and a 4K Radarr) and configure each independently.</li>
+                <li><strong>Non-destructive:</strong> Huntarr only triggers searches. Your *arr apps handle the actual downloading, importing, and file management.</li>
             </ul>
 
+            <!-- ══════════════════════════════════════════════ -->
             <h2>Adding an Instance</h2>
             <ol class="steps">
-                <li>Navigate to the Apps page from the sidebar</li>
-                <li>Select the app type (Sonarr, Radarr, etc.)</li>
-                <li>Click "Add Instance"</li>
-                <li>Enter a friendly name, the app URL, and API key</li>
-                <li>Click "Test Connection" to verify</li>
-                <li>Save the instance</li>
+                <li>Navigate to the <strong>Apps</strong> section from the Huntarr sidebar.</li>
+                <li>Select the app type you want to connect (Sonarr, Radarr, etc.).</li>
+                <li>Click <strong>"Add Instance"</strong>.</li>
+                <li>Enter a friendly name (e.g., "Movies-4K" or "TV-Anime").</li>
+                <li>Enter the full URL of your *arr instance, including the port (e.g., <code>http://192.168.1.100:7878</code>).</li>
+                <li>Paste the API key from your *arr app (found under <em>Settings &gt; General &gt; Security</em> in each app).</li>
+                <li>Click <strong>"Test Connection"</strong> to verify Huntarr can reach the app.</li>
+                <li>Save the instance.</li>
             </ol>
 
             <div class="alert alert-info">
-                <strong>Your API key</strong> is found in each *arr app under Settings &gt; General &gt; Security.
+                <strong>Finding your API key:</strong> In any *arr app, go to <em>Settings &gt; General &gt; Security</em>. The API key is displayed there. Copy it and paste it into Huntarr.
             </div>
 
-            <h2>Managing Instances</h2>
-            <ul>
-                <li>Edit instance settings (URL, API key, name)</li>
-                <li>Enable/disable specific instances without deleting</li>
-                <li>Configure per-instance hunt settings</li>
-                <li>Delete instances you no longer need</li>
-            </ul>
-
-            <h2>Supported App Grid</h2>
-            <div class="card-grid">
-                <a href="sonarr.html" class="card">
-                    <div class="card-icon icon-blue"><i class="fas fa-tv"></i></div>
-                    <h3>Sonarr</h3>
-                    <p>TV series — hunt missing episodes and upgrade quality.</p>
-                </a>
-                <a href="radarr.html" class="card">
-                    <div class="card-icon icon-gold"><i class="fas fa-film"></i></div>
-                    <h3>Radarr</h3>
-                    <p>Movies — hunt missing films and upgrade quality.</p>
-                </a>
-                <a href="lidarr.html" class="card">
-                    <div class="card-icon icon-green"><i class="fas fa-music"></i></div>
-                    <h3>Lidarr</h3>
-                    <p>Music — hunt missing albums and tracks.</p>
-                </a>
-                <a href="readarr.html" class="card">
-                    <div class="card-icon icon-red"><i class="fas fa-book"></i></div>
-                    <h3>Readarr</h3>
-                    <p>Books and audiobooks — hunt missing content.</p>
-                </a>
-                <a href="whisparr.html" class="card">
-                    <div class="card-icon icon-purple"><i class="fas fa-mask"></i></div>
-                    <h3>Whisparr</h3>
-                    <p>Adult content — hunt missing and upgrade.</p>
-                </a>
-                <a href="prowlarr.html" class="card">
-                    <div class="card-icon icon-orange"><i class="fas fa-search"></i></div>
-                    <h3>Prowlarr</h3>
-                    <p>Indexer management — sync with Huntarr.</p>
-                </a>
-                <a href="swaparr.html" class="card">
-                    <div class="card-icon icon-cyan"><i class="fas fa-exchange-alt"></i></div>
-                    <h3>Swaparr</h3>
-                    <p>Stalled download management and swap-outs.</p>
-                </a>
-            </div>
-
-            <h2>Instance Settings</h2>
+            <!-- ══════════════════════════════════════════════ -->
+            <h2>Common Instance Settings</h2>
+            <p>These settings are shared across all huntable apps (Sonarr, Radarr, Lidarr, Readarr, Whisparr):</p>
             <table>
                 <thead>
-                    <tr><th>Setting</th><th>Description</th></tr>
+                    <tr><th>Setting</th><th>Default</th><th>Description</th></tr>
                 </thead>
                 <tbody>
-                    <tr><td><strong>Name</strong></td><td>A friendly label for this instance</td></tr>
-                    <tr><td><strong>URL</strong></td><td>Full URL including port (e.g., http://localhost:8989)</td></tr>
-                    <tr><td><strong>API Key</strong></td><td>Found in Settings &gt; General of the app</td></tr>
-                    <tr><td><strong>Enabled</strong></td><td>Toggle hunting for this instance on/off</td></tr>
-                    <tr><td><strong>Hunt Missing</strong></td><td>Search for missing media</td></tr>
-                    <tr><td><strong>Hunt Upgrades</strong></td><td>Search for quality upgrades</td></tr>
+                    <tr><td><strong>Name</strong></td><td>&mdash;</td><td>A friendly label to identify this instance (e.g., "TV-1080p")</td></tr>
+                    <tr><td><strong>URL</strong></td><td>&mdash;</td><td>Full URL including port (e.g., <code>http://localhost:8989</code>)</td></tr>
+                    <tr><td><strong>API Key</strong></td><td>&mdash;</td><td>Found in the app under Settings &gt; General &gt; Security</td></tr>
+                    <tr><td><strong>Enabled</strong></td><td>Yes</td><td>Toggle hunting on/off for this instance without deleting it</td></tr>
+                    <tr><td><strong>Hunt Missing</strong></td><td>Enabled</td><td>Search for media that has no file on disk</td></tr>
+                    <tr><td><strong>Hunt Upgrades</strong></td><td>Enabled</td><td>Search for better-quality versions of existing files</td></tr>
+                    <tr><td><strong>Missing Items per Cycle</strong></td><td>1</td><td>How many missing items to search for each hunt cycle</td></tr>
+                    <tr><td><strong>Upgrade Items per Cycle</strong></td><td>1</td><td>How many upgrades to attempt each cycle</td></tr>
+                    <tr><td><strong>Monitored Only</strong></td><td>Enabled</td><td>Only hunt items you've marked as monitored in the *arr app</td></tr>
                 </tbody>
             </table>
+
+            <div class="alert alert-warning">
+                <strong>Start low:</strong> Begin with 1&ndash;3 items per cycle to avoid overwhelming your indexers. You can increase later once you're confident everything is working well.
+            </div>
+
+            <!-- ══════════════════════════════════════════════ -->
+            <h2>How Hunting Works</h2>
+            <p>The hunt cycle follows the same pattern for all apps:</p>
+            <ol>
+                <li><strong>Query:</strong> Huntarr calls the *arr app's API to get a list of missing or upgradeable items.</li>
+                <li><strong>Filter:</strong> Results are filtered by monitored status, availability, and your configured caps.</li>
+                <li><strong>Search:</strong> Huntarr sends a search command back to the *arr app for each selected item.</li>
+                <li><strong>Download:</strong> The *arr app handles the search results, selects the best release, and sends it to your download client.</li>
+                <li><strong>Repeat:</strong> After the configured interval, the cycle starts again.</li>
+            </ol>
+
+            <!-- ══════════════════════════════════════════════ -->
+            <h2>Supported Apps at a Glance</h2>
+            <table>
+                <thead>
+                    <tr><th>App</th><th>Media Type</th><th>Hunt Missing</th><th>Hunt Upgrades</th><th>Notes</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong><a href="#sonarr">Sonarr</a></strong></td><td>TV Series</td><td>Yes</td><td>Yes</td><td>Episodes and seasons</td></tr>
+                    <tr><td><strong><a href="#radarr">Radarr</a></strong></td><td>Movies</td><td>Yes</td><td>Yes</td><td>Includes Minimum Availability filtering</td></tr>
+                    <tr><td><strong><a href="#lidarr">Lidarr</a></strong></td><td>Music</td><td>Yes</td><td>Yes</td><td>Albums and tracks</td></tr>
+                    <tr><td><strong><a href="#readarr">Readarr</a></strong></td><td>Books</td><td>Yes</td><td>Yes</td><td>eBooks and audiobooks</td></tr>
+                    <tr><td><strong><a href="#whisparr">Whisparr</a></strong></td><td>Adult</td><td>Yes</td><td>Yes</td><td>Supports v2 and v3</td></tr>
+                    <tr><td><strong><a href="#prowlarr">Prowlarr</a></strong></td><td>Indexers</td><td>&mdash;</td><td>&mdash;</td><td>Indexer management (no hunting)</td></tr>
+                    <tr><td><strong><a href="#swaparr">Swaparr</a></strong></td><td>Downloads</td><td>&mdash;</td><td>&mdash;</td><td>Stalled download management</td></tr>
+                </tbody>
+            </table>
+
+            <!-- ══════════════════════════════════════════════ -->
+            <!-- SONARR -->
+            <!-- ══════════════════════════════════════════════ -->
+            <h2 id="sonarr"><i class="fas fa-tv" style="color: #60a5fa; margin-right: 8px;"></i>Sonarr</h2>
+            <p class="page-subtitle">TV series &mdash; hunt missing episodes and upgrade quality.</p>
+
+            <ul>
+                <li>Sonarr manages TV series. Huntarr connects to it to find missing episodes and upgrade existing ones to better quality.</li>
+                <li>Compatible with <strong>Sonarr v3 and v4</strong>.</li>
+                <li>Ideal use case: you have a large TV library with hundreds of missing episodes that Sonarr's RSS feed will never find on its own.</li>
+                <li>Multiple instances let you maintain separate libraries (e.g., 1080p anime vs 4K live-action).</li>
+            </ul>
+
+            <h3>Sonarr-Specific Behavior</h3>
+            <ul>
+                <li>Huntarr searches at the <strong>episode level</strong>, not the series level. This means it can target individual missing episodes within a series.</li>
+                <li>Upgrade hunts check each episode's current quality against the quality cutoff defined in your Sonarr quality profile.</li>
+                <li>Huntarr skips unaired episodes and respects series monitoring settings.</li>
+            </ul>
+
+            <h3>Tips for Sonarr</h3>
+            <ul>
+                <li>Start with 1&ndash;3 episodes per cycle to avoid indexer rate limits.</li>
+                <li>If you have a large backlog (500+ missing episodes), consider increasing the cycle rate gradually over a few days.</li>
+                <li>Check Sonarr's <em>Activity &gt; Queue</em> if searches seem slow &mdash; downloads may be queued.</li>
+                <li>Make sure Sonarr's indexers are healthy before enabling hunts.</li>
+            </ul>
+
+            <div class="alert alert-warning">
+                <strong>Huntarr triggers searches through Sonarr</strong> &mdash; make sure Sonarr has working indexers and a download client configured before enabling hunts.
+            </div>
+
+            <!-- ══════════════════════════════════════════════ -->
+            <!-- RADARR -->
+            <!-- ══════════════════════════════════════════════ -->
+            <h2 id="radarr"><i class="fas fa-film" style="color: #fbbf24; margin-right: 8px;"></i>Radarr</h2>
+            <p class="page-subtitle">Movies &mdash; hunt missing films and upgrade quality.</p>
+
+            <ul>
+                <li>Radarr manages movies. Huntarr connects to find missing films and upgrade quality.</li>
+                <li>Compatible with <strong>Radarr v3+</strong>.</li>
+                <li>Multiple instances supported (e.g., one for 1080p, one for 4K, one for kids' movies).</li>
+            </ul>
+
+            <h3>Radarr-Specific Settings</h3>
+            <table>
+                <thead>
+                    <tr><th>Setting</th><th>Default</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Minimum Availability</strong></td><td>Announced</td><td>When a movie becomes searchable: <em>Announced</em>, <em>In Cinemas</em>, or <em>Released</em>. Controls whether Huntarr will attempt to search for a movie based on its release status.</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Tips for Radarr</h3>
+            <ul>
+                <li><strong>Minimum Availability matters:</strong> Searching for "Announced" movies rarely finds results. Use "Released" for the best hit rate.</li>
+                <li>Radarr's custom formats can help you target specific qualities and codecs.</li>
+                <li>If movies aren't being found, verify that Radarr's Minimum Availability matches your expectations &mdash; a movie marked "Announced" likely has no releases yet.</li>
+                <li>Multiple instances let you maintain separate quality libraries (e.g., a 1080p library and a 4K HDR library).</li>
+            </ul>
+
+            <!-- ══════════════════════════════════════════════ -->
+            <!-- LIDARR -->
+            <!-- ══════════════════════════════════════════════ -->
+            <h2 id="lidarr"><i class="fas fa-music" style="color: #34d399; margin-right: 8px;"></i>Lidarr</h2>
+            <p class="page-subtitle">Music &mdash; hunt missing albums and upgrade audio quality.</p>
+
+            <ul>
+                <li>Lidarr manages music &mdash; albums, tracks, and artists.</li>
+                <li>Compatible with <strong>Lidarr v1+</strong>.</li>
+                <li>Multiple instances supported (e.g., FLAC lossless library vs MP3 portable library).</li>
+            </ul>
+
+            <h3>Lidarr-Specific Behavior</h3>
+            <ul>
+                <li>Huntarr searches at the <strong>album level</strong>. Lidarr handles individual track matching.</li>
+                <li>Album searches often return full discographies; Lidarr filters to the correct album automatically.</li>
+                <li>Music indexers can be more inconsistent than video indexers &mdash; patience and multiple indexers help.</li>
+            </ul>
+
+            <h3>Tips for Lidarr</h3>
+            <ul>
+                <li>Start with very low caps (1 album per cycle) since music indexers are often rate-limited.</li>
+                <li>Use quality profiles in Lidarr to control FLAC vs MP3 preference.</li>
+                <li>If missing albums aren't found, verify Lidarr has at least one healthy music indexer configured.</li>
+                <li>Separate instances for FLAC and MP3 libraries is a common and recommended setup.</li>
+            </ul>
+
+            <!-- ══════════════════════════════════════════════ -->
+            <!-- READARR -->
+            <!-- ══════════════════════════════════════════════ -->
+            <h2 id="readarr"><i class="fas fa-book" style="color: #f87171; margin-right: 8px;"></i>Readarr</h2>
+            <p class="page-subtitle">Books &mdash; hunt missing eBooks and audiobooks automatically.</p>
+
+            <ul>
+                <li>Readarr manages books and audiobooks.</li>
+                <li>Compatible with <strong>Readarr v0.1+</strong>.</li>
+                <li>Multiple instances supported (e.g., one for eBooks, one for audiobooks).</li>
+            </ul>
+
+            <h3>Readarr-Specific Behavior</h3>
+            <ul>
+                <li>Huntarr searches at the <strong>book level</strong> (individual titles).</li>
+                <li>Audiobook searches may require specialized indexers that carry audio content.</li>
+                <li>Book indexers can be limited compared to video &mdash; results may take longer to appear.</li>
+            </ul>
+
+            <h3>Tips for Readarr</h3>
+            <ul>
+                <li>Separate instances for eBooks and audiobooks is strongly recommended since they use different indexers and quality profiles.</li>
+                <li>Book indexers are niche &mdash; make sure you have at least one dedicated book indexer in your setup.</li>
+                <li>Be patient with search results; book content is less widely available than TV or movies.</li>
+                <li>Check Readarr's <em>Activity</em> queue for search progress.</li>
+            </ul>
+
+            <!-- ══════════════════════════════════════════════ -->
+            <!-- WHISPARR -->
+            <!-- ══════════════════════════════════════════════ -->
+            <h2 id="whisparr"><i class="fas fa-mask" style="color: #a78bfa; margin-right: 8px;"></i>Whisparr</h2>
+            <p class="page-subtitle">Adult content &mdash; automated hunting and quality upgrades.</p>
+
+            <ul>
+                <li>Whisparr manages adult content.</li>
+                <li>Compatible with <strong>Whisparr v2 and v3</strong>.</li>
+                <li>Multiple instances supported.</li>
+            </ul>
+
+            <h3>Whisparr-Specific Behavior</h3>
+            <ul>
+                <li>Huntarr uses the same hunt pattern as other *arr apps: query API, filter, trigger searches.</li>
+                <li>Specialized indexers may be required for this content type.</li>
+                <li>Quality profiles in Whisparr control resolution and format preferences.</li>
+            </ul>
+
+            <h3>Tips for Whisparr</h3>
+            <ul>
+                <li><strong>Whisparr v3 is recommended</strong> for the best API compatibility with Huntarr.</li>
+                <li>If you're running v2, consider upgrading &mdash; v3 has better API support and stability.</li>
+                <li>Use Huntarr's scheduling to keep indexer hit rates reasonable.</li>
+            </ul>
+
+            <div class="alert alert-info">
+                <strong>Version note:</strong> Huntarr supports both Whisparr v2 and v3. If you encounter API issues with v2, upgrading to v3 typically resolves them.
+            </div>
+
+            <!-- ══════════════════════════════════════════════ -->
+            <!-- PROWLARR -->
+            <!-- ══════════════════════════════════════════════ -->
+            <h2 id="prowlarr"><i class="fas fa-search" style="color: #fb923c; margin-right: 8px;"></i>Prowlarr</h2>
+            <p class="page-subtitle">Centralized indexer management for all your *arr apps.</p>
+
+            <p>Prowlarr is different from the other apps listed here. It does <strong>not</strong> hunt for media &mdash; instead, it manages the indexers that all your other *arr apps use for searching.</p>
+
+            <h3>What Huntarr Does with Prowlarr</h3>
+            <ul>
+                <li>Monitors indexer health and status from the Huntarr dashboard.</li>
+                <li>Provides visibility into which indexers are online, offline, or rate-limited.</li>
+                <li>Allows you to view Prowlarr configuration from within Huntarr's interface.</li>
+            </ul>
+
+            <h3>Prowlarr Settings</h3>
+            <table>
+                <thead>
+                    <tr><th>Setting</th><th>Default</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>URL</strong></td><td>&mdash;</td><td>Your Prowlarr instance URL (e.g., <code>http://localhost:9696</code>)</td></tr>
+                    <tr><td><strong>API Key</strong></td><td>&mdash;</td><td>Found in Prowlarr &gt; Settings &gt; General</td></tr>
+                    <tr><td><strong>Enabled</strong></td><td>Yes</td><td>Monitor this Prowlarr instance</td></tr>
+                </tbody>
+            </table>
+
+            <div class="alert alert-info">
+                <strong>Prowlarr doesn't have hunt capabilities.</strong> It manages indexers that Sonarr, Radarr, and other apps use. Keep Prowlarr healthy &mdash; it directly affects every other app's ability to find content.
+            </div>
+
+            <h3>Tips for Prowlarr</h3>
+            <ul>
+                <li>Configure all your indexers in Prowlarr rather than in individual *arr apps &mdash; Prowlarr syncs them automatically.</li>
+                <li>Huntarr will warn you if Prowlarr reports unhealthy or failing indexers.</li>
+                <li>Regularly check indexer health to ensure your hunting is effective across all apps.</li>
+            </ul>
+
+            <!-- ══════════════════════════════════════════════ -->
+            <!-- SWAPARR -->
+            <!-- ══════════════════════════════════════════════ -->
+            <h2 id="swaparr"><i class="fas fa-exchange-alt" style="color: #22d3ee; margin-right: 8px;"></i>Swaparr</h2>
+            <p class="page-subtitle">Automatically manage stalled and slow downloads.</p>
+
+            <p>Swaparr is a download management feature built into Huntarr. It monitors your download clients for stalled or slow downloads and automatically swaps them for better alternatives &mdash; reducing the need for manual queue management.</p>
+
+            <h3>How Swaparr Works</h3>
+            <ol>
+                <li>Swaparr monitors active downloads in your configured clients.</li>
+                <li>Downloads that are stalled, extremely slow, or stuck receive a <strong>strike</strong>.</li>
+                <li>After reaching the configured strike count, the problematic download is removed.</li>
+                <li>A new search is triggered through the appropriate *arr app to find an alternative release.</li>
+                <li>A new, hopefully better, download begins automatically.</li>
+            </ol>
+
+            <h3>Swaparr Settings</h3>
+            <table>
+                <thead>
+                    <tr><th>Setting</th><th>Default</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Enabled</strong></td><td>Yes</td><td>Enable Swaparr monitoring for this instance</td></tr>
+                    <tr><td><strong>Strike Count</strong></td><td>3</td><td>Number of strikes before a download is swapped</td></tr>
+                    <tr><td><strong>Strike Interval</strong></td><td>5 minutes</td><td>Time between strike checks</td></tr>
+                    <tr><td><strong>Max Download Speed</strong></td><td>&mdash;</td><td>Downloads below this speed (KB/s) receive strikes</td></tr>
+                    <tr><td><strong>Ignore Categories</strong></td><td>&mdash;</td><td>Comma-separated download categories to exclude from monitoring</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Dashboard Stats</h3>
+            <p>Huntarr displays Swaparr statistics on the home page:</p>
+            <ul>
+                <li>Total swaps performed</li>
+                <li>Active strikes on current downloads</li>
+                <li>Number of downloads being monitored</li>
+                <li>Overall success rate</li>
+            </ul>
+
+            <h3>Tips for Swaparr</h3>
+            <ul>
+                <li>Set the strike count to <strong>3 or higher</strong> to avoid swapping downloads that are only temporarily slow.</li>
+                <li>Use ignore categories for large downloads that are expected to be slow (e.g., 4K remuxes).</li>
+                <li>Monitor the Swaparr stats on the dashboard to see if your settings need tuning.</li>
+                <li>Works best with torrent clients (qBittorrent, Deluge, Transmission).</li>
+            </ul>
+
+            <div class="alert alert-warning">
+                <strong>Swaparr removes and re-searches downloads.</strong> Make sure your *arr apps have good indexer coverage so alternative downloads can be found when a swap occurs.
+            </div>
+
+            <!-- ══════════════════════════════════════════════ -->
+            <!-- GENERAL TIPS -->
+            <!-- ══════════════════════════════════════════════ -->
+            <h2>General Tips</h2>
+            <ul>
+                <li><strong>Test connections first:</strong> Always test your connection before saving an instance. If the test fails, Huntarr can't hunt.</li>
+                <li><strong>Start conservative:</strong> Begin with 1 item per cycle for each app. You can always increase later.</li>
+                <li><strong>Check your indexers:</strong> Huntarr is only as good as the indexers configured in your *arr apps. No indexers = no results.</li>
+                <li><strong>Use scheduling wisely:</strong> Stagger your hunt cycles across apps to spread out indexer load.</li>
+                <li><strong>Multiple instances:</strong> Don't be afraid to use multiple instances of the same app for different quality levels or content categories.</li>
+                <li><strong>Monitor the dashboard:</strong> Huntarr's home page shows real-time hunt status, connection health, and activity across all your instances.</li>
+            </ul>
 
         </div><!-- /docs-content -->
 
         <footer class="docs-footer">
-            <p>Huntarr is open source. <a href="https://github.com/plexguide/Huntarr.io" target="_blank">GitHub</a> · <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank">Discord</a> · <a href="https://www.reddit.com/r/huntarr/" target="_blank">Reddit</a></p>
+            <p>Huntarr is open source. <a href="https://github.com/plexguide/Huntarr.io" target="_blank">GitHub</a> &middot; <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank">Discord</a> &middot; <a href="https://www.reddit.com/r/huntarr/" target="_blank">Reddit</a></p>
         </footer>
     </main>
 
