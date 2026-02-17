@@ -1384,7 +1384,12 @@ def _import_list_sync_loop():
             from src.primary.routes.media_hunt.import_lists_movie import run_import_list_sync_cycle
             run_import_list_sync_cycle()
         except Exception as e:
-            logger.error(f"Import list sync cycle error: {e}")
+            logger.error(f"Import list sync cycle error (movie): {e}")
+        try:
+            from src.primary.routes.media_hunt.import_lists_tv import run_tv_import_list_sync_cycle
+            run_tv_import_list_sync_cycle()
+        except Exception as e:
+            logger.error(f"Import list sync cycle error (tv): {e}")
         # Wait 5 minutes between checks
         stop_event.wait(300)
 

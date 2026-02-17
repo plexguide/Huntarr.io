@@ -1,7 +1,7 @@
 /**
  * Import Lists – single view for Movie Hunt and TV Hunt. Combined instance dropdown
  * (Movie - X / TV - X, alphabetical). Each instance keeps its own lists; same page linked from both sidebars.
- * TV Hunt returns empty lists (stub) until TV import lists are implemented.
+ * TV Hunt supports Trakt, Plex Watchlist, and Custom JSON list types with monitor options.
  */
 (function() {
     'use strict';
@@ -229,6 +229,7 @@
                                     '<span class="import-list-badge ' + (enabled ? 'badge-enabled' : 'badge-disabled') + '">' + (enabled ? 'Enabled' : 'Disabled') + '</span>' +
                                     '<span class="import-list-badge ' + (lst.auto_add ? 'badge-enabled' : 'badge-disabled') + '">' + (lst.auto_add ? 'Auto Add' : 'Manual') + '</span>' +
                                     '<span class="import-list-badge badge-interval"><i class="fas fa-clock"></i> ' + _intervalLabel(interval) + '</span>' +
+                                    (lst.monitor ? '<span class="import-list-badge badge-interval"><i class="fas fa-eye"></i> ' + _esc(_monitorLabel(lst.monitor)) + '</span>' : '') +
                                 '</div>' +
                                 '<div class="import-list-stats">' +
                                     '<span class="import-list-stat"><i class="fas fa-history"></i> ' + lastSync + '</span>' +
@@ -246,28 +247,22 @@
                         '</div>';
                     }
 
-                    // Add card at end (hide for TV - import lists not implemented for TV yet)
-                    if (window.ImportLists._ilMode !== 'tv') {
-                        html += '<div class="add-instance-card add-import-list-card" id="import-lists-add-card" data-app-type="import-list">' +
-                            '<div class="add-icon"><i class="fas fa-plus-circle"></i></div>' +
-                            '<div class="add-text">Add Import List</div></div>';
-                    } else if (lists.length === 0) {
-                        html += '<p class="import-lists-tv-empty" style="color:#94a3b8;margin:12px 0;">Import lists for TV Hunt are not available yet.</p>';
-                    }
+                    // Add card at end
+                    html += '<div class="add-instance-card add-import-list-card" id="import-lists-add-card" data-app-type="import-list">' +
+                        '<div class="add-icon"><i class="fas fa-plus-circle"></i></div>' +
+                        '<div class="add-text">Add Import List</div></div>';
 
                     gridEl.innerHTML = html;
                     window.ImportLists._bindCardButtons();
                     var syncAllBtn = document.getElementById('import-lists-sync-all-btn');
-                    if (syncAllBtn) syncAllBtn.style.display = window.ImportLists._ilMode === 'tv' ? 'none' : '';
+                    if (syncAllBtn) syncAllBtn.style.display = '';
                 })
                 .catch(function(e) {
                     console.error('[ImportLists] Failed to load:', e);
                     var errHtml = '<p style="color: #ef4444; margin: 0 0 12px 0;">Failed to load import lists.</p>';
-                    if (window.ImportLists._ilMode !== 'tv') {
-                        errHtml += '<div class="add-instance-card add-import-list-card" id="import-lists-add-card" data-app-type="import-list">' +
-                            '<div class="add-icon"><i class="fas fa-plus-circle"></i></div>' +
-                            '<div class="add-text">Add Import List</div></div>';
-                    }
+                    errHtml += '<div class="add-instance-card add-import-list-card" id="import-lists-add-card" data-app-type="import-list">' +
+                        '<div class="add-icon"><i class="fas fa-plus-circle"></i></div>' +
+                        '<div class="add-text">Add Import List</div></div>';
                     gridEl.innerHTML = errHtml;
                     window.ImportLists._bindAddCard();
                 });
@@ -375,6 +370,12 @@
             var autoAddCheckbox = document.getElementById('import-list-auto-add');
             if (autoAddCheckbox) autoAddCheckbox.checked = false;
 
+            // Show/hide monitor dropdown (TV only)
+            var monitorGroup = document.getElementById('import-list-monitor-group');
+            if (monitorGroup) monitorGroup.style.display = (window.ImportLists._ilMode === 'tv') ? '' : 'none';
+            var monitorSelect = document.getElementById('import-list-monitor');
+            if (monitorSelect) monitorSelect.value = 'all_episodes';
+
             _loadListTypes(function() {
                 _renderTypePicker();
             });
@@ -449,6 +450,11 @@
                 sync_interval_hours: parseInt(intervalSelect.value, 10) || 12,
                 auto_add: autoAddCheckbox ? autoAddCheckbox.checked : false,
             };
+            // Include monitor for TV mode
+            if (window.ImportLists._ilMode === 'tv') {
+                var monitorSelect = document.getElementById('import-list-monitor');
+                if (monitorSelect) payload.monitor = monitorSelect.value || 'all_episodes';
+            }
             var instId = window.ImportLists.getInstanceId();
             if (instId) payload.instance_id = parseInt(instId, 10);
             var url = window.ImportLists._appendInstanceParam(window.ImportLists.getApiBase());
@@ -520,6 +526,12 @@
                     var autoAddCheckbox = document.getElementById('import-list-edit-auto-add');
                     if (autoAddCheckbox) autoAddCheckbox.checked = !!lst.auto_add;
 
+                    // Show/hide monitor dropdown (TV only)
+                    var editMonitorGroup = document.getElementById('import-list-edit-monitor-group');
+                    if (editMonitorGroup) editMonitorGroup.style.display = (window.ImportLists._ilMode === 'tv') ? '' : 'none';
+                    var editMonitorSelect = document.getElementById('import-list-edit-monitor');
+                    if (editMonitorSelect) editMonitorSelect.value = lst.monitor || 'all_episodes';
+
                     var modal = document.getElementById('import-list-edit-modal');
                     // Move modal to body so it sits outside .app-container (avoids being blurred)
                     if (modal && modal.parentNode !== document.body) {
@@ -558,6 +570,11 @@
                 sync_interval_hours: parseInt(intervalSelect.value, 10) || 12,
                 auto_add: autoAddCheckbox ? autoAddCheckbox.checked : false,
             };
+            // Include monitor for TV mode
+            if (window.ImportLists._ilMode === 'tv') {
+                var editMonitorSelect = document.getElementById('import-list-edit-monitor');
+                if (editMonitorSelect) payload.monitor = editMonitorSelect.value || 'all_episodes';
+            }
             var instId = window.ImportLists.getInstanceId();
             if (instId) payload.instance_id = parseInt(instId, 10);
             var editUrl = window.ImportLists.getApiBase() + '/' + currentEditId;
@@ -1049,6 +1066,21 @@
     function _intervalLabel(hours) {
         if (hours < 24) return hours + 'h';
         return Math.floor(hours / 24) + 'd';
+    }
+
+    function _monitorLabel(val) {
+        var labels = {
+            'all_episodes': 'All Episodes',
+            'future_episodes': 'Future Episodes',
+            'missing_episodes': 'Missing Episodes',
+            'existing_episodes': 'Existing Episodes',
+            'recent_episodes': 'Recent Episodes',
+            'pilot_episode': 'Pilot Episode',
+            'first_season': 'First Season',
+            'last_season': 'Last Season',
+            'none': 'None',
+        };
+        return labels[val] || val || '';
     }
 
     function _notify(msg, type) {

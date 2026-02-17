@@ -111,6 +111,22 @@
                     <p class="import-list-field-help">When enabled, items from this list are automatically added to your library on sync. When disabled, the list syncs but nothing is added.</p>
                 </div>
 
+                <div class="import-list-form-group" id="import-list-monitor-group" style="display: none;">
+                    <label for="import-list-monitor">Monitor</label>
+                    <select id="import-list-monitor" class="control-select">
+                        <option value="all_episodes" selected>All Episodes</option>
+                        <option value="future_episodes">Future Episodes</option>
+                        <option value="missing_episodes">Missing Episodes</option>
+                        <option value="existing_episodes">Existing Episodes</option>
+                        <option value="recent_episodes">Recent Episodes</option>
+                        <option value="pilot_episode">Pilot Episode</option>
+                        <option value="first_season">First Season</option>
+                        <option value="last_season">Last Season</option>
+                        <option value="none">None</option>
+                    </select>
+                    <p class="import-list-field-help">Monitoring option applied to series added from this list.</p>
+                </div>
+
                 <div class="import-list-form-actions">
                     <button type="button" class="btn-cancel" id="import-list-cancel-btn">Cancel</button>
                     <button type="button" class="btn-save" id="import-list-save-btn">
@@ -168,6 +184,22 @@
                         <span class="toggle-slider"></span>
                     </label>
                     <p class="import-list-field-help">When enabled, items from this list are automatically added to your library on sync. When disabled, the list syncs but nothing is added.</p>
+                </div>
+
+                <div class="import-list-form-group" id="import-list-edit-monitor-group" style="display: none;">
+                    <label for="import-list-edit-monitor">Monitor</label>
+                    <select id="import-list-edit-monitor" class="control-select">
+                        <option value="all_episodes">All Episodes</option>
+                        <option value="future_episodes">Future Episodes</option>
+                        <option value="missing_episodes">Missing Episodes</option>
+                        <option value="existing_episodes">Existing Episodes</option>
+                        <option value="recent_episodes">Recent Episodes</option>
+                        <option value="pilot_episode">Pilot Episode</option>
+                        <option value="first_season">First Season</option>
+                        <option value="last_season">Last Season</option>
+                        <option value="none">None</option>
+                    </select>
+                    <p class="import-list-field-help">Monitoring option applied to series added from this list.</p>
                 </div>
 
                 <div class="import-list-form-actions">
