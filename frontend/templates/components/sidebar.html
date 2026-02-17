@@ -433,41 +433,40 @@ function setActiveNavItem() {
     });
 
     var h = window.location.hash || '#home';
-    collapseAllSubs();
-    // Reset sub-view modes
     var mhBody = document.getElementById('sidebar-group-media-hunt');
     if (mhBody) { mhBody.classList.remove('config-view'); mhBody.classList.remove('activity-view'); mhBody.classList.remove('indexmaster-view'); }
 
     var selector = null;
-    var group = null; // which group to expand
+    var group = null;
+    var subToExpand = null; // which Media Hunt sub to expand (avoids collapse-then-expand flicker)
 
     // Home
     if (h === '#home') { selector = '#homeNav'; group = null; }
 
     // ── Media Hunt (daily use) ──────────────────────
     else if (h === '#media-hunt-collection' || h === '#movie-hunt-home' || h === '#movie-hunt-collection') {
-        selector = '#movieHuntCollectionNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-collection-sub');
+        selector = '#movieHuntCollectionNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub';
     }
-    else if (h === '#media-hunt-instances') { selector = '#movieHuntInstancesNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-collection-sub'); }
-    else if (h === '#movie-hunt-calendar') { selector = '#movieHuntCalendarNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-collection-sub'); }
-    else if (h === '#settings-import-media') { selector = '#movieHuntImportMediaNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }
-    else if (h === '#activity-queue') { selector = '#movieHuntActivityQueueNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-activity-sub'); if (mhBody) mhBody.classList.add('activity-view'); }
-    else if (h === '#activity-history') { selector = '#movieHuntActivityHistoryNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-activity-sub'); if (mhBody) mhBody.classList.add('activity-view'); }
-    else if (h === '#activity-blocklist') { selector = '#movieHuntActivityBlocklistNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-activity-sub'); if (mhBody) mhBody.classList.add('activity-view'); }
-    else if (h === '#activity-logs' || h === '#logs-media-hunt' || h === '#logs-tv-hunt') { selector = '#movieHuntActivityLogsNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-activity-sub'); if (mhBody) mhBody.classList.add('activity-view'); }
+    else if (h === '#media-hunt-instances') { selector = '#movieHuntInstancesNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+    else if (h === '#movie-hunt-calendar') { selector = '#movieHuntCalendarNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+    else if (h === '#settings-import-media') { selector = '#movieHuntImportMediaNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'media-hunt-config-sub'; if (mhBody) mhBody.classList.add('config-view'); }
+    else if (h === '#activity-queue') { selector = '#movieHuntActivityQueueNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-activity-sub'; if (mhBody) mhBody.classList.add('activity-view'); }
+    else if (h === '#activity-history') { selector = '#movieHuntActivityHistoryNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-activity-sub'; if (mhBody) mhBody.classList.add('activity-view'); }
+    else if (h === '#activity-blocklist') { selector = '#movieHuntActivityBlocklistNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-activity-sub'; if (mhBody) mhBody.classList.add('activity-view'); }
+    else if (h === '#activity-logs' || h === '#logs-media-hunt' || h === '#logs-tv-hunt') { selector = '#movieHuntActivityLogsNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-activity-sub'; if (mhBody) mhBody.classList.add('activity-view'); }
 
     // ── Media Hunt > Configuration ──────────────────
-    else if (h === '#media-hunt-settings' || h === '#movie-hunt-settings' || h === '#settings-instance-management') { selector = '#movieHuntSettingsMovieManagementNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }
-    else if (h === '#indexer-hunt') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-collection-sub'); }
-    else if (h === '#indexer-hunt-stats') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-collection-sub'); }
-    else if (h === '#indexer-hunt-history') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-collection-sub'); }
-    else if (h === '#settings-clients') { selector = '#movieHuntClientsMainNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-collection-sub'); }
-    else if (h === '#settings-media-management') { selector = '#movieHuntSettingsMovieManagementNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }
-    else if (h === '#settings-profiles') { selector = '#movieHuntSettingsProfilesNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }
-    else if (h === '#settings-sizes') { selector = '#movieHuntSettingsSizesNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }
-    else if (h === '#settings-custom-formats') { selector = '#movieHuntSettingsCustomFormatsNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }
-    else if (h === '#settings-import-lists') { selector = '#movieHuntSettingsImportListsNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }
-    else if (h === '#settings-root-folders') { selector = '#movieHuntSettingsRootFoldersNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }
+    else if (h === '#media-hunt-settings' || h === '#movie-hunt-settings' || h === '#settings-instance-management') { selector = '#movieHuntSettingsMovieManagementNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'media-hunt-config-sub'; if (mhBody) mhBody.classList.add('config-view'); }
+    else if (h === '#indexer-hunt') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+    else if (h === '#indexer-hunt-stats') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+    else if (h === '#indexer-hunt-history') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+    else if (h === '#settings-clients') { selector = '#movieHuntClientsMainNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+    else if (h === '#settings-media-management') { selector = '#movieHuntSettingsMovieManagementNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'media-hunt-config-sub'; if (mhBody) mhBody.classList.add('config-view'); }
+    else if (h === '#settings-profiles') { selector = '#movieHuntSettingsProfilesNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'media-hunt-config-sub'; if (mhBody) mhBody.classList.add('config-view'); }
+    else if (h === '#settings-sizes') { selector = '#movieHuntSettingsSizesNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'media-hunt-config-sub'; if (mhBody) mhBody.classList.add('config-view'); }
+    else if (h === '#settings-custom-formats') { selector = '#movieHuntSettingsCustomFormatsNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'media-hunt-config-sub'; if (mhBody) mhBody.classList.add('config-view'); }
+    else if (h === '#settings-import-lists') { selector = '#movieHuntSettingsImportListsNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'media-hunt-config-sub'; if (mhBody) mhBody.classList.add('config-view'); }
+    else if (h === '#settings-root-folders') { selector = '#movieHuntSettingsRootFoldersNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'media-hunt-config-sub'; if (mhBody) mhBody.classList.add('config-view'); }
 
     // ── Requests ──────────────────────────────────
     else if (h === '#requestarr') { selector = '#requestarrDiscoverNav'; group = 'sidebar-group-requests'; }
@@ -508,6 +507,16 @@ function setActiveNavItem() {
 
     // Fallback
     else { selector = '#homeNav'; group = null; }
+
+    // Media Hunt sub-groups: only collapse subs we are not expanding (avoids flicker)
+    if (subToExpand) {
+        ALL_SUB_GROUP_IDS.forEach(function(id) {
+            if (id === subToExpand) expandSub(id);
+            else collapseSub(id);
+        });
+    } else {
+        collapseAllSubs();
+    }
 
     // Expand the correct group (accordion)
     if (group) { expandSidebarGroup(group); }
