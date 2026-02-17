@@ -8147,7 +8147,36 @@ document.head.appendChild(styleEl);
         // ---------------------------------------------------------------
         // Refresh / render
         // ---------------------------------------------------------------
+        _updateModeLabels: function() {
+            var isTV = (window.ImportLists._ilMode === 'tv');
+            var mediaWord = isTV ? 'shows' : 'movies';
+            var mediaSingular = isTV ? 'series' : 'movie';
+            var searchNoun = isTV ? 'missing episodes' : 'the missing ' + mediaSingular;
+
+            var helpEl = document.getElementById('import-lists-help-text');
+            if (helpEl) helpEl.textContent = 'Automatically add ' + mediaWord + ' to your collection from external lists. Lists sync on a schedule and new ' + mediaWord + ' are added automatically.';
+            var subtitleEl = document.getElementById('import-list-modal-subtitle');
+            if (subtitleEl) subtitleEl.textContent = 'Choose a list source to automatically import ' + mediaWord + '.';
+
+            // Add modal descriptions
+            var addAutoDesc = document.getElementById('import-list-auto-add-desc');
+            if (addAutoDesc) addAutoDesc.textContent = 'Add ' + mediaWord + ' from this list when syncs are performed via the UI or automatically.';
+            var addSearchLabel = document.getElementById('import-list-search-label');
+            if (addSearchLabel) addSearchLabel.textContent = isTV ? 'Search for Missing Episodes' : 'Search for Missing Movies';
+            var addSearchDesc = document.getElementById('import-list-search-desc');
+            if (addSearchDesc) addSearchDesc.textContent = 'After ' + mediaSingular + ' is added, automatically search for ' + searchNoun + '.';
+
+            // Edit modal descriptions
+            var editAutoDesc = document.getElementById('import-list-edit-auto-add-desc');
+            if (editAutoDesc) editAutoDesc.textContent = 'Add ' + mediaWord + ' from this list when syncs are performed via the UI or automatically.';
+            var editSearchLabel = document.getElementById('import-list-edit-search-label');
+            if (editSearchLabel) editSearchLabel.textContent = isTV ? 'Search for Missing Episodes' : 'Search for Missing Movies';
+            var editSearchDesc = document.getElementById('import-list-edit-search-desc');
+            if (editSearchDesc) editSearchDesc.textContent = 'After ' + mediaSingular + ' is added, automatically search for ' + searchNoun + '.';
+        },
+
         refreshList: function() {
+            window.ImportLists._updateModeLabels();
             var gridEl = document.getElementById('import-lists-grid');
             if (!gridEl) return;
             var url = window.ImportLists._appendInstanceParam(window.ImportLists.getApiBase());
@@ -8181,9 +8210,10 @@ document.head.appendChild(styleEl);
                             '<div class="import-list-card-body">' +
                                 '<div class="import-list-badges">' +
                                     '<span class="import-list-badge ' + (enabled ? 'badge-enabled' : 'badge-disabled') + '">' + (enabled ? 'Enabled' : 'Disabled') + '</span>' +
-                                    '<span class="import-list-badge ' + (lst.auto_add ? 'badge-enabled' : 'badge-disabled') + '">' + (lst.auto_add ? 'Auto Add' : 'Manual') + '</span>' +
+                                    '<span class="import-list-badge ' + ((lst.enable_auto_add !== false) ? 'badge-enabled' : 'badge-disabled') + '">' + ((lst.enable_auto_add !== false) ? 'Auto Add' : 'Manual') + '</span>' +
+                                    (lst.search_on_add ? '<span class="import-list-badge badge-enabled"><i class="fas fa-search"></i> Search</span>' : '') +
                                     '<span class="import-list-badge badge-interval"><i class="fas fa-clock"></i> ' + _intervalLabel(interval) + '</span>' +
-                                    (lst.monitor ? '<span class="import-list-badge badge-interval"><i class="fas fa-eye"></i> ' + _esc(_monitorLabel(lst.monitor)) + '</span>' : '') +
+                                    '<span class="import-list-badge badge-interval"><i class="fas fa-eye"></i> ' + _esc(_monitorLabel(lst.monitor || (window.ImportLists._ilMode === 'tv' ? 'all_episodes' : 'movie_only'))) + '</span>' +
                                 '</div>' +
                                 '<div class="import-list-stats">' +
                                     '<span class="import-list-stat"><i class="fas fa-history"></i> ' + lastSync + '</span>' +
@@ -8286,7 +8316,8 @@ document.head.appendChild(styleEl);
                         var results = data.results || {};
                         var totalAdded = 0;
                         Object.keys(results).forEach(function(k) { totalAdded += (results[k].added || 0); });
-                        _notify('All lists synced: ' + totalAdded + ' movies added', 'success');
+                        var syncWord = (window.ImportLists._ilMode === 'tv') ? 'shows' : 'movies';
+                        _notify('All lists synced: ' + totalAdded + ' ' + syncWord + ' added', 'success');
                     } else {
                         _notify('Sync failed', 'error');
                     }
@@ -8320,15 +8351,17 @@ document.head.appendChild(styleEl);
             document.getElementById('import-list-type-picker').style.display = '';
             document.getElementById('import-list-config-form').style.display = 'none';
 
-            // Reset auto-add toggle (unchecked by default)
-            var autoAddCheckbox = document.getElementById('import-list-auto-add');
-            if (autoAddCheckbox) autoAddCheckbox.checked = false;
+            // Reset checkboxes to defaults
+            var enableAutoAdd = document.getElementById('import-list-enable-auto-add');
+            if (enableAutoAdd) enableAutoAdd.checked = true;
+            var searchOnAdd = document.getElementById('import-list-search-on-add');
+            if (searchOnAdd) searchOnAdd.checked = false;
 
-            // Show/hide monitor dropdown (TV only)
-            var monitorGroup = document.getElementById('import-list-monitor-group');
-            if (monitorGroup) monitorGroup.style.display = (window.ImportLists._ilMode === 'tv') ? '' : 'none';
-            var monitorSelect = document.getElementById('import-list-monitor');
-            if (monitorSelect) monitorSelect.value = 'all_episodes';
+            // Update mode-specific labels
+            window.ImportLists._updateModeLabels();
+
+            // Populate monitor dropdown based on mode
+            _populateMonitorSelect('import-list-monitor', window.ImportLists._ilMode);
 
             _loadListTypes(function() {
                 _renderTypePicker();
@@ -8396,19 +8429,19 @@ document.head.appendChild(styleEl);
                 settings.list_type = subtypeSelect.value;
             }
 
-            var autoAddCheckbox = document.getElementById('import-list-auto-add');
+            var enableAutoAddCb = document.getElementById('import-list-enable-auto-add');
+            var searchOnAddCb = document.getElementById('import-list-search-on-add');
+            var monitorSelect = document.getElementById('import-list-monitor');
+            var defaultMon = (window.ImportLists._ilMode === 'tv') ? 'all_episodes' : 'movie_only';
             var payload = {
                 type: selectedType,
                 name: name,
                 settings: settings,
                 sync_interval_hours: parseInt(intervalSelect.value, 10) || 12,
-                auto_add: autoAddCheckbox ? autoAddCheckbox.checked : false,
+                enable_auto_add: enableAutoAddCb ? enableAutoAddCb.checked : true,
+                search_on_add: searchOnAddCb ? searchOnAddCb.checked : false,
+                monitor: monitorSelect ? (monitorSelect.value || defaultMon) : defaultMon,
             };
-            // Include monitor for TV mode
-            if (window.ImportLists._ilMode === 'tv') {
-                var monitorSelect = document.getElementById('import-list-monitor');
-                if (monitorSelect) payload.monitor = monitorSelect.value || 'all_episodes';
-            }
             var instId = window.ImportLists.getInstanceId();
             if (instId) payload.instance_id = parseInt(instId, 10);
             var url = window.ImportLists._appendInstanceParam(window.ImportLists.getApiBase());
@@ -8476,15 +8509,18 @@ document.head.appendChild(styleEl);
                     var intervalSelect = document.getElementById('import-list-edit-interval');
                     intervalSelect.value = String(lst.sync_interval_hours || 12);
 
-                    // Auto Add toggle
-                    var autoAddCheckbox = document.getElementById('import-list-edit-auto-add');
-                    if (autoAddCheckbox) autoAddCheckbox.checked = !!lst.auto_add;
+                    // Enable Automatic Add + Search on Add checkboxes
+                    var editAutoAddCb = document.getElementById('import-list-edit-enable-auto-add');
+                    if (editAutoAddCb) editAutoAddCb.checked = (lst.enable_auto_add !== false);
+                    var editSearchCb = document.getElementById('import-list-edit-search-on-add');
+                    if (editSearchCb) editSearchCb.checked = !!lst.search_on_add;
 
-                    // Show/hide monitor dropdown (TV only)
-                    var editMonitorGroup = document.getElementById('import-list-edit-monitor-group');
-                    if (editMonitorGroup) editMonitorGroup.style.display = (window.ImportLists._ilMode === 'tv') ? '' : 'none';
-                    var editMonitorSelect = document.getElementById('import-list-edit-monitor');
-                    if (editMonitorSelect) editMonitorSelect.value = lst.monitor || 'all_episodes';
+                    // Update mode-specific labels
+                    window.ImportLists._updateModeLabels();
+
+                    // Populate monitor dropdown based on mode
+                    var editDefaultMon = (window.ImportLists._ilMode === 'tv') ? 'all_episodes' : 'movie_only';
+                    _populateMonitorSelect('import-list-edit-monitor', window.ImportLists._ilMode, lst.monitor || editDefaultMon);
 
                     var modal = document.getElementById('import-list-edit-modal');
                     // Move modal to body so it sits outside .app-container (avoids being blurred)
@@ -8517,18 +8553,18 @@ document.head.appendChild(styleEl);
                 settings.list_type = subtypeSelect.value;
             }
 
-            var autoAddCheckbox = document.getElementById('import-list-edit-auto-add');
+            var editAutoAddCb = document.getElementById('import-list-edit-enable-auto-add');
+            var editSearchCb = document.getElementById('import-list-edit-search-on-add');
+            var editMonitorSelect = document.getElementById('import-list-edit-monitor');
+            var editDefaultMon = (window.ImportLists._ilMode === 'tv') ? 'all_episodes' : 'movie_only';
             var payload = {
                 name: name,
                 settings: settings,
                 sync_interval_hours: parseInt(intervalSelect.value, 10) || 12,
-                auto_add: autoAddCheckbox ? autoAddCheckbox.checked : false,
+                enable_auto_add: editAutoAddCb ? editAutoAddCb.checked : true,
+                search_on_add: editSearchCb ? editSearchCb.checked : false,
+                monitor: editMonitorSelect ? (editMonitorSelect.value || editDefaultMon) : editDefaultMon,
             };
-            // Include monitor for TV mode
-            if (window.ImportLists._ilMode === 'tv') {
-                var editMonitorSelect = document.getElementById('import-list-edit-monitor');
-                if (editMonitorSelect) payload.monitor = editMonitorSelect.value || 'all_episodes';
-            }
             var instId = window.ImportLists.getInstanceId();
             if (instId) payload.instance_id = parseInt(instId, 10);
             var editUrl = window.ImportLists.getApiBase() + '/' + currentEditId;
@@ -9022,8 +9058,43 @@ document.head.appendChild(styleEl);
         return Math.floor(hours / 24) + 'd';
     }
 
+    var _MOVIE_MONITOR_OPTIONS = [
+        {value: 'movie_only', label: 'Movie Only'},
+        {value: 'movie_and_collection', label: 'Movie and Collection'},
+        {value: 'none', label: 'None'},
+    ];
+
+    var _TV_MONITOR_OPTIONS = [
+        {value: 'all_episodes', label: 'All Episodes'},
+        {value: 'future_episodes', label: 'Future Episodes'},
+        {value: 'missing_episodes', label: 'Missing Episodes'},
+        {value: 'existing_episodes', label: 'Existing Episodes'},
+        {value: 'recent_episodes', label: 'Recent Episodes'},
+        {value: 'pilot_episode', label: 'Pilot Episode'},
+        {value: 'first_season', label: 'First Season'},
+        {value: 'last_season', label: 'Last Season'},
+        {value: 'none', label: 'None'},
+    ];
+
+    function _populateMonitorSelect(selectId, mode, selectedValue) {
+        var sel = document.getElementById(selectId);
+        if (!sel) return;
+        var options = (mode === 'tv') ? _TV_MONITOR_OPTIONS : _MOVIE_MONITOR_OPTIONS;
+        var defaultVal = (mode === 'tv') ? 'all_episodes' : 'movie_only';
+        sel.innerHTML = '';
+        options.forEach(function(opt) {
+            var o = document.createElement('option');
+            o.value = opt.value;
+            o.textContent = opt.label;
+            if ((selectedValue || defaultVal) === opt.value) o.selected = true;
+            sel.appendChild(o);
+        });
+    }
+
     function _monitorLabel(val) {
         var labels = {
+            'movie_only': 'Movie Only',
+            'movie_and_collection': 'Movie and Collection',
             'all_episodes': 'All Episodes',
             'future_episodes': 'Future Episodes',
             'missing_episodes': 'Missing Episodes',

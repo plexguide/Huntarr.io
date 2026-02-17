@@ -30,7 +30,7 @@
             <div class="import-lists-header">
                 <div>
                     <h3>Import Lists</h3>
-                    <p class="import-lists-help">Automatically add movies to your collection from external lists. Lists sync on a schedule and new movies are added automatically.</p>
+                    <p class="import-lists-help" id="import-lists-help-text">Automatically add items to your collection from external lists. Lists sync on a schedule and new items are added automatically.</p>
                 </div>
                 <div class="import-lists-header-actions">
                     <button type="button" class="btn-sync-all" id="import-lists-sync-all-btn" title="Sync All Lists">
@@ -57,7 +57,7 @@
                     <i class="fas fa-times"></i>
                 </button>
                 <h2 class="import-list-modal-title">Add Import List</h2>
-                <p class="import-list-modal-subtitle">Choose a list source to automatically import movies.</p>
+                <p class="import-list-modal-subtitle" id="import-list-modal-subtitle">Choose a list source to automatically import items.</p>
             </div>
 
             <!-- Step 1: Pick list type -->
@@ -102,29 +102,31 @@
                     </select>
                 </div>
 
-                <div class="import-list-form-group import-list-toggle-row">
-                    <label for="import-list-auto-add">Auto Add to Library</label>
-                    <label class="toggle-switch toggle-switch-sm">
-                        <input type="checkbox" id="import-list-auto-add">
-                        <span class="toggle-slider"></span>
-                    </label>
-                    <p class="import-list-field-help">When enabled, items from this list are automatically added to your library on sync. When disabled, the list syncs but nothing is added.</p>
-                </div>
-
-                <div class="import-list-form-group" id="import-list-monitor-group" style="display: none;">
+                <div class="import-list-form-group" id="import-list-monitor-group">
                     <label for="import-list-monitor">Monitor</label>
                     <select id="import-list-monitor" class="control-select">
-                        <option value="all_episodes" selected>All Episodes</option>
-                        <option value="future_episodes">Future Episodes</option>
-                        <option value="missing_episodes">Missing Episodes</option>
-                        <option value="existing_episodes">Existing Episodes</option>
-                        <option value="recent_episodes">Recent Episodes</option>
-                        <option value="pilot_episode">Pilot Episode</option>
-                        <option value="first_season">First Season</option>
-                        <option value="last_season">Last Season</option>
-                        <option value="none">None</option>
+                        <!-- Options populated by JS based on movie/tv mode -->
                     </select>
-                    <p class="import-list-field-help">Monitoring option applied to series added from this list.</p>
+                </div>
+
+                <div class="import-list-form-group import-list-checkbox-row">
+                    <div class="import-list-checkbox-item">
+                        <input type="checkbox" id="import-list-enable-auto-add" checked>
+                        <div class="import-list-checkbox-text">
+                            <label for="import-list-enable-auto-add">Enable Automatic Add</label>
+                            <p class="import-list-checkbox-desc" id="import-list-auto-add-desc">Add items from this list when syncs are performed via the UI or automatically.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="import-list-form-group import-list-checkbox-row">
+                    <div class="import-list-checkbox-item">
+                        <input type="checkbox" id="import-list-search-on-add">
+                        <div class="import-list-checkbox-text">
+                            <label for="import-list-search-on-add" id="import-list-search-label">Search for New Items</label>
+                            <p class="import-list-checkbox-desc" id="import-list-search-desc">After an item is added, automatically search for it.</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="import-list-form-actions">
@@ -177,29 +179,31 @@
                     </select>
                 </div>
 
-                <div class="import-list-form-group import-list-toggle-row">
-                    <label for="import-list-edit-auto-add">Auto Add to Library</label>
-                    <label class="toggle-switch toggle-switch-sm">
-                        <input type="checkbox" id="import-list-edit-auto-add">
-                        <span class="toggle-slider"></span>
-                    </label>
-                    <p class="import-list-field-help">When enabled, items from this list are automatically added to your library on sync. When disabled, the list syncs but nothing is added.</p>
-                </div>
-
-                <div class="import-list-form-group" id="import-list-edit-monitor-group" style="display: none;">
+                <div class="import-list-form-group" id="import-list-edit-monitor-group">
                     <label for="import-list-edit-monitor">Monitor</label>
                     <select id="import-list-edit-monitor" class="control-select">
-                        <option value="all_episodes">All Episodes</option>
-                        <option value="future_episodes">Future Episodes</option>
-                        <option value="missing_episodes">Missing Episodes</option>
-                        <option value="existing_episodes">Existing Episodes</option>
-                        <option value="recent_episodes">Recent Episodes</option>
-                        <option value="pilot_episode">Pilot Episode</option>
-                        <option value="first_season">First Season</option>
-                        <option value="last_season">Last Season</option>
-                        <option value="none">None</option>
+                        <!-- Options populated by JS based on movie/tv mode -->
                     </select>
-                    <p class="import-list-field-help">Monitoring option applied to series added from this list.</p>
+                </div>
+
+                <div class="import-list-form-group import-list-checkbox-row">
+                    <div class="import-list-checkbox-item">
+                        <input type="checkbox" id="import-list-edit-enable-auto-add" checked>
+                        <div class="import-list-checkbox-text">
+                            <label for="import-list-edit-enable-auto-add">Enable Automatic Add</label>
+                            <p class="import-list-checkbox-desc" id="import-list-edit-auto-add-desc">Add items from this list when syncs are performed via the UI or automatically.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="import-list-form-group import-list-checkbox-row">
+                    <div class="import-list-checkbox-item">
+                        <input type="checkbox" id="import-list-edit-search-on-add">
+                        <div class="import-list-checkbox-text">
+                            <label for="import-list-edit-search-on-add" id="import-list-edit-search-label">Search for New Items</label>
+                            <p class="import-list-checkbox-desc" id="import-list-edit-search-desc">After an item is added, automatically search for it.</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="import-list-form-actions">
@@ -232,5 +236,23 @@
 }
 #settingsImportListsSection .settings-no-instances .no-instances-action-btn:hover {
     background: rgba(99, 102, 241, 0.3); border-color: rgba(99, 102, 241, 0.5);
+}
+/* Checkbox rows for Enable Automatic Add / Search for Missing */
+.import-list-checkbox-row { margin-bottom: 4px !important; }
+.import-list-checkbox-item {
+    display: flex; align-items: flex-start; gap: 12px; padding: 12px 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+}
+.import-list-checkbox-item input[type="checkbox"] {
+    width: 20px; height: 20px; margin-top: 2px; flex-shrink: 0;
+    accent-color: #6366f1; cursor: pointer; border-radius: 4px;
+}
+.import-list-checkbox-text { flex: 1; }
+.import-list-checkbox-text label {
+    display: block; font-weight: 600; color: #f1f5f9; font-size: 0.95rem;
+    margin-bottom: 2px; cursor: pointer;
+}
+.import-list-checkbox-desc {
+    font-size: 0.85rem; color: #94a3b8; line-height: 1.4; margin: 0;
 }
 </style>

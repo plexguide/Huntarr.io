@@ -28,6 +28,10 @@ def fetch_tv_list(list_type, settings):
         'trakt': _fetch_trakt_tv,
         'plex': _fetch_plex_tv,
         'custom_json': _fetch_custom_json_tv,
+        'imdb': _fetch_imdb_tv,
+        'simkl': _fetch_simkl_tv,
+        'anilist': _fetch_anilist_tv,
+        'myanimelist': _fetch_myanimelist_tv,
     }
     fn = fetchers.get(list_type)
     if not fn:
@@ -398,6 +402,299 @@ def _fetch_custom_json_tv(settings):
         raise
     except Exception as e:
         logger.error("Custom JSON TV fetch failed: %s", e)
+        raise
+
+    return shows
+
+
+# ---------------------------------------------------------------------------
+# IMDb (TV series from custom list)
+# ---------------------------------------------------------------------------
+
+def _fetch_imdb_tv(settings):
+    """Fetch TV shows from an IMDb list by list ID (e.g. ls123456789)."""
+    import re
+    list_id = (settings.get('list_id') or '').strip()
+    if not list_id:
+        raise ValueError("IMDb List ID is required (e.g. ls123456789)")
+
+    if not list_id.startswith('ls'):
+        list_id = 'ls' + list_id
+
+    shows = []
+    try:
+        url = f"https://www.imdb.com/list/{list_id}/"
+        resp = requests.get(url, timeout=REQUEST_TIMEOUT, headers={
+            'User-Agent': 'Mozilla/5.0 (compatible; Huntarr/1.0)'
+        })
+        if resp.status_code != 200:
+            raise ValueError(f"IMDb list returned {resp.status_code}")
+
+        imdb_ids = re.findall(r'(tt\d{7,10})', resp.text)
+        seen = set()
+        for iid in imdb_ids:
+            if iid in seen:
+                continue
+            seen.add(iid)
+            resolved = _resolve_imdb_to_tmdb_tv(iid)
+            if resolved:
+                shows.append(resolved)
+            time.sleep(0.15)
+
+    except ValueError:
+        raise
+    except Exception as e:
+        logger.error("IMDb TV list fetch failed for %s: %s", list_id, e)
+        raise
+
+    return shows
+
+
+# ---------------------------------------------------------------------------
+# Simkl
+# ---------------------------------------------------------------------------
+
+def _fetch_simkl_tv(settings):
+    """Fetch TV shows from Simkl user lists."""
+    list_type = settings.get('list_type', 'watching')
+    access_token = settings.get('access_token', '')
+
+    simkl_status_map = {
+        'watching': 'watching',
+        'plantowatch': 'plantowatch',
+        'hold': 'hold',
+        'completed': 'completed',
+        'dropped': 'dropped',
+    }
+    status = simkl_status_map.get(list_type, 'watching')
+
+    headers = {
+        'Content-Type': 'application/json',
+        'simkl-api-key': 'a756ee57e85cbda1286261bdf06',
+    }
+    if access_token:
+        headers['Authorization'] = f'Bearer {access_token}'
+
+    shows = []
+    try:
+        url = f'https://api.simkl.com/sync/all-items/shows/{status}'
+        resp = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
+
+        if resp.status_code == 401:
+            raise ValueError("Simkl authentication required or token expired")
+        if resp.status_code != 200:
+            raise ValueError(f"Simkl API returned {resp.status_code}")
+
+        data = resp.json()
+        if not isinstance(data, dict):
+            data = {'shows': data if isinstance(data, list) else []}
+
+        items = data.get('shows', data) if isinstance(data, dict) else data
+        if not isinstance(items, list):
+            items = []
+
+        for item in items:
+            show = item.get('show', item)
+            ids = show.get('ids', {})
+            title = show.get('title', '')
+            year = str(show.get('year') or '')
+            tmdb_id = ids.get('tmdb')
+
+            entry = {
+                'title': title,
+                'year': year,
+                'tmdb_id': tmdb_id,
+                'poster_path': '',
+            }
+
+            if tmdb_id:
+                detail = _tmdb_tv_details(tmdb_id)
+                if detail:
+                    entry['poster_path'] = detail.get('poster_path', '')
+                time.sleep(0.1)
+            elif ids.get('imdb'):
+                resolved = _resolve_imdb_to_tmdb_tv(ids['imdb'])
+                if resolved:
+                    entry.update(resolved)
+                time.sleep(0.1)
+            elif title:
+                resolved = _search_tmdb_tv(title, year)
+                if resolved:
+                    entry.update(resolved)
+                time.sleep(0.1)
+
+            if entry.get('tmdb_id'):
+                shows.append(entry)
+
+    except ValueError:
+        raise
+    except Exception as e:
+        logger.error("Simkl TV fetch failed: %s", e)
+        raise
+
+    return shows
+
+
+# ---------------------------------------------------------------------------
+# AniList
+# ---------------------------------------------------------------------------
+
+def _fetch_anilist_tv(settings):
+    """Fetch anime (TV) from AniList user lists via GraphQL."""
+    username = (settings.get('username') or '').strip()
+    if not username:
+        raise ValueError("AniList username is required")
+
+    list_type = settings.get('list_type', 'watching')
+    status_map = {
+        'watching': 'CURRENT',
+        'planning': 'PLANNING',
+        'completed': 'COMPLETED',
+        'paused': 'PAUSED',
+        'dropped': 'DROPPED',
+    }
+    al_status = status_map.get(list_type, 'CURRENT')
+
+    query = '''
+    query ($username: String, $status: MediaListStatus) {
+      MediaListCollection(userName: $username, type: ANIME, status: $status) {
+        lists {
+          entries {
+            media {
+              title { romaji english }
+              startDate { year }
+              idMal
+              id
+            }
+          }
+        }
+      }
+    }
+    '''
+
+    shows = []
+    try:
+        resp = requests.post(
+            'https://graphql.anilist.co',
+            json={'query': query, 'variables': {'username': username, 'status': al_status}},
+            headers={'Content-Type': 'application/json', 'Accept': 'application/json'},
+            timeout=REQUEST_TIMEOUT
+        )
+
+        if resp.status_code != 200:
+            raise ValueError(f"AniList API returned {resp.status_code}")
+
+        data = resp.json()
+        lists = (data.get('data') or {}).get('MediaListCollection', {}).get('lists', [])
+
+        for lst in lists:
+            for entry in lst.get('entries', []):
+                media = entry.get('media', {})
+                title_obj = media.get('title', {})
+                title = title_obj.get('english') or title_obj.get('romaji') or ''
+                year = str((media.get('startDate') or {}).get('year') or '')
+
+                entry_data = {
+                    'title': title,
+                    'year': year,
+                    'tmdb_id': None,
+                    'poster_path': '',
+                }
+
+                if title:
+                    resolved = _search_tmdb_tv(title, year)
+                    if resolved:
+                        entry_data.update(resolved)
+                    time.sleep(0.1)
+
+                if entry_data.get('tmdb_id'):
+                    shows.append(entry_data)
+
+    except ValueError:
+        raise
+    except Exception as e:
+        logger.error("AniList TV fetch failed: %s", e)
+        raise
+
+    return shows
+
+
+# ---------------------------------------------------------------------------
+# MyAnimeList
+# ---------------------------------------------------------------------------
+
+def _fetch_myanimelist_tv(settings):
+    """Fetch anime (TV) from MyAnimeList user lists."""
+    username = (settings.get('username') or '').strip()
+    if not username:
+        raise ValueError("MyAnimeList username is required")
+
+    list_type = settings.get('list_type', 'all')
+    status_map = {
+        'all': '',
+        'watching': 'watching',
+        'completed': 'completed',
+        'on_hold': 'on_hold',
+        'dropped': 'dropped',
+        'plan_to_watch': 'plan_to_watch',
+    }
+    mal_status = status_map.get(list_type, '')
+
+    shows = []
+    try:
+        offset = 0
+        limit = 100
+        while True:
+            url = f'https://api.jikan.moe/v4/users/{username}/animelist'
+            params = {'limit': limit, 'offset': offset}
+            if mal_status:
+                params['status'] = mal_status
+
+            resp = requests.get(url, params=params, timeout=REQUEST_TIMEOUT, headers={
+                'User-Agent': 'Huntarr/1.0'
+            })
+
+            if resp.status_code == 429:
+                time.sleep(2)
+                continue
+            if resp.status_code != 200:
+                raise ValueError(f"MyAnimeList API returned {resp.status_code}")
+
+            data = resp.json()
+            items = data.get('data', [])
+            if not items:
+                break
+
+            for item in items:
+                entry = item.get('entry', item)
+                title = entry.get('title', '')
+                mal_id = entry.get('mal_id', '')
+
+                entry_data = {
+                    'title': title,
+                    'year': '',
+                    'tmdb_id': None,
+                    'poster_path': '',
+                }
+
+                if title:
+                    resolved = _search_tmdb_tv(title)
+                    if resolved:
+                        entry_data.update(resolved)
+                    time.sleep(0.15)
+
+                if entry_data.get('tmdb_id'):
+                    shows.append(entry_data)
+
+            if not data.get('pagination', {}).get('has_next_page', False):
+                break
+            offset += limit
+            time.sleep(1)
+
+    except ValueError:
+        raise
+    except Exception as e:
+        logger.error("MyAnimeList TV fetch failed: %s", e)
         raise
 
     return shows

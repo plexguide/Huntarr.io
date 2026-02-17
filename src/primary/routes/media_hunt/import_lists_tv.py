@@ -18,7 +18,7 @@ logger = tv_hunt_logger
 # Helpers
 # ---------------------------------------------------------------------------
 
-TV_LIST_TYPES = ['trakt', 'plex', 'custom_json']
+TV_LIST_TYPES = ['trakt', 'plex', 'custom_json', 'imdb', 'simkl', 'anilist', 'myanimelist']
 
 SYNC_INTERVAL_OPTIONS = [1, 3, 6, 12, 24, 48, 72, 168]  # hours
 
@@ -61,7 +61,8 @@ def _build_default_tv_list(list_type, name=None):
         'name': name or '',
         'type': list_type,
         'enabled': True,
-        'auto_add': False,
+        'enable_auto_add': True,
+        'search_on_add': False,
         'monitor': 'all_episodes',
         'sync_interval_hours': 12,
         'last_sync': None,
@@ -84,6 +85,23 @@ def _default_settings_for_type(list_type):
         return {'access_token': ''}
     elif list_type == 'custom_json':
         return {'url': ''}
+    elif list_type == 'imdb':
+        return {'list_id': ''}
+    elif list_type == 'simkl':
+        return {
+            'list_type': 'watching',
+            'access_token': '', 'refresh_token': '', 'expires_at': 0,
+        }
+    elif list_type == 'anilist':
+        return {
+            'username': '',
+            'list_type': 'watching',
+        }
+    elif list_type == 'myanimelist':
+        return {
+            'username': '',
+            'list_type': 'all',
+        }
     return {}
 
 
@@ -98,11 +116,13 @@ def _run_tv_sync(list_config, instance_id):
     list_type = list_config.get('type', '')
     list_name = list_config.get('name', list_type)
     settings = list_config.get('settings') or {}
-    auto_add = list_config.get('auto_add', False)
+    # Support both new field and legacy auto_add
+    enable_auto_add = list_config.get('enable_auto_add', list_config.get('auto_add', True))
+    search_on_add = list_config.get('search_on_add', False)
     monitor = list_config.get('monitor', 'all_episodes')
 
-    logger.info("Syncing TV import list: %s (%s) [auto_add=%s, monitor=%s]",
-                list_name, list_type, auto_add, monitor)
+    logger.info("Syncing TV import list: %s (%s) [enable_auto_add=%s, search_on_add=%s, monitor=%s]",
+                list_name, list_type, enable_auto_add, search_on_add, monitor)
 
     try:
         shows = fetch_tv_list(list_type, settings)
@@ -114,8 +134,8 @@ def _run_tv_sync(list_config, instance_id):
         logger.info("No shows returned from TV list: %s", list_name)
         return {'added': 0, 'skipped': 0, 'total': 0, 'error': None}
 
-    if not auto_add:
-        logger.info("TV import list %s: auto-add disabled, %d items fetched but not added",
+    if not enable_auto_add:
+        logger.info("TV import list %s: automatic add disabled, %d items fetched but not added",
                      list_name, len(shows))
         return {'added': 0, 'skipped': len(shows), 'total': len(shows), 'error': None}
 
@@ -288,8 +308,10 @@ def register_tv_import_lists_routes(bp):
                 pass
         if 'enabled' in data:
             new_list['enabled'] = bool(data['enabled'])
-        if 'auto_add' in data:
-            new_list['auto_add'] = bool(data['auto_add'])
+        if 'enable_auto_add' in data:
+            new_list['enable_auto_add'] = bool(data['enable_auto_add'])
+        if 'search_on_add' in data:
+            new_list['search_on_add'] = bool(data['search_on_add'])
         if 'monitor' in data:
             mon = data['monitor']
             if mon in TV_MONITOR_OPTIONS:
@@ -314,7 +336,7 @@ def register_tv_import_lists_routes(bp):
         if existing is None:
             return jsonify({'success': False, 'error': 'List not found'}), 404
 
-        for field in ('name', 'enabled', 'auto_add', 'sync_interval_hours', 'monitor'):
+        for field in ('name', 'enabled', 'enable_auto_add', 'search_on_add', 'sync_interval_hours', 'monitor'):
             if field in data:
                 existing[field] = data[field]
 
@@ -434,6 +456,33 @@ def register_tv_import_lists_routes(bp):
             {'id': 'plex', 'name': 'Plex Watchlist', 'icon': 'fas fa-tv',
              'subtypes': [],
              'requires_oauth': True},
+            {'id': 'imdb', 'name': 'IMDb', 'icon': 'fab fa-imdb',
+             'subtypes': []},
+            {'id': 'simkl', 'name': 'Simkl', 'icon': 'fas fa-list-alt',
+             'subtypes': [
+                 {'id': 'watching', 'name': 'Watching'},
+                 {'id': 'plantowatch', 'name': 'Plan to Watch'},
+                 {'id': 'hold', 'name': 'On Hold'},
+                 {'id': 'completed', 'name': 'Completed'},
+                 {'id': 'dropped', 'name': 'Dropped'},
+             ]},
+            {'id': 'anilist', 'name': 'AniList', 'icon': 'fas fa-dragon',
+             'subtypes': [
+                 {'id': 'watching', 'name': 'Watching'},
+                 {'id': 'planning', 'name': 'Planning'},
+                 {'id': 'completed', 'name': 'Completed'},
+                 {'id': 'paused', 'name': 'Paused'},
+                 {'id': 'dropped', 'name': 'Dropped'},
+             ]},
+            {'id': 'myanimelist', 'name': 'MyAnimeList', 'icon': 'fas fa-torii-gate',
+             'subtypes': [
+                 {'id': 'all', 'name': 'All'},
+                 {'id': 'watching', 'name': 'Watching'},
+                 {'id': 'completed', 'name': 'Completed'},
+                 {'id': 'on_hold', 'name': 'On Hold'},
+                 {'id': 'dropped', 'name': 'Dropped'},
+                 {'id': 'plan_to_watch', 'name': 'Plan to Watch'},
+             ]},
             {'id': 'custom_json', 'name': 'Custom JSON', 'icon': 'fas fa-code',
              'subtypes': []},
         ]
