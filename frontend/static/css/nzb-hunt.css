@@ -1953,6 +1953,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    justify-content: space-between;
     padding: 16px 20px;
     border-bottom: 1px solid rgba(148, 163, 184, 0.2);
 }
@@ -2060,6 +2061,193 @@
 
 .nzb-browse-item i {
     color: #94a3b8;
+}
+
+.nzb-browse-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nzb-browse-new-folder-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    background: rgba(99, 102, 241, 0.2);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    color: #a5b4fc;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.nzb-browse-new-folder-btn:hover {
+    background: rgba(99, 102, 241, 0.3);
+    border-color: rgba(99, 102, 241, 0.5);
+}
+
+/* Inline create/delete rows */
+.nzb-browse-inline-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 8px;
+}
+
+.nzb-browse-inline-row i {
+    color: #818cf8;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.nzb-browse-delete-row {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.nzb-browse-delete-row i {
+    color: #f87171 !important;
+}
+
+.nzb-browse-delete-row span {
+    color: #f1f5f9;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.nzb-browse-delete-hint {
+    color: #94a3b8 !important;
+    font-weight: 400 !important;
+    font-size: 0.8rem !important;
+    flex: 1;
+}
+
+.nzb-browse-inline-input {
+    flex: 1;
+    padding: 7px 10px;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    border-radius: 6px;
+    color: #f8fafc;
+    font-family: monospace;
+    font-size: 0.9rem;
+    box-sizing: border-box;
+}
+
+.nzb-browse-inline-input:focus {
+    outline: none;
+    border-color: #6366f1;
+}
+
+.nzb-browse-inline-ok {
+    padding: 6px 12px;
+    background: rgba(16, 185, 129, 0.2);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    border-radius: 6px;
+    color: #6ee7b7;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.nzb-browse-inline-ok:hover {
+    background: rgba(16, 185, 129, 0.3);
+}
+
+.nzb-browse-inline-cancel {
+    padding: 6px 12px;
+    background: rgba(148, 163, 184, 0.15);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    border-radius: 6px;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.nzb-browse-inline-cancel:hover {
+    background: rgba(148, 163, 184, 0.25);
+}
+
+.nzb-browse-inline-danger {
+    padding: 6px 12px;
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    border-radius: 6px;
+    color: #f87171;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.nzb-browse-inline-danger:hover {
+    background: rgba(239, 68, 68, 0.3);
+}
+
+/* Browse item with actions (rename/delete) */
+.nzb-browse-item {
+    justify-content: space-between;
+}
+
+.nzb-browse-item-main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+    cursor: pointer;
+}
+
+.nzb-browse-item-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.nzb-browse-item:hover .nzb-browse-item-actions {
+    opacity: 1;
+}
+
+.nzb-browse-item-btn {
+    padding: 4px 8px;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.nzb-browse-item-btn:hover {
+    background: rgba(148, 163, 184, 0.2);
+    color: #e2e8f0;
+}
+
+.nzb-browse-item-btn[data-action="delete"]:hover {
+    color: #f87171;
+}
+
+/* Inline rename input */
+.nzb-browse-item-rename-input {
+    flex: 1;
+    padding: 5px 8px;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    border-radius: 5px;
+    color: #f8fafc;
+    font-family: monospace;
+    font-size: 0.9rem;
+    box-sizing: border-box;
+}
+
+.nzb-browse-item-rename-input:focus {
+    outline: none;
+    border-color: #6366f1;
 }
 
 .nzb-browse-actions {

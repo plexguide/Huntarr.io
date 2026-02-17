@@ -325,7 +325,12 @@
         <div class="nzb-browse-content">
             <div class="nzb-browse-header">
                 <h2>File Browser</h2>
-                <button type="button" class="nzb-browse-close" id="nzb-browse-close" aria-label="Close"><i class="fas fa-times"></i></button>
+                <div class="nzb-browse-header-actions">
+                    <button type="button" class="nzb-browse-new-folder-btn" id="nzb-browse-new-folder" title="Create new folder">
+                        <i class="fas fa-folder-plus"></i> New Folder
+                    </button>
+                    <button type="button" class="nzb-browse-close" id="nzb-browse-close" aria-label="Close"><i class="fas fa-times"></i></button>
+                </div>
             </div>
             <div class="nzb-browse-body">
                 <label>Start typing or select a path below</label>
@@ -333,11 +338,26 @@
                 <div class="nzb-browse-up-row">
                     <button type="button" class="nzb-browse-up-btn" id="nzb-browse-up"><i class="fas fa-arrow-up"></i> Go Back</button>
                 </div>
+                <!-- Inline new-folder row (hidden by default) -->
+                <div id="nzb-browse-new-folder-row" class="nzb-browse-inline-row" style="display: none;">
+                    <i class="fas fa-folder-plus"></i>
+                    <input type="text" id="nzb-browse-new-folder-input" class="nzb-browse-inline-input" placeholder="Folder name" autocomplete="off" />
+                    <button type="button" class="nzb-browse-inline-ok" id="nzb-browse-new-folder-confirm"><i class="fas fa-check"></i></button>
+                    <button type="button" class="nzb-browse-inline-cancel" id="nzb-browse-new-folder-cancel"><i class="fas fa-times"></i></button>
+                </div>
+                <!-- Inline delete confirm row (hidden by default) -->
+                <div id="nzb-browse-delete-confirm-row" class="nzb-browse-inline-row nzb-browse-delete-row" style="display: none;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span id="nzb-browse-delete-name"></span>
+                    <span class="nzb-browse-delete-hint">Must be empty to delete.</span>
+                    <button type="button" class="nzb-browse-inline-danger" id="nzb-browse-delete-yes"><i class="fas fa-trash"></i> Delete</button>
+                    <button type="button" class="nzb-browse-inline-cancel" id="nzb-browse-delete-no"><i class="fas fa-times"></i></button>
+                </div>
                 <div id="nzb-browse-list" class="nzb-browse-list"></div>
             </div>
             <div class="nzb-browse-actions">
                 <button type="button" class="nzb-btn" id="nzb-browse-cancel">Cancel</button>
-                <button type="button" class="nzb-btn nzb-btn-primary" id="nzb-browse-ok"><i class="fas fa-save"></i> Save</button>
+                <button type="button" class="nzb-btn nzb-btn-primary" id="nzb-browse-ok">Ok</button>
             </div>
         </div>
     </div>

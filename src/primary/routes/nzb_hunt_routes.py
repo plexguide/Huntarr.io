@@ -673,6 +673,44 @@ def browse_nzb_dirs():
     return jsonify({"path": path, "directories": dirs})
 
 
+@nzb_hunt_bp.route("/api/nzb-hunt/browse/create", methods=["POST"])
+def browse_nzb_create_folder():
+    """Create a new directory inside the currently browsed path."""
+    from src.primary.routes.media_hunt.root_folders import create_folder
+    data = request.get_json() or {}
+    parent = (data.get("parent_path") or data.get("path") or "").strip()
+    name = (data.get("name") or "").strip()
+    success, result = create_folder(parent, name)
+    if success:
+        return jsonify({"success": True, "path": result["path"]}), 200
+    return jsonify({"success": False, "error": result.get("error", "Failed")}), 400
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/browse/rename", methods=["POST"])
+def browse_nzb_rename_folder():
+    """Rename a directory in the file browser."""
+    from src.primary.routes.media_hunt.root_folders import rename_folder
+    data = request.get_json() or {}
+    path = (data.get("path") or "").strip()
+    new_name = (data.get("new_name") or "").strip()
+    success, result = rename_folder(path, new_name)
+    if success:
+        return jsonify({"success": True, "path": result["path"]}), 200
+    return jsonify({"success": False, "error": result.get("error", "Failed")}), 400
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/browse/delete", methods=["POST"])
+def browse_nzb_delete_folder():
+    """Delete an empty directory in the file browser."""
+    from src.primary.routes.media_hunt.root_folders import delete_folder
+    data = request.get_json() or {}
+    path = (data.get("path") or "").strip()
+    success, err = delete_folder(path)
+    if success:
+        return jsonify({"success": True}), 200
+    return jsonify({"success": False, "error": err or "Failed"}), 400
+
+
 # ──────────────────────────────────────────────────────────────────
 # Download Queue & Status (used by NZB Hunt UI and Movie Hunt integration)
 # ──────────────────────────────────────────────────────────────────

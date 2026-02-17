@@ -1319,13 +1319,46 @@
             if (cancelBtn) cancelBtn.addEventListener('click', function () { self._closeBrowseModal(); });
             if (okBtn) okBtn.addEventListener('click', function () { self._confirmBrowse(); });
             if (upBtn) upBtn.addEventListener('click', function () { self._browseParent(); });
+
+            var pathInput = document.getElementById('nzb-browse-path-input');
+            if (pathInput) {
+                pathInput.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') { e.preventDefault(); self._loadBrowsePath(pathInput.value); }
+                });
+            }
+
+            // New folder button + inline create
+            var newFolderBtn = document.getElementById('nzb-browse-new-folder');
+            if (newFolderBtn) newFolderBtn.addEventListener('click', function () { self._browseShowCreateFolder(); });
+            var createConfirm = document.getElementById('nzb-browse-new-folder-confirm');
+            var createCancel = document.getElementById('nzb-browse-new-folder-cancel');
+            var createInput = document.getElementById('nzb-browse-new-folder-input');
+            if (createConfirm) createConfirm.addEventListener('click', function () { self._browseDoCreateFolder(); });
+            if (createCancel) createCancel.addEventListener('click', function () { self._browseHideCreateFolder(); });
+            if (createInput) createInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') { e.preventDefault(); self._browseDoCreateFolder(); }
+                if (e.key === 'Escape') { e.preventDefault(); self._browseHideCreateFolder(); }
+            });
+
+            // Delete confirm buttons
+            var deleteYes = document.getElementById('nzb-browse-delete-yes');
+            var deleteNo = document.getElementById('nzb-browse-delete-no');
+            if (deleteYes) deleteYes.addEventListener('click', function () { self._browseDoDeleteFolder(); });
+            if (deleteNo) deleteNo.addEventListener('click', function () { self._browseHideDeleteFolder(); });
+
+            // Escape key to close
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    var modal = document.getElementById('nzb-browse-modal');
+                    if (modal && modal.style.display === 'flex') self._closeBrowseModal();
+                }
+            });
         },
 
         _openBrowseModal: function (targetInput) {
             this._browseTarget = targetInput;
             var modal = document.getElementById('nzb-browse-modal');
             if (!modal) return;
-            // Move to body if nested in a section
             if (modal.parentElement !== document.body) document.body.appendChild(modal);
             var pathInput = document.getElementById('nzb-browse-path-input');
             var startPath = (targetInput && targetInput.value) ? targetInput.value : '/';
@@ -1343,7 +1376,6 @@
             var pathInput = document.getElementById('nzb-browse-path-input');
             if (this._browseTarget && pathInput) {
                 this._browseTarget.value = pathInput.value;
-                // Auto-save if the target is the temporary folder
                 if (this._browseTarget.id === 'nzb-temp-folder') {
                     this._saveFolders();
                 }
@@ -1363,34 +1395,201 @@
             this._loadBrowsePath(parent);
         },
 
+        /* ── Browse: Create folder ── */
+        _browseShowCreateFolder: function () {
+            var row = document.getElementById('nzb-browse-new-folder-row');
+            var input = document.getElementById('nzb-browse-new-folder-input');
+            var delRow = document.getElementById('nzb-browse-delete-confirm-row');
+            if (delRow) delRow.style.display = 'none';
+            if (!row || !input) return;
+            row.style.display = 'flex';
+            input.value = '';
+            setTimeout(function () { input.focus(); }, 50);
+        },
+
+        _browseHideCreateFolder: function () {
+            var row = document.getElementById('nzb-browse-new-folder-row');
+            if (row) row.style.display = 'none';
+        },
+
+        _browseDoCreateFolder: function () {
+            var input = document.getElementById('nzb-browse-new-folder-input');
+            var row = document.getElementById('nzb-browse-new-folder-row');
+            var pathInput = document.getElementById('nzb-browse-path-input');
+            var name = (input && input.value || '').trim();
+            if (!name) { if (input) input.focus(); return; }
+            var parent = (pathInput && pathInput.value || '').trim() || '/';
+            var self = this;
+            fetch('./api/nzb-hunt/browse/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ parent_path: parent, name: name })
+            }).then(function (r) { return r.json(); }).then(function (data) {
+                if (data.success) {
+                    if (row) row.style.display = 'none';
+                    self._loadBrowsePath(parent);
+                } else {
+                    if (input) { input.style.borderColor = '#f87171'; input.focus(); }
+                }
+            }).catch(function () { if (input) { input.style.borderColor = '#f87171'; input.focus(); } });
+        },
+
+        /* ── Browse: Rename folder ── */
+        _browseRenameFolder: function (path, currentName, el) {
+            var main = el && el.querySelector('.nzb-browse-item-main');
+            if (!main) return;
+            var origHTML = main.innerHTML;
+            main.innerHTML = '<i class="fas fa-folder" style="color:#818cf8;flex-shrink:0;"></i>' +
+                '<input type="text" class="nzb-browse-item-rename-input" value="' + (currentName || '').replace(/"/g, '&quot;') + '" />' +
+                '<button type="button" class="nzb-browse-inline-ok nzb-rename-confirm"><i class="fas fa-check"></i></button>' +
+                '<button type="button" class="nzb-browse-inline-cancel nzb-rename-cancel"><i class="fas fa-times"></i></button>';
+            var inp = main.querySelector('input');
+            if (inp) { inp.focus(); inp.select(); }
+            main.onclick = null;
+            var self = this;
+            function doRename() {
+                var name = (inp && inp.value || '').trim();
+                if (!name || name === currentName) { revert(); return; }
+                fetch('./api/nzb-hunt/browse/rename', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path: path, new_name: name })
+                }).then(function (r) { return r.json(); }).then(function (data) {
+                    if (data.success) {
+                        var pathInput = document.getElementById('nzb-browse-path-input');
+                        var parent = path.replace(/\/+$/, '').split('/').slice(0, -1).join('/') || '/';
+                        self._loadBrowsePath(parent || (pathInput && pathInput.value) || '/');
+                    } else {
+                        if (inp) { inp.style.borderColor = '#f87171'; inp.focus(); }
+                    }
+                }).catch(function () { revert(); });
+            }
+            function revert() {
+                main.innerHTML = origHTML;
+                self._rebindBrowseItem(el);
+            }
+            main.querySelector('.nzb-rename-confirm').onclick = function (e) { e.stopPropagation(); doRename(); };
+            main.querySelector('.nzb-rename-cancel').onclick = function (e) { e.stopPropagation(); revert(); };
+            if (inp) inp.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') { e.preventDefault(); doRename(); }
+                if (e.key === 'Escape') { e.preventDefault(); revert(); }
+            });
+        },
+
+        /* ── Browse: Delete folder ── */
+        _pendingDeletePath: null,
+
+        _browseShowDeleteFolder: function (path, name) {
+            var row = document.getElementById('nzb-browse-delete-confirm-row');
+            var nameEl = document.getElementById('nzb-browse-delete-name');
+            var newRow = document.getElementById('nzb-browse-new-folder-row');
+            if (newRow) newRow.style.display = 'none';
+            if (!row) return;
+            row.style.display = 'flex';
+            if (nameEl) nameEl.textContent = 'Delete "' + (name || path) + '"?';
+            this._pendingDeletePath = path;
+        },
+
+        _browseHideDeleteFolder: function () {
+            var row = document.getElementById('nzb-browse-delete-confirm-row');
+            if (row) row.style.display = 'none';
+            this._pendingDeletePath = null;
+        },
+
+        _browseDoDeleteFolder: function () {
+            var path = this._pendingDeletePath;
+            var row = document.getElementById('nzb-browse-delete-confirm-row');
+            if (!path) return;
+            var self = this;
+            fetch('./api/nzb-hunt/browse/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: path })
+            }).then(function (r) { return r.json(); }).then(function (data) {
+                if (data.success) {
+                    if (row) row.style.display = 'none';
+                    var pathInput = document.getElementById('nzb-browse-path-input');
+                    var parent = path.replace(/\/+$/, '').split('/').slice(0, -1).join('/') || '/';
+                    self._loadBrowsePath(parent);
+                }
+            }).catch(function () {});
+        },
+
+        /* ── Browse: rebind item click handlers after rename revert ── */
+        _rebindBrowseItem: function (el) {
+            var self = this;
+            var main = el.querySelector('.nzb-browse-item-main');
+            if (main) {
+                main.onclick = function () {
+                    var p = el.getAttribute('data-path') || '';
+                    if (p) self._loadBrowsePath(p);
+                };
+            }
+            el.querySelectorAll('.nzb-browse-item-btn').forEach(function (btn) {
+                var action = btn.getAttribute('data-action');
+                if (action === 'rename') {
+                    btn.onclick = function (e) {
+                        e.stopPropagation();
+                        self._browseRenameFolder(el.getAttribute('data-path'), el.getAttribute('data-name'), el);
+                    };
+                } else if (action === 'delete') {
+                    btn.onclick = function (e) {
+                        e.stopPropagation();
+                        self._browseShowDeleteFolder(el.getAttribute('data-path'), el.getAttribute('data-name'));
+                    };
+                }
+            });
+        },
+
         _loadBrowsePath: function (path) {
             var list = document.getElementById('nzb-browse-list');
             var pathInput = document.getElementById('nzb-browse-path-input');
             var upBtn = document.getElementById('nzb-browse-up');
             if (!list) return;
 
+            // Hide inline rows on navigate
+            var newRow = document.getElementById('nzb-browse-new-folder-row');
+            var delRow = document.getElementById('nzb-browse-delete-confirm-row');
+            if (newRow) newRow.style.display = 'none';
+            if (delRow) delRow.style.display = 'none';
+
             list.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
 
+            var self = this;
             fetch('./api/nzb-hunt/browse?path=' + encodeURIComponent(path) + '&t=' + Date.now())
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
                     if (pathInput) pathInput.value = data.path || path;
-                    if (upBtn) upBtn.disabled = (data.path === '/');
+                    if (upBtn) {
+                        var currentPath = (pathInput && pathInput.value || '').trim() || '/';
+                        var parent = currentPath.replace(/\/+$/, '').split('/').slice(0, -1).join('/') || '/';
+                        upBtn.disabled = (parent === currentPath || currentPath === '/' || currentPath === '');
+                    }
                     var dirs = data.directories || [];
                     if (dirs.length === 0) {
                         list.innerHTML = '<div style="padding: 20px; text-align: center; color: #64748b;">No subdirectories</div>';
                         return;
                     }
-                    list.innerHTML = '';
-                    dirs.forEach(function (d) {
-                        var item = document.createElement('div');
-                        item.className = 'nzb-browse-item';
-                        item.innerHTML = '<i class="fas fa-folder"></i> <span style="font-family: monospace; font-size: 0.9rem; word-break: break-all;">' + _esc(d.name) + '</span>';
-                        item.addEventListener('click', function () {
-                            if (pathInput) pathInput.value = d.path;
-                            window.NzbHunt._loadBrowsePath(d.path);
-                        });
-                        list.appendChild(item);
+                    var html = '';
+                    for (var i = 0; i < dirs.length; i++) {
+                        var d = dirs[i];
+                        var rawName = d.name || '';
+                        var name = rawName.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                        var p = (d.path || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                        var nameAttr = rawName.replace(/"/g, '&quot;');
+                        html += '<div class="nzb-browse-item" data-path="' + p + '" data-name="' + nameAttr + '" title="' + p + '">' +
+                            '<span class="nzb-browse-item-main">' +
+                            '<i class="fas fa-folder"></i>' +
+                            '<span style="font-family: monospace; font-size: 0.9rem; word-break: break-all;">' + name + '</span>' +
+                            '</span>' +
+                            '<span class="nzb-browse-item-actions">' +
+                            '<button type="button" class="nzb-browse-item-btn" data-action="rename" title="Rename"><i class="fas fa-pen"></i></button>' +
+                            '<button type="button" class="nzb-browse-item-btn" data-action="delete" title="Delete"><i class="fas fa-trash"></i></button>' +
+                            '</span></div>';
+                    }
+                    list.innerHTML = html;
+                    list.querySelectorAll('.nzb-browse-item').forEach(function (el) {
+                        self._rebindBrowseItem(el);
                     });
                 })
                 .catch(function () {
