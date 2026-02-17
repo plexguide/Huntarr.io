@@ -47,6 +47,12 @@
 #media-hunt-search-results-grid,
 #media-hunt-collection-grid {
     justify-items: start;
+    align-items: start;   /* Prevent cards from stretching to fill row height */
+}
+
+/* Collection grid: no forced min-height (inherits from .media-grid 400px which causes card stretching) */
+#media-hunt-collection-grid {
+    min-height: auto;
 }
 
 /* Media Hunt Collection: no-instances empty state — full-width expanding box (like Index Master Pool ih-group-box) */
