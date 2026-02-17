@@ -827,7 +827,7 @@ window.HuntarrNavigation = {
             if (appType === 'indexer') sectionForNav = 'indexer-hunt';
             else if (appType === 'client') sectionForNav = 'settings-clients';
         }
-        const collectionSections = ['movie-hunt-home', 'movie-hunt-collection', 'media-hunt-collection', 'movie-hunt-calendar'];
+        const collectionSections = ['movie-hunt-home', 'movie-hunt-collection', 'media-hunt-collection', 'media-hunt-instances', 'movie-hunt-calendar', 'settings-clients'];
         const activitySections = ['activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-media-hunt', 'logs-tv-hunt', 'tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist'];
         const configSections = ['media-hunt-settings', 'movie-hunt-settings', 'settings-instance-management', 'indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'profile-editor', 'settings-custom-formats', 'settings-import-media', 'settings-import-lists', 'settings-root-folders', 'instance-editor'];
         const indexMasterSections = ['indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history'];
