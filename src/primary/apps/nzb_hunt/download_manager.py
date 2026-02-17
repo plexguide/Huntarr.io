@@ -354,17 +354,17 @@ class NZBHuntDownloadManager:
         # every poll (frontend polls every 3-5 seconds).
         self._cached_status: Optional[dict] = None
         self._cached_status_time: float = 0.0
-        self._status_cache_ttl: float = 1.5  # seconds
+        self._status_cache_ttl: float = 3.0  # seconds (higher = less GIL contention)
 
         self._cached_queue: Optional[List[dict]] = None
         self._cached_queue_time: float = 0.0
-        self._queue_cache_ttl: float = 1.5  # seconds
+        self._queue_cache_ttl: float = 3.0  # seconds
 
         # Cache disk_usage (filesystem I/O) separately - very slow-changing
         self._cached_disk_free: int = 0
         self._cached_disk_free_human: str = "--"
         self._cached_disk_time: float = 0.0
-        self._disk_cache_ttl: float = 15.0  # seconds
+        self._disk_cache_ttl: float = 30.0  # seconds
         
         # yEnc decoding now runs in-thread using sabyenc3 (C extension,
         # releases GIL) or a fast bytes.translate() decoder.  No more
@@ -1351,6 +1351,12 @@ class NZBHuntDownloadManager:
         (1s → 2s → 4s → 8s → 10s max) instead of looping with fixed 5s
         delays that could keep the queue stuck for minutes.
         """
+        # Lower OS scheduling priority so download threads don't starve
+        # the web server.  +10 is "low priority" on Linux (Docker/Unraid).
+        try:
+            os.nice(10)
+        except (OSError, AttributeError):
+            pass
         logger.info("NZB Hunt download worker started")
         try:
             # ── Startup: configure servers with retry ──
@@ -1489,6 +1495,9 @@ class NZBHuntDownloadManager:
                         if decoded is not None and len(decoded) > 0:
                             self._rate_limiter.consume(len(decoded))
                             self._record_speed(len(decoded))
+                            # Yield GIL so web server threads can run.
+                            # sleep(0) is a near-zero-cost context switch hint.
+                            time.sleep(0)
                             yenc_begin = yenc_hdr.get("begin")
                             yenc_size = yenc_hdr.get("size")
                             return len(decoded), decoded, server_name, yenc_begin, yenc_size
@@ -1723,7 +1732,7 @@ class NZBHuntDownloadManager:
             file_handled    = [False] * n_files
 
             _last_save_time = time.time()
-            _SAVE_INTERVAL  = 5.0
+            _SAVE_INTERVAL  = 15.0  # seconds between progress saves (higher = less disk I/O during downloads)
 
             # ── Direct-Write via OS file descriptors ──
             _has_pwrite = hasattr(os, 'pwrite')
@@ -1797,7 +1806,10 @@ class NZBHuntDownloadManager:
                 with open(seg_path, "wb") as sf:
                     sf.write(decoded)
 
-            max_inflight = max(max_workers * 4, 128)
+            # Cap in-flight futures to prevent memory bloat and excessive
+            # context switching that starves the web server.
+            max_inflight = max(max_workers * 2, 64)
+            max_inflight = min(max_inflight, 256)
 
             # ── Completion Queue ──
             done_q: Queue = Queue()
@@ -1805,7 +1817,15 @@ class NZBHuntDownloadManager:
             def _on_done(fut):
                 done_q.put_nowait(fut)
 
-            executor = ThreadPoolExecutor(max_workers=max_workers)
+            def _init_dl_thread():
+                """Lower OS priority of download worker threads."""
+                try:
+                    os.nice(10)
+                except (OSError, AttributeError):
+                    pass
+
+            executor = ThreadPoolExecutor(max_workers=max_workers,
+                                          initializer=_init_dl_thread)
             try:
                 pending = {}
                 seg_source = _segment_iter()
@@ -1853,7 +1873,7 @@ class NZBHuntDownloadManager:
                                 item.downloaded_bytes + nbytes
                             )
 
-                            if item.completed_segments & 15 == 0:
+                            if item.completed_segments & 63 == 0:
                                 speed = self._get_rolling_speed()
                                 item.speed_bps = speed
                                 remaining = max(0, item.total_bytes - item.downloaded_bytes)
@@ -1981,6 +2001,7 @@ class NZBHuntDownloadManager:
                         break
 
                     # Fill submission window
+                    _submit_count = 0
                     while len(pending) < max_inflight and not segments_exhausted:
                         if item.state == STATE_PAUSED or self._paused_global:
                             break
@@ -1996,6 +2017,10 @@ class NZBHuntDownloadManager:
                             future.add_done_callback(_on_done)
                             pending[future] = (file_idx, seg)
                             future = None
+                            _submit_count += 1
+                            # Yield GIL every 32 submissions to keep web responsive
+                            if _submit_count & 31 == 0:
+                                time.sleep(0)
                         except StopIteration:
                             segments_exhausted = True
                             break
@@ -2009,14 +2034,20 @@ class NZBHuntDownloadManager:
                         if not _process_future(first):
                             break
                         # Drain all others that are already done (non-blocking)
+                        _drain_count = 0
                         while not done_q.empty() and pending:
                             try:
                                 fut = done_q.get_nowait()
                                 if not _process_future(fut):
                                     aborted = True
                                     break
+                                _drain_count += 1
                             except Empty:
                                 break
+                        # Yield GIL after processing a batch so web server
+                        # threads aren't starved during heavy downloads.
+                        if _drain_count > 0:
+                            time.sleep(0)
 
                 # Drain remaining
                 while pending and not (item.state == STATE_PAUSED or self._paused_global):

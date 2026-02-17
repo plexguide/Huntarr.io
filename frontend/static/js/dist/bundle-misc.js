@@ -2535,9 +2535,23 @@
         /* ──────────────────────────────────────────────
            Queue & Status Polling
         ────────────────────────────────────────────── */
+        _queueFingerprint: '',
+
+        _buildQueueFingerprint: function (queue) {
+            if (!queue || !queue.length) return '[]';
+            var parts = [];
+            for (var i = 0; i < queue.length; i++) {
+                var q = queue[i];
+                parts.push(q.id + '|' + q.state + '|' + Math.round(q.progress_pct || 0) + '|' +
+                    (q.downloaded_bytes || 0) + '|' + (q.speed_bps || 0) + '|' +
+                    (q.priority || 'normal') + '|' + (q.time_left || '') + '|' +
+                    (q.status_message || '') + '|' + (q.completed_files || 0));
+            }
+            return parts.join(';');
+        },
+
         _fetchQueueAndStatus: function () {
             var self = this;
-            // Single combined request instead of 3 separate ones
             fetch('./api/nzb-hunt/poll?t=' + Date.now())
                 .then(function (r) { return r.ok ? r.json() : Promise.resolve({ status: {}, queue: [] }); })
                 .then(function (data) {
@@ -2545,7 +2559,15 @@
                     var queueList = data.queue || [];
                     self._lastStatus = statusData;
                     self._lastQueue = queueList;
-                    self._renderQueue(queueList);
+
+                    // Only rebuild DOM if queue data actually changed
+                    var fp = self._buildQueueFingerprint(queueList);
+                    if (fp !== self._queueFingerprint) {
+                        self._queueFingerprint = fp;
+                        self._renderQueue(queueList);
+                    }
+
+                    // Status bar is lightweight text updates, always safe
                     self._updateStatusBar(statusData);
                     self._updateQueueBadge(queueList);
                     var hBadge = document.getElementById('nzb-history-count');

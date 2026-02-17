@@ -766,23 +766,34 @@ def _nzb_hunt_configured_as_client() -> bool:
         return False
 
 
+_nzb_client_cache = {"value": None, "ts": 0}
+_bw_flush_ts = 0
+
 @nzb_hunt_bp.route("/api/nzb-hunt/poll", methods=["GET"])
 def nzb_hunt_poll():
     """Combined queue + status endpoint.  Returns both in one request to
     cut polling traffic by 2/3 (frontend no longer needs three separate calls)."""
+    global _bw_flush_ts
     try:
         mgr = _get_download_manager()
         status = mgr.get_status()
         if not isinstance(status, dict):
             status = dict(status) if hasattr(status, 'items') else {}
         bandwidth = status.get("bandwidth_by_server", {})
-        if bandwidth:
+        import time as _time
+        now = _time.monotonic()
+        if bandwidth and (now - _bw_flush_ts) > 30:
+            _bw_flush_ts = now
             try:
                 from src.primary.apps.nzb_hunt.bandwidth_history import get_bandwidth_history
                 get_bandwidth_history(_config_dir()).flush(bandwidth)
             except Exception:
                 pass
-        status["nzb_hunt_configured_as_client"] = _nzb_hunt_configured_as_client()
+        # Cache the client-configured check (changes rarely, expensive DB reads)
+        if _nzb_client_cache["value"] is None or (now - _nzb_client_cache["ts"]) > 60:
+            _nzb_client_cache["value"] = _nzb_hunt_configured_as_client()
+            _nzb_client_cache["ts"] = now
+        status["nzb_hunt_configured_as_client"] = _nzb_client_cache["value"]
         return jsonify({"status": status, "queue": mgr.get_queue()})
     except Exception as e:
         logger.exception("NZB Hunt poll error")
@@ -792,19 +803,28 @@ def nzb_hunt_poll():
 @nzb_hunt_bp.route("/api/nzb-hunt/status", methods=["GET"])
 def nzb_hunt_status():
     """Get overall NZB Hunt download status."""
+    global _bw_flush_ts
     try:
         mgr = _get_download_manager()
         status = mgr.get_status()
         if not isinstance(status, dict):
             status = dict(status) if hasattr(status, 'items') else {}
         bandwidth = status.get("bandwidth_by_server", {})
-        if bandwidth:
+        import time as _time
+        now = _time.monotonic()
+        # Throttle bandwidth flush to once per 30s (same as poll endpoint)
+        if bandwidth and (now - _bw_flush_ts) > 30:
+            _bw_flush_ts = now
             try:
                 from src.primary.apps.nzb_hunt.bandwidth_history import get_bandwidth_history
                 get_bandwidth_history(_config_dir()).flush(bandwidth)
             except Exception:
                 pass
-        status["nzb_hunt_configured_as_client"] = _nzb_hunt_configured_as_client()
+        # Use the same client-configured cache as the poll endpoint
+        if _nzb_client_cache["value"] is None or (now - _nzb_client_cache["ts"]) > 60:
+            _nzb_client_cache["value"] = _nzb_hunt_configured_as_client()
+            _nzb_client_cache["ts"] = now
+        status["nzb_hunt_configured_as_client"] = _nzb_client_cache["value"]
         return jsonify(status)
     except Exception as e:
         logger.exception("NZB Hunt status error")
@@ -814,7 +834,12 @@ def nzb_hunt_status():
 @nzb_hunt_bp.route("/api/nzb-hunt/is-client-configured", methods=["GET"])
 def nzb_hunt_is_client_configured():
     """Lightweight check: is NZB Hunt configured as a download client? Used by NZB Home banner."""
-    return jsonify({"configured": _nzb_hunt_configured_as_client()})
+    import time as _time
+    now = _time.monotonic()
+    if _nzb_client_cache["value"] is None or (now - _nzb_client_cache["ts"]) > 60:
+        _nzb_client_cache["value"] = _nzb_hunt_configured_as_client()
+        _nzb_client_cache["ts"] = now
+    return jsonify({"configured": _nzb_client_cache["value"]})
 
 
 @nzb_hunt_bp.route("/api/nzb-hunt/queue", methods=["GET"])
@@ -1195,7 +1220,13 @@ def nzb_hunt_home_stats():
     try:
         has_servers = has_nzb_servers()
         show_nzb_warning = not has_servers
-        is_client = _nzb_hunt_configured_as_client()
+        # Use cached client check (DB reads are expensive under load)
+        import time as _time
+        now = _time.monotonic()
+        if _nzb_client_cache["value"] is None or (now - _nzb_client_cache["ts"]) > 60:
+            _nzb_client_cache["value"] = _nzb_hunt_configured_as_client()
+            _nzb_client_cache["ts"] = now
+        is_client = _nzb_client_cache["value"]
 
         # Check the general setting toggle (default off — user must opt in)
         show_on_home = False
