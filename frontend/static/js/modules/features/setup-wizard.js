@@ -34,14 +34,10 @@
             var forceShow = false;
             try { forceShow = sessionStorage.getItem('setup-wizard-force-show') === '1'; } catch (e) {}
 
-            // If user is actively navigating within the wizard flow, always show
-            var activeNav = false;
-            try { activeNav = sessionStorage.getItem('setup-wizard-active-nav') === '1'; } catch (e) {}
-
             _checkAllSteps(function() {
                 var allDone = _allStepsComplete();
-                if (allDone && !forceShow && !activeNav) {
-                    // Auto-mark complete so it never shows again
+                if (allDone && !forceShow) {
+                    // All steps done — mark complete so wizard and banners never show again
                     _markComplete();
                     cb(false);
                 } else {
@@ -91,10 +87,8 @@
             _checkAllSteps(function() {
                 _refreshing = false;
                 var allDone = _allStepsComplete();
-                // Don't auto-complete while user is actively in the wizard flow
-                var activeNav = false;
-                try { activeNav = sessionStorage.getItem('setup-wizard-active-nav') === '1'; } catch (e) {}
-                if (allDone && !activeNav) {
+                if (allDone) {
+                    // All steps done — mark complete so wizard and banners never show again
                     _markComplete();
                     if (cb) cb();
                     return;

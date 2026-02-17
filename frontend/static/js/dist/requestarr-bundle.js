@@ -1588,9 +1588,9 @@ class RequestarrSettings {
             this.hiddenMediaState.page = page;
         }
 
-        // Ensure instance list is loaded before reading selection (fixes post-refresh race)
+        // Always refresh instance list — instances may have been added/removed since last visit
         const instanceSelect = document.getElementById('hidden-media-instance');
-        if (instanceSelect && (!instanceSelect.options || instanceSelect.options.length <= 1)) {
+        if (instanceSelect) {
             await this.loadHiddenMediaInstances();
         }
 

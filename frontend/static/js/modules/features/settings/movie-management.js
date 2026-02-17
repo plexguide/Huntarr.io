@@ -469,11 +469,8 @@
 
     function initOrRefresh() {
         var selectEl = document.getElementById('movie-management-instance-select');
-        if (selectEl && selectEl.options.length <= 1) {
-            populateInstanceDropdown();
-        } else {
-            load();
-        }
+        // Always repopulate — instances may have been added/removed since last visit
+        populateInstanceDropdown();
         if (selectEl && !selectEl._mgmtChangeBound) {
             selectEl._mgmtChangeBound = true;
             selectEl.addEventListener('change', function() {

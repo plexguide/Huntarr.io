@@ -171,15 +171,8 @@
             self._rfMode = (preferMode === 'tv') ? 'tv' : 'movie';
             var selectEl = document.getElementById('settings-root-folders-instance-select');
             updateRootFoldersSetupBanner();
-            if (selectEl && selectEl.options.length <= 1) {
-                self.populateCombinedInstanceDropdown(preferMode);
-            } else {
-                var val = selectEl.value || '';
-                var parts = val.split(':');
-                if (parts.length === 2) self._rfMode = parts[0] === 'tv' ? 'tv' : 'movie';
-                self._applyRequestarrGotoInstance(selectEl);
-                self.refreshList();
-            }
+            // Always repopulate — instances may have been added/removed since last visit
+            self.populateCombinedInstanceDropdown(preferMode);
             if (selectEl && !selectEl._rfChangeBound) {
                 selectEl._rfChangeBound = true;
                 selectEl.addEventListener('change', function() { window.RootFolders.onCombinedInstanceChange(); });

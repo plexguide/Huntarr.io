@@ -6432,11 +6432,8 @@ document.head.appendChild(styleEl);
 
     function initOrRefresh() {
         var selectEl = document.getElementById('movie-management-instance-select');
-        if (selectEl && selectEl.options.length <= 1) {
-            populateInstanceDropdown();
-        } else {
-            load();
-        }
+        // Always repopulate — instances may have been added/removed since last visit
+        populateInstanceDropdown();
         if (selectEl && !selectEl._mgmtChangeBound) {
             selectEl._mgmtChangeBound = true;
             selectEl.addEventListener('change', function() {
@@ -7109,11 +7106,8 @@ document.head.appendChild(styleEl);
 
     function initOrRefresh() {
         var selectEl = document.getElementById('tv-management-instance-select');
-        if (selectEl && selectEl.options.length <= 1) {
-            populateInstanceDropdown();
-        } else {
-            load();
-        }
+        // Always repopulate — instances may have been added/removed since last visit
+        populateInstanceDropdown();
         if (selectEl && !selectEl._tvMgmtBound) {
             selectEl._tvMgmtBound = true;
             selectEl.addEventListener('change', function() {
@@ -8130,14 +8124,8 @@ document.head.appendChild(styleEl);
             var self = window.ImportLists;
             self._ilMode = (preferMode === 'tv') ? 'tv' : 'movie';
             var selectEl = document.getElementById('settings-import-lists-instance-select');
-            if (selectEl && selectEl.options.length <= 1) {
-                self.populateCombinedInstanceDropdown(preferMode);
-            } else {
-                var val = selectEl.value || '';
-                var parts = val.split(':');
-                if (parts.length === 2) self._ilMode = parts[0] === 'tv' ? 'tv' : 'movie';
-                self.refreshList();
-            }
+            // Always repopulate — instances may have been added/removed since last visit
+            self.populateCombinedInstanceDropdown(preferMode);
             if (selectEl && !selectEl._ilChangeBound) {
                 selectEl._ilChangeBound = true;
                 selectEl.addEventListener('change', function() { window.ImportLists.onCombinedInstanceChange(); });
@@ -9949,15 +9937,8 @@ document.head.appendChild(styleEl);
             self._rfMode = (preferMode === 'tv') ? 'tv' : 'movie';
             var selectEl = document.getElementById('settings-root-folders-instance-select');
             updateRootFoldersSetupBanner();
-            if (selectEl && selectEl.options.length <= 1) {
-                self.populateCombinedInstanceDropdown(preferMode);
-            } else {
-                var val = selectEl.value || '';
-                var parts = val.split(':');
-                if (parts.length === 2) self._rfMode = parts[0] === 'tv' ? 'tv' : 'movie';
-                self._applyRequestarrGotoInstance(selectEl);
-                self.refreshList();
-            }
+            // Always repopulate — instances may have been added/removed since last visit
+            self.populateCombinedInstanceDropdown(preferMode);
             if (selectEl && !selectEl._rfChangeBound) {
                 selectEl._rfChangeBound = true;
                 selectEl.addEventListener('change', function() { window.RootFolders.onCombinedInstanceChange(); });

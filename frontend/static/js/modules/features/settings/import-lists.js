@@ -176,14 +176,8 @@
             var self = window.ImportLists;
             self._ilMode = (preferMode === 'tv') ? 'tv' : 'movie';
             var selectEl = document.getElementById('settings-import-lists-instance-select');
-            if (selectEl && selectEl.options.length <= 1) {
-                self.populateCombinedInstanceDropdown(preferMode);
-            } else {
-                var val = selectEl.value || '';
-                var parts = val.split(':');
-                if (parts.length === 2) self._ilMode = parts[0] === 'tv' ? 'tv' : 'movie';
-                self.refreshList();
-            }
+            // Always repopulate — instances may have been added/removed since last visit
+            self.populateCombinedInstanceDropdown(preferMode);
             if (selectEl && !selectEl._ilChangeBound) {
                 selectEl._ilChangeBound = true;
                 selectEl.addEventListener('change', function() { window.ImportLists.onCombinedInstanceChange(); });
