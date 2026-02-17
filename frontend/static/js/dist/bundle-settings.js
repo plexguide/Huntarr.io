@@ -844,8 +844,9 @@ window.SettingsForms = {
             const authMode = container.querySelector("#auth_mode")?.value || "login";
             settings.auth_mode = authMode;
             settings.ssl_verify = getInputValue("#ssl_verify", true);
-            settings.enable_media_hunt = getInputValue("#enable_media_hunt", true);
-            settings.enable_third_party_apps = getInputValue("#enable_third_party_apps", true);
+            settings.enable_requestarr = !getInputValue("#disable_requests", false);
+            settings.enable_media_hunt = !getInputValue("#disable_media_hunt", false);
+            settings.enable_third_party_apps = !getInputValue("#disable_third_party_apps", false);
             settings.base_url = getInputValue("#base_url", "");
             settings.dev_key = getInputValue("#dev_key", "");
 
@@ -14455,6 +14456,40 @@ document.head.appendChild(styleEl);
                     </div>
                 </div>
 
+                <!-- Huntarr Operations card -->
+                <div class="mset-card">
+                    <div class="mset-card-header">
+                        <div class="mset-card-icon mset-icon-blue"><i class="fas fa-cogs"></i></div>
+                        <h3>Huntarr Operations</h3>
+                    </div>
+                    <div class="mset-card-body">
+                        <div class="setting-item flex-row">
+                            <label for="disable_requests">Disable Requests:</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="disable_requests" ${settings.enable_requestarr === false ? "checked" : ""}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <p class="setting-help">When enabled, the Requests section (Discover, TV Shows, Movies, etc.) is fully off—no UI, logging, or background work. Saves compute.</p>
+                        <div class="setting-item flex-row" style="margin-top: 15px;">
+                            <label for="disable_media_hunt">Disable Media Hunt &amp; NZB Hunt:</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="disable_media_hunt" ${settings.enable_media_hunt === false ? "checked" : ""}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <p class="setting-help">When enabled, Media Hunt and NZB Hunt are fully off—no UI, logging, or background work. Saves compute.</p>
+                        <div class="setting-item flex-row" style="margin-top: 15px;">
+                            <label for="disable_third_party_apps">Disable 3rd Party Apps:</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="disable_third_party_apps" ${settings.enable_third_party_apps === false ? "checked" : ""}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <p class="setting-help">When enabled, 3rd Party Apps (Sonarr, Radarr, etc.) are fully off—no UI, logging, or hunt cycles. Saves compute.</p>
+                    </div>
+                </div>
+
                 <!-- Security card -->
                 <div class="mset-card">
                     <div class="mset-card-header">
@@ -14489,22 +14524,6 @@ document.head.appendChild(styleEl);
                         <h3>Advanced Settings</h3>
                     </div>
                     <div class="mset-card-body">
-                        <div class="setting-item flex-row">
-                            <label for="enable_media_hunt">Enable Media Hunt & NZB Hunt:</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="enable_media_hunt" ${settings.enable_media_hunt !== false ? "checked" : ""}>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        <p class="setting-help" style="margin-top: -8px;">When disabled, Media Hunt and NZB Hunt are hidden from the sidebar and all Media Hunt cycles stop running.</p>
-                        <div class="setting-item flex-row" style="margin-top: 12px;">
-                            <label for="enable_third_party_apps">Enable 3rd Party Apps:</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="enable_third_party_apps" ${settings.enable_third_party_apps !== false ? "checked" : ""}>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        <p class="setting-help" style="margin-top: -8px;">When disabled, 3rd Party Apps (Sonarr, Radarr, etc.) are hidden from the sidebar and all their hunt cycles stop running.</p>
                         <div class="setting-item" style="margin-top: 15px; border-top: 1px solid rgba(148, 163, 184, 0.08); padding-top: 15px;">
                             <label for="base_url">Base URL:</label>
                             <input type="text" id="base_url" value="${settings.base_url || ""}" placeholder="/huntarr" class="mset-input">
@@ -14681,6 +14700,7 @@ document.head.appendChild(styleEl);
                     // Re-apply feature flags to sidebar after save
                     if (typeof window.applyFeatureFlags === 'function') window.applyFeatureFlags();
                     if (window.huntarrUI) {
+                        window.huntarrUI._enableRequestarr = settings.enable_requestarr !== false;
                         window.huntarrUI._enableMediaHunt = settings.enable_media_hunt !== false;
                         window.huntarrUI._enableThirdPartyApps = settings.enable_third_party_apps !== false;
                     }

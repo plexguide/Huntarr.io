@@ -673,6 +673,7 @@ def api_feature_flags():
     """Return lightweight feature flag settings for sidebar visibility."""
     general = settings_manager.load_settings('general') or {}
     return jsonify({
+        'enable_requestarr': general.get('enable_requestarr', True),
         'enable_media_hunt': general.get('enable_media_hunt', True),
         'enable_third_party_apps': general.get('enable_third_party_apps', True),
     })

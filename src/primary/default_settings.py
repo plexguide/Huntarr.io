@@ -275,6 +275,8 @@ GENERAL_DEFAULTS = {
     "ui_theme": "dark",
     "check_for_updates": True,
     "enable_requestarr": True,
+    "enable_media_hunt": True,
+    "enable_third_party_apps": True,
     "show_trending": True,
     "show_nzb_hunt_on_home": False,
     "low_usage_mode": True,
