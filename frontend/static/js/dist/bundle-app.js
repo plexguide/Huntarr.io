@@ -1241,11 +1241,6 @@ let huntarrUI = {
                 window.MediaHuntCalendar.init();
             }
         } else if ((section === 'activity-queue' || section === 'activity-history' || section === 'activity-blocklist' || section === 'activity-logs') && document.getElementById('activitySection')) {
-            // Redirect queue to history (queue is now in NZB Hunt)
-            if (section === 'activity-queue') {
-                section = 'activity-history';
-                history.replaceState(null, '', './#activity-history');
-            }
             if (document.getElementById('tvHuntActivitySection')) {
                 document.getElementById('tvHuntActivitySection').classList.remove('active');
                 document.getElementById('tvHuntActivitySection').style.display = 'none';
@@ -1253,8 +1248,10 @@ let huntarrUI = {
             document.getElementById('activitySection').classList.add('active');
             document.getElementById('activitySection').style.display = 'block';
             // Restore sidebar nav links to Movie Hunt Activity
+            var qNav = document.getElementById('movieHuntActivityQueueNav');
             var hNav = document.getElementById('movieHuntActivityHistoryNav');
             var bNav = document.getElementById('movieHuntActivityBlocklistNav');
+            if (qNav) qNav.setAttribute('href', './#activity-queue');
             if (hNav) hNav.setAttribute('href', './#activity-history');
             if (bNav) bNav.setAttribute('href', './#activity-blocklist');
             if (document.getElementById('mediaHuntSection')) {
@@ -1265,8 +1262,8 @@ let huntarrUI = {
                 document.getElementById('mediaHuntCalendarSection').classList.remove('active');
                 document.getElementById('mediaHuntCalendarSection').style.display = 'none';
             }
-            var view = section === 'activity-history' ? 'history' : section === 'activity-blocklist' ? 'blocklist' : 'logs';
-            newTitle = section === 'activity-history' ? 'Activity – History' : section === 'activity-blocklist' ? 'Activity – Blocklist' : 'Activity – Logs';
+            var view = section === 'activity-queue' ? 'queue' : section === 'activity-history' ? 'history' : section === 'activity-blocklist' ? 'blocklist' : 'logs';
+            newTitle = section === 'activity-queue' ? 'Activity – Queue' : section === 'activity-history' ? 'Activity – History' : section === 'activity-blocklist' ? 'Activity – Blocklist' : 'Activity – Logs';
             this.currentSection = section;
             this.showMovieHuntSidebar();
             if (window.ActivityModule && typeof window.ActivityModule.init === 'function') {

@@ -2,7 +2,7 @@
     <link rel="stylesheet" href="./static/css/instance-editor.css?v=1.0.2">
     <div class="app-content-panel" style="padding: 20px;">
     {% from 'components/page_header_partial.html' import page_header %}
-    {{ page_header(back_href='./#media-hunt-collection', parent_icon='fas fa-clock', parent_name='Activity', current_name='History', sponsor_section_id='activity') }}
+    {{ page_header(back_href='./#media-hunt-collection', parent_icon='fas fa-clock', parent_name='Activity', current_name='History', current_name_id='activityCurrentViewLabel', sponsor_section_id='activity') }}
     <div id="activity-unable-to-load" class="activity-unable-to-load" style="display: none;">
         <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
         <p class="no-instances-title">Unable to load</p>
@@ -59,6 +59,10 @@
 
     <!-- Queue view -->
     <div id="activity-queue-view" class="activity-view" style="display: none;">
+        <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-info-circle" style="color: #818cf8; font-size: 1rem;"></i>
+            <span style="color: #94a3b8; font-size: 0.9rem;">This queue tracks downloads sent to <strong style="color: #e2e8f0;">SABnzbd</strong> and <strong style="color: #e2e8f0;">NZBGet</strong>. For NZB Hunt (built-in) downloads, check the NZB Hunt section.</span>
+        </div>
         <div class="logs-table-wrapper">
             <table class="logs-data-table">
                 <thead>

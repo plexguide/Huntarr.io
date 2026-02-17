@@ -163,6 +163,10 @@
                         <div class="nav-icon-wrapper"><i class="fas fa-history"></i></div>
                         <span>History</span>
                     </a>
+                    <a href="./#activity-queue" class="nav-item nav-item-sub" id="movieHuntActivityQueueNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-list-ul"></i></div>
+                        <span>Queue</span>
+                    </a>
                     <a href="./#activity-blocklist" class="nav-item nav-item-sub" id="movieHuntActivityBlocklistNav">
                         <div class="nav-icon-wrapper"><i class="fas fa-ban"></i></div>
                         <span>Blocklist</span>
@@ -463,7 +467,8 @@ function setActiveNavItem() {
     else if (h === '#media-hunt-instances') { selector = '#movieHuntInstancesNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-collection-sub'); }
     else if (h === '#movie-hunt-calendar') { selector = '#movieHuntCalendarNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-collection-sub'); }
     else if (h === '#settings-import-media') { selector = '#movieHuntImportMediaNav'; group = 'sidebar-group-media-hunt'; }
-    else if (h === '#activity-queue' || h === '#activity-history') { selector = '#movieHuntActivityHistoryNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-activity-sub'); if (mhBody) mhBody.classList.add('activity-view'); }
+    else if (h === '#activity-queue') { selector = '#movieHuntActivityQueueNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-activity-sub'); if (mhBody) mhBody.classList.add('activity-view'); }
+    else if (h === '#activity-history') { selector = '#movieHuntActivityHistoryNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-activity-sub'); if (mhBody) mhBody.classList.add('activity-view'); }
     else if (h === '#activity-blocklist') { selector = '#movieHuntActivityBlocklistNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-activity-sub'); if (mhBody) mhBody.classList.add('activity-view'); }
     else if (h === '#activity-logs' || h === '#logs-media-hunt' || h === '#logs-tv-hunt') { selector = '#movieHuntActivityLogsNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-activity-sub'); if (mhBody) mhBody.classList.add('activity-view'); }
 

@@ -1693,6 +1693,11 @@
         if (removeBtn) removeBtn.style.display = view === 'queue' ? '' : 'none';
         var toolbar = document.getElementById('activityQueueToolbar');
         if (toolbar) toolbar.style.display = view === 'logs' ? 'none' : 'flex';
+        var headerLabel = el('activityCurrentViewLabel');
+        if (headerLabel) {
+            var labels = { queue: 'Queue', history: 'History', blocklist: 'Blocklist', logs: 'Logs' };
+            headerLabel.textContent = labels[view] || view;
+        }
         currentPage = 1;
         if (view === 'logs') {
             logPage = 1;
