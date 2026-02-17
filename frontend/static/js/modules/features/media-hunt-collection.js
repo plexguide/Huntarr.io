@@ -1040,8 +1040,38 @@
         return !!document.getElementById(movieSelectId) && !!document.getElementById(tvSelectId);
     }
 
+    var COLLECTION_PAGE_SIZE = 48;
+
+    function getCollectionPosterUrl(posterPath, size) {
+        size = size || 'w500';
+        if (!posterPath) return './static/images/blackout.jpg';
+        var fullUrl = (posterPath.indexOf('http') === 0) ? posterPath : ('https://image.tmdb.org/t/p/' + size + (posterPath[0] === '/' ? posterPath : '/' + posterPath));
+        if (window.tmdbImageCache && window.tmdbImageCache.enabled && window.tmdbImageCache.storage === 'server') {
+            return './api/tmdb/image?url=' + encodeURIComponent(fullUrl);
+        }
+        return fullUrl;
+    }
+
+    function applyCollectionCacheToImages(container) {
+        if (!container || !window.getCachedTMDBImage || !window.tmdbImageCache || !window.tmdbImageCache.enabled || window.tmdbImageCache.storage !== 'browser') return;
+        var imgs = container.querySelectorAll('img[src^="https://image.tmdb.org"]');
+        imgs.forEach(function(img) {
+            var posterUrlVal = img.getAttribute('src');
+            if (!posterUrlVal) return;
+            window.getCachedTMDBImage(posterUrlVal, window.tmdbImageCache).then(function(cachedUrl) {
+                if (cachedUrl && cachedUrl !== posterUrlVal) img.src = cachedUrl;
+            }).catch(function() {});
+        });
+    }
+
     window.MediaHuntCollection = {
         _combinedItems: [],
+        _combinedTotal: 0,
+        _combinedPage: 0,
+        _collectionLoading: false,
+        _collectionHasMore: false,
+        _collectionFetchedAll: false,
+        _collectionScrollObserver: null,
         _movieInstanceId: null,
         _tvInstanceId: null,
         sortBy: 'title.asc',
@@ -1159,13 +1189,15 @@
                 .catch(function() { self.hiddenMediaSet = new Set(); });
         },
 
-        loadCombinedCollection: function() {
+        loadCombinedCollection: function(append) {
             var self = this;
             var grid = document.getElementById('media-hunt-collection-grid');
             if (!grid) return;
 
-            grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading collection...</p></div>';
-            grid.style.display = 'flex';
+            if (!append) {
+                grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading collection...</p></div>';
+                grid.style.display = 'flex';
+            }
 
             if (!self._movieInstanceId && !self._tvInstanceId) {
                 grid.innerHTML = '<div class="media-hunt-collection-no-instances">' +
@@ -1177,8 +1209,8 @@
                 return;
             }
 
-            function processAndRender(combined) {
-                combined = combined.filter(function(item) {
+            function filterAndSort(items) {
+                var out = items.filter(function(item) {
                     if (!item.tmdb_id || !self.hiddenMediaSet || self.hiddenMediaSet.size === 0) return true;
                     var mt = item.media_type || 'movie';
                     for (var key of self.hiddenMediaSet) {
@@ -1186,13 +1218,36 @@
                     }
                     return true;
                 });
-                combined.sort(function(a, b) {
+                out.sort(function(a, b) {
                     var c = (a._sortTitle || '').localeCompare(b._sortTitle || '');
                     if (c !== 0) return self.sortBy === 'title.desc' ? -c : c;
                     return ((a._year || '').localeCompare(b._year || ''));
                 });
-                self._combinedItems = combined;
+                return out;
+            }
+
+            function processFirstPage(data) {
+                var items = data.items || [];
+                var total = data.total != null ? data.total : items.length;
+                var filtered = filterAndSort(items);
+                self._combinedItems = filtered;
+                self._combinedTotal = total;
+                self._combinedPage = 1;
+                self._collectionHasMore = (items.length === COLLECTION_PAGE_SIZE && 1 * COLLECTION_PAGE_SIZE < total);
+                self._collectionFetchedAll = false;
                 self.renderCombined();
+                self.setupCollectionInfiniteScroll();
+            }
+
+            function processFallbackFull(combined) {
+                var filtered = filterAndSort(combined);
+                self._combinedItems = filtered;
+                self._combinedTotal = filtered.length;
+                self._combinedPage = 1;
+                self._collectionHasMore = filtered.length > COLLECTION_PAGE_SIZE;
+                self._collectionFetchedAll = true;
+                self.renderCombined();
+                self.setupCollectionInfiniteScroll();
             }
 
             function fallbackToLegacyApis() {
@@ -1244,29 +1299,86 @@
                 }
                 Promise.all(promises).then(function(results) {
                     var combined = (results[0] || []).concat(results[1] || []);
-                    processAndRender(combined);
+                    processFallbackFull(combined);
                 });
+            }
+
+            if (append) {
+                if (self._collectionLoading || !self._collectionHasMore) return;
+                self._collectionLoading = true;
+                if (self._collectionFetchedAll) {
+                    var start = self._combinedPage * COLLECTION_PAGE_SIZE;
+                    var slice = self._combinedItems.slice(start, start + COLLECTION_PAGE_SIZE);
+                    self._combinedPage++;
+                    self._collectionHasMore = (self._combinedPage * COLLECTION_PAGE_SIZE < self._combinedTotal);
+                    slice.forEach(function(item) {
+                        grid.appendChild(self.createCombinedCard(item));
+                    });
+                    applyCollectionCacheToImages(grid);
+                    self._collectionLoading = false;
+                } else {
+                    var params = new URLSearchParams();
+                    if (self._movieInstanceId) params.set('movie_instance_id', self._movieInstanceId);
+                    if (self._tvInstanceId) params.set('tv_instance_id', self._tvInstanceId);
+                    params.set('page', String(self._combinedPage + 1));
+                    params.set('page_size', String(COLLECTION_PAGE_SIZE));
+                    params.set('sort', self.sortBy || 'title.asc');
+                    fetch('./api/requestarr/collection?' + params.toString())
+                        .then(function(r) { return r.json(); })
+                        .then(function(data) {
+                            var items = data.items || [];
+                            var total = data.total != null ? data.total : 0;
+                            var filtered = filterAndSort(items);
+                            self._combinedItems = self._combinedItems.concat(filtered);
+                            self._combinedPage++;
+                            self._collectionHasMore = (self._combinedPage * COLLECTION_PAGE_SIZE < total);
+                            filtered.forEach(function(item) {
+                                grid.appendChild(self.createCombinedCard(item));
+                            });
+                            applyCollectionCacheToImages(grid);
+                        })
+                        .catch(function() {})
+                        .then(function() {
+                            self._collectionLoading = false;
+                        });
+                }
+                return;
             }
 
             var params = new URLSearchParams();
             if (self._movieInstanceId) params.set('movie_instance_id', self._movieInstanceId);
             if (self._tvInstanceId) params.set('tv_instance_id', self._tvInstanceId);
             params.set('page', '1');
-            params.set('page_size', '9999');
+            params.set('page_size', String(COLLECTION_PAGE_SIZE));
             params.set('sort', self.sortBy || 'title.asc');
 
             fetch('./api/requestarr/collection?' + params.toString())
                 .then(function(r) {
-                    if (r.ok) return r.json().then(function(data) { return data.items || []; });
+                    if (r.ok) return r.json().then(function(data) { processFirstPage(data); return null; });
                     if (r.status === 404) { fallbackToLegacyApis(); return null; }
                     throw new Error('Failed to load');
                 })
-                .then(function(combined) {
-                    if (combined !== null) processAndRender(combined);
-                })
                 .catch(function() {
-                    grid.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 60px;">Failed to load collection.</p>';
+                    if (!append) grid.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 60px;">Failed to load collection.</p>';
                 });
+        },
+
+        setupCollectionInfiniteScroll: function() {
+            var self = this;
+            var sentinel = document.getElementById('media-hunt-collection-scroll-sentinel');
+            var scrollRoot = document.querySelector('.main-content');
+            if (!sentinel || self._collectionScrollObserver) return;
+            self._collectionScrollObserver = new IntersectionObserver(
+                function(entries) {
+                    entries.forEach(function(entry) {
+                        if (!entry.isIntersecting) return;
+                        if (self.viewMode !== 'posters') return;
+                        if (self._collectionHasMore && !self._collectionLoading) self.loadCombinedCollection(true);
+                    });
+                },
+                { root: scrollRoot, rootMargin: '200px 0px', threshold: 0 }
+            );
+            self._collectionScrollObserver.observe(sentinel);
         },
 
         setupSort: function() {
@@ -1344,6 +1456,7 @@
             filtered.forEach(function(item) {
                 grid.appendChild(this.createCombinedCard(item));
             }.bind(this));
+            applyCollectionCacheToImages(grid);
         },
 
         renderCombined: function() {
@@ -1366,12 +1479,59 @@
             else if (self.sortBy === 'title.desc') items = items.slice().sort(function(a, b) { return (b._sortTitle || '').localeCompare(a._sortTitle || ''); });
             else items = items.slice().sort(function(a, b) { return (a._sortTitle || '').localeCompare(b._sortTitle || ''); });
 
+            if (self.viewMode === 'table' || self.viewMode === 'overview') {
+                if (!self._collectionFetchedAll && items.length < self._combinedTotal && self._combinedTotal > 0) {
+                    var params = new URLSearchParams();
+                    if (self._movieInstanceId) params.set('movie_instance_id', self._movieInstanceId);
+                    if (self._tvInstanceId) params.set('tv_instance_id', self._tvInstanceId);
+                    params.set('page', '1');
+                    params.set('page_size', String(Math.min(10000, self._combinedTotal)));
+                    params.set('sort', self.sortBy || 'title.asc');
+                    fetch('./api/requestarr/collection?' + params.toString())
+                        .then(function(r) { return r.json(); })
+                        .then(function(data) {
+                            var raw = data.items || [];
+                            var filtered = raw.filter(function(item) {
+                                if (!item.tmdb_id || !self.hiddenMediaSet || self.hiddenMediaSet.size === 0) return true;
+                                var mt = item.media_type || 'movie';
+                                for (var key of self.hiddenMediaSet) {
+                                    if (key.indexOf(item.tmdb_id + ':' + mt) === 0) return false;
+                                }
+                                return true;
+                            });
+                            filtered.sort(function(a, b) {
+                                var c = (a._sortTitle || '').localeCompare(b._sortTitle || '');
+                                if (c !== 0) return self.sortBy === 'title.desc' ? -c : c;
+                                return ((a._year || '').localeCompare(b._year || ''));
+                            });
+                            self._combinedItems = filtered;
+                            self._combinedTotal = filtered.length;
+                            self._collectionFetchedAll = true;
+                            self.renderCombined();
+                        })
+                        .catch(function() {
+                            self.renderCombined();
+                        });
+                    return;
+                }
+            }
+
+            if (self.viewMode === 'posters' && self._collectionFetchedAll) {
+                items = items.slice(0, self._combinedPage * COLLECTION_PAGE_SIZE);
+            }
+
             if (items.length === 0) {
                 grid.style.display = 'flex';
                 grid.style.alignItems = 'center';
                 grid.style.justifyContent = 'center';
                 grid.innerHTML = '<div style="text-align:center;color:#9ca3af;"><i class="fas fa-inbox" style="font-size:48px;opacity:0.4;margin-bottom:16px;display:block;"></i><p>No items in collection</p></div>';
                 return;
+            }
+
+            function posterUrl(size) {
+                return function(item) {
+                    return item.poster_path ? getCollectionPosterUrl(item.poster_path, size) : './static/images/blackout.jpg';
+                };
             }
 
             if (self.viewMode === 'table' && table && tableBody) {
@@ -1382,13 +1542,13 @@
                     var tr = document.createElement('tr');
                     var title = (item.title || item.name || '').replace(/</g, '&lt;');
                     var year = item.year || item._year || '-';
-                    var posterUrl = item.poster_path ? 'https://image.tmdb.org/t/p/w92' + (item.poster_path[0] === '/' ? item.poster_path : '/' + item.poster_path) : './static/images/blackout.jpg';
                     var typeLabel = item.media_type === 'tv' ? 'TV' : 'Movie';
-                    tr.innerHTML = '<td><img src="' + posterUrl + '" class="table-poster" onerror="this.src=\'./static/images/blackout.jpg\'"></td><td>' + title + '</td><td>' + year + '</td><td>' + typeLabel + '</td>';
+                    tr.innerHTML = '<td><img src="' + posterUrl('w92')(item) + '" class="table-poster" loading="lazy" onerror="this.src=\'./static/images/blackout.jpg\'"></td><td>' + title + '</td><td>' + year + '</td><td>' + typeLabel + '</td>';
                     tr.style.cursor = 'pointer';
                     tr.onclick = function() { self.onCardClick(item); };
                     tableBody.appendChild(tr);
                 });
+                applyCollectionCacheToImages(table);
             } else if (self.viewMode === 'overview' && overview && overviewList) {
                 overview.style.display = 'block';
                 grid.style.display = 'none';
@@ -1398,17 +1558,18 @@
                     div.className = 'media-overview-item';
                     var title = (item.title || item.name || '').replace(/</g, '&lt;');
                     var year = item.year || item._year || '-';
-                    var posterUrl = item.poster_path ? 'https://image.tmdb.org/t/p/w200' + (item.poster_path[0] === '/' ? item.poster_path : '/' + item.poster_path) : './static/images/blackout.jpg';
                     var typeLabel = item.media_type === 'tv' ? 'TV' : 'Movie';
-                    div.innerHTML = '<div class="media-overview-poster"><img src="' + posterUrl + '" onerror="this.src=\'./static/images/blackout.jpg\'"></div><div class="media-overview-details"><div class="media-overview-title">' + title + ' <span class="media-overview-year">(' + year + ') · ' + typeLabel + '</span></div></div>';
+                    div.innerHTML = '<div class="media-overview-poster"><img src="' + posterUrl('w200')(item) + '" loading="lazy" onerror="this.src=\'./static/images/blackout.jpg\'"></div><div class="media-overview-details"><div class="media-overview-title">' + title + ' <span class="media-overview-year">(' + year + ') · ' + typeLabel + '</span></div></div>';
                     div.style.cursor = 'pointer';
                     div.onclick = function() { self.onCardClick(item); };
                     overviewList.appendChild(div);
                 });
+                applyCollectionCacheToImages(overview);
             } else {
                 items.forEach(function(item) {
                     grid.appendChild(self.createCombinedCard(item));
                 });
+                applyCollectionCacheToImages(grid);
             }
         },
 
@@ -1418,7 +1579,7 @@
             card.className = 'media-card';
             var title = (item.title || item.name || '').replace(/</g, '&lt;').replace(/"/g, '&quot;');
             var year = item.year || item._year || 'N/A';
-            var posterUrl = item.poster_path ? 'https://image.tmdb.org/t/p/w500' + (item.poster_path[0] === '/' ? item.poster_path : '/' + item.poster_path) : './static/images/blackout.jpg';
+            var posterUrl = getCollectionPosterUrl(item.poster_path, 'w500');
             var typeBadgeLabel = item.media_type === 'tv' ? 'TV' : 'Movie';
             var status = item.status || (item.media_type === 'movie' ? (item.in_library ? 'available' : 'requested') : '');
             var statusClass = status === 'available' ? 'complete' : 'partial';
@@ -1445,7 +1606,7 @@
             card.innerHTML = '<div class="media-card-poster">' +
                 '<div class="media-card-status-badge ' + statusClass + '"><i class="fas fa-' + statusIcon + '"></i></div>' +
                 '<span class="media-type-badge">' + typeBadgeLabel + '</span>' +
-                '<img src="' + posterUrl + '" alt="' + title + '" onerror="this.src=\'./static/images/blackout.jpg\'">' +
+                '<img src="' + posterUrl + '" alt="' + title + '" loading="lazy" onerror="this.src=\'./static/images/blackout.jpg\'">' +
                 '<div class="media-card-overlay"><div class="media-card-overlay-title">' + title + '</div><div class="media-card-overlay-content"><div class="media-card-overlay-year">' + year + '</div></div></div>' +
                 '</div>' +
                 '<div class="' + combBarClass + '"' + (item.media_type === 'tv' ? ' title="' + combAvail + ' / ' + combTotal + ' episodes (' + combPct + '%)"' : '') + '>' +
