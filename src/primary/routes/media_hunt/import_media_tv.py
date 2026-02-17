@@ -26,6 +26,10 @@ from .import_media_shared import (
     should_skip_folder,
     year_range_pattern,
     tmdb_pattern,
+    normalize_for_scoring,
+    strip_country_suffix,
+    strip_articles,
+    title_similarity,
 )
 from .discovery_tv import (
     _get_collection_config,
@@ -286,53 +290,77 @@ def _lookup_tmdb_by_tvdb(tvdb_id):
 
 
 def _score_tv_match(parsed, tmdb_result, seasons_on_disk=None):
-    """TV-specific confidence scoring. first_air_date is critical for reboots."""
+    """TV-specific confidence scoring with smart normalization.
+
+    Handles possessives (Gabby's vs Gabbys), country suffixes (Shameless US vs
+    Shameless), and near-miss titles via bigram/fuzzy matching.
+    """
     score = 0
-    parsed_title = (parsed.get('title') or '').strip().lower()
+    parsed_title = (parsed.get('title') or '').strip()
     parsed_year = (parsed.get('year') or '').strip()
 
-    tmdb_name = (tmdb_result.get('name') or '').lower()
-    tmdb_original = (tmdb_result.get('original_name') or '').lower()
+    tmdb_name = (tmdb_result.get('name') or '')
+    tmdb_original = (tmdb_result.get('original_name') or '')
     first_air = tmdb_result.get('first_air_date') or ''
     tmdb_year = first_air[:4] if len(first_air) >= 4 else ''
 
-    def norm(s):
-        s = re.sub(r'[^\w\s]', ' ', (s or '').lower())
-        return ' '.join(s.split())
+    # Smart normalization (handles possessives, single-char words, punctuation)
+    n_parsed = normalize_for_scoring(parsed_title)
+    n_tmdb = normalize_for_scoring(tmdb_name)
+    n_original = normalize_for_scoring(tmdb_original)
 
-    n_parsed = norm(parsed_title)
-    n_tmdb = norm(tmdb_name)
-    n_original = norm(tmdb_original)
+    # Also try with country suffix stripped ("Shameless US" -> "Shameless")
+    n_parsed_no_country = normalize_for_scoring(strip_country_suffix(parsed_title))
+    # And with articles stripped ("The Office" -> "Office")
+    n_parsed_no_article = normalize_for_scoring(strip_articles(parsed_title))
 
-    # Title match (TV uses 'name' not 'title')
-    if n_parsed == n_tmdb or n_parsed == n_original:
-        score += 50
-    elif n_parsed in n_tmdb or n_tmdb in n_parsed:
-        score += 35
-    elif n_parsed in n_original or n_original in n_parsed:
-        score += 30
+    # Calculate similarity across multiple normalization strategies, take best
+    sims = [
+        title_similarity(n_parsed, n_tmdb),
+        title_similarity(n_parsed, n_original),
+        title_similarity(n_parsed_no_country, n_tmdb),
+        title_similarity(n_parsed_no_country, n_original),
+        title_similarity(n_parsed_no_article, n_tmdb),
+        title_similarity(n_parsed_no_article, n_original),
+    ]
+    best_sim = max(sims)
+
+    # Title scoring based on similarity (0.0-1.0 -> 0-55 points)
+    if best_sim >= 0.95:
+        score += 55    # Near-exact match
+    elif best_sim >= 0.85:
+        score += 48    # Very close (e.g., "Gabbys Dollhouse" vs "Gabby Dollhouse")
+    elif best_sim >= 0.70:
+        score += 40    # Strong match (country suffix stripped, etc.)
+    elif best_sim >= 0.55:
+        score += 30    # Decent match
+    elif best_sim >= 0.40:
+        score += 20    # Partial match
+    elif best_sim >= 0.25:
+        score += 10    # Weak match
     else:
-        p_words = set(n_parsed.split())
-        t_words = set(n_tmdb.split())
-        if p_words and t_words:
-            overlap = len(p_words & t_words) / max(len(p_words), len(t_words))
-            score += int(overlap * 30)
+        score += int(best_sim * 30)  # Minimal
 
     # first_air_date year — CRITICAL for TV (reboots, remakes)
     if parsed_year and tmdb_year:
         if parsed_year == tmdb_year:
-            score += 35  # Higher than movie — year disambiguates more for TV
+            score += 30
         elif abs(int(parsed_year) - int(tmdb_year)) <= 1:
             score += 15
+    elif not parsed_year and tmdb_year:
+        # No year on disk — don't penalize, give a small neutral bonus
+        # if the title match is already strong
+        if best_sim >= 0.70:
+            score += 8
 
     # Seasons on disk vs TMDB (if we detected them)
     if seasons_on_disk is not None and seasons_on_disk > 0:
         tmdb_seasons = tmdb_result.get('number_of_seasons') or 0
         if tmdb_seasons > 0 and seasons_on_disk <= tmdb_seasons:
             if seasons_on_disk == tmdb_seasons:
-                score += 10  # Exact season count match
+                score += 10
             else:
-                score += 5   # Partial (e.g. we have 2, TMDB says 5)
+                score += 5
 
     # Popularity
     popularity = tmdb_result.get('popularity', 0)
@@ -535,8 +563,12 @@ def _process_one_unmapped_item(item, tmdb_delay=0.2):
     return True
 
 
-def run_import_media_scan(instance_id, max_match=None, lightweight=False):
-    """Run full TV Import Media scan for an instance."""
+def run_import_media_scan(instance_id, max_match=None, lightweight=False, rescore=False):
+    """Run full TV Import Media scan for an instance.
+
+    rescore: if True, re-process all 'matched' items to refresh scores with
+    the latest scoring algorithm.
+    """
     tmdb_delay = 1.0 if lightweight else 0.2
     if not _scan_lock.acquire(blocking=False):
         logger.info("TV Import Media: scan already in progress, skipping")
@@ -558,11 +590,18 @@ def run_import_media_scan(instance_id, max_match=None, lightweight=False):
             path = new_item['folder_path']
             if path in existing_by_path:
                 existing = existing_by_path[path]
-                if existing.get('status') in ('matched', 'confirmed', 'skipped', 'no_match'):
+                if rescore and existing.get('status') == 'matched':
+                    # Force re-score: reset to pending so it gets re-processed
+                    existing['status'] = 'pending'
+                    merged.append(existing)
+                elif existing.get('status') in ('matched', 'confirmed', 'skipped', 'no_match'):
                     merged.append(existing)
                     continue
-            new_item['status'] = 'pending'
-            merged.append(new_item)
+                else:
+                    merged.append(existing)
+            else:
+                new_item['status'] = 'pending'
+                merged.append(new_item)
 
         pending_count = len([i for i in merged if i.get('status') in ('pending', None)])
         if pending_count:
@@ -723,7 +762,11 @@ def run_import_media_background_cycle():
 def register_tv_import_media_routes(bp):
     @bp.route('/api/tv-hunt/import-media', methods=['GET'])
     def api_tv_import_media_list():
-        """List unmapped TV series with match status."""
+        """List unmapped TV series with match status.
+
+        Re-checks items against the current collection to filter out any
+        series that were added via other means (import lists, manual add, etc.).
+        """
         try:
             instance_id = _get_tv_hunt_instance_id_from_request()
             if not instance_id:
@@ -733,18 +776,57 @@ def register_tv_import_media_routes(bp):
             status_filter = (request.args.get('status') or '').strip()
             if status_filter:
                 items = [i for i in items if i.get('status') == status_filter]
+
+            # Build current collection lookup to filter out already-imported items
+            collection = _get_collection_config(instance_id)
+            known_tmdb_ids = set()
+            known_title_year = set()
+            for s in collection:
+                if not isinstance(s, dict):
+                    continue
+                tid = s.get('tmdb_id')
+                if tid:
+                    known_tmdb_ids.add(int(tid) if isinstance(tid, (int, float)) else tid)
+                title = _normalize_title_for_key(s.get('title') or s.get('name'))
+                first_air = s.get('first_air_date') or ''
+                year = first_air[:4] if len(first_air) >= 4 else ''
+                if title:
+                    known_title_year.add((title, year))
+
             out = []
+            auto_confirmed = False
             for item in items:
                 if item.get('status') == 'confirmed':
                     continue
+
+                # Re-check: is the best match already in the collection?
+                best = item.get('best_match')
+                if best and best.get('tmdb_id'):
+                    best_tid = best['tmdb_id']
+                    if isinstance(best_tid, (int, float)):
+                        best_tid = int(best_tid)
+                    if best_tid in known_tmdb_ids:
+                        item['status'] = 'confirmed'
+                        auto_confirmed = True
+                        continue
+
+                # Re-check: is the parsed title+year already in the collection?
+                parsed = item.get('parsed', {})
+                norm_title = _normalize_title_for_key(parsed.get('title', ''))
+                p_year = parsed.get('year', '')
+                if norm_title and (norm_title, p_year) in known_title_year:
+                    item['status'] = 'confirmed'
+                    auto_confirmed = True
+                    continue
+
                 mi = item.get('media_info', {})
                 mf = mi.get('main_file', {})
                 entry = {
                     'folder_path': item.get('folder_path', ''),
                     'folder_name': item.get('folder_name', ''),
                     'root_folder': item.get('root_folder', ''),
-                    'parsed_title': item.get('parsed', {}).get('title', ''),
-                    'parsed_year': item.get('parsed', {}).get('year', ''),
+                    'parsed_title': parsed.get('title', ''),
+                    'parsed_year': p_year,
                     'status': item.get('status', 'pending'),
                     'file_size': mi.get('total_size', 0),
                     'file_count': mi.get('file_count', 0),
@@ -754,6 +836,11 @@ def register_tv_import_media_routes(bp):
                     'processed_at': item.get('processed_at'),
                 }
                 out.append(entry)
+
+            # Persist auto-confirmed status changes
+            if auto_confirmed:
+                _save_unmapped_config(config, instance_id)
+
             return jsonify({
                 'success': True,
                 'items': out,
@@ -768,7 +855,11 @@ def register_tv_import_media_routes(bp):
     
     @bp.route('/api/tv-hunt/import-media/scan', methods=['POST'])
     def api_tv_import_media_scan():
-        """Trigger on-demand TV Import Media scan."""
+        """Trigger on-demand TV Import Media scan.
+
+        Passing rescore=true forces re-scoring of all matched items with
+        the latest scoring algorithm (useful after scoring improvements).
+        """
         try:
             instance_id = _get_tv_hunt_instance_id_from_request()
             if not instance_id:
@@ -776,9 +867,11 @@ def register_tv_import_media_routes(bp):
             config = _get_unmapped_config(instance_id)
             if config.get('scan_in_progress'):
                 return jsonify({'success': False, 'message': 'Scan already in progress'}), 200
-    
+
+            rescore = request.args.get('rescore', 'false').lower() == 'true'
+
             def _scan():
-                run_import_media_scan(instance_id, max_match=None)
+                run_import_media_scan(instance_id, max_match=None, rescore=rescore)
             threading.Thread(target=_scan, name="TVImportMediaScan", daemon=True).start()
             return jsonify({'success': True, 'message': 'Scan started'}), 200
         except Exception as e:

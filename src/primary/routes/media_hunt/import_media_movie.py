@@ -27,6 +27,10 @@ from .import_media_shared import (
     should_skip_folder,
     year_range_pattern,
     tmdb_pattern,
+    normalize_for_scoring,
+    strip_country_suffix,
+    strip_articles,
+    title_similarity,
 )
 from .discovery_movie import (
     _get_collection_config,
@@ -364,48 +368,66 @@ def _lookup_tmdb_by_imdb(imdb_id):
 
 
 def _score_tmdb_match(parsed, tmdb_result):
-    """Score how well a TMDB result matches our parsed folder info (0-100)."""
+    """Score how well a TMDB result matches our parsed folder info (0-100).
+
+    Uses smart normalization that handles possessives, country suffixes,
+    and near-miss titles via bigram/fuzzy matching.
+    """
     score = 0
 
-    parsed_title = (parsed.get('title') or '').strip().lower()
+    parsed_title = (parsed.get('title') or '').strip()
     parsed_year = (parsed.get('year') or '').strip()
 
-    tmdb_title = (tmdb_result.get('title') or '').lower()
-    tmdb_original = (tmdb_result.get('original_title') or '').lower()
+    tmdb_title = (tmdb_result.get('title') or '')
+    tmdb_original = (tmdb_result.get('original_title') or '')
     tmdb_release = (tmdb_result.get('release_date') or '')
     tmdb_year = tmdb_release[:4] if len(tmdb_release) >= 4 else ''
 
-    # Normalize for comparison
-    def norm(s):
-        s = re.sub(r'[^\w\s]', ' ', s.lower())
-        return ' '.join(s.split())
+    # Smart normalization (handles possessives, single-char words, punctuation)
+    n_parsed = normalize_for_scoring(parsed_title)
+    n_tmdb = normalize_for_scoring(tmdb_title)
+    n_original = normalize_for_scoring(tmdb_original)
 
-    n_parsed = norm(parsed_title)
-    n_tmdb = norm(tmdb_title)
-    n_original = norm(tmdb_original)
+    # Also try with country suffix stripped and articles stripped
+    n_parsed_no_country = normalize_for_scoring(strip_country_suffix(parsed_title))
+    n_parsed_no_article = normalize_for_scoring(strip_articles(parsed_title))
 
-    # Exact title match
-    if n_parsed == n_tmdb or n_parsed == n_original:
-        score += 50
-    # Title contained in other
-    elif n_parsed in n_tmdb or n_tmdb in n_parsed:
-        score += 35
-    elif n_parsed in n_original or n_original in n_parsed:
+    # Calculate similarity across multiple normalization strategies, take best
+    sims = [
+        title_similarity(n_parsed, n_tmdb),
+        title_similarity(n_parsed, n_original),
+        title_similarity(n_parsed_no_country, n_tmdb),
+        title_similarity(n_parsed_no_country, n_original),
+        title_similarity(n_parsed_no_article, n_tmdb),
+        title_similarity(n_parsed_no_article, n_original),
+    ]
+    best_sim = max(sims)
+
+    # Title scoring based on similarity (0.0-1.0 -> 0-55 points)
+    if best_sim >= 0.95:
+        score += 55
+    elif best_sim >= 0.85:
+        score += 48
+    elif best_sim >= 0.70:
+        score += 40
+    elif best_sim >= 0.55:
         score += 30
-    # Word overlap
+    elif best_sim >= 0.40:
+        score += 20
+    elif best_sim >= 0.25:
+        score += 10
     else:
-        p_words = set(n_parsed.split())
-        t_words = set(n_tmdb.split())
-        if p_words and t_words:
-            overlap = len(p_words & t_words) / max(len(p_words), len(t_words))
-            score += int(overlap * 30)
+        score += int(best_sim * 30)
 
     # Year match
     if parsed_year and tmdb_year:
         if parsed_year == tmdb_year:
             score += 30
         elif abs(int(parsed_year) - int(tmdb_year)) <= 1:
-            score += 15  # Off by one year (common with release date variations)
+            score += 15
+    elif not parsed_year and tmdb_year:
+        if best_sim >= 0.70:
+            score += 8
 
     # Popularity bonus (well-known movies more likely to be correct)
     popularity = tmdb_result.get('popularity', 0)
@@ -690,14 +712,15 @@ def _process_one_unmapped_item(item, tmdb_delay=0.2):
 # Full scan cycle (background or on-demand)
 # ---------------------------------------------------------------------------
 
-def run_import_media_scan(instance_id, max_match=None, lightweight=False):
+def run_import_media_scan(instance_id, max_match=None, lightweight=False, rescore=False):
     """Run a full scan cycle for an instance:
     1. Scan root folders for unmapped items
     2. Merge with existing unmapped config (keep user confirmations)
     3. Process unmatched items through TMDB (one at a time, save after each)
     4. Save results
     max_match: None = process all pending; int = limit (e.g. for background scans).
-    lightweight: if True, use longer delays (1s) between TMDB calls to reduce CPU/network load when running in background.
+    lightweight: if True, use longer delays (1s) between TMDB calls.
+    rescore: if True, re-process all 'matched' items to refresh scores.
     """
     tmdb_delay = 1.0 if lightweight else 0.2
     if not _scan_lock.acquire(blocking=False):
@@ -719,25 +742,22 @@ def run_import_media_scan(instance_id, max_match=None, lightweight=False):
         existing_by_path = {item.get('folder_path'): item for item in existing_items if isinstance(item, dict)}
 
         merged = []
-        new_paths = set()
 
         for new_item in new_unmapped:
             path = new_item['folder_path']
-            new_paths.add(path)
 
             if path in existing_by_path:
                 existing = existing_by_path[path]
-                # Keep existing data if already processed (don't restart/reprocess)
-                if existing.get('status') in ('matched', 'confirmed', 'skipped', 'no_match'):
+                if rescore and existing.get('status') == 'matched':
+                    existing['status'] = 'pending'
+                    merged.append(existing)
+                elif existing.get('status') in ('matched', 'confirmed', 'skipped', 'no_match'):
                     merged.append(existing)
                 else:
                     merged.append(new_item)
             else:
                 new_item['status'] = 'pending'
                 merged.append(new_item)
-
-        # Remove items whose folders no longer exist
-        # (they were moved, deleted, or added to collection)
 
         # Step 3: Process one item at a time, save after each (avoids stall/timeout)
         pending_count = len([i for i in merged if i.get('status') in ('pending', None)])
@@ -827,7 +847,11 @@ def run_import_media_background_cycle():
 def register_movie_import_media_routes(bp):
     @bp.route('/api/movie-hunt/import-media', methods=['GET'])
     def api_import_media_list():
-        """List unmapped folders with their match status."""
+        """List unmapped folders with their match status.
+
+        Re-checks items against the current collection to filter out any
+        movies that were added via other means (import lists, manual add, etc.).
+        """
         try:
             instance_id = _get_movie_hunt_instance_id_from_request()
             config = _get_unmapped_config(instance_id)
@@ -838,11 +862,47 @@ def register_movie_import_media_routes(bp):
             if status_filter:
                 items = [i for i in items if i.get('status') == status_filter]
     
+            # Build current collection lookup to filter out already-imported items
+            collection = _get_collection_config(instance_id)
+            known_tmdb_ids = set()
+            known_title_year = set()
+            for c_item in collection:
+                if not isinstance(c_item, dict):
+                    continue
+                tid = c_item.get('tmdb_id')
+                if tid:
+                    known_tmdb_ids.add(int(tid) if isinstance(tid, (int, float)) else tid)
+                title = _normalize_title_for_key(c_item.get('title'))
+                year = str(c_item.get('year') or '').strip()
+                if title:
+                    known_title_year.add((title, year))
+    
             # Prepare items for frontend (strip large data)
             out = []
+            auto_confirmed = False
             for item in items:
                 if item.get('status') == 'confirmed':
                     continue  # Don't show already-imported items
+    
+                # Re-check: is the best match already in the collection?
+                best = item.get('best_match')
+                if best and best.get('tmdb_id'):
+                    best_tid = best['tmdb_id']
+                    if isinstance(best_tid, (int, float)):
+                        best_tid = int(best_tid)
+                    if best_tid in known_tmdb_ids:
+                        item['status'] = 'confirmed'
+                        auto_confirmed = True
+                        continue
+    
+                # Re-check: is the parsed title+year already in the collection?
+                parsed = item.get('parsed', {})
+                norm_title = _normalize_title_for_key(parsed.get('title', ''))
+                p_year = parsed.get('year', '')
+                if norm_title and (norm_title, p_year) in known_title_year:
+                    item['status'] = 'confirmed'
+                    auto_confirmed = True
+                    continue
     
                 media_info = item.get('media_info', {})
                 main_file = media_info.get('main_file', {})
@@ -852,9 +912,9 @@ def register_movie_import_media_routes(bp):
                     'folder_name': item.get('folder_name', ''),
                     'root_folder': item.get('root_folder', ''),
                     'is_file': item.get('is_file', False),
-                    'parsed_title': item.get('parsed', {}).get('title', ''),
-                    'parsed_year': item.get('parsed', {}).get('year', ''),
-                    'parsed_quality': item.get('parsed', {}).get('quality', ''),
+                    'parsed_title': parsed.get('title', ''),
+                    'parsed_year': p_year,
+                    'parsed_quality': parsed.get('quality', ''),
                     'status': item.get('status', 'pending'),
                     'file_size': media_info.get('total_size', 0),
                     'file_count': media_info.get('file_count', 0),
@@ -864,6 +924,10 @@ def register_movie_import_media_routes(bp):
                     'processed_at': item.get('processed_at'),
                 }
                 out.append(entry)
+    
+            # Persist auto-confirmed status changes
+            if auto_confirmed:
+                _save_unmapped_config(config, instance_id)
     
             return jsonify({
                 'success': True,
@@ -880,17 +944,22 @@ def register_movie_import_media_routes(bp):
     
     @bp.route('/api/movie-hunt/import-media/scan', methods=['POST'])
     def api_import_media_scan():
-        """Trigger an on-demand scan for unmapped folders."""
+        """Trigger an on-demand scan for unmapped folders.
+
+        Passing rescore=true forces re-scoring of all matched items with
+        the latest scoring algorithm.
+        """
         try:
             instance_id = _get_movie_hunt_instance_id_from_request()
             config = _get_unmapped_config(instance_id)
     
             if config.get('scan_in_progress'):
                 return jsonify({'success': False, 'message': 'Scan already in progress'}), 200
+
+            rescore = request.args.get('rescore', 'false').lower() == 'true'
     
-            # Run scan in background thread so we don't block the request
             def _scan():
-                run_import_media_scan(instance_id, max_match=None)
+                run_import_media_scan(instance_id, max_match=None, rescore=rescore)
     
             thread = threading.Thread(target=_scan, name="ImportMediaScan", daemon=True)
             thread.start()

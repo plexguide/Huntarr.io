@@ -9504,7 +9504,7 @@ document.head.appendChild(styleEl);
                 if (st) st.textContent = 'Starting scan...';
             }
 
-            fetch(this.getApiBase() + '/import-media/scan?' + this.getInstanceParam().replace('&', ''), { method: 'POST' })
+            fetch(this.getApiBase() + '/import-media/scan?rescore=true&' + this.getInstanceParam().replace('&', ''), { method: 'POST' })
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     if (data.success) self.startPolling();
