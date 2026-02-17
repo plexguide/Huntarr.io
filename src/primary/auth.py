@@ -745,9 +745,9 @@ def disable_2fa_with_password_and_otp(username: str, password: str, otp_code: st
             logger.warning(f"Failed to disable 2FA for '{username}': User not found.")
             return False
         
-        # 1. Verify Password (stored in plain text according to memories)
+        # 1. Verify Password using proper hash verification
         stored_password = user_data.get("password", "")
-        if stored_password != password:
+        if not verify_password(stored_password, password):
             logger.warning(f"Failed to disable 2FA for '{username}': Invalid password provided.")
             return False
             
