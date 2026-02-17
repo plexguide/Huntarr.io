@@ -15,14 +15,7 @@ docs/
 │   ├── setup-wizard.html       # First-launch wizard walkthrough
 │   └── first-steps.html        # Quick start guide
 ├── apps/
-│   ├── index.html              # App connections overview
-│   ├── sonarr.html
-│   ├── radarr.html
-│   ├── lidarr.html
-│   ├── readarr.html
-│   ├── whisparr.html
-│   ├── prowlarr.html
-│   └── swaparr.html
+│   └── index.html              # 3rd Party Apps (all apps consolidated)
 ├── movie-hunt/
 │   ├── index.html              # Movie Hunt overview
 │   ├── media-collection.html
