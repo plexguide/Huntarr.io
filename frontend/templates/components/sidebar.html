@@ -132,12 +132,12 @@
                     <div class="nav-icon-wrapper"><i class="fas fa-search-plus"></i></div>
                     <span>Index Master</span>
                 </a>
-                <a href="javascript:void(0)" class="nav-item nav-item-sub" id="movieHuntActivityToggle">
+                <a href="./#activity-history" class="nav-item nav-item-sub" id="movieHuntActivityToggle">
                     <div class="nav-icon-wrapper"><i class="fas fa-clock"></i></div>
                     <span>Activity</span>
                 </a>
                 <div class="nav-sub-group" id="movie-hunt-activity-sub">
-                    <a href="javascript:void(0)" class="nav-item nav-item-sub media-hunt-config-back" id="mediaHuntActivityBackNav">
+                    <a href="./#media-hunt-collection" class="nav-item nav-item-sub media-hunt-config-back" id="mediaHuntActivityBackNav">
                         <div class="nav-icon-wrapper"><i class="fas fa-arrow-left"></i></div>
                         <span>Back</span>
                     </a>
@@ -162,12 +162,12 @@
                     <div class="nav-icon-wrapper"><i class="fas fa-cloud-download-alt"></i></div>
                     <span>Clients</span>
                 </a>
-                <a href="javascript:void(0)" class="nav-item nav-item-sub" id="movieHuntSettingsToggle">
+                <a href="./#settings-media-management" class="nav-item nav-item-sub" id="movieHuntSettingsToggle">
                     <div class="nav-icon-wrapper"><i class="fas fa-cog"></i></div>
                     <span>Settings</span>
                 </a>
                 <div class="nav-sub-group" id="media-hunt-config-sub">
-                    <a href="javascript:void(0)" class="nav-item nav-item-sub media-hunt-config-back" id="mediaHuntConfigBackNav">
+                    <a href="./#media-hunt-collection" class="nav-item nav-item-sub media-hunt-config-back" id="mediaHuntConfigBackNav">
                         <div class="nav-icon-wrapper"><i class="fas fa-arrow-left"></i></div>
                         <span>Back</span>
                     </a>
@@ -458,9 +458,9 @@ function setActiveNavItem() {
 
     // ── Media Hunt > Configuration ──────────────────
     else if (h === '#media-hunt-settings' || h === '#movie-hunt-settings' || h === '#settings-instance-management') { selector = '#movieHuntSettingsMovieManagementNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }
-    else if (h === '#indexer-hunt') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; }
-    else if (h === '#indexer-hunt-stats') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; }
-    else if (h === '#indexer-hunt-history') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; }
+    else if (h === '#indexer-hunt') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-collection-sub'); }
+    else if (h === '#indexer-hunt-stats') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-collection-sub'); }
+    else if (h === '#indexer-hunt-history') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-collection-sub'); }
     else if (h === '#settings-clients') { selector = '#movieHuntClientsMainNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-collection-sub'); }
     else if (h === '#settings-media-management') { selector = '#movieHuntSettingsMovieManagementNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }
     else if (h === '#settings-profiles') { selector = '#movieHuntSettingsProfilesNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }
@@ -520,54 +520,21 @@ function setActiveNavItem() {
     }
 }
 
-// ── Media Hunt "Activity" toggle → enter activity view ───────
-document.addEventListener('click', function(e) {
-    var activityBtn = e.target.closest('#movieHuntActivityToggle');
-    if (!activityBtn) return;
-    e.preventDefault();
-    var mhBody = document.getElementById('sidebar-group-media-hunt');
-    if (mhBody) mhBody.classList.add('activity-view');
-    expandSub('movie-hunt-activity-sub');
-    // Navigate to History by default
-    window.location.hash = '#activity-history';
-});
+// ── Media Hunt "Activity" toggle ─────────────────────────────
+// Now uses href="./#activity-history" — handled by the
+// generic sidebar click handler in app.js + setActiveNavItem().
 
 // ── Media Hunt Activity "Back" button ────────────────────────
-document.addEventListener('click', function(e) {
-    var backBtn = e.target.closest('#mediaHuntActivityBackNav');
-    if (!backBtn) return;
-    e.preventDefault();
-    collapseSub('movie-hunt-activity-sub');
-    var mhBody = document.getElementById('sidebar-group-media-hunt');
-    if (mhBody) mhBody.classList.remove('activity-view');
-    // Navigate back to Collections
-    window.location.hash = '#media-hunt-collection';
-});
+// Now uses href="./#media-hunt-collection" — handled by the
+// generic sidebar click handler in app.js + setActiveNavItem().
 
-// ── Media Hunt "Settings" toggle → enter config view ─────────
-document.addEventListener('click', function(e) {
-    var settingsBtn = e.target.closest('#movieHuntSettingsToggle');
-    if (!settingsBtn) return;
-    e.preventDefault();
-    var mhBody = document.getElementById('sidebar-group-media-hunt');
-    if (mhBody) mhBody.classList.add('config-view');
-    expandSub('media-hunt-config-sub');
-    // Navigate to Media Management by default
-    window.location.hash = '#settings-media-management';
-});
+// ── Media Hunt "Settings" toggle ─────────────────────────────
+// Now uses href="./#settings-media-management" — handled by the
+// generic sidebar click handler in app.js + setActiveNavItem().
 
 // ── Media Hunt Config "Back" button ──────────────────────────
-document.addEventListener('click', function(e) {
-    var backBtn = e.target.closest('#mediaHuntConfigBackNav');
-    if (!backBtn) return;
-    e.preventDefault();
-    // Collapse config sub-group and remove config-view
-    collapseSub('media-hunt-config-sub');
-    var mhBody = document.getElementById('sidebar-group-media-hunt');
-    if (mhBody) mhBody.classList.remove('config-view');
-    // Navigate back to Collections
-    window.location.hash = '#media-hunt-collection';
-});
+// Now uses href="./#media-hunt-collection" — handled by the
+// generic sidebar click handler in app.js + setActiveNavItem().
 
 // ── Media Hunt sidebar: Import Media visibility ──────────────
 (function() {

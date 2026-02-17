@@ -298,17 +298,8 @@ let huntarrUI = {
                     } else if (normalizedHash === 'media-hunt-collection' && window.TVHuntCollection && typeof window.TVHuntCollection.showMainView === 'function') {
                         window.TVHuntCollection.showMainView();
                     }
-                    const parentSidebar = sidebarNavItem.closest('.sidebar');
-                    if (parentSidebar) {
-                        parentSidebar.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-                        sidebarNavItem.classList.add('active');
-                    }
+                    if (typeof setActiveNavItem === 'function') setActiveNavItem();
                     return;
-                }
-                const parentSidebar = sidebarNavItem.closest('.sidebar');
-                if (parentSidebar) {
-                    parentSidebar.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-                    sidebarNavItem.classList.add('active');
                 }
             }
 
