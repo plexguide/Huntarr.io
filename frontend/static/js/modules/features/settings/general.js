@@ -204,6 +204,13 @@
                             </button>
                             <p class="setting-help">Re-show the Media Hunt setup wizard on next visit. Useful if you skipped the wizard and want to run it again.</p>
                         </div>
+                        <div class="setting-item" style="margin-top: 15px; border-top: 1px solid rgba(148, 163, 184, 0.08); padding-top: 15px;">
+                            <label>Reset Welcome Message:</label>
+                            <button type="button" id="reset-welcome-message-btn" class="mset-btn-secondary" style="margin-top: 6px; padding: 7px 16px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 6px; color: #f87171; font-size: 0.85rem; cursor: pointer; transition: all 0.15s;">
+                                <i class="fas fa-envelope-open"></i> Reset Welcome
+                            </button>
+                            <p class="setting-help">Re-show the welcome message on the Home page. Useful for testing or if you want to see the welcome message again.</p>
+                        </div>
                     </div>
                 </div>
 
@@ -256,6 +263,29 @@
                             body: JSON.stringify({ ui_preferences: { 'media-hunt-wizard-completed': false } })
                         }).catch(function(err) { console.error('[ResetWizard] Failed to save:', err); });
                         try { sessionStorage.setItem('setup-wizard-force-show', '1'); } catch (e) {}
+                    }
+                }
+            });
+        }
+
+        // Reset Welcome Message button
+        var resetWelcomeBtn = container.querySelector('#reset-welcome-message-btn');
+        if (resetWelcomeBtn) {
+            resetWelcomeBtn.addEventListener('click', function() {
+                if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                    window.HuntarrConfirm.show({
+                        title: 'Reset Welcome Message',
+                        message: 'This will re-show the welcome message the next time you visit the Home page. Continue?',
+                        confirmLabel: 'Reset',
+                        cancelLabel: 'Cancel',
+                        onConfirm: function() {
+                            HuntarrUtils.setUIPreference('welcome-dismissed', false);
+                            if (window.HuntarrToast) window.HuntarrToast.success('Welcome message has been reset. It will show on your next visit to Home.');
+                        }
+                    });
+                } else {
+                    if (confirm('Reset the welcome message? It will show again on your next Home page visit.')) {
+                        HuntarrUtils.setUIPreference('welcome-dismissed', false);
                     }
                 }
             });

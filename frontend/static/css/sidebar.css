@@ -584,6 +584,17 @@
     box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
 }
 
+.sidebar-social-btn.issues-btn {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.08);
+}
+.sidebar-social-btn.issues-btn:hover {
+    color: #fbbf24;
+    background: rgba(245, 158, 11, 0.2);
+    border-color: rgba(245, 158, 11, 0.3);
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+}
+
 /* ===== SIDEBAR FOOTER ===== */
 .sidebar-footer {
     position: absolute;

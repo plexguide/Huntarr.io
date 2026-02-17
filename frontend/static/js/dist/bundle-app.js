@@ -732,6 +732,8 @@ let huntarrUI = {
             if (window.HomeRequestarr) {
                 window.HomeRequestarr.refresh();
             }
+            // Show welcome message on first visit (not during setup wizard)
+            this._maybeShowWelcome();
         } else if (section === 'logs-media-hunt' && this.elements.logsSection) {
             // Media Hunt logs - show logsSection under Movie Hunt sidebar (hide tab bar)
             var activitySection = document.getElementById('activitySection');
@@ -2036,6 +2038,36 @@ let huntarrUI = {
     showMainSidebar: function() {
         // Let setActiveNavItem handle group expansion based on hash
         if (typeof setActiveNavItem === 'function') setActiveNavItem();
+    },
+
+    _maybeShowWelcome: function() {
+        // Don't show during setup wizard phase
+        var wizardCompleted = HuntarrUtils.getUIPreference('media-hunt-wizard-completed', false);
+        if (!wizardCompleted) return;
+        // Check if already dismissed
+        var dismissed = HuntarrUtils.getUIPreference('welcome-dismissed', false);
+        if (dismissed) return;
+        // Show the welcome modal
+        var modal = document.getElementById('huntarr-welcome-modal');
+        if (!modal) return;
+        modal.style.display = 'flex';
+        // Wire up dismiss handlers (only once)
+        if (!modal._welcomeWired) {
+            modal._welcomeWired = true;
+            var dismissBtn = document.getElementById('huntarr-welcome-dismiss');
+            var closeBtn = document.getElementById('huntarr-welcome-close');
+            var backdrop = document.getElementById('huntarr-welcome-backdrop');
+            var dismiss = function() {
+                modal.style.display = 'none';
+                HuntarrUtils.setUIPreference('welcome-dismissed', true);
+            };
+            if (dismissBtn) dismissBtn.addEventListener('click', dismiss);
+            if (closeBtn) closeBtn.addEventListener('click', dismiss);
+            if (backdrop) backdrop.addEventListener('click', dismiss);
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && modal.style.display === 'flex') dismiss();
+            });
+        }
     },
 
     _updateMainSidebarBetaVisibility: function() {

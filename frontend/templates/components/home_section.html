@@ -2342,4 +2342,199 @@ document.addEventListener('DOMContentLoaded', function() {
     // Home sponsor banner is driven by app-sponsor-rotation.js (same rotation as app pages)
 });
 </script>
+
+<!-- Welcome Message Modal -->
+<div id="huntarr-welcome-modal" style="display: none;">
+    <div class="huntarr-welcome-backdrop" id="huntarr-welcome-backdrop"></div>
+    <div class="huntarr-welcome-content">
+        <div class="huntarr-welcome-header">
+            <button type="button" class="huntarr-welcome-close" id="huntarr-welcome-close" aria-label="Close">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="huntarr-welcome-logo">
+                <i class="fas fa-rocket"></i>
+            </div>
+            <h2 class="huntarr-welcome-title">Welcome to Huntarr</h2>
+            <p class="huntarr-welcome-subtitle">Your all-in-one media management companion</p>
+        </div>
+        <div class="huntarr-welcome-body">
+            <p>Thanks for choosing Huntarr! This app is built with one goal in mind: <strong>making media management simple</strong>. Rather than overwhelming you with hundreds of advanced settings, Huntarr focuses on what matters most &mdash; helping you find and organize your media with ease.</p>
+            <p>Huntarr is designed for the <strong>90% of users</strong> who just want things to work. If you're new to the *arr ecosystem, you're in the right place.</p>
+            <div class="huntarr-welcome-tip">
+                <i class="fas fa-lightbulb"></i>
+                <div>
+                    <strong>A note on updates:</strong> If you're running Huntarr via Docker with the <code>huntarr/huntarr:latest</code> tag, expect frequent updates and rapid changes &mdash; we move fast! For a more stable experience, pin to a specific version like <code>huntarr/huntarr:9.3.0</code>.
+                </div>
+            </div>
+            <p>Huntarr is a free, community-driven project. The goal has always been to make your media experience enjoyable and hassle-free.</p>
+            <p>A heartfelt thank you to everyone who has supported <strong>my daughter's education</strong> through sponsorships &mdash; it truly means the world to our family. Knowing that so many people I've never even met genuinely care is the greatest motivation I could ever ask for. A special shoutout to the <strong>r/Unraid</strong> community &mdash; where it all started! I build this for you.</p>
+            <p class="huntarr-welcome-signoff">Happy hunting!<br><strong>&mdash; Admin9705</strong></p>
+        </div>
+        <div class="huntarr-welcome-footer">
+            <button type="button" class="huntarr-welcome-dismiss" id="huntarr-welcome-dismiss">
+                <i class="fas fa-check"></i> Got it, thanks!
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+#huntarr-welcome-modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+#huntarr-welcome-modal[style*="display: flex"] { display: flex !important; }
+
+.huntarr-welcome-backdrop {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    z-index: 10000;
+}
+.huntarr-welcome-content {
+    position: relative;
+    z-index: 10001;
+    background: rgba(15, 23, 42, 0.98);
+    border: 2px solid rgba(99, 102, 241, 0.35);
+    border-radius: 16px;
+    max-width: 780px;
+    width: 94%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), 0 0 60px rgba(99, 102, 241, 0.1);
+    animation: welcomeFadeIn 0.3s ease-out;
+}
+@keyframes welcomeFadeIn {
+    from { opacity: 0; transform: scale(0.95) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.huntarr-welcome-header {
+    position: relative;
+    padding: 28px 28px 18px;
+    text-align: center;
+    background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #0f172a 100%);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+}
+.huntarr-welcome-close {
+    position: absolute;
+    top: 14px; right: 14px;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.15s;
+}
+.huntarr-welcome-close:hover { color: #f8fafc; }
+.huntarr-welcome-logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    margin-bottom: 12px;
+    font-size: 1.5rem;
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+}
+.huntarr-welcome-title {
+    margin: 0 0 4px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #f8fafc;
+}
+.huntarr-welcome-subtitle {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #94a3b8;
+}
+.huntarr-welcome-body {
+    padding: 22px 28px;
+    color: #cbd5e1;
+    font-size: 0.92rem;
+    line-height: 1.65;
+}
+.huntarr-welcome-body p {
+    margin: 0 0 14px;
+}
+.huntarr-welcome-body p:last-child {
+    margin-bottom: 0;
+}
+.huntarr-welcome-body strong {
+    color: #f1f5f9;
+}
+.huntarr-welcome-body code {
+    background: rgba(99, 102, 241, 0.12);
+    color: #a5b4fc;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+.huntarr-welcome-tip {
+    display: flex;
+    gap: 12px;
+    padding: 14px 16px;
+    background: rgba(234, 179, 8, 0.06);
+    border: 1px solid rgba(234, 179, 8, 0.18);
+    border-radius: 10px;
+    margin: 14px 0;
+    color: #cbd5e1;
+    font-size: 0.88rem;
+    line-height: 1.55;
+}
+.huntarr-welcome-tip > i {
+    color: #eab308;
+    font-size: 1.1rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+.huntarr-welcome-signoff {
+    margin-top: 8px !important;
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+.huntarr-welcome-signoff strong {
+    color: #a5b4fc;
+}
+.huntarr-welcome-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 20px 28px 24px;
+    border-top: 1px solid rgba(148, 163, 184, 0.08);
+}
+.huntarr-welcome-dismiss {
+    padding: 10px 24px;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter 0.15s, transform 0.1s;
+}
+.huntarr-welcome-dismiss:hover { filter: brightness(1.15); }
+.huntarr-welcome-dismiss:active { transform: scale(0.98); }
+@media (max-width: 600px) {
+    .huntarr-welcome-content {
+        width: 96%;
+        max-width: none;
+        border-radius: 12px;
+    }
+    .huntarr-welcome-header { padding: 20px 18px 14px; }
+    .huntarr-welcome-body { padding: 16px 18px; font-size: 0.88rem; }
+    .huntarr-welcome-footer { padding: 16px 18px 20px; }
+    .huntarr-welcome-title { font-size: 1.25rem; }
+    .huntarr-welcome-tip { font-size: 0.84rem; padding: 12px 14px; }
+}
+</style>
 </section>
