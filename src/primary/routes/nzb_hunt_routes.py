@@ -900,6 +900,58 @@ def nzb_hunt_queue_remove(nzb_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@nzb_hunt_bp.route("/api/nzb-hunt/queue/<nzb_id>/priority", methods=["POST"])
+def nzb_hunt_queue_set_priority(nzb_id):
+    """Set priority for a single queue item.
+    Body: { priority: "force"|"high"|"normal"|"low"|"stop" }
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        priority = (data.get("priority") or "normal").strip().lower()
+        mgr = _get_download_manager()
+        ok = mgr.set_item_priority(nzb_id, priority)
+        if not ok:
+            return jsonify({"success": False, "error": "Invalid priority or item not found"}), 400
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/queue/bulk/priority", methods=["POST"])
+def nzb_hunt_queue_bulk_priority():
+    """Set priority for multiple queue items.
+    Body: { ids: [...], priority: "force"|"high"|"normal"|"low"|"stop" }
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        ids = data.get("ids") or []
+        priority = (data.get("priority") or "normal").strip().lower()
+        if not ids:
+            return jsonify({"success": False, "error": "No IDs provided"}), 400
+        mgr = _get_download_manager()
+        count = mgr.set_items_priority(ids, priority)
+        return jsonify({"success": True, "updated": count})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@nzb_hunt_bp.route("/api/nzb-hunt/queue/bulk/delete", methods=["POST"])
+def nzb_hunt_queue_bulk_delete():
+    """Remove multiple items from the queue.
+    Body: { ids: [...] }
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        ids = data.get("ids") or []
+        if not ids:
+            return jsonify({"success": False, "error": "No IDs provided"}), 400
+        mgr = _get_download_manager()
+        count = mgr.remove_items(ids)
+        return jsonify({"success": True, "removed": count})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @nzb_hunt_bp.route("/api/nzb-hunt/history", methods=["GET"])
 def nzb_hunt_history():
     """Get download history."""

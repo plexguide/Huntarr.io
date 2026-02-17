@@ -1036,6 +1036,55 @@ class NZBHuntDownloadManager:
                     self._save_state()
                     return True
         return False
+
+    def remove_items(self, nzb_ids: list) -> int:
+        """Remove multiple items from the queue. Returns count removed."""
+        removed = 0
+        with self._queue_lock:
+            to_remove = []
+            for i, item in enumerate(self._queue):
+                if item.id in nzb_ids:
+                    to_remove.append(i)
+            for idx in reversed(to_remove):
+                item = self._queue.pop(idx)
+                self._cleanup_temp_for_item(item)
+                self._delete_nzb_content(item.id)
+                removed += 1
+            if removed:
+                self._save_state()
+        return removed
+
+    VALID_PRIORITIES = ("force", "high", "normal", "low", "stop")
+
+    def set_item_priority(self, nzb_id: str, priority: str) -> bool:
+        """Change the priority of a queued item."""
+        priority = priority.lower().strip()
+        if priority not in self.VALID_PRIORITIES:
+            return False
+        with self._queue_lock:
+            for item in self._queue:
+                if item.id == nzb_id:
+                    item.priority = priority
+                    self._cached_queue = None
+                    self._save_state()
+                    return True
+        return False
+
+    def set_items_priority(self, nzb_ids: list, priority: str) -> int:
+        """Change priority for multiple items. Returns count updated."""
+        priority = priority.lower().strip()
+        if priority not in self.VALID_PRIORITIES:
+            return 0
+        updated = 0
+        with self._queue_lock:
+            for item in self._queue:
+                if item.id in nzb_ids:
+                    item.priority = priority
+                    updated += 1
+            if updated:
+                self._cached_queue = None
+                self._save_state()
+        return updated
     
     def clear_history(self):
         """Clear download history."""

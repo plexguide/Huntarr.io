@@ -21,6 +21,7 @@
         _catEditIndex: null, // null = add, number = edit
         _pollTimer: null,
         _paused: false,
+        _selectedIds: {},
 
         /* ──────────────────────────────────────────────
            Initialization
@@ -178,11 +179,97 @@
         /* ──────────────────────────────────────────────
            Queue Rendering
         ────────────────────────────────────────────── */
+        _priorityLabel: function (p) {
+            var map = { force: 'Force', high: 'High', normal: 'Normal', low: 'Low', stop: 'Stop' };
+            return map[(p || 'normal').toLowerCase()] || 'Normal';
+        },
+
+        _priorityClass: function (p) {
+            return 'nzb-priority-' + (p || 'normal').toLowerCase();
+        },
+
+        _getSelectedIds: function () {
+            var ids = [];
+            for (var k in this._selectedIds) {
+                if (this._selectedIds[k]) ids.push(k);
+            }
+            return ids;
+        },
+
+        _updateSelectAllState: function () {
+            var cb = document.getElementById('nzb-select-all');
+            if (!cb) return;
+            var rows = document.querySelectorAll('.nzb-queue-row-cb');
+            var total = rows.length;
+            var checked = 0;
+            rows.forEach(function (r) { if (r.checked) checked++; });
+            cb.checked = total > 0 && checked === total;
+            cb.indeterminate = checked > 0 && checked < total;
+        },
+
+        _updateMassActionBar: function () {
+            var bar = document.getElementById('nzb-mass-action-bar');
+            if (!bar) return;
+            var selected = this._getSelectedIds();
+            if (selected.length > 0) {
+                bar.style.display = 'flex';
+                var countEl = document.getElementById('nzb-mass-count');
+                if (countEl) countEl.textContent = selected.length + ' selected';
+            } else {
+                bar.style.display = 'none';
+            }
+        },
+
+        _onMassPriorityChange: function (priority) {
+            var self = this;
+            var ids = this._getSelectedIds();
+            if (!ids.length || !priority) return;
+            fetch('./api/nzb-hunt/queue/bulk/priority', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: ids, priority: priority })
+            })
+                .then(function (r) { return _parseJsonOrThrow(r); })
+                .then(function () { self._fetchQueueAndStatus(); })
+                .catch(function (err) { console.error('[NzbHunt] Bulk priority error:', err); });
+        },
+
+        _onMassDelete: function () {
+            var self = this;
+            var ids = this._getSelectedIds();
+            if (!ids.length) return;
+            if (!confirm('Remove ' + ids.length + ' item' + (ids.length > 1 ? 's' : '') + ' from the queue?')) return;
+            fetch('./api/nzb-hunt/queue/bulk/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: ids })
+            })
+                .then(function (r) { return _parseJsonOrThrow(r); })
+                .then(function () {
+                    self._selectedIds = {};
+                    self._fetchQueueAndStatus();
+                })
+                .catch(function (err) { console.error('[NzbHunt] Bulk delete error:', err); });
+        },
+
+        _onSinglePriorityChange: function (id, priority) {
+            var self = this;
+            fetch('./api/nzb-hunt/queue/' + id + '/priority', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ priority: priority })
+            })
+                .then(function (r) { return _parseJsonOrThrow(r); })
+                .then(function () { self._fetchQueueAndStatus(); })
+                .catch(function (err) { console.error('[NzbHunt] Set priority error:', err); });
+        },
+
         _renderQueue: function (queue) {
             var body = document.getElementById('nzb-queue-body');
             if (!body) return;
 
             if (!queue || queue.length === 0) {
+                this._selectedIds = {};
                 body.innerHTML =
                     '<div class="nzb-queue-empty">' +
                         '<div class="nzb-queue-empty-icon"><i class="fas fa-inbox"></i></div>' +
@@ -210,14 +297,22 @@
                 totalRemaining += Math.max(0, tb - db);
             });
 
+            // Prune _selectedIds: remove IDs no longer in the full queue
+            var queueIdSet = {};
+            queue.forEach(function (q) { queueIdSet[q.id] = true; });
+            for (var sid in self._selectedIds) {
+                if (!queueIdSet[sid]) delete self._selectedIds[sid];
+            }
+
             var html =
                 '<table class="nzb-queue-table">' +
                 '<thead><tr>' +
+                '<th class="nzb-col-check"><input type="checkbox" id="nzb-select-all" title="Select all" /></th>' +
                 '<th class="nzb-col-name">Name</th>' +
                 '<th class="nzb-col-cat">Category</th>' +
                 '<th class="nzb-col-pct">Progress</th>' +
                 '<th class="nzb-col-size">Size</th>' +
-                '<th class="nzb-col-speed">Speed</th>' +
+                '<th class="nzb-col-priority">Priority</th>' +
                 '<th class="nzb-col-eta">ETA</th>' +
                 '<th class="nzb-col-status">Status</th>' +
                 '<th class="nzb-col-actions"></th>' +
@@ -229,7 +324,6 @@
                 var stateIcon = self._stateIcon(item.state);
                 var stateLabel = self._stateLabel(item.state);
                 var isActivelyDownloading = (item.state === 'downloading' && progress < 100);
-                var speed = isActivelyDownloading ? self._formatBytes(item.speed_bps || 0) + '/s' : '—';
                 var timeLeft = isActivelyDownloading ? (item.time_left || '—') : '—';
                 var db = item.downloaded_bytes || 0;
                 var tb = item.total_bytes || 0;
@@ -238,8 +332,12 @@
                 var totalSize = self._formatBytes(tb);
                 var name = self._escHtml(item.name || 'Unknown');
                 var catLabel = item.category ? self._escHtml(String(item.category)) : '—';
+                var isChecked = !!self._selectedIds[item.id];
+                var priVal = (item.priority || 'normal').toLowerCase();
+                var priLabel = self._priorityLabel(priVal);
+                var priClass = self._priorityClass(priVal);
 
-                // Build status display — label on top, detail message below
+                // Build status display
                 var failedSegs = item.failed_segments || 0;
                 var tooltipText = '';
                 var statusHtml = '<span class="nzb-status-label"><i class="' + stateIcon + '"></i> ';
@@ -273,7 +371,7 @@
                     statusHtml = '<span class="nzb-status-with-tooltip" title="">' + statusHtml + '<div class="nzb-cell-tooltip">' + self._escHtml(tooltipText) + '</div></span>';
                 }
 
-                // Progress: clean percentage; missing articles in tooltip only
+                // Progress
                 var missingBytes = item.missing_bytes || 0;
                 var missingStr = '';
                 if (missingBytes > 0 && item.state === 'downloading') {
@@ -288,12 +386,21 @@
                 }
 
                 html +=
-                    '<tr class="nzb-queue-row ' + stateClass + '" data-nzb-id="' + item.id + '">' +
+                    '<tr class="nzb-queue-row ' + stateClass + (isChecked ? ' nzb-row-selected' : '') + '" data-nzb-id="' + item.id + '">' +
+                        '<td class="nzb-col-check"><input type="checkbox" class="nzb-queue-row-cb" data-id="' + item.id + '"' + (isChecked ? ' checked' : '') + ' /></td>' +
                         '<td class="nzb-col-name" data-label="Name" title="' + name + '"><span class="nzb-cell-name">' + name + '</span></td>' +
                         '<td class="nzb-col-cat" data-label="Category"><span class="nzb-cell-cat">' + catLabel + '</span></td>' +
                         '<td class="nzb-col-pct" data-label="Progress">' + pctHtml + '</td>' +
                         '<td class="nzb-col-size" data-label="Size">' + downloaded + ' / ' + totalSize + '</td>' +
-                        '<td class="nzb-col-speed" data-label="Speed">' + speed + '</td>' +
+                        '<td class="nzb-col-priority ' + priClass + '" data-label="Priority">' +
+                            '<select class="nzb-priority-select" data-id="' + item.id + '">' +
+                                '<option value="force"' + (priVal === 'force' ? ' selected' : '') + '>Force</option>' +
+                                '<option value="high"' + (priVal === 'high' ? ' selected' : '') + '>High</option>' +
+                                '<option value="normal"' + (priVal === 'normal' ? ' selected' : '') + '>Normal</option>' +
+                                '<option value="low"' + (priVal === 'low' ? ' selected' : '') + '>Low</option>' +
+                                '<option value="stop"' + (priVal === 'stop' ? ' selected' : '') + '>Stop</option>' +
+                            '</select>' +
+                        '</td>' +
                         '<td class="nzb-col-eta" data-label="ETA">' + timeLeft + '</td>' +
                         '<td class="nzb-col-status" data-label="Status">' + statusHtml + '</td>' +
                         '<td class="nzb-col-actions" data-label="">' +
@@ -308,6 +415,22 @@
 
             html += '</tbody></table>';
             html = '<div class="nzb-table-scroll">' + html + '</div>';
+
+            // Mass action bar (hidden by default, shown when items selected)
+            var selCount = self._getSelectedIds().length;
+            html += '<div class="nzb-mass-action-bar" id="nzb-mass-action-bar" style="display:' + (selCount > 0 ? 'flex' : 'none') + ';">';
+            html += '<span class="nzb-mass-count" id="nzb-mass-count">' + selCount + ' selected</span>';
+            html += '<select class="nzb-mass-priority-select" id="nzb-mass-priority-select" title="Set priority for selected">';
+            html += '<option value="">Priority</option>';
+            html += '<option value="force">Force</option>';
+            html += '<option value="high">High</option>';
+            html += '<option value="normal">Normal</option>';
+            html += '<option value="low">Low</option>';
+            html += '<option value="stop">Stop</option>';
+            html += '</select>';
+            html += '<button class="nzb-mass-delete-btn" id="nzb-mass-delete-btn" title="Remove selected"><i class="fas fa-trash-alt"></i></button>';
+            html += '</div>';
+
             html += '<div class="nzb-queue-footer">';
             html += '<div class="nzb-hist-search"><i class="fas fa-search"></i><input type="text" id="nzb-queue-search-input" placeholder="Search" value="' + self._escHtml(this._queueFilter) + '" /></div>';
             html += '<div class="nzb-hist-pagination">';
@@ -328,6 +451,65 @@
             html += '</div>';
 
             body.innerHTML = html;
+
+            // Wire up select-all checkbox
+            var selectAllCb = document.getElementById('nzb-select-all');
+            if (selectAllCb) {
+                selectAllCb.addEventListener('change', function () {
+                    var checked = selectAllCb.checked;
+                    body.querySelectorAll('.nzb-queue-row-cb').forEach(function (cb) {
+                        cb.checked = checked;
+                        var rowId = cb.getAttribute('data-id');
+                        if (rowId) self._selectedIds[rowId] = checked;
+                        var row = cb.closest('.nzb-queue-row');
+                        if (row) {
+                            if (checked) row.classList.add('nzb-row-selected');
+                            else row.classList.remove('nzb-row-selected');
+                        }
+                    });
+                    self._updateMassActionBar();
+                });
+            }
+
+            // Wire up individual row checkboxes
+            body.querySelectorAll('.nzb-queue-row-cb').forEach(function (cb) {
+                cb.addEventListener('change', function () {
+                    var rowId = cb.getAttribute('data-id');
+                    if (rowId) self._selectedIds[rowId] = cb.checked;
+                    var row = cb.closest('.nzb-queue-row');
+                    if (row) {
+                        if (cb.checked) row.classList.add('nzb-row-selected');
+                        else row.classList.remove('nzb-row-selected');
+                    }
+                    self._updateSelectAllState();
+                    self._updateMassActionBar();
+                });
+            });
+
+            // Wire up per-row priority dropdowns
+            body.querySelectorAll('.nzb-priority-select').forEach(function (sel) {
+                sel.addEventListener('change', function () {
+                    var rowId = sel.getAttribute('data-id');
+                    if (rowId) self._onSinglePriorityChange(rowId, sel.value);
+                });
+            });
+
+            // Wire up mass priority dropdown
+            var massPriSel = document.getElementById('nzb-mass-priority-select');
+            if (massPriSel) {
+                massPriSel.addEventListener('change', function () {
+                    if (massPriSel.value) {
+                        self._onMassPriorityChange(massPriSel.value);
+                        massPriSel.value = '';
+                    }
+                });
+            }
+
+            // Wire up mass delete button
+            var massDelBtn = document.getElementById('nzb-mass-delete-btn');
+            if (massDelBtn) {
+                massDelBtn.addEventListener('click', function () { self._onMassDelete(); });
+            }
 
             var searchInput = document.getElementById('nzb-queue-search-input');
             if (searchInput) {
@@ -355,6 +537,9 @@
                     if (action && id) self._queueItemAction(action, id);
                 });
             });
+
+            // Update select-all state (in case of re-render with persisted selections)
+            self._updateSelectAllState();
         },
 
         _queueItemAction: function (action, id) {
