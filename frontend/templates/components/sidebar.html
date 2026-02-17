@@ -176,9 +176,9 @@
                         <span>Logs</span>
                     </a>
                 </div>
-                <a href="./#settings-import-media" class="nav-item nav-item-sub" id="movieHuntImportMediaNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-file-import"></i></div>
-                    <span>Import Media</span>
+                <a href="./#settings-clients" class="nav-item nav-item-sub" id="movieHuntClientsMainNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-cloud-download-alt"></i></div>
+                    <span>Clients</span>
                 </a>
                 <a href="javascript:void(0)" class="nav-item nav-item-sub" id="movieHuntSettingsToggle">
                     <div class="nav-icon-wrapper"><i class="fas fa-cog"></i></div>
@@ -193,9 +193,9 @@
                         <div class="nav-icon-wrapper"><i class="fas fa-film"></i></div>
                         <span>Media Management</span>
                     </a>
-                    <a href="./#settings-clients" class="nav-item nav-item-sub" id="movieHuntIndexMasterClientsNav">
-                        <div class="nav-icon-wrapper"><i class="fas fa-cloud-download-alt"></i></div>
-                        <span>Clients</span>
+                    <a href="./#settings-import-media" class="nav-item nav-item-sub" id="movieHuntImportMediaNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-file-import"></i></div>
+                        <span>Import Media</span>
                     </a>
                     <a href="./#settings-profiles" class="nav-item nav-item-sub" id="movieHuntSettingsProfilesNav">
                         <div class="nav-icon-wrapper"><i class="fas fa-id-card"></i></div>
@@ -466,7 +466,7 @@ function setActiveNavItem() {
     }
     else if (h === '#media-hunt-instances') { selector = '#movieHuntInstancesNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-collection-sub'); }
     else if (h === '#movie-hunt-calendar') { selector = '#movieHuntCalendarNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-collection-sub'); }
-    else if (h === '#settings-import-media') { selector = '#movieHuntImportMediaNav'; group = 'sidebar-group-media-hunt'; }
+    else if (h === '#settings-import-media') { selector = '#movieHuntImportMediaNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }
     else if (h === '#activity-queue') { selector = '#movieHuntActivityQueueNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-activity-sub'); if (mhBody) mhBody.classList.add('activity-view'); }
     else if (h === '#activity-history') { selector = '#movieHuntActivityHistoryNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-activity-sub'); if (mhBody) mhBody.classList.add('activity-view'); }
     else if (h === '#activity-blocklist') { selector = '#movieHuntActivityBlocklistNav'; group = 'sidebar-group-media-hunt'; expandSub('movie-hunt-activity-sub'); if (mhBody) mhBody.classList.add('activity-view'); }
@@ -477,7 +477,7 @@ function setActiveNavItem() {
     else if (h === '#indexer-hunt') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; expandSub('index-master-view-sub'); if (mhBody) mhBody.classList.add('indexmaster-view'); }
     else if (h === '#indexer-hunt-stats') { selector = '#movieHuntIndexMasterStatsNav'; group = 'sidebar-group-media-hunt'; expandSub('index-master-view-sub'); if (mhBody) mhBody.classList.add('indexmaster-view'); }
     else if (h === '#indexer-hunt-history') { selector = '#movieHuntIndexMasterHistoryNav'; group = 'sidebar-group-media-hunt'; expandSub('index-master-view-sub'); if (mhBody) mhBody.classList.add('indexmaster-view'); }
-    else if (h === '#settings-clients') { selector = '#movieHuntIndexMasterClientsNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }
+    else if (h === '#settings-clients') { selector = '#movieHuntClientsMainNav'; group = 'sidebar-group-media-hunt'; }
     else if (h === '#settings-media-management') { selector = '#movieHuntSettingsMovieManagementNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }
     else if (h === '#settings-profiles') { selector = '#movieHuntSettingsProfilesNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }
     else if (h === '#settings-sizes') { selector = '#movieHuntSettingsSizesNav'; group = 'sidebar-group-media-hunt'; expandSub('media-hunt-config-sub'); if (mhBody) mhBody.classList.add('config-view'); }

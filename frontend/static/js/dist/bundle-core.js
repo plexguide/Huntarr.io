@@ -827,9 +827,9 @@ window.HuntarrNavigation = {
             if (appType === 'indexer') sectionForNav = 'indexer-hunt';
             else if (appType === 'client') sectionForNav = 'settings-clients';
         }
-        const collectionSections = ['movie-hunt-home', 'movie-hunt-collection', 'media-hunt-collection', 'settings-import-media', 'movie-hunt-calendar'];
+        const collectionSections = ['movie-hunt-home', 'movie-hunt-collection', 'media-hunt-collection', 'movie-hunt-calendar'];
         const activitySections = ['activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-media-hunt', 'logs-tv-hunt', 'tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist'];
-        const configSections = ['media-hunt-settings', 'movie-hunt-settings', 'settings-instance-management', 'indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history', 'settings-clients', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'profile-editor', 'settings-custom-formats', 'settings-import-lists', 'settings-root-folders', 'instance-editor'];
+        const configSections = ['media-hunt-settings', 'movie-hunt-settings', 'settings-instance-management', 'indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'profile-editor', 'settings-custom-formats', 'settings-import-media', 'settings-import-lists', 'settings-root-folders', 'instance-editor'];
         const indexMasterSections = ['indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history'];
         const onCollection = collectionSections.indexOf(currentSection) !== -1;
         const onActivity = activitySections.indexOf(sectionForNav) !== -1;
@@ -844,6 +844,13 @@ window.HuntarrNavigation = {
         if (actSub) actSub.classList.toggle('expanded', onActivity);
         if (cfgSub) cfgSub.classList.toggle('expanded', onConfig);
         if (idxMasterSub) idxMasterSub.classList.toggle('expanded', onIndexMaster);
+
+        const mhBody = document.getElementById('sidebar-group-media-hunt');
+        if (mhBody) {
+            mhBody.classList.toggle('config-view', onConfig);
+            mhBody.classList.toggle('activity-view', onActivity);
+            mhBody.classList.toggle('indexmaster-view', onIndexMaster);
+        }
 
         // Highlight the active item within Media Hunt sidebar
         const items = document.querySelectorAll('#sidebar-group-media-hunt .nav-item');

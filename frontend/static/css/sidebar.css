@@ -411,7 +411,7 @@
 #sidebar-group-media-hunt.config-view > #index-master-view-sub,
 #sidebar-group-media-hunt.config-view > #movieHuntActivityToggle,
 #sidebar-group-media-hunt.config-view > #movie-hunt-activity-sub,
-#sidebar-group-media-hunt.config-view > #movieHuntImportMediaNav,
+#sidebar-group-media-hunt.config-view > #movieHuntClientsMainNav,
 #sidebar-group-media-hunt.config-view > #movieHuntSettingsToggle {
     display: none !important;
 }
@@ -422,7 +422,7 @@
 #sidebar-group-media-hunt.activity-view > #movieHuntIndexMasterToggle,
 #sidebar-group-media-hunt.activity-view > #index-master-view-sub,
 #sidebar-group-media-hunt.activity-view > #movieHuntActivityToggle,
-#sidebar-group-media-hunt.activity-view > #movieHuntImportMediaNav,
+#sidebar-group-media-hunt.activity-view > #movieHuntClientsMainNav,
 #sidebar-group-media-hunt.activity-view > #movieHuntSettingsToggle,
 #sidebar-group-media-hunt.activity-view > #media-hunt-config-sub {
     display: none !important;
@@ -434,7 +434,7 @@
 #sidebar-group-media-hunt.indexmaster-view > #movieHuntIndexMasterToggle,
 #sidebar-group-media-hunt.indexmaster-view > #movieHuntActivityToggle,
 #sidebar-group-media-hunt.indexmaster-view > #movie-hunt-activity-sub,
-#sidebar-group-media-hunt.indexmaster-view > #movieHuntImportMediaNav,
+#sidebar-group-media-hunt.indexmaster-view > #movieHuntClientsMainNav,
 #sidebar-group-media-hunt.indexmaster-view > #movieHuntSettingsToggle,
 #sidebar-group-media-hunt.indexmaster-view > #media-hunt-config-sub {
     display: none !important;
