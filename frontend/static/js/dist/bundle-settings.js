@@ -3147,7 +3147,7 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_enabled">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html#enable-swaparr" class="info-icon" title="Enable or disable Swaparr" target="_blank" rel="noopener">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrenable-swaparr" class="info-icon" title="Enable or disable Swaparr" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         Enable Swaparr:
@@ -3163,7 +3163,7 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_max_strikes">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html#max-strikes" class="info-icon" title="Number of strikes before removal" target="_blank" rel="noopener">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrmax-strikes" class="info-icon" title="Number of strikes before removal" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         Max Strikes:
@@ -3176,7 +3176,7 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_max_download_time">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html#max-download-time" class="info-icon" title="Maximum time before considering download stalled" target="_blank" rel="noopener">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrmax-download-time" class="info-icon" title="Maximum time before considering download stalled" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         Max Download Time:
@@ -3189,7 +3189,7 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_ignore_above_size">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html#ignore-above-size" class="info-icon" title="Ignore downloads larger than this size" target="_blank" rel="noopener">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrignore-above-size" class="info-icon" title="Ignore downloads larger than this size" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         Ignore Above Size:
@@ -3202,7 +3202,7 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_remove_from_client">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html#remove-from-client" class="info-icon" title="Remove downloads from download client" target="_blank" rel="noopener">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrremove-from-client" class="info-icon" title="Remove downloads from download client" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         Remove from Client:
@@ -3218,7 +3218,7 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_research_removed">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html#research-removed" class="info-icon" title="Automatically blocklist and re-search removed downloads" target="_blank" rel="noopener">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrresearch-removed" class="info-icon" title="Automatically blocklist and re-search removed downloads" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         Re-Search Removed Download:
@@ -3234,7 +3234,7 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_failed_import_detection">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html#failed-import-detection" class="info-icon" title="Automatically handle failed imports" target="_blank" rel="noopener">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrfailed-import-detection" class="info-icon" title="Automatically handle failed imports" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         Handle Failed Imports:
@@ -3252,7 +3252,7 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_dry_run">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html#dry-run-mode" class="info-icon" title="Test mode - no actual removals" target="_blank" rel="noopener">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrdry-run-mode" class="info-icon" title="Test mode - no actual removals" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         Dry Run Mode:
@@ -3268,7 +3268,7 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_ignore_usenet_queued">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html#ignore-usenet-queued" class="info-icon" title="Ignore queued usenet downloads with 0% progress" target="_blank" rel="noopener">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrignore-usenet-queued" class="info-icon" title="Ignore queued usenet downloads with 0% progress" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         Ignore Queued Usenet:
@@ -3284,7 +3284,7 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_remove_completed_stalled">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html#remove-completed-stalled" class="info-icon" title="Treat 100% complete downloads as stalled" target="_blank" rel="noopener">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrremove-completed-stalled" class="info-icon" title="Treat 100% complete downloads as stalled" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         Remove Completed (100%) Stalled:
@@ -3300,7 +3300,7 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_sleep_duration">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html#sleep-duration" class="info-icon" title="Time between Swaparr cycles" target="_blank" rel="noopener">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrsleep-duration" class="info-icon" title="Time between Swaparr cycles" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         Sleep Duration (Minutes):
@@ -3326,7 +3326,7 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_malicious_detection">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html#malicious-file-detection" class="info-icon" title="Enable malicious file detection" target="_blank" rel="noopener">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrmalicious-file-detection" class="info-icon" title="Enable malicious file detection" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         Malicious File Detection:
@@ -3344,7 +3344,7 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_malicious_extensions_input">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html#malicious-extensions" class="info-icon" title="File extensions to consider malicious" target="_blank" rel="noopener">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrmalicious-extensions" class="info-icon" title="File extensions to consider malicious" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         Malicious File Extensions:
@@ -3363,7 +3363,7 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_suspicious_patterns_input">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html#suspicious-patterns" class="info-icon" title="Suspicious filename patterns" target="_blank" rel="noopener">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrsuspicious-patterns" class="info-icon" title="Suspicious filename patterns" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         Suspicious Patterns:
@@ -3389,7 +3389,7 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_age_based_removal">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html#age-based-removal" class="info-icon" title="Enable age-based removal" target="_blank" rel="noopener">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrage-based-removal" class="info-icon" title="Enable age-based removal" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         Enable Age-Based Removal:
@@ -3405,7 +3405,7 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_max_age_days">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html#max-age-days" class="info-icon" title="Maximum age before removal" target="_blank" rel="noopener">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrmax-age-days" class="info-icon" title="Maximum age before removal" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         Maximum Age (Days):
@@ -3425,7 +3425,7 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_quality_based_removal">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html#quality-based-removal" class="info-icon" title="Enable quality-based filtering" target="_blank" rel="noopener">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrquality-based-removal" class="info-icon" title="Enable quality-based filtering" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         Enable Quality-Based Filtering:
@@ -3443,7 +3443,7 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_quality_patterns_input">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html#blocked-quality-patterns" class="info-icon" title="Quality patterns to block" target="_blank" rel="noopener">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrblocked-quality-patterns" class="info-icon" title="Quality patterns to block" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         Blocked Quality Patterns:

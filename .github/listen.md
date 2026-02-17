@@ -158,12 +158,12 @@ fetch('./api/endpoint');
 <label><a href="/Huntarr.io/docs/#/configuration" class="info-icon">
 <label><a href="#" class="info-icon">
 
-// ✅ FIXED - GitHub documentation with anchors
-<label><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#instances" class="info-icon">
-<label><a href="https://plexguide.github.io/Huntarr.io/apps/radarr.html#skip-future-movies" class="info-icon">
-<label><a href="https://plexguide.github.io/Huntarr.io/apps/swaparr.html#enable-swaparr" class="info-icon">
+// ✅ FIXED - GitHub documentation with anchors (consolidated 3rd Party Apps page)
+<label><a href="https://plexguide.github.io/Huntarr.io/apps/index.html#radarr" class="info-icon">
+<label><a href="https://plexguide.github.io/Huntarr.io/apps/index.html#radarr" class="info-icon">
+<label><a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparr" class="info-icon">
 ```
-**Pattern:** `https://plexguide.github.io/Huntarr.io/apps/[app-name].html#[anchor]`
+**Pattern:** `https://plexguide.github.io/Huntarr.io/apps/index.html#[app-name]`
 **Requirements:**
 - Always use `https://plexguide.github.io/Huntarr.io/` domain
 - Include `target="_blank" rel="noopener"` attributes
