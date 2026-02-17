@@ -1135,23 +1135,26 @@ def save_nzb_universal_settings():
 def nzb_hunt_home_stats():
     """Return NZB Hunt visibility and stats for the home page card.
     
-    Visible when servers are configured AND the user hasn't toggled
-    'Show NZB Hunt on Home' off in Settings > Main.
+    Visible only when ALL conditions are met:
+      1. NZB Hunt servers are configured
+      2. NZB Hunt is configured as a download client in at least one instance
+      3. 'Show NZB Hunt on Home' toggle is ON in Settings > Main
     """
     try:
         has_servers = has_nzb_servers()
         show_nzb_warning = not has_servers
+        is_client = _nzb_hunt_configured_as_client()
 
-        # Check the general setting toggle
-        show_on_home = True
+        # Check the general setting toggle (default off — user must opt in)
+        show_on_home = False
         try:
             from src.primary.settings_manager import load_settings
             general = load_settings('general')
-            show_on_home = general.get('show_nzb_hunt_on_home', True)
+            show_on_home = general.get('show_nzb_hunt_on_home', False)
         except Exception:
             pass
 
-        if not has_servers or not show_on_home:
+        if not has_servers or not is_client or not show_on_home:
             return jsonify({
                 "visible": False,
                 "has_servers": has_servers,

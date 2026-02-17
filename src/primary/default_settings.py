@@ -276,7 +276,7 @@ GENERAL_DEFAULTS = {
     "check_for_updates": True,
     "enable_requestarr": True,
     "show_trending": True,
-    "show_nzb_hunt_on_home": True,
+    "show_nzb_hunt_on_home": False,
     "low_usage_mode": True,
     "enable_notifications": False,
     "notification_level": "info",

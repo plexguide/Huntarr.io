@@ -117,7 +117,7 @@
                         <div class="setting-item flex-row" style="margin-top: 15px;">
                             <label for="show_nzb_hunt_on_home">Show NZB Hunt on Home:</label>
                             <label class="toggle-switch">
-                                <input type="checkbox" id="show_nzb_hunt_on_home" ${settings.show_nzb_hunt_on_home !== false ? "checked" : ""}>
+                                <input type="checkbox" id="show_nzb_hunt_on_home" ${settings.show_nzb_hunt_on_home === true ? "checked" : ""}>
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>

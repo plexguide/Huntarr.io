@@ -319,11 +319,11 @@
                 const versionInfo = localStorage.getItem('huntarr-version-info');
                 if (versionInfo) {
                     const parsedInfo = JSON.parse(versionInfo);
-                    if (parsedInfo.currentVersion) {
+                    if (parsedInfo.currentVersion && versionElement) {
                         versionElement.textContent = parsedInfo.currentVersion;
                         versionElement.style.display = 'inline';
                     }
-                    if (parsedInfo.latestVersion) {
+                    if (parsedInfo.latestVersion && latestVersionElement) {
                         latestVersionElement.textContent = parsedInfo.latestVersion;
                         latestVersionElement.style.display = 'inline';
                     }
@@ -337,7 +337,7 @@
                 }
                 
                 const starsInfo = localStorage.getItem('huntarr-github-stars');
-                if (starsInfo) {
+                if (starsInfo && starsElement) {
                     try {
                         const parsedStars = JSON.parse(starsInfo);
                         if (parsedStars && parsedStars.stars !== undefined) {
@@ -354,11 +354,11 @@
         
         function showFallbacks() {
             setTimeout(() => {
-                if (versionElement.style.display === 'none' || !versionElement.textContent) {
+                if (versionElement && (versionElement.style.display === 'none' || !versionElement.textContent)) {
                     versionElement.textContent = 'N/A';
                     versionElement.style.display = 'inline';
                 }
-                if (latestVersionElement.style.display === 'none' || !latestVersionElement.textContent) {
+                if (latestVersionElement && (latestVersionElement.style.display === 'none' || !latestVersionElement.textContent)) {
                     latestVersionElement.textContent = 'N/A';
                     latestVersionElement.style.display = 'inline';
                 }

@@ -636,11 +636,14 @@ document.addEventListener('click', function(e) {
             .then(function(r) { return r.json(); })
             .then(function(flags) {
                 var mediaHuntGroup = document.getElementById('nav-group-media-hunt');
+                var nzbHuntGroup = document.getElementById('nzb-hunt-sidebar-group');
                 var appsGroup = document.getElementById('nav-group-apps');
                 var appsLabel = document.getElementById('nav-group-apps-label');
                 var hideMedia = flags.enable_media_hunt === false;
                 var hideApps = flags.enable_third_party_apps === false;
                 if (mediaHuntGroup) mediaHuntGroup.style.display = hideMedia ? 'none' : '';
+                // NZB Hunt sidebar: always visible unless Media Hunt is disabled
+                if (nzbHuntGroup) nzbHuntGroup.style.display = hideMedia ? 'none' : '';
                 if (appsGroup) appsGroup.style.display = hideApps ? 'none' : '';
                 // Hide the "Apps" label if everything under it is hidden
                 if (appsLabel) appsLabel.style.display = (hideMedia && hideApps) ? 'none' : '';

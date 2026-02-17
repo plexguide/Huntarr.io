@@ -776,7 +776,7 @@ window.SettingsForms = {
                 enable_requestarr: true, // Always enabled (required for Movie Hunt)
 
                 show_trending: getVal('show_trending', true),
-                show_nzb_hunt_on_home: getVal('show_nzb_hunt_on_home', true),
+                show_nzb_hunt_on_home: getVal('show_nzb_hunt_on_home', false),
                 tmdb_image_cache_days: parseInt(container.querySelector('#tmdb_image_cache_days')?.value || '30'),
                 auth_mode: (container.querySelector('#auth_mode') && container.querySelector('#auth_mode').value) || 'login',
                 ssl_verify: getVal('ssl_verify', true),
@@ -3147,7 +3147,7 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_enabled">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrenable-swaparr" class="info-icon" title="Enable or disable Swaparr" target="_blank" rel="noopener">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparr" class="info-icon" title="Enable or disable Swaparr" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         Enable Swaparr:
@@ -3163,7 +3163,7 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_max_strikes">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrmax-strikes" class="info-icon" title="Number of strikes before removal" target="_blank" rel="noopener">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparr" class="info-icon" title="Number of strikes before removal" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         Max Strikes:
@@ -3176,7 +3176,7 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_max_download_time">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrmax-download-time" class="info-icon" title="Maximum time before considering download stalled" target="_blank" rel="noopener">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparr" class="info-icon" title="Maximum time before considering download stalled" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         Max Download Time:
@@ -3189,7 +3189,7 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_ignore_above_size">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrignore-above-size" class="info-icon" title="Ignore downloads larger than this size" target="_blank" rel="noopener">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparr" class="info-icon" title="Ignore downloads larger than this size" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         Ignore Above Size:
@@ -3202,7 +3202,7 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_remove_from_client">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrremove-from-client" class="info-icon" title="Remove downloads from download client" target="_blank" rel="noopener">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparr" class="info-icon" title="Remove downloads from download client" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         Remove from Client:
@@ -3218,7 +3218,7 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_research_removed">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrresearch-removed" class="info-icon" title="Automatically blocklist and re-search removed downloads" target="_blank" rel="noopener">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparr" class="info-icon" title="Automatically blocklist and re-search removed downloads" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         Re-Search Removed Download:
@@ -3234,7 +3234,7 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_failed_import_detection">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrfailed-import-detection" class="info-icon" title="Automatically handle failed imports" target="_blank" rel="noopener">
+                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparr" class="info-icon" title="Automatically handle failed imports" target="_blank" rel="noopener">
                             <i class="fas fa-info-circle"></i>
                         </a>
                         Handle Failed Imports:
@@ -14460,7 +14460,7 @@ document.head.appendChild(styleEl);
                         <div class="setting-item flex-row" style="margin-top: 15px;">
                             <label for="show_nzb_hunt_on_home">Show NZB Hunt on Home:</label>
                             <label class="toggle-switch">
-                                <input type="checkbox" id="show_nzb_hunt_on_home" ${settings.show_nzb_hunt_on_home !== false ? "checked" : ""}>
+                                <input type="checkbox" id="show_nzb_hunt_on_home" ${settings.show_nzb_hunt_on_home === true ? "checked" : ""}>
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>

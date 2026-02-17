@@ -90,9 +90,8 @@ let huntarrUI = {
                     var onSettings = ['settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user'].indexOf(this.currentSection) !== -1;
                     nav.style.display = (onSystem || onSettings) ? 'none' : '';
                 }
-                // NZB Hunt: always enabled, visibility of sidebar group depends on client config
+                // NZB Hunt: always enabled, sidebar visibility is handled by applyFeatureFlags
                 this._enableNzbHunt = true;
-                this._refreshNzbHuntSidebarGroup();
 
                 // Feature flags: Media Hunt + NZB Hunt and 3rd Party Apps
                 var generalSettings = (all && all.general) || {};
@@ -2041,9 +2040,6 @@ let huntarrUI = {
     },
 
     _maybeShowWelcome: function() {
-        // Don't show during setup wizard phase
-        var wizardCompleted = HuntarrUtils.getUIPreference('media-hunt-wizard-completed', false);
-        if (!wizardCompleted) return;
         // Check if already dismissed
         var dismissed = HuntarrUtils.getUIPreference('welcome-dismissed', false);
         if (dismissed) return;
@@ -2106,18 +2102,10 @@ let huntarrUI = {
         if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
 
-    /** Fetch NZB Hunt client-configured status and show/hide the sidebar group accordingly. */
+    /** NZB Hunt sidebar is now always visible (controlled by applyFeatureFlags / enable_media_hunt).
+     *  Kept as no-op for backward compatibility with callers. */
     _refreshNzbHuntSidebarGroup: function() {
-        var group = document.getElementById('nzb-hunt-sidebar-group');
-        if (!group) return;
-        fetch('./api/nzb-hunt/is-client-configured', { cache: 'no-store' })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                group.style.display = data.configured ? '' : 'none';
-            })
-            .catch(function() {
-                // On error, keep hidden
-            });
+        // No-op: sidebar visibility is handled by applyFeatureFlags()
     },
 
     /** Keep all Movie Hunt sidebar icons visible - no hiding when navigating between sections. */
