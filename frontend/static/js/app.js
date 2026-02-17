@@ -121,6 +121,11 @@ let huntarrUI = {
                         window.HuntarrStats.updateStatsDisplay(window.mediaStats);
                     }
                 }
+
+                // Settings are loaded — now safe to check welcome preference
+                if (this.currentSection === 'home' || !this.currentSection) {
+                    this._maybeShowWelcome();
+                }
             })
             .catch(() => {});
         
@@ -2038,6 +2043,10 @@ let huntarrUI = {
     },
 
     _maybeShowWelcome: function() {
+        // Settings must be loaded before we can check preferences
+        if (!window.huntarrUI || !window.huntarrUI.originalSettings || !window.huntarrUI.originalSettings.general) {
+            return; // Settings not loaded yet — will be retried after settings load
+        }
         // Check if already dismissed
         var dismissed = HuntarrUtils.getUIPreference('welcome-dismissed', false);
         if (dismissed) return;

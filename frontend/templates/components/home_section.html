@@ -128,11 +128,17 @@
                     </div>
                     <p style="font-size: 18px; margin-bottom: 10px; font-weight: 500; color: #e2e8f0;">No Instances Configured</p>
                     <p style="font-size: 14px; line-height: 1.6; opacity: 0.8; max-width: 400px; margin-bottom: 20px;">
-                        Get started by heading to Media Hunt. The setup guide will walk you through configuration.
+                        Get started by heading to Media Hunt or configure your 3rd Party Apps.
                     </p>
-                    <button onclick="window.location.hash = '#media-hunt-collection'" class="action-button" style="background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.4); color: #818cf8; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: all 0.2s ease;">
-                        <i class="fas fa-rocket" style="margin-right: 8px;"></i> Open Media Hunt
-                    </button>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <button onclick="window.location.hash = '#media-hunt-collection'" class="action-button" style="background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.4); color: #818cf8; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: all 0.2s ease;">
+                            <i class="fas fa-rocket" style="margin-right: 8px;"></i> Media Hunt
+                        </button>
+                        <span style="color: #64748b; font-size: 14px;">or</span>
+                        <button onclick="window.location.hash = '#sonarr'" class="action-button" style="background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.4); color: #818cf8; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; white-space: nowrap;">
+                            <i class="fas fa-th-large" style="margin-right: 8px;"></i> 3rd Party Apps
+                        </button>
+                    </div>
                 </div>
 
                 <div class="app-stats-grid" id="app-stats-grid">
