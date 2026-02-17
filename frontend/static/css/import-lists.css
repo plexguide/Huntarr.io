@@ -558,6 +558,28 @@ body.modal-open .app-container {
     color: #e2e8f0;
 }
 
+/* Toggle row */
+.import-list-toggle-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.import-list-toggle-row > label:first-child {
+    flex: 1;
+    min-width: 120px;
+}
+.import-list-toggle-row .toggle-switch {
+    flex-shrink: 0;
+}
+.import-list-toggle-row .import-list-field-help {
+    flex-basis: 100%;
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: rgba(148,163,184,0.7);
+    line-height: 1.4;
+}
+
 /* ---- Responsive ---- */
 @media (max-width: 600px) {
     .import-list-modal-content {

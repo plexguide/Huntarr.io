@@ -8181,6 +8181,7 @@ document.head.appendChild(styleEl);
                             '<div class="import-list-card-body">' +
                                 '<div class="import-list-badges">' +
                                     '<span class="import-list-badge ' + (enabled ? 'badge-enabled' : 'badge-disabled') + '">' + (enabled ? 'Enabled' : 'Disabled') + '</span>' +
+                                    '<span class="import-list-badge ' + (lst.auto_add ? 'badge-enabled' : 'badge-disabled') + '">' + (lst.auto_add ? 'Auto Add' : 'Manual') + '</span>' +
                                     '<span class="import-list-badge badge-interval"><i class="fas fa-clock"></i> ' + _intervalLabel(interval) + '</span>' +
                                 '</div>' +
                                 '<div class="import-list-stats">' +
@@ -8324,6 +8325,10 @@ document.head.appendChild(styleEl);
             document.getElementById('import-list-type-picker').style.display = '';
             document.getElementById('import-list-config-form').style.display = 'none';
 
+            // Reset auto-add toggle (unchecked by default)
+            var autoAddCheckbox = document.getElementById('import-list-auto-add');
+            if (autoAddCheckbox) autoAddCheckbox.checked = false;
+
             _loadListTypes(function() {
                 _renderTypePicker();
             });
@@ -8390,11 +8395,13 @@ document.head.appendChild(styleEl);
                 settings.list_type = subtypeSelect.value;
             }
 
+            var autoAddCheckbox = document.getElementById('import-list-auto-add');
             var payload = {
                 type: selectedType,
                 name: name,
                 settings: settings,
                 sync_interval_hours: parseInt(intervalSelect.value, 10) || 12,
+                auto_add: autoAddCheckbox ? autoAddCheckbox.checked : false,
             };
             var instId = window.ImportLists.getInstanceId();
             if (instId) payload.instance_id = parseInt(instId, 10);
@@ -8463,6 +8470,10 @@ document.head.appendChild(styleEl);
                     var intervalSelect = document.getElementById('import-list-edit-interval');
                     intervalSelect.value = String(lst.sync_interval_hours || 12);
 
+                    // Auto Add toggle
+                    var autoAddCheckbox = document.getElementById('import-list-edit-auto-add');
+                    if (autoAddCheckbox) autoAddCheckbox.checked = !!lst.auto_add;
+
                     var modal = document.getElementById('import-list-edit-modal');
                     // Move modal to body so it sits outside .app-container (avoids being blurred)
                     if (modal && modal.parentNode !== document.body) {
@@ -8494,10 +8505,12 @@ document.head.appendChild(styleEl);
                 settings.list_type = subtypeSelect.value;
             }
 
+            var autoAddCheckbox = document.getElementById('import-list-edit-auto-add');
             var payload = {
                 name: name,
                 settings: settings,
                 sync_interval_hours: parseInt(intervalSelect.value, 10) || 12,
+                auto_add: autoAddCheckbox ? autoAddCheckbox.checked : false,
             };
             var instId = window.ImportLists.getInstanceId();
             if (instId) payload.instance_id = parseInt(instId, 10);

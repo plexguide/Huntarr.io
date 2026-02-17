@@ -57,6 +57,7 @@ def _build_default_list(list_type, name=None):
         'name': name or '',
         'type': list_type,
         'enabled': True,
+        'auto_add': False,
         'sync_interval_hours': 12,
         'last_sync': None,
         'last_sync_count': 0,
@@ -101,8 +102,9 @@ def _run_sync(list_config, instance_id):
     list_type = list_config.get('type', '')
     list_name = list_config.get('name', list_type)
     settings = list_config.get('settings') or {}
+    auto_add = list_config.get('auto_add', False)
 
-    logger.info("Syncing import list: %s (%s)", list_name, list_type)
+    logger.info("Syncing import list: %s (%s) [auto_add=%s]", list_name, list_type, auto_add)
 
     try:
         movies = fetch_list(list_type, settings)
@@ -113,6 +115,11 @@ def _run_sync(list_config, instance_id):
     if not movies:
         logger.info("No movies returned from list: %s", list_name)
         return {'added': 0, 'skipped': 0, 'total': len(movies) if movies else 0, 'error': None}
+
+    # If auto_add is disabled, sync succeeds but nothing is added to the library
+    if not auto_add:
+        logger.info("Import list %s: auto-add disabled, %d items fetched but not added", list_name, len(movies))
+        return {'added': 0, 'skipped': len(movies), 'total': len(movies), 'error': None}
 
     # Get existing collection to check for dupes
     collection = _get_collection_config(instance_id)
@@ -272,6 +279,8 @@ def register_movie_import_lists_routes(bp):
                 pass
         if 'enabled' in data:
             new_list['enabled'] = bool(data['enabled'])
+        if 'auto_add' in data:
+            new_list['auto_add'] = bool(data['auto_add'])
     
         lists = _get_import_lists(instance_id)
         lists.append(new_list)
@@ -293,7 +302,7 @@ def register_movie_import_lists_routes(bp):
             return jsonify({'success': False, 'error': 'List not found'}), 404
     
         # Update allowed fields
-        for field in ('name', 'enabled', 'sync_interval_hours'):
+        for field in ('name', 'enabled', 'auto_add', 'sync_interval_hours'):
             if field in data:
                 existing[field] = data[field]
     
