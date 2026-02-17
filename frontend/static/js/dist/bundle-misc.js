@@ -3515,8 +3515,6 @@
             this._setupCategoryGrid();
             this._setupCategoryModal();
             this._setupAdvanced();
-            this._setupUniversalSettings();
-            this._loadUniversalCard();
             this._loadFolders();
             this._loadServers();
             this._loadCategories();
@@ -3550,108 +3548,6 @@
             });
             if (tab === 'history') { this._fetchHistory(); }
             if (tab === 'warnings') { this._renderWarnings(); }
-        },
-
-        /* ──────────────────────────────────────────────
-           Universal Settings (show on home toggle)
-        ────────────────────────────────────────────── */
-        _setupUniversalSettings: function () {
-            var self = this;
-            var editBtn = document.getElementById('nzb-universal-edit-btn');
-            var modal = document.getElementById('nzb-universal-modal');
-            var backdrop = document.getElementById('nzb-universal-modal-backdrop');
-            var closeBtn = document.getElementById('nzb-universal-modal-close');
-            var cancelBtn = document.getElementById('nzb-universal-modal-cancel');
-            var saveBtn = document.getElementById('nzb-universal-save-btn');
-            if (!editBtn || !modal) return;
-
-            function openModal() {
-                modal.style.display = 'flex';
-            }
-            function closeModal() {
-                modal.style.display = 'none';
-            }
-            editBtn.addEventListener('click', function () {
-                self._loadUniversalCard();
-                openModal();
-            });
-            if (backdrop) backdrop.addEventListener('click', closeModal);
-            if (closeBtn) closeBtn.addEventListener('click', closeModal);
-            if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
-            if (saveBtn) saveBtn.addEventListener('click', function () {
-                self._saveUniversalSettings(closeModal);
-            });
-            // Escape key
-            document.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape' && modal.style.display === 'flex') closeModal();
-            });
-        },
-
-        _loadUniversalCard: function () {
-            fetch('./api/nzb-hunt/universal-settings?t=' + Date.now())
-                .then(function (r) { return r.json(); })
-                .then(function (data) {
-                    var showHome = data.show_on_home !== false;
-                    var tempFolder = data.temp_folder || '/downloads/incomplete';
-                    var catCount = data.category_count || 0;
-
-                    // Update card labels
-                    var showLabel = document.getElementById('nzb-universal-show-home-label');
-                    if (showLabel) showLabel.textContent = showHome ? 'Enabled' : 'Disabled';
-
-                    var folderLabel = document.getElementById('nzb-universal-temp-folder-label');
-                    if (folderLabel) folderLabel.textContent = tempFolder;
-
-                    var catLabel = document.getElementById('nzb-universal-cat-count-label');
-                    if (catLabel) catLabel.textContent = catCount + ' auto-generated';
-
-                    // Update status icon
-                    var statusIcon = document.getElementById('nzb-universal-status-icon');
-                    if (statusIcon) {
-                        statusIcon.className = 'instance-status-icon ' + (showHome ? 'status-connected' : 'status-error');
-                        statusIcon.title = showHome ? 'Shown on Home' : 'Hidden from Home';
-                        statusIcon.innerHTML = '<i class="fas ' + (showHome ? 'fa-check-circle' : 'fa-minus-circle') + '"></i>';
-                    }
-
-                    // Update modal toggle
-                    var toggle = document.getElementById('nzb-universal-show-home-toggle');
-                    if (toggle) toggle.checked = showHome;
-                })
-                .catch(function (err) {
-                    console.error('[NzbHunt] Failed to load universal settings:', err);
-                });
-        },
-
-        _saveUniversalSettings: function (closeCallback) {
-            var toggle = document.getElementById('nzb-universal-show-home-toggle');
-            var showHome = toggle ? toggle.checked : true;
-
-            fetch('./api/nzb-hunt/universal-settings', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ show_on_home: showHome })
-            })
-                .then(function (r) { return _parseJsonOrThrow(r); })
-                .then(function (data) {
-                    if (data.success) {
-                        if (window.huntarrUI && window.huntarrUI.showNotification) {
-                            window.huntarrUI.showNotification('Universal settings saved.', 'success');
-                        }
-                        if (closeCallback) closeCallback();
-                        // Refresh card
-                        if (window.NzbHunt) window.NzbHunt._loadUniversalCard();
-                    } else {
-                        if (window.huntarrUI && window.huntarrUI.showNotification) {
-                            window.huntarrUI.showNotification('Failed to save: ' + (data.error || 'Unknown error'), 'error');
-                        }
-                    }
-                })
-                .catch(function (err) {
-                    console.error('[NzbHunt] Save universal settings error:', err);
-                    if (window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification('Failed to save settings.', 'error');
-                    }
-                });
         },
 
         /* ──────────────────────────────────────────────
@@ -3731,7 +3627,6 @@
                         }
                         if (window.NzbHunt) {
                             window.NzbHunt._loadCategories();
-                            window.NzbHunt._loadUniversalCard();
                         }
                     }
                 })
