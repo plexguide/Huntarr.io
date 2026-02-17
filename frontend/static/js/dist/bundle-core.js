@@ -858,17 +858,7 @@ window.HuntarrNavigation = {
         // Mapping for sub-pages to their main nav item for highlighting
         var navMapping = {
             'indexer-hunt-stats': 'indexer-hunt',
-            'indexer-hunt-history': 'indexer-hunt',
-            'activity-queue': 'activity-history',
-            'activity-blocklist': 'activity-history',
-            'activity-logs': 'activity-history',
-            'logs-media-hunt': 'activity-history',
-            'settings-profiles': 'settings-media-management',
-            'settings-sizes': 'settings-media-management',
-            'settings-custom-formats': 'settings-media-management',
-            'settings-import-media': 'settings-media-management',
-            'settings-import-lists': 'settings-media-management',
-            'settings-root-folders': 'settings-media-management'
+            'indexer-hunt-history': 'indexer-hunt'
         };
 
         var navTarget = navMapping[sectionForNav] || sectionForNav;
