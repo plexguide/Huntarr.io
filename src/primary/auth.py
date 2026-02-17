@@ -421,27 +421,16 @@ def authenticate_request():
     if not _user_exists:
         if not is_polling_endpoint:
             logger.debug(f"No user exists, redirecting to setup")
+        # Return JSON for API calls so the frontend doesn't try to parse HTML
+        if request.path.startswith("/api/"):
+            from flask import jsonify as _jsonify
+            return _jsonify({"error": "Setup required", "setup_required": True}), 503
         return redirect(get_base_url_path() + url_for("common.setup"))
     
-    # Check if setup is in progress (cached for 10s)
-    _setup_in_progress = _auth_cache["setup_in_progress"]
-    if _setup_in_progress is None or (now - _auth_cache["setup_in_progress_ts"]) > _AUTH_CACHE_TTL:
-        try:
-            db = get_database()
-            _setup_in_progress = db.is_setup_in_progress()
-        except Exception as e:
-            logger.error(f"Error checking setup progress in auth middleware: {e}")
-            _setup_in_progress = False
-        with _auth_cache_lock:
-            _auth_cache["setup_in_progress"] = _setup_in_progress
-            _auth_cache["setup_in_progress_ts"] = now
-    
-    if _setup_in_progress:
-        if not is_polling_endpoint:
-            logger.debug(f"Setup is in progress, redirecting to setup")
-        return redirect(get_base_url_path() + url_for("common.setup"))
-    
-    # Load auth settings (cached for 10s — DO NOT clear the settings cache!)
+    # Load auth settings EARLY (cached for 10s) — auth bypass modes must be
+    # evaluated before is_setup_in_progress so that a user who already chose
+    # No Login or Local Bypass during setup isn't locked out by leftover
+    # setup_progress records.
     local_access_bypass = False
     proxy_auth_bypass = False
     _cached_settings = _auth_cache["auth_settings"]
@@ -460,7 +449,7 @@ def authenticate_request():
     proxy_auth_bypass = _cached_settings.get("proxy_auth_bypass", False)
     
     # Check if proxy auth bypass is enabled - this completely disables authentication
-    # Note: This has highest priority and is checked first (matching the "No Login Mode" in the UI)
+    # Checked before is_setup_in_progress so "No Login Mode" users aren't blocked
     if proxy_auth_bypass:
         return None
     
@@ -521,6 +510,29 @@ def authenticate_request():
         else:
             if not is_polling_endpoint:
                 logger.warning(f"Access from {remote_addr} is not recognized as local network - Authentication required")
+    
+    # Auth bypass did not apply — check if setup is still in progress.
+    # This is intentionally AFTER the bypass checks so users who already
+    # chose No Login / Local Bypass during setup aren't locked out.
+    _setup_in_progress = _auth_cache["setup_in_progress"]
+    if _setup_in_progress is None or (now - _auth_cache["setup_in_progress_ts"]) > _AUTH_CACHE_TTL:
+        try:
+            db = get_database()
+            _setup_in_progress = db.is_setup_in_progress()
+        except Exception as e:
+            logger.error(f"Error checking setup progress in auth middleware: {e}")
+            _setup_in_progress = False
+        with _auth_cache_lock:
+            _auth_cache["setup_in_progress"] = _setup_in_progress
+            _auth_cache["setup_in_progress_ts"] = now
+    
+    if _setup_in_progress:
+        if not is_polling_endpoint:
+            logger.debug(f"Setup is in progress, redirecting to setup")
+        if request.path.startswith("/api/"):
+            from flask import jsonify as _jsonify
+            return _jsonify({"error": "Setup in progress", "setup_required": True}), 503
+        return redirect(get_base_url_path() + url_for("common.setup"))
     
     # Check for valid session
     session_id = request.cookies.get(SESSION_COOKIE_NAME)

@@ -384,6 +384,22 @@ class BackupManager:
             except Exception as reset_error:
                 logger.warning(f"Could not reset database singletons after restore: {reset_error}")
             
+            # Clear the in-memory settings cache so restored preferences take effect
+            try:
+                from src.primary.settings_manager import clear_cache
+                clear_cache()
+                logger.info("Settings cache cleared after restore")
+            except Exception as cache_error:
+                logger.warning(f"Could not clear settings cache after restore: {cache_error}")
+            
+            # Clear the auth cache so restored auth state takes effect
+            try:
+                from src.primary.auth import invalidate_auth_cache
+                invalidate_auth_cache()
+                logger.info("Auth cache invalidated after restore")
+            except Exception as auth_error:
+                logger.warning(f"Could not invalidate auth cache after restore: {auth_error}")
+            
             logger.info(f"Backup restored successfully: {backup_id}")
             return {
                 'backup_id': backup_id,
@@ -511,6 +527,24 @@ class BackupManager:
                 logger.info("Database singletons reset after deletion")
             except Exception as reset_error:
                 logger.warning(f"Could not reset database singletons: {reset_error}")
+            
+            # Clear the in-memory settings cache so stale preferences
+            # (like welcome-dismissed) aren't served from the old database
+            try:
+                from src.primary.settings_manager import clear_cache
+                clear_cache()
+                logger.info("Settings cache cleared after database deletion")
+            except Exception as cache_error:
+                logger.warning(f"Could not clear settings cache: {cache_error}")
+            
+            # Clear the auth cache so user_exists / setup_in_progress
+            # are re-evaluated against the fresh database
+            try:
+                from src.primary.auth import invalidate_auth_cache
+                invalidate_auth_cache()
+                logger.info("Auth cache invalidated after database deletion")
+            except Exception as auth_error:
+                logger.warning(f"Could not invalidate auth cache: {auth_error}")
             
             logger.warning(f"Database deletion completed: {deleted_databases}")
             return deleted_databases
