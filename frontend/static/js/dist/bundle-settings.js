@@ -14697,12 +14697,25 @@ document.head.appendChild(styleEl);
             const settings = window.SettingsForms.getFormSettings(container, "general");
             window.SettingsForms.saveAppSettings("general", settings, "Settings saved successfully", { section: "main" })
                 .then(function() {
-                    // Re-apply feature flags to sidebar after save
-                    if (typeof window.applyFeatureFlags === 'function') window.applyFeatureFlags();
                     if (window.huntarrUI) {
                         window.huntarrUI._enableRequestarr = settings.enable_requestarr !== false;
                         window.huntarrUI._enableMediaHunt = settings.enable_media_hunt !== false;
                         window.huntarrUI._enableThirdPartyApps = settings.enable_third_party_apps !== false;
+                    }
+                    // Update sidebar visibility immediately from saved settings (don't rely on async fetch)
+                    var requestsGroup = document.getElementById('nav-group-requests');
+                    var mediaHuntGroup = document.getElementById('nav-group-media-hunt');
+                    var nzbHuntGroup = document.getElementById('nzb-hunt-sidebar-group');
+                    var appsGroup = document.getElementById('nav-group-apps');
+                    var appsLabel = document.getElementById('nav-group-apps-label');
+                    if (requestsGroup) requestsGroup.style.display = (settings.enable_requestarr === false) ? 'none' : '';
+                    if (mediaHuntGroup) mediaHuntGroup.style.display = (settings.enable_media_hunt === false) ? 'none' : '';
+                    if (nzbHuntGroup) nzbHuntGroup.style.display = (settings.enable_media_hunt === false) ? 'none' : '';
+                    if (appsGroup) appsGroup.style.display = (settings.enable_third_party_apps === false) ? 'none' : '';
+                    if (appsLabel) appsLabel.style.display = (settings.enable_media_hunt === false && settings.enable_third_party_apps === false) ? 'none' : '';
+                    if (typeof window.applyFeatureFlags === 'function') window.applyFeatureFlags();
+                    if (window.HomeRequestarr && typeof window.HomeRequestarr.applyTrendingVisibility === 'function') {
+                        window.HomeRequestarr.applyTrendingVisibility();
                     }
                 }).catch(function() {});
 

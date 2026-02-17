@@ -2784,6 +2784,13 @@
 }
 
 /* Hide Available Toggle */
+.filter-group .filter-help {
+    display: block;
+    margin-top: 4px;
+    color: #94a3b8;
+    font-size: 0.8rem;
+}
+
 .filter-toggle-label {
     display: flex;
     align-items: center;

@@ -123,20 +123,27 @@ const HomeRequestarr = {
             const response = await fetch('./api/settings');
             const data = await response.json();
             if (data && data.general) {
-                this.showTrending = data.general.show_trending !== false;
-                console.log('[HomeRequestarr] Show Smart Hunt on Home:', this.showTrending);
+                const showPref = data.general.show_trending !== false;
+                const requestsEnabled = data.general.enable_requestarr !== false;
+                this.showTrending = showPref && requestsEnabled;
+                console.log('[HomeRequestarr] Show Smart Hunt on Home:', this.showTrending, '(show_trending:', showPref, ', requests enabled:', requestsEnabled, ')');
             }
         } catch (error) {
             console.error('[HomeRequestarr] Error loading settings:', error);
-            this.enableRequestarr = true;
             this.showTrending = true;
         }
     },
 
     applyTrendingVisibility() {
+        const requestsEnabled = !!(window.huntarrUI && window.huntarrUI._enableRequestarr !== false);
+        const card = this.elements.requestarrCard;
+        if (card) {
+            card.style.display = requestsEnabled ? '' : 'none';
+        }
         const discoverView = this.elements.discoverView;
         if (discoverView) {
-            if (this.showTrending) {
+            const show = this.showTrending && requestsEnabled;
+            if (show) {
                 discoverView.style.setProperty('display', 'block', 'important');
             } else {
                 discoverView.style.setProperty('display', 'none', 'important');
@@ -145,6 +152,7 @@ const HomeRequestarr = {
     },
 
     cacheElements() {
+        this.elements.requestarrCard = document.querySelector('.requestarr-home-card');
         this.elements.searchInput = document.getElementById('home-requestarr-search-input');
         this.elements.searchResultsView = document.getElementById('home-search-results-view');
         this.elements.searchResultsGrid = document.getElementById('home-search-results-grid');

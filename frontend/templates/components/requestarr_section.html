@@ -391,12 +391,13 @@
                     <span id="filter-active-count">0 Active Filters</span>
                 </div>
                 
-                <!-- Hide Available Movies -->
+                <!-- Hide items in library (filter out what we have) -->
                 <div class="filter-group">
                     <label class="filter-toggle-label">
                         <input type="checkbox" id="hide-available-movies" class="filter-checkbox">
-                        <span class="filter-toggle-text">Hide Available Movies</span>
+                        <span class="filter-toggle-text">Hide items in library</span>
                     </label>
+                    <small class="filter-help">Only show titles you don't have yet</small>
                 </div>
                 
                 <!-- Genres -->
@@ -492,12 +493,13 @@
                     <span id="tv-filter-active-count">0 Active Filters</span>
                 </div>
                 
-                <!-- Hide Available TV Shows -->
+                <!-- Hide items in library (filter out what we have) -->
                 <div class="filter-group">
                     <label class="filter-toggle-label">
                         <input type="checkbox" id="hide-available-tv" class="filter-checkbox">
-                        <span class="filter-toggle-text">Hide Available TV Shows</span>
+                        <span class="filter-toggle-text">Hide items in library</span>
                     </label>
+                    <small class="filter-help">Only show titles you don't have yet</small>
                 </div>
                 
                 <!-- Genres -->
@@ -608,7 +610,7 @@
                                     <span class="toggle-slider"></span>
                                 </label>
                             </label>
-                            <small>Hide items already in library, requested, or hidden</small>
+                            <small>Hide items already in library, requested, or hidden. Uses instances selected on Discover or default instances on Home.</small>
                         </div>
                         <div class="settings-field">
                             <label for="smarthunt-cache-ttl">Result Cache Duration</label>
