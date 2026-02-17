@@ -8139,6 +8139,9 @@ window.HuntarrStats = {
         // but CycleCountdown needs to know about them and populate data
         this._refreshCycleTimers();
 
+        if (allCards.length > 0) {
+            this.updateEmptyStateVisibility(true);
+        }
         setTimeout(function() {
             if (typeof window.loadHourlyCapData === 'function') {
                 window.loadHourlyCapData();
@@ -8460,6 +8463,10 @@ window.HuntarrStats = {
 
         // Refresh cycle timers — timer elements are baked into each <tr>
         this._refreshCycleTimers();
+
+        if (visibleApps.length > 0) {
+            this.updateEmptyStateVisibility(true);
+        }
     },
 
     // ─── Refresh Cycle Timers after view render ──────────────────────
