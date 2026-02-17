@@ -78,6 +78,26 @@
                     <input type="text" id="import-list-name" class="control-input" placeholder="My List">
                 </div>
 
+                <div class="import-list-form-group import-list-checkbox-row">
+                    <div class="import-list-checkbox-item">
+                        <input type="checkbox" id="import-list-enable-auto-add" checked>
+                        <div class="import-list-checkbox-text">
+                            <label for="import-list-enable-auto-add">Enable Automatic Add</label>
+                            <p class="import-list-checkbox-desc" id="import-list-auto-add-desc">Add items from this list when syncs are performed via the UI or automatically.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="import-list-form-group import-list-checkbox-row">
+                    <div class="import-list-checkbox-item">
+                        <input type="checkbox" id="import-list-search-on-add">
+                        <div class="import-list-checkbox-text">
+                            <label for="import-list-search-on-add" id="import-list-search-label">Search for New Items</label>
+                            <p class="import-list-checkbox-desc" id="import-list-search-desc">After an item is added, automatically search for it.</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="import-list-form-group" id="import-list-subtype-group" style="display: none;">
                     <label for="import-list-subtype">List Type</label>
                     <select id="import-list-subtype" class="control-select">
@@ -109,26 +129,6 @@
                     </select>
                 </div>
 
-                <div class="import-list-form-group import-list-checkbox-row">
-                    <div class="import-list-checkbox-item">
-                        <input type="checkbox" id="import-list-enable-auto-add" checked>
-                        <div class="import-list-checkbox-text">
-                            <label for="import-list-enable-auto-add">Enable Automatic Add</label>
-                            <p class="import-list-checkbox-desc" id="import-list-auto-add-desc">Add items from this list when syncs are performed via the UI or automatically.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="import-list-form-group import-list-checkbox-row">
-                    <div class="import-list-checkbox-item">
-                        <input type="checkbox" id="import-list-search-on-add">
-                        <div class="import-list-checkbox-text">
-                            <label for="import-list-search-on-add" id="import-list-search-label">Search for New Items</label>
-                            <p class="import-list-checkbox-desc" id="import-list-search-desc">After an item is added, automatically search for it.</p>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="import-list-form-actions">
                     <button type="button" class="btn-cancel" id="import-list-cancel-btn">Cancel</button>
                     <button type="button" class="btn-save" id="import-list-save-btn">
@@ -154,6 +154,26 @@
                 <div class="import-list-form-group">
                     <label for="import-list-edit-name">List Name</label>
                     <input type="text" id="import-list-edit-name" class="control-input">
+                </div>
+
+                <div class="import-list-form-group import-list-checkbox-row">
+                    <div class="import-list-checkbox-item">
+                        <input type="checkbox" id="import-list-edit-enable-auto-add" checked>
+                        <div class="import-list-checkbox-text">
+                            <label for="import-list-edit-enable-auto-add">Enable Automatic Add</label>
+                            <p class="import-list-checkbox-desc" id="import-list-edit-auto-add-desc">Add items from this list when syncs are performed via the UI or automatically.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="import-list-form-group import-list-checkbox-row">
+                    <div class="import-list-checkbox-item">
+                        <input type="checkbox" id="import-list-edit-search-on-add">
+                        <div class="import-list-checkbox-text">
+                            <label for="import-list-edit-search-on-add" id="import-list-edit-search-label">Search for New Items</label>
+                            <p class="import-list-checkbox-desc" id="import-list-edit-search-desc">After an item is added, automatically search for it.</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="import-list-form-group" id="import-list-edit-subtype-group" style="display: none;">
@@ -184,26 +204,6 @@
                     <select id="import-list-edit-monitor" class="control-select">
                         <!-- Options populated by JS based on movie/tv mode -->
                     </select>
-                </div>
-
-                <div class="import-list-form-group import-list-checkbox-row">
-                    <div class="import-list-checkbox-item">
-                        <input type="checkbox" id="import-list-edit-enable-auto-add" checked>
-                        <div class="import-list-checkbox-text">
-                            <label for="import-list-edit-enable-auto-add">Enable Automatic Add</label>
-                            <p class="import-list-checkbox-desc" id="import-list-edit-auto-add-desc">Add items from this list when syncs are performed via the UI or automatically.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="import-list-form-group import-list-checkbox-row">
-                    <div class="import-list-checkbox-item">
-                        <input type="checkbox" id="import-list-edit-search-on-add">
-                        <div class="import-list-checkbox-text">
-                            <label for="import-list-edit-search-on-add" id="import-list-edit-search-label">Search for New Items</label>
-                            <p class="import-list-checkbox-desc" id="import-list-edit-search-desc">After an item is added, automatically search for it.</p>
-                        </div>
-                    </div>
                 </div>
 
                 <div class="import-list-form-actions">
