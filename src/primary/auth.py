@@ -788,8 +788,9 @@ def change_username(current_username: str, new_username: str, password: str) -> 
         logger.warning(f"Username change failed: User '{current_username}' not found in database.")
         return False
     
-    # Verify current password (direct comparison as used in verify_user)
-    if user_data.get("password") != password:
+    # Verify current password using the proper verify_password function
+    stored_password = user_data.get("password") or ""
+    if not verify_password(stored_password, password):
         logger.warning(f"Username change failed for '{current_username}': Invalid password provided.")
         return False
     
@@ -820,12 +821,13 @@ def change_password(current_password: str, new_password: str) -> bool:
         logger.warning(f"Password change failed: User '{username}' not found in database.")
         return False
     
-    # Verify current password (direct comparison as used in verify_user)
-    if user_data.get("password") != current_password:
+    # Verify current password using the proper verify_password function
+    stored_password = user_data.get("password") or ""
+    if not verify_password(stored_password, current_password):
         logger.warning(f"Password change failed for '{username}': Invalid current password provided.")
         return False
     
-    # Update password in database (store new password directly, no hashing)
+    # Update password in database (update_user_password hashes automatically)
     if db.update_user_password(username, new_password):
         logger.info(f"Password changed successfully for user '{username}'.")
         return True
