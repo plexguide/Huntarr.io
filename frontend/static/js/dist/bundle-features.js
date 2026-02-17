@@ -5813,12 +5813,17 @@ class UserModule {
     }
 
     showStatus(element, message, type) {
+        // Cancel any previous hide timeout for this element
+        if (element._statusTimeout) {
+            clearTimeout(element._statusTimeout);
+        }
         element.textContent = message;
         element.className = `status-message ${type}`;
         element.style.display = 'block';
         
-        setTimeout(() => {
+        element._statusTimeout = setTimeout(() => {
             element.style.display = 'none';
+            element._statusTimeout = null;
         }, 5000);
     }
 }

@@ -3066,8 +3066,8 @@ document.addEventListener('DOMContentLoaded', function() {
         SettingsForms.setupInstanceResetListeners();
     }
     
-    // Initialize UserModule when available
-    if (typeof UserModule !== 'undefined') {
+    // Initialize UserModule when available (guard against duplicate construction)
+    if (typeof UserModule !== 'undefined' && !window.userModule) {
         console.log('[huntarrUI] UserModule available, initializing...');
         window.userModule = new UserModule();
     }
