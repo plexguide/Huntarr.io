@@ -54,7 +54,7 @@ If Huntarr has been helpful to you and you appreciate the power of open-source s
 
 This application continually searches your media libraries for missing content and items that need quality upgrades. It automatically triggers searches for both missing items and those below your quality cutoff. It's designed to run continuously while being gentle on your indexers, helping you gradually complete your media collection with the best available quality.
 
-For detailed documentation, please visit our <a href="https://plexguide.github.io/Huntarr.io/" target="_blank" rel="noopener noreferrer">Wiki</a>.
+For detailed documentation, please visit our <a href="https://plexguide.github.io/Huntarr.io/" target="_blank" rel="noopener noreferrer">Wiki</a>. See the <a href="https://plexguide.github.io/Huntarr.io/apps/index.html" target="_blank" rel="noopener noreferrer">3rd Party Apps</a> guide for connecting Sonarr, Radarr, Lidarr, Readarr, Whisparr, Prowlarr, and Swaparr.
 
 ## ❓ Why You Need Huntarr
 
@@ -83,10 +83,11 @@ My 12-year-old daughter is passionate about singing, dancing, and exploring STEM
 
 ## ⬇️ Installation Methods
 
-- 🐋 **[Docker Installation](https://plexguide.github.io/Huntarr.io/getting-started/installation.html)**
+- 🐋 **[Docker Installation](https://plexguide.github.io/Huntarr.io/getting-started/installation.html#docker-installation)** (Recommended)
+- 🔵 **[Unraid Installation](https://plexguide.github.io/Huntarr.io/getting-started/installation.html#unraid-installation)**
 - 🪟 **[Windows Installation](https://plexguide.github.io/Huntarr.io/getting-started/installation.html#windows-installation)**
 - 🍏 **[macOS Installation](https://plexguide.github.io/Huntarr.io/getting-started/installation.html#macos-installation)**
-- 🔵 **[Unraid Installation](https://plexguide.github.io/Huntarr.io/getting-started/installation.html#unraid-installation)**
+- 🐧 **[Linux Installation](https://plexguide.github.io/Huntarr.io/getting-started/installation.html#linux-installation)**
 - 🔧 **[Alternative Methods](https://plexguide.github.io/Huntarr.io/getting-started/installation.html#alternative-methods)**
 
 Special thanks to [Nwithan8](https://github.com/nwithan8) for maintaining the Unraid templates and helping Huntarr grow through the Unraid Community Applications repository.
