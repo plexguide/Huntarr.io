@@ -5421,40 +5421,45 @@ class UserModule {
         }
     }
 
-    copyRecoveryKey() {
-        const recoveryKey = document.getElementById('recoveryKeyValue').textContent;
-        const button = document.getElementById('copyRecoveryKey');
-        
-        navigator.clipboard.writeText(recoveryKey).then(() => {
-            const originalText = button.textContent;
+    _copyToClipboard(text, button) {
+        function showCopied() {
+            var originalText = button.textContent;
             button.textContent = 'Copied!';
             button.classList.add('copied');
-            
-            setTimeout(() => {
+            setTimeout(function() {
                 button.textContent = originalText;
                 button.classList.remove('copied');
             }, 2000);
-        }).catch(() => {
-            console.error('Failed to copy recovery key');
-        });
+        }
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(showCopied).catch(function() {
+                fallbackCopy(text, showCopied);
+            });
+        } else {
+            fallbackCopy(text, showCopied);
+        }
+        function fallbackCopy(val, onSuccess) {
+            var ta = document.createElement('textarea');
+            ta.value = val;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); if (onSuccess) onSuccess(); } catch (e) {}
+            document.body.removeChild(ta);
+        }
+    }
+
+    copyRecoveryKey() {
+        var recoveryKey = document.getElementById('recoveryKeyValue').textContent;
+        var button = document.getElementById('copyRecoveryKey');
+        this._copyToClipboard(recoveryKey, button);
     }
 
     copySecretKey(event) {
-        const secretKey = document.getElementById('secretKey').textContent;
-        const button = event.target;
-        
-        navigator.clipboard.writeText(secretKey).then(() => {
-            const originalText = button.textContent;
-            button.textContent = 'Copied!';
-            button.classList.add('copied');
-            
-            setTimeout(() => {
-                button.textContent = originalText;
-                button.classList.remove('copied');
-            }, 2000);
-        }).catch(() => {
-            console.error('Failed to copy secret key');
-        });
+        var secretKey = document.getElementById('secretKey').textContent;
+        var button = event.target;
+        this._copyToClipboard(secretKey, button);
     }
 
     async linkPlexAccount() {
@@ -6181,27 +6186,29 @@ window.UserModule = UserModule;
         if (!recoveryKeyValue) return;
         
         const text = recoveryKeyValue.textContent;
+        const copyBtn = document.getElementById('copyRecoveryKey');
         
-        // Copy to clipboard
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(text).then(() => {
-                // Update button text briefly
-                const copyBtn = document.getElementById('copyRecoveryKey');
-                if (copyBtn) {
-                    const originalText = copyBtn.textContent;
-                    copyBtn.textContent = 'Copied!';
-                    setTimeout(() => {
-                        copyBtn.textContent = originalText;
-                    }, 2000);
-                }
-            }).catch(err => {
-                console.error('Failed to copy to clipboard:', err);
-                // Fallback to text selection
-                selectText(recoveryKeyValue);
-            });
+        function showCopied() {
+            if (copyBtn) {
+                var originalText = copyBtn.textContent;
+                copyBtn.textContent = 'Copied!';
+                setTimeout(function() { copyBtn.textContent = originalText; }, 2000);
+            }
+        }
+        function fallbackCopy(val, onSuccess) {
+            var ta = document.createElement('textarea');
+            ta.value = val;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); if (onSuccess) onSuccess(); } catch (e) { selectText(recoveryKeyValue); }
+            document.body.removeChild(ta);
+        }
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(showCopied).catch(function() { fallbackCopy(text, showCopied); });
         } else {
-            // Fallback for older browsers
-            selectText(recoveryKeyValue);
+            fallbackCopy(text, showCopied);
         }
     }
     

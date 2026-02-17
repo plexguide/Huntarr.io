@@ -805,6 +805,7 @@
     background: rgba(99, 102, 241, 0.06);
     border: 1px solid rgba(99, 102, 241, 0.15);
     border-radius: 10px;
+    text-align: center;
 }
 .setup-confirm-prompt > span {
     display: block;
@@ -821,6 +822,7 @@
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
+    justify-content: center;
 }
 
 /* ═══════════════════════════════════════════════════

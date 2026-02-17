@@ -221,6 +221,27 @@ def invalidate_auth_cache():
         _auth_cache["auth_settings"] = None
         _auth_cache["auth_settings_ts"] = 0
 
+def _auto_clear_setup_progress():
+    """Silently clear any lingering setup_progress record.
+    
+    Called when a user is already authenticated (via session or bypass).
+    If they can use the app, setup is done — the record is stale.
+    Only runs once per process to avoid hitting the DB on every request.
+    """
+    # Fast path: if cache says setup is not in progress, nothing to clear
+    if _auth_cache.get("setup_in_progress") is False:
+        return
+    try:
+        db = get_database()
+        if db.is_setup_in_progress():
+            db.clear_setup_progress()
+            with _auth_cache_lock:
+                _auth_cache["setup_in_progress"] = False
+                _auth_cache["setup_in_progress_ts"] = time.time()
+            logger.info("Auto-cleared stale setup_progress (user is already authenticated)")
+    except Exception as e:
+        logger.debug(f"_auto_clear_setup_progress: {e}")
+
 def user_exists() -> bool:
     """Check if a user has been created"""
     db = get_database()
@@ -451,6 +472,7 @@ def authenticate_request():
     # Check if proxy auth bypass is enabled - this completely disables authentication
     # Checked before is_setup_in_progress so "No Login Mode" users aren't blocked
     if proxy_auth_bypass:
+        _auto_clear_setup_progress()
         return None
     
     remote_addr = request.remote_addr
@@ -506,14 +528,22 @@ def authenticate_request():
         if is_local:
             if not is_polling_endpoint:
                 logger.debug(f"Local network access from {remote_addr} - Authentication bypassed! (Local Bypass Mode)")
+            _auto_clear_setup_progress()
             return None
         else:
             if not is_polling_endpoint:
                 logger.warning(f"Access from {remote_addr} is not recognized as local network - Authentication required")
     
-    # Auth bypass did not apply — check if setup is still in progress.
-    # This is intentionally AFTER the bypass checks so users who already
-    # chose No Login / Local Bypass during setup aren't locked out.
+    # Check for valid session BEFORE is_setup_in_progress so that
+    # logged-in users aren't kicked back to setup by stale records.
+    session_id = request.cookies.get(SESSION_COOKIE_NAME)
+    if session_id and verify_session(session_id):
+        if not is_polling_endpoint:
+            pass  # Session valid - debug spam removed
+        _auto_clear_setup_progress()
+        return None
+    
+    # No bypass, no session — check if setup is still in progress.
     _setup_in_progress = _auth_cache["setup_in_progress"]
     if _setup_in_progress is None or (now - _auth_cache["setup_in_progress_ts"]) > _AUTH_CACHE_TTL:
         try:
@@ -533,13 +563,6 @@ def authenticate_request():
             from flask import jsonify as _jsonify
             return _jsonify({"error": "Setup in progress", "setup_required": True}), 503
         return redirect(get_base_url_path() + url_for("common.setup"))
-    
-    # Check for valid session
-    session_id = request.cookies.get(SESSION_COOKIE_NAME)
-    if session_id and verify_session(session_id):
-        if not is_polling_endpoint:
-            pass  # Session valid - debug spam removed
-        return None
     
     # Use less verbose logging for polling endpoints
     if is_polling_endpoint:
