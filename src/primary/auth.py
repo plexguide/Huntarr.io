@@ -61,6 +61,7 @@ PLEX_VERSION = "1.0"
 
 # Store active sessions
 active_sessions = {}
+_session_cleanup_ts = 0  # Last time expired sessions were swept
 
 # Store active Plex PINs
 active_plex_pins = {}
@@ -354,19 +355,35 @@ def create_session(username: str) -> str:
 
 def verify_session(session_id: str) -> bool:
     """Verify if a session is valid"""
+    global _session_cleanup_ts
+    now = time.time()
+
+    # Periodic sweep: remove ALL expired sessions every 5 minutes
+    if now - _session_cleanup_ts > 300:
+        _session_cleanup_ts = now
+        expired = [sid for sid, sd in active_sessions.items()
+                   if sd.get("expires_at", 0) < now]
+        for sid in expired:
+            active_sessions.pop(sid, None)
+        # Also clean expired Plex PINs
+        expired_pins = [pid for pid, pd in active_plex_pins.items()
+                        if pd.get("expires_at", 0) < now]
+        for pid in expired_pins:
+            active_plex_pins.pop(pid, None)
+
     if not session_id or session_id not in active_sessions:
         return False
         
     session_data = active_sessions[session_id]
     
     # Check if session has expired
-    if session_data.get("expires_at", 0) < time.time():
+    if session_data.get("expires_at", 0) < now:
         # Clean up expired session
         del active_sessions[session_id]
         return False
         
     # Extend session expiry
-    active_sessions[session_id]["expires_at"] = time.time() + SESSION_EXPIRY
+    active_sessions[session_id]["expires_at"] = now + SESSION_EXPIRY
     return True
 
 def get_username_from_session(session_id: str) -> Optional[str]:

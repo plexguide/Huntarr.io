@@ -42,13 +42,19 @@ class HuntarrDatabase:
         return _ctx()
 
     def _configure_connection(self, conn):
-        """Configure SQLite connection with Synology NAS compatible settings"""
+        """Configure SQLite connection with Synology NAS compatible settings.
+        
+        Memory note: cache_size is PER CONNECTION and Huntarr uses thread-local
+        connections.  With 32 Waitress threads + background threads (~42 total),
+        the old 16 MB setting meant 42 × 16 MB ≈ 672 MB of RAM just for SQLite
+        page cache.  Reduced to 2 MB (still generous for a small config DB).
+        """
         conn.execute('PRAGMA foreign_keys = ON')
         conn.execute('PRAGMA journal_mode = WAL')
         conn.execute('PRAGMA synchronous = NORMAL')
-        conn.execute('PRAGMA cache_size = -16000')  # 16MB cache (negative = KB)
+        conn.execute('PRAGMA cache_size = -2000')   # 2 MB per connection (was 16 MB — caused 600 MB+ RAM usage)
         conn.execute('PRAGMA temp_store = MEMORY')
-        conn.execute('PRAGMA mmap_size = 268435456')
+        conn.execute('PRAGMA mmap_size = 67108864')  # 64 MB (was 256 MB — excessive for small config DB)
         conn.execute('PRAGMA wal_autocheckpoint = 1000')
         conn.execute('PRAGMA busy_timeout = 30000')
         conn.execute('PRAGMA auto_vacuum = INCREMENTAL')
@@ -3726,7 +3732,7 @@ class LogsDatabase:
             
             # Optimized settings for log writing
             conn.execute('PRAGMA synchronous = NORMAL')     # Balance between speed and safety for logs
-            conn.execute('PRAGMA cache_size = -16000')      # 16MB cache for log operations
+            conn.execute('PRAGMA cache_size = -2000')       # 2 MB per connection (was 16 MB — per-connection cost adds up)
             conn.execute('PRAGMA temp_store = MEMORY')
             conn.execute('PRAGMA busy_timeout = 30000')     # 30 seconds for log operations
             conn.execute('PRAGMA auto_vacuum = INCREMENTAL')

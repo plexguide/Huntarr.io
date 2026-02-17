@@ -30,8 +30,10 @@ TMDB_BASE = "https://api.themoviedb.org/3"
 # TV Newznab categories (5000-series)
 TV_HUNT_DEFAULT_CATEGORIES = [5000, 5010, 5020, 5030, 5040, 5045, 5050, 5060, 5070]
 
-# Cache for TMDB→TVDB ID lookups (avoids repeated API calls in the same request)
+# Cache for TMDB→TVDB ID lookups (avoids repeated API calls in the same request).
+# Bounded to 2000 entries to prevent unbounded memory growth.
 _tvdb_id_cache = {}
+_TVDB_CACHE_MAX = 2000
 
 
 def _lookup_tvdb_id_from_tmdb(tmdb_id):
@@ -53,6 +55,8 @@ def _lookup_tvdb_id_from_tmdb(tmdb_id):
             data = r.json()
             tvdb_id = data.get('tvdb_id')
             if tvdb_id:
+                if len(_tvdb_id_cache) >= _TVDB_CACHE_MAX:
+                    _tvdb_id_cache.clear()
                 _tvdb_id_cache[tmdb_id] = tvdb_id
                 tv_hunt_logger.debug("Resolved TMDB %d → TVDB %s", tmdb_id, tvdb_id)
                 return tvdb_id
