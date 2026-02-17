@@ -7547,7 +7547,8 @@ document.head.appendChild(styleEl);
         const typeRaw = (instance.type || 'nzbget').toLowerCase().trim();
         const typeVal = CLIENT_TYPES.some(function(o) { return o.value === typeRaw; }) ? typeRaw : 'nzbget';
         const host = (instance.host || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-        const port = instance.port !== undefined && instance.port !== '' ? String(instance.port) : '8080';
+        const defaultPort = typeVal === 'nzbget' ? '6789' : '8080';
+        const port = instance.port !== undefined && instance.port !== '' ? String(instance.port) : defaultPort;
         const username = (instance.username || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         const enabled = instance.enabled !== false;
         const isEdit = !!(instance.name && instance.name.trim());
@@ -7558,7 +7559,9 @@ document.head.appendChild(styleEl);
         const pwdPlaceholder = isEdit && (instance.password_last4 || '')
             ? ('Enter new password or leave blank to keep existing (••••' + (instance.password_last4 || '') + ')')
             : 'Password (if required)';
-        const category = (instance.category || 'movies').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        const isTvContext = !!(window._mediaHuntInstanceEditorMode === 'tv');
+        const catDefault = isTvContext ? 'tv' : 'movies';
+        const category = (instance.category || catDefault).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         const recentPriority = (instance.recent_priority || 'default').toLowerCase();
         const olderPriority = (instance.older_priority || 'default').toLowerCase();
         let clientPriority = parseInt(instance.client_priority, 10);
@@ -7623,7 +7626,7 @@ document.head.appendChild(styleEl);
                     </div>
                     <div class="editor-field-group"${hideForNzbHunt}>
                         <label for="editor-client-port">Port</label>
-                        <input type="number" id="editor-client-port" value="${port}" placeholder="8080" min="1" max="65535" />
+                        <input type="number" id="editor-client-port" value="${port}" placeholder="${defaultPort}" min="1" max="65535" />
                         <p class="editor-help-text">Port number for your download client (SABnzbd default: 8080, NZBGet default: 6789)</p>
                     </div>
                     <div class="editor-field-group"${hideForNzbHunt}>
@@ -7647,8 +7650,8 @@ document.head.appendChild(styleEl);
                     <div class="editor-section-title">Additional Configurations</div>
                     <div class="editor-field-group">
                         <label for="editor-client-category">Category</label>
-                        <input type="text" id="editor-client-category" value="${category}" placeholder="movies" />
-                        <p class="editor-help-text">Adding a category specific to Movie Hunt avoids conflicts with unrelated non–Movie Hunt downloads. Using a category is optional, but strongly recommended.</p>
+                        <input type="text" id="editor-client-category" value="${category}" placeholder="${catDefault}" />
+                        <p class="editor-help-text">Adding a category specific to ${isTvContext ? 'TV' : 'Movie'} Hunt avoids conflicts with unrelated downloads. Using a category is optional, but strongly recommended.</p>
                     </div>
                     ` : ''}
                     <div class="editor-field-group">
@@ -7691,7 +7694,8 @@ document.head.appendChild(styleEl);
         const isNzbHuntType = (type === 'nzbhunt' || type === 'nzb_hunt');
         const name = isNzbHuntType ? 'NZB Hunt' : (nameEl ? nameEl.value.trim() : '');
         const host = hostEl ? hostEl.value.trim() : '';
-        let port = 8080;
+        const portDefault = type === 'nzbget' ? 6789 : 8080;
+        let port = portDefault;
         if (portEl && portEl.value.trim() !== '') {
             const p = parseInt(portEl.value, 10);
             if (!isNaN(p)) port = p;
@@ -7700,7 +7704,9 @@ document.head.appendChild(styleEl);
         const apiKey = apiKeyEl ? apiKeyEl.value.trim() : '';
         const username = usernameEl ? usernameEl.value.trim() : '';
         const password = passwordEl ? passwordEl.value.trim() : '';
-        let category = (categoryEl && !isNzbHuntType) ? categoryEl.value.trim() : 'movies';
+        const isTvMode = !!(window._mediaHuntInstanceEditorMode === 'tv');
+        const defaultCategory = isTvMode ? 'tv' : 'movies';
+        let category = (categoryEl && !isNzbHuntType) ? categoryEl.value.trim() : defaultCategory;
         if (isNzbHuntType) {
             const orig = this._currentEditing && this._currentEditing.originalInstance;
             category = (orig && orig.category) ? String(orig.category).trim() : '';
@@ -7719,7 +7725,7 @@ document.head.appendChild(styleEl);
             host: isNzbHuntType ? 'internal' : host,
             port: isNzbHuntType ? 0 : port,
             enabled: enabled,
-            category: category || 'movies',
+            category: category || defaultCategory,
             recent_priority: recentPriority,
             older_priority: olderPriority,
             client_priority: clientPriority

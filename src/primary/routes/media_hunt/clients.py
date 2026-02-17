@@ -96,13 +96,14 @@ def _register_clients_routes(bp, get_instance_id, config_key, route_prefix, use_
             client_type = (data.get('type') or ('nzbget' if not route_prefix else 'nzb_hunt')).strip().lower()
             host = 'internal' if client_type in ('nzbhunt', 'nzb_hunt') else (data.get('host') or '').strip()
             raw_port = data.get('port')
+            default_port = 6789 if client_type == 'nzbget' else 8080
             if raw_port is None or (isinstance(raw_port, str) and str(raw_port).strip() == ''):
-                port = 8080
+                port = default_port
             else:
                 try:
                     port = int(raw_port)
                 except (TypeError, ValueError):
-                    port = 8080
+                    port = default_port
             enabled = data.get('enabled', True)
             api_key = (data.get('api_key') or '').strip()
             username = (data.get('username') or '').strip()

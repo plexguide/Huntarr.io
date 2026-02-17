@@ -223,7 +223,7 @@ def _add_nzb_to_download_client(client, nzb_url, nzb_name, category, verify_ssl,
             auth = (username, password) if (username or password) else None
             payload = {
                 'method': 'append',
-                'params': ['', nzb_url, cat, 0, False, False, '', 0, 'SCORE', False, []],
+                'params': [nzb_name or '', nzb_url, cat, 0, False, False, '', 0, 'SCORE', False, []],
                 'id': 1
             }
             r = requests.post(jsonrpc_url, json=payload, auth=auth, timeout=15, verify=verify_ssl)

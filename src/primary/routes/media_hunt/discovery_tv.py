@@ -664,55 +664,67 @@ def _send_to_sabnzbd(client, nzb_url, title, category):
     """Send NZB to SABnzbd."""
     try:
         host = (client.get('host') or '').strip().rstrip('/')
-        api_key = (client.get('api_key') or '').strip()
-        if not host or not api_key:
+        if not host:
             return False, ''
+        if not (host.startswith('http://') or host.startswith('https://')):
+            host = f'http://{host}'
+        port = client.get('port', 8080)
+        base_url = f'{host}:{port}'
+        api_key = (client.get('api_key') or '').strip()
         params = {
             'mode': 'addurl',
             'name': nzb_url,
             'nzbname': title,
             'cat': category,
-            'apikey': api_key,
             'output': 'json',
         }
+        if api_key:
+            params['apikey'] = api_key
         from src.primary.settings_manager import get_ssl_verify_setting
         verify_ssl = get_ssl_verify_setting()
-        r = requests.get(f'{host}/api', params=params, timeout=30, verify=verify_ssl)
-        data = r.json() if r.status_code == 200 else {}
-        if data.get('status'):
+        r = requests.get(f'{base_url}/api', params=params, timeout=30, verify=verify_ssl)
+        r.raise_for_status()
+        data = r.json()
+        if data.get('status') is True or data.get('nzo_ids'):
             nzo_ids = data.get('nzo_ids') or []
             return True, nzo_ids[0] if nzo_ids else ''
-        return False, ''
+        return False, data.get('error', 'SABnzbd returned an error')
     except Exception as e:
         tv_hunt_logger.debug("SABnzbd send error: %s", e)
-        return False, ''
+        return False, str(e) or 'Connection failed'
 
 
 def _send_to_nzbget(client, nzb_url, title, category):
     """Send NZB to NZBGet."""
     try:
         host = (client.get('host') or '').strip().rstrip('/')
-        username = (client.get('username') or '').strip()
-        password = (client.get('password') or '').strip()
         if not host:
             return False, ''
+        if not (host.startswith('http://') or host.startswith('https://')):
+            host = f'http://{host}'
+        port = client.get('port', 6789)
+        base_url = f'{host}:{port}'
+        username = (client.get('username') or '').strip()
+        password = (client.get('password') or '').strip()
         from src.primary.settings_manager import get_ssl_verify_setting
         verify_ssl = get_ssl_verify_setting()
-        url = f'{host}/jsonrpc'
+        jsonrpc_url = f'{base_url}/jsonrpc'
         payload = {
             'method': 'append',
             'params': [title, nzb_url, category, 0, False, False, '', 0, 'SCORE'],
+            'id': 1,
         }
-        auth = (username, password) if username else None
-        r = requests.post(url, json=payload, auth=auth, timeout=30, verify=verify_ssl)
-        data = r.json() if r.status_code == 200 else {}
-        result_id = data.get('result')
-        if result_id and result_id > 0:
-            return True, str(result_id)
-        return False, ''
+        auth = (username, password) if (username or password) else None
+        r = requests.post(jsonrpc_url, json=payload, auth=auth, timeout=30, verify=verify_ssl)
+        r.raise_for_status()
+        data = r.json()
+        if data.get('result') and data.get('result') != 0:
+            return True, str(data.get('result'))
+        err = data.get('error', {})
+        return False, err.get('message', 'NZBGet returned an error') if isinstance(err, dict) else str(err)
     except Exception as e:
         tv_hunt_logger.debug("NZBGet send error: %s", e)
-        return False, ''
+        return False, str(e) or 'Connection failed'
 
 
 # ── TMDB Discovery Endpoints ──

@@ -9,6 +9,8 @@ from flask import request, jsonify
 
 from .helpers import (
     _get_movie_hunt_instance_id_from_request,
+    _get_movie_hunt_instance_display_name,
+    _instance_name_to_category,
     _download_client_base_url,
     _extract_quality_from_filename,
     _extract_formats_from_filename,
@@ -92,6 +94,61 @@ def _get_sabnzbd_history_item(client, queue_id):
 
     except Exception as e:
         movie_hunt_logger.error("Import: error fetching SABnzbd history for queue id %s: %s", queue_id, e)
+        return None
+
+
+# --- NZBGet history lookup ---
+
+def _get_nzbget_history_item(client, queue_id):
+    """Get a specific item from NZBGet history by NZBID."""
+    try:
+        base_url = _download_client_base_url(client)
+        if not base_url:
+            return None
+
+        jsonrpc_url = f"{base_url}/jsonrpc"
+        username = (client.get('username') or '').strip()
+        password = (client.get('password') or '').strip()
+        auth = (username, password) if (username or password) else None
+
+        from src.primary.settings_manager import get_ssl_verify_setting
+        verify_ssl = get_ssl_verify_setting()
+
+        payload = {'method': 'history', 'params': [False], 'id': 1}
+        r = requests.post(jsonrpc_url, json=payload, auth=auth, timeout=15, verify=verify_ssl)
+        r.raise_for_status()
+        data = r.json()
+
+        result = data.get('result') if isinstance(data.get('result'), list) else []
+        queue_id_str = str(queue_id).strip()
+
+        for item in result:
+            if not isinstance(item, dict):
+                continue
+            nzb_id = item.get('NZBID') or item.get('ID')
+            if nzb_id is None:
+                continue
+            if str(nzb_id).strip() == queue_id_str:
+                status = (item.get('Status') or '').strip()
+                dest_dir = (item.get('DestDir') or item.get('FinalDir') or '').strip()
+                nzb_name = (item.get('NZBName') or item.get('NZBFilename') or item.get('Name') or '').strip()
+                return {
+                    'status': status,
+                    'storage': dest_dir,
+                    'name': nzb_name,
+                    'category': (item.get('Category') or '').strip(),
+                    'fail_message': '',
+                }
+
+        sample_ids = [str(i.get('NZBID') or i.get('ID')) for i in result[:5] if isinstance(i, dict)]
+        movie_hunt_logger.info(
+            "Import: NZBID %s not found in NZBGet history (history has %s entries). Sample ids: %s",
+            queue_id_str, len(result), sample_ids
+        )
+        return None
+
+    except Exception as e:
+        movie_hunt_logger.error("Import: error fetching NZBGet history for queue id %s: %s", queue_id, e)
         return None
 
 
@@ -282,6 +339,52 @@ def _check_and_import_completed(client_name, queue_item, instance_id):
             if release_name and release_name.endswith('.nzb'):
                 release_name = release_name[:-4]
 
+        # ── NZBGet ──
+        elif client_type == 'nzbget':
+            movie_hunt_logger.info(
+                "Import: item left queue (NZBID=%s, title='%s'). Checking NZBGet history for completed download.",
+                queue_id, title
+            )
+            history_item = _get_nzbget_history_item(client, queue_id)
+
+            if not history_item:
+                movie_hunt_logger.warning(
+                    "Import: item left queue but not found in NZBGet history (NZBID=%s, title='%s'). "
+                    "If the download completed in NZBGet, refresh the Queue page to trigger another check.",
+                    queue_id, title
+                )
+                return
+
+            status = history_item.get('status', '')
+            storage_path = (history_item.get('storage') or '').strip()
+            movie_hunt_logger.info(
+                "Import: download completed for '%s' (%s). NZBGet status=%s, NZBGet dest path=%s",
+                title, year or 'no year', status, storage_path or '(empty)'
+            )
+
+            # NZBGet uses SUCCESS/FAILURE/DELETED as status values
+            if not status.upper().startswith('SUCCESS'):
+                source_title = (history_item.get('name') or '').strip()
+                if source_title and source_title.endswith('.nzb'):
+                    source_title = source_title[:-4]
+                reason_failed = status or 'Download failed'
+                _blocklist_add(movie_title=title, year=year, source_title=source_title, reason_failed=reason_failed, instance_id=instance_id)
+                movie_hunt_logger.warning(
+                    "Import: download '%s' (%s) did not complete (status: %s). Added to blocklist: %s",
+                    title, year, status, source_title or '(no name)'
+                )
+                return
+
+            download_path = storage_path
+
+            if not download_path:
+                movie_hunt_logger.error("Import: no dest path in NZBGet history for '%s' (%s). Cannot import.", title, year)
+                return
+
+            release_name = (history_item.get('name') or '').strip()
+            if release_name and release_name.endswith('.nzb'):
+                release_name = release_name[:-4]
+
         # ── Unsupported client type ──
         else:
             movie_hunt_logger.debug("Import: unsupported client type: %s", client_type)
@@ -436,13 +539,17 @@ def _get_download_client_queue(client, instance_id):
     base_url = _download_client_base_url(client)
     if not base_url:
         return []
-    raw_cat = (client.get('category') or '').strip()
-    raw_cat_lower = raw_cat.lower()
-    if raw_cat_lower in ('default', '*', ''):
-        client_cat_lower = MOVIE_HUNT_DEFAULT_CATEGORY.lower()
+    # Use instance-based category (Movies-InstanceName) to match what discovery sends.
+    inst_name = _get_movie_hunt_instance_display_name(instance_id)
+    if inst_name:
+        expected_cat = _instance_name_to_category(inst_name, "Movies")
     else:
-        client_cat_lower = raw_cat_lower
-    allowed_cats = frozenset((client_cat_lower,))
+        raw_cat = (client.get('category') or '').strip()
+        if raw_cat.lower() in ('default', '*', ''):
+            expected_cat = MOVIE_HUNT_DEFAULT_CATEGORY
+        else:
+            expected_cat = raw_cat or MOVIE_HUNT_DEFAULT_CATEGORY
+    allowed_cats = frozenset((expected_cat.lower(),))
     requested_ids = _get_requested_queue_ids(instance_id).get(name, set())
     try:
         from src.primary.settings_manager import get_ssl_verify_setting
