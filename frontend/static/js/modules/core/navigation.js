@@ -288,7 +288,12 @@ window.HuntarrNavigation = {
         const activitySections = ['activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-media-hunt', 'logs-tv-hunt', 'tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist'];
         const configSections = ['media-hunt-settings', 'movie-hunt-settings', 'settings-instance-management', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'profile-editor', 'settings-custom-formats', 'settings-import-media', 'settings-import-lists', 'settings-root-folders', 'instance-editor'];
         const indexMasterSections = ['indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history'];
-        
+
+        // Use hash as source of truth for sub-expansion (avoids revert when async code runs ~1s later)
+        const hashSection = (window.location.hash || '').replace(/^#+/, '').split('/')[0];
+        const hashForNav = hashSection && (configSections.indexOf(hashSection) !== -1 || activitySections.indexOf(hashSection) !== -1 || collectionSections.indexOf(hashSection) !== -1 || indexMasterSections.indexOf(hashSection) !== -1) ? hashSection : null;
+        if (hashForNav) sectionForNav = hashForNav;
+
         const onActivity = activitySections.indexOf(sectionForNav) !== -1;
         const onConfig = configSections.indexOf(sectionForNav) !== -1;
 
