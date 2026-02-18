@@ -171,42 +171,45 @@ class NNTPConnection:
             file = conn.file
             chunks = []
             total = 0
-            terminator = b"\r\n.\r\n"
-            _READ_SIZE = 1048576  # 1MB — with 1MB buffered reader, read1()
-                                  # can return large batches of TLS records
-                                  # in a single call, minimizing syscalls
+            # Resolve read method once (avoid hasattr per iteration)
+            _read = getattr(file, 'read1', None) or file.read
+            _READ_SIZE = 1048576  # 1MB
+            # Track last 5 bytes across chunk boundaries without allocation.
+            # _tail is a small bytes object updated each iteration — avoids
+            # the old approach of slicing two chunks and concatenating.
+            _tail = b""
+            _TERM = b"\r\n.\r\n"
             
             while True:
-                # read1() returns whatever is in the buffer (up to _READ_SIZE),
-                # avoiding blocking for the full amount.  On SSL sockets
-                # this typically returns one TLS record (~16KB), but a large
-                # request size ensures we drain the kernel buffer in one call
-                # when multiple records are available.
-                chunk = file.read1(_READ_SIZE) if hasattr(file, 'read1') else file.read(_READ_SIZE)
+                chunk = _read(_READ_SIZE)
                 if not chunk:
                     break
                 chunks.append(chunk)
                 total += len(chunk)
-                # Terminator is always the last 5 bytes.  endswith() is an
-                # O(1) pointer comparison — no scanning like 'in'.  For small
-                # TLS chunks (<5 bytes) we check across the chunk boundary.
-                if total >= 5:
-                    if len(chunk) >= 5:
-                        if chunk.endswith(terminator):
-                            break
-                    elif len(chunks) > 1:
-                        boundary = chunks[-2][-(5 - len(chunk)):] + chunk
-                        if boundary.endswith(terminator):
-                            break
+                # Fast path: chunk is large (>= 5 bytes, ~always true for 1MB reads).
+                # endswith is O(5) on the 5-byte suffix — effectively free.
+                if len(chunk) >= 5:
+                    if chunk[-1:] == b"\n" and chunk.endswith(_TERM):
+                        break
+                    _tail = chunk[-5:]
+                else:
+                    # Rare: tiny chunk at stream end.  Merge with previous
+                    # tail to check for cross-boundary terminator.
+                    _tail = (_tail + chunk)[-5:]
+                    if len(_tail) >= 5 and _tail == _TERM:
+                        break
             
-            # Single join (one allocation), then free chunk list
+            # Single join (one allocation), then free chunk list.
+            # We know the terminator is at the very end (we broke on it),
+            # so just trim the last 5 bytes instead of scanning with rfind.
             raw = b"".join(chunks)
             del chunks
             
-            # Strip trailing ".\r\n" terminator
-            end = raw.rfind(terminator)
-            body = raw[:end] if end != -1 else raw
-            del raw  # Free the joined bytes — only body slice is needed
+            if total >= 5 and raw[-5:] == _TERM:
+                body = raw[:-5]
+            else:
+                body = raw
+            del raw
             
             # Handle dot-stuffing (lines starting with ".." → ".")
             # This is rare in yEnc data, so the 'in' check is almost always False.
