@@ -427,28 +427,21 @@ def get_popular_movies():
         if request.args.get('vote_count.lte'):
             filter_params['vote_count.lte'] = request.args.get('vote_count.lte')
         
-        # Add instance info for per-instance library status checking
-        if request.args.get('app_type'):
-            filter_params['app_type'] = request.args.get('app_type')
-        if request.args.get('instance_name'):
-            filter_params['instance_name'] = request.args.get('instance_name')
+        # Add instance info for per-instance library status checking (required for hide_available filter)
+        app_type = request.args.get('app_type', '').strip()
+        instance_name = (request.args.get('instance_name') or '').strip()
+        if app_type:
+            filter_params['app_type'] = app_type
+        if instance_name:
+            filter_params['instance_name'] = instance_name
         
         results = requestarr_api.get_popular_movies(page, **filter_params)
-        
-        # NOTE: We don't filter hidden media in discover view - users should see all content
-        # Hidden media filtering is only for library-specific views
-        # The status badges will show if items are in library or not
-        
-        # Get instance info for library status checking (already done in get_popular_movies)
-        # app_type = request.args.get('app_type', 'radarr')
-        # instance_name = request.args.get('instance_name')
         
         # Filter out available movies if hide_available is true
         original_count = len(results)
         if hide_available:
             results = requestarr_api.filter_available_media(results, 'movie')
         
-        # Continue loading until no results returned or reasonable upper limit
         has_more = len(results) > 0 and page < 100
         
         return jsonify({
@@ -495,28 +488,21 @@ def get_popular_tv():
         if request.args.get('vote_count.lte'):
             filter_params['vote_count.lte'] = request.args.get('vote_count.lte')
         
-        # Add instance info for per-instance library status checking
-        if request.args.get('app_type'):
-            filter_params['app_type'] = request.args.get('app_type')
-        if request.args.get('instance_name'):
-            filter_params['instance_name'] = request.args.get('instance_name')
+        # Add instance info for per-instance library status checking (required for hide_available filter)
+        app_type = request.args.get('app_type', '').strip()
+        instance_name = (request.args.get('instance_name') or '').strip()
+        if app_type:
+            filter_params['app_type'] = app_type
+        if instance_name:
+            filter_params['instance_name'] = instance_name
         
         results = requestarr_api.get_popular_tv(page, **filter_params)
-        
-        # NOTE: We don't filter hidden media in discover view - users should see all content
-        # Hidden media filtering is only for library-specific views
-        # The status badges will show if items are in library or not
-        
-        # Get instance info for library status checking (already done in get_popular_tv)
-        # app_type = request.args.get('app_type', 'sonarr')
-        # instance_name = request.args.get('instance_name')
         
         # Filter out available TV shows if hide_available is true
         original_count = len(results)
         if hide_available:
             results = requestarr_api.filter_available_media(results, 'tv')
         
-        # Continue loading until no results returned or reasonable upper limit
         has_more = len(results) > 0 and page < 100
         
         return jsonify({
