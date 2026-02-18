@@ -438,6 +438,7 @@ def register_tv_storage_routes(bp, get_instance_id):
             'multi_episode_style': 'Prefixed Range',
             'minimum_free_space_gb': 10,
             'rss_sync_enabled': True, 'rss_sync_interval_minutes': 15,
+            'ignore_non_season_in_collection_status': True,
         }
 
     def _get_tv_management_config(instance_id):

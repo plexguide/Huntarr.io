@@ -1279,8 +1279,17 @@
                 self.setupCollectionInfiniteScroll();
             }
 
+            function ensureTvConfig() {
+                if (!self._tvInstanceId) { self._tvIgnoreNonSeason = true; return Promise.resolve(); }
+                return fetch('./api/tv-hunt/settings/tv-management?instance_id=' + self._tvInstanceId)
+                    .then(function(r) { return r.json(); })
+                    .then(function(cfg) { self._tvIgnoreNonSeason = cfg.ignore_non_season_in_collection_status !== false; })
+                    .catch(function() { self._tvIgnoreNonSeason = true; });
+            }
+
             function fallbackToLegacyApis() {
                 var promises = [];
+                promises.push(ensureTvConfig());
                 if (self._movieInstanceId) {
                     promises.push(fetch('./api/movie-hunt/collection?instance_id=' + self._movieInstanceId + '&page=1&page_size=9999&sort=' + encodeURIComponent(self.sortBy || 'title.asc'))
                         .then(function(r) { return r.json(); })
@@ -1327,7 +1336,7 @@
                     promises.push(Promise.resolve([]));
                 }
                 Promise.all(promises).then(function(results) {
-                    var combined = (results[0] || []).concat(results[1] || []);
+                    var combined = (results[1] || []).concat(results[2] || []);
                     processFallbackFull(combined);
                 });
             }
@@ -1381,11 +1390,18 @@
             params.set('page_size', String(COLLECTION_PAGE_SIZE));
             params.set('sort', self.sortBy || 'title.asc');
 
-            fetch('./api/requestarr/collection?' + params.toString())
+            var tvConfigPromise = ensureTvConfig();
+            var collectionPromise = fetch('./api/requestarr/collection?' + params.toString())
                 .then(function(r) {
-                    if (r.ok) return r.json().then(function(data) { processFirstPage(data); return null; });
-                    if (r.status === 404) { fallbackToLegacyApis(); return null; }
+                    if (r.ok) return r.json();
+                    if (r.status === 404) return null;
                     throw new Error('Failed to load');
+                });
+            Promise.all([tvConfigPromise, collectionPromise])
+                .then(function(results) {
+                    var data = results[1];
+                    if (data) processFirstPage(data);
+                    else if (data === null) fallbackToLegacyApis();
                 })
                 .catch(function() {
                     if (!append) grid.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 60px;">Failed to load collection.</p>';
@@ -1611,16 +1627,15 @@
             var posterUrl = getCollectionPosterUrl(item.poster_path, 'w500');
             var typeBadgeLabel = item.media_type === 'tv' ? 'TV' : 'Movie';
             var status = item.status || (item.media_type === 'movie' ? (item.in_library ? 'available' : 'requested') : '');
-            var statusClass = status === 'available' ? 'complete' : 'partial';
-            var statusIcon = status === 'available' ? 'check' : 'bookmark';
-            if (status === 'available') card.classList.add('in-library');
 
-            // Progress bar for combined view
+            // Progress bar for combined view (compute first so we can use for TV icon)
             var combPct = 0;
             var combTotal = 0;
             var combAvail = 0;
             if (item.media_type === 'tv' && item.seasons) {
+                var ignoreNonSeason = self._tvIgnoreNonSeason !== false;
                 (item.seasons || []).forEach(function(s) {
+                    if (ignoreNonSeason && parseInt(s.season_number || s.seasonNumber || 0, 10) === 0) return;
                     (s.episodes || []).forEach(function(ep) {
                         combTotal++;
                         if (ep.status === 'available' || ep.file_path) combAvail++;
@@ -1630,6 +1645,12 @@
             } else {
                 combPct = status === 'available' ? 100 : 0;
             }
+
+            // TV: green check when all episodes downloaded; Movie: green check when available
+            var isComplete = item.media_type === 'tv' ? (combPct >= 100) : (status === 'available');
+            var statusClass = isComplete ? 'complete' : 'partial';
+            var statusIcon = isComplete ? 'check' : 'bookmark';
+            if (isComplete) card.classList.add('in-library');
             var combBarClass = 'episode-progress-bar' + (combPct >= 100 ? ' complete' : (combPct === 0 ? ' empty' : ''));
 
             card.innerHTML = '<div class="media-card-poster">' +

@@ -27,6 +27,7 @@
             rename_episodes: true,
             replace_illegal_characters: true,
             colon_replacement: 'Smart Replace',
+            ignore_non_season_in_collection_status: true,
             standard_episode_format: "{Series TitleYear} - S{season:00}E{episode:00} - {Episode CleanTitle} {Quality Full}",
             daily_episode_format: "{Series TitleYear} - {Air-Date} - {Episode CleanTitle} {Quality Full}",
             anime_episode_format: "{Series TitleYear} - S{season:00}E{episode:00} - {absolute:000} - {Episode CleanTitle} {Quality Full}",
@@ -56,6 +57,7 @@
         var minSpace = typeof d.minimum_free_space_gb === 'number' ? d.minimum_free_space_gb : 10;
         var rssEnabled = d.rss_sync_enabled !== false;
         var rssInterval = typeof d.rss_sync_interval_minutes === 'number' ? d.rss_sync_interval_minutes : 15;
+        var ignoreNonSeason = d.ignore_non_season_in_collection_status !== false;
 
         var colonOptionList = ['Smart Replace', 'Delete', 'Replace with Dash', 'Replace with Space Dash', 'Replace with Space Dash Space'];
         var colonOptions = colonOptionList.map(function(opt) {
@@ -71,6 +73,16 @@
         }).join('');
 
         return '<div class="editor-grid">' +
+            '<div class="editor-section">' +
+            '<div class="editor-section-title">General Settings</div>' +
+            '<p class="editor-help-text" style="margin-bottom: 12px; color: #94a3b8;">These options apply only to TV Hunt. Movie Hunt does not use these settings.</p>' +
+            '<div class="editor-field-group">' +
+            '<div class="editor-setting-item flex-row">' +
+            '<label for="tv-mgmt-ignore-non-season">Exclude Specials from Collection Status</label>' +
+            '<label class="toggle-switch"><input type="checkbox" id="tv-mgmt-ignore-non-season"' + (ignoreNonSeason ? ' checked' : '') + '><span class="toggle-slider"></span></label>' +
+            '</div><p class="editor-help-text">When enabled, the collection progress bar and status count only include seasons 1 and up (e.g. Season 01, 02), not specials.</p>' +
+            '<p class="editor-help-text">Specials often never get downloaded, so this keeps the status bar accurate. Huntarr still downloads all requested items when available.</p></div>' +
+            '</div>' +
             '<div class="editor-section">' +
             '<div class="editor-section-title">Episode Naming</div>' +
             '<div class="editor-field-group">' +
@@ -173,6 +185,7 @@
         return {
             rename_episodes: document.getElementById('tv-mgmt-rename') ? document.getElementById('tv-mgmt-rename').checked : true,
             replace_illegal_characters: document.getElementById('tv-mgmt-replace-illegal') ? document.getElementById('tv-mgmt-replace-illegal').checked : true,
+            ignore_non_season_in_collection_status: document.getElementById('tv-mgmt-ignore-non-season') ? document.getElementById('tv-mgmt-ignore-non-season').checked : true,
             colon_replacement: document.getElementById('tv-mgmt-colon') ? (document.getElementById('tv-mgmt-colon').value || 'Smart Replace').trim() : 'Smart Replace',
             standard_episode_format: (document.getElementById('tv-mgmt-standard-format') || {}).value || defaults().standard_episode_format,
             daily_episode_format: (document.getElementById('tv-mgmt-daily-format') || {}).value || defaults().daily_episode_format,
@@ -213,7 +226,7 @@
 
     function setupChangeDetection() {
         var ids = [
-            'tv-mgmt-rename', 'tv-mgmt-replace-illegal', 'tv-mgmt-colon',
+            'tv-mgmt-rename', 'tv-mgmt-replace-illegal', 'tv-mgmt-ignore-non-season', 'tv-mgmt-colon',
             'tv-mgmt-standard-format', 'tv-mgmt-daily-format', 'tv-mgmt-anime-format',
             'tv-mgmt-series-folder', 'tv-mgmt-season-folder', 'tv-mgmt-specials-folder',
             'tv-mgmt-multi-episode', 'tv-mgmt-min-space', 'tv-mgmt-rss-enabled', 'tv-mgmt-rss-interval'
