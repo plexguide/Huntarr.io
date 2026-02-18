@@ -392,9 +392,10 @@
             const overview = item.overview || 'No description available.';
             const inLibrary = item.in_library || false;
             const partial = item.partial || false;
+            const importable = item.importable || false;
             const instanceSelect = document.getElementById('media-hunt-instance-select');
             const hasInstance = instanceSelect && instanceSelect.value && instanceSelect.value !== '';
-            const statusBadge = window.MediaUtils.getStatusBadge(inLibrary, partial, hasInstance);
+            const statusBadge = window.MediaUtils.getStatusBadge(inLibrary, partial, hasInstance, importable);
             const metaClass = hasInstance ? 'media-card-meta' : 'media-card-meta no-hide';
             const showRequestBtn = hasInstance && !inLibrary;
             const overlayAction = showRequestBtn ? '<button class="media-card-request-btn"><i class="fas fa-plus-circle"></i> Add</button>' : '';

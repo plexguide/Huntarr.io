@@ -36,13 +36,16 @@
      * @param {boolean} hasInstance - An instance is configured
      * @returns {string} HTML string
      */
-    function getStatusBadge(inLibrary, partial, hasInstance) {
+    function getStatusBadge(inLibrary, partial, hasInstance, importable) {
         if (!hasInstance) return '';
         if (inLibrary) {
             return '<div class="media-card-status-badge complete"><i class="fas fa-check"></i></div>';
         }
         if (partial) {
             return '<div class="media-card-status-badge partial"><i class="fas fa-bookmark"></i></div>';
+        }
+        if (importable) {
+            return '<div class="media-card-status-badge importable" title="Found on disk — importable"><i class="fas fa-file-import"></i></div>';
         }
         return '<div class="media-card-status-badge available"><i class="fas fa-download"></i></div>';
     }
@@ -1063,9 +1066,10 @@
             const overview = item.overview || 'No description available.';
             const inLibrary = item.in_library || false;
             const partial = item.partial || false;
+            const importable = item.importable || false;
             const instanceSelect = document.getElementById('media-hunt-instance-select');
             const hasInstance = instanceSelect && instanceSelect.value && instanceSelect.value !== '';
-            const statusBadge = window.MediaUtils.getStatusBadge(inLibrary, partial, hasInstance);
+            const statusBadge = window.MediaUtils.getStatusBadge(inLibrary, partial, hasInstance, importable);
             const metaClass = hasInstance ? 'media-card-meta' : 'media-card-meta no-hide';
             const showRequestBtn = hasInstance && !inLibrary;
             const overlayAction = showRequestBtn ? '<button class="media-card-request-btn"><i class="fas fa-plus-circle"></i> Add</button>' : '';

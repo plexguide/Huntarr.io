@@ -1190,8 +1190,9 @@ def register_movie_import_media_routes(bp):
                         'already_exists': True,
                     }), 200
     
-            # Determine root folder from the path
+            # Determine root folder and quality profile from the request
             root_folder = data.get('root_folder') or ''
+            quality_profile = (data.get('quality_profile') or '').strip()
     
             # Add to collection as "available" (it's already on disk)
             _collection_append(
@@ -1201,6 +1202,7 @@ def register_movie_import_media_routes(bp):
                 tmdb_id=tmdb_id,
                 poster_path=poster_path,
                 root_folder=root_folder,
+                quality_profile=quality_profile,
             )
     
             # Mark item as confirmed in unmapped config

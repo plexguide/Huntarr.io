@@ -34,6 +34,7 @@ from .import_media_shared import (
 from .discovery_tv import (
     _get_collection_config,
     _save_collection_config,
+    add_series_to_tv_hunt_collection,
     TMDB_BASE,
     TMDB_API_KEY,
 )
@@ -1061,10 +1062,12 @@ def register_tv_import_media_routes(bp):
             data = request.get_json() or {}
             folder_path = (data.get('folder_path') or '').strip()
             tmdb_id = data.get('tmdb_id')
-            title = (data.get('title') or '').strip()
+            title = (data.get('title') or data.get('name') or '').strip()
             year = (data.get('year') or '').strip()
             poster_path = (data.get('poster_path') or '').strip()
             root_folder = (data.get('root_folder') or '').strip()
+            quality_profile = (data.get('quality_profile') or '').strip()
+            monitor = (data.get('monitor') or '').strip()
     
             if not folder_path:
                 return jsonify({'success': False, 'message': 'folder_path is required'}), 400
@@ -1075,18 +1078,21 @@ def register_tv_import_media_routes(bp):
             if not instance_id:
                 return jsonify({'success': False, 'message': 'No instance selected'}), 400
     
-            ok, msg = _add_series_to_collection(
-                instance_id, tmdb_id, title, root_folder, poster_path,
-                first_air_date=year + '-01-01' if year else ''
+            ok, msg = add_series_to_tv_hunt_collection(
+                instance_id, tmdb_id, title,
+                poster_path=poster_path,
+                root_folder=root_folder,
+                quality_profile=quality_profile,
+                monitor=monitor,
             )
             if not ok:
-                if msg == 'already_exists':
+                if 'already in collection' in msg.lower():
                     return jsonify({
                         'success': False,
                         'message': f'"{title}" is already in your TV Collection.',
                         'already_exists': True,
                     }), 200
-                return jsonify({'success': False, 'message': 'Failed to add to collection'}), 200
+                return jsonify({'success': False, 'message': msg or 'Failed to add to collection'}), 200
     
             config = _get_unmapped_config(instance_id)
             for item in config.get('items', []):

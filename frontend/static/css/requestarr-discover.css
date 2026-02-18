@@ -408,6 +408,12 @@
     border: 2px solid #2563eb;
 }
 
+/* Importable - Amber with file-import icon (files found on disk) */
+.media-card-status-badge.importable {
+    background: #d97706;
+    border: 2px solid #b45309;
+}
+
 /* In library: no button, so push title and text lower in the overlay */
 .media-card.in-library .media-card-overlay {
     justify-content: flex-end;

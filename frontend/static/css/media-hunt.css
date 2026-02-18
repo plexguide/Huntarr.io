@@ -522,6 +522,11 @@
     border: 2px solid #ea580c;
 }
 
+#media-hunt-collection-grid .media-card-status-badge.importable {
+    background: #d97706;
+    border: 2px solid #b45309;
+}
+
 #media-hunt-collection-grid .media-card-info {
     padding: 8px 10px 10px;
 }
@@ -1017,6 +1022,10 @@
 #mediaHuntSection .media-card-status-badge.partial {
     background: #f97316;
     border: 2px solid #ea580c;
+}
+#mediaHuntSection .media-card-status-badge.importable {
+    background: #d97706;
+    border: 2px solid #b45309;
 }
 #mediaHuntSection .media-card.in-library .media-card-request-btn { display: none; }
 #mediaHuntSection .media-card-info { padding: 8px 10px 10px; }

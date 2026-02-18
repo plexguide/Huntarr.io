@@ -756,8 +756,10 @@ class RequestarrModal {
             // Read current form selections so import uses the same settings
             const rootSelect = document.getElementById('modal-root-folder');
             const qualitySelect = document.getElementById('modal-quality-profile');
+            const monitorSelect = document.getElementById('modal-monitor');
             const rootFolder = (rootSelect && rootSelect.value) ? rootSelect.value : (match.root_folder || '');
             const qualityProfile = qualitySelect ? qualitySelect.value : '';
+            const monitor = monitorSelect ? monitorSelect.value : '';
 
             const body = {
                 folder_path: match.folder_path,
@@ -768,6 +770,7 @@ class RequestarrModal {
                 root_folder: rootFolder,
                 instance_id: decoded.name,
                 quality_profile: qualityProfile,
+                monitor: monitor,
             };
             // TV confirm expects 'name' field
             if (isTVHunt) {

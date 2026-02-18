@@ -1314,6 +1314,54 @@ class RequestarrAPI:
                 except Exception as e:
                     logger.error(f"Error checking Sonarr instance {instance['name']}: {e}")
             
+            # Build importable TMDB ID sets from cached import-media scans
+            # (no filesystem access — reads from DB only)
+            importable_movie_ids = set()
+            importable_tv_ids = set()
+            try:
+                from src.primary.utils.database import get_database as _get_db
+                _db = _get_db()
+                # Movie Hunt importable items
+                for mh_inst in (movie_hunt_instances or []):
+                    try:
+                        mh_id = mh_inst.get('id') or self._resolve_movie_hunt_instance_id(mh_inst['name'])
+                        if not mh_id:
+                            continue
+                        cfg = _db.get_app_config_for_instance('movie_hunt_import_media', mh_id)
+                        if cfg and isinstance(cfg, dict):
+                            for itm in (cfg.get('items') or []):
+                                if itm.get('status') in ('matched', 'pending', 'no_match'):
+                                    best = itm.get('best_match') or {}
+                                    tid = best.get('tmdb_id')
+                                    if tid:
+                                        try:
+                                            importable_movie_ids.add(int(tid))
+                                        except (TypeError, ValueError):
+                                            pass
+                    except Exception:
+                        pass
+                # TV Hunt importable items
+                for th_inst in (tv_hunt_instances or []):
+                    try:
+                        th_id = th_inst.get('id') or self._resolve_tv_hunt_instance_id(th_inst['name'])
+                        if not th_id:
+                            continue
+                        cfg = _db.get_app_config_for_instance('tv_hunt_import_media', th_id)
+                        if cfg and isinstance(cfg, dict):
+                            for itm in (cfg.get('items') or []):
+                                if itm.get('status') in ('matched', 'pending', 'no_match'):
+                                    best = itm.get('best_match') or {}
+                                    tid = best.get('tmdb_id')
+                                    if tid:
+                                        try:
+                                            importable_tv_ids.add(int(tid))
+                                        except (TypeError, ValueError):
+                                            pass
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
             # Mark each item with status
             for item in items:
                 tmdb_id = item.get('tmdb_id')
@@ -1329,12 +1377,15 @@ class RequestarrAPI:
                     # Check Movie Hunt first (if applicable), then Radarr
                     item['in_library'] = tmdb_id in movie_hunt_tmdb_ids or tmdb_id in radarr_tmdb_ids
                     item['partial'] = False
+                    item['importable'] = tmdb_id in importable_movie_ids and not item['in_library']
                 elif media_type == 'tv':
                     item['in_library'] = tmdb_id in sonarr_tmdb_ids or tmdb_id in tv_hunt_tmdb_ids
                     item['partial'] = tmdb_id in sonarr_partial_tmdb_ids or tmdb_id in tv_hunt_partial_tmdb_ids
+                    item['importable'] = tmdb_id in importable_tv_ids and not item['in_library'] and not item['partial']
                 else:
                     item['in_library'] = False
                     item['partial'] = False
+                    item['importable'] = False
             
             return items
             

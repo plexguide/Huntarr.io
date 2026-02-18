@@ -34,13 +34,16 @@
      * @param {boolean} hasInstance - An instance is configured
      * @returns {string} HTML string
      */
-    function getStatusBadge(inLibrary, partial, hasInstance) {
+    function getStatusBadge(inLibrary, partial, hasInstance, importable) {
         if (!hasInstance) return '';
         if (inLibrary) {
             return '<div class="media-card-status-badge complete"><i class="fas fa-check"></i></div>';
         }
         if (partial) {
             return '<div class="media-card-status-badge partial"><i class="fas fa-bookmark"></i></div>';
+        }
+        if (importable) {
+            return '<div class="media-card-status-badge importable" title="Found on disk — importable"><i class="fas fa-file-import"></i></div>';
         }
         return '<div class="media-card-status-badge available"><i class="fas fa-download"></i></div>';
     }
