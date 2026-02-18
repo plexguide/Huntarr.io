@@ -5352,6 +5352,8 @@ class RequestarrModal {
     _clearImportBanner() {
         const existing = document.getElementById('modal-import-banner');
         if (existing) existing.remove();
+        const actionsArea = document.querySelector('.mh-req-actions');
+        if (actionsArea) actionsArea.classList.remove('import-available');
     }
 
     async _checkForImport(instanceName) {
@@ -5401,13 +5403,27 @@ class RequestarrModal {
         else if (score >= 65) { confidenceClass = 'medium'; confidenceLabel = 'Medium'; }
         else { confidenceClass = 'low'; confidenceLabel = 'Low'; }
 
+        // Swap status badge to amber warning
+        const container = document.getElementById('requestarr-modal-status-container');
+        if (container) {
+            container.innerHTML = '<span class="mh-req-badge mh-req-badge-import"><i class="fas fa-exclamation-triangle"></i> Found on Disk</span>';
+        }
+
+        // Read current form selections for the settings summary
+        const instanceSelect = document.getElementById('modal-instance-select');
+        const rootSelect = document.getElementById('modal-root-folder');
+        const qualitySelect = document.getElementById('modal-quality-profile');
+        const instLabel = instanceSelect ? instanceSelect.options[instanceSelect.selectedIndex]?.text : '';
+        const rootLabel = rootSelect ? rootSelect.value : '';
+        const qualLabel = qualitySelect ? qualitySelect.options[qualitySelect.selectedIndex]?.text : '';
+
         const banner = document.createElement('div');
         banner.id = 'modal-import-banner';
         banner.className = 'modal-import-banner';
         banner.innerHTML =
             '<div class="import-banner-header">' +
                 '<i class="fas fa-folder-open"></i>' +
-                '<span>Existing file detected on disk</span>' +
+                '<span>Existing files detected on disk</span>' +
                 '<span class="import-confidence import-confidence-' + confidenceClass + '">' + score + '% ' + confidenceLabel + '</span>' +
             '</div>' +
             '<div class="import-banner-details">' +
@@ -5420,14 +5436,20 @@ class RequestarrModal {
                     (fileCount > 1 ? '<span><i class="fas fa-copy"></i> ' + fileCount + ' files</span>' : '') +
                 '</div>' +
             '</div>' +
+            '<div class="import-banner-settings">' +
+                (instLabel ? '<span><i class="fas fa-server"></i>' + this._escBannerHtml(instLabel) + '</span>' : '') +
+                (rootLabel ? '<span><i class="fas fa-folder-open"></i>' + this._escBannerHtml(rootLabel) + '</span>' : '') +
+                (qualLabel ? '<span><i class="fas fa-sliders-h"></i>' + this._escBannerHtml(qualLabel) + '</span>' : '') +
+            '</div>' +
             '<button class="import-banner-btn" id="modal-import-instead-btn">' +
-                '<i class="fas fa-download"></i> Import Instead' +
+                '<i class="fas fa-download"></i> Import to Library' +
             '</button>';
 
         // Insert before the action buttons area
         const actionsArea = document.querySelector('.mh-req-actions');
         if (actionsArea) {
             actionsArea.parentNode.insertBefore(banner, actionsArea);
+            actionsArea.classList.add('import-available');
         } else {
             // Fallback: insert at end of form column
             const formCol = document.querySelector('.mh-req-form');
@@ -5439,6 +5461,16 @@ class RequestarrModal {
         if (importBtn) {
             importBtn.onclick = () => this._doImportInstead(match, instanceName);
         }
+
+        // Demote the Add to Library button to secondary
+        const requestBtn = document.getElementById('modal-request-btn');
+        if (requestBtn && !requestBtn.disabled) {
+            requestBtn.textContent = 'Add as New';
+        }
+
+        // Update modal label to reflect import context
+        const labelEl = document.getElementById('requestarr-modal-label');
+        if (labelEl) labelEl.textContent = 'Import to Library';
     }
 
     async _doImportInstead(match, instanceName) {
@@ -5450,9 +5482,16 @@ class RequestarrModal {
 
         try {
             const data = this.core.currentModalData;
-            const decoded = decodeInstanceValue(instanceName);
+            const isTVShow = data.media_type === 'tv';
+            const decoded = decodeInstanceValue(instanceName, isTVShow ? 'sonarr' : 'radarr');
             const isTVHunt = decoded.appType === 'tv_hunt';
             const confirmUrl = isTVHunt ? './api/tv-hunt/import-media/confirm' : './api/movie-hunt/import-media/confirm';
+
+            // Read current form selections so import uses the same settings
+            const rootSelect = document.getElementById('modal-root-folder');
+            const qualitySelect = document.getElementById('modal-quality-profile');
+            const rootFolder = (rootSelect && rootSelect.value) ? rootSelect.value : (match.root_folder || '');
+            const qualityProfile = qualitySelect ? qualitySelect.value : '';
 
             const body = {
                 folder_path: match.folder_path,
@@ -5460,8 +5499,9 @@ class RequestarrModal {
                 title: data.title || data.name || '',
                 year: String(data.year || ''),
                 poster_path: data.poster_path || '',
-                root_folder: match.root_folder || '',
+                root_folder: rootFolder,
                 instance_id: decoded.name,
+                quality_profile: qualityProfile,
             };
             // TV confirm expects 'name' field
             if (isTVHunt) {

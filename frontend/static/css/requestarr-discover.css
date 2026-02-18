@@ -4148,6 +4148,11 @@ body.requestarr-modal-open {
     color: #f87171;
     border: 1px solid rgba(239, 68, 68, 0.2);
 }
+.mh-req-badge-import {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
 
 /* Form fields */
 .mh-req-fields {
@@ -4481,8 +4486,8 @@ body.requestarr-modal-open {
    Import Detection Banner (Add to Library modal)
    ======================================== */
 .modal-import-banner {
-    background: rgba(99, 102, 241, 0.08);
-    border: 1px solid rgba(99, 102, 241, 0.25);
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.25);
     border-radius: 8px;
     padding: 12px;
     margin-top: 8px;
@@ -4496,11 +4501,11 @@ body.requestarr-modal-open {
     gap: 8px;
     font-size: 13px;
     font-weight: 600;
-    color: #a5b4fc;
+    color: #fbbf24;
 }
 .import-banner-header > i {
     font-size: 14px;
-    color: #818cf8;
+    color: #f59e0b;
 }
 .import-confidence {
     margin-left: auto;
@@ -4567,17 +4572,45 @@ body.requestarr-modal-open {
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    background: linear-gradient(135deg, #f59e0b, #d97706);
     color: #fff;
     transition: filter 0.15s ease, box-shadow 0.15s ease;
 }
 .import-banner-btn:hover:not(:disabled) {
     filter: brightness(1.1);
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
 }
 .import-banner-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+.import-banner-btn.success {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+.import-banner-settings {
+    font-size: 11px;
+    color: #94a3b8;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 2px;
+    border-top: 1px solid rgba(245, 158, 11, 0.1);
+}
+.import-banner-settings i {
+    color: #64748b;
+    margin-right: 3px;
+    font-size: 10px;
+}
+/* Demote Add to Library when import is available */
+.mh-req-actions.import-available .mh-req-btn-submit {
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    color: #a5b4fc;
+    font-size: 12px;
+}
+.mh-req-actions.import-available .mh-req-btn-submit:hover {
+    background: rgba(99, 102, 241, 0.25);
+}
 }
 .import-banner-btn.success {
     background: linear-gradient(135deg, #22c55e, #16a34a);
