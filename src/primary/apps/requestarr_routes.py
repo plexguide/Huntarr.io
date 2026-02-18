@@ -139,13 +139,15 @@ def get_unified_collection():
         # Fetch TV collection directly from database (test_client is unreliable)
         if tv_instance_id:
             try:
-                from src.primary.routes.media_hunt.discovery_tv import _get_collection_config
+                from src.primary.routes.media_hunt.discovery_tv import _get_collection_config, _merge_detected_episodes_into_collection
                 try:
                     tv_id_int = int(tv_instance_id)
                 except (TypeError, ValueError):
                     tv_id_int = 0
                 if tv_id_int:
                     series_list = _get_collection_config(tv_id_int)
+                    # Merge disk-detected episodes so imported files show correct status on hard refresh
+                    _merge_detected_episodes_into_collection(tv_id_int, series_list)
                     for s in series_list:
                         title = s.get('title') or s.get('name') or ''
                         year = (s.get('first_air_date') or '')[:4]

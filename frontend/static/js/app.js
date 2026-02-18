@@ -681,6 +681,11 @@ let huntarrUI = {
             window.CycleCountdown.cleanup();
         }
 
+        // Clean up Media Hunt collection when leaving (stops refresh interval and visibility listener)
+        if (this.currentSection === 'media-hunt-collection' && section !== 'media-hunt-collection' && window.MediaHuntCollection && typeof window.MediaHuntCollection.cleanup === 'function') {
+            window.MediaHuntCollection.cleanup();
+        }
+
         // Update active section
         this.elements.sections.forEach(s => {
             s.classList.remove('active');

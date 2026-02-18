@@ -362,6 +362,12 @@ def import_episode(client: Dict[str, Any], series_title: str, year: str,
                 _cleanup_source_folder(local_path, root_folder, series_title, season, episode)
             except Exception:
                 pass
+            if instance_id:
+                try:
+                    from src.primary.routes.media_hunt.discovery_tv import _merge_detected_episodes_into_collection
+                    _merge_detected_episodes_into_collection(instance_id)
+                except Exception as e:
+                    _tv_log().warning("Import: post-import merge failed: %s", e)
             return True
 
         # 6. Move file
@@ -385,6 +391,15 @@ def import_episode(client: Dict[str, Any], series_title: str, year: str,
             _cleanup_source_folder(local_path, root_folder, series_title, season, episode)
         except Exception:
             pass
+
+        # 10. Merge detected episodes from disk into collection (refresh scan)
+        # Ensures collection status is correct for hard refresh / next page load
+        if instance_id:
+            try:
+                from src.primary.routes.media_hunt.discovery_tv import _merge_detected_episodes_into_collection
+                _merge_detected_episodes_into_collection(instance_id)
+            except Exception as e:
+                _tv_log().warning("Import: post-import merge failed: %s", e)
 
         _tv_log().info("Import: completed '%s' S%02dE%02d -> %s",
                         series_title, season or 0, episode or 0, dest_file)

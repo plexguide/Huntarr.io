@@ -3911,6 +3911,35 @@
             if (window.TVHuntCollection && typeof window.TVHuntCollection.setupBackButton === 'function') {
                 window.TVHuntCollection.setupBackButton();
             }
+
+            // Remove any existing refresh listeners before adding new ones
+            self.cleanup();
+
+            // Refresh collection when window regains focus (e.g. after import completes in another tab)
+            self._onVisibilityChange = function() {
+                if (document.visibilityState === 'visible' && self._movieInstanceId || self._tvInstanceId) {
+                    self.loadCombinedCollection();
+                }
+            };
+            document.addEventListener('visibilitychange', self._onVisibilityChange);
+
+            // Periodic refresh while on collection view (catches imports that complete in background)
+            self._collectionRefreshInterval = setInterval(function() {
+                if (document.visibilityState === 'visible' && (self._movieInstanceId || self._tvInstanceId)) {
+                    self.loadCombinedCollection();
+                }
+            }, 90000); // 90 seconds
+        },
+
+        cleanup: function() {
+            if (this._onVisibilityChange) {
+                document.removeEventListener('visibilitychange', this._onVisibilityChange);
+                this._onVisibilityChange = null;
+            }
+            if (this._collectionRefreshInterval) {
+                clearInterval(this._collectionRefreshInterval);
+                this._collectionRefreshInterval = null;
+            }
         },
 
         loadHiddenMediaIds: function() {
