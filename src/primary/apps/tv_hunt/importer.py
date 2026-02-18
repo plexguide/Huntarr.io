@@ -167,14 +167,20 @@ def _update_episode_status(series_title: str, season: int, episode: int,
 
         title_clean = (series_title or '').strip().lower()
         updated = False
+        season_int = int(season) if season is not None else None
+        episode_int = int(episode) if episode is not None else None
         for series in config['series']:
             if (series.get('title') or '').strip().lower() != title_clean:
                 continue
             for s in (series.get('seasons') or []):
-                if s.get('season_number') != season:
+                s_num = s.get('season_number')
+                s_num = int(s_num) if s_num is not None else None
+                if s_num != season_int:
                     continue
                 for ep in (s.get('episodes') or []):
-                    if ep.get('episode_number') == episode:
+                    ep_num = ep.get('episode_number')
+                    ep_num = int(ep_num) if ep_num is not None else None
+                    if ep_num == episode_int:
                         ep['status'] = status
                         if file_path:
                             ep['file_path'] = file_path

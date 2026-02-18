@@ -774,41 +774,79 @@ class RequestarrAPI:
             return {'success': False, 'message': str(e) or 'Request failed'}
 
     def get_series_status_from_tv_hunt(self, tmdb_id: int, instance_name: str) -> Dict[str, Any]:
-        """Get series status from TV Hunt collection - exists, missing episodes, etc."""
+        """Get series status from TV Hunt collection - exists, missing episodes, etc.
+        Merges with filesystem scan (get_detected_episodes) so imported episodes show as available
+        even before the importer has updated the collection."""
         try:
+            import re
+            import os
             already_requested_in_db = self.db.is_already_requested(tmdb_id, 'tv', 'tv_hunt', instance_name)
 
             instance_id = self._resolve_tv_hunt_instance_id(instance_name)
             if instance_id is None:
                 return {'exists': False, 'previously_requested': already_requested_in_db}
 
-            from src.primary.routes.media_hunt.discovery_tv import _get_collection_config
+            from src.primary.routes.media_hunt.discovery_tv import _get_collection_config, _save_collection_config
             from src.primary.routes.media_hunt.helpers import _extract_quality_from_filename
+            from src.primary.routes.media_hunt.storage import get_detected_episodes_from_all_roots
+
+            def _normalize_series_for_match(title):
+                """Strip (YYYY) from folder name for matching."""
+                s = (title or '').strip()
+                s = re.sub(r'\s*\(\d{4}\)\s*$', '', s).strip()
+                return s.lower()
+
             collection = _get_collection_config(instance_id)
+            detected = get_detected_episodes_from_all_roots(instance_id)
+            detected_by_series = {}
+            for d in detected:
+                folder_norm = _normalize_series_for_match(d.get('series_title') or '')
+                if not folder_norm:
+                    continue
+                key = (int(d.get('season_number') or 0), int(d.get('episode_number') or 0))
+                if folder_norm not in detected_by_series:
+                    detected_by_series[folder_norm] = {}
+                detected_by_series[folder_norm][key] = d.get('file_path') or ''
+
             for s in collection:
                 if s.get('tmdb_id') == tmdb_id:
+                    series_title = (s.get('title') or '').strip()
+                    series_norm = _normalize_series_for_match(series_title)
+                    detected_eps = detected_by_series.get(series_norm) or {}
+
                     seasons_raw = s.get('seasons') or []
                     total_eps = 0
                     available_eps = 0
                     seasons = []
+                    collection_updated = False
                     for sec in seasons_raw:
                         eps = sec.get('episodes') or []
                         total_eps += len(eps)
                         eps_enriched = []
                         for ep in eps:
                             has_file = (ep.get('status') or '').lower() == 'available' or ep.get('file_path')
+                            if not has_file:
+                                season_num = int(sec.get('season_number') or 0)
+                                ep_num = int(ep.get('episode_number') or 0)
+                                detected_path = detected_eps.get((season_num, ep_num))
+                                if detected_path:
+                                    ep['status'] = 'available'
+                                    ep['file_path'] = detected_path
+                                    has_file = True
+                                    collection_updated = True
                             if has_file:
                                 available_eps += 1
                             ep_copy = dict(ep)
                             file_path = ep.get('file_path')
                             if file_path:
-                                import os
                                 fname = os.path.basename(file_path)
                                 q = _extract_quality_from_filename(fname)
                                 if q and q != '-':
                                     ep_copy['quality'] = q
                             eps_enriched.append(ep_copy)
                         seasons.append(dict(sec, episodes=eps_enriched))
+                    if collection_updated:
+                        _save_collection_config(collection, instance_id)
                     missing_eps = total_eps - available_eps
                     previously_requested = already_requested_in_db or (total_eps > 0 and available_eps == 0)
                     return {

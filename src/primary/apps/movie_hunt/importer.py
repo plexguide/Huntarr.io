@@ -156,6 +156,15 @@ def _find_largest_video_file(download_path: str) -> Optional[str]:
         return None
 
 
+def _match_collection_item(item: dict, title: str, year: str) -> bool:
+    """Match collection item by title and year. Normalizes types for reliable comparison."""
+    item_title = (item.get('title') or '').strip()
+    item_year = str(item.get('year') or '').strip()
+    search_title = (title or '').strip()
+    search_year = str(year or '').strip()
+    return item_title == search_title and item_year == search_year
+
+
 def _get_collection_item(title: str, year: str, instance_id: int = None) -> Optional[Dict[str, Any]]:
     """Get collection item by title and year. Checks per-instance storage first, then global."""
     try:
@@ -177,7 +186,7 @@ def _get_collection_item(title: str, year: str, instance_id: int = None) -> Opti
         
         items = config['items']
         for item in items:
-            if item.get('title') == title and item.get('year') == year:
+            if _match_collection_item(item, title, year):
                 return item
         
         return None
@@ -205,7 +214,7 @@ def _update_collection_status(title: str, year: str, status: str, file_path: Opt
         updated = False
         
         for item in items:
-            if item.get('title') == title and item.get('year') == year:
+            if _match_collection_item(item, title, year):
                 item['status'] = status
                 if file_path:
                     item['file_path'] = file_path

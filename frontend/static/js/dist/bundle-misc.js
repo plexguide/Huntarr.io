@@ -274,7 +274,12 @@
             var backBtn = document.getElementById('requestarr-detail-back');
             if (backBtn) backBtn.addEventListener('click', () => this.closeDetail());
             var refreshBtn = document.getElementById('requestarr-detail-refresh');
-            if (refreshBtn) refreshBtn.addEventListener('click', () => { this.updateDetailInfoBar(true); });
+            if (refreshBtn) refreshBtn.addEventListener('click', async () => {
+                await this.updateDetailInfoBar(true);
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('Refresh scan completed.', 'success');
+                }
+            });
             var editBtn = document.getElementById('requestarr-detail-edit');
             if (editBtn) editBtn.addEventListener('click', () => this.openEditModalForMovieHunt());
             var deleteBtn = document.getElementById('requestarr-detail-delete');

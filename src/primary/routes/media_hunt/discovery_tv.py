@@ -19,7 +19,7 @@ from .helpers import (
 from .indexers import get_tv_indexers_config, resolve_tv_indexer_api_url
 from .profiles import get_profile_by_name_or_default, best_result_matching_profile
 from .clients import get_tv_clients_config
-from .storage import get_tv_root_folders_config
+from .storage import get_tv_root_folders_config, get_detected_episodes_from_all_roots
 from ...utils.logger import logger
 
 
@@ -252,6 +252,56 @@ def _save_collection_config(series_list, instance_id):
     from src.primary.utils.database import get_database
     db = get_database()
     db.save_app_config_for_instance('tv_hunt_collection', instance_id, {'series': series_list})
+
+
+def _merge_detected_episodes_into_collection(instance_id, collection):
+    """
+    Merge filesystem-detected episodes into the collection so imported episodes
+    show as available even before the importer has updated the collection.
+    Mutates collection in place and persists if any episode was updated.
+    """
+    import re
+    if not collection:
+        return
+    detected = get_detected_episodes_from_all_roots(instance_id)
+    if not detected:
+        return
+
+    def _normalize_series_for_match(title):
+        s = (title or '').strip()
+        s = re.sub(r'\s*\(\d{4}\)\s*$', '', s).strip()
+        return s.lower()
+
+    detected_by_series = {}
+    for d in detected:
+        folder_norm = _normalize_series_for_match(d.get('series_title') or '')
+        if not folder_norm:
+            continue
+        key = (int(d.get('season_number') or 0), int(d.get('episode_number') or 0))
+        if folder_norm not in detected_by_series:
+            detected_by_series[folder_norm] = {}
+        detected_by_series[folder_norm][key] = d.get('file_path') or ''
+
+    collection_updated = False
+    for s in collection:
+        if not isinstance(s, dict):
+            continue
+        series_title = (s.get('title') or '').strip()
+        series_norm = _normalize_series_for_match(series_title)
+        detected_eps = detected_by_series.get(series_norm) or {}
+        for sec in (s.get('seasons') or []):
+            for ep in (sec.get('episodes') or []):
+                if (ep.get('status') or '').lower() == 'available' or ep.get('file_path'):
+                    continue
+                season_num = int(sec.get('season_number') or 0)
+                ep_num = int(ep.get('episode_number') or 0)
+                detected_path = detected_eps.get((season_num, ep_num))
+                if detected_path:
+                    ep['status'] = 'available'
+                    ep['file_path'] = detected_path
+                    collection_updated = True
+    if collection_updated:
+        _save_collection_config(collection, instance_id)
 
 
 # --- Add series to collection (used by Requestarr) ---
@@ -841,12 +891,14 @@ def register_tv_discovery_routes(bp):
     
     @bp.route('/api/tv-hunt/collection', methods=['GET'])
     def api_tv_hunt_collection_get():
-        """Get the TV series collection for the current instance."""
+        """Get the TV series collection for the current instance.
+        Merges detected episodes from disk so imported episodes show as available."""
         try:
             instance_id = _get_tv_hunt_instance_id_from_request()
             if not instance_id:
                 return jsonify({'series': []}), 200
             series = _get_collection_config(instance_id)
+            _merge_detected_episodes_into_collection(instance_id, series)
             return jsonify({'series': series}), 200
         except Exception as e:
             logger.exception('TV Hunt collection get error')
