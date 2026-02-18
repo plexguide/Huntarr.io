@@ -76,11 +76,17 @@ class RequestarrAPI:
                     if region:
                         params['watch_region'] = region
                     params['with_watch_providers'] = '|'.join([str(p) for p in providers])
-                
-                response = requests.get(url, params=params, timeout=10)
-                response.raise_for_status()
-                
-                data = response.json()
+
+                from src.primary.utils.tmdb_metadata_cache import get_discover, set_discover
+
+                cache_params = {k: v for k, v in params.items() if k != 'api_key'}
+                data = get_discover(media_type, cache_params)
+                if data is None:
+                    response = requests.get(url, params=params, timeout=10)
+                    response.raise_for_status()
+                    data = response.json()
+                    set_discover(media_type, cache_params, data)
+
                 bl_set = set(blacklisted_movie) if media_type == 'movie' else set(blacklisted_tv)
                 count = 0
                 for item in data.get('results', []):
@@ -211,12 +217,17 @@ class RequestarrAPI:
                 params['vote_count.lte'] = kwargs['vote_count.lte']
             
             logger.info(f"Fetching movies from TMDB - Page: {page}, Sort: {params['sort_by']}")
-            
-            response = requests.get(url, params=params, timeout=10)
-            response.raise_for_status()
-            
-            data = response.json()
-            
+
+            from src.primary.utils.tmdb_metadata_cache import get_discover, set_discover
+
+            cache_params = {k: v for k, v in params.items() if k != 'api_key'}
+            data = get_discover('movie', cache_params)
+            if data is None:
+                response = requests.get(url, params=params, timeout=10)
+                response.raise_for_status()
+                data = response.json()
+                set_discover('movie', cache_params, data)
+
             for item in data.get('results', []):
                 # Skip if item has any blacklisted genre (fallback if TMDB ignores without_genres)
                 item_genre_ids = set(item.get('genre_ids') or [])
@@ -329,12 +340,17 @@ class RequestarrAPI:
             logger.info(f"Fetching TV shows from TMDB - Page: {page}, Sort: {params['sort_by']}")
             logger.debug(f"TMDB Request URL: {url}")
             logger.debug(f"TMDB Request Params: {params}")
-            
-            response = requests.get(url, params=params, timeout=10)
-            response.raise_for_status()
-            
-            data = response.json()
-            
+
+            from src.primary.utils.tmdb_metadata_cache import get_discover, set_discover
+
+            cache_params = {k: v for k, v in params.items() if k != 'api_key'}
+            data = get_discover('tv', cache_params)
+            if data is None:
+                response = requests.get(url, params=params, timeout=10)
+                response.raise_for_status()
+                data = response.json()
+                set_discover('tv', cache_params, data)
+
             for item in data.get('results', []):
                 # Skip if item has any blacklisted genre (fallback if TMDB ignores without_genres)
                 item_genre_ids = set(item.get('genre_ids') or [])
@@ -1915,9 +1931,16 @@ class RequestarrAPI:
             return []
 
     def get_watch_providers(self, media_type: str, region: str = '') -> List[Dict[str, Any]]:
-        """Get watch providers for a media type and region"""
-        api_key = self.get_tmdb_api_key()
+        """Get watch providers for a media type and region. Cached 24h (server-side)."""
+        from src.primary.utils.tmdb_metadata_cache import get_watch_providers as get_cached, set_watch_providers
 
+        try:
+            cached = get_cached(media_type, region)
+            if cached is not None:
+                return cached
+        except Exception:
+            pass
+        api_key = self.get_tmdb_api_key()
         try:
             url = f"{self.tmdb_base_url}/watch/providers/{media_type}"
             params = {'api_key': api_key}
@@ -1930,33 +1953,45 @@ class RequestarrAPI:
 
             providers = data.get('results', [])
             providers.sort(key=lambda p: p.get('display_priority', 9999))
+            try:
+                set_watch_providers(media_type, region, providers)
+            except Exception:
+                pass
             return providers
         except Exception as e:
             logger.error(f"Error getting watch providers: {e}")
             return []
     
     def get_genres(self, media_type: str) -> List[Dict[str, Any]]:
-        """Get genre list from TMDB"""
+        """Get genre list from TMDB. Cached 24h."""
+        from src.primary.utils.tmdb_metadata_cache import get_genres as get_cached_genres, set_genres
+
+        try:
+            cached = get_cached_genres(media_type)
+            if cached is not None:
+                return cached
+        except Exception:
+            pass
         api_key = self.get_tmdb_api_key()
-        
         try:
             url = f"{self.tmdb_base_url}/genre/{media_type}/list"
             params = {'api_key': api_key}
             
             response = requests.get(url, params=params, timeout=10)
             response.raise_for_status()
-            
             data = response.json()
-            return data.get('genres', [])
-            
+            genres = data.get('genres', [])
+            try:
+                set_genres(media_type, genres)
+            except Exception:
+                pass
+            return genres
         except Exception as e:
             logger.error(f"Error getting genres: {e}")
             return []
     
     def search_media_with_availability(self, query: str, app_type: str, instance_name: str) -> List[Dict[str, Any]]:
-        """Search for media using TMDB API and check availability in specified app instance"""
-        api_key = self.get_tmdb_api_key()
-        
+        """Search for media using TMDB API and check availability in specified app instance. Raw TMDB cached 1h."""
         # Determine search type based on app (movie_hunt searches movies; tv_hunt searches TV)
         if app_type in ("radarr", "movie_hunt"):
             media_type = "movie"
@@ -1964,20 +1999,19 @@ class RequestarrAPI:
             media_type = "tv"
         else:
             media_type = "multi"
-        
+
+        from src.primary.utils.tmdb_metadata_cache import get_search, set_search
+
         try:
-            # Use search to get movies or TV shows
-            url = f"{self.tmdb_base_url}/search/{media_type}"
-            params = {
-                'api_key': api_key,
-                'query': query,
-                'include_adult': False
-            }
-            
-            response = requests.get(url, params=params, timeout=10)
-            response.raise_for_status()
-            
-            data = response.json()
+            data = get_search(media_type, query)
+            if data is None:
+                api_key = self.get_tmdb_api_key()
+                url = f"{self.tmdb_base_url}/search/{media_type}"
+                params = {'api_key': api_key, 'query': query, 'include_adult': False}
+                response = requests.get(url, params=params, timeout=10)
+                response.raise_for_status()
+                data = response.json()
+                set_search(media_type, query, data)
             results = []
             
             # Get instance configuration for availability checking
@@ -2063,25 +2097,21 @@ class RequestarrAPI:
             return []
 
     def search_media_with_availability_stream(self, query: str, app_type: str, instance_name: str):
-        """Stream search results as they become available"""
-        api_key = self.get_tmdb_api_key()
-        
-        # Determine search type based on app
+        """Stream search results as they become available. Raw TMDB cached 1h (server-side)."""
+        from src.primary.utils.tmdb_metadata_cache import get_search, set_search
+
         media_type = "movie" if app_type in ("radarr", "movie_hunt") else "tv" if app_type in ("sonarr", "tv_hunt") else "multi"
-        
+
         try:
-            # Use search to get movies or TV shows
-            url = f"{self.tmdb_base_url}/search/{media_type}"
-            params = {
-                'api_key': api_key,
-                'query': query,
-                'include_adult': False
-            }
-            
-            response = requests.get(url, params=params, timeout=10)
-            response.raise_for_status()
-            
-            data = response.json()
+            data = get_search(media_type, query)
+            if data is None:
+                api_key = self.get_tmdb_api_key()
+                url = f"{self.tmdb_base_url}/search/{media_type}"
+                params = {'api_key': api_key, 'query': query, 'include_adult': False}
+                response = requests.get(url, params=params, timeout=10)
+                response.raise_for_status()
+                data = response.json()
+                set_search(media_type, query, data)
             
             # Get instance configuration for availability checking (skip for hunt apps)
             app_config = self.db.get_app_config(app_type) if app_type not in ('movie_hunt', 'tv_hunt') else None

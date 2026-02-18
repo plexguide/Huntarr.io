@@ -230,31 +230,50 @@ def _parse_series_name(raw_name):
 # ---------------------------------------------------------------------------
 
 def _search_tmdb_tv(query, year=None):
-    """Search TMDB for a TV series. first_air_date_year for year filter."""
+    """Search TMDB for a TV series. first_air_date_year for year filter. Cached 1h (server-side)."""
+    if not query or not query.strip():
+        return []
     try:
-        params = {
-            'api_key': TMDB_API_KEY,
-            'language': 'en-US',
-            'query': query,
-        }
-        if year:
-            params['first_air_date_year'] = int(year)
-        from src.primary.settings_manager import get_ssl_verify_setting
-        verify_ssl = get_ssl_verify_setting()
-        resp = requests.get(
-            f'{TMDB_BASE}/search/tv',
-            params=params, timeout=10, verify=verify_ssl
-        )
-        if resp.status_code != 200:
-            return []
-        return resp.json().get('results', [])[:10]
+        from src.primary.utils.tmdb_metadata_cache import get_search, set_search
+
+        cache_key = f"{query}:y{year or ''}"
+        data = get_search('tv', cache_key)
+        if data is None:
+            params = {
+                'api_key': TMDB_API_KEY,
+                'language': 'en-US',
+                'query': query,
+            }
+            if year:
+                params['first_air_date_year'] = int(year)
+            from src.primary.settings_manager import get_ssl_verify_setting
+            verify_ssl = get_ssl_verify_setting()
+            resp = requests.get(
+                f'{TMDB_BASE}/search/tv',
+                params=params, timeout=10, verify=verify_ssl
+            )
+            if resp.status_code != 200:
+                return []
+            data = resp.json()
+            set_search('tv', cache_key, data)
+        return data.get('results', [])[:10]
     except Exception as e:
         logger.debug("TMDB TV search error for '%s': %s", query, e)
         return []
 
 
 def _lookup_tmdb_tv_by_id(tmdb_id):
-    """Look up a TV series by TMDB ID."""
+    """Look up a TV series by TMDB ID. Uses server-side cache when available."""
+    if not tmdb_id:
+        return None
+    try:
+        from src.primary.utils.tmdb_metadata_cache import get
+
+        cached = get('tv', tmdb_id)
+        if cached is not None:
+            return cached
+    except Exception:
+        pass
     try:
         from src.primary.settings_manager import get_ssl_verify_setting
         verify_ssl = get_ssl_verify_setting()
@@ -271,8 +290,16 @@ def _lookup_tmdb_tv_by_id(tmdb_id):
 
 
 def _lookup_tmdb_by_tvdb(tvdb_id):
-    """Look up TMDB via TVDB ID using find endpoint."""
+    """Look up TMDB via TVDB ID using find endpoint. Cached 24h (server-side)."""
+    if not tvdb_id:
+        return None
     try:
+        from src.primary.utils.tmdb_metadata_cache import get_find, set_find
+
+        cached = get_find('tvdb', str(tvdb_id))
+        if cached is not None:
+            return cached
+
         from src.primary.settings_manager import get_ssl_verify_setting
         verify_ssl = get_ssl_verify_setting()
         resp = requests.get(
@@ -283,7 +310,9 @@ def _lookup_tmdb_by_tvdb(tvdb_id):
         if resp.status_code == 200:
             results = resp.json().get('tv_results', [])
             if results:
-                return results[0]
+                s = results[0]
+                set_find('tvdb', str(tvdb_id), s)
+                return s
     except Exception as e:
         logger.debug("TMDB find by TVDB error for %s: %s", tvdb_id, e)
     return None

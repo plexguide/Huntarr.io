@@ -1,9 +1,17 @@
 """
 Media Hunt metadata refresh — periodic update of collection metadata from TMDB.
 
-Refreshes episode titles, air dates, series status (Ended vs Continuing) for TV,
-and release dates (in_cinemas, digital_release, physical_release) for movies.
+Runs every 18 hours (see background.py). Refreshes episode titles, air dates,
+series status (Ended vs Continuing) for TV, and release dates, title, year for movies.
 Does not request or download media; only updates information.
+
+INTEGRATION WITH TMDB METADATA CACHE (tmdb_metadata_cache.py):
+- When we update a series or movie, we call invalidate_tv_series() or invalidate_movie()
+  so the detail page cache is cleared. Next time a user opens that detail, fresh
+  data is fetched. This keeps the cache and collection in sync.
+- The cache reduces TMDB API load for detail pages; the refresh keeps collection
+  data current. They work together: refresh updates collection, invalidation
+  ensures cached detail views reflect those updates.
 
 Skips items to reduce TMDB API load:
 - TV: Ended series (metadata finalized), recently refreshed (< 7 days)
@@ -211,6 +219,12 @@ def refresh_tv_hunt_metadata(instance_id: int, stop_check=None) -> int:
                 if series_updated:
                     refreshed += 1
                     tv_logger.debug("Metadata refresh: updated series tmdb_id=%s", tmdb_id)
+                # Invalidate detail cache so next open shows fresh data (ties to tmdb_metadata_cache)
+                try:
+                    from src.primary.utils.tmdb_metadata_cache import invalidate_tv_series
+                    invalidate_tv_series(tmdb_id)
+                except Exception:
+                    pass
 
                 time.sleep(0.25)
             except Exception as e:
@@ -290,6 +304,12 @@ def refresh_movie_hunt_metadata(instance_id: int, stop_check=None) -> int:
                 if item_changed:
                     refreshed += 1
                     movie_logger.debug("Metadata refresh: updated movie tmdb_id=%s", tmdb_id)
+                # Invalidate detail cache so next open shows fresh data (ties to tmdb_metadata_cache)
+                try:
+                    from src.primary.utils.tmdb_metadata_cache import invalidate_movie
+                    invalidate_movie(tmdb_id)
+                except Exception:
+                    pass
 
                 time.sleep(0.25)
             except Exception as e:

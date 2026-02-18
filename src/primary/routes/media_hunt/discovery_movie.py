@@ -323,9 +323,18 @@ def _fetch_tmdb_release_dates(tmdb_id):
     Returns dict with 'in_cinemas', 'digital_release', 'physical_release' date strings (YYYY-MM-DD or '').
     Uses US region by default; falls back to earliest global dates.
     TMDB release_date types: 1=Premiere, 2=Theatrical(limited), 3=Theatrical, 4=Digital, 5=Physical, 6=TV
+    Cached for 24 hours to reduce API load.
     """
     if not tmdb_id:
         return {'in_cinemas': '', 'digital_release': '', 'physical_release': ''}
+    try:
+        from src.primary.utils.tmdb_metadata_cache import get_release_dates, set_release_dates
+
+        cached = get_release_dates(tmdb_id)
+        if cached is not None:
+            return cached
+    except Exception:
+        pass
     api_key = _get_tmdb_api_key_movie_hunt()
     try:
         resp = requests.get(
@@ -373,11 +382,16 @@ def _fetch_tmdb_release_dates(tmdb_id):
         digital_release = us_digital or (min(all_digital) if all_digital else '')
         physical_release = us_physical or (min(all_physical) if all_physical else '')
 
-        return {
+        result = {
             'in_cinemas': in_cinemas,
             'digital_release': digital_release,
             'physical_release': physical_release,
         }
+        try:
+            set_release_dates(tmdb_id, result)
+        except Exception:
+            pass
+        return result
     except Exception as e:
         movie_hunt_logger.debug("TMDB release_dates fetch error for %s: %s", tmdb_id, e)
         return {'in_cinemas': '', 'digital_release': '', 'physical_release': ''}
@@ -1304,36 +1318,43 @@ def register_movie_discovery_routes(bp):
 
     @bp.route('/api/movie-hunt/discover/movies', methods=['GET'])
     def api_movie_hunt_discover_movies():
-        """Movie Hunt–only discover: TMDB discover/movie with in_library from Movie Hunt collection."""
+        """Movie Hunt–only discover: TMDB discover/movie with in_library from Movie Hunt collection. Cached 2h."""
         try:
             instance_id = _get_movie_hunt_instance_id_from_request()
             page = max(1, request.args.get('page', 1, type=int))
             sort_by = (request.args.get('sort_by') or 'popularity.desc').strip()
             hide_available = request.args.get('hide_available', 'false').lower() == 'true'
             api_key = _get_tmdb_api_key_movie_hunt()
-            url = 'https://api.themoviedb.org/3/discover/movie'
-            params = {'api_key': api_key, 'page': page, 'sort_by': sort_by}
+            cache_params = {'page': page, 'sort_by': sort_by}
             if request.args.get('with_genres'):
-                params['with_genres'] = request.args.get('with_genres')
+                cache_params['with_genres'] = request.args.get('with_genres')
             if request.args.get('release_date.gte'):
-                params['release_date.gte'] = request.args.get('release_date.gte')
+                cache_params['release_date.gte'] = request.args.get('release_date.gte')
             if request.args.get('release_date.lte'):
-                params['release_date.lte'] = request.args.get('release_date.lte')
+                cache_params['release_date.lte'] = request.args.get('release_date.lte')
             if request.args.get('with_runtime.gte'):
-                params['with_runtime.gte'] = request.args.get('with_runtime.gte')
+                cache_params['with_runtime.gte'] = request.args.get('with_runtime.gte')
             if request.args.get('with_runtime.lte'):
-                params['with_runtime.lte'] = request.args.get('with_runtime.lte')
+                cache_params['with_runtime.lte'] = request.args.get('with_runtime.lte')
             if request.args.get('vote_average.gte'):
-                params['vote_average.gte'] = request.args.get('vote_average.gte')
+                cache_params['vote_average.gte'] = request.args.get('vote_average.gte')
             if request.args.get('vote_average.lte'):
-                params['vote_average.lte'] = request.args.get('vote_average.lte')
+                cache_params['vote_average.lte'] = request.args.get('vote_average.lte')
             if request.args.get('vote_count.gte'):
-                params['vote_count.gte'] = request.args.get('vote_count.gte')
+                cache_params['vote_count.gte'] = request.args.get('vote_count.gte')
             if request.args.get('vote_count.lte'):
-                params['vote_count.lte'] = request.args.get('vote_count.lte')
-            r = requests.get(url, params=params, timeout=10)
-            r.raise_for_status()
-            rdata = r.json()
+                cache_params['vote_count.lte'] = request.args.get('vote_count.lte')
+
+            from src.primary.utils.tmdb_metadata_cache import get_discover, set_discover
+
+            rdata = get_discover('movie', cache_params)
+            if rdata is None:
+                url = 'https://api.themoviedb.org/3/discover/movie'
+                params = {**cache_params, 'api_key': api_key}
+                r = requests.get(url, params=params, timeout=10)
+                r.raise_for_status()
+                rdata = r.json()
+                set_discover('movie', cache_params, rdata)
             available_tmdb_ids, available_title_year = _movie_hunt_collection_lookups(instance_id)
             results = []
             for item in rdata.get('results', []):
@@ -1805,31 +1826,37 @@ def register_movie_discovery_routes(bp):
     @bp.route('/api/movie-hunt/calendar/upcoming', methods=['GET'])
     def api_movie_hunt_calendar_upcoming():
         """Return upcoming TMDB releases (not limited to collection) for discovery.
-        Uses TMDB discover/movie with upcoming release dates.
+        Uses TMDB discover/movie with upcoming release dates. Cached 2h.
         """
         try:
-            api_key = _get_tmdb_api_key_movie_hunt()
             today = datetime.utcnow()
             start_date = today.strftime('%Y-%m-%d')
             end_date = (today + timedelta(days=90)).strftime('%Y-%m-%d')
             page = request.args.get('page', 1, type=int)
             region = request.args.get('region', 'US')
 
-            resp = requests.get(
-                'https://api.themoviedb.org/3/discover/movie',
-                params={
-                    'api_key': api_key,
-                    'primary_release_date.gte': start_date,
-                    'primary_release_date.lte': end_date,
-                    'sort_by': 'primary_release_date.asc',
-                    'page': page,
-                    'region': region,
-                    'with_release_type': '2|3|4|5',  # Theatrical, Digital, Physical
-                },
-                timeout=10
-            )
-            resp.raise_for_status()
-            data = resp.json()
+            cache_params = {
+                'page': page,
+                'sort_by': 'primary_release_date.asc',
+                'primary_release_date.gte': start_date,
+                'primary_release_date.lte': end_date,
+                'region': region,
+                'with_release_type': '2|3|4|5',
+            }
+
+            from src.primary.utils.tmdb_metadata_cache import get_discover, set_discover
+
+            data = get_discover('movie', cache_params)
+            if data is None:
+                api_key = _get_tmdb_api_key_movie_hunt()
+                resp = requests.get(
+                    'https://api.themoviedb.org/3/discover/movie',
+                    params={'api_key': api_key, **cache_params},
+                    timeout=10
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                set_discover('movie', cache_params, data)
 
             movies = []
             for item in data.get('results', []):

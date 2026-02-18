@@ -1737,6 +1737,11 @@ def _start_media_probe_thread():
 # ---------------------------------------------------------------------------
 # Media Hunt metadata refresh — update collection metadata from TMDB (18-hour interval)
 # ---------------------------------------------------------------------------
+# TIES TO tmdb_metadata_cache: When metadata_refresh updates a movie/TV item, it calls
+# invalidate_movie() / invalidate_tv_series() so the detail page cache is cleared.
+# This keeps the cache and collection in sync. See metadata_refresh.py and
+# src/primary/utils/tmdb_metadata_cache.py for integration notes.
+# ---------------------------------------------------------------------------
 _metadata_refresh_thread = None
 
 METADATA_REFRESH_INTERVAL_SECONDS = 18 * 3600  # 18 hours

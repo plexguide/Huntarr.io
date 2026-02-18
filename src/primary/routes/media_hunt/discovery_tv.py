@@ -815,31 +815,41 @@ def _send_to_nzbget(client, nzb_url, title, category):
 def register_tv_discovery_routes(bp):
     @bp.route('/api/tv-hunt/discover/tv', methods=['GET'])
     def api_tv_hunt_discover():
-        """Discover TV shows from TMDB."""
+        """Discover TV shows from TMDB. Cached 2h."""
         try:
             page = request.args.get('page', 1, type=int)
             sort_by = request.args.get('sort_by', 'popularity.desc')
             genre = request.args.get('genre', '')
             year = request.args.get('year', '')
-            
-            params = {
-                'api_key': TMDB_API_KEY,
-                'language': 'en-US',
-                'sort_by': sort_by,
-                'page': page,
-                'include_adult': 'false',
-            }
+
+            cache_params = {'page': page, 'sort_by': sort_by}
             if genre:
-                params['with_genres'] = genre
+                cache_params['with_genres'] = genre
             if year:
-                params['first_air_date_year'] = year
-            
-            from src.primary.settings_manager import get_ssl_verify_setting
-            verify_ssl = get_ssl_verify_setting()
-            r = requests.get(f'{TMDB_BASE}/discover/tv', params=params, timeout=15, verify=verify_ssl)
-            if r.status_code != 200:
-                return jsonify({'results': [], 'total_pages': 0}), 200
-            data = r.json()
+                cache_params['first_air_date_year'] = year
+
+            from src.primary.utils.tmdb_metadata_cache import get_discover, set_discover
+
+            data = get_discover('tv', cache_params)
+            if data is None:
+                params = {
+                    'api_key': TMDB_API_KEY,
+                    'language': 'en-US',
+                    'sort_by': sort_by,
+                    'page': page,
+                    'include_adult': 'false',
+                }
+                if genre:
+                    params['with_genres'] = genre
+                if year:
+                    params['first_air_date_year'] = year
+                from src.primary.settings_manager import get_ssl_verify_setting
+                verify_ssl = get_ssl_verify_setting()
+                r = requests.get(f'{TMDB_BASE}/discover/tv', params=params, timeout=15, verify=verify_ssl)
+                if r.status_code != 200:
+                    return jsonify({'results': [], 'total_pages': 0}), 200
+                data = r.json()
+                set_discover('tv', cache_params, data)
             return jsonify({
                 'results': data.get('results', []),
                 'total_pages': data.get('total_pages', 0),
@@ -853,24 +863,31 @@ def register_tv_discovery_routes(bp):
     
     @bp.route('/api/tv-hunt/search', methods=['GET'])
     def api_tv_hunt_search():
-        """Search TV shows on TMDB."""
+        """Search TV shows on TMDB. Cached 1h."""
         try:
             q = request.args.get('q', '').strip()
             if not q:
                 return jsonify({'results': []}), 200
             page = request.args.get('page', 1, type=int)
-            params = {
-                'api_key': TMDB_API_KEY,
-                'language': 'en-US',
-                'query': q,
-                'page': page,
-            }
-            from src.primary.settings_manager import get_ssl_verify_setting
-            verify_ssl = get_ssl_verify_setting()
-            r = requests.get(f'{TMDB_BASE}/search/tv', params=params, timeout=15, verify=verify_ssl)
-            if r.status_code != 200:
-                return jsonify({'results': []}), 200
-            data = r.json()
+
+            from src.primary.utils.tmdb_metadata_cache import get_search, set_search
+
+            cache_key = f"{q}:p{page}"
+            data = get_search('tv', cache_key)
+            if data is None:
+                params = {
+                    'api_key': TMDB_API_KEY,
+                    'language': 'en-US',
+                    'query': q,
+                    'page': page,
+                }
+                from src.primary.settings_manager import get_ssl_verify_setting
+                verify_ssl = get_ssl_verify_setting()
+                r = requests.get(f'{TMDB_BASE}/search/tv', params=params, timeout=15, verify=verify_ssl)
+                if r.status_code != 200:
+                    return jsonify({'results': []}), 200
+                data = r.json()
+                set_search('tv', cache_key, data)
             return jsonify({
                 'results': data.get('results', []),
                 'total_pages': data.get('total_pages', 0),

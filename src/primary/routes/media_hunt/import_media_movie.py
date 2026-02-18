@@ -325,24 +325,30 @@ def _parse_movie_name(raw_name):
 # ---------------------------------------------------------------------------
 
 def _search_tmdb(query, year=None):
-    """Search TMDB for a movie by title (and optional year). Returns list of results."""
-    api_key = _get_tmdb_api_key_movie_hunt()
-    if not api_key:
+    """Search TMDB for a movie by title (and optional year). Returns list of results. Cached 1h (server-side)."""
+    if not query or not query.strip():
         return []
-
     try:
-        params = {'api_key': api_key, 'query': query, 'include_adult': 'false'}
-        if year:
-            params['year'] = year
+        from src.primary.utils.tmdb_metadata_cache import get_search, set_search
 
-        resp = requests.get(
-            'https://api.themoviedb.org/3/search/movie',
-            params=params, timeout=10,
-        )
-        if resp.status_code != 200:
-            return []
-
-        results = resp.json().get('results', [])
+        cache_key = f"{query}:y{year or ''}"
+        data = get_search('movie', cache_key)
+        if data is None:
+            api_key = _get_tmdb_api_key_movie_hunt()
+            if not api_key:
+                return []
+            params = {'api_key': api_key, 'query': query, 'include_adult': 'false'}
+            if year:
+                params['year'] = year
+            resp = requests.get(
+                'https://api.themoviedb.org/3/search/movie',
+                params=params, timeout=10,
+            )
+            if resp.status_code != 200:
+                return []
+            data = resp.json()
+            set_search('movie', cache_key, data)
+        results = data.get('results', [])
         return results[:10]  # Limit to top 10
     except Exception as e:
         logger.debug("TMDB search error for '%s': %s", query, e)
@@ -350,11 +356,20 @@ def _search_tmdb(query, year=None):
 
 
 def _lookup_tmdb_by_id(tmdb_id):
-    """Look up a movie by TMDB ID. Returns movie data or None."""
-    api_key = _get_tmdb_api_key_movie_hunt()
-    if not api_key or not tmdb_id:
+    """Look up a movie by TMDB ID. Uses server-side cache when available."""
+    if not tmdb_id:
         return None
+    try:
+        from src.primary.utils.tmdb_metadata_cache import get
 
+        cached = get('movie', tmdb_id)
+        if cached is not None:
+            return cached
+    except Exception:
+        pass
+    api_key = _get_tmdb_api_key_movie_hunt()
+    if not api_key:
+        return None
     try:
         resp = requests.get(
             f'https://api.themoviedb.org/3/movie/{tmdb_id}',
@@ -368,12 +383,19 @@ def _lookup_tmdb_by_id(tmdb_id):
 
 
 def _lookup_tmdb_by_imdb(imdb_id):
-    """Look up a movie by IMDB ID via TMDB find. Returns TMDB movie data or None."""
-    api_key = _get_tmdb_api_key_movie_hunt()
-    if not api_key or not imdb_id:
+    """Look up a movie by IMDB ID via TMDB find. Cached 24h (server-side)."""
+    if not imdb_id:
         return None
-
     try:
+        from src.primary.utils.tmdb_metadata_cache import get_find, set_find
+
+        cached = get_find('imdb', imdb_id)
+        if cached is not None:
+            return cached
+
+        api_key = _get_tmdb_api_key_movie_hunt()
+        if not api_key:
+            return None
         resp = requests.get(
             f'https://api.themoviedb.org/3/find/{imdb_id}',
             params={'api_key': api_key, 'external_source': 'imdb_id'}, timeout=10,
@@ -381,7 +403,9 @@ def _lookup_tmdb_by_imdb(imdb_id):
         if resp.status_code == 200:
             results = resp.json().get('movie_results', [])
             if results:
-                return results[0]
+                m = results[0]
+                set_find('imdb', imdb_id, m)
+                return m
     except Exception as e:
         logger.debug("TMDB find by IMDB error for %s: %s", imdb_id, e)
     return None

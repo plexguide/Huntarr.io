@@ -39,10 +39,22 @@ def fetch_list(list_type, settings):
 # ---------------------------------------------------------------------------
 
 def _resolve_imdb_to_tmdb(imdb_id):
-    """Resolve an IMDb ID to TMDb ID and metadata."""
+    """Resolve an IMDb ID to TMDb ID and metadata. Cached 24h (server-side)."""
     if not imdb_id:
         return None
     try:
+        from src.primary.utils.tmdb_metadata_cache import get_find, set_find
+
+        cached = get_find('imdb', imdb_id)
+        if cached is not None:
+            return {
+                'title': cached.get('title', ''),
+                'year': (cached.get('release_date') or '')[:4],
+                'tmdb_id': cached.get('id'),
+                'poster_path': cached.get('poster_path') or '',
+                'imdb_id': imdb_id,
+            }
+
         resp = requests.get(
             f"{TMDB_BASE}/find/{imdb_id}",
             params={'api_key': TMDB_API_KEY, 'external_source': 'imdb_id'},
@@ -54,6 +66,7 @@ def _resolve_imdb_to_tmdb(imdb_id):
         results = data.get('movie_results', [])
         if results:
             m = results[0]
+            set_find('imdb', imdb_id, m)
             return {
                 'title': m.get('title', ''),
                 'year': (m.get('release_date') or '')[:4],
@@ -67,17 +80,24 @@ def _resolve_imdb_to_tmdb(imdb_id):
 
 
 def _search_tmdb_by_title(title, year=None):
-    """Search TMDb by title and optional year."""
+    """Search TMDb by title and optional year. Cached 1h (server-side)."""
     if not title:
         return None
     try:
-        params = {'api_key': TMDB_API_KEY, 'query': title}
-        if year:
-            params['year'] = year
-        resp = requests.get(f"{TMDB_BASE}/search/movie", params=params, timeout=REQUEST_TIMEOUT)
-        if resp.status_code != 200:
-            return None
-        results = resp.json().get('results', [])
+        from src.primary.utils.tmdb_metadata_cache import get_search, set_search
+
+        cache_key = f"{title}:y{year or ''}"
+        data = get_search('movie', cache_key)
+        if data is None:
+            params = {'api_key': TMDB_API_KEY, 'query': title}
+            if year:
+                params['year'] = year
+            resp = requests.get(f"{TMDB_BASE}/search/movie", params=params, timeout=REQUEST_TIMEOUT)
+            if resp.status_code != 200:
+                return None
+            data = resp.json()
+            set_search('movie', cache_key, data)
+        results = data.get('results', [])
         if results:
             m = results[0]
             return {
@@ -92,8 +112,22 @@ def _search_tmdb_by_title(title, year=None):
 
 
 def _tmdb_movie_details(tmdb_id):
-    """Get TMDb movie details by ID."""
+    """Get TMDb movie details by ID. Uses server-side cache when available."""
+    if not tmdb_id:
+        return None
     try:
+        from src.primary.utils.tmdb_metadata_cache import get
+
+        cached = get('movie', tmdb_id)
+        if cached is not None:
+            return {
+                'title': cached.get('title', ''),
+                'year': (cached.get('release_date') or '')[:4],
+                'tmdb_id': cached.get('id'),
+                'poster_path': cached.get('poster_path') or '',
+                'imdb_id': cached.get('imdb_id') or '',
+            }
+
         resp = requests.get(
             f"{TMDB_BASE}/movie/{tmdb_id}",
             params={'api_key': TMDB_API_KEY},
@@ -259,15 +293,22 @@ def _fetch_tmdb(settings):
     movies = []
 
     if list_type in ('popular', 'top_rated', 'now_playing', 'upcoming'):
+        from src.primary.utils.tmdb_metadata_cache import get_list, set_list
+
         for page in range(1, 6):
-            resp = requests.get(
-                f"{TMDB_BASE}/movie/{list_type}",
-                params={'api_key': TMDB_API_KEY, 'page': page},
-                timeout=REQUEST_TIMEOUT
-            )
-            if resp.status_code != 200:
-                break
-            for m in resp.json().get('results', []):
+            cache_key = f"movie:{list_type}:{page}"
+            data = get_list(cache_key)
+            if data is None:
+                resp = requests.get(
+                    f"{TMDB_BASE}/movie/{list_type}",
+                    params={'api_key': TMDB_API_KEY, 'page': page},
+                    timeout=REQUEST_TIMEOUT
+                )
+                if resp.status_code != 200:
+                    break
+                data = resp.json()
+                set_list(cache_key, data)
+            for m in data.get('results', []):
                 movies.append({
                     'title': m.get('title', ''),
                     'year': (m.get('release_date') or '')[:4],
@@ -276,21 +317,27 @@ def _fetch_tmdb(settings):
                 })
 
     elif list_type == 'list':
+        from src.primary.utils.tmdb_metadata_cache import get_list, set_list
+
         list_id = (settings.get('list_id') or '').strip()
         if not list_id:
             raise ValueError("TMDb List ID is required")
         page = 1
         while True:
-            resp = requests.get(
-                f"{TMDB_BASE}/list/{list_id}",
-                params={'api_key': TMDB_API_KEY, 'page': page},
-                timeout=REQUEST_TIMEOUT
-            )
-            if resp.status_code != 200:
-                if page == 1:
-                    raise ValueError(f"TMDb list {list_id} not found or not accessible")
-                break
-            data = resp.json()
+            cache_key = f"movie:list:{list_id}:{page}"
+            data = get_list(cache_key)
+            if data is None:
+                resp = requests.get(
+                    f"{TMDB_BASE}/list/{list_id}",
+                    params={'api_key': TMDB_API_KEY, 'page': page},
+                    timeout=REQUEST_TIMEOUT
+                )
+                if resp.status_code != 200:
+                    if page == 1:
+                        raise ValueError(f"TMDb list {list_id} not found or not accessible")
+                    break
+                data = resp.json()
+                set_list(cache_key, data)
             items = data.get('items', [])
             if not items:
                 break
@@ -308,18 +355,25 @@ def _fetch_tmdb(settings):
                 break
 
     elif list_type == 'keyword':
+        from src.primary.utils.tmdb_metadata_cache import get_discover, set_discover
+
         keyword_id = (settings.get('keyword_id') or '').strip()
         if not keyword_id:
             raise ValueError("TMDb Keyword ID is required")
         for page in range(1, 6):
-            resp = requests.get(
-                f"{TMDB_BASE}/discover/movie",
-                params={'api_key': TMDB_API_KEY, 'with_keywords': keyword_id, 'page': page},
-                timeout=REQUEST_TIMEOUT
-            )
-            if resp.status_code != 200:
-                break
-            for m in resp.json().get('results', []):
+            cache_params = {'page': page, 'with_keywords': keyword_id}
+            data = get_discover('movie', cache_params)
+            if data is None:
+                resp = requests.get(
+                    f"{TMDB_BASE}/discover/movie",
+                    params={'api_key': TMDB_API_KEY, 'with_keywords': keyword_id, 'page': page},
+                    timeout=REQUEST_TIMEOUT
+                )
+                if resp.status_code != 200:
+                    break
+                data = resp.json()
+                set_discover('movie', cache_params, data)
+            for m in data.get('results', []):
                 movies.append({
                     'title': m.get('title', ''),
                     'year': (m.get('release_date') or '')[:4],
@@ -328,18 +382,25 @@ def _fetch_tmdb(settings):
                 })
 
     elif list_type == 'company':
+        from src.primary.utils.tmdb_metadata_cache import get_discover, set_discover
+
         company_id = (settings.get('company_id') or '').strip()
         if not company_id:
             raise ValueError("TMDb Company ID is required")
         for page in range(1, 6):
-            resp = requests.get(
-                f"{TMDB_BASE}/discover/movie",
-                params={'api_key': TMDB_API_KEY, 'with_companies': company_id, 'page': page},
-                timeout=REQUEST_TIMEOUT
-            )
-            if resp.status_code != 200:
-                break
-            for m in resp.json().get('results', []):
+            cache_params = {'page': page, 'with_companies': company_id}
+            data = get_discover('movie', cache_params)
+            if data is None:
+                resp = requests.get(
+                    f"{TMDB_BASE}/discover/movie",
+                    params={'api_key': TMDB_API_KEY, 'with_companies': company_id, 'page': page},
+                    timeout=REQUEST_TIMEOUT
+                )
+                if resp.status_code != 200:
+                    break
+                data = resp.json()
+                set_discover('movie', cache_params, data)
+            for m in data.get('results', []):
                 movies.append({
                     'title': m.get('title', ''),
                     'year': (m.get('release_date') or '')[:4],
@@ -348,18 +409,25 @@ def _fetch_tmdb(settings):
                 })
 
     elif list_type == 'person':
+        from src.primary.utils.tmdb_metadata_cache import get_discover, set_discover
+
         person_id = (settings.get('person_id') or '').strip()
         if not person_id:
             raise ValueError("TMDb Person ID is required")
         for page in range(1, 6):
-            resp = requests.get(
-                f"{TMDB_BASE}/discover/movie",
-                params={'api_key': TMDB_API_KEY, 'with_people': person_id, 'page': page},
-                timeout=REQUEST_TIMEOUT
-            )
-            if resp.status_code != 200:
-                break
-            for m in resp.json().get('results', []):
+            cache_params = {'page': page, 'with_people': person_id}
+            data = get_discover('movie', cache_params)
+            if data is None:
+                resp = requests.get(
+                    f"{TMDB_BASE}/discover/movie",
+                    params={'api_key': TMDB_API_KEY, 'with_people': person_id, 'page': page},
+                    timeout=REQUEST_TIMEOUT
+                )
+                if resp.status_code != 200:
+                    break
+                data = resp.json()
+                set_discover('movie', cache_params, data)
+            for m in data.get('results', []):
                 movies.append({
                     'title': m.get('title', ''),
                     'year': (m.get('release_date') or '')[:4],

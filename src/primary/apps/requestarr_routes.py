@@ -1070,6 +1070,9 @@ def get_smarthunt():
             requestarr_api.check_library_status_batch(
                 tv_items, app_type=tv_app_type or 'sonarr', instance_name=tv_instance_name
             )
+        # Filter out in-library and partial items (Hide Library Items) — handles stale cache
+        if settings.get('hide_library_items', True):
+            results = [r for r in results if not r.get('in_library') and not r.get('partial')]
         # Strip internal scoring field only
         for r in results:
             r.pop('_score', None)

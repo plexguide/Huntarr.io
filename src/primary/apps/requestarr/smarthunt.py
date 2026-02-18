@@ -2,6 +2,13 @@
 Smart Hunt Discovery Engine — intelligent recommendation system combining
 multiple TMDB discovery strategies with percentage-based mixing, deduplication,
 library filtering, and caching.
+
+CACHE ALIGNMENT WITH 18-HOUR METADATA REFRESH (background.py, metadata_refresh.py):
+- Smart Hunt result cache (cache_ttl_minutes) is independent but can be set to 18h
+  to align with the metadata refresh cycle. Both use the same TMDB metadata cache
+  (tmdb_metadata_cache.py) for discover/search; metadata refresh invalidates
+  detail cache when it updates items. Smart Hunt filters by library at generation
+  time and on each request (re-check), so results stay accurate regardless of TTL.
 """
 
 import logging
@@ -44,7 +51,8 @@ SMARTHUNT_DEFAULTS = {
 }
 
 # Cache TTL mapping (minutes -> seconds); 0 = disabled
-CACHE_TTL_OPTIONS = {0: 0, 30: 1800, 60: 3600, 360: 21600, 720: 43200, 1440: 86400}
+# 1080 = 18h — aligns with metadata refresh (background.py) for consistency
+CACHE_TTL_OPTIONS = {0: 0, 30: 1800, 60: 3600, 360: 21600, 720: 43200, 1080: 64800, 1440: 86400}
 
 BATCH_SIZE = 20
 MAX_PAGES = 5  # 100 items total
@@ -475,13 +483,23 @@ class SmartHuntEngine:
         return scored[:count * 2]  # Return more than needed; dedup will trim
 
     def _fetch_recommendations(self, tmdb_id: int, media_type: str, api_key: str, common: dict) -> List[dict]:
-        """Fetch /recommendations for a single seed item."""
+        """Fetch /recommendations for a single seed item. Cached 2h (server-side)."""
+        from src.primary.utils.tmdb_metadata_cache import get_recommendations, set_recommendations
+
+        try:
+            cached = get_recommendations(media_type, tmdb_id)
+            if cached is not None:
+                bl = common.get("bl_movie") if media_type == "movie" else common.get("bl_tv")
+                return self._parse_results(cached.get("results", [])[:20], media_type, bl or set())
+        except Exception:
+            pass
         url = f"{self.TMDB_BASE}/{media_type}/{tmdb_id}/recommendations"
         params = {"api_key": api_key, "page": 1}
         try:
             resp = requests.get(url, params=params, timeout=10)
             resp.raise_for_status()
             data = resp.json()
+            set_recommendations(media_type, tmdb_id, data)
             bl = common.get("bl_movie") if media_type == "movie" else common.get("bl_tv")
             return self._parse_results(data.get("results", [])[:20], media_type, bl or set())
         except Exception as e:
@@ -651,13 +669,19 @@ class SmartHuntEngine:
             params["first_air_date.lte"] = f"{ye}-12-31"
 
     def _tmdb_discover(self, media_type: str, params: dict, count: int, common: dict) -> List[dict]:
-        """Hit TMDB /discover/{media_type} and parse results."""
+        """Hit TMDB /discover/{media_type} and parse results. Cached 2h (server-side)."""
+        from src.primary.utils.tmdb_metadata_cache import get_discover, set_discover
+
+        cache_params = {k: v for k, v in params.items() if k != "api_key"}
         url = f"{self.TMDB_BASE}/discover/{media_type}"
         bl = common.get("bl_movie") if media_type == "movie" else common.get("bl_tv")
         try:
-            resp = requests.get(url, params=params, timeout=10)
-            resp.raise_for_status()
-            data = resp.json()
+            data = get_discover(media_type, cache_params)
+            if data is None:
+                resp = requests.get(url, params=params, timeout=10)
+                resp.raise_for_status()
+                data = resp.json()
+                set_discover(media_type, cache_params, data)
             results = data.get("results", [])
             return self._parse_results(results[:count * 2], media_type, bl or set())
         except Exception as e:
@@ -754,11 +778,11 @@ class SmartHuntEngine:
         except Exception as e:
             logger.warning(f"[SmartHunt] Hidden media filter failed: {e}")
 
-        # Recombine and filter out in-library items
+        # Recombine and filter out in-library items (including partial TV shows)
         all_items = movie_items + tv_items
         filtered = [
             i for i in all_items
-            if not i.get("in_library")
+            if not i.get("in_library") and not i.get("partial")
         ]
 
         # Shuffle so movies and TV are mixed randomly (not movie-block then TV-block)

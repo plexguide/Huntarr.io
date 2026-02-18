@@ -44,17 +44,24 @@ def fetch_tv_list(list_type, settings):
 # ---------------------------------------------------------------------------
 
 def _search_tmdb_tv(title, year=None):
-    """Search TMDb for a TV series by title."""
+    """Search TMDb for a TV series by title. Cached 1h (server-side)."""
     if not title:
         return None
     try:
-        params = {'api_key': TMDB_API_KEY, 'query': title}
-        if year:
-            params['first_air_date_year'] = year
-        resp = requests.get(f"{TMDB_BASE}/search/tv", params=params, timeout=REQUEST_TIMEOUT)
-        if resp.status_code != 200:
-            return None
-        results = resp.json().get('results', [])
+        from src.primary.utils.tmdb_metadata_cache import get_search, set_search
+
+        cache_key = f"{title}:y{year or ''}"
+        data = get_search('tv', cache_key)
+        if data is None:
+            params = {'api_key': TMDB_API_KEY, 'query': title}
+            if year:
+                params['first_air_date_year'] = year
+            resp = requests.get(f"{TMDB_BASE}/search/tv", params=params, timeout=REQUEST_TIMEOUT)
+            if resp.status_code != 200:
+                return None
+            data = resp.json()
+            set_search('tv', cache_key, data)
+        results = data.get('results', [])
         if results:
             s = results[0]
             return {
@@ -69,8 +76,21 @@ def _search_tmdb_tv(title, year=None):
 
 
 def _tmdb_tv_details(tmdb_id):
-    """Get TMDb TV series details by ID."""
+    """Get TMDb TV series details by ID. Uses server-side cache when available."""
+    if not tmdb_id:
+        return None
     try:
+        from src.primary.utils.tmdb_metadata_cache import get
+
+        cached = get('tv', tmdb_id)
+        if cached is not None:
+            return {
+                'title': cached.get('name', ''),
+                'year': (cached.get('first_air_date') or '')[:4],
+                'tmdb_id': cached.get('id'),
+                'poster_path': cached.get('poster_path') or '',
+            }
+
         resp = requests.get(
             f"{TMDB_BASE}/tv/{tmdb_id}",
             params={'api_key': TMDB_API_KEY},
@@ -91,10 +111,16 @@ def _tmdb_tv_details(tmdb_id):
 
 
 def _resolve_imdb_to_tmdb_tv(imdb_id):
-    """Resolve an IMDb ID to a TMDb TV series."""
+    """Resolve an IMDb ID to a TMDb TV series. Cached 24h (server-side)."""
     if not imdb_id:
         return None
     try:
+        from src.primary.utils.tmdb_metadata_cache import get_find, set_find
+
+        cached = get_find('imdb_tv', imdb_id)
+        if cached is not None:
+            return cached
+
         resp = requests.get(
             f"{TMDB_BASE}/find/{imdb_id}",
             params={'api_key': TMDB_API_KEY, 'external_source': 'imdb_id'},
@@ -106,12 +132,14 @@ def _resolve_imdb_to_tmdb_tv(imdb_id):
         results = data.get('tv_results', [])
         if results:
             s = results[0]
-            return {
+            result = {
                 'title': s.get('name', ''),
                 'year': (s.get('first_air_date') or '')[:4],
                 'tmdb_id': s.get('id'),
                 'poster_path': s.get('poster_path') or '',
             }
+            set_find('imdb_tv', imdb_id, result)
+            return result
     except Exception as e:
         logger.debug("IMDb->TMDb TV resolve failed for %s: %s", imdb_id, e)
     return None
