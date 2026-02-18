@@ -4,11 +4,16 @@ Media Hunt metadata refresh — periodic update of collection metadata from TMDB
 Refreshes episode titles, air dates, series status (Ended vs Continuing) for TV,
 and release dates (in_cinemas, digital_release, physical_release) for movies.
 Does not request or download media; only updates information.
+
+Skips items to reduce TMDB API load:
+- TV: Ended series (metadata finalized), recently refreshed (< 7 days)
+- Movies: Old releases (2+ years), fully released > 12 months ago, recently refreshed (< 30 days)
 """
 
 import time
+from datetime import date, datetime, timedelta, timezone
+
 import requests
-from typing import Optional
 
 from src.primary.utils.logger import get_logger
 
@@ -17,7 +22,12 @@ movie_logger = get_logger("movie_hunt")
 
 TMDB_BASE = "https://api.themoviedb.org/3"
 TMDB_API_KEY = "9265b0bd0cd1962f7f3225989fcd7192"
-REFRESH_INTERVAL_HOURS = 12
+
+# Throttling: minimum days between refreshes per item
+TV_REFRESH_COOLDOWN_DAYS = 7
+MOVIE_REFRESH_COOLDOWN_DAYS = 30
+MOVIE_OLD_YEARS = 2  # Skip movies 2+ years old
+MOVIE_RELEASED_MONTHS = 12  # Skip movies with physical release > 12 months ago
 
 
 def _get_ssl_verify():
@@ -26,6 +36,74 @@ def _get_ssl_verify():
         return get_ssl_verify_setting()
     except Exception:
         return True
+
+
+def _parse_iso_date(s: str):
+    """Parse YYYY-MM-DD or YYYY-MM to date. Returns None on failure."""
+    if not s or not isinstance(s, str):
+        return None
+    s = s.strip()[:10]
+    if not s:
+        return None
+    try:
+        parts = s.split("-")
+        y = int(parts[0])
+        m = int(parts[1]) if len(parts) > 1 else 1
+        d = int(parts[2]) if len(parts) > 2 else 1
+        return date(y, m, d)
+    except (ValueError, IndexError):
+        return None
+
+
+def _should_skip_tv_series(s: dict) -> tuple[bool, str | None]:
+    """Returns (skip, reason). Skip=True means do not call TMDB for this series."""
+    status = (s.get("status") or "").strip()
+    if status == "Ended":
+        return True, "ended"
+    last = s.get("metadata_last_refreshed")
+    if last:
+        try:
+            dt = datetime.fromisoformat(last.replace("Z", "+00:00"))
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            if (datetime.now(timezone.utc) - dt) < timedelta(days=TV_REFRESH_COOLDOWN_DAYS):
+                return True, "recent"
+        except (ValueError, TypeError):
+            pass
+    return False, None
+
+
+def _should_skip_movie(item: dict) -> tuple[bool, str | None]:
+    """Returns (skip, reason). Skip=True means do not call TMDB for this movie."""
+    now = datetime.now(timezone.utc)
+    current_year = now.year
+    year_str = str(item.get("year") or "").strip()
+    if year_str:
+        try:
+            y = int(year_str)
+            if y <= current_year - MOVIE_OLD_YEARS:
+                return True, "old"
+        except ValueError:
+            pass
+    phys = (item.get("physical_release") or "").strip()
+    if phys:
+        d = _parse_iso_date(phys)
+        if d:
+            today = date(now.year, now.month, now.day)
+            days = (today - d).days
+            if days > MOVIE_RELEASED_MONTHS * 30:
+                return True, "released"
+    last = item.get("metadata_last_refreshed")
+    if last:
+        try:
+            dt = datetime.fromisoformat(last.replace("Z", "+00:00"))
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            if (now - dt) < timedelta(days=MOVIE_REFRESH_COOLDOWN_DAYS):
+                return True, "recent"
+        except (ValueError, TypeError):
+            pass
+    return False, None
 
 
 def refresh_tv_hunt_metadata(instance_id: int, stop_check=None) -> int:
@@ -50,12 +128,17 @@ def refresh_tv_hunt_metadata(instance_id: int, stop_check=None) -> int:
 
         verify_ssl = _get_ssl_verify()
         refreshed = 0
+        collection_modified = False
 
         for s in collection:
             if stop_check and stop_check():
                 break
             tmdb_id = s.get('tmdb_id')
             if not tmdb_id:
+                continue
+            skip, reason = _should_skip_tv_series(s)
+            if skip:
+                tv_logger.debug("Metadata refresh: skipping TV tmdb_id=%s (%s)", tmdb_id, reason)
                 continue
 
             try:
@@ -121,17 +204,19 @@ def refresh_tv_hunt_metadata(instance_id: int, stop_check=None) -> int:
                             ep['still_path'] = new_still
                         series_updated = True
 
-                    time.sleep(0.1)
+                    time.sleep(0.2)
 
+                s["metadata_last_refreshed"] = datetime.now(timezone.utc).isoformat()
+                collection_modified = True
                 if series_updated:
                     refreshed += 1
                     tv_logger.debug("Metadata refresh: updated series tmdb_id=%s", tmdb_id)
 
-                time.sleep(0.2)
+                time.sleep(0.25)
             except Exception as e:
                 tv_logger.debug("Metadata refresh TV series %s: %s", tmdb_id, e)
 
-        if refreshed > 0:
+        if collection_modified:
             db.save_app_config_for_instance('tv_hunt_collection', instance_id, {'series': collection})
             tv_logger.info("Metadata refresh TV: updated %d series for instance %s", refreshed, instance_id)
 
@@ -161,11 +246,16 @@ def refresh_movie_hunt_metadata(instance_id: int, stop_check=None) -> int:
             return 0
 
         refreshed = 0
+        collection_modified = False
         for item in items:
             if stop_check and stop_check():
                 break
             tmdb_id = item.get('tmdb_id')
             if not tmdb_id:
+                continue
+            skip, reason = _should_skip_movie(item)
+            if skip:
+                movie_logger.debug("Metadata refresh: skipping movie tmdb_id=%s (%s)", tmdb_id, reason)
                 continue
 
             try:
@@ -195,15 +285,17 @@ def refresh_movie_hunt_metadata(instance_id: int, stop_check=None) -> int:
                         item['year'] = new_year
                         item_changed = True
 
+                item["metadata_last_refreshed"] = datetime.now(timezone.utc).isoformat()
+                collection_modified = True
                 if item_changed:
                     refreshed += 1
                     movie_logger.debug("Metadata refresh: updated movie tmdb_id=%s", tmdb_id)
 
-                time.sleep(0.15)
+                time.sleep(0.25)
             except Exception as e:
                 movie_logger.debug("Metadata refresh movie %s: %s", tmdb_id, e)
 
-        if refreshed > 0:
+        if collection_modified:
             db.save_app_config_for_instance('movie_hunt_collection', instance_id, {'items': items})
             movie_logger.info("Metadata refresh Movie: updated %d movies for instance %s", refreshed, instance_id)
 
