@@ -273,9 +273,19 @@
             if (backBtn) backBtn.addEventListener('click', () => this.closeDetail());
             var refreshBtn = document.getElementById('requestarr-detail-refresh');
             if (refreshBtn) refreshBtn.addEventListener('click', async () => {
-                await this.updateDetailInfoBar(true);
-                if (window.huntarrUI && window.huntarrUI.showNotification) {
-                    window.huntarrUI.showNotification('Refresh scan completed.', 'success');
+                if (refreshBtn.disabled) return;
+                refreshBtn.disabled = true;
+                try {
+                    await this.updateDetailInfoBar(true);
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Refresh scan completed.', 'success');
+                    }
+                } catch (e) {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Refresh failed.', 'error');
+                    }
+                } finally {
+                    refreshBtn.disabled = false;
                 }
             });
             var editBtn = document.getElementById('requestarr-detail-edit');

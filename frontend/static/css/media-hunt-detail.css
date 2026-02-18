@@ -65,6 +65,11 @@
     background: rgba(239, 68, 68, 0.15);
     color: #ef4444;
 }
+.mh-tb:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
 
 @media (max-width: 600px) {
     .mh-tb span { display: none; }

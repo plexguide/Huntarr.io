@@ -275,9 +275,19 @@
             if (backBtn) backBtn.addEventListener('click', () => this.closeDetail());
             var refreshBtn = document.getElementById('requestarr-detail-refresh');
             if (refreshBtn) refreshBtn.addEventListener('click', async () => {
-                await this.updateDetailInfoBar(true);
-                if (window.huntarrUI && window.huntarrUI.showNotification) {
-                    window.huntarrUI.showNotification('Refresh scan completed.', 'success');
+                if (refreshBtn.disabled) return;
+                refreshBtn.disabled = true;
+                try {
+                    await this.updateDetailInfoBar(true);
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Refresh scan completed.', 'success');
+                    }
+                } catch (e) {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Refresh failed.', 'error');
+                    }
+                } finally {
+                    refreshBtn.disabled = false;
                 }
             });
             var editBtn = document.getElementById('requestarr-detail-edit');
@@ -1493,6 +1503,7 @@
             const toolbarHTML = `
                 <div class="mh-toolbar" id="requestarr-tv-detail-toolbar">
                     <div class="mh-toolbar-left">
+                        ${isTVHunt ? '<button class="mh-tb" id="requestarr-tv-detail-refresh" title="Refresh" style="display:none"><i class="fas fa-redo-alt"></i><span>Refresh</span></button>' : ''}
                         ${isTVHunt ? '<button class="mh-tb" id="requestarr-tv-search-monitored" style="display:none"><i class="fas fa-search"></i> <span>Search Monitored</span></button>' : ''}
                     </div>
                     <div class="mh-toolbar-right">
@@ -1699,6 +1710,26 @@
                 searchMonitoredBtn.onclick = async () => {
                     await this.searchMonitoredEpisodes();
                 };
+            }
+
+            const refreshBtn = document.getElementById('requestarr-tv-detail-refresh');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', async () => {
+                    if (refreshBtn.disabled) return;
+                    refreshBtn.disabled = true;
+                    try {
+                        await this.updateDetailInfoBar();
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification('Refresh scan completed.', 'success');
+                        }
+                    } catch (e) {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification('Refresh failed.', 'error');
+                        }
+                    } finally {
+                        refreshBtn.disabled = false;
+                    }
+                });
             }
 
             const editBtn = document.getElementById('requestarr-tv-detail-edit');
@@ -1911,6 +1942,7 @@
                 const isTVHunt = decoded.appType === 'tv_hunt';
                 const editBtnEl = document.getElementById('requestarr-tv-detail-edit');
                 const deleteBtnEl = document.getElementById('requestarr-tv-detail-delete');
+                const refreshBtnEl = document.getElementById('requestarr-tv-detail-refresh');
                 const searchMonBtnEl = document.getElementById('requestarr-tv-search-monitored');
 
                 if (data.exists) {
@@ -1955,6 +1987,7 @@
                     // Show toolbar buttons for items in collection
                     if (editBtnEl && isTVHunt) editBtnEl.style.display = '';
                     if (deleteBtnEl && isTVHunt) deleteBtnEl.style.display = '';
+                    if (refreshBtnEl && isTVHunt) refreshBtnEl.style.display = '';
                     if (searchMonBtnEl && isTVHunt) searchMonBtnEl.style.display = '';
 
                     this.updateSeasonCountBadges();
@@ -1969,6 +2002,7 @@
                     // Hide toolbar buttons when not in collection
                     if (editBtnEl) editBtnEl.style.display = 'none';
                     if (deleteBtnEl) deleteBtnEl.style.display = 'none';
+                    if (refreshBtnEl) refreshBtnEl.style.display = 'none';
                     if (searchMonBtnEl) searchMonBtnEl.style.display = 'none';
 
                     this.updateSeasonCountBadges();
