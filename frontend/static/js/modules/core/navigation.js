@@ -93,6 +93,15 @@ window.HuntarrNavigation = {
                 window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#media-hunt-collection');
             }
         }
+        // Calendar: canonical hash is media-hunt-calendar (movie-hunt-calendar and tv-hunt-calendar redirect)
+        if (section === 'movie-hunt-calendar' || section === 'tv-hunt-calendar') {
+            var mode = section === 'tv-hunt-calendar' ? 'tv' : 'movie';
+            section = 'media-hunt-calendar';
+            if (window.huntarrUI) window.huntarrUI._pendingMediaHuntCalendarMode = mode;
+            if (window.location.hash !== '#media-hunt-calendar') {
+                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#media-hunt-calendar');
+            }
+        }
         // Media Hunt movie detail direct link: #movie/<tmdb_id> — redirect to Requestarr detail
         var movieMatch = /^movie\/(\d+)$/.exec(section);
         if (movieMatch) {
@@ -275,7 +284,7 @@ window.HuntarrNavigation = {
             if (appType === 'indexer') sectionForNav = 'indexer-hunt';
             else if (appType === 'client') sectionForNav = 'settings-clients';
         }
-        const collectionSections = ['movie-hunt-home', 'movie-hunt-collection', 'media-hunt-collection', 'media-hunt-instances', 'movie-hunt-calendar', 'settings-clients'];
+        const collectionSections = ['movie-hunt-home', 'movie-hunt-collection', 'media-hunt-collection', 'media-hunt-instances', 'media-hunt-calendar', 'settings-clients'];
         const activitySections = ['activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-media-hunt', 'logs-tv-hunt', 'tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist'];
         const configSections = ['media-hunt-settings', 'movie-hunt-settings', 'settings-instance-management', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'profile-editor', 'settings-custom-formats', 'settings-import-media', 'settings-import-lists', 'settings-root-folders', 'instance-editor'];
         const indexMasterSections = ['indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history'];

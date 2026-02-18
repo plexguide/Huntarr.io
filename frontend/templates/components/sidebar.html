@@ -123,7 +123,7 @@
                         <div class="nav-icon-wrapper"><i class="fas fa-layer-group"></i></div>
                         <span>Instances</span>
                     </a>
-                    <a href="./#movie-hunt-calendar" class="nav-item nav-item-sub" id="movieHuntCalendarNav">
+                    <a href="./#media-hunt-calendar" class="nav-item nav-item-sub" id="movieHuntCalendarNav">
                         <div class="nav-icon-wrapper"><i class="fas fa-calendar-alt"></i></div>
                         <span>Calendar</span>
                     </a>
@@ -448,7 +448,7 @@ function setActiveNavItem() {
         selector = '#movieHuntCollectionNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub';
     }
     else if (h === '#media-hunt-instances') { selector = '#movieHuntInstancesNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
-    else if (h === '#movie-hunt-calendar') { selector = '#movieHuntCalendarNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+    else if (h === '#media-hunt-calendar' || h === '#movie-hunt-calendar' || h === '#tv-hunt-calendar') { selector = '#movieHuntCalendarNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
     else if (h === '#settings-import-media') { selector = '#movieHuntImportMediaNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'media-hunt-config-sub'; if (mhBody) mhBody.classList.add('config-view'); }
     else if (h === '#activity-queue') { selector = '#movieHuntActivityQueueNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-activity-sub'; if (mhBody) mhBody.classList.add('activity-view'); }
     else if (h === '#activity-history') { selector = '#movieHuntActivityHistoryNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-activity-sub'; if (mhBody) mhBody.classList.add('activity-view'); }

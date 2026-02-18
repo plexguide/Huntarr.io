@@ -272,7 +272,7 @@
             var backBtn = document.getElementById('requestarr-detail-back');
             if (backBtn) backBtn.addEventListener('click', () => this.closeDetail());
             var refreshBtn = document.getElementById('requestarr-detail-refresh');
-            if (refreshBtn) refreshBtn.addEventListener('click', () => { this.updateDetailInfoBar(); });
+            if (refreshBtn) refreshBtn.addEventListener('click', () => { this.updateDetailInfoBar(true); });
             var editBtn = document.getElementById('requestarr-detail-edit');
             if (editBtn) editBtn.addEventListener('click', () => this.openEditModalForMovieHunt());
             var deleteBtn = document.getElementById('requestarr-detail-delete');
@@ -463,7 +463,7 @@
          * force search/upgrade button, and action button area.
          * This is the single source of truth for the detail page state.
          */
-        async updateDetailInfoBar() {
+        async updateDetailInfoBar(forceProbe) {
             var self = this;
             var pathEl = document.getElementById('requestarr-ib-path');
             var statusEl = document.getElementById('requestarr-ib-status');
@@ -488,7 +488,9 @@
                     return;
                 }
                 try {
-                    var resp = await fetch('./api/movie-hunt/movie-status?tmdb_id=' + tmdbId + '&instance_id=' + instanceId);
+                    var qs = 'tmdb_id=' + tmdbId + '&instance_id=' + instanceId + '&t=' + Date.now();
+                    if (forceProbe) qs += '&force_probe=true';
+                    var resp = await fetch('./api/movie-hunt/movie-status?' + qs);
                     data = await resp.json();
                     this.currentMovieStatusForMH = data;
                 } catch (err) {
@@ -500,7 +502,7 @@
                 }
             } else if (decoded.appType === 'radarr' && decoded.name) {
                 try {
-                    var resp = await fetch('./api/requestarr/movie-detail-status?tmdb_id=' + tmdbId + '&instance=' + encodeURIComponent(decoded.name));
+                    var resp = await fetch('./api/requestarr/movie-detail-status?tmdb_id=' + tmdbId + '&instance=' + encodeURIComponent(decoded.name) + '&t=' + Date.now());
                     data = await resp.json();
                 } catch (err) {
                     console.error('[RequestarrDetail] Radarr detail bar error:', err);

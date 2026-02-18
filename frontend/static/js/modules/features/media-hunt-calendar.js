@@ -431,10 +431,14 @@
             if (sel.options.length === 0) {
                 var empty = document.createElement('option');
                 empty.value = '';
-                empty.textContent = 'No instances configured';
+                empty.textContent = 'No Movie or TV Hunt instances';
                 sel.appendChild(empty);
                 _collectionLoaded = false;
                 _upcomingLoaded = false;
+                var timeline = document.getElementById('media-hunt-calendar-timeline');
+                var upcomingTimeline = document.getElementById('media-hunt-calendar-upcoming-timeline');
+                if (timeline) timeline.innerHTML = '<div class="mh-cal-empty"><i class="fas fa-calendar-times"></i><p>Configure a Movie Hunt or TV Hunt instance to view the calendar.</p></div>';
+                if (upcomingTimeline) upcomingTimeline.innerHTML = '<div class="mh-cal-empty"><i class="fas fa-calendar-times"></i><p>Configure a Movie Hunt instance to discover upcoming releases.</p></div>';
                 return;
             }
             if (preferred) {
@@ -454,6 +458,10 @@
             }
         }).catch(function() {
             sel.innerHTML = '<option value="">Failed to load instances</option>';
+            var timeline = document.getElementById('media-hunt-calendar-timeline');
+            var upcomingTimeline = document.getElementById('media-hunt-calendar-upcoming-timeline');
+            if (timeline) timeline.innerHTML = '<div class="mh-cal-empty"><i class="fas fa-exclamation-triangle"></i><p>Failed to load instances.</p></div>';
+            if (upcomingTimeline) upcomingTimeline.innerHTML = '<div class="mh-cal-empty"><i class="fas fa-exclamation-triangle"></i><p>Failed to load instances.</p></div>';
         });
     }
 

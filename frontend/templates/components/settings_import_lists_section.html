@@ -1,12 +1,5 @@
 <section id="settingsImportListsSection" class="content-section" style="display: none;">
     <div id="importListsManagementContainer" class="app-content-panel">
-        <!-- No-instances warning box (same style as Media Management) -->
-        <div id="settings-import-lists-no-instances" class="settings-no-instances" style="display: none;">
-            <i class="fas fa-cube" aria-hidden="true"></i>
-            <p class="no-instances-title">No instances configured</p>
-            <p class="no-instances-desc">Configure a Movie Hunt or TV Hunt instance to manage import lists.</p>
-            <a href="./#media-hunt-instances" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure instances</a>
-        </div>
         <div id="settings-import-lists-no-indexers" class="settings-no-indexers" style="display: none;">
             <i class="fas fa-satellite-dish" aria-hidden="true"></i>
             <p class="no-instances-title">No indexers configured</p>
@@ -220,23 +213,6 @@
     </div>
 </section>
 <style>
-/* No-instances warning box — same style as Media Management */
-#settingsImportListsSection .settings-no-instances {
-    text-align: center; padding: 64px 24px; width: 100%; box-sizing: border-box;
-    background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(148, 163, 184, 0.08);
-    border-radius: 12px; margin: 0 0 20px 0; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-}
-#settingsImportListsSection .settings-no-instances i.fa-cube { font-size: 3rem; color: #334155; margin-bottom: 16px; display: block; }
-#settingsImportListsSection .settings-no-instances .no-instances-title { font-size: 1.2rem; font-weight: 600; color: #f1f5f9; margin: 0 0 8px 0; }
-#settingsImportListsSection .settings-no-instances .no-instances-desc { font-size: 0.95rem; color: #94a3b8; line-height: 1.6; margin: 0 auto 24px auto; max-width: 400px; }
-#settingsImportListsSection .settings-no-instances .no-instances-action-btn {
-    display: inline-flex; align-items: center; gap: 8px; background: rgba(99, 102, 241, 0.2);
-    border: 1px solid rgba(99, 102, 241, 0.4); color: #818cf8; padding: 10px 20px; border-radius: 8px;
-    text-decoration: none; font-weight: 500; transition: background 0.2s, border-color 0.2s;
-}
-#settingsImportListsSection .settings-no-instances .no-instances-action-btn:hover {
-    background: rgba(99, 102, 241, 0.3); border-color: rgba(99, 102, 241, 0.5);
-}
 /* Checkbox rows for Enable Automatic Add / Search for Missing */
 .import-list-checkbox-row { margin-bottom: 4px !important; }
 .import-list-checkbox-item {

@@ -166,14 +166,12 @@
                     emptyOpt.value = '';
                     emptyOpt.textContent = 'No Movie or TV Hunt instances';
                     selectEl.appendChild(emptyOpt);
-                    var noInstEl = document.getElementById('settings-custom-formats-no-instances');
                     var noIdxEl = document.getElementById('settings-custom-formats-no-indexers');
                     var noCliEl = document.getElementById('settings-custom-formats-no-clients');
                     var wrapperEl = document.getElementById('settings-custom-formats-content-wrapper');
-                    if (noInstEl) noInstEl.style.display = '';
                     if (noIdxEl) noIdxEl.style.display = 'none';
                     if (noCliEl) noCliEl.style.display = 'none';
-                    if (wrapperEl) wrapperEl.style.display = 'none';
+                    if (wrapperEl) wrapperEl.style.display = '';
                     return;
                 }
                 var indexerCount = (results[4].indexers || []).length;
@@ -183,11 +181,9 @@
                     emptyOpt.value = '';
                     emptyOpt.textContent = 'No indexers configured';
                     selectEl.appendChild(emptyOpt);
-                    var noInstEl = document.getElementById('settings-custom-formats-no-instances');
                     var noIdxEl = document.getElementById('settings-custom-formats-no-indexers');
                     var noCliEl = document.getElementById('settings-custom-formats-no-clients');
                     var wrapperEl = document.getElementById('settings-custom-formats-content-wrapper');
-                    if (noInstEl) noInstEl.style.display = 'none';
                     if (noIdxEl) noIdxEl.style.display = '';
                     if (noCliEl) noCliEl.style.display = 'none';
                     if (wrapperEl) wrapperEl.style.display = 'none';
@@ -200,11 +196,9 @@
                     emptyOpt.value = '';
                     emptyOpt.textContent = 'No clients configured';
                     selectEl.appendChild(emptyOpt);
-                    var noInstEl = document.getElementById('settings-custom-formats-no-instances');
                     var noIdxEl = document.getElementById('settings-custom-formats-no-indexers');
                     var noCliEl = document.getElementById('settings-custom-formats-no-clients');
                     var wrapperEl = document.getElementById('settings-custom-formats-content-wrapper');
-                    if (noInstEl) noInstEl.style.display = 'none';
                     if (noIdxEl) noIdxEl.style.display = 'none';
                     if (noCliEl) noCliEl.style.display = '';
                     if (wrapperEl) wrapperEl.style.display = 'none';
@@ -234,11 +228,9 @@
                     selected = combined[0].value;
                 }
                 selectEl.value = selected;
-                var noInstEl = document.getElementById('settings-custom-formats-no-instances');
                 var noIdxEl = document.getElementById('settings-custom-formats-no-indexers');
                 var noCliEl = document.getElementById('settings-custom-formats-no-clients');
                 var wrapperEl = document.getElementById('settings-custom-formats-content-wrapper');
-                if (noInstEl) noInstEl.style.display = 'none';
                 if (noIdxEl) noIdxEl.style.display = 'none';
                 if (noCliEl) noCliEl.style.display = 'none';
                 if (wrapperEl) wrapperEl.style.display = '';
@@ -250,11 +242,9 @@
                 }
             }).catch(function() {
                 selectEl.innerHTML = '<option value="">Failed to load instances</option>';
-                var noInstEl = document.getElementById('settings-custom-formats-no-instances');
                 var noIdxEl = document.getElementById('settings-custom-formats-no-indexers');
                 var noCliEl = document.getElementById('settings-custom-formats-no-clients');
                 var wrapperEl = document.getElementById('settings-custom-formats-content-wrapper');
-                if (noInstEl) noInstEl.style.display = 'none';
                 if (noIdxEl) noIdxEl.style.display = 'none';
                 if (noCliEl) noCliEl.style.display = '';
                 if (wrapperEl) wrapperEl.style.display = 'none';
