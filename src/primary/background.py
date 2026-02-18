@@ -1112,6 +1112,16 @@ def shutdown_threads():
         else:
             logger.info("RSS Sync thread stopped")
 
+    # Stop the Media Hunt metadata refresh thread
+    global _metadata_refresh_thread
+    if _metadata_refresh_thread and _metadata_refresh_thread.is_alive():
+        logger.info("Waiting for Media Hunt metadata refresh thread to stop...")
+        _metadata_refresh_thread.join(timeout=5.0)
+        if _metadata_refresh_thread.is_alive():
+            logger.warning("Media Hunt metadata refresh thread did not stop gracefully")
+        else:
+            logger.info("Media Hunt metadata refresh thread stopped")
+
     # Stop the Swaparr processing thread
     global swaparr_thread
     if swaparr_thread and swaparr_thread.is_alive():
@@ -1724,6 +1734,42 @@ def _start_media_probe_thread():
     logger.info("Media probe sweep thread started")
 
 
+# ---------------------------------------------------------------------------
+# Media Hunt metadata refresh — update collection metadata from TMDB (18-hour interval)
+# ---------------------------------------------------------------------------
+_metadata_refresh_thread = None
+
+METADATA_REFRESH_INTERVAL_SECONDS = 18 * 3600  # 18 hours
+
+
+def _metadata_refresh_loop():
+    """Background loop: refresh Movie Hunt and TV Hunt metadata from TMDB every 18 hours."""
+    from src.primary.apps.media_hunt.metadata_refresh import run_metadata_refresh_cycle
+    # Wait 5 minutes after startup before first run
+    stop_event.wait(300)
+    while not stop_event.is_set():
+        try:
+            run_metadata_refresh_cycle(stop_check=lambda: stop_event.is_set())
+        except Exception as e:
+            logger.error("Media Hunt metadata refresh cycle error: %s", e)
+        stop_event.wait(METADATA_REFRESH_INTERVAL_SECONDS)
+
+
+def _start_metadata_refresh_thread():
+    """Start the Media Hunt metadata refresh thread."""
+    global _metadata_refresh_thread
+    if _metadata_refresh_thread and _metadata_refresh_thread.is_alive():
+        logger.info("Metadata refresh thread already running")
+        return
+    _metadata_refresh_thread = threading.Thread(
+        target=_metadata_refresh_loop,
+        name="MediaHuntMetadataRefresh",
+        daemon=True,
+    )
+    _metadata_refresh_thread.start()
+    logger.info("Media Hunt metadata refresh thread started (18-hour interval)")
+
+
 def start_swaparr_thread():
     """Start the dedicated Swaparr processing thread"""
     global swaparr_thread
@@ -1797,6 +1843,13 @@ def start_huntarr():
         logger.info("Media probe sweep thread started successfully")
     except Exception as e:
         logger.error(f"Failed to start Media probe sweep thread: {e}")
+
+    # Start Media Hunt metadata refresh thread (18-hour interval)
+    try:
+        _start_metadata_refresh_thread()
+        logger.info("Media Hunt metadata refresh thread started successfully")
+    except Exception as e:
+        logger.error(f"Failed to start Media Hunt metadata refresh thread: {e}")
 
     # Start RSS Sync background thread
     try:
