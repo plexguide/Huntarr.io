@@ -46,16 +46,12 @@
                 sf('./api/movie-hunt/instances?t=' + ts, { instances: [] }),
                 sf('./api/tv-hunt/instances?t=' + ts, { instances: [] }),
                 sf('./api/movie-hunt/instances/current?t=' + ts, { current_instance_id: null }),
-                sf('./api/tv-hunt/instances/current?t=' + ts, { current_instance_id: null }),
-                sf('./api/indexer-hunt/indexers?t=' + ts, { indexers: [] }),
-                sf('./api/movie-hunt/has-clients?t=' + ts, { has_clients: false })
+                sf('./api/tv-hunt/instances/current?t=' + ts, { current_instance_id: null })
             ]).then(function(results) {
                 var movieList = results[0].instances || [];
                 var tvList = results[1].instances || [];
                 var movieCurrent = results[2].current_instance_id != null ? Number(results[2].current_instance_id) : null;
                 var tvCurrent = results[3].current_instance_id != null ? Number(results[3].current_instance_id) : null;
-                var indexerCount = (results[4].indexers || []).length;
-                var hasClients = results[5].has_clients === true;
 
                 var opts = [];
                 movieList.forEach(function(inst) {
@@ -70,17 +66,7 @@
 
                 if (opts.length === 0) {
                     select.innerHTML = '';
-                    select.appendChild(document.createElement('option')).value = ''; select.options[0].textContent = 'No instances';
-                    return;
-                }
-                if (indexerCount === 0) {
-                    select.innerHTML = '';
-                    select.appendChild(document.createElement('option')).value = ''; select.options[0].textContent = 'No indexers configured';
-                    return;
-                }
-                if (!hasClients) {
-                    select.innerHTML = '';
-                    select.appendChild(document.createElement('option')).value = ''; select.options[0].textContent = 'No clients configured';
+                    select.appendChild(document.createElement('option')).value = ''; select.options[0].textContent = 'No instances configured';
                     return;
                 }
 
@@ -327,7 +313,7 @@
             div.innerHTML = '<div class="import-media-poster"><img src="' + posterUrl + '" onerror="this.src=\'./static/images/blackout.jpg\'"></div>' +
                 '<div class="import-media-info">' +
                 '<div class="import-media-folder-name">' + self.escapeHtml(item.folder_name) + '</div>' +
-                '<div class="import-media-folder-path">' + self.escapeHtml(item.root_folder) + '</div>' +
+                '<div class="import-media-folder-path">' + self.escapeHtml(item.folder_path || item.root_folder) + '</div>' +
                 '<div class="import-media-file-info">' +
                 (sizeStr ? '<span><i class="fas fa-hdd"></i> ' + sizeStr + '</span>' : '') +
                 (item.file_count ? '<span><i class="fas fa-file-video"></i> ' + item.file_count + ' file' + (item.file_count > 1 ? 's' : '') + '</span>' : '') +
