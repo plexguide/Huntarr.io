@@ -526,10 +526,9 @@ def _instance_name_to_category(name: str, prefix: str) -> str:
 
 
 def _get_categories_from_instances():
-    """Build category list from Movie Hunt and TV Hunt instances. Merge with persisted known (never remove)."""
+    """Build category list from current Movie Hunt and TV Hunt instances only. No persistence."""
     from src.primary.utils.database import get_database
-    cfg = _load_config()
-    known = set(cfg.get("known_category_names", []))
+    categories = []
 
     try:
         db = get_database()
@@ -540,16 +539,12 @@ def _get_categories_from_instances():
 
     for inst in mh:
         name = inst.get("name") or "Unnamed"
-        known.add(_instance_name_to_category(name, "Movies"))
+        categories.append(_instance_name_to_category(name, "Movies"))
     for inst in th:
         name = inst.get("name") or "Unnamed"
-        known.add(_instance_name_to_category(name, "TV"))
+        categories.append(_instance_name_to_category(name, "TV"))
 
-    # Persist known (grows over time, never shrinks on instance delete/rename)
-    cfg["known_category_names"] = sorted(known)
-    _save_config(cfg)
-
-    return sorted(known)
+    return sorted(set(categories))
 
 
 def _temp_to_complete_base(temp_folder: str) -> str:
