@@ -125,9 +125,25 @@ jobs:
             huntarr/huntarr:${{ steps.meta.outputs.VERSION }}
             ghcr.io/plexguide/huntarr:${{ steps.meta.outputs.VERSION }}
       
-      # 7d) Build & Push for any other branch
+      # 7d) Build & Push for win-* branches (also publishes beta tag on Docker Hub)
+      - name: Build and Push (win-* branch → beta)
+        if: startsWith(github.ref, 'refs/heads/win-') && github.event_name != 'pull_request'
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            huntarr/huntarr:${{ steps.meta.outputs.BRANCH }}
+            huntarr/huntarr:beta
+            huntarr/huntarr:${{ github.sha }}
+            ghcr.io/plexguide/huntarr:${{ steps.meta.outputs.BRANCH }}
+            ghcr.io/plexguide/huntarr:beta
+            ghcr.io/plexguide/huntarr:${{ github.sha }}
+      
+      # 7e) Build & Push for other feature branches (non-win-*)
       - name: Build and Push (feature branch)
-        if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/dev' && steps.meta.outputs.IS_TAG != 'true' && github.event_name != 'pull_request'
+        if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/dev' && !startsWith(github.ref, 'refs/heads/win-') && steps.meta.outputs.IS_TAG != 'true' && github.event_name != 'pull_request'
         uses: docker/build-push-action@v3
         with:
           context: .
@@ -139,7 +155,7 @@ jobs:
             ghcr.io/plexguide/huntarr:${{ steps.meta.outputs.BRANCH }}
             ghcr.io/plexguide/huntarr:${{ github.sha }}
       
-      # 7e) Just build on pull requests
+      # 7f) Just build on pull requests
       - name: Build (PR)
         if: github.event_name == 'pull_request'
         uses: docker/build-push-action@v3
