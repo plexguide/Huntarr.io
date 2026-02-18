@@ -52,6 +52,8 @@ jobs:
         pip install apprise==1.6.0
         pip install markdown==3.4.3
         pip install pyyaml==6.0.1
+        # System tray support
+        pip install pystray==0.19.5
         python -m pip show setuptools pyinstaller
 
     - name: Create directories
@@ -74,6 +76,16 @@ jobs:
         
         # Display contents of dist/Huntarr
         dir dist/Huntarr
+        
+        # Verify frontend files were bundled (catch missing files early)
+        if (!(Test-Path "dist/Huntarr/_internal/frontend/templates/index.html")) {
+            Write-Host "WARNING: frontend/templates not found in _internal/, checking alternate locations..."
+            if (!(Test-Path "dist/Huntarr/_internal/templates/index.html")) {
+                Write-Error "FATAL: Frontend templates missing from PyInstaller bundle!"
+                exit 1
+            }
+        }
+        Write-Host "Frontend templates verified in bundle."
         
     - name: Install NSIS
       run: |

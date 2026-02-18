@@ -72,17 +72,33 @@ def integrate_windows_helpers(app=None):
                 # Ensure paths are properly configured
                 if app:
                     # Basic template and static path detection for Windows
-                    base_dir = Path(sys.executable).parent
-                    template_dir = base_dir / "frontend" / "templates"
-                    static_dir = base_dir / "frontend" / "static"
+                    # PyInstaller 6.x: data files live under _MEIPASS (_internal/)
+                    meipass = getattr(sys, '_MEIPASS', None)
+                    base_dir = Path(meipass) if meipass else Path(sys.executable).parent
                     
-                    if template_dir.exists():
-                        logger.info(f"Setting Flask template folder to: {template_dir}")
-                        app.template_folder = str(template_dir)
+                    # Check _MEIPASS paths first, then exe_dir fallbacks
+                    template_candidates = [
+                        base_dir / "frontend" / "templates",
+                        base_dir / "templates",
+                        Path(sys.executable).parent / "frontend" / "templates",
+                    ]
+                    static_candidates = [
+                        base_dir / "frontend" / "static",
+                        base_dir / "static",
+                        Path(sys.executable).parent / "frontend" / "static",
+                    ]
                     
-                    if static_dir.exists():
-                        logger.info(f"Setting Flask static folder to: {static_dir}")
-                        app.static_folder = str(static_dir)
+                    for td in template_candidates:
+                        if td.exists():
+                            logger.info(f"Setting Flask template folder to: {td}")
+                            app.template_folder = str(td)
+                            break
+                    
+                    for sd in static_candidates:
+                        if sd.exists():
+                            logger.info(f"Setting Flask static folder to: {sd}")
+                            app.static_folder = str(sd)
+                            break
         else:
             # When running from source code, check if the helper is in the distribution directory
             project_root = Path(__file__).parent.parent.parent.parent

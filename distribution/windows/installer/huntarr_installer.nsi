@@ -89,15 +89,15 @@ Section "Huntarr Application (required)" SecCore
   ; Delete existing service if present (for upgrading from service to non-service)
   nsExec::ExecToLog '"$INSTDIR\${EXENAME}" --remove-service'
   
-  ; Copy all files from dist directory
-  !echo "Copying files from '${PROJECT_ROOT}\dist\Huntarr\*.*'"
-  File /r "${PROJECT_ROOT}\dist\Huntarr\*.*"
+  ; Copy all files from dist directory (PyInstaller output)
+  !echo "Copying files from '${PROJECT_ROOT}\dist\Huntarr\'"
+  File /r "${PROJECT_ROOT}\dist\Huntarr\*"
   
   ; Copy version.txt file
   !echo "Copying version.txt from '${PROJECT_ROOT}\version.txt'"
   File "${PROJECT_ROOT}\version.txt"
   
-  ; Create required directories
+  ; Create required config directories (these are NOT in the PyInstaller bundle)
   CreateDirectory "$INSTDIR\config"
   CreateDirectory "$INSTDIR\config\logs"
   CreateDirectory "$INSTDIR\config\stateful"
@@ -109,8 +109,6 @@ Section "Huntarr Application (required)" SecCore
   CreateDirectory "$INSTDIR\config\tally"
   CreateDirectory "$INSTDIR\config\eros"
   CreateDirectory "$INSTDIR\logs"
-  CreateDirectory "$INSTDIR\frontend\templates"
-  CreateDirectory "$INSTDIR\frontend\static"
   
   ; Set permissions (using PowerShell to avoid quoting issues)
   nsExec::ExecToLog 'powershell -Command "& {Set-Acl -Path \"$INSTDIR\config\" -AclObject (Get-Acl -Path \"$INSTDIR\config\")}"'

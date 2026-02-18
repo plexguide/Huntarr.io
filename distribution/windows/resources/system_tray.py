@@ -1,199 +1,132 @@
 """
 Windows System Tray Icon for Huntarr
-Provides a system tray icon with menu options to control Huntarr
+Provides a system tray icon with menu options to control Huntarr.
+Runs in a daemon thread alongside the Waitress web server.
 """
 
 import os
 import sys
 import threading
 import webbrowser
-import pystray
-from PIL import Image
 import logging
 
 logger = logging.getLogger('HuntarrSystemTray')
 
+
 def _safe_port():
-    """Parse port from env with fallback. Avoids crash on invalid PORT."""
+    """Parse port from env with fallback."""
     try:
         return int(os.environ.get("HUNTARR_PORT", os.environ.get("PORT", 9705)))
     except (TypeError, ValueError):
         return 9705
 
 
+def _load_icon_image():
+    """Load the Huntarr icon from bundled data files.
+
+    Search order:
+      1. _MEIPASS/frontend/static/logo/huntarr.ico   (PyInstaller 6.x)
+      2. _MEIPASS/static/logo/huntarr.ico             (legacy fallback)
+      3. exe_dir/frontend/static/logo/huntarr.ico     (manual copy)
+      4. source tree relative path                     (dev mode)
+    Falls back to a generated 64x64 orange placeholder.
+    """
+    from PIL import Image
+
+    candidates = []
+
+    if getattr(sys, 'frozen', False):
+        meipass = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+        exe_dir = os.path.dirname(sys.executable)
+        candidates += [
+            os.path.join(meipass, 'frontend', 'static', 'logo', 'huntarr.ico'),
+            os.path.join(meipass, 'static', 'logo', 'huntarr.ico'),
+            os.path.join(exe_dir, 'frontend', 'static', 'logo', 'huntarr.ico'),
+        ]
+    else:
+        # Running from source
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+        candidates.append(os.path.join(project_root, 'frontend', 'static', 'logo', 'huntarr.ico'))
+
+    for path in candidates:
+        if os.path.exists(path):
+            logger.info(f"Loading tray icon from: {path}")
+            return Image.open(path)
+
+    # Try PNG fallbacks
+    for base in candidates:
+        logo_dir = os.path.dirname(base)
+        for size in ('64', '48', '32'):
+            png = os.path.join(logo_dir, f'{size}.png')
+            if os.path.exists(png):
+                logger.info(f"Loading tray icon from: {png}")
+                return Image.open(png)
+
+    logger.warning("Huntarr icon not found, using placeholder")
+    return Image.new('RGB', (64, 64), color=(255, 127, 0))
+
+
 class HuntarrSystemTray:
-    """System tray icon for Huntarr on Windows"""
-    
-    def __init__(self, port=None):
-        """Initialize the system tray icon
-        
-        Args:
-            port (int): Port number where Huntarr web interface is running.
-                       If None, reads from HUNTARR_PORT or PORT env.
-        """
+    """System tray icon for Huntarr on Windows."""
+
+    def __init__(self, port=None, shutdown_callback=None):
         self.port = port if port is not None else _safe_port()
-        self.icon = None
-        self.running = True
-        self.icon_thread = None
-        
-    def create_icon_image(self):
-        """Create or load the icon image for the system tray"""
-        try:
-            # Try to load the Huntarr icon from the static folder
-            if getattr(sys, 'frozen', False):
-                # Running as PyInstaller bundle
-                base_path = sys._MEIPASS
-            else:
-                # Running as script
-                base_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-            
-            icon_path = os.path.join(base_path, 'frontend', 'static', 'logo', 'huntarr.ico')
-            
-            if os.path.exists(icon_path):
-                logger.info(f"Loading icon from: {icon_path}")
-                return Image.open(icon_path)
-            else:
-                # Fallback: Try PNG versions
-                for size in ['64', '48', '32']:
-                    png_path = os.path.join(base_path, 'frontend', 'static', 'logo', f'{size}.png')
-                    if os.path.exists(png_path):
-                        logger.info(f"Loading icon from: {png_path}")
-                        return Image.open(png_path)
-                
-                # Final fallback: Create a simple icon
-                logger.warning("Could not find Huntarr icon, creating placeholder")
-                return self._create_placeholder_icon()
-                
-        except Exception as e:
-            logger.error(f"Error loading icon: {e}")
-            return self._create_placeholder_icon()
-    
-    def _create_placeholder_icon(self):
-        """Create a simple placeholder icon"""
-        # Create a 64x64 orange/blue icon
-        img = Image.new('RGB', (64, 64), color=(255, 127, 0))
-        return img
-    
-    def open_web_interface(self, icon=None, item=None):
-        """Open the Huntarr web interface in the default browser"""
+        self._shutdown_callback = shutdown_callback
+        self._icon = None
+        self._thread = None
+
+    # -- Menu actions --
+
+    def _open_web(self, icon=None, item=None):
         try:
             url = f"http://localhost:{self.port}"
             webbrowser.open(url)
-            logger.info(f"Opened web interface: {url}")
+            logger.info(f"Opened browser: {url}")
         except Exception as e:
-            logger.error(f"Error opening web interface: {e}")
-    
-    def show_about(self, icon=None, item=None):
-        """Show about information (opens web interface)"""
-        self.open_web_interface()
-    
-    def exit_app(self, icon=None, item=None):
-        """Exit Huntarr application"""
-        logger.info("System tray exit requested")
-        self.running = False
-        if self.icon:
-            self.icon.stop()
-        
-        # Signal the main application to shut down
-        try:
-            from primary.background import stop_event
-            if not stop_event.is_set():
-                stop_event.set()
-                logger.info("Stop event set for main application")
-        except Exception as e:
-            logger.error(f"Error signaling main application shutdown: {e}")
-        
-        # Give threads time to clean up
-        import time
-        time.sleep(1)
-        
-        # Force exit if needed
-        os._exit(0)
-    
-    def create_menu(self):
-        """Create the system tray context menu"""
-        return pystray.Menu(
-            pystray.MenuItem(
-                "Open Huntarr",
-                self.open_web_interface,
-                default=True
-            ),
-            pystray.MenuItem(
-                "About Huntarr",
-                self.show_about
-            ),
-            pystray.Menu.SEPARATOR,
-            pystray.MenuItem(
-                "Exit",
-                self.exit_app
-            )
-        )
-    
-    def run(self):
-        """Run the system tray icon (blocking)"""
-        try:
-            logger.info("Starting system tray icon...")
-            
-            # Create the icon
-            image = self.create_icon_image()
-            menu = self.create_menu()
-            
-            self.icon = pystray.Icon(
-                "Huntarr",
-                image,
-                "Huntarr - Media Management",
-                menu
-            )
-            
-            # Run the icon (this is blocking)
-            logger.info("System tray icon running")
-            self.icon.run()
-            
-        except Exception as e:
-            logger.error(f"Error running system tray icon: {e}")
-            logger.exception(e)
-    
+            logger.error(f"Error opening browser: {e}")
+
+    def _exit_app(self, icon=None, item=None):
+        logger.info("Exit requested from system tray")
+        self.stop()
+        if self._shutdown_callback:
+            try:
+                self._shutdown_callback()
+            except Exception as e:
+                logger.error(f"Shutdown callback error: {e}")
+
+    # -- Lifecycle --
+
     def start(self):
-        """Start the system tray icon in a separate thread"""
-        try:
-            logger.info("Starting system tray in background thread...")
-            self.icon_thread = threading.Thread(
-                target=self.run,
-                name="SystemTrayThread",
-                daemon=True
-            )
-            self.icon_thread.start()
-            logger.info("System tray thread started")
-            return True
-        except Exception as e:
-            logger.error(f"Error starting system tray thread: {e}")
-            return False
-    
+        """Start the tray icon in a daemon thread. Non-blocking."""
+        self._thread = threading.Thread(target=self._run, name="SystemTrayThread", daemon=True)
+        self._thread.start()
+        logger.info("System tray thread started")
+
     def stop(self):
-        """Stop the system tray icon"""
+        """Stop the tray icon."""
+        if self._icon:
+            try:
+                self._icon.stop()
+            except Exception:
+                pass
+        logger.info("System tray icon stopped")
+
+    def _run(self):
         try:
-            self.running = False
-            if self.icon:
-                self.icon.stop()
-            logger.info("System tray icon stopped")
+            import pystray
+            image = _load_icon_image()
+            menu = pystray.Menu(
+                pystray.MenuItem("Open Huntarr", self._open_web, default=True),
+                pystray.Menu.SEPARATOR,
+                pystray.MenuItem("Exit", self._exit_app),
+            )
+            self._icon = pystray.Icon("Huntarr", image, "Huntarr", menu)
+            logger.info("System tray icon running")
+            self._icon.run()  # blocking
         except Exception as e:
-            logger.error(f"Error stopping system tray: {e}")
+            logger.error(f"System tray error: {e}", exc_info=True)
 
 
-def create_system_tray(port=None):
-    """Create and return a system tray instance
-    
-    Args:
-        port (int): Port number where Huntarr is running
-    
-    Returns:
-        HuntarrSystemTray: System tray instance
-    """
-    return HuntarrSystemTray(port=port)
-
-
-if __name__ == '__main__':
-    # Test the system tray
-    logging.basicConfig(level=logging.INFO)
-    tray = HuntarrSystemTray()
-    tray.run()  # Blocking call for testing
+def create_system_tray(port=None, shutdown_callback=None):
+    """Factory function. Returns a HuntarrSystemTray instance."""
+    return HuntarrSystemTray(port=port, shutdown_callback=shutdown_callback)

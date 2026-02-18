@@ -235,9 +235,30 @@ def run_web_server():
 
     web_logger.info(f"Starting web server on {host}:{port} (Debug: {debug_mode})...")
     
-    # TODO: System tray implementation temporarily disabled
-    # Will be re-enabled in a future update after thorough testing
-    # For now, console=False in PyInstaller spec provides silent background operation
+    # Start Windows system tray icon (non-debug, Windows-only, frozen builds)
+    _system_tray = None
+    if (not debug_mode
+            and sys.platform == 'win32'
+            and getattr(sys, 'frozen', False)):
+        try:
+            # Import from bundled resources or source tree
+            try:
+                from resources.system_tray import create_system_tray
+            except ImportError:
+                from distribution.windows.resources.system_tray import create_system_tray
+
+            def _tray_shutdown():
+                """Called when user clicks Exit in the tray menu."""
+                if not stop_event.is_set():
+                    stop_event.set()
+                if not shutdown_requested.is_set():
+                    shutdown_requested.set()
+
+            _system_tray = create_system_tray(port=port, shutdown_callback=_tray_shutdown)
+            _system_tray.start()
+            web_logger.info("Windows system tray icon initialized")
+        except Exception as e:
+            web_logger.warning(f"System tray not available: {e}")
 
     # Log the current authentication mode once at startup
     try:
@@ -308,6 +329,14 @@ def run_web_server():
             
             # Shutdown sequence
             web_logger.info("Shutdown signal received. Stopping Waitress server...")
+
+            # Stop system tray icon
+            if _system_tray:
+                try:
+                    _system_tray.stop()
+                except Exception:
+                    pass
+
             try:
                 waitress_server.close()
                 web_logger.info("Waitress server close() called.")
