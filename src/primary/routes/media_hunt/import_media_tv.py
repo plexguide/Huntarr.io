@@ -1098,6 +1098,13 @@ def register_tv_import_media_routes(bp):
             config['items'] = config.get('items', [])
             _save_unmapped_config(config, instance_id)
     
+            # Merge detected episodes from disk so they show as available immediately
+            try:
+                from .discovery_tv import _merge_detected_episodes_into_collection
+                _merge_detected_episodes_into_collection(instance_id)
+            except Exception as merge_err:
+                logger.warning("TV Import Media: episode merge after confirm failed: %s", merge_err)
+
             logger.info("TV Import Media: confirmed '%s' (%s) [TMDB %s]", title, year, tmdb_id)
             return jsonify({'success': True, 'message': f'"{title}" imported to your TV Collection.'}), 200
         except Exception as e:
@@ -1149,6 +1156,14 @@ def register_tv_import_media_routes(bp):
             config['items'] = items
             _save_unmapped_config(config, instance_id)
     
+            # Merge detected episodes from disk so they show as available immediately
+            if imported > 0:
+                try:
+                    from .discovery_tv import _merge_detected_episodes_into_collection
+                    _merge_detected_episodes_into_collection(instance_id)
+                except Exception as merge_err:
+                    logger.warning("TV Import Media: episode merge after confirm-all failed: %s", merge_err)
+
             msg = f'Imported {imported} series.'
             if skipped:
                 msg += f' {skipped} already in collection.'

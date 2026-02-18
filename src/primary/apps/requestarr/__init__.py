@@ -2938,6 +2938,12 @@ class RequestarrAPI:
             )
             if not success:
                 return {'success': False, 'message': msg, 'status': 'add_failed'}
+            # Merge detected episodes from disk so files already present show as available
+            try:
+                from src.primary.routes.media_hunt.discovery_tv import _merge_detected_episodes_into_collection
+                _merge_detected_episodes_into_collection(instance_id)
+            except Exception as merge_err:
+                logger.warning(f"TV Hunt: episode merge after add failed: {merge_err}")
             self.db.add_request(
                 tmdb_id, 'tv', title, None, overview,
                 (poster_path or '').strip(), (backdrop_path or '').strip(),
