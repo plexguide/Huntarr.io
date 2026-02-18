@@ -401,6 +401,10 @@
     background-color: var(--info-color);
 }
 
+.notification.warning {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
 /* Placeholder messages */
 .placeholder-message {
     display: flex;

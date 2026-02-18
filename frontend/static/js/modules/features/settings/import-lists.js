@@ -73,36 +73,6 @@
                     if (wrapperEl) wrapperEl.style.display = '';
                     return;
                 }
-                var indexerCount = (results[4].indexers || []).length;
-                if (indexerCount === 0) {
-                    selectEl.innerHTML = '';
-                    var emptyOpt = document.createElement('option');
-                    emptyOpt.value = '';
-                    emptyOpt.textContent = 'No indexers configured';
-                    selectEl.appendChild(emptyOpt);
-                    var noIdxEl = document.getElementById('settings-import-lists-no-indexers');
-                    var noCliEl = document.getElementById('settings-import-lists-no-clients');
-                    var wrapperEl = document.getElementById('settings-import-lists-content-wrapper');
-                    if (noIdxEl) noIdxEl.style.display = '';
-                    if (noCliEl) noCliEl.style.display = 'none';
-                    if (wrapperEl) wrapperEl.style.display = 'none';
-                    return;
-                }
-                var hasClients = results[5].has_clients === true;
-                if (!hasClients) {
-                    selectEl.innerHTML = '';
-                    var emptyOpt = document.createElement('option');
-                    emptyOpt.value = '';
-                    emptyOpt.textContent = 'No clients configured';
-                    selectEl.appendChild(emptyOpt);
-                    var noIdxEl = document.getElementById('settings-import-lists-no-indexers');
-                    var noCliEl = document.getElementById('settings-import-lists-no-clients');
-                    var wrapperEl = document.getElementById('settings-import-lists-content-wrapper');
-                    if (noIdxEl) noIdxEl.style.display = 'none';
-                    if (noCliEl) noCliEl.style.display = '';
-                    if (wrapperEl) wrapperEl.style.display = 'none';
-                    return;
-                }
                 combined.forEach(function(item) {
                     var opt = document.createElement('option');
                     opt.value = item.value;

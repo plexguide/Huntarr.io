@@ -8070,36 +8070,6 @@ document.head.appendChild(styleEl);
                     if (wrapperEl) wrapperEl.style.display = '';
                     return;
                 }
-                var indexerCount = (results[4].indexers || []).length;
-                if (indexerCount === 0) {
-                    selectEl.innerHTML = '';
-                    var emptyOpt = document.createElement('option');
-                    emptyOpt.value = '';
-                    emptyOpt.textContent = 'No indexers configured';
-                    selectEl.appendChild(emptyOpt);
-                    var noIdxEl = document.getElementById('settings-import-lists-no-indexers');
-                    var noCliEl = document.getElementById('settings-import-lists-no-clients');
-                    var wrapperEl = document.getElementById('settings-import-lists-content-wrapper');
-                    if (noIdxEl) noIdxEl.style.display = '';
-                    if (noCliEl) noCliEl.style.display = 'none';
-                    if (wrapperEl) wrapperEl.style.display = 'none';
-                    return;
-                }
-                var hasClients = results[5].has_clients === true;
-                if (!hasClients) {
-                    selectEl.innerHTML = '';
-                    var emptyOpt = document.createElement('option');
-                    emptyOpt.value = '';
-                    emptyOpt.textContent = 'No clients configured';
-                    selectEl.appendChild(emptyOpt);
-                    var noIdxEl = document.getElementById('settings-import-lists-no-indexers');
-                    var noCliEl = document.getElementById('settings-import-lists-no-clients');
-                    var wrapperEl = document.getElementById('settings-import-lists-content-wrapper');
-                    if (noIdxEl) noIdxEl.style.display = 'none';
-                    if (noCliEl) noCliEl.style.display = '';
-                    if (wrapperEl) wrapperEl.style.display = 'none';
-                    return;
-                }
                 combined.forEach(function(item) {
                     var opt = document.createElement('option');
                     opt.value = item.value;
@@ -9167,6 +9137,29 @@ document.head.appendChild(styleEl);
     'use strict';
 
     var PREFIX = 'media-hunt-import-media';
+    var IMPORT_MEDIA_PAGE_SIZE = 48;
+
+    function getImportMediaPosterUrl(posterPath, size) {
+        size = size || 'w92';
+        if (!posterPath) return './static/images/blackout.jpg';
+        var fullUrl = (posterPath.indexOf('http') === 0) ? posterPath : ('https://image.tmdb.org/t/p/' + size + (posterPath[0] === '/' ? posterPath : '/' + posterPath));
+        if (window.tmdbImageCache && window.tmdbImageCache.enabled && window.tmdbImageCache.storage === 'server') {
+            return './api/tmdb/image?url=' + encodeURIComponent(fullUrl);
+        }
+        return fullUrl;
+    }
+
+    function applyImportMediaCacheToImages(container) {
+        if (!container || !window.getCachedTMDBImage || !window.tmdbImageCache || !window.tmdbImageCache.enabled || window.tmdbImageCache.storage !== 'browser') return;
+        var imgs = container.querySelectorAll('img[src^="https://image.tmdb.org"]');
+        imgs.forEach(function(img) {
+            var posterUrlVal = img.getAttribute('src');
+            if (!posterUrlVal) return;
+            window.getCachedTMDBImage(posterUrlVal, window.tmdbImageCache).then(function(cachedUrl) {
+                if (cachedUrl && cachedUrl !== posterUrlVal) img.src = cachedUrl;
+            }).catch(function() {});
+        });
+    }
 
     window.MediaHuntImportMedia = {
         items: [],
@@ -9174,6 +9167,7 @@ document.head.appendChild(styleEl);
         pollInterval: null,
         currentSearchFolderPath: null,
         importProgressAbort: false,
+        _importScrollObserver: null,
 
         getApiBase: function() {
             return this.mode === 'tv' ? './api/tv-hunt' : './api/movie-hunt';
@@ -9242,7 +9236,7 @@ document.head.appendChild(styleEl);
                     confEl.className = 'import-progress-current-confidence ' + (score >= 70 ? 'high' : score >= 40 ? 'medium' : 'low');
                 }
                 if (posterEl) {
-                    var posterUrl = (currentItem.best_match && currentItem.best_match.poster_path) ? 'https://image.tmdb.org/t/p/w92' + currentItem.best_match.poster_path : './static/images/blackout.jpg';
+                    var posterUrl = (currentItem.best_match && currentItem.best_match.poster_path) ? getImportMediaPosterUrl(currentItem.best_match.poster_path, 'w92') : './static/images/blackout.jpg';
                     posterEl.innerHTML = '<img src="' + posterUrl + '" onerror="this.src=\'./static/images/blackout.jpg\'"></img>';
                 }
             } else {
@@ -9504,9 +9498,52 @@ document.head.appendChild(styleEl);
             }
 
             listEl.innerHTML = '';
-            for (var i = 0; i < this.items.length; i++) {
-                listEl.appendChild(self.createItemElement(this.items[i]));
+            self._importRenderedCount = 0;
+            self._appendImportMediaBatch(listEl);
+            self._setupImportMediaScrollLoad(listEl);
+        },
+
+        _appendImportMediaBatch: function(listEl) {
+            var self = this;
+            var start = self._importRenderedCount || 0;
+            var end = Math.min(start + IMPORT_MEDIA_PAGE_SIZE, self.items.length);
+            for (var i = start; i < end; i++) {
+                listEl.appendChild(self.createItemElement(self.items[i]));
             }
+            self._importRenderedCount = end;
+            applyImportMediaCacheToImages(listEl);
+        },
+
+        _setupImportMediaScrollLoad: function(listEl) {
+            var self = this;
+            if (self._importScrollObserver) {
+                self._importScrollObserver.disconnect();
+                self._importScrollObserver = null;
+            }
+            if (self._importRenderedCount >= self.items.length) return;
+
+            var sentinel = document.createElement('div');
+            sentinel.className = 'import-media-scroll-sentinel';
+            sentinel.setAttribute('aria-hidden', 'true');
+            sentinel.style.cssText = 'height:1px;visibility:hidden;pointer-events:none;';
+            listEl.appendChild(sentinel);
+
+            self._importScrollObserver = new IntersectionObserver(function(entries) {
+                if (!entries[0] || !entries[0].isIntersecting) return;
+                if (self._importRenderedCount >= self.items.length) return;
+                self._importScrollObserver.disconnect();
+                sentinel.remove();
+                self._appendImportMediaBatch(listEl);
+                if (self._importRenderedCount < self.items.length) {
+                    var newSentinel = document.createElement('div');
+                    newSentinel.className = 'import-media-scroll-sentinel';
+                    newSentinel.setAttribute('aria-hidden', 'true');
+                    newSentinel.style.cssText = 'height:1px;visibility:hidden;pointer-events:none;';
+                    listEl.appendChild(newSentinel);
+                    self._importScrollObserver.observe(newSentinel);
+                }
+            }, { root: null, rootMargin: '200px', threshold: 0 });
+            self._importScrollObserver.observe(sentinel);
         },
 
         createItemElement: function(item) {
@@ -9520,7 +9557,7 @@ document.head.appendChild(styleEl);
 
             if (item.status === 'matched' && item.best_match) {
                 var m = item.best_match;
-                if (m.poster_path) posterUrl = 'https://image.tmdb.org/t/p/w92' + m.poster_path;
+                if (m.poster_path) posterUrl = getImportMediaPosterUrl(m.poster_path, 'w92');
                 var scoreClass = m.score >= 70 ? 'high' : (m.score >= 40 ? 'medium' : 'low');
                 matchHtml = '<div class="import-media-match-info">' +
                     '<div class="import-media-match-title">' + self.escapeHtml(m.title) + '</div>' +
@@ -9545,7 +9582,7 @@ document.head.appendChild(styleEl);
 
             var sizeStr = item.file_size ? self.formatSize(item.file_size) : '';
             var qualityStr = item.parsed_quality || '';
-            div.innerHTML = '<div class="import-media-poster"><img src="' + posterUrl + '" onerror="this.src=\'./static/images/blackout.jpg\'"></div>' +
+            div.innerHTML = '<div class="import-media-poster"><img src="' + posterUrl + '" loading="lazy" onerror="this.src=\'./static/images/blackout.jpg\'"></div>' +
                 '<div class="import-media-info">' +
                 '<div class="import-media-folder-name">' + self.escapeHtml(item.folder_name) + '</div>' +
                 '<div class="import-media-folder-path">' + self.escapeHtml(item.folder_path || item.root_folder) + '</div>' +
@@ -9557,7 +9594,13 @@ document.head.appendChild(styleEl);
 
             var confirmBtns = div.querySelectorAll('.import-media-btn-confirm');
             for (var j = 0; j < confirmBtns.length; j++) {
-                confirmBtns[j].onclick = function() { self.confirmItem(this.getAttribute('data-path')); };
+                confirmBtns[j].onclick = function() {
+                    var btn = this;
+                    var path = btn.getAttribute('data-path');
+                    if (btn.disabled) return;
+                    btn.disabled = true;
+                    self.confirmItem(path, btn);
+                };
             }
             var searchBtns = div.querySelectorAll('.import-media-btn-search');
             for (var j = 0; j < searchBtns.length; j++) {
@@ -9617,7 +9660,7 @@ document.head.appendChild(styleEl);
             if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-search"></i> Scan Folders'; }
         },
 
-        confirmItem: function(folderPath) {
+        confirmItem: function(folderPath, btn) {
             var self = this;
             var item = this.findItemByPath(folderPath);
             if (!item || !item.best_match) return;
@@ -9643,7 +9686,12 @@ document.head.appendChild(styleEl);
                     } else {
                         if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(data.message || 'Import failed', data.already_exists ? 'info' : 'error');
                         if (data.already_exists) self.loadItems();
+                        if (btn) { btn.disabled = false; }
                     }
+                })
+                .catch(function() {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Import failed.', 'error');
+                    if (btn) { btn.disabled = false; }
                 });
         },
 
@@ -9795,10 +9843,10 @@ document.head.appendChild(styleEl);
                         var r = data.results[i];
                         var el = document.createElement('div');
                         el.className = 'import-media-search-result';
-                        var posterUrl = r.poster_path ? 'https://image.tmdb.org/t/p/w92' + r.poster_path : './static/images/blackout.jpg';
+                        var posterUrl = r.poster_path ? getImportMediaPosterUrl(r.poster_path, 'w92') : './static/images/blackout.jpg';
                         var overview = (r.overview || '').substring(0, 120);
                         if (overview.length >= 120) overview += '...';
-                        el.innerHTML = '<div class="import-media-search-result-poster"><img src="' + posterUrl + '" onerror="this.src=\'./static/images/blackout.jpg\'"></div>' +
+                        el.innerHTML = '<div class="import-media-search-result-poster"><img src="' + posterUrl + '" loading="lazy" onerror="this.src=\'./static/images/blackout.jpg\'"></div>' +
                             '<div class="import-media-search-result-info">' +
                             '<div class="import-media-search-result-title">' + self.escapeHtml(r.title) + '</div>' +
                             '<div class="import-media-search-result-meta">' + (r.year || 'N/A') + ' &middot; ' + (r.vote_average || 0).toFixed(1) + ' <i class="fas fa-star" style="font-size:0.7em;color:#fbbf24;"></i></div>' +
@@ -9864,8 +9912,8 @@ document.head.appendChild(styleEl);
                 var m = item.matches[i];
                 var el = document.createElement('div');
                 el.className = 'import-media-matches-dropdown-item';
-                var posterUrl = m.poster_path ? 'https://image.tmdb.org/t/p/w92' + m.poster_path : './static/images/blackout.jpg';
-                el.innerHTML = '<div class="poster"><img src="' + posterUrl + '" onerror="this.src=\'./static/images/blackout.jpg\'"></div><div class="info"><div class="title">' + self.escapeHtml(m.title) + '</div><div class="year">' + (m.year || '') + ' &middot; ' + m.score + '%</div></div>';
+                var posterUrl = m.poster_path ? getImportMediaPosterUrl(m.poster_path, 'w92') : './static/images/blackout.jpg';
+                el.innerHTML = '<div class="poster"><img src="' + posterUrl + '" loading="lazy" onerror="this.src=\'./static/images/blackout.jpg\'"></div><div class="info"><div class="title">' + self.escapeHtml(m.title) + '</div><div class="year">' + (m.year || '') + ' &middot; ' + m.score + '%</div></div>';
                 (function(match) {
                     el.onclick = function() {
                         item.best_match = match;
@@ -11329,36 +11377,6 @@ document.head.appendChild(styleEl);
                     if (noIdxEl) noIdxEl.style.display = 'none';
                     if (noCliEl) noCliEl.style.display = 'none';
                     if (wrapperEl) wrapperEl.style.display = '';
-                    return;
-                }
-                var indexerCount = (results[4].indexers || []).length;
-                if (indexerCount === 0) {
-                    selectEl.innerHTML = '';
-                    var emptyOpt = document.createElement('option');
-                    emptyOpt.value = '';
-                    emptyOpt.textContent = 'No indexers configured';
-                    selectEl.appendChild(emptyOpt);
-                    var noIdxEl = document.getElementById('settings-custom-formats-no-indexers');
-                    var noCliEl = document.getElementById('settings-custom-formats-no-clients');
-                    var wrapperEl = document.getElementById('settings-custom-formats-content-wrapper');
-                    if (noIdxEl) noIdxEl.style.display = '';
-                    if (noCliEl) noCliEl.style.display = 'none';
-                    if (wrapperEl) wrapperEl.style.display = 'none';
-                    return;
-                }
-                var hasClients = results[5].has_clients === true;
-                if (!hasClients) {
-                    selectEl.innerHTML = '';
-                    var emptyOpt = document.createElement('option');
-                    emptyOpt.value = '';
-                    emptyOpt.textContent = 'No clients configured';
-                    selectEl.appendChild(emptyOpt);
-                    var noIdxEl = document.getElementById('settings-custom-formats-no-indexers');
-                    var noCliEl = document.getElementById('settings-custom-formats-no-clients');
-                    var wrapperEl = document.getElementById('settings-custom-formats-content-wrapper');
-                    if (noIdxEl) noIdxEl.style.display = 'none';
-                    if (noCliEl) noCliEl.style.display = '';
-                    if (wrapperEl) wrapperEl.style.display = 'none';
                     return;
                 }
                 combined.forEach(function(item) {

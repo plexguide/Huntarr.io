@@ -367,6 +367,12 @@
     background: rgba(34, 197, 94, 0.3);
 }
 
+.import-media-btn-confirm:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 .import-media-btn-search {
     background: rgba(99, 102, 241, 0.15);
     color: #a5b4fc;
