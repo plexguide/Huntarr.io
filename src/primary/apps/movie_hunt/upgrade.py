@@ -58,6 +58,9 @@ def get_movies_needing_upgrade(instance_id: int) -> List[Dict[str, Any]]:
                                 'target_quality': cutoff_quality,
                                 'file_path': file_path,
                                 'quality_profile': quality_profile_name,
+                                'root_folder': movie.get('root_folder'),
+                                'tmdb_id': movie.get('tmdb_id'),
+                                'poster_path': movie.get('poster_path'),
                                 'instance_id': instance_id
                             })
                 except Exception as e:
@@ -201,10 +204,11 @@ def process_cutoff_upgrades(
     Returns:
         True if any movies were processed for upgrades, False otherwise
     """
-    movie_hunt_logger.info("Starting quality cutoff upgrades processing cycle for Movie Hunt.")
+    movie_hunt_logger.info("=== Starting Movie Hunt Quality Cutoff Upgrades ===")
     
     processed_any = False
     instance_id = app_settings.get('instance_id')
+    instance_name = app_settings.get("instance_name", "Default")
     hunt_upgrade_movies = app_settings.get('hunt_upgrade_movies', 0)
     
     if not instance_id:
@@ -212,7 +216,7 @@ def process_cutoff_upgrades(
         return False
     
     if hunt_upgrade_movies <= 0:
-        movie_hunt_logger.debug("hunt_upgrade_movies is 0, skipping upgrade cycle.")
+        movie_hunt_logger.info(f"'hunt_upgrade_movies' setting is 0 or less for instance '{instance_name}'. Skipping upgrade processing.")
         return False
     
     if stop_check and stop_check():
@@ -220,7 +224,7 @@ def process_cutoff_upgrades(
         return False
     
     # Get movies eligible for upgrade
-    movie_hunt_logger.info("Retrieving movies eligible for cutoff upgrade...")
+    movie_hunt_logger.info(f"Retrieving movies eligible for cutoff upgrade for instance '{instance_name}'...")
     upgrade_eligible = get_movies_needing_upgrade(instance_id)
     
     if not upgrade_eligible:
@@ -233,9 +237,20 @@ def process_cutoff_upgrades(
     movie_hunt_logger.info(f"Randomly selecting up to {hunt_upgrade_movies} movies for quality upgrade.")
     movies_to_upgrade = random.sample(upgrade_eligible, min(len(upgrade_eligible), hunt_upgrade_movies))
     
-    movie_hunt_logger.info(f"Selected {len(movies_to_upgrade)} movies for quality upgrade.")
+    movie_hunt_logger.info(f"Selected {len(movies_to_upgrade)} movies to search for upgrades.")
+    
+    # Log selected movies
+    if movies_to_upgrade:
+        movie_hunt_logger.info("Movies selected for upgrade processing in this cycle:")
+        for idx, movie in enumerate(movies_to_upgrade):
+            title = movie.get('title', 'Unknown')
+            year = movie.get('year', '')
+            current_q = movie.get('current_quality', 'Unknown')
+            target_q = movie.get('target_quality', 'Unknown')
+            movie_hunt_logger.info(f"  {idx+1}. {title} ({year}) - {current_q} -> {target_q}")
     
     # Process selected movies (trigger search for better quality)
+    processed_count = 0
     for movie in movies_to_upgrade:
         if stop_check and stop_check():
             movie_hunt_logger.info("Stop requested during upgrade processing.")
@@ -246,14 +261,47 @@ def process_cutoff_upgrades(
         current_quality = movie.get('current_quality', '')
         target_quality = movie.get('target_quality', '')
         
-        movie_hunt_logger.info(
-            f"Processing upgrade for '{title}' ({year}): {current_quality} -> {target_quality}"
-        )
+        movie_hunt_logger.info(f"Processing upgrade for '{title}' ({year}): {current_quality} -> {target_quality}")
         
         # Trigger search for better quality
-        # This would integrate with the existing Movie Hunt search system
-        # For now, just log that we would search
-        movie_hunt_logger.debug(f"Would search for better quality release of '{title}' ({year})")
-        processed_any = True
+        from ...routes.media_hunt.discovery_movie import perform_movie_hunt_request
+        
+        try:
+            from src.primary.stats_manager import increment_stat_only
+            increment_stat_only("movie_hunt", "hunted", 1, str(instance_id))
+        except Exception:
+            pass
+        
+        success, msg = perform_movie_hunt_request(
+            instance_id, title, year,
+            root_folder=movie.get('root_folder'),
+            quality_profile=movie.get('quality_profile'),
+            tmdb_id=movie.get('tmdb_id'),
+            poster_path=movie.get('poster_path')
+        )
+        
+        if success:
+            processed_any = True
+            processed_count += 1
+            movie_hunt_logger.info(f"  - Successfully triggered upgrade search for '{title}' ({year})")
+            
+            try:
+                from src.primary.stats_manager import increment_stat_only
+                increment_stat_only("movie_hunt", "found", 1, str(instance_id))
+            except Exception:
+                pass
+            
+            try:
+                from src.primary.utils.history_utils import log_processed_media
+                media_name = f"{title} ({year})" if year else title
+                log_processed_media("movie_hunt", media_name, 
+                                   movie.get('tmdb_id'), str(instance_id), "upgrade", 
+                                   display_name_for_log=instance_name)
+                movie_hunt_logger.debug(f"Logged quality upgrade to history for movie: {media_name}")
+            except Exception as e:
+                movie_hunt_logger.warning(f"Failed to log history for '{title}': {e}")
+        else:
+            movie_hunt_logger.warning(f"  - Failed to trigger upgrade search for '{title}' ({year}): {msg}")
     
+    movie_hunt_logger.info(f"=== Completed Movie Hunt Upgrade Cycle: Processed {processed_count} of {len(movies_to_upgrade)} selected movies ===")
     return processed_any

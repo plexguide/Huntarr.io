@@ -34,7 +34,10 @@ def get_episodes_needing_upgrade(instance_id: int) -> List[Dict[str, Any]]:
         for series in series_list:
             series_title = series.get('title', '')
             tmdb_id = series.get('tmdb_id', '')
+            tvdb_id = series.get('tvdb_id')
             quality_profile_name = series.get('quality_profile', '')
+            root_folder = series.get('root_folder')
+            poster_path = series.get('poster_path')
             
             # Get quality profile and cutoff
             if not quality_profile_name:
@@ -67,6 +70,7 @@ def get_episodes_needing_upgrade(instance_id: int) -> List[Dict[str, Any]]:
                             episodes_needing_upgrade.append({
                                 'series_title': series_title,
                                 'tmdb_id': tmdb_id,
+                                'tvdb_id': tvdb_id,
                                 'season': season_num,
                                 'episode': episode_num,
                                 'episode_title': episode.get('name', ''),
@@ -74,6 +78,8 @@ def get_episodes_needing_upgrade(instance_id: int) -> List[Dict[str, Any]]:
                                 'target_quality': cutoff_quality,
                                 'file_path': file_path,
                                 'quality_profile': quality_profile_name,
+                                'root_folder': root_folder,
+                                'poster_path': poster_path,
                                 'instance_id': instance_id
                             })
             except Exception as e:
@@ -125,10 +131,11 @@ def process_cutoff_upgrades(
     Returns:
         True if any episodes were processed for upgrades, False otherwise
     """
-    tv_hunt_logger.info("Starting quality cutoff upgrades processing cycle for TV Hunt.")
+    tv_hunt_logger.info("=== Starting TV Hunt Quality Cutoff Upgrades ===")
     
     processed_any = False
     instance_id = app_settings.get('instance_id')
+    instance_name = app_settings.get("instance_name", "Default")
     hunt_upgrade_episodes = app_settings.get('hunt_upgrade_episodes', 0)
     
     if not instance_id:
@@ -136,7 +143,7 @@ def process_cutoff_upgrades(
         return False
     
     if hunt_upgrade_episodes <= 0:
-        tv_hunt_logger.debug("hunt_upgrade_episodes is 0, skipping upgrade cycle.")
+        tv_hunt_logger.info(f"'hunt_upgrade_episodes' setting is 0 or less for instance '{instance_name}'. Skipping upgrade processing.")
         return False
     
     if stop_check and stop_check():
@@ -144,7 +151,7 @@ def process_cutoff_upgrades(
         return False
     
     # Get episodes eligible for upgrade
-    tv_hunt_logger.info("Retrieving episodes eligible for cutoff upgrade...")
+    tv_hunt_logger.info(f"Retrieving episodes eligible for cutoff upgrade for instance '{instance_name}'...")
     upgrade_eligible = get_episodes_needing_upgrade(instance_id)
     
     if not upgrade_eligible:
@@ -157,9 +164,21 @@ def process_cutoff_upgrades(
     tv_hunt_logger.info(f"Randomly selecting up to {hunt_upgrade_episodes} episodes for quality upgrade.")
     episodes_to_upgrade = random.sample(upgrade_eligible, min(len(upgrade_eligible), hunt_upgrade_episodes))
     
-    tv_hunt_logger.info(f"Selected {len(episodes_to_upgrade)} episodes for quality upgrade.")
+    tv_hunt_logger.info(f"Selected {len(episodes_to_upgrade)} episodes to search for upgrades.")
+    
+    # Log selected episodes
+    if episodes_to_upgrade:
+        tv_hunt_logger.info("Episodes selected for upgrade processing in this cycle:")
+        for idx, episode in enumerate(episodes_to_upgrade):
+            series_title = episode.get('series_title', 'Unknown')
+            season = episode.get('season', 0)
+            episode_num = episode.get('episode', 0)
+            current_q = episode.get('current_quality', 'Unknown')
+            target_q = episode.get('target_quality', 'Unknown')
+            tv_hunt_logger.info(f"  {idx+1}. {series_title} S{season:02d}E{episode_num:02d} - {current_q} -> {target_q}")
     
     # Process selected episodes (trigger search for better quality)
+    processed_count = 0
     for episode in episodes_to_upgrade:
         if stop_check and stop_check():
             tv_hunt_logger.info("Stop requested during upgrade processing.")
@@ -168,17 +187,55 @@ def process_cutoff_upgrades(
         series_title = episode.get('series_title', '')
         season = episode.get('season', 0)
         episode_num = episode.get('episode', 0)
+        episode_title = episode.get('episode_title', '')
         current_quality = episode.get('current_quality', '')
         target_quality = episode.get('target_quality', '')
         
-        tv_hunt_logger.info(
-            f"Processing upgrade for '{series_title}' S{season:02d}E{episode_num:02d}: {current_quality} -> {target_quality}"
-        )
+        tv_hunt_logger.info(f"Processing upgrade for '{series_title}' S{season:02d}E{episode_num:02d}: {current_quality} -> {target_quality}")
         
         # Trigger search for better quality
-        # This would integrate with the existing TV Hunt search system
-        # For now, just log that we would search
-        tv_hunt_logger.debug(f"Would search for better quality release of '{series_title}' S{season:02d}E{episode_num:02d}")
-        processed_any = True
+        from ...routes.media_hunt.discovery_tv import perform_tv_hunt_request
+        
+        try:
+            from src.primary.stats_manager import increment_stat_only
+            increment_stat_only("tv_hunt", "hunted", 1, str(instance_id))
+        except Exception:
+            pass
+        
+        success, msg = perform_tv_hunt_request(
+            instance_id, series_title,
+            season_number=season,
+            episode_number=episode_num,
+            tvdb_id=episode.get('tvdb_id'),
+            root_folder=episode.get('root_folder'),
+            quality_profile=episode.get('quality_profile'),
+            poster_path=episode.get('poster_path')
+        )
+        
+        if success:
+            processed_any = True
+            processed_count += 1
+            tv_hunt_logger.info(f"  - Successfully triggered upgrade search for '{series_title}' S{season:02d}E{episode_num:02d}")
+            
+            try:
+                from src.primary.stats_manager import increment_stat_only
+                increment_stat_only("tv_hunt", "found", 1, str(instance_id))
+            except Exception:
+                pass
+            
+            try:
+                from src.primary.utils.history_utils import log_processed_media
+                display = f"{series_title} S{season:02d}E{episode_num:02d}"
+                if episode_title:
+                    display += f" - {episode_title}"
+                log_processed_media("tv_hunt", display, episode.get('tmdb_id'), 
+                                   str(instance_id), "upgrade", 
+                                   display_name_for_log=instance_name)
+                tv_hunt_logger.debug(f"Logged quality upgrade to history for episode: {display}")
+            except Exception as e:
+                tv_hunt_logger.warning(f"Failed to log history for '{series_title}' S{season:02d}E{episode_num:02d}: {e}")
+        else:
+            tv_hunt_logger.warning(f"  - Failed to trigger upgrade search for '{series_title}' S{season:02d}E{episode_num:02d}: {msg}")
     
+    tv_hunt_logger.info(f"=== Completed TV Hunt Upgrade Cycle: Processed {processed_count} of {len(episodes_to_upgrade)} selected episodes ===")
     return processed_any
