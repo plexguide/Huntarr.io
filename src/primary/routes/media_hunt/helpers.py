@@ -83,20 +83,22 @@ def _instance_name_to_category(name: str, prefix: str) -> str:
 # --- TV Hunt instance ID ---
 def _get_tv_hunt_instance_id_from_request():
     """Resolve TV Hunt instance_id from query or JSON body."""
-    instance_id = request.args.get('instance_id')
-    if instance_id is None:
-        data = request.get_json(silent=True) or {}
-        instance_id = data.get('instance_id')
-    if instance_id is None:
-        from src.primary.utils.database import get_database
-        db = get_database()
-        instance_id = db.get_current_tv_hunt_instance_id()
+    from src.primary.utils.database import get_database
+    db = get_database()
+    instance_id = request.args.get('instance_id', type=int)
     if instance_id is not None:
+        return instance_id
+    if request.method in ('POST', 'DELETE', 'PUT') and request.is_json:
         try:
-            instance_id = int(instance_id)
+            body = request.get_json(silent=True) or {}
+            bid = body.get('instance_id')
+            if bid is not None:
+                instance_id = int(bid)
+                if instance_id is not None:
+                    return instance_id
         except (TypeError, ValueError):
-            instance_id = 0
-    return instance_id or 0
+            pass
+    return db.get_current_tv_hunt_instance_id()
 
 
 def _tv_profiles_context():

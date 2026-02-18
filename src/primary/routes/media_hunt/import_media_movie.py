@@ -889,6 +889,121 @@ def run_import_media_background_cycle():
 # ---------------------------------------------------------------------------
 
 def register_movie_import_media_routes(bp):
+    @bp.route('/api/movie-hunt/import-check', methods=['GET'])
+    def api_import_check():
+        """Check if a movie (by TMDB ID) already exists on disk in any root folder.
+
+        Called by the Add to Library modal to detect importable files.
+        Query params: tmdb_id (required), instance_id (optional)
+        Returns: { found: bool, matches: [{ folder_path, folder_name, score, media_info }] }
+        """
+        try:
+            tmdb_id_raw = request.args.get('tmdb_id')
+            if not tmdb_id_raw:
+                return jsonify({'found': False, 'matches': []}), 200
+            try:
+                tmdb_id = int(tmdb_id_raw)
+            except (TypeError, ValueError):
+                return jsonify({'found': False, 'matches': []}), 200
+
+            instance_id = _get_movie_hunt_instance_id_from_request()
+            root_folders = _get_root_folders_config(instance_id)
+            if not root_folders:
+                return jsonify({'found': False, 'matches': []}), 200
+
+            # Look up the movie from TMDB to get title/year for matching
+            tmdb_data = _lookup_tmdb_by_id(tmdb_id)
+            if not tmdb_data:
+                return jsonify({'found': False, 'matches': []}), 200
+
+            tmdb_title = tmdb_data.get('title') or ''
+            tmdb_original = tmdb_data.get('original_title') or tmdb_title
+            tmdb_release = tmdb_data.get('release_date') or ''
+            tmdb_year = tmdb_release[:4] if len(tmdb_release) >= 4 else ''
+
+            # Pre-compute normalized TMDB titles for fast pre-filtering
+            n_tmdb = normalize_for_scoring(tmdb_title)
+            n_tmdb_orig = normalize_for_scoring(tmdb_original)
+
+            matches = []
+            for rf in root_folders:
+                rf_path = (rf.get('path') or '').strip() if isinstance(rf, dict) else str(rf).strip()
+                if not rf_path or not os.path.isdir(rf_path):
+                    continue
+                try:
+                    entries = os.listdir(rf_path)
+                except OSError:
+                    continue
+                for entry_name in entries:
+                    full_path = os.path.join(rf_path, entry_name)
+                    if not os.path.isdir(full_path):
+                        continue
+                    if _should_skip_folder(entry_name):
+                        continue
+                    parsed = _parse_movie_name(entry_name)
+                    if not parsed.get('title'):
+                        continue
+
+                    # If folder has embedded TMDB ID, check direct match
+                    if parsed.get('tmdb_id') and parsed['tmdb_id'] == tmdb_id:
+                        media_info = _get_folder_media_info(full_path)
+                        if media_info:
+                            matches.append({
+                                'folder_path': full_path,
+                                'folder_name': entry_name,
+                                'root_folder': rf_path,
+                                'score': 100,
+                                'media_info': {
+                                    'file_count': media_info['file_count'],
+                                    'total_size': media_info['total_size'],
+                                    'main_file': media_info['main_file']['name'],
+                                },
+                            })
+                        continue
+
+                    # Fast pre-filter: title similarity must be >= 0.65 to even consider
+                    n_parsed = normalize_for_scoring(parsed['title'])
+                    best_sim = max(
+                        title_similarity(n_parsed, n_tmdb),
+                        title_similarity(n_parsed, n_tmdb_orig),
+                    )
+                    if best_sim < 0.65:
+                        continue
+
+                    # Full score using the existing scoring engine
+                    fake_tmdb = {
+                        'title': tmdb_title,
+                        'original_title': tmdb_original,
+                        'release_date': tmdb_release,
+                        'popularity': tmdb_data.get('popularity', 0),
+                        'vote_count': tmdb_data.get('vote_count', 0),
+                        'poster_path': tmdb_data.get('poster_path'),
+                    }
+                    score = _score_tmdb_match(parsed, fake_tmdb)
+                    if score >= 70:
+                        media_info = _get_folder_media_info(full_path)
+                        if media_info:
+                            matches.append({
+                                'folder_path': full_path,
+                                'folder_name': entry_name,
+                                'root_folder': rf_path,
+                                'score': score,
+                                'media_info': {
+                                    'file_count': media_info['file_count'],
+                                    'total_size': media_info['total_size'],
+                                    'main_file': media_info['main_file']['name'],
+                                },
+                            })
+
+            # Sort by score descending, limit to top 3
+            matches.sort(key=lambda m: m['score'], reverse=True)
+            matches = matches[:3]
+            return jsonify({'found': len(matches) > 0, 'matches': matches}), 200
+
+        except Exception as e:
+            logger.exception("Import check error")
+            return jsonify({'found': False, 'matches': [], 'error': str(e)}), 200
+
     @bp.route('/api/movie-hunt/import-media', methods=['GET'])
     def api_import_media_list():
         """List unmapped folders with their match status.

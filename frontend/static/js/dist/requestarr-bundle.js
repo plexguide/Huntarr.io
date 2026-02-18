@@ -5255,13 +5255,16 @@ class RequestarrModal {
                 if (isComplete) {
                     container.innerHTML = `<span class="mh-req-badge mh-req-badge-lib"><i class="fas fa-check-circle"></i> Complete (${status.available_episodes}/${status.total_episodes} episodes)</span>`;
                     if (requestBtn) { requestBtn.disabled = true; requestBtn.classList.add('disabled'); requestBtn.textContent = 'Complete'; }
+                    this._clearImportBanner();
                 } else if (status.missing_episodes > 0) {
                     container.innerHTML = `<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-tv"></i> ${status.missing_episodes} missing episodes (${status.available_episodes}/${status.total_episodes})</span>`;
                     if (requestBtn) { requestBtn.disabled = false; requestBtn.classList.remove('disabled'); requestBtn.textContent = addLabel; }
                     this._updateRequestButtonFromRootFolder();
+                    if (isTVHunt) this._checkForImport(instanceName);
                 } else {
                     container.innerHTML = '<span class="mh-req-badge mh-req-badge-lib"><i class="fas fa-check-circle"></i> In Library</span>';
                     if (requestBtn) { requestBtn.disabled = true; requestBtn.classList.add('disabled'); requestBtn.textContent = 'In Library'; }
+                    this._clearImportBanner();
                 }
             } else {
                 container.innerHTML = isTVHunt
@@ -5269,6 +5272,8 @@ class RequestarrModal {
                     : '<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-check-circle"></i> Available to request</span>';
                 if (requestBtn) { requestBtn.disabled = false; requestBtn.classList.remove('disabled'); requestBtn.textContent = addLabel; }
                 this._updateRequestButtonFromRootFolder();
+                // Check for importable files on disk for TV Hunt
+                if (isTVHunt) this._checkForImport(instanceName);
             }
         } catch (error) {
             console.error('[RequestarrModal] Error loading series status:', error);
@@ -5297,8 +5302,8 @@ class RequestarrModal {
             if (status.in_library) {
                 container.innerHTML = '<span class="mh-req-badge mh-req-badge-lib"><i class="fas fa-check-circle"></i> Already in library</span>';
                 if (requestBtn) { requestBtn.disabled = true; requestBtn.classList.add('disabled'); requestBtn.textContent = 'Already in library'; }
-                // Sync Discover card badge — it may have been rendered before the movie was added
                 this._syncCardBadge(this.core.currentModalData.tmdb_id, true);
+                this._clearImportBanner();
             } else if (status.previously_requested) {
                 container.innerHTML = isMovieHunt
                     ? '<span class="mh-req-badge mh-req-badge-warn"><i class="fas fa-clock"></i> Requested — waiting for download</span>'
@@ -5309,8 +5314,9 @@ class RequestarrModal {
                     requestBtn.textContent = isMovieHunt ? 'Add to Library' : 'Request';
                 }
                 this._updateRequestButtonFromRootFolder();
-                // Sync Discover card badge to "requested" state
                 this._syncCardBadge(this.core.currentModalData.tmdb_id, false, true);
+                // Still check for importable files even if previously requested
+                if (isMovieHunt) this._checkForImport(instanceName);
             } else {
                 container.innerHTML = isMovieHunt
                     ? '<span class="mh-req-badge mh-req-badge-ok"><i class="fas fa-check-circle"></i> Available to add</span>'
@@ -5321,6 +5327,8 @@ class RequestarrModal {
                     requestBtn.textContent = isMovieHunt ? 'Add to Library' : 'Request';
                 }
                 this._updateRequestButtonFromRootFolder();
+                // Check for importable files on disk
+                if (isMovieHunt) this._checkForImport(instanceName);
             }
         } catch (error) {
             console.error('[RequestarrModal] Error loading movie status:', error);
@@ -5335,6 +5343,192 @@ class RequestarrModal {
                 requestBtn.textContent = isMovieHunt ? 'Add to Library' : 'Request';
             }
         }
+    }
+
+    // ========================================
+    // IMPORT DETECTION
+    // ========================================
+
+    _clearImportBanner() {
+        const existing = document.getElementById('modal-import-banner');
+        if (existing) existing.remove();
+    }
+
+    async _checkForImport(instanceName) {
+        this._clearImportBanner();
+        if (!this.core.currentModalData) return;
+
+        const isTVShow = this.core.currentModalData.media_type === 'tv';
+        const decoded = decodeInstanceValue(instanceName, isTVShow ? 'sonarr' : 'radarr');
+        const isMovieHunt = decoded.appType === 'movie_hunt';
+        const isTVHunt = decoded.appType === 'tv_hunt';
+        if (!isMovieHunt && !isTVHunt) return;
+
+        const tmdbId = this.core.currentModalData.tmdb_id;
+        if (!tmdbId) return;
+
+        // Resolve numeric instance ID from core.instances (backend expects integer)
+        const instKey = isTVHunt ? 'tv_hunt' : 'movie_hunt';
+        const instList = (this.core.instances && this.core.instances[instKey]) || [];
+        const instObj = instList.find(i => i.name === decoded.name);
+        const numericId = instObj ? instObj.id : '';
+
+        const apiBase = isMovieHunt ? './api/movie-hunt/import-check' : './api/tv-hunt/import-check';
+
+        try {
+            const resp = await fetch(`${apiBase}?tmdb_id=${tmdbId}&instance_id=${encodeURIComponent(numericId)}`);
+            const data = await resp.json();
+            if (!data.found || !data.matches || data.matches.length === 0) return;
+
+            const best = data.matches[0];
+            this._showImportBanner(best, instanceName);
+        } catch (err) {
+            console.warn('[RequestarrModal] Import check failed:', err);
+        }
+    }
+
+    _showImportBanner(match, instanceName) {
+        this._clearImportBanner();
+
+        const score = match.score;
+        const sizeGB = match.media_info ? (match.media_info.total_size / 1e9).toFixed(1) : '?';
+        const fileCount = match.media_info ? match.media_info.file_count : 0;
+        const mainFile = match.media_info ? match.media_info.main_file : '';
+
+        // Confidence label
+        let confidenceClass, confidenceLabel;
+        if (score >= 85) { confidenceClass = 'high'; confidenceLabel = 'High'; }
+        else if (score >= 65) { confidenceClass = 'medium'; confidenceLabel = 'Medium'; }
+        else { confidenceClass = 'low'; confidenceLabel = 'Low'; }
+
+        const banner = document.createElement('div');
+        banner.id = 'modal-import-banner';
+        banner.className = 'modal-import-banner';
+        banner.innerHTML =
+            '<div class="import-banner-header">' +
+                '<i class="fas fa-folder-open"></i>' +
+                '<span>Existing file detected on disk</span>' +
+                '<span class="import-confidence import-confidence-' + confidenceClass + '">' + score + '% ' + confidenceLabel + '</span>' +
+            '</div>' +
+            '<div class="import-banner-details">' +
+                '<div class="import-banner-folder" title="' + this._escBannerAttr(match.folder_path) + '">' +
+                    '<i class="fas fa-folder"></i> ' + this._escBannerHtml(match.folder_name) +
+                '</div>' +
+                '<div class="import-banner-meta">' +
+                    (mainFile ? '<span title="' + this._escBannerAttr(mainFile) + '"><i class="fas fa-film"></i> ' + this._escBannerHtml(mainFile) + '</span>' : '') +
+                    '<span><i class="fas fa-hdd"></i> ' + sizeGB + ' GB</span>' +
+                    (fileCount > 1 ? '<span><i class="fas fa-copy"></i> ' + fileCount + ' files</span>' : '') +
+                '</div>' +
+            '</div>' +
+            '<button class="import-banner-btn" id="modal-import-instead-btn">' +
+                '<i class="fas fa-download"></i> Import Instead' +
+            '</button>';
+
+        // Insert before the action buttons area
+        const actionsArea = document.querySelector('.mh-req-actions');
+        if (actionsArea) {
+            actionsArea.parentNode.insertBefore(banner, actionsArea);
+        } else {
+            // Fallback: insert at end of form column
+            const formCol = document.querySelector('.mh-req-form');
+            if (formCol) formCol.appendChild(banner);
+        }
+
+        // Wire up import button
+        const importBtn = document.getElementById('modal-import-instead-btn');
+        if (importBtn) {
+            importBtn.onclick = () => this._doImportInstead(match, instanceName);
+        }
+    }
+
+    async _doImportInstead(match, instanceName) {
+        const importBtn = document.getElementById('modal-import-instead-btn');
+        if (importBtn) {
+            importBtn.disabled = true;
+            importBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importing...';
+        }
+
+        try {
+            const data = this.core.currentModalData;
+            const decoded = decodeInstanceValue(instanceName);
+            const isTVHunt = decoded.appType === 'tv_hunt';
+            const confirmUrl = isTVHunt ? './api/tv-hunt/import-media/confirm' : './api/movie-hunt/import-media/confirm';
+
+            const body = {
+                folder_path: match.folder_path,
+                tmdb_id: data.tmdb_id,
+                title: data.title || data.name || '',
+                year: String(data.year || ''),
+                poster_path: data.poster_path || '',
+                root_folder: match.root_folder || '',
+                instance_id: decoded.name,
+            };
+            // TV confirm expects 'name' field
+            if (isTVHunt) {
+                body.name = data.title || data.name || '';
+                body.first_air_date = data.first_air_date || '';
+            }
+
+            const resp = await fetch(confirmUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+            const result = await resp.json();
+
+            if (result.success) {
+                if (importBtn) {
+                    importBtn.innerHTML = '<i class="fas fa-check"></i> Imported';
+                    importBtn.classList.add('success');
+                }
+                this.core.showNotification(result.message || 'Imported successfully', 'success');
+
+                // Update status badge and card
+                const container = document.getElementById('requestarr-modal-status-container');
+                if (container) {
+                    container.innerHTML = '<span class="mh-req-badge mh-req-badge-lib"><i class="fas fa-check-circle"></i> Already in library</span>';
+                }
+                const requestBtn = document.getElementById('modal-request-btn');
+                if (requestBtn) {
+                    requestBtn.disabled = true;
+                    requestBtn.classList.add('disabled');
+                    requestBtn.textContent = 'Already in library';
+                }
+                this._syncCardBadge(data.tmdb_id, true);
+
+                // Notify detail page
+                window.dispatchEvent(new CustomEvent('requestarr-request-success', {
+                    detail: { tmdbId: data.tmdb_id, mediaType: isTVHunt ? 'tv' : 'movie', appType: decoded.appType, instanceName: decoded.name }
+                }));
+
+                setTimeout(() => this.closeModal(), 2000);
+            } else {
+                if (importBtn) {
+                    importBtn.disabled = false;
+                    importBtn.innerHTML = '<i class="fas fa-download"></i> Import Instead';
+                }
+                this.core.showNotification(result.message || 'Import failed', 'error');
+            }
+        } catch (err) {
+            console.error('[RequestarrModal] Import error:', err);
+            if (importBtn) {
+                importBtn.disabled = false;
+                importBtn.innerHTML = '<i class="fas fa-download"></i> Import Instead';
+            }
+            this.core.showNotification('Import failed: ' + (err.message || 'Unknown error'), 'error');
+        }
+    }
+
+    _escBannerHtml(s) {
+        if (!s) return '';
+        const d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+    }
+
+    _escBannerAttr(s) {
+        if (!s) return '';
+        return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
     /**
@@ -5371,6 +5565,7 @@ class RequestarrModal {
     }
 
     instanceChanged(instanceName) {
+        this._clearImportBanner();
         const isTVShow = this.core.currentModalData.media_type === 'tv';
 
         // Save to server modal preferences
@@ -5627,6 +5822,7 @@ class RequestarrModal {
         const modal = document.getElementById('media-modal');
         if (modal) modal.style.display = 'none';
         this.core.currentModalData = null;
+        this._clearImportBanner();
         document.body.classList.remove('requestarr-modal-open');
     }
 }
