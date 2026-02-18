@@ -147,6 +147,12 @@ def _run_sync(list_config, instance_id):
         if title:
             existing_title_years.add((title, year))
 
+    # Refresh scan: get detected movies on disk so we add with status=available when already present
+    from .storage import get_detected_movies_from_all_roots
+    from .discovery_movie import _normalize_title_for_key
+    detected = get_detected_movies_from_all_roots(instance_id)
+    detected_keys = {(_normalize_title_for_key(d.get('title')), str(d.get('year') or '').strip()) for d in detected}
+
     added = 0
     skipped = 0
     for movie in movies:
@@ -173,6 +179,8 @@ def _run_sync(list_config, instance_id):
         if not default_rf and root_folders:
             default_rf = root_folders[0].get('path', '')
 
+        movie_key = (_normalize_title_for_key(title), year)
+        on_disk = movie_key in detected_keys
         _collection_append(
             title=title,
             year=year,
@@ -180,6 +188,7 @@ def _run_sync(list_config, instance_id):
             tmdb_id=tmdb_id,
             poster_path=movie.get('poster_path', ''),
             root_folder=default_rf,
+            initial_status='available' if on_disk else 'requested',
         )
 
         # Track to avoid dupes within same sync

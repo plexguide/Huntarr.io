@@ -212,6 +212,11 @@ def _run_tv_sync(list_config, instance_id):
             skipped += 1
             logger.debug("Skipped adding '%s': %s", title, msg)
 
+    # Refresh scan: merge detected episodes so any already on disk get status=available
+    if added > 0:
+        from .discovery_tv import _merge_detected_episodes_into_collection
+        _merge_detected_episodes_into_collection(instance_id)
+
     logger.info("TV import list %s sync complete: %d added, %d skipped, %d total",
                 list_name, added, skipped, len(shows))
 

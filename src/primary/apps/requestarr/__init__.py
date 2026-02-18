@@ -1056,12 +1056,24 @@ class RequestarrAPI:
             status_raw = (movie.get('status') or '').lower()
             file_path = (movie.get('file_path') or '').strip()
             has_file = False
-            
+
             if file_path and os.path.isfile(file_path):
                 has_file = True
             elif status_raw == 'available':
                 has_file = True
-            
+            else:
+                # Refresh scan: check if movie is on disk via filesystem scan
+                try:
+                    from src.primary.routes.media_hunt.storage import get_detected_movies_from_all_roots
+                    from src.primary.routes.media_hunt.discovery_movie import _normalize_title_for_key
+                    detected = get_detected_movies_from_all_roots(instance_id)
+                    movie_key = (_normalize_title_for_key(movie.get('title')), str(movie.get('year') or '').strip())
+                    detected_keys = {(_normalize_title_for_key(d.get('title')), str(d.get('year') or '').strip()) for d in detected}
+                    if movie_key in detected_keys:
+                        has_file = True
+                except Exception:
+                    pass
+
             return {
                 'in_library': has_file,
                 'previously_requested': already_requested_in_db or status_raw == 'requested',

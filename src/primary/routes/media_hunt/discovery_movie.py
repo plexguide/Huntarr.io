@@ -258,10 +258,11 @@ def _save_collection_config(items_list, instance_id):
 
 
 def _collection_append(title, year, instance_id, tmdb_id=None, poster_path=None, root_folder=None,
-                      quality_profile=None, minimum_availability=None):
+                      quality_profile=None, minimum_availability=None, initial_status='requested'):
     """Append one entry to Media Collection (add to library).
     Fetches TMDB release dates for the movie to support minimum availability enforcement.
     Does not add duplicates if the movie is already in the collection.
+    initial_status: 'requested' (default) or 'available' when item is already on disk.
     """
     items = _get_collection_config(instance_id)
 
@@ -305,7 +306,7 @@ def _collection_append(title, year, instance_id, tmdb_id=None, poster_path=None,
         'digital_release': release_dates.get('digital_release', ''),
         'physical_release': release_dates.get('physical_release', ''),
         'requested_at': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
-        'status': 'requested',
+        'status': initial_status or 'requested',
         'monitored': True
     })
     _save_collection_config(items, instance_id)
@@ -567,6 +568,26 @@ def perform_movie_hunt_request(instance_id, title, year='', root_folder=None, qu
     title = (title or '').strip()
     if not title:
         return False, 'Title is required'
+
+    # Refresh scan: check if movie is already on disk before requesting
+    year_str = str(year or '').strip()
+    detected = get_detected_movies_from_all_roots(instance_id)
+    detected_keys = {(_normalize_title_for_key(d.get('title')), str(d.get('year') or '').strip()) for d in detected}
+    movie_key = (_normalize_title_for_key(title), year_str)
+    if movie_key in detected_keys:
+        movie_hunt_logger.info("Request: '%s' (%s) already on disk, skipping download", title, year_str or 'no year')
+        # Update collection status to available if item exists
+        items = _get_collection_config(instance_id)
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            it_title = _normalize_title_for_key(item.get('title'))
+            it_year = str(item.get('year') or '').strip()
+            if (it_title, it_year) == movie_key and (item.get('status') or '').lower() != 'available':
+                item['status'] = 'available'
+                _save_collection_config(items, instance_id)
+                break
+        return False, 'Already available on disk'
     year = str(year).strip() if year is not None else ''
     quality_profile = (quality_profile or '').strip() or None
     indexers = _get_indexers_config(instance_id)
@@ -1012,6 +1033,10 @@ def register_movie_discovery_routes(bp):
                 if movie_key in detected_keys:
                     has_file = True
                     status_raw = 'available'
+                    # Persist: mark collection item as available so it stays updated
+                    if (movie.get('status') or '').lower() != 'available':
+                        movie['status'] = 'available'
+                        _save_collection_config(items, instance_id)
 
             # Final status
             if has_file or status_raw == 'available':

@@ -1,6 +1,7 @@
 """TV Hunt discovery/request routes: search, NZB download, TMDB discover, collection."""
 
 import json
+import re
 import requests
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
@@ -254,13 +255,16 @@ def _save_collection_config(series_list, instance_id):
     db.save_app_config_for_instance('tv_hunt_collection', instance_id, {'series': series_list})
 
 
-def _merge_detected_episodes_into_collection(instance_id, collection):
+def _merge_detected_episodes_into_collection(instance_id, collection=None):
     """
     Merge filesystem-detected episodes into the collection so imported episodes
     show as available even before the importer has updated the collection.
     Mutates collection in place and persists if any episode was updated.
+    If collection is None, fetches it from config.
     """
     import re
+    if collection is None:
+        collection = _get_collection_config(instance_id)
     if not collection:
         return
     detected = get_detected_episodes_from_all_roots(instance_id)
@@ -493,6 +497,13 @@ def add_series_to_tv_hunt_collection(
 
 # --- Core request function ---
 
+def _normalize_series_for_detected_match(title):
+    """Normalize series title for matching against detected folder names."""
+    s = (title or '').strip()
+    s = re.sub(r'\s*\(\d{4}\)\s*$', '', s).strip()
+    return s.lower()
+
+
 def perform_tv_hunt_request(
     instance_id, series_title, season_number=None, episode_number=None,
     tvdb_id=None, root_folder=None, quality_profile=None, poster_path=None,
@@ -513,6 +524,28 @@ def perform_tv_hunt_request(
         instance_id = int(instance_id)
     except (TypeError, ValueError):
         return False, "Invalid instance_id"
+
+    # Refresh scan: check if episode(s) already on disk before requesting
+    detected = get_detected_episodes_from_all_roots(instance_id)
+    detected_set = set()
+    for d in detected:
+        folder_norm = _normalize_series_for_detected_match(d.get('series_title') or '')
+        if folder_norm:
+            detected_set.add((folder_norm, int(d.get('season_number') or 0), int(d.get('episode_number') or 0)))
+    series_norm = _normalize_series_for_detected_match(series_title)
+    if search_type == "episode" and season_number is not None and episode_number is not None:
+        key = (series_norm, int(season_number), int(episode_number))
+        if key in detected_set:
+            tv_hunt_logger.info("Request: '%s' S%02dE%02d already on disk, skipping download", series_title.strip(), int(season_number), int(episode_number))
+            _merge_detected_episodes_into_collection(instance_id)
+            return False, "Already available on disk"
+    elif search_type == "season" and season_number is not None:
+        # For season pack: skip only if we have a contiguous run 1..N (likely full season)
+        ep_nums = sorted(e for (sn, s, e) in detected_set if sn == series_norm and s == int(season_number))
+        if ep_nums and ep_nums == list(range(1, len(ep_nums) + 1)) and len(ep_nums) >= 3:
+            tv_hunt_logger.info("Request: '%s' S%02d already on disk (%d episodes), skipping download", series_title.strip(), int(season_number), len(ep_nums))
+            _merge_detected_episodes_into_collection(instance_id)
+            return False, "Already available on disk"
 
     # Prepare search parameters
     title_clean = series_title.strip()
