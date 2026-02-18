@@ -1,17 +1,5 @@
 <section id="movieManagementSection" class="content-section">
     <div id="movieManagementContainer" class="app-content-panel">
-        <div id="movie-management-no-indexers" class="movie-management-no-indexers" style="display: none;">
-            <i class="fas fa-satellite-dish" aria-hidden="true"></i>
-            <p class="no-instances-title">No indexers configured</p>
-            <p class="no-instances-desc">Configure at least one indexer in the Index Master Pool to use this section.</p>
-            <a href="./#indexer-hunt" class="no-instances-action-btn"><i class="fas fa-plus"></i> Add Indexer</a>
-        </div>
-        <div id="movie-management-no-clients" class="movie-management-no-clients" style="display: none;">
-            <i class="fas fa-download" aria-hidden="true"></i>
-            <p class="no-instances-title">No clients configured</p>
-            <p class="no-instances-desc">Configure at least one download client in Settings → Clients to use this section.</p>
-            <a href="./#settings-clients" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure Clients</a>
-        </div>
         <div id="movie-management-content-wrapper" style="display: none;">
         <div class="media-hunt-settings-instance-bar" style="margin-bottom: 16px;">
             <select id="movie-management-instance-select" class="control-select" aria-label="Instance">
@@ -413,6 +401,47 @@
         border: 1px solid rgba(99, 102, 241, 0.3);
     }
     .tkb-btn-done:hover { background: rgba(99, 102, 241, 0.35); color: #a5b4fc; }
+
+    /* ── Reset Library (Danger Zone) ────── */
+    #movie-management-content .reset-library-section {
+        background: rgba(239, 68, 68, 0.08);
+        border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+    #movie-management-content .reset-library-title {
+        color: #f87171 !important;
+        border-bottom-color: rgba(239, 68, 68, 0.25) !important;
+    }
+    #movie-management-content .reset-library-title i { margin-right: 6px; }
+    #movie-management-content .reset-library-card {
+        padding: 16px;
+        background: rgba(239, 68, 68, 0.05);
+        border-radius: 8px;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+    #movie-management-content .reset-library-warning {
+        color: #fca5a5;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        margin: 0 0 16px 0;
+    }
+    #movie-management-content .reset-library-warning strong { color: #fecaca; }
+    #movie-management-content .reset-library-btn {
+        padding: 10px 20px;
+        background: rgba(239, 68, 68, 0.2);
+        border: 1px solid rgba(239, 68, 68, 0.5);
+        border-radius: 8px;
+        color: #f87171;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+    #movie-management-content .reset-library-btn:hover {
+        background: rgba(239, 68, 68, 0.3);
+        border-color: rgba(239, 68, 68, 0.6);
+    }
 
     @media (max-width: 768px) {
         #movieManagementContainer { padding: 20px 0 100px 0; }

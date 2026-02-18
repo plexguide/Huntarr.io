@@ -6072,7 +6072,13 @@ document.head.appendChild(styleEl);
             '<label>Next Sync</label>' +
             '<div id="movie-mgmt-rss-next-sync" class="editor-help-text" style="color: #94a3b8; padding: 6px 0;">Loading\u2026</div>' +
             '</div>' +
-            '</div></div>';
+            '</div>' +
+            '<div class="editor-section reset-library-section">' +
+            '<div class="editor-section-title reset-library-title"><i class="fas fa-exclamation-triangle"></i> Danger Zone</div>' +
+            '<div class="reset-library-card">' +
+            '<p class="reset-library-warning">Reset Library Collection clears all movies from this instance\'s collection. Your files on disk are <strong>not deleted</strong>. The library will appear empty until you add movies again via Import Media, discovery, or import lists.</p>' +
+            '<button type="button" class="reset-library-btn" id="movie-mgmt-reset-library"><i class="fas fa-trash-alt"></i> Reset Library Collection</button>' +
+            '</div></div></div>';
     }
 
     function markDirty() {
@@ -6212,6 +6218,7 @@ document.head.appendChild(styleEl);
                 setupChangeDetection();
                 attachTokenBuilderButtons();
                 loadRssSyncStatus();
+                attachResetLibraryButton();
                 if (saveBtn) {
                     saveBtn.onclick = function() { window.MovieManagement.save(); };
                 }
@@ -6229,6 +6236,7 @@ document.head.appendChild(styleEl);
                 contentEl.innerHTML = generateFormHtml(_movieManagementData);
                 setupChangeDetection();
                 attachTokenBuilderButtons();
+                attachResetLibraryButton();
                 if (saveBtn) saveBtn.onclick = function() { window.MovieManagement.save(); };
                 if (backBtn) backBtn.onclick = function() {
                     confirmLeaveMovieManagement(function(result) {
@@ -6290,6 +6298,46 @@ document.head.appendChild(styleEl);
         return './api/settings/movie-management';
     }
 
+    function attachResetLibraryButton() {
+        var btn = document.getElementById('movie-mgmt-reset-library');
+        if (!btn) return;
+        btn.onclick = function() {
+            var instId = getInstanceId();
+            if (!instId) {
+                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Select an instance first.', 'error');
+                return;
+            }
+            var sel = document.getElementById('movie-management-instance-select');
+            var instName = (sel && sel.options[sel.selectedIndex]) ? sel.options[sel.selectedIndex].textContent : 'this instance';
+            if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                window.HuntarrConfirm.show({
+                    title: 'Reset Library Collection',
+                    message: 'This will clear all movies from the collection for ' + instName + '. Your files on disk will NOT be deleted. The library will be empty until you add movies again.\n\nAre you sure?',
+                    confirmLabel: 'Reset Library',
+                    onConfirm: function() { doResetLibrary(instId); }
+                });
+            } else {
+                if (!confirm('Reset library collection for ' + instName + '? Files will NOT be deleted.')) return;
+                doResetLibrary(instId);
+            }
+        };
+    }
+
+    function doResetLibrary(instanceId) {
+        fetch('./api/movie-hunt/instances/' + encodeURIComponent(instanceId) + '/reset-collection', { method: 'DELETE' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success && window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification(data.message || 'Library collection reset.', 'success');
+                } else if (!data.success && window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification(data.error || 'Failed to reset.', 'error');
+                }
+            })
+            .catch(function() {
+                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Failed to reset library.', 'error');
+            });
+    }
+
     function getInstanceId() {
         var sel = document.getElementById('movie-management-instance-select');
         var v = sel && sel.value ? sel.value : '';
@@ -6315,9 +6363,7 @@ document.head.appendChild(styleEl);
         Promise.all([
             safeJsonFetch('./api/movie-hunt/instances?t=' + ts, { instances: [] }),
             safeJsonFetch('./api/tv-hunt/instances?t=' + ts, { instances: [] }),
-            safeJsonFetch('./api/movie-hunt/instances/current?t=' + ts, { current_instance_id: null }),
-            safeJsonFetch('./api/indexer-hunt/indexers?t=' + ts, { indexers: [] }),
-            safeJsonFetch('./api/movie-hunt/has-clients?t=' + ts, { has_clients: false })
+            safeJsonFetch('./api/movie-hunt/instances/current?t=' + ts, { current_instance_id: null })
         ]).then(function(results) {
             var movieList = (results[0].instances || []).map(function(inst) {
                 return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
@@ -6334,42 +6380,8 @@ document.head.appendChild(styleEl);
                 emptyOpt.value = '';
                 emptyOpt.textContent = 'No Movie or TV Hunt instances';
                 selectEl.appendChild(emptyOpt);
-                var noIdxEl = document.getElementById('movie-management-no-indexers');
-                var noCliEl = document.getElementById('movie-management-no-clients');
                 var wrapperEl = document.getElementById('movie-management-content-wrapper');
-                if (noIdxEl) noIdxEl.style.display = 'none';
-                if (noCliEl) noCliEl.style.display = 'none';
                 if (wrapperEl) wrapperEl.style.display = '';
-                return;
-            }
-            var indexerCount = (results[3].indexers || []).length;
-            if (indexerCount === 0) {
-                selectEl.innerHTML = '';
-                var emptyOpt = document.createElement('option');
-                emptyOpt.value = '';
-                emptyOpt.textContent = 'No indexers configured';
-                selectEl.appendChild(emptyOpt);
-                var noIdxEl = document.getElementById('movie-management-no-indexers');
-                var noCliEl = document.getElementById('movie-management-no-clients');
-                var wrapperEl = document.getElementById('movie-management-content-wrapper');
-                if (noIdxEl) noIdxEl.style.display = '';
-                if (noCliEl) noCliEl.style.display = 'none';
-                if (wrapperEl) wrapperEl.style.display = 'none';
-                return;
-            }
-            var hasClients = results[4].has_clients === true;
-            if (!hasClients) {
-                selectEl.innerHTML = '';
-                var emptyOpt = document.createElement('option');
-                emptyOpt.value = '';
-                emptyOpt.textContent = 'No clients configured';
-                selectEl.appendChild(emptyOpt);
-                var noIdxEl = document.getElementById('movie-management-no-indexers');
-                var noCliEl = document.getElementById('movie-management-no-clients');
-                var wrapperEl = document.getElementById('movie-management-content-wrapper');
-                if (noIdxEl) noIdxEl.style.display = 'none';
-                if (noCliEl) noCliEl.style.display = '';
-                if (wrapperEl) wrapperEl.style.display = 'none';
                 return;
             }
             combined.forEach(function(item) {
@@ -6388,22 +6400,14 @@ document.head.appendChild(styleEl);
                 selected = combined[0].value;
             }
             selectEl.value = selected;
-            var noIdxEl = document.getElementById('movie-management-no-indexers');
-            var noCliEl = document.getElementById('movie-management-no-clients');
             var wrapperEl = document.getElementById('movie-management-content-wrapper');
-            if (noIdxEl) noIdxEl.style.display = 'none';
-            if (noCliEl) noCliEl.style.display = 'none';
             if (wrapperEl) wrapperEl.style.display = '';
             if (typeof localStorage !== 'undefined') localStorage.setItem('media-mgmt-last-instance', selected);
             handleInstanceChange(selected);
         }).catch(function() {
             selectEl.innerHTML = '<option value="">Failed to load instances</option>';
-            var noIdxEl = document.getElementById('movie-management-no-indexers');
-            var noCliEl = document.getElementById('movie-management-no-clients');
             var wrapperEl = document.getElementById('movie-management-content-wrapper');
-            if (noIdxEl) noIdxEl.style.display = 'none';
-            if (noCliEl) noCliEl.style.display = '';
-            if (wrapperEl) wrapperEl.style.display = 'none';
+            if (wrapperEl) wrapperEl.style.display = '';
         });
     }
 
@@ -6816,7 +6820,13 @@ document.head.appendChild(styleEl);
             '<label>Next Sync</label>' +
             '<div id="tv-mgmt-rss-next-sync" class="editor-help-text" style="color: #94a3b8; padding: 6px 0;">Loading\u2026</div>' +
             '</div>' +
-            '</div></div>';
+            '</div>' +
+            '<div class="editor-section reset-library-section">' +
+            '<div class="editor-section-title reset-library-title"><i class="fas fa-exclamation-triangle"></i> Danger Zone</div>' +
+            '<div class="reset-library-card">' +
+            '<p class="reset-library-warning">Reset Library Collection clears all series from this instance\'s collection. Your files on disk are <strong>not deleted</strong>. The library will appear empty until you add series again via Import Media, discovery, or import lists.</p>' +
+            '<button type="button" class="reset-library-btn" id="tv-mgmt-reset-library"><i class="fas fa-trash-alt"></i> Reset Library Collection</button>' +
+            '</div></div></div>';
     }
 
     function markDirty() {
@@ -6971,6 +6981,7 @@ document.head.appendChild(styleEl);
                 setupChangeDetection();
                 attachTokenBuilderButtons();
                 loadRssSyncStatus();
+                attachResetLibraryButton();
                 if (saveBtn) saveBtn.onclick = function() { window.TVManagement.save(); };
             })
             .catch(function() {
@@ -6978,7 +6989,48 @@ document.head.appendChild(styleEl);
                 contentEl.innerHTML = generateFormHtml(_data);
                 setupChangeDetection();
                 attachTokenBuilderButtons();
+                attachResetLibraryButton();
                 if (saveBtn) saveBtn.onclick = function() { window.TVManagement.save(); };
+            });
+    }
+
+    function attachResetLibraryButton() {
+        var btn = document.getElementById('tv-mgmt-reset-library');
+        if (!btn) return;
+        btn.onclick = function() {
+            var instId = getInstanceId();
+            if (!instId) {
+                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Select an instance first.', 'error');
+                return;
+            }
+            var sel = document.getElementById('tv-management-instance-select');
+            var instName = (sel && sel.options[sel.selectedIndex]) ? sel.options[sel.selectedIndex].textContent : 'this instance';
+            if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                window.HuntarrConfirm.show({
+                    title: 'Reset Library Collection',
+                    message: 'This will clear all series from the collection for ' + instName + '. Your files on disk will NOT be deleted. The library will be empty until you add series again.\n\nAre you sure?',
+                    confirmLabel: 'Reset Library',
+                    onConfirm: function() { doResetLibrary(instId); }
+                });
+            } else {
+                if (!confirm('Reset library collection for ' + instName + '? Files will NOT be deleted.')) return;
+                doResetLibrary(instId);
+            }
+        };
+    }
+
+    function doResetLibrary(instanceId) {
+        fetch('./api/tv-hunt/instances/' + encodeURIComponent(instanceId) + '/reset-collection', { method: 'DELETE' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success && window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification(data.message || 'Library collection reset.', 'success');
+                } else if (!data.success && window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification(data.error || 'Failed to reset.', 'error');
+                }
+            })
+            .catch(function() {
+                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Failed to reset library.', 'error');
             });
     }
 

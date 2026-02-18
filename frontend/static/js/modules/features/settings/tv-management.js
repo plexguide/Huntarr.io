@@ -151,7 +151,13 @@
             '<label>Next Sync</label>' +
             '<div id="tv-mgmt-rss-next-sync" class="editor-help-text" style="color: #94a3b8; padding: 6px 0;">Loading\u2026</div>' +
             '</div>' +
-            '</div></div>';
+            '</div>' +
+            '<div class="editor-section reset-library-section">' +
+            '<div class="editor-section-title reset-library-title"><i class="fas fa-exclamation-triangle"></i> Danger Zone</div>' +
+            '<div class="reset-library-card">' +
+            '<p class="reset-library-warning">Reset Library Collection clears all series from this instance\'s collection. Your files on disk are <strong>not deleted</strong>. The library will appear empty until you add series again via Import Media, discovery, or import lists.</p>' +
+            '<button type="button" class="reset-library-btn" id="tv-mgmt-reset-library"><i class="fas fa-trash-alt"></i> Reset Library Collection</button>' +
+            '</div></div></div>';
     }
 
     function markDirty() {
@@ -306,6 +312,7 @@
                 setupChangeDetection();
                 attachTokenBuilderButtons();
                 loadRssSyncStatus();
+                attachResetLibraryButton();
                 if (saveBtn) saveBtn.onclick = function() { window.TVManagement.save(); };
             })
             .catch(function() {
@@ -313,7 +320,48 @@
                 contentEl.innerHTML = generateFormHtml(_data);
                 setupChangeDetection();
                 attachTokenBuilderButtons();
+                attachResetLibraryButton();
                 if (saveBtn) saveBtn.onclick = function() { window.TVManagement.save(); };
+            });
+    }
+
+    function attachResetLibraryButton() {
+        var btn = document.getElementById('tv-mgmt-reset-library');
+        if (!btn) return;
+        btn.onclick = function() {
+            var instId = getInstanceId();
+            if (!instId) {
+                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Select an instance first.', 'error');
+                return;
+            }
+            var sel = document.getElementById('tv-management-instance-select');
+            var instName = (sel && sel.options[sel.selectedIndex]) ? sel.options[sel.selectedIndex].textContent : 'this instance';
+            if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                window.HuntarrConfirm.show({
+                    title: 'Reset Library Collection',
+                    message: 'This will clear all series from the collection for ' + instName + '. Your files on disk will NOT be deleted. The library will be empty until you add series again.\n\nAre you sure?',
+                    confirmLabel: 'Reset Library',
+                    onConfirm: function() { doResetLibrary(instId); }
+                });
+            } else {
+                if (!confirm('Reset library collection for ' + instName + '? Files will NOT be deleted.')) return;
+                doResetLibrary(instId);
+            }
+        };
+    }
+
+    function doResetLibrary(instanceId) {
+        fetch('./api/tv-hunt/instances/' + encodeURIComponent(instanceId) + '/reset-collection', { method: 'DELETE' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success && window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification(data.message || 'Library collection reset.', 'success');
+                } else if (!data.success && window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification(data.error || 'Failed to reset.', 'error');
+                }
+            })
+            .catch(function() {
+                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Failed to reset library.', 'error');
             });
     }
 
