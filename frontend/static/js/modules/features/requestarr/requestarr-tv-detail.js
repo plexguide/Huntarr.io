@@ -453,11 +453,11 @@
                 refreshBtn.addEventListener('click', async () => {
                     if (refreshBtn.disabled) return;
                     refreshBtn.disabled = true;
+                    if (window.huntarrUI && window.huntarrUI.showNotification) {
+                        window.huntarrUI.showNotification('Refresh scan initiated.', 'success');
+                    }
                     try {
                         await this.updateDetailInfoBar();
-                        if (window.huntarrUI && window.huntarrUI.showNotification) {
-                            window.huntarrUI.showNotification('Refresh scan completed.', 'success');
-                        }
                     } catch (e) {
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
                             window.huntarrUI.showNotification('Refresh failed.', 'error');
