@@ -844,12 +844,11 @@ window.HuntarrNavigation = {
         const onActivity = activitySections.indexOf(sectionForNav) !== -1;
         const onConfig = configSections.indexOf(sectionForNav) !== -1;
 
-        // Keep Collections sub-menu (Instances/Calendar) expanded within Media Hunt
+        // Expand only the relevant sub (matches setActiveNavItem — avoids flicker when clicking Settings)
         const colSub = document.getElementById('movie-hunt-collection-sub');
-        if (colSub) colSub.classList.add('expanded');
-
         const actSub = document.getElementById('movie-hunt-activity-sub');
         const cfgSub = document.getElementById('media-hunt-config-sub');
+        if (colSub) colSub.classList.toggle('expanded', !onActivity && !onConfig);
         if (actSub) actSub.classList.toggle('expanded', onActivity);
         if (cfgSub) cfgSub.classList.toggle('expanded', onConfig);
 
