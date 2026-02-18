@@ -11,6 +11,7 @@ This is the main integration point for Movie Hunt → NZB Hunt.
 
 import os
 import re
+import sys
 import json
 import time
 import uuid
@@ -357,11 +358,11 @@ class NZBHuntDownloadManager:
         # every poll (frontend polls every 3-5 seconds).
         self._cached_status: Optional[dict] = None
         self._cached_status_time: float = 0.0
-        self._status_cache_ttl: float = 4.0  # seconds (higher = less GIL contention)
+        self._status_cache_ttl: float = 5.0  # seconds (higher = less GIL contention from polling)
 
         self._cached_queue: Optional[List[dict]] = None
         self._cached_queue_time: float = 0.0
-        self._queue_cache_ttl: float = 4.0  # seconds
+        self._queue_cache_ttl: float = 5.0  # seconds
 
         # Cache disk_usage (filesystem I/O) separately - very slow-changing
         self._cached_disk_free: int = 0
@@ -1636,6 +1637,7 @@ class NZBHuntDownloadManager:
     
     def _process_download(self, item: DownloadItem):
         """Process a single NZB download using parallel connections."""
+
         item.state = STATE_DOWNLOADING
         item.started_at = datetime.now(timezone.utc).isoformat()
         # Reset all progress counters (critical after restart recovery –
@@ -2041,6 +2043,7 @@ class NZBHuntDownloadManager:
                         break
 
                     # Fill submission window
+                    _submit_count = 0
                     while len(pending) < max_inflight and not segments_exhausted:
                         if item.state == STATE_PAUSED or self._paused_global:
                             break
@@ -2061,21 +2064,28 @@ class NZBHuntDownloadManager:
                             future.add_done_callback(_on_done)
                             pending[future] = (file_idx, seg)
                             future = None
+                            # Yield GIL every 32 submissions so web threads
+                            # aren't blocked during initial burst
+                            _submit_count += 1
+                            if _submit_count & 31 == 0:
+                                time.sleep(0)
                         except StopIteration:
                             segments_exhausted = True
                             break
 
                     # ── Batch drain: process ALL available completed futures ──
-                    # Block for the first one, then drain everything else
-                    # that's ready without blocking.  This catches up fast
-                    # after any stall and keeps workers fully saturated.
+                    # Block for the first one, then drain up to _DRAIN_CAP
+                    # others before yielding the GIL.  Without a cap, 50+
+                    # futures completing at once would hold the GIL for the
+                    # entire batch, starving the web server.
                     if pending:
+                        _DRAIN_CAP = 16
                         first = done_q.get()  # block for at least one
                         if not _process_future(first):
                             break
-                        # Drain all others that are already done (non-blocking)
+                        # Drain up to _DRAIN_CAP others that are already done
                         _drain_count = 0
-                        while not done_q.empty() and pending:
+                        while _drain_count < _DRAIN_CAP and not done_q.empty() and pending:
                             try:
                                 fut = done_q.get_nowait()
                                 if not _process_future(fut):
@@ -2084,16 +2094,19 @@ class NZBHuntDownloadManager:
                                 _drain_count += 1
                             except Empty:
                                 break
-                        # Yield GIL after processing a batch so web server
-                        # threads aren't starved during heavy downloads.
-                        if _drain_count > 0:
-                            time.sleep(0)
+                        # Yield GIL after every batch so Waitress web server
+                        # threads can serve requests during heavy downloads.
+                        time.sleep(0)
 
                 # Drain remaining
+                _drain_rem = 0
                 while pending and not (item.state == STATE_PAUSED or self._paused_global):
                     fut = done_q.get()
                     if not _process_future(fut):
                         break
+                    _drain_rem += 1
+                    if _drain_rem & 15 == 0:
+                        time.sleep(0)
 
                 # Cancel outstanding
                 if pending:
@@ -2347,6 +2360,20 @@ def _format_eta(seconds: int) -> str:
 
 # ── Module-level convenience functions ────────────────────────────
 
-def get_manager() -> NZBHuntDownloadManager:
-    """Get the singleton download manager instance."""
-    return NZBHuntDownloadManager.get_instance()
+# When True, get_manager() returns the real NZBHuntDownloadManager
+# (used inside the child download process).  When False (default),
+# it returns the DownloadManagerProxy that talks to the child process.
+_force_direct = False
+
+def get_manager():
+    """Get the download manager instance.
+
+    In the web server process this returns a DownloadManagerProxy that
+    communicates with a child process (separate GIL).  Inside the child
+    process itself, _force_direct is set so the real manager is returned.
+    """
+    if _force_direct:
+        return NZBHuntDownloadManager.get_instance()
+    # Return the proxy — download engine runs in its own process
+    from src.primary.apps.nzb_hunt.download_process import DownloadManagerProxy
+    return DownloadManagerProxy.get_instance()

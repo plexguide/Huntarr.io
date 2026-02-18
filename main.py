@@ -275,12 +275,15 @@ def run_web_server():
             import time
             web_logger.info("Running with Waitress production server.")
             
-            # Read configurable web server thread count from settings
-            web_threads = 32  # default
+            # Read configurable web server thread count from settings.
+            # Fewer threads = less GIL contention with download workers.
+            # 8 threads is plenty for a single-user app; 32 was causing
+            # severe GIL starvation during heavy NZB downloads.
+            web_threads = 8  # default
             try:
                 from primary.settings_manager import load_settings
                 general_settings = load_settings('general')
-                web_threads = max(8, min(int(general_settings.get('web_server_threads', 32)), 96))
+                web_threads = max(4, min(int(general_settings.get('web_server_threads', 8)), 32))
             except Exception:
                 pass
             web_logger.info(f"Waitress configured with {web_threads} worker threads")
@@ -412,6 +415,16 @@ def main_shutdown_handler(signum, frame):
             waitress_server.close()
         except Exception as e:
             huntarr_logger.warning(f"Error closing Waitress server: {e}")
+
+    # Stop the NZB Hunt download child process
+    try:
+        from src.primary.apps.nzb_hunt.download_process import DownloadManagerProxy
+        proxy = DownloadManagerProxy._instance
+        if proxy is not None:
+            huntarr_logger.info("Stopping NZB Hunt download child process...")
+            proxy.stop()
+    except Exception as e:
+        huntarr_logger.warning(f"Error stopping download child process: {e}")
     
     # Force exit if shutdown takes too long (Docker container update scenario)
     elapsed_time = time.time() - shutdown_start_time
