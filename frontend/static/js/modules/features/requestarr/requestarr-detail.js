@@ -128,25 +128,11 @@
             if (!tmdbId) return null;
 
             try {
-                if (!this.tmdbApiKey) {
-                    const keyResponse = await fetch('./api/movie-hunt/tmdb-key');
-                    if (!keyResponse.ok) throw new Error('TMDB key endpoint failed: ' + keyResponse.status);
-                    const keyData = await keyResponse.json();
-                    this.tmdbApiKey = keyData.api_key;
-                }
-
-                if (!this.tmdbApiKey) {
-                    console.error('[RequestarrDetail] No TMDB API key available');
-                    return null;
-                }
-
-                const url = `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${this.tmdbApiKey}&append_to_response=credits,similar,videos,release_dates`;
-                const response = await fetch(url);
-
+                const response = await fetch(`./api/movie-hunt/tmdb-movie/${tmdbId}`);
                 if (!response.ok) throw new Error(`TMDB API returned ${response.status}`);
                 return await response.json();
             } catch (error) {
-                console.error('[RequestarrDetail] Error fetching from TMDB:', error);
+                console.error('[RequestarrDetail] Error fetching movie details:', error);
                 return null;
             }
         },

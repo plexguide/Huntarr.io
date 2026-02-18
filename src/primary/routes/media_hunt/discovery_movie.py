@@ -1,6 +1,7 @@
 """Movie Hunt discovery/request routes: search, NZB download, TMDB discover, collection."""
 
 import json
+import time
 import requests
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
@@ -847,9 +848,9 @@ def register_movie_discovery_routes(bp):
                     continue
                 categories = idx.get('categories') or [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2070]
                 ih_id = idx.get('indexer_hunt_id', '')
-                _search_start = _time.time()
+                _search_start = time.time()
                 results = _search_newznab_movie(base_url, api_key, query, categories, timeout=15)
-                _search_ms = int((_time.time() - _search_start) * 1000)
+                _search_ms = int((time.time() - _search_start) * 1000)
                 # Record search event for Indexer Hunt stats
                 if ih_id:
                     try:
@@ -944,6 +945,34 @@ def register_movie_discovery_routes(bp):
         """Return TMDB API key for Movie Hunt detail page."""
         key = _get_tmdb_api_key_movie_hunt()
         return jsonify({'api_key': key or ''})
+
+    @bp.route('/api/movie-hunt/tmdb-movie/<int:tmdb_id>', methods=['GET'])
+    def api_movie_hunt_tmdb_movie(tmdb_id):
+        """Get movie detail from TMDB (credits, similar, videos, release_dates). Cached with smart TTL."""
+        try:
+            from src.primary.utils.tmdb_metadata_cache import get, set_movie
+
+            cached = get('movie', tmdb_id)
+            if cached is not None:
+                return jsonify(cached), 200
+
+            api_key = _get_tmdb_api_key_movie_hunt()
+            if not api_key:
+                return jsonify({'error': 'TMDB API key not configured'}), 500
+
+            from src.primary.settings_manager import get_ssl_verify_setting
+            verify_ssl = get_ssl_verify_setting()
+            url = f'https://api.themoviedb.org/3/movie/{tmdb_id}'
+            params = {'api_key': api_key, 'language': 'en-US', 'append_to_response': 'credits,similar,videos,release_dates'}
+            r = requests.get(url, params=params, timeout=15, verify=verify_ssl)
+            if r.status_code != 200:
+                return jsonify({'error': 'Movie not found'}), 404
+            data = r.json()
+            set_movie(tmdb_id, data)
+            return jsonify(data), 200
+        except Exception as e:
+            movie_hunt_logger.exception('Movie Hunt TMDB movie detail error: %s', e)
+            return jsonify({'error': str(e)}), 500
 
 
     @bp.route('/api/movie-hunt/movie-status', methods=['GET'])

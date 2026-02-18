@@ -388,21 +388,26 @@ class RequestarrAPI:
             return []
     
     def get_media_details(self, tmdb_id: int, media_type: str) -> Dict[str, Any]:
-        """Get detailed information about a movie or TV show"""
-        api_key = self.get_tmdb_api_key()
-        
+        """Get detailed information about a movie or TV show. Uses smart TMDB metadata cache."""
         try:
-            endpoint = "movie" if media_type == "movie" else "tv"
-            url = f"{self.tmdb_base_url}/{endpoint}/{tmdb_id}"
-            params = {
-                'api_key': api_key,
-                'append_to_response': 'credits,videos'
-            }
-            
-            response = requests.get(url, params=params, timeout=10)
-            response.raise_for_status()
-            
-            data = response.json()
+            from src.primary.utils.tmdb_metadata_cache import get, set_movie, set_tv_series
+
+            cached = get(media_type, tmdb_id)
+            if cached is not None:
+                data = cached
+            else:
+                api_key = self.get_tmdb_api_key()
+                endpoint = "movie" if media_type == "movie" else "tv"
+                url = f"{self.tmdb_base_url}/{endpoint}/{tmdb_id}"
+                params = {'api_key': api_key, 'append_to_response': 'credits,videos'}
+
+                response = requests.get(url, params=params, timeout=10)
+                response.raise_for_status()
+                data = response.json()
+                if media_type == "movie":
+                    set_movie(tmdb_id, data)
+                else:
+                    set_tv_series(tmdb_id, data)
             
             # Build poster and backdrop URLs
             poster_path = data.get('poster_path')

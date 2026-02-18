@@ -883,8 +883,14 @@ def register_tv_discovery_routes(bp):
     
     @bp.route('/api/tv-hunt/series/<int:tmdb_id>', methods=['GET'])
     def api_tv_hunt_series_detail(tmdb_id):
-        """Get detailed TV series info from TMDB including seasons."""
+        """Get detailed TV series info from TMDB including seasons. Cached with smart TTL."""
         try:
+            from src.primary.utils.tmdb_metadata_cache import get, set_tv_series
+
+            cached = get('tv', tmdb_id)
+            if cached is not None:
+                return jsonify(cached), 200
+
             params = {
                 'api_key': TMDB_API_KEY,
                 'language': 'en-US',
@@ -895,7 +901,9 @@ def register_tv_discovery_routes(bp):
             r = requests.get(f'{TMDB_BASE}/tv/{tmdb_id}', params=params, timeout=15, verify=verify_ssl)
             if r.status_code != 200:
                 return jsonify({'error': 'Series not found'}), 404
-            return jsonify(r.json()), 200
+            data = r.json()
+            set_tv_series(tmdb_id, data)
+            return jsonify(data), 200
         except Exception as e:
             logger.exception('TV Hunt series detail error')
             return jsonify({'error': str(e)}), 500
@@ -903,8 +911,14 @@ def register_tv_discovery_routes(bp):
     
     @bp.route('/api/tv-hunt/series/<int:tmdb_id>/season/<int:season_number>', methods=['GET'])
     def api_tv_hunt_season_detail(tmdb_id, season_number):
-        """Get detailed season info from TMDB including all episodes."""
+        """Get detailed season info from TMDB including all episodes. Cached with smart TTL."""
         try:
+            from src.primary.utils.tmdb_metadata_cache import get, set_tv_season
+
+            cached = get('tv', tmdb_id, f'season:{season_number}')
+            if cached is not None:
+                return jsonify(cached), 200
+
             params = {
                 'api_key': TMDB_API_KEY,
                 'language': 'en-US',
@@ -914,7 +928,9 @@ def register_tv_discovery_routes(bp):
             r = requests.get(f'{TMDB_BASE}/tv/{tmdb_id}/season/{season_number}', params=params, timeout=15, verify=verify_ssl)
             if r.status_code != 200:
                 return jsonify({'error': 'Season not found'}), 404
-            return jsonify(r.json()), 200
+            data = r.json()
+            set_tv_season(tmdb_id, season_number, data, series_data=None)
+            return jsonify(data), 200
         except Exception as e:
             logger.exception('TV Hunt season detail error')
             return jsonify({'error': str(e)}), 500
