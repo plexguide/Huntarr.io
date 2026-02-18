@@ -69,6 +69,47 @@
         </div>
     </div>
 
+    <!-- Import All Progress modal -->
+    <div id="media-hunt-import-media-progress-modal" class="import-progress-modal" style="display: none;">
+        <div class="import-progress-modal-backdrop" id="media-hunt-import-media-progress-backdrop"></div>
+        <div class="import-progress-modal-content">
+            <div class="import-progress-modal-header">
+                <button type="button" class="import-progress-modal-close" id="media-hunt-import-media-progress-close" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="import-progress-modal-header-overlay">
+                    <h2 class="import-progress-modal-title">Importing Media</h2>
+                    <p class="import-progress-modal-subtitle" id="media-hunt-import-media-progress-instance">Movie - Instance</p>
+                </div>
+            </div>
+            <div class="import-progress-modal-body">
+                <div class="import-progress-stats">
+                    <div class="import-progress-stat">
+                        <span class="import-progress-stat-value" id="media-hunt-import-media-progress-done">0</span>
+                        <span class="import-progress-stat-label">Imported</span>
+                    </div>
+                    <div class="import-progress-stat">
+                        <span class="import-progress-stat-value" id="media-hunt-import-media-progress-remaining">0</span>
+                        <span class="import-progress-stat-label">Remaining</span>
+                    </div>
+                </div>
+                <div class="import-progress-current-card" id="media-hunt-import-media-progress-current-card">
+                    <div class="import-progress-current-poster" id="media-hunt-import-media-progress-poster"></div>
+                    <div class="import-progress-current-info">
+                        <div class="import-progress-current-title" id="media-hunt-import-media-progress-current-title">—</div>
+                        <div class="import-progress-current-path" id="media-hunt-import-media-progress-current-path">—</div>
+                        <div class="import-progress-current-confidence" id="media-hunt-import-media-progress-confidence">—</div>
+                    </div>
+                </div>
+                <div class="import-progress-modal-actions">
+                    <button type="button" class="import-progress-modal-stop" id="media-hunt-import-media-progress-stop">
+                        <i class="fas fa-stop"></i> Stop
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="media-hunt-import-media-search-modal" class="import-media-modal" style="display: none;">
         <div class="import-media-modal-backdrop" id="media-hunt-import-media-search-backdrop"></div>
         <div class="import-media-modal-content">
@@ -144,5 +185,195 @@
 #mediaHuntSettingsImportMediaSection .settings-no-clients .no-instances-action-btn:hover {
     background: rgba(99, 102, 241, 0.3);
     border-color: rgba(99, 102, 241, 0.5);
+}
+
+/* Import Progress modal (like Add Download Client) */
+.import-progress-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+.import-progress-modal[style*="display: flex"] {
+    display: flex !important;
+}
+body.import-progress-modal-open {
+    overflow: hidden;
+}
+body.import-progress-modal-open .app-container {
+    filter: blur(10px);
+}
+.import-progress-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 1000;
+}
+.import-progress-modal-content {
+    position: relative;
+    z-index: 1001;
+    background: rgba(15, 23, 42, 0.98);
+    border: 2px solid rgba(99, 102, 241, 0.4);
+    border-radius: 12px;
+    max-width: 520px;
+    width: 90%;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+}
+.import-progress-modal-header {
+    position: relative;
+    min-height: 100px;
+    background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #0f172a 100%);
+    padding: 20px 24px 24px;
+}
+.import-progress-modal-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: linear-gradient(to bottom, transparent, rgba(15, 23, 42, 0.98));
+}
+.import-progress-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+.import-progress-modal-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+.import-progress-modal-header-overlay {
+    position: relative;
+    z-index: 2;
+    margin-top: 12px;
+}
+.import-progress-modal-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0 0 4px 0;
+}
+.import-progress-modal-subtitle {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+    margin: 0;
+}
+.import-progress-modal-body {
+    padding: 24px;
+}
+.import-progress-stats {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 20px;
+}
+.import-progress-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 20px;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 10px;
+    min-width: 100px;
+}
+.import-progress-stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #a5b4fc;
+}
+.import-progress-stat-label {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+}
+.import-progress-current-card {
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 2px solid rgba(148, 163, 184, 0.15);
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+.import-progress-current-poster {
+    width: 60px;
+    height: 90px;
+    flex-shrink: 0;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #1e293b;
+}
+.import-progress-current-poster img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.import-progress-current-info {
+    flex: 1;
+    min-width: 0;
+}
+.import-progress-current-title {
+    font-weight: 600;
+    color: #e2e8f0;
+    font-size: 1rem;
+    margin-bottom: 4px;
+}
+.import-progress-current-path {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    word-break: break-all;
+    margin-bottom: 6px;
+}
+.import-progress-current-confidence {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+.import-progress-current-confidence.high { color: #4ade80; }
+.import-progress-current-confidence.medium { color: #fbbf24; }
+.import-progress-current-confidence.low { color: #f87171; }
+.import-progress-modal-actions {
+    display: flex;
+    justify-content: center;
+}
+.import-progress-modal-stop {
+    padding: 10px 24px;
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    border-radius: 8px;
+    color: #f87171;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.import-progress-modal-stop:hover {
+    background: rgba(239, 68, 68, 0.3);
+    border-color: rgba(239, 68, 68, 0.5);
 }
 </style>

@@ -9121,6 +9121,7 @@ document.head.appendChild(styleEl);
         mode: 'movie',
         pollInterval: null,
         currentSearchFolderPath: null,
+        importProgressAbort: false,
 
         getApiBase: function() {
             return this.mode === 'tv' ? './api/tv-hunt' : './api/movie-hunt';
@@ -9133,9 +9134,82 @@ document.head.appendChild(styleEl);
             this.setupCombinedInstanceSelect();
             this.setupScanButton();
             this.setupImportAllButton();
+            this.setupImportProgressModal();
             this.setupSearchModal();
             this.updateModeLabels();
             this.loadItems();
+        },
+
+        setupImportProgressModal: function() {
+            var self = this;
+            var modal = document.getElementById(PREFIX + '-progress-modal');
+            var backdrop = document.getElementById(PREFIX + '-progress-backdrop');
+            var closeBtn = document.getElementById(PREFIX + '-progress-close');
+            var stopBtn = document.getElementById(PREFIX + '-progress-stop');
+            if (!modal) return;
+            if (modal.parentElement !== document.body) document.body.appendChild(modal);
+            if (backdrop) backdrop.onclick = function() { self.importProgressAbort = true; };
+            if (closeBtn) closeBtn.onclick = function() { self.importProgressAbort = true; };
+            if (stopBtn) stopBtn.onclick = function() { self.importProgressAbort = true; };
+        },
+
+        openImportProgressModal: function(instanceName, total) {
+            var self = this;
+            var modal = document.getElementById(PREFIX + '-progress-modal');
+            if (!modal) return;
+            if (modal.parentElement !== document.body) document.body.appendChild(modal);
+            document.body.classList.add('import-progress-modal-open');
+            modal.style.display = 'flex';
+            var instEl = document.getElementById(PREFIX + '-progress-instance');
+            if (instEl) instEl.textContent = instanceName || (this.mode === 'tv' ? 'TV' : 'Movie');
+            var doneEl = document.getElementById(PREFIX + '-progress-done');
+            if (doneEl) doneEl.textContent = '0';
+            var remEl = document.getElementById(PREFIX + '-progress-remaining');
+            if (remEl) remEl.textContent = String(total || 0);
+            this._importProgressEscapeHandler = function(e) {
+                if (e.key === 'Escape') { self.importProgressAbort = true; document.removeEventListener('keydown', self._importProgressEscapeHandler); }
+            };
+            document.addEventListener('keydown', this._importProgressEscapeHandler);
+        },
+
+        updateImportProgressModal: function(done, remaining, currentItem) {
+            var doneEl = document.getElementById(PREFIX + '-progress-done');
+            if (doneEl) doneEl.textContent = String(done);
+            var remEl = document.getElementById(PREFIX + '-progress-remaining');
+            if (remEl) remEl.textContent = String(remaining);
+            var titleEl = document.getElementById(PREFIX + '-progress-current-title');
+            var pathEl = document.getElementById(PREFIX + '-progress-current-path');
+            var confEl = document.getElementById(PREFIX + '-progress-confidence');
+            var posterEl = document.getElementById(PREFIX + '-progress-poster');
+            if (currentItem) {
+                if (titleEl) titleEl.textContent = (currentItem.best_match && currentItem.best_match.title) ? currentItem.best_match.title + (currentItem.best_match.year ? ' (' + currentItem.best_match.year + ')' : '') : currentItem.folder_name || '—';
+                if (pathEl) pathEl.textContent = currentItem.folder_path || currentItem.root_folder || '—';
+                var score = currentItem.best_match && currentItem.best_match.score != null ? currentItem.best_match.score : 0;
+                if (confEl) {
+                    confEl.textContent = score + '% confidence';
+                    confEl.className = 'import-progress-current-confidence ' + (score >= 70 ? 'high' : score >= 40 ? 'medium' : 'low');
+                }
+                if (posterEl) {
+                    var posterUrl = (currentItem.best_match && currentItem.best_match.poster_path) ? 'https://image.tmdb.org/t/p/w92' + currentItem.best_match.poster_path : './static/images/blackout.jpg';
+                    posterEl.innerHTML = '<img src="' + posterUrl + '" onerror="this.src=\'./static/images/blackout.jpg\'"></img>';
+                }
+            } else {
+                if (titleEl) titleEl.textContent = '—';
+                if (pathEl) pathEl.textContent = '—';
+                if (confEl) { confEl.textContent = '—'; confEl.className = 'import-progress-current-confidence'; }
+                if (posterEl) posterEl.innerHTML = '';
+            }
+        },
+
+        closeImportProgressModal: function() {
+            var modal = document.getElementById(PREFIX + '-progress-modal');
+            if (modal) modal.style.display = 'none';
+            document.body.classList.remove('import-progress-modal-open');
+            if (this._importProgressEscapeHandler) {
+                document.removeEventListener('keydown', this._importProgressEscapeHandler);
+                this._importProgressEscapeHandler = null;
+            }
+            this.importProgressAbort = false;
         },
 
         _safeJsonFetch: function(url, fallback) {
@@ -9531,25 +9605,75 @@ document.head.appendChild(styleEl);
             if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
                 window.HuntarrConfirm.show({
                     title: 'Import All Matched',
-                    message: 'Import all ' + matched.length + ' matched ' + label + (plural ? 's' : '') + ' into your ' + (this.mode === 'tv' ? 'TV' : 'Movie') + ' Collection?\n\nItems already in your collection will be skipped.',
+                    message: 'Import all ' + matched.length + ' matched ' + label + (plural ? 's' : '') + ' into your ' + (this.mode === 'tv' ? 'TV' : 'Movie') + ' Collection?\n\nItems will be imported one at a time. Items already in your collection will be skipped.',
                     confirmLabel: 'Import All',
-                    onConfirm: function() { self._doImportAll(); }
+                    onConfirm: function() { self._doImportAllSequential(matched); }
                 });
             } else {
                 if (!confirm('Import all ' + matched.length + ' matched ' + label + (plural ? 's' : '') + '?')) return;
-                self._doImportAll();
+                self._doImportAllSequential(matched);
             }
         },
 
-        _doImportAll: function() {
+        _doImportAllSequential: function(matchedItems) {
             var self = this;
-            fetch(this.getApiBase() + '/import-media/confirm-all?' + this.getInstanceParam().replace('&', ''), { method: 'POST' })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (data.success && window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(data.message || 'All imported!', 'success');
-                    else if (!data.success && window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(data.message || 'Import failed', 'error');
+            var select = document.getElementById(PREFIX + '-instance-select');
+            var instanceName = (select && select.options[select.selectedIndex]) ? select.options[select.selectedIndex].textContent : (this.mode === 'tv' ? 'TV' : 'Movie');
+            var total = matchedItems.length;
+            var imported = 0;
+            var skipped = 0;
+            var index = 0;
+            self.importProgressAbort = false;
+
+            self.openImportProgressModal(instanceName, total);
+            self.updateImportProgressModal(0, total, matchedItems[0] || null);
+
+            function doNext() {
+                if (self.importProgressAbort || index >= matchedItems.length) {
+                    self.closeImportProgressModal();
                     self.loadItems();
-                });
+                    var msg = 'Imported ' + imported + '.';
+                    if (skipped) msg += ' ' + skipped + ' already in collection.';
+                    if (self.importProgressAbort && (imported > 0 || skipped > 0)) msg = 'Stopped. ' + msg;
+                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(msg, 'success');
+                    return;
+                }
+                var item = matchedItems[index];
+                var m = item.best_match;
+                if (!m || !m.tmdb_id) {
+                    index++;
+                    doNext();
+                    return;
+                }
+                self.updateImportProgressModal(imported, total - index, item);
+
+                fetch(self.getApiBase() + '/import-media/confirm?' + self.getInstanceParam().replace('&', ''), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        folder_path: item.folder_path,
+                        tmdb_id: m.tmdb_id,
+                        title: m.title,
+                        year: m.year || '',
+                        poster_path: m.poster_path || '',
+                        root_folder: item.root_folder || ''
+                    })
+                })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        index++;
+                        if (data.success) imported++;
+                        else if (data.already_exists) skipped++;
+                        self.updateImportProgressModal(imported, total - index, matchedItems[index] || null);
+                        doNext();
+                    })
+                    .catch(function() {
+                        index++;
+                        self.updateImportProgressModal(imported, total - index, matchedItems[index] || null);
+                        doNext();
+                    });
+            }
+            doNext();
         },
 
         skipItem: function(folderPath) {
