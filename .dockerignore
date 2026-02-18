@@ -5,6 +5,7 @@
 
 # IDE / Editor
 .cursor
+.kiro
 .vscode
 .idea
 *.swp

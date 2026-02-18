@@ -47,6 +47,7 @@ chrome-user-data
 .vscode
 .cursor
 *.mdc
+.kiro/
 *.swp
 *.swo
 
