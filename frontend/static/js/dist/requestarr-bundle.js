@@ -6134,11 +6134,22 @@ class SmartHunt {
             tv_instance_name: tvName,
         });
 
-        const resp = await fetch(`./api/requestarr/smarthunt?${params.toString()}`);
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const data = await resp.json();
-
-        return data.results || [];
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        try {
+            const resp = await fetch(`./api/requestarr/smarthunt?${params.toString()}`, {
+                signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const data = await resp.json();
+            if (data.error) throw new Error(data.error);
+            return data.results || [];
+        } catch (err) {
+            clearTimeout(timeoutId);
+            if (err.name === 'AbortError') throw new Error('Request timed out');
+            throw err;
+        }
     }
 
     _render(results, append) {
