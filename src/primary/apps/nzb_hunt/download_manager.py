@@ -333,7 +333,7 @@ class NZBHuntDownloadManager:
         # then-clear race, so speed is never under-reported.
         self._speed_lock = threading.Lock()
         self._speed_samples: deque = deque()
-        self._speed_window = 3.0  # seconds
+        self._speed_window = 5.0  # seconds (wider window = smoother speed/ETA)
         self._speed_accum_bytes = 0       # monotonically increasing (workers +=)
         self._speed_last_flushed = 0      # last value flushed (drain thread only)
         
@@ -1421,7 +1421,9 @@ class NZBHuntDownloadManager:
     
     def _download_segment(self, message_id: str, groups: List[str],
                            item: DownloadItem,
-                           max_retries: int = 3) -> Tuple[int, Optional[bytes], str, Optional[int], Optional[int]]:
+                           max_retries: int = 3,
+                           dw_fd: int = -1,
+                           file_idx: int = -1) -> Tuple[int, Optional[bytes], str, Optional[int], Optional[int]]:
         """Download and decode a single segment with retry logic.
         
         Uses a persistent per-thread NNTP connection. Each ThreadPoolExecutor
@@ -1431,6 +1433,9 @@ class NZBHuntDownloadManager:
         
         NNTP download runs in the calling thread (I/O bound, releases GIL).
         yEnc decode runs in-thread via sabyenc3 C extension or fast translate.
+        When dw_fd >= 0, pwrite() is done in-thread (releases GIL) so disk
+        I/O is parallelized across all worker threads instead of serialized
+        in the drain thread.
         Retries up to max_retries times on failure.
         
         Returns:
@@ -1438,6 +1443,7 @@ class NZBHuntDownloadManager:
              yenc_begin_or_None, yenc_file_size_or_None)
              yenc_begin: 1-based byte offset in the output file (for direct write)
              yenc_file_size: total decoded file size (for pre-allocation)
+             When pwrite succeeds in-thread, decoded_bytes is None (already written).
         """
         # Check if paused
         if item.state == STATE_PAUSED or self._paused_global:
@@ -1495,11 +1501,21 @@ class NZBHuntDownloadManager:
                         if decoded is not None and len(decoded) > 0:
                             self._rate_limiter.consume(len(decoded))
                             self._record_speed(len(decoded))
-                            # Yield GIL so web server threads can run.
-                            # sleep(0) is a near-zero-cost context switch hint.
-                            time.sleep(0)
                             yenc_begin = yenc_hdr.get("begin")
                             yenc_size = yenc_hdr.get("size")
+                            # ── In-thread pwrite ──
+                            # os.pwrite() is a single atomic syscall that
+                            # releases the GIL.  By writing here instead of
+                            # in the drain thread, disk I/O is parallelized
+                            # across all 120 worker threads.
+                            if (dw_fd >= 0 and yenc_begin is not None
+                                    and yenc_begin > 0):
+                                try:
+                                    os.pwrite(dw_fd, decoded, yenc_begin - 1)
+                                    # Return None for decoded — already on disk
+                                    return len(decoded), None, server_name, yenc_begin, yenc_size
+                                except Exception:
+                                    pass  # Fall through to return decoded bytes
                             return len(decoded), decoded, server_name, yenc_begin, yenc_size
                     except Exception:
                         pass
@@ -1806,10 +1822,11 @@ class NZBHuntDownloadManager:
                 with open(seg_path, "wb") as sf:
                     sf.write(decoded)
 
-            # Cap in-flight futures to prevent memory bloat and excessive
-            # context switching that starves the web server.
-            max_inflight = max(max_workers * 2, 64)
-            max_inflight = min(max_inflight, 256)
+            # Cap in-flight futures.  With in-thread pwrite, the drain
+            # thread is lightweight (just bookkeeping), so we can afford
+            # more in-flight work to keep all connections saturated.
+            max_inflight = max(max_workers * 3, 128)
+            max_inflight = min(max_inflight, 512)
 
             # ── Completion Queue ──
             done_q: Queue = Queue()
@@ -1843,26 +1860,37 @@ class NZBHuntDownloadManager:
                         nbytes, decoded, server_name, yenc_begin, yenc_size = future.result()
                         future._result = None
 
-                        if decoded is not None:
-                            if yenc_begin is not None and yenc_begin > 0:
-                                try:
-                                    _dw_write(file_idx_d, yenc_begin - 1, decoded)
-                                    dw_used[file_idx_d] = True
-                                    end_pos = yenc_begin - 1 + len(decoded)
-                                    if end_pos > dw_max_pos[file_idx_d]:
-                                        dw_max_pos[file_idx_d] = end_pos
-                                except Exception as we:
-                                    logger.debug(f"[{item.id}] pwrite failed, using cache: {we}")
+                        if nbytes > 0:
+                            # decoded is None when pwrite was done in worker thread
+                            wrote_in_thread = (decoded is None and yenc_begin is not None
+                                               and yenc_begin > 0)
+
+                            if decoded is not None:
+                                if yenc_begin is not None and yenc_begin > 0:
+                                    try:
+                                        _dw_write(file_idx_d, yenc_begin - 1, decoded)
+                                        dw_used[file_idx_d] = True
+                                        end_pos = yenc_begin - 1 + len(decoded)
+                                        if end_pos > dw_max_pos[file_idx_d]:
+                                            dw_max_pos[file_idx_d] = end_pos
+                                    except Exception as we:
+                                        logger.debug(f"[{item.id}] pwrite failed, using cache: {we}")
+                                        try:
+                                            _seg_cache_write(file_idx_d, seg_d, decoded)
+                                        except Exception as we2:
+                                            logger.error(f"[{item.id}] Segment cache also failed: {we2}")
+                                else:
                                     try:
                                         _seg_cache_write(file_idx_d, seg_d, decoded)
-                                    except Exception as we2:
-                                        logger.error(f"[{item.id}] Segment cache also failed: {we2}")
-                            else:
-                                try:
-                                    _seg_cache_write(file_idx_d, seg_d, decoded)
-                                except Exception as we:
-                                    logger.error(f"[{item.id}] Failed to cache segment: {we}")
-                            del decoded
+                                    except Exception as we:
+                                        logger.error(f"[{item.id}] Failed to cache segment: {we}")
+                                del decoded
+                            elif wrote_in_thread:
+                                # Worker thread did pwrite — just track position
+                                dw_used[file_idx_d] = True
+                                end_pos = yenc_begin - 1 + nbytes
+                                if end_pos > dw_max_pos[file_idx_d]:
+                                    dw_max_pos[file_idx_d] = end_pos
 
                             file_completed[file_idx_d] += 1
                             consecutive_failures = 0
@@ -2001,7 +2029,6 @@ class NZBHuntDownloadManager:
                         break
 
                     # Fill submission window
-                    _submit_count = 0
                     while len(pending) < max_inflight and not segments_exhausted:
                         if item.state == STATE_PAUSED or self._paused_global:
                             break
@@ -2009,18 +2036,19 @@ class NZBHuntDownloadManager:
                             break
                         try:
                             file_idx, seg, groups = next(seg_source)
+                            # Pass the OS file descriptor so the worker thread
+                            # can pwrite() directly (parallel disk I/O).
+                            _fd = dw_fds[file_idx] if file_idx < len(dw_fds) else -1
+                            if _fd is None:
+                                _fd = -1
                             future = executor.submit(
                                 self._download_segment,
                                 seg.message_id, groups, item,
-                                max_retries
+                                max_retries, _fd, file_idx
                             )
                             future.add_done_callback(_on_done)
                             pending[future] = (file_idx, seg)
                             future = None
-                            _submit_count += 1
-                            # Yield GIL every 32 submissions to keep web responsive
-                            if _submit_count & 31 == 0:
-                                time.sleep(0)
                         except StopIteration:
                             segments_exhausted = True
                             break

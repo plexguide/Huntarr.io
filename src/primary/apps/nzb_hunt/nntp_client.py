@@ -71,9 +71,11 @@ class NNTPConnection:
             try:
                 sock = self._conn.sock
                 if sock:
-                    # 2MB receive buffer — reduces syscalls significantly
-                    # for large articles and helps saturate gigabit connections
-                    sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 2097152)
+                    # 4MB receive buffer — reduces syscalls significantly
+                    # for large articles and helps saturate gigabit+ connections.
+                    # The kernel may cap this at net.core.rmem_max but will
+                    # use the highest allowed value.
+                    sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4194304)
                     sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 262144)
                     # Disable Nagle's algorithm — send BODY commands immediately
                     # instead of waiting to coalesce small writes
@@ -170,7 +172,9 @@ class NNTPConnection:
             chunks = []
             total = 0
             terminator = b"\r\n.\r\n"
-            _READ_SIZE = 524288  # 512KB — larger reads reduce syscall overhead
+            _READ_SIZE = 1048576  # 1MB — with 1MB buffered reader, read1()
+                                  # can return large batches of TLS records
+                                  # in a single call, minimizing syscalls
             
             while True:
                 # read1() returns whatever is in the buffer (up to _READ_SIZE),
