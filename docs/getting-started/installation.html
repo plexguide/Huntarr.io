@@ -92,7 +92,7 @@
             <p>Docker is the recommended way to run Huntarr on any platform. It works on Linux, macOS, Windows, and Unraid.</p>
 
             <h3>Docker Compose</h3>
-            <p>Create a <code>docker-compose.yml</code> file:</p>
+            <p>Create a <code>docker-compose.yml</code> file. Only <code>/config</code> is required; add <code>/media</code> and <code>/downloads</code> only if you use those features:</p>
             <pre><code>services:
   huntarr:
     image: huntarr/huntarr:latest
@@ -101,7 +101,10 @@
       - "9705:9705"
     volumes:
       - /path/to/huntarr/config:/config
+      # Optional: add only if using Media Hunt (movie/TV collection, root folders)
       - /path/to/media:/media
+      # Optional: add only if using NZB Hunt (download handling)
+      - /path/to/downloads:/downloads
     environment:
       - TZ=America/New_York
     restart: unless-stopped</code></pre>
@@ -109,23 +112,25 @@
             <pre><code>docker-compose up -d</code></pre>
 
             <h3>Docker Run</h3>
-            <p>If you prefer a single command without Compose:</p>
+            <p>If you prefer a single command without Compose. Include only the volumes you need:</p>
             <pre><code>docker run -d \
   --name huntarr \
   -p 9705:9705 \
   -v /path/to/huntarr/config:/config \
   -v /path/to/media:/media \
+  -v /path/to/downloads:/downloads \
   -e TZ=America/New_York \
   --restart unless-stopped \
   huntarr/huntarr:latest</code></pre>
+            <p><strong>Minimal (config only):</strong> If you only use Requests or don't need Media Hunt or NZB Hunt, you can omit the <code>/media</code> and <code>/downloads</code> mounts.</p>
 
             <h3>Volume Mappings</h3>
             <table>
                 <thead><tr><th>Container Path</th><th>Purpose</th><th>Required</th></tr></thead>
                 <tbody>
                     <tr><td><code>/config</code></td><td>Huntarr configuration, database, and logs</td><td>Yes</td></tr>
-                    <tr><td><code>/media</code></td><td>Your media library (for Movie Hunt / NZB Hunt)</td><td>If using Media Hunt</td></tr>
-                    <tr><td><code>/downloads</code></td><td>Download directory (for NZB Hunt)</td><td>If using NZB Hunt</td></tr>
+                    <tr><td><code>/media</code></td><td>Your media library (Media Hunt root folders, collection scanning)</td><td>Optional — only if using Media Hunt</td></tr>
+                    <tr><td><code>/downloads</code></td><td>Download directory (NZB Hunt temp/complete folders)</td><td>Optional — only if using NZB Hunt</td></tr>
                 </tbody>
             </table>
 
@@ -146,7 +151,8 @@
                     <ul>
                         <li><strong>Port:</strong> 9705 (default)</li>
                         <li><strong>Config path:</strong> <code>/mnt/user/appdata/huntarr</code></li>
-                        <li><strong>Media path:</strong> Map to your media share (e.g., <code>/mnt/user/media</code>)</li>
+                        <li><strong>Media path (optional):</strong> Map to your media share (e.g., <code>/mnt/user/media</code>) — only if using Media Hunt</li>
+                        <li><strong>Downloads path (optional):</strong> Map to your download directory — only if using NZB Hunt</li>
                         <li><strong>Timezone:</strong> Set to your local timezone</li>
                     </ul>
                 </li>
@@ -210,12 +216,13 @@ python3 main.py</code></pre>
             <p>Install Docker if you haven't already:</p>
             <pre><code>curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER</code></pre>
-            <p>Then run Huntarr:</p>
+            <p>Then run Huntarr. Add <code>-v /path/to/media:/media</code> and <code>-v /path/to/downloads:/downloads</code> only if you use Media Hunt or NZB Hunt:</p>
             <pre><code>docker run -d \
   --name huntarr \
   -p 9705:9705 \
   -v /opt/huntarr/config:/config \
-  -v /media:/media \
+  -v /path/to/media:/media \
+  -v /path/to/downloads:/downloads \
   -e TZ=America/New_York \
   --restart unless-stopped \
   huntarr/huntarr:latest</code></pre>
