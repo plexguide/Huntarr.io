@@ -780,6 +780,15 @@ window.SettingsForms = {
                 tmdb_image_cache_days: parseInt(container.querySelector('#tmdb_image_cache_days')?.value || '30'),
                 auth_mode: (container.querySelector('#auth_mode') && container.querySelector('#auth_mode').value) || 'login',
                 ssl_verify: getVal('ssl_verify', true),
+                frame_ancestors: (() => {
+                    const sel = container.querySelector('#frame_ancestors');
+                    if (!sel) return "'self'";
+                    if (sel.value === 'custom') {
+                        const custom = (container.querySelector('#frame_ancestors_custom')?.value || '').trim();
+                        return custom || "'self'";
+                    }
+                    return sel.value;
+                })(),
                 base_url: getVal('base_url', ''),
                 dev_key: getVal('dev_key', ''),
                 web_server_threads: parseInt(container.querySelector('#web_server_threads')?.value || '32'),
@@ -844,6 +853,16 @@ window.SettingsForms = {
             const authMode = container.querySelector("#auth_mode")?.value || "login";
             settings.auth_mode = authMode;
             settings.ssl_verify = getInputValue("#ssl_verify", true);
+            // Frame ancestors for iframe embedding
+            const faSel = container.querySelector("#frame_ancestors");
+            if (faSel) {
+                if (faSel.value === 'custom') {
+                    const custom = (container.querySelector('#frame_ancestors_custom')?.value || '').trim();
+                    settings.frame_ancestors = custom || "'self'";
+                } else {
+                    settings.frame_ancestors = faSel.value;
+                }
+            }
             settings.enable_requestarr = !getInputValue("#disable_requests", false);
             settings.enable_media_hunt = !getInputValue("#disable_media_hunt", false);
             settings.enable_third_party_apps = !getInputValue("#disable_third_party_apps", false);
@@ -14677,6 +14696,16 @@ document.head.appendChild(styleEl);
                             </label>
                         </div>
                         <p class="setting-help">Disable SSL certificate verification when using self-signed certificates.</p>
+                        <div class="setting-item" style="margin-top: 15px; border-top: 1px solid rgba(148, 163, 184, 0.08); padding-top: 15px;">
+                            <label for="frame_ancestors">Iframe Embedding:</label>
+                            <select id="frame_ancestors" class="mset-select">
+                                <option value="'self'" ${!settings.frame_ancestors || settings.frame_ancestors === "'self'" ? "selected" : ""}>Disabled (Same Origin Only)</option>
+                                <option value="*" ${settings.frame_ancestors === "*" ? "selected" : ""}>Allow All Origins</option>
+                                <option value="custom" ${settings.frame_ancestors && settings.frame_ancestors !== "'self'" && settings.frame_ancestors !== "*" ? "selected" : ""}>Custom Origins</option>
+                            </select>
+                            <input type="text" id="frame_ancestors_custom" class="mset-input" placeholder="'self' https://organizr.local https://homepage.local" value="${settings.frame_ancestors && settings.frame_ancestors !== "'self'" && settings.frame_ancestors !== "*" ? settings.frame_ancestors : ""}" style="margin-top: 8px; display: ${settings.frame_ancestors && settings.frame_ancestors !== "'self'" && settings.frame_ancestors !== "*" ? "block" : "none"};">
+                            <p class="setting-help">Allow Huntarr to be embedded in iframes (e.g. Organizr, Homepage). Custom origins use CSP frame-ancestors syntax.</p>
+                        </div>
                     </div>
                 </div>
 
@@ -14800,6 +14829,16 @@ document.head.appendChild(styleEl);
                         HuntarrUtils.setUIPreference('welcome-dismissed', false);
                     }
                 }
+            });
+        }
+
+        // Frame ancestors dropdown: show/hide custom input
+        var frameSelect = container.querySelector('#frame_ancestors');
+        var frameCustom = container.querySelector('#frame_ancestors_custom');
+        if (frameSelect && frameCustom) {
+            frameSelect.addEventListener('change', function() {
+                frameCustom.style.display = frameSelect.value === 'custom' ? 'block' : 'none';
+                if (frameSelect.value !== 'custom') frameCustom.value = '';
             });
         }
 

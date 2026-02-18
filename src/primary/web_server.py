@@ -326,8 +326,17 @@ app.before_request(authenticate_request)
 @app.after_request
 def _set_response_headers(response):
     """Set security headers and cache control on all responses."""
+    # Read frame-ancestors from settings (env var overrides saved setting)
+    from src.primary.settings_manager import get_frame_ancestors_setting
+    fa = get_frame_ancestors_setting()
+
     # Security headers — protect against common web attacks
-    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    # X-Frame-Options: use SAMEORIGIN when frame-ancestors is 'self', otherwise remove
+    # (X-Frame-Options can't express multiple origins; CSP takes over)
+    if fa == "'self'":
+        response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    else:
+        response.headers.pop('X-Frame-Options', None)
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
     response.headers['Permissions-Policy'] = 'camera=(), microphone=(), geolocation=()'
@@ -342,7 +351,7 @@ def _set_response_headers(response):
         "font-src 'self' https://cdnjs.cloudflare.com; "
         "img-src 'self' data: https://image.tmdb.org https://artworks.thetvdb.com https://*.plex.direct https://github.com https://avatars.githubusercontent.com; "
         "connect-src 'self' https://api.github.com https://api.themoviedb.org; "
-        "frame-ancestors 'self';"
+        f"frame-ancestors {fa};"
     )
     # HSTS — only when request came through HTTPS (reverse proxy sets X-Forwarded-Proto)
     if request.headers.get('X-Forwarded-Proto') == 'https':

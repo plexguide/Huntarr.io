@@ -183,6 +183,16 @@
                             </label>
                         </div>
                         <p class="setting-help">Disable SSL certificate verification when using self-signed certificates.</p>
+                        <div class="setting-item" style="margin-top: 15px; border-top: 1px solid rgba(148, 163, 184, 0.08); padding-top: 15px;">
+                            <label for="frame_ancestors">Iframe Embedding:</label>
+                            <select id="frame_ancestors" class="mset-select">
+                                <option value="'self'" ${!settings.frame_ancestors || settings.frame_ancestors === "'self'" ? "selected" : ""}>Disabled (Same Origin Only)</option>
+                                <option value="*" ${settings.frame_ancestors === "*" ? "selected" : ""}>Allow All Origins</option>
+                                <option value="custom" ${settings.frame_ancestors && settings.frame_ancestors !== "'self'" && settings.frame_ancestors !== "*" ? "selected" : ""}>Custom Origins</option>
+                            </select>
+                            <input type="text" id="frame_ancestors_custom" class="mset-input" placeholder="'self' https://organizr.local https://homepage.local" value="${settings.frame_ancestors && settings.frame_ancestors !== "'self'" && settings.frame_ancestors !== "*" ? settings.frame_ancestors : ""}" style="margin-top: 8px; display: ${settings.frame_ancestors && settings.frame_ancestors !== "'self'" && settings.frame_ancestors !== "*" ? "block" : "none"};">
+                            <p class="setting-help">Allow Huntarr to be embedded in iframes (e.g. Organizr, Homepage). Custom origins use CSP frame-ancestors syntax.</p>
+                        </div>
                     </div>
                 </div>
 
@@ -306,6 +316,16 @@
                         HuntarrUtils.setUIPreference('welcome-dismissed', false);
                     }
                 }
+            });
+        }
+
+        // Frame ancestors dropdown: show/hide custom input
+        var frameSelect = container.querySelector('#frame_ancestors');
+        var frameCustom = container.querySelector('#frame_ancestors_custom');
+        if (frameSelect && frameCustom) {
+            frameSelect.addEventListener('change', function() {
+                frameCustom.style.display = frameSelect.value === 'custom' ? 'block' : 'none';
+                if (frameSelect.value !== 'custom') frameCustom.value = '';
             });
         }
 

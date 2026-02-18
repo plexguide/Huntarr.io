@@ -615,6 +615,7 @@ ADVANCED_SETTINGS = [
     "hourly_cap",
     "ssl_verify",  # Add SSL verification setting
     "base_url",    # Add base URL setting
+    "frame_ancestors",  # CSP frame-ancestors for iframe embedding (Organizr, etc.)
     "log_rotation_enabled",
     "log_max_size_mb",
     "log_backup_count",
@@ -652,6 +653,22 @@ def get_ssl_verify_setting():
         bool: True if SSL verification is enabled, False otherwise
     """
     return get_advanced_setting("ssl_verify", True)  # Default to True for security
+
+
+def get_frame_ancestors_setting():
+    """
+    Get the CSP frame-ancestors setting.
+    Env var FRAME_ANCESTORS overrides the saved setting.
+
+    Returns:
+        str: The frame-ancestors value (e.g. "'self'" or "'self' https://organizr.local")
+    """
+    env_val = os.environ.get('FRAME_ANCESTORS', '').strip()
+    if env_val:
+        return env_val
+    saved = get_advanced_setting("frame_ancestors", "'self'")
+    return (saved or '').strip() or "'self'"
+
 
 def get_custom_tag(app_name: str, tag_type: str, default: str) -> str:
     """
