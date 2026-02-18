@@ -35,6 +35,7 @@ from .import_media_shared import (
 from .discovery_movie import (
     _get_collection_config,
     _collection_append,
+    _save_collection_config,
     _get_tmdb_api_key_movie_hunt,
     _normalize_title_for_key,
 )
@@ -91,6 +92,25 @@ _IMDB_PATTERN = re.compile(r'\{imdb-(tt\d+)\}|\[imdb[-=](tt\d+)\]|imdbid[-=](tt\
 _scan_lock = threading.Lock()
 
 _ALL_VIDEO_EXTENSIONS = VIDEO_EXTENSIONS | EXTRA_VIDEO_EXTENSIONS
+
+
+def _find_video_file_in_folder(folder_path: str):
+    """Find the largest video file in folder_path. Returns full path or None."""
+    if not folder_path or not os.path.isdir(folder_path):
+        return None
+    video_files = []
+    for name in os.listdir(folder_path):
+        if not is_video_file(name, EXTRA_VIDEO_EXTENSIONS):
+            continue
+        fpath = os.path.join(folder_path, name)
+        if os.path.isfile(fpath):
+            try:
+                video_files.append((fpath, os.path.getsize(fpath)))
+            except OSError:
+                pass
+    if not video_files:
+        return None
+    return max(video_files, key=lambda x: x[1])[0]
 
 
 def _is_video_file(name):
@@ -1056,12 +1076,14 @@ def register_movie_import_media_routes(bp):
             config['items'] = items
             _save_unmapped_config(config, instance_id)
     
-            # Update the collection item status to available since it's on disk
+            # Update the collection item: status available + actual file path (not just root)
             collection = _get_collection_config(instance_id)
+            file_path = _find_video_file_in_folder(folder_path)
             for item in collection:
-                if item.get('tmdb_id') == tmdb_id and (item.get('status') or '').lower() != 'available':
+                if item.get('tmdb_id') == tmdb_id:
                     item['status'] = 'available'
-                    from .discovery_movie import _save_collection_config
+                    if file_path:
+                        item['file_path'] = file_path
                     _save_collection_config(collection, instance_id)
                     break
     
@@ -1107,6 +1129,7 @@ def register_movie_import_media_routes(bp):
                     continue
     
                 try:
+                    folder_path = item.get('folder_path', '')
                     _collection_append(
                         title=best['title'],
                         year=best.get('year', ''),
@@ -1120,19 +1143,18 @@ def register_movie_import_media_routes(bp):
                     item['confirmed_tmdb_id'] = tmdb_id
                     item['confirmed_at'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
                     imported_count += 1
+                    # Set file_path and status so path display shows actual location, not just root
+                    file_path = _find_video_file_in_folder(folder_path)
+                    updated = _get_collection_config(instance_id)
+                    for c_item in updated:
+                        if c_item.get('tmdb_id') == tmdb_id:
+                            c_item['status'] = 'available'
+                            if file_path:
+                                c_item['file_path'] = file_path
+                            _save_collection_config(updated, instance_id)
+                            break
                 except Exception as e:
                     errors.append(f"{best['title']}: {str(e)}")
-    
-            # Update all imported items to available
-            updated_collection = _get_collection_config(instance_id)
-            collection_updated = False
-            for c_item in updated_collection:
-                if c_item.get('tmdb_id') in known_tmdb_ids and (c_item.get('status') or '').lower() != 'available':
-                    c_item['status'] = 'available'
-                    collection_updated = True
-            if collection_updated:
-                from .discovery_movie import _save_collection_config
-                _save_collection_config(updated_collection, instance_id)
     
             config['items'] = items
             _save_unmapped_config(config, instance_id)
