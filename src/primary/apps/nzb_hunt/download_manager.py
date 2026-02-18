@@ -1361,12 +1361,6 @@ class NZBHuntDownloadManager:
         (1s → 2s → 4s → 8s → 10s max) instead of looping with fixed 5s
         delays that could keep the queue stuck for minutes.
         """
-        # Lower OS scheduling priority so download threads don't starve
-        # the web server.  +10 is "low priority" on Linux (Docker/Unraid).
-        try:
-            os.nice(10)
-        except (OSError, AttributeError):
-            pass
         logger.info("NZB Hunt download worker started")
         try:
             # ── Startup: configure servers with retry ──
@@ -1557,9 +1551,11 @@ class NZBHuntDownloadManager:
                     _wc.pool = None
                     return 0, None, "", None, None
             
-            # Retry after a brief pause (only if not last attempt)
+            # Retry after a brief pause (only if not last attempt).
+            # Keep retries fast — the connection is already established,
+            # so transient failures resolve quickly.
             if attempt < max_retries - 1:
-                time.sleep(0.5 * (attempt + 1))
+                time.sleep(0.1 * (attempt + 1))
         
         # All retries exhausted
         return 0, None, server_name, None, None
@@ -1709,6 +1705,13 @@ class NZBHuntDownloadManager:
             
             logger.info(f"[{item.id}] Starting parallel download with {max_workers} workers")
             
+            # Pre-warm all NNTP connections in parallel before starting.
+            # SSL handshakes take 50-200ms each; opening 90+ connections
+            # serially would take 5-18 seconds.  Pre-warming gets all
+            # connections ready in ~1 second so the download hits full
+            # speed immediately.
+            self._nntp.prewarm_connections(max_workers=30)
+            
             # Persistent per-thread connection tracking.
             # Each worker thread acquires one NNTP connection on its first
             # segment and holds it for the entire download.  This keeps all
@@ -1835,7 +1838,7 @@ class NZBHuntDownloadManager:
             # thread is lightweight (just bookkeeping), so we can afford
             # more in-flight work to keep all connections saturated.
             max_inflight = max(max_workers * 3, 128)
-            max_inflight = min(max_inflight, 512)
+            max_inflight = min(max_inflight, 1024)
 
             # ── Completion Queue ──
             done_q: Queue = Queue()
@@ -1843,15 +1846,7 @@ class NZBHuntDownloadManager:
             def _on_done(fut):
                 done_q.put_nowait(fut)
 
-            def _init_dl_thread():
-                """Lower OS priority of download worker threads."""
-                try:
-                    os.nice(10)
-                except (OSError, AttributeError):
-                    pass
-
-            executor = ThreadPoolExecutor(max_workers=max_workers,
-                                          initializer=_init_dl_thread)
+            executor = ThreadPoolExecutor(max_workers=max_workers)
             try:
                 pending = {}
                 seg_source = _segment_iter()
@@ -1915,7 +1910,7 @@ class NZBHuntDownloadManager:
                                 item.downloaded_bytes + nbytes
                             )
 
-                            if item.completed_segments & 255 == 0:
+                            if item.completed_segments & 511 == 0:
                                 speed = self._get_rolling_speed()
                                 item.speed_bps = speed
                                 remaining = max(0, item.total_bytes - item.downloaded_bytes)
@@ -2043,7 +2038,6 @@ class NZBHuntDownloadManager:
                         break
 
                     # Fill submission window
-                    _submit_count = 0
                     while len(pending) < max_inflight and not segments_exhausted:
                         if item.state == STATE_PAUSED or self._paused_global:
                             break
@@ -2064,49 +2058,33 @@ class NZBHuntDownloadManager:
                             future.add_done_callback(_on_done)
                             pending[future] = (file_idx, seg)
                             future = None
-                            # Yield GIL every 32 submissions so web threads
-                            # aren't blocked during initial burst
-                            _submit_count += 1
-                            if _submit_count & 31 == 0:
-                                time.sleep(0)
                         except StopIteration:
                             segments_exhausted = True
                             break
 
                     # ── Batch drain: process ALL available completed futures ──
-                    # Block for the first one, then drain up to _DRAIN_CAP
-                    # others before yielding the GIL.  Without a cap, 50+
-                    # futures completing at once would hold the GIL for the
-                    # entire batch, starving the web server.
+                    # No drain cap needed — download engine runs in its own
+                    # process with its own GIL, so draining aggressively
+                    # maximizes throughput without starving anything.
                     if pending:
-                        _DRAIN_CAP = 16
                         first = done_q.get()  # block for at least one
                         if not _process_future(first):
                             break
-                        # Drain up to _DRAIN_CAP others that are already done
-                        _drain_count = 0
-                        while _drain_count < _DRAIN_CAP and not done_q.empty() and pending:
+                        # Drain all others that are already done
+                        while not done_q.empty() and pending:
                             try:
                                 fut = done_q.get_nowait()
                                 if not _process_future(fut):
                                     aborted = True
                                     break
-                                _drain_count += 1
                             except Empty:
                                 break
-                        # Yield GIL after every batch so Waitress web server
-                        # threads can serve requests during heavy downloads.
-                        time.sleep(0)
 
                 # Drain remaining
-                _drain_rem = 0
                 while pending and not (item.state == STATE_PAUSED or self._paused_global):
                     fut = done_q.get()
                     if not _process_future(fut):
                         break
-                    _drain_rem += 1
-                    if _drain_rem & 15 == 0:
-                        time.sleep(0)
 
                 # Cancel outstanding
                 if pending:

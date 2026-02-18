@@ -46,6 +46,21 @@ def _get_ipc_path() -> str:
 def _child_main(cmd_queue, result_queue, ready_event):
     """Entry point for the download child process."""
     signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+    # ── GIL tuning for the download process ──
+    # Default switch interval is 5ms (0.005s).  With 120 threads, that
+    # means ~24,000 involuntary context switches per second — each one
+    # interrupts a thread mid-read to give another thread a turn, even
+    # though the interrupted thread was about to release the GIL for I/O
+    # anyway.  Raising to 10ms lets each thread complete more Python
+    # bytecode (loop control, chunk append, len check) before yielding,
+    # cutting context-switch overhead by ~2x while still allowing the
+    # main thread (IPC writes, command processing) to get timely turns.
+    #
+    # Safe here because this is an isolated child process — the web
+    # server has its own GIL at the default interval.
+    sys.setswitchinterval(0.010)
+
     mgr = None
     try:
         from src.primary.utils.logger import get_logger
@@ -331,7 +346,10 @@ class DownloadManagerProxy:
     # ── Mutating methods (forwarded to child process) ──
 
     def add_nzb(self, **kwargs) -> Tuple[bool, str, str]:
-        result = self._send_command("add_nzb", kwargs=kwargs, timeout=30.0)
+        # Longer timeout — add_nzb fetches the NZB URL, parses XML, and
+        # saves state.  During heavy downloads (120 threads), the child's
+        # main thread competes for the GIL and may take a while.
+        result = self._send_command("add_nzb", kwargs=kwargs, timeout=120.0)
         if isinstance(result, (list, tuple)) and len(result) == 3:
             return tuple(result)
         return (False, "Unexpected response from download process", "")

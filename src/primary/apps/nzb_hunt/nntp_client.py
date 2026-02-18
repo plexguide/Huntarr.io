@@ -71,15 +71,23 @@ class NNTPConnection:
             try:
                 sock = self._conn.sock
                 if sock:
-                    # 4MB receive buffer — reduces syscalls significantly
-                    # for large articles and helps saturate gigabit+ connections.
-                    # The kernel may cap this at net.core.rmem_max but will
-                    # use the highest allowed value.
-                    sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4194304)
+                    # 8MB receive buffer — reduces syscalls significantly
+                    # for large articles and helps saturate 2.5 Gbps+ connections.
+                    # The kernel may cap this at net.core.rmem_max (16MB on
+                    # this host) but will use the highest allowed value.
+                    sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 8388608)
                     sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 262144)
                     # Disable Nagle's algorithm — send BODY commands immediately
                     # instead of waiting to coalesce small writes
                     sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                    # Disable delayed ACKs on Linux — ACK each segment
+                    # immediately so the server sends the next one faster.
+                    # This reduces round-trip latency on high-throughput
+                    # connections.  TCP_QUICKACK is Linux-only (value 12).
+                    try:
+                        sock.setsockopt(socket.IPPROTO_TCP, 12, 1)  # TCP_QUICKACK
+                    except (OSError, AttributeError):
+                        pass
             except Exception:
                 pass
             
@@ -173,7 +181,7 @@ class NNTPConnection:
             total = 0
             # Resolve read method once (avoid hasattr per iteration)
             _read = getattr(file, 'read1', None) or file.read
-            _READ_SIZE = 1048576  # 1MB
+            _READ_SIZE = 4194304  # 4MB — matches 8MB SO_RCVBUF
             # Track last 5 bytes across chunk boundaries without allocation.
             # _tail is a small bytes object updated each iteration — avoids
             # the old approach of slicing two chunks and concatenating.
@@ -202,7 +210,11 @@ class NNTPConnection:
             # Single join (one allocation), then free chunk list.
             # We know the terminator is at the very end (we broke on it),
             # so just trim the last 5 bytes instead of scanning with rfind.
-            raw = b"".join(chunks)
+            # Fast path: single chunk avoids the join allocation entirely.
+            if len(chunks) == 1:
+                raw = chunks[0]
+            else:
+                raw = b"".join(chunks)
             del chunks
             
             if total >= 5 and raw[-5:] == _TERM:
@@ -264,15 +276,18 @@ class NNTPConnectionPool:
     
     def get_connection(self, timeout: float = 30.0) -> Optional[NNTPConnection]:
         """Get an available connection from the pool.
-        
+
         Blocks up to `timeout` seconds waiting for a connection to become
         available.  If under the limit, opens a new one immediately.  On
         connect failure it retries (with backoff) until the deadline rather
         than giving up instantly.
+
+        SSL handshake is done OUTSIDE the lock so other threads can
+        acquire idle connections concurrently.
         """
         deadline = time.time() + timeout
         backoff = 0.05  # initial retry sleep
-        
+
         while time.time() < deadline:
             with self._lock:
                 # Return an available (idle) connection
@@ -284,23 +299,35 @@ class NNTPConnectionPool:
                     # Dead connection – remove from pool and try to open a new one
                     if conn in self._connections:
                         self._connections.remove(conn)
-                
-                # Create a new connection if under limit
+
+                # Reserve a slot if under limit (but don't connect yet)
                 if len(self._connections) < self.max_connections:
                     conn = NNTPConnection(
                         self.host, self.port, self.use_ssl,
                         self.username, self.password
                     )
-                    if conn.connect():
-                        self._connections.append(conn)
-                        return conn
-                    # Connect failed — don't return None immediately, keep
-                    # retrying until deadline (server may be temporarily busy)
-            
+                    # Add placeholder to reserve the slot
+                    self._connections.append(conn)
+                else:
+                    conn = None
+
+            if conn is not None:
+                # Connect OUTSIDE the lock — SSL handshake can take 50-200ms
+                # and we don't want to block other threads from getting idle
+                # connections during that time.
+                if conn.connect():
+                    return conn
+                else:
+                    # Connect failed — remove the placeholder
+                    with self._lock:
+                        if conn in self._connections:
+                            self._connections.remove(conn)
+                    # Fall through to retry
+
             # Wait briefly before retrying (bounded backoff)
             time.sleep(min(backoff, max(0, deadline - time.time())))
             backoff = min(backoff * 1.5, 1.0)
-        
+
         return None
     
     def release_connection(self, conn: NNTPConnection):
@@ -605,3 +632,38 @@ class NNTPManager:
         with self._lock:
             for pool in self._pools:
                 pool.close_all()
+    def prewarm_connections(self, max_workers: int = 20):
+        """Open all server connections in parallel before download starts.
+
+        SSL handshakes take 50-200ms each.  Opening 90 connections serially
+        takes 5-18 seconds.  By pre-warming in parallel (20 threads), all
+        connections are ready in ~1 second, so the download hits full speed
+        immediately instead of ramping up over 30-60 seconds.
+        """
+        with self._lock:
+            pools = list(self._pools)
+
+        if not pools:
+            return
+
+        def _open_one(pool):
+            conn = pool.get_connection(timeout=15.0)
+            if conn:
+                pool.release_connection(conn)
+
+        tasks = []
+        for pool in pools:
+            remaining = pool.max_connections - len(pool._connections)
+            for _ in range(remaining):
+                tasks.append(pool)
+
+        if not tasks:
+            return
+
+        logger.info(f"Pre-warming {len(tasks)} NNTP connections across {len(pools)} servers...")
+        from concurrent.futures import ThreadPoolExecutor as _TPE
+        with _TPE(max_workers=min(max_workers, len(tasks))) as executor:
+            list(executor.map(_open_one, tasks))
+
+        total = sum(len(p._connections) for p in pools)
+        logger.info(f"Pre-warm complete: {total} connections ready")

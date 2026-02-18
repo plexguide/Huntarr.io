@@ -336,7 +336,7 @@ class NNTP:
         self.sock = self._create_socket(timeout)
         self.file = None
         try:
-            self.file = self.sock.makefile("rwb", buffering=1048576)
+            self.file = self.sock.makefile("rwb", buffering=4194304)
             self._base_init(readermode)
             if user or usenetrc:
                 self.login(user, password, usenetrc)
@@ -1003,7 +1003,7 @@ class NNTP:
             if resp.startswith('382'):
                 self.file.close()
                 self.sock = _encrypt_on(self.sock, context, self.host)
-                self.file = self.sock.makefile("rwb", buffering=1048576)
+                self.file = self.sock.makefile("rwb", buffering=4194304)
                 self.tls_on = True
                 # Capabilities may change after TLS starts up, so ask for them
                 # again.
