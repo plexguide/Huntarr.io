@@ -323,6 +323,20 @@ def _auto_probe_file(title: str, year: str, file_path: str, instance_id: int = N
         _mh_log().debug("Import probe: error for '%s' (%s): %s", title, year, e)
 
 
+def _cleanup_on_import_failure(local_path: str, root_folder: str, title: str, year: str) -> None:
+    """
+    Remove the source download folder when import fails.
+    Frees disk space so failed downloads don't accumulate.
+    """
+    if not local_path or not root_folder:
+        return
+    try:
+        _cleanup_source_folder(local_path, root_folder, title, year)
+        _mh_log().info("Import: discarded failed download for '%s' (%s) to free space", title, year)
+    except Exception as e:
+        _mh_log().warning("Import: could not discard failed download folder %s: %s", local_path, e)
+
+
 def _cleanup_source_folder(local_path: str, root_folder: str, title: str, year: str) -> None:
     """
     Remove the source download folder after successful import.
@@ -402,6 +416,7 @@ def import_movie(client: Dict[str, Any], title: str, year: str, download_path: s
         video_file = _find_largest_video_file(local_path)
         if not video_file:
             _mh_log().error("Import: no video file found in %s", local_path)
+            _cleanup_on_import_failure(local_path, root_folder, title, year)
             return False
         
         # 4. Create movie folder and filename using format settings
@@ -429,6 +444,7 @@ def import_movie(client: Dict[str, Any], title: str, year: str, download_path: s
             os.makedirs(dest_folder, exist_ok=True)
         except Exception as e:
             _mh_log().error("Import: failed to create folder %s: %s", dest_folder, e)
+            _cleanup_on_import_failure(local_path, root_folder, title, year)
             return False
 
         dest_file = os.path.join(dest_folder, file_name)
@@ -458,6 +474,7 @@ def import_movie(client: Dict[str, Any], title: str, year: str, download_path: s
                 "Import: failed to move file: %s. Reason: %s. Check permissions and that destination is writable.",
                 video_file, e
             )
+            _cleanup_on_import_failure(local_path, root_folder, title, year)
             return False
         
         # 8. Update collection status
@@ -481,4 +498,11 @@ def import_movie(client: Dict[str, Any], title: str, year: str, download_path: s
         
     except Exception as e:
         _mh_log().exception("Import: error for '%s' (%s): %s", title, year, e)
+        try:
+            local_path = locals().get('local_path')
+            root_folder = locals().get('root_folder')
+            if local_path and root_folder:
+                _cleanup_on_import_failure(local_path, root_folder, title, year)
+        except Exception:
+            pass
         return False

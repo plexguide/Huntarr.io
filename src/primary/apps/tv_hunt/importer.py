@@ -223,6 +223,19 @@ def _add_import_history(series_title: str, season: int, episode: int,
         logger.error("Error adding TV import history: %s", e)
 
 
+def _cleanup_on_import_failure(local_path: str, root_folder: str,
+                              series_title: str, season: int, episode: int) -> None:
+    """Remove the source download folder when import fails. Frees disk space."""
+    if not local_path or not root_folder:
+        return
+    try:
+        _cleanup_source_folder(local_path, root_folder, series_title, season, episode)
+        _tv_log().info("Import: discarded failed download for '%s' S%02dE%02d to free space",
+                       series_title, season or 0, episode or 0)
+    except Exception as e:
+        _tv_log().warning("Import: could not discard failed download folder %s: %s", local_path, e)
+
+
 def _cleanup_source_folder(local_path: str, root_folder: str,
                            series_title: str, season: int, episode: int) -> None:
     """Remove the source download folder after successful import."""
@@ -298,6 +311,7 @@ def import_episode(client: Dict[str, Any], series_title: str, year: str,
         video_file = _find_largest_video_file(local_path)
         if not video_file:
             _tv_log().error("Import: no video file found in %s", local_path)
+            _cleanup_on_import_failure(local_path, root_folder, series_title, season, episode)
             return False
 
         # 4. Generate folder and file names using format settings
@@ -335,6 +349,7 @@ def import_episode(client: Dict[str, Any], series_title: str, year: str,
             os.makedirs(dest_season_folder, exist_ok=True)
         except Exception as e:
             _tv_log().error("Import: failed to create folder %s: %s", dest_season_folder, e)
+            _cleanup_on_import_failure(local_path, root_folder, series_title, season, episode)
             return False
 
         # 5. Check if file already exists
@@ -355,6 +370,7 @@ def import_episode(client: Dict[str, Any], series_title: str, year: str,
             shutil.move(video_file, dest_file)
         except Exception as e:
             _tv_log().error("Import: failed to move file: %s -> %s. Reason: %s", video_file, dest_file, e)
+            _cleanup_on_import_failure(local_path, root_folder, series_title, season, episode)
             return False
 
         # 7. Update collection status
@@ -377,4 +393,11 @@ def import_episode(client: Dict[str, Any], series_title: str, year: str,
     except Exception as e:
         _tv_log().exception("Import: error for '%s' S%02dE%02d: %s",
                             series_title, season or 0, episode or 0, e)
+        try:
+            local_path = locals().get('local_path')
+            root_folder = locals().get('root_folder')
+            if local_path and root_folder:
+                _cleanup_on_import_failure(local_path, root_folder, series_title, season, episode)
+        except Exception:
+            pass
         return False
