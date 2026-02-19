@@ -714,7 +714,6 @@ body.non-owner-mode #nav-group-apps-label,
 body.non-owner-mode #nav-group-media-hunt,
 body.non-owner-mode #nzb-hunt-sidebar-group,
 body.non-owner-mode #nav-group-apps,
-body.non-owner-mode .requestarr-header-bar,
-body.non-owner-mode .sidebar-footer {
+body.non-owner-mode .requestarr-header-bar {
     display: none !important;
 }
