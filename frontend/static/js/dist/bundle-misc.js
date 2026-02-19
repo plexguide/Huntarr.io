@@ -3818,7 +3818,69 @@
                 this._histPollTimer = null;
             }
         },
+    };
 
+    /* ── Helpers ────────────────────────────────────────────────────── */
+    function _esc(s) {
+        var d = document.createElement('div');
+        d.textContent = s || '';
+        return d.innerHTML;
+    }
+
+    function _fmtBytes(b) {
+        if (!b || b <= 0) return '0 B';
+        var units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        var i = Math.floor(Math.log(b) / Math.log(1024));
+        return (b / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0) + ' ' + units[i];
+    }
+
+    function _capFirst(s) {
+        if (!s) return '';
+        return s.charAt(0).toUpperCase() + s.slice(1);
+    }
+
+    // Initialize on DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () { /* wait for section switch */ });
+    }
+})();
+
+
+/* === modules/features/nzb-hunt-settings.js === */
+/**
+ * NZB Hunt Settings - Folders, Servers, Categories, Processing, Advanced
+ * Extends window.NzbHunt defined in nzb-hunt.js
+ */
+(function () {
+    'use strict';
+
+    /* ── Helpers (shared with nzb-hunt.js, duplicated for IIFE scope) ── */
+    function _esc(s) {
+        var d = document.createElement('div');
+        d.textContent = s || '';
+        return d.innerHTML;
+    }
+
+    function _fmtBytes(b) {
+        if (!b || b <= 0) return '0 B';
+        var units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        var i = Math.floor(Math.log(b) / Math.log(1024));
+        return (b / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0) + ' ' + units[i];
+    }
+
+    function _capFirst(s) {
+        if (!s) return '';
+        return s.charAt(0).toUpperCase() + s.slice(1);
+    }
+
+    function _parseJsonOrThrow(r) {
+        return r.json().then(function (data) {
+            if (!r.ok) throw new Error(data && (data.error || data.message) || 'Request failed');
+            return data;
+        });
+    }
+
+    Object.assign(window.NzbHunt, {
         initSettings: function () {
             this._setupSettingsTabs();
             this._setupFolderBrowse();
@@ -5075,31 +5137,7 @@
                     }
                 });
         }
-    };
-
-    /* ── Helpers ────────────────────────────────────────────────────── */
-    function _esc(s) {
-        var d = document.createElement('div');
-        d.textContent = s || '';
-        return d.innerHTML;
-    }
-
-    function _fmtBytes(b) {
-        if (!b || b <= 0) return '0 B';
-        var units = ['B', 'KB', 'MB', 'GB', 'TB'];
-        var i = Math.floor(Math.log(b) / Math.log(1024));
-        return (b / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0) + ' ' + units[i];
-    }
-
-    function _capFirst(s) {
-        if (!s) return '';
-        return s.charAt(0).toUpperCase() + s.slice(1);
-    }
-
-    // Initialize on DOM ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function () { /* wait for section switch */ });
-    }
+    });
 })();
 
 

@@ -2757,7 +2757,7 @@
 })();
 
 
-/* === modules/features/media-hunt-collection.js === */
+/* === modules/features/media-hunt-collection-movies.js === */
 /**
  * Movie Hunt Movie Collection - requested movies and status (requested / available).
  * Users go to Request Movies (#requestarr-movies) to add movies; this view lists the collection.
@@ -3341,6 +3341,8 @@
     };
 })();
 
+
+/* === modules/features/media-hunt-collection-tv.js === */
 /**
  * TV Hunt Collection – series list with expandable seasons and episodes.
  * Mirrors Sonarr's series detail view: header with info, then accordion seasons with episode tables.
@@ -3786,6 +3788,8 @@
     };
 })();
 
+
+/* === modules/features/media-hunt-collection.js === */
 /**
  * Media Hunt Collection – Movie Hunt + TV Hunt instance dropdowns, combined library view.
  * Only shows Movie Hunt and TV Hunt instances (no Radarr/Sonarr).
@@ -4461,6 +4465,7 @@
         }
     };
 })();
+
 
 
 /* === modules/features/media-hunt-calendar.js === */
