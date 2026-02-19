@@ -216,6 +216,43 @@
 
         // updateMovieStatus — removed (no-op). Status is driven by updateDetailInfoBar().
 
+        /**
+         * Check if there's an existing request for this movie and update the action button.
+         */
+        async _checkRequestStatus() {
+            if (!this.currentMovie) return;
+            const tmdbId = this.currentMovie.tmdb_id || this.currentMovie.id;
+            if (!tmdbId) return;
+            try {
+                const resp = await fetch(`./api/requestarr/requests/check/movie/${tmdbId}`, { cache: 'no-store' });
+                if (!resp.ok) return;
+                const data = await resp.json();
+                if (data.exists && data.request) {
+                    const btn = document.getElementById('requestarr-detail-request-btn');
+                    if (!btn) return;
+                    const status = data.request.status;
+                    if (status === 'pending') {
+                        btn.innerHTML = '<i class="fas fa-clock"></i> Request Pending';
+                        btn.classList.remove('mh-btn-primary');
+                        btn.classList.add('mh-btn-warning');
+                        btn.disabled = true;
+                    } else if (status === 'approved') {
+                        btn.innerHTML = '<i class="fas fa-check-circle"></i> Request Approved';
+                        btn.classList.remove('mh-btn-primary');
+                        btn.classList.add('mh-btn-success');
+                        btn.disabled = true;
+                    } else if (status === 'denied') {
+                        // Denied — allow re-request
+                        btn.innerHTML = '<i class="fas fa-times-circle"></i> Denied — Re-request';
+                        btn.classList.remove('mh-btn-primary');
+                        btn.classList.add('mh-btn-denied');
+                    }
+                }
+            } catch (e) {
+                console.debug('[RequestarrDetail] Request status check skipped:', e);
+            }
+        },
+
         formatFileSize(bytes) {
             if (!bytes || bytes === 0) return '0 B';
             if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(1) + ' GB';
@@ -1151,6 +1188,9 @@
                     }
                 });
             }
+
+            // Check for existing request status and update button accordingly
+            this._checkRequestStatus();
 
             // ── Auto-refresh after request/edit/delete via shared event system ──
             if (window.MediaUtils) {

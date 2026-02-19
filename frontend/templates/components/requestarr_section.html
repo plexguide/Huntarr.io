@@ -4,7 +4,7 @@
     <link rel="stylesheet" href="./static/css/instance-editor.css?v=1.0.2">
     <link rel="stylesheet" href="./static/css/media-hunt-detail.css?v=1.5.0">
     <link rel="stylesheet" href="./static/css/media-hunt-tv.css?v=1.0.0">
-    <link rel="stylesheet" href="./static/css/requestarr-users.css?v=1.0.0">
+    <link rel="stylesheet" href="./static/css/requestarr-users.css?v=1.1.0">
     
     <div class="requestarr-content">
         <!-- Single header bar: back+breadcrumb (left) + sponsor/partner (right) — all inside the bordered toolbar -->
@@ -37,6 +37,10 @@
                 <div id="requestarr-header-services" class="requestarr-view-header" style="display: none;">
                     <a href="./#requestarr" class="reqset-back-btn"><i class="fas fa-arrow-left"></i> Back</a>
                     <div class="reqset-breadcrumb"><i class="fas fa-server"></i><span>Requests</span><i class="fas fa-chevron-right reqset-breadcrumb-sep"></i><span>Services</span></div>
+                </div>
+                <div id="requestarr-header-requests" class="requestarr-view-header" style="display: none;">
+                    <a href="./#requestarr" class="reqset-back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+                    <div class="reqset-breadcrumb"><i class="fas fa-inbox"></i><span>Requests</span><i class="fas fa-chevron-right reqset-breadcrumb-sep"></i><span>Manage Requests</span></div>
                 </div>
             </div>
             <div class="reqset-toolbar-right">
@@ -286,6 +290,31 @@
                 <div class="loading-spinner">
                     <i class="fas fa-spinner fa-spin"></i>
                     <p>Loading users...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Requests Management View -->
+        <div id="requestarr-requests-view" class="requestarr-view" style="display: none;">
+            <div class="requsers-toolbar">
+                <div class="reqrequests-filters">
+                    <select id="reqrequests-status-filter" class="control-select" onchange="window.RequestarrRequests && window.RequestarrRequests.loadRequests()">
+                        <option value="">All Statuses</option>
+                        <option value="pending" selected>Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="denied">Denied</option>
+                    </select>
+                    <select id="reqrequests-type-filter" class="control-select" onchange="window.RequestarrRequests && window.RequestarrRequests.loadRequests()">
+                        <option value="">All Types</option>
+                        <option value="movie">Movies</option>
+                        <option value="tv">TV Shows</option>
+                    </select>
+                </div>
+            </div>
+            <div id="reqrequests-content">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading requests...</p>
                 </div>
             </div>
         </div>

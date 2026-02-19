@@ -19,7 +19,10 @@ requestarr_users_bp = Blueprint('requestarr_users', __name__, url_prefix='/api/r
 # ── Helpers ──────────────────────────────────────────────────
 
 def _get_current_user():
-    """Get the current authenticated user dict (with role)."""
+    """Get the current authenticated user's requestarr profile (with role).
+    Falls back to treating the main Huntarr user as 'owner' if they exist
+    in the main users table but haven't been synced to requestarr_users yet.
+    """
     session_token = request.cookies.get(SESSION_COOKIE_NAME)
     username = get_username_from_session(session_token)
     if not username:
@@ -29,12 +32,24 @@ def _get_current_user():
             settings = load_settings("general")
             if settings.get("local_access_bypass") or settings.get("proxy_auth_bypass"):
                 db = get_database()
-                return db.get_first_user()
+                main_user = db.get_first_user()
+                if main_user:
+                    username = main_user.get('username')
         except Exception:
             pass
+    if not username:
         return None
     db = get_database()
-    return db.get_user_by_username(username)
+    # First try requestarr_users table (has role info)
+    req_user = db.get_requestarr_user_by_username(username)
+    if req_user:
+        return req_user
+    # Fallback: main Huntarr user — treat as owner (they are the server admin)
+    main_user = db.get_user_by_username(username)
+    if main_user:
+        main_user['role'] = 'owner'
+        return main_user
+    return None
 
 
 def _require_admin():
@@ -157,15 +172,19 @@ def create_user():
         permissions = json.dumps(DEFAULT_PERMISSIONS.get(role, DEFAULT_PERMISSIONS['user']))
 
         db = get_database()
-        # Check if username already exists
-        existing = db.get_user_by_username(username)
+        # Check if username already exists in requestarr_users
+        existing = db.get_requestarr_user_by_username(username)
         if existing:
+            return jsonify({'error': 'Username already exists'}), 409
+        # Also check main users table to avoid conflicts
+        existing_main = db.get_user_by_username(username)
+        if existing_main:
             return jsonify({'error': 'Username already exists'}), 409
 
         success = db.create_requestarr_user(username, password, email, role, permissions)
         if success:
             logger.info(f"User '{username}' created by '{current_user.get('username')}' with role '{role}'")
-            new_user = db.get_user_by_username(username)
+            new_user = db.get_requestarr_user_by_username(username)
             return jsonify({'success': True, 'user': _sanitize_user(new_user)}), 201
         return jsonify({'error': 'Failed to create user'}), 500
     except Exception as e:

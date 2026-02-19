@@ -1034,6 +1034,24 @@ class RequestarrModal {
                 const successMsg = result.message || (isHuntApp ? 'Successfully added to library.' : `${isTVShow ? 'Series' : 'Movie'} requested successfully!`);
                 this.core.showNotification(successMsg, 'success');
 
+                // Also create a request tracking record
+                try {
+                    await fetch('./api/requestarr/requests', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            media_type: isTVShow ? 'tv' : 'movie',
+                            tmdb_id: this.core.currentModalData.tmdb_id,
+                            title: this.core.currentModalData.title || '',
+                            year: String(this.core.currentModalData.year || ''),
+                            poster_path: this.core.currentModalData.poster_path || '',
+                            instance_name: instanceName,
+                        })
+                    });
+                } catch (trackErr) {
+                    console.debug('[RequestarrModal] Request tracking record skipped:', trackErr);
+                }
+
                 // Immediately sync card badge to "requested" state
                 const tmdbId = this.core.currentModalData.tmdb_id;
                 const mediaType = this.core.currentModalData.media_type;
@@ -1043,6 +1061,11 @@ class RequestarrModal {
                 window.dispatchEvent(new CustomEvent('requestarr-request-success', {
                     detail: { tmdbId: tmdbId, mediaType: mediaType, appType: appType, instanceName: instanceName }
                 }));
+
+                // Refresh pending request badge in sidebar
+                if (window.huntarrUI && typeof window.huntarrUI._updatePendingRequestBadge === 'function') {
+                    window.huntarrUI._updatePendingRequestBadge();
+                }
 
                 // Delayed re-check: the movie might download very quickly (especially Movie Hunt)
                 // Re-fetch real status and update card badge accurately

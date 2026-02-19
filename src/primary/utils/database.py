@@ -1086,6 +1086,54 @@ class HuntarrDatabase:
             ''')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_requestarr_services_type ON requestarr_services(service_type)')
 
+            # ── Requestarr Requests (media request tracking) ──
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS requestarr_requests (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL DEFAULT 0,
+                    username TEXT NOT NULL DEFAULT '',
+                    media_type TEXT NOT NULL DEFAULT 'movie',
+                    tmdb_id INTEGER NOT NULL DEFAULT 0,
+                    tvdb_id INTEGER,
+                    title TEXT NOT NULL DEFAULT '',
+                    year TEXT,
+                    poster_path TEXT,
+                    status TEXT NOT NULL DEFAULT 'pending',
+                    instance_name TEXT,
+                    requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    responded_at TIMESTAMP,
+                    responded_by TEXT,
+                    notes TEXT
+                )
+            ''')
+            # Add columns if they don't exist (migration for existing DBs)
+            for col_def in [
+                ('user_id', 'INTEGER NOT NULL DEFAULT 0'),
+                ('username', "TEXT NOT NULL DEFAULT ''"),
+                ('media_type', "TEXT NOT NULL DEFAULT 'movie'"),
+                ('tmdb_id', 'INTEGER NOT NULL DEFAULT 0'),
+                ('tvdb_id', 'INTEGER'),
+                ('title', "TEXT NOT NULL DEFAULT ''"),
+                ('year', 'TEXT'),
+                ('poster_path', 'TEXT'),
+                ('status', "TEXT NOT NULL DEFAULT 'pending'"),
+                ('instance_name', 'TEXT'),
+                ('requested_at', 'TIMESTAMP'),
+                ('responded_at', 'TIMESTAMP'),
+                ('responded_by', 'TEXT'),
+                ('notes', 'TEXT'),
+            ]:
+                try:
+                    conn.execute(f'ALTER TABLE requestarr_requests ADD COLUMN {col_def[0]} {col_def[1]}')
+                except Exception:
+                    pass  # Column already exists
+            try:
+                conn.execute('CREATE INDEX IF NOT EXISTS idx_requestarr_requests_user ON requestarr_requests(user_id)')
+                conn.execute('CREATE INDEX IF NOT EXISTS idx_requestarr_requests_status ON requestarr_requests(status)')
+                conn.execute('CREATE INDEX IF NOT EXISTS idx_requestarr_requests_media ON requestarr_requests(media_type, tmdb_id)')
+            except Exception:
+                pass  # Indexes may already exist or columns missing
+
             conn.commit()
             logger.info(f"Database initialized at: {self.db_path}")
     
@@ -2903,6 +2951,125 @@ class HuntarrDatabase:
             return False
 
     # ── (end requestarr user/service methods) ────────────────────
+
+    # ── Requestarr Request Tracking Methods ──────────────────────
+
+    def create_requestarr_request(self, user_id: int, username: str, media_type: str,
+                                   tmdb_id: int, title: str, year: str = None,
+                                   poster_path: str = None, tvdb_id: int = None,
+                                   instance_name: str = None, status: str = 'pending') -> Optional[int]:
+        """Create a new media request. Returns the request ID or None."""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.execute('''
+                    INSERT INTO requestarr_requests
+                    (user_id, username, media_type, tmdb_id, tvdb_id, title, year, poster_path, status, instance_name, requested_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                ''', (user_id, username, media_type, tmdb_id, tvdb_id, title, year, poster_path, status, instance_name))
+                conn.commit()
+                return cursor.lastrowid
+        except Exception as e:
+            logger.error(f"Error creating requestarr request: {e}")
+            return None
+
+    def get_requestarr_requests(self, status: str = None, user_id: int = None,
+                                 media_type: str = None, limit: int = 100, offset: int = 0) -> list:
+        """Get requests with optional filters."""
+        try:
+            with self.get_connection() as conn:
+                conn.row_factory = sqlite3.Row
+                conditions = []
+                params = []
+                if status:
+                    conditions.append('status = ?')
+                    params.append(status)
+                if user_id:
+                    conditions.append('user_id = ?')
+                    params.append(user_id)
+                if media_type:
+                    conditions.append('media_type = ?')
+                    params.append(media_type)
+                where = (' WHERE ' + ' AND '.join(conditions)) if conditions else ''
+                params.extend([limit, offset])
+                rows = conn.execute(
+                    f'SELECT * FROM requestarr_requests{where} ORDER BY requested_at DESC LIMIT ? OFFSET ?',
+                    params
+                ).fetchall()
+                return [dict(r) for r in rows]
+        except Exception as e:
+            logger.error(f"Error getting requestarr requests: {e}")
+            return []
+
+    def get_requestarr_request_by_id(self, request_id: int) -> Optional[Dict[str, Any]]:
+        """Get a single request by ID."""
+        try:
+            with self.get_connection() as conn:
+                conn.row_factory = sqlite3.Row
+                row = conn.execute('SELECT * FROM requestarr_requests WHERE id = ?', (request_id,)).fetchone()
+                return dict(row) if row else None
+        except Exception as e:
+            logger.error(f"Error getting requestarr request {request_id}: {e}")
+            return None
+
+    def update_requestarr_request_status(self, request_id: int, status: str,
+                                          responded_by: str = None, notes: str = None) -> bool:
+        """Update a request's status (approve/deny)."""
+        try:
+            with self.get_connection() as conn:
+                conn.execute('''
+                    UPDATE requestarr_requests
+                    SET status = ?, responded_at = CURRENT_TIMESTAMP, responded_by = ?, notes = ?
+                    WHERE id = ?
+                ''', (status, responded_by, notes, request_id))
+                conn.commit()
+                return True
+        except Exception as e:
+            logger.error(f"Error updating requestarr request {request_id}: {e}")
+            return False
+
+    def delete_requestarr_request(self, request_id: int) -> bool:
+        """Delete a request."""
+        try:
+            with self.get_connection() as conn:
+                conn.execute('DELETE FROM requestarr_requests WHERE id = ?', (request_id,))
+                conn.commit()
+                return True
+        except Exception as e:
+            logger.error(f"Error deleting requestarr request {request_id}: {e}")
+            return False
+
+    def get_requestarr_request_count(self, user_id: int = None, status: str = None) -> int:
+        """Get count of requests with optional filters."""
+        try:
+            with self.get_connection() as conn:
+                conditions = []
+                params = []
+                if user_id:
+                    conditions.append('user_id = ?')
+                    params.append(user_id)
+                if status:
+                    conditions.append('status = ?')
+                    params.append(status)
+                where = (' WHERE ' + ' AND '.join(conditions)) if conditions else ''
+                row = conn.execute(f'SELECT COUNT(*) FROM requestarr_requests{where}', params).fetchone()
+                return row[0] if row else 0
+        except Exception as e:
+            logger.error(f"Error counting requestarr requests: {e}")
+            return 0
+
+    def check_existing_request(self, media_type: str, tmdb_id: int) -> Optional[Dict[str, Any]]:
+        """Check if a request already exists for this media item."""
+        try:
+            with self.get_connection() as conn:
+                conn.row_factory = sqlite3.Row
+                row = conn.execute(
+                    'SELECT * FROM requestarr_requests WHERE media_type = ? AND tmdb_id = ? ORDER BY requested_at DESC LIMIT 1',
+                    (media_type, tmdb_id)
+                ).fetchone()
+                return dict(row) if row else None
+        except Exception as e:
+            logger.error(f"Error checking existing request: {e}")
+            return None
 
     def generate_recovery_key(self, username: str) -> Optional[str]:
         """Generate a new recovery key for a user"""

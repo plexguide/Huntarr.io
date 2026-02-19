@@ -244,6 +244,9 @@ let huntarrUI = {
         // Setup Indexer Hunt home card (shows if indexers configured)
         this.setupIndexerHuntHome();
         
+        // Fetch current user role and apply UI restrictions for non-admin users
+        this.applyRoleBasedUI();
+
         // Make dashboard visible after initialization to prevent FOUC
         setTimeout(() => {
             this.showDashboard();
@@ -251,6 +254,155 @@ let huntarrUI = {
             this.isInitialized = true;
             console.log('[huntarrUI] Initialization complete - refresh on section change enabled');
         }, 50); // Reduced from implicit longer delay
+    },
+
+    // ── Role-based UI stripping ──────────────────────────────
+    _userRole: null,
+    _userPermissions: null,
+
+    applyRoleBasedUI: function() {
+        fetch('./api/requestarr/users/me', { cache: 'no-store' })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (!data || !data.user) return;
+                this._userRole = data.user.role || 'owner';
+                this._userPermissions = data.user.permissions || {};
+                window._huntarrUserRole = this._userRole;
+                window._huntarrUserPermissions = this._userPermissions;
+                console.log('[huntarrUI] User role:', this._userRole);
+
+                if (this._userRole === 'owner') {
+                    // Owner sees everything — just load badge
+                    this._updatePendingRequestBadge();
+                    if (!this._pendingBadgeInterval) {
+                        this._pendingBadgeInterval = setInterval(() => this._updatePendingRequestBadge(), 60000);
+                    }
+                } else {
+                    // Admin and User roles: siloed to Requests only
+                    this._applyNonOwnerRestrictions();
+                    // Admins get the pending badge too
+                    if (this._userRole === 'admin') {
+                        this._updatePendingRequestBadge();
+                        if (!this._pendingBadgeInterval) {
+                            this._pendingBadgeInterval = setInterval(() => this._updatePendingRequestBadge(), 60000);
+                        }
+                    }
+                }
+            })
+            .catch(e => {
+                console.debug('[huntarrUI] Could not fetch user role:', e);
+            });
+    },
+
+    _updatePendingRequestBadge: function() {
+        fetch('./api/requestarr/requests/pending-count', { cache: 'no-store' })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                var badge = document.getElementById('requestarr-pending-badge');
+                if (!badge) return;
+                var count = (data && data.count) || 0;
+                if (count > 0) {
+                    badge.textContent = count > 99 ? '99+' : String(count);
+                    badge.style.display = '';
+                } else {
+                    badge.style.display = 'none';
+                }
+            })
+            .catch(function() {});
+    },
+
+    /**
+     * Non-owner users (admin + user) are siloed to Requests only.
+     * - Hide Home, Core label, System, Apps label, Media Hunt, NZB Hunt, 3rd Party Apps, Sponsors
+     * - Hide the Requests group header (no accordion) — show sub-items as flat top-level nav
+     * - For 'user' role: also hide admin-only items within Requests (Users, Services, Requests mgmt, Settings, Smart Hunt)
+     */
+    _applyNonOwnerRestrictions: function() {
+        var role = this._userRole;
+
+        // 1. Hide everything outside Requests
+        var hideElements = [
+            'homeNav',                              // Home button
+            'nav-group-core-label',                 // "Core" label
+            'nav-group-system',                     // System group
+            'nav-group-apps-label',                 // "Apps" label
+            'nav-group-media-hunt',                 // Media Hunt
+            'nzb-hunt-sidebar-group',               // NZB Hunt
+            'nav-group-apps',                       // 3rd Party Apps
+            'main-sidebar-partner-projects-group',  // Sponsors
+        ];
+        hideElements.forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+
+        // 2. Hide the Requests group header (accordion toggle) — make sub-items flat
+        var requestsGroup = document.getElementById('nav-group-requests');
+        if (requestsGroup) {
+            var header = requestsGroup.querySelector('.nav-group-header');
+            if (header) header.style.display = 'none';
+        }
+
+        // 3. Force-expand the Requests group body and promote items to top-level styling
+        var requestsBody = document.getElementById('sidebar-group-requests');
+        if (requestsBody) {
+            requestsBody.classList.remove('collapsed');
+            requestsBody.classList.add('non-owner-flat');
+        }
+
+        // 4. For 'user' role, hide admin-only items within Requests
+        if (role === 'user') {
+            var hideNavItems = [
+                'requestarrSmartHuntSettingsNav',
+                'requestarrRequestsNav',
+                'requestarrUsersNav',
+                'requestarrServicesNav',
+                'requestarrSettingsNav',
+            ];
+            hideNavItems.forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+        }
+
+        // 5. Redirect if current section is not allowed
+        var allowedSections = [
+            'requestarr', 'requestarr-discover', 'requestarr-movies',
+            'requestarr-tv', 'requestarr-hidden',
+        ];
+        if (role === 'admin') {
+            allowedSections.push(
+                'requestarr-requests', 'requestarr-users', 'requestarr-services',
+                'requestarr-settings', 'requestarr-smarthunt-settings'
+            );
+        }
+        if (allowedSections.indexOf(this.currentSection) === -1) {
+            window.location.hash = '#requestarr-discover';
+        }
+
+        // 6. Hide the Requests header bar (breadcrumb) — redundant for non-owner users
+        var headerBar = document.querySelector('.requestarr-header-bar');
+        if (headerBar) headerBar.style.display = 'none';
+
+        // 7. Mark body so CSS can adjust layout
+        document.body.classList.add('non-owner-mode');
+    },
+
+    isAdminOnlySection: function(section) {
+        if (this._userRole === 'owner') return false;
+        if (!this._userRole) return false; // not loaded yet, don't block
+        // Both admin and user roles are siloed
+        var allowed = [
+            'requestarr', 'requestarr-discover', 'requestarr-movies',
+            'requestarr-tv', 'requestarr-hidden',
+        ];
+        if (this._userRole === 'admin') {
+            allowed.push(
+                'requestarr-requests', 'requestarr-users', 'requestarr-services',
+                'requestarr-settings', 'requestarr-smarthunt-settings'
+            );
+        }
+        return allowed.indexOf(section) === -1;
     },
 
     runWhenRequestarrReady: function(actionName, callback) {
@@ -539,7 +691,7 @@ let huntarrUI = {
         if (section === 'tv-hunt-settings-sizes') { section = 'settings-sizes'; this._pendingSizesMode = 'tv'; }
 
         // Feature flag guards: redirect to home if section is disabled
-        var requestarrSections = ['requestarr', 'requestarr-discover', 'requestarr-movies', 'requestarr-tv', 'requestarr-hidden', 'requestarr-settings', 'requestarr-smarthunt-settings', 'requestarr-users', 'requestarr-services'];
+        var requestarrSections = ['requestarr', 'requestarr-discover', 'requestarr-movies', 'requestarr-tv', 'requestarr-hidden', 'requestarr-settings', 'requestarr-smarthunt-settings', 'requestarr-users', 'requestarr-services', 'requestarr-requests'];
         var mediaHuntSections = ['media-hunt-collection', 'media-hunt-settings', 'media-hunt-instances', 'media-hunt-calendar', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-media-hunt', 'indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history', 'settings-clients', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'settings-custom-formats', 'settings-import-lists', 'settings-import-media', 'settings-root-folders', 'settings-instance-management', 'movie-hunt-instance-editor', 'profile-editor'];
         var nzbHuntSections = ['nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-folders', 'nzb-hunt-servers', 'nzb-hunt-advanced', 'nzb-hunt-server-editor'];
         var thirdPartyAppSections = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr'];
@@ -554,6 +706,12 @@ let huntarrUI = {
         if (this._enableThirdPartyApps === false && thirdPartyAppSections.indexOf(section) !== -1) {
             console.log('[huntarrUI] 3rd Party Apps disabled - redirecting to home');
             this.switchSection('home'); return;
+        }
+
+        // Role-based guard: restrict non-owner users to allowed sections only
+        if (this._userRole && this._userRole !== 'owner' && this.isAdminOnlySection(section)) {
+            console.log('[huntarrUI] Non-owner role restricted - redirecting to discover');
+            this.switchSection('requestarr-discover'); return;
         }
 
         // Check for unsaved changes before allowing navigation
@@ -656,7 +814,7 @@ let huntarrUI = {
             }
             
             // Don't refresh page when navigating to/from instance editor or between app sections
-            const noRefreshSections = ['home', 'instance-editor', 'profile-editor', 'movie-hunt-instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'media-hunt-collection', 'media-hunt-calendar', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-media-hunt', 'movie-hunt-settings', 'media-hunt-settings', 'media-hunt-instances', 'settings-instance-management', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-import-media', 'settings-custom-formats', 'settings-root-folders', 'tv-hunt-collection', 'media-hunt-collection', 'tv-hunt-settings', 'media-hunt-settings', 'tv-hunt-settings-profiles', 'tv-hunt-settings-sizes', 'tv-hunt-settings-custom-formats', 'tv-hunt-settings-indexers', 'tv-hunt-settings-clients', 'tv-hunt-settings-import-lists', 'tv-hunt-settings-root-folders', 'tv-hunt-settings-tv-management', 'tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist', 'tv-hunt-instance-editor', 'logs-tv-hunt', 'system', 'hunt-manager', 'logs', 'about', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-folders', 'nzb-hunt-servers', 'nzb-hunt-advanced', 'nzb-hunt-settings', 'nzb-hunt-settings-folders', 'nzb-hunt-settings-servers', 'nzb-hunt-settings-processing', 'nzb-hunt-settings-advanced', 'nzb-hunt-server-editor', 'requestarr', 'requestarr-discover', 'requestarr-movies', 'requestarr-tv', 'requestarr-hidden', 'requestarr-settings', 'requestarr-smarthunt-settings', 'requestarr-users', 'requestarr-services', 'indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history'];
+            const noRefreshSections = ['home', 'instance-editor', 'profile-editor', 'movie-hunt-instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'media-hunt-collection', 'media-hunt-calendar', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-media-hunt', 'movie-hunt-settings', 'media-hunt-settings', 'media-hunt-instances', 'settings-instance-management', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-import-media', 'settings-custom-formats', 'settings-root-folders', 'tv-hunt-collection', 'media-hunt-collection', 'tv-hunt-settings', 'media-hunt-settings', 'tv-hunt-settings-profiles', 'tv-hunt-settings-sizes', 'tv-hunt-settings-custom-formats', 'tv-hunt-settings-indexers', 'tv-hunt-settings-clients', 'tv-hunt-settings-import-lists', 'tv-hunt-settings-root-folders', 'tv-hunt-settings-tv-management', 'tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist', 'tv-hunt-instance-editor', 'logs-tv-hunt', 'system', 'hunt-manager', 'logs', 'about', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-folders', 'nzb-hunt-servers', 'nzb-hunt-advanced', 'nzb-hunt-settings', 'nzb-hunt-settings-folders', 'nzb-hunt-settings-servers', 'nzb-hunt-settings-processing', 'nzb-hunt-settings-advanced', 'nzb-hunt-server-editor', 'requestarr', 'requestarr-discover', 'requestarr-movies', 'requestarr-tv', 'requestarr-hidden', 'requestarr-settings', 'requestarr-smarthunt-settings', 'requestarr-users', 'requestarr-services', 'requestarr-requests', 'indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history'];
             const skipRefresh = noRefreshSections.includes(section) || noRefreshSections.includes(this.currentSection);
             
             if (!skipRefresh) {
@@ -1356,7 +1514,8 @@ let huntarrUI = {
                 'requestarr-settings-view',
                 'requestarr-smarthunt-settings-view',
                 'requestarr-users-view',
-                'requestarr-services-view'
+                'requestarr-services-view',
+                'requestarr-requests-view'
             ];
             viewIds.forEach((viewId) => {
                 const view = document.getElementById(viewId);
@@ -1470,6 +1629,22 @@ let huntarrUI = {
             this.runWhenRequestarrReady('services', () => {
                 if (window.RequestarrDiscover && typeof window.RequestarrDiscover.switchView === 'function') {
                     window.RequestarrDiscover.switchView('services');
+                }
+            });
+        } else if (section === 'requestarr-requests' && document.getElementById('requestarr-section')) {
+            document.getElementById('requestarr-section').classList.add('active');
+            document.getElementById('requestarr-section').style.display = 'block';
+            if (document.getElementById('requestarrRequestsNav')) document.getElementById('requestarrRequestsNav').classList.add('active');
+            newTitle = 'Requests';
+            this.currentSection = 'requestarr-requests';
+            
+            // Switch to Requestarr sidebar
+            this.showRequestarrSidebar();
+            
+            // Show requests view
+            this.runWhenRequestarrReady('requests', () => {
+                if (window.RequestarrDiscover && typeof window.RequestarrDiscover.switchView === 'function') {
+                    window.RequestarrDiscover.switchView('requests');
                 }
             });
         } else if (section === 'apps') {

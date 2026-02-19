@@ -272,7 +272,8 @@ def create_user(username: str, password: str) -> bool:
 
 def verify_user(username: str, password: str, otp_code: str = None) -> Tuple[bool, bool]:
     """
-    Verify user credentials
+    Verify user credentials.
+    Checks main users table first, then requestarr_users table as fallback.
     
     Returns:
         Tuple[bool, bool]: (auth_success, needs_2fa)
@@ -285,7 +286,17 @@ def verify_user(username: str, password: str, otp_code: str = None) -> Tuple[boo
         db = get_database()
         user_data = db.get_user_by_username(username)
         
+        # If not found in main users table, check requestarr_users table
         if not user_data:
+            req_user = db.get_requestarr_user_by_username(username)
+            if req_user:
+                stored_password = req_user.get("password") or ""
+                if not verify_password(stored_password, password):
+                    logger.warning(f"Login attempt failed for requestarr user '{username}': Invalid password.")
+                    return False, False
+                # Requestarr users don't have 2FA (yet)
+                logger.debug(f"Requestarr user '{username}' authenticated successfully.")
+                return True, False
             logger.warning(f"Login attempt failed: User '{username}' not found.")
             return False, False
 

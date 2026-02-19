@@ -139,7 +139,7 @@ export class RequestarrDiscover {
 
         if (globalSearchBar) {
             console.log(`[RequestarrDiscover] Found global search bar, applying visibility for ${view}`);
-            if (view === 'hidden' || view === 'settings' || view === 'smarthunt-settings' || view === 'users' || view === 'services') {
+            if (view === 'hidden' || view === 'settings' || view === 'smarthunt-settings' || view === 'users' || view === 'services' || view === 'requests') {
                 globalSearchBar.style.setProperty('display', 'none', 'important');
                 console.log('[RequestarrDiscover] Hiding global search bar');
             } else {
@@ -163,15 +163,17 @@ export class RequestarrDiscover {
         // Hide the entire header bar when settings/smarthunt-settings have their own toolbar
         const headerBar = document.querySelector('.requestarr-header-bar');
         const contentEl = document.querySelector('.requestarr-content');
-        if (view === 'settings' || view === 'smarthunt-settings' || view === 'users' || view === 'services') {
+        if (view === 'settings' || view === 'smarthunt-settings' || view === 'users' || view === 'services' || view === 'requests') {
             if (headerBar) headerBar.style.display = 'none';
             // Allow dropdowns to overflow outside cards in settings view
             if (contentEl) contentEl.classList.add('settings-active');
         } else {
-            if (headerBar) headerBar.style.display = '';
+            // Non-owner users never see the header bar
+            var isNonOwner = document.body.classList.contains('non-owner-mode');
+            if (headerBar) headerBar.style.display = isNonOwner ? 'none' : '';
             if (contentEl) contentEl.classList.remove('settings-active');
             const headerEl = document.getElementById(`requestarr-header-${view}`);
-            if (headerEl) {
+            if (headerEl && !isNonOwner) {
                 headerEl.style.display = '';
             }
         }
@@ -232,6 +234,11 @@ export class RequestarrDiscover {
             case 'services':
                 if (window.RequestarrServices && typeof window.RequestarrServices.init === 'function') {
                     window.RequestarrServices.init();
+                }
+                break;
+            case 'requests':
+                if (window.RequestarrRequests && typeof window.RequestarrRequests.init === 'function') {
+                    window.RequestarrRequests.init();
                 }
                 break;
         }

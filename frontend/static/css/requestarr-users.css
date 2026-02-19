@@ -514,3 +514,208 @@
         display: none;
     }
 }
+
+/* ── Requests Management ─────────────────────────────────── */
+
+.reqrequests-filters {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.reqrequests-filters .control-select {
+    min-width: 140px;
+}
+
+.reqrequests-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 20px;
+    text-align: center;
+}
+
+.reqrequests-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.reqrequests-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px 16px;
+    transition: border-color 0.15s ease;
+}
+
+.reqrequests-card:hover {
+    border-color: var(--accent-color);
+}
+
+.reqrequests-poster {
+    width: 46px;
+    height: 69px;
+    border-radius: 4px;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: var(--bg-tertiary);
+}
+
+.reqrequests-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.reqrequests-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.reqrequests-year {
+    font-weight: 400;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.reqrequests-meta {
+    display: flex;
+    gap: 14px;
+    margin-top: 4px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.reqrequests-meta i {
+    margin-right: 4px;
+    opacity: 0.7;
+}
+
+.reqrequests-notes {
+    margin-top: 4px;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    font-style: italic;
+}
+
+.reqrequests-notes i {
+    margin-right: 4px;
+}
+
+.reqrequests-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.reqrequests-status {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.reqrequests-status-pending {
+    background: rgba(234, 179, 8, 0.15);
+    color: #eab308;
+}
+
+.reqrequests-status-approved {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+}
+
+.reqrequests-status-denied {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.reqrequests-actions {
+    display: flex;
+    gap: 6px;
+}
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+    .reqrequests-card {
+        flex-wrap: wrap;
+    }
+    .reqrequests-right {
+        flex-direction: row;
+        width: 100%;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .reqrequests-filters {
+        flex-wrap: wrap;
+    }
+}
+
+/* ── Pending Request Badge (sidebar) ─────────────────────── */
+
+.nav-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    background: #ef4444;
+    color: #fff;
+    margin-left: auto;
+    line-height: 1;
+}
+
+/* ── Request Status Buttons (detail pages) ───────────────── */
+
+.mh-btn-warning {
+    background: rgba(234, 179, 8, 0.2) !important;
+    color: #eab308 !important;
+    border: 1px solid rgba(234, 179, 8, 0.4) !important;
+    cursor: default !important;
+}
+
+.mh-btn-denied {
+    background: rgba(239, 68, 68, 0.15) !important;
+    color: #f87171 !important;
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+    cursor: pointer !important;
+}
+
+.mh-btn-denied:hover {
+    background: rgba(239, 68, 68, 0.25) !important;
+}
+
+.requsers-btn-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+}
+.requsers-btn-secondary:hover {
+    background: var(--bg-hover);
+}
+
+/* ── Non-owner flat sidebar (no accordion, sub-items as top-level) ── */
+
+.nav-group-body.non-owner-flat {
+    display: block !important;
+}
+
+.nav-group-body.non-owner-flat .nav-item-sub {
+    padding-left: 16px;
+    font-size: 0.9rem;
+}
