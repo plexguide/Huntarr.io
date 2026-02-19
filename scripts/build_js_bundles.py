@@ -35,7 +35,7 @@ BUNDLES = [
     ),
     (
         "bundle-app.js",
-        ["app.js"],
+        ["app.js", "app-sections.js"],
     ),
     (
         "bundle-settings.js",
