@@ -494,12 +494,22 @@ export class RequestarrSettings {
         // Only show unhide button if NOT globally blacklisted (or if owner and it's a personal hide)
         const showUnhide = !isGlobalBlacklist || (isOwner && item._source !== 'global_blacklist');
 
+        const year = item.year || item.release_year || 'N/A';
+        const rating = item.vote_average ? parseFloat(item.vote_average).toFixed(1) : 'N/A';
+
         card.innerHTML = `
             <div class="media-card-poster">
                 ${showUnhide ? '<button class="media-card-unhide-btn" title="Unhide this media"><i class="fas fa-eye"></i></button>' : ''}
                 <img src="${posterUrl}" alt="${item.title}" onerror="this.src='./static/images/blackout.jpg'">
                 <span class="media-type-badge">${typeBadgeLabel}</span>
                 ${scopeBadge}
+            </div>
+            <div class="media-card-info">
+                <div class="media-card-title" title="${item.title}">${item.title}</div>
+                <div class="media-card-meta no-hide">
+                    <span class="media-card-year">${year}</span>
+                    <span class="media-card-rating"><i class="fas fa-star"></i> ${rating}</span>
+                </div>
             </div>
         `;
         

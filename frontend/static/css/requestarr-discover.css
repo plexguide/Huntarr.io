@@ -4695,8 +4695,4 @@ body.requestarr-modal-open {
     font-size: 11px;
 }
 
-/* Globally Blacklisted badge in Personal Blacklist view */
-.hidden-scope-blacklisted {
-    background: rgba(239, 68, 68, 0.85);
-    color: #fff;
-}
+/* Globally Blacklisted badge — positioning moved to requestarr-users.css for load-order safety */

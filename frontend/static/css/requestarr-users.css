@@ -695,6 +695,13 @@
     color: #fff;
 }
 
+.hidden-scope-blacklisted {
+    background: rgba(239, 68, 68, 0.85);
+    color: #fff;
+    top: auto !important;
+    bottom: 6px;
+}
+
 /* ── Non-owner mode: hide everything outside Requests via CSS !important ── */
 /* This is the nuclear option — no JS race condition can override these rules */
 

@@ -1977,12 +1977,22 @@ class RequestarrSettings {
         // Only show unhide button if NOT globally blacklisted (or if owner and it's a personal hide)
         const showUnhide = !isGlobalBlacklist || (isOwner && item._source !== 'global_blacklist');
 
+        const year = item.year || item.release_year || 'N/A';
+        const rating = item.vote_average ? parseFloat(item.vote_average).toFixed(1) : 'N/A';
+
         card.innerHTML = `
             <div class="media-card-poster">
                 ${showUnhide ? '<button class="media-card-unhide-btn" title="Unhide this media"><i class="fas fa-eye"></i></button>' : ''}
                 <img src="${posterUrl}" alt="${item.title}" onerror="this.src='./static/images/blackout.jpg'">
                 <span class="media-type-badge">${typeBadgeLabel}</span>
                 ${scopeBadge}
+            </div>
+            <div class="media-card-info">
+                <div class="media-card-title" title="${item.title}">${item.title}</div>
+                <div class="media-card-meta no-hide">
+                    <span class="media-card-year">${year}</span>
+                    <span class="media-card-rating"><i class="fas fa-star"></i> ${rating}</span>
+                </div>
             </div>
         `;
         
@@ -8368,12 +8378,21 @@ window.RequestarrRequests = {
             ? (item.poster_path.startsWith('http') ? item.poster_path : `https://image.tmdb.org/t/p/w185${item.poster_path}`)
             : './static/images/blackout.jpg';
         const typeBadgeLabel = item.media_type === 'tv' ? 'TV' : 'Movie';
+        const year = item.year || item.release_year || 'N/A';
+        const rating = item.vote_average ? parseFloat(item.vote_average).toFixed(1) : 'N/A';
 
         card.innerHTML = `
             <div class="media-card-poster">
-                <button class="media-card-unhide-btn" title="Remove from Global Blacklist"><i class="fas fa-undo"></i></button>
+                <button class="media-card-unhide-btn" title="Remove from Global Blacklist"><i class="fas fa-undo-alt"></i></button>
                 <img src="${posterUrl}" alt="${this._esc(item.title)}" onerror="this.src='./static/images/blackout.jpg'">
                 <span class="media-type-badge">${typeBadgeLabel}</span>
+            </div>
+            <div class="media-card-info">
+                <div class="media-card-title" title="${this._esc(item.title)}">${this._esc(item.title)}</div>
+                <div class="media-card-meta no-hide">
+                    <span class="media-card-year">${year}</span>
+                    <span class="media-card-rating"><i class="fas fa-star"></i> ${rating}</span>
+                </div>
             </div>
         `;
 
