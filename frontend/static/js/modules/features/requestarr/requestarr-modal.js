@@ -1055,6 +1055,7 @@ class RequestarrModal {
 
     async submitRequest() {
             const isOwner = window._huntarrUserRole === 'owner';
+            const perms = window._huntarrUserPermissions || {};
             const requestBtn = document.getElementById('modal-request-btn');
             const instanceSelect = document.getElementById('modal-instance-select');
 
@@ -1077,12 +1078,66 @@ class RequestarrModal {
                 const appType = decoded.appType;
                 const isHuntApp = appType === 'movie_hunt' || appType === 'tv_hunt';
 
+                // Determine if this user has auto-approve (owners always do)
+                const hasAutoApprove = isOwner || (isTVShow
+                    ? (perms.auto_approve || perms.auto_approve_tv)
+                    : (perms.auto_approve || perms.auto_approve_movies));
+
                 if (requestBtn) {
                     requestBtn.disabled = true;
                     requestBtn.classList.add('pressed');
-                    requestBtn.textContent = isHuntApp ? 'Adding...' : 'Requesting...';
+                    requestBtn.textContent = hasAutoApprove
+                        ? (isHuntApp ? 'Adding...' : 'Requesting...')
+                        : 'Submitting...';
                 }
 
+                // ── Non-auto-approve path: only create a pending request record ──
+                if (!hasAutoApprove) {
+                    const trackResp = await fetch('./api/requestarr/requests', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            media_type: isTVShow ? 'tv' : 'movie',
+                            tmdb_id: this.core.currentModalData.tmdb_id,
+                            title: this.core.currentModalData.title || '',
+                            year: String(this.core.currentModalData.year || ''),
+                            poster_path: this.core.currentModalData.poster_path || '',
+                            instance_name: instanceName,
+                            app_type: appType,
+                        })
+                    });
+                    const trackResult = await trackResp.json();
+
+                    if (trackResp.ok && (trackResult.success || trackResult.request)) {
+                        if (requestBtn) {
+                            requestBtn.textContent = 'Submitted \u2713';
+                            requestBtn.classList.add('success');
+                        }
+                        this.core.showNotification('Request submitted — awaiting owner approval.', 'success');
+
+                        const tmdbId = this.core.currentModalData.tmdb_id;
+                        const mediaType = this.core.currentModalData.media_type;
+                        this._syncCardBadge(tmdbId, false, true);
+                        window.dispatchEvent(new CustomEvent('requestarr-request-success', {
+                            detail: { tmdbId, mediaType, appType, instanceName }
+                        }));
+                        if (window.huntarrUI && typeof window.huntarrUI._updatePendingRequestBadge === 'function') {
+                            window.huntarrUI._updatePendingRequestBadge();
+                        }
+                        setTimeout(() => this.closeModal(), 2000);
+                    } else {
+                        const errorMsg = trackResult.error || trackResult.message || 'Failed to submit request';
+                        this.core.showNotification(errorMsg, 'error');
+                        if (requestBtn) {
+                            requestBtn.disabled = false;
+                            requestBtn.classList.remove('success', 'pressed');
+                            requestBtn.textContent = 'Request';
+                        }
+                    }
+                    return;
+                }
+
+                // ── Auto-approve / owner path: trigger the search pipeline ──
                 const requestData = {
                     tmdb_id: this.core.currentModalData.tmdb_id,
                     media_type: this.core.currentModalData.media_type,
@@ -1116,7 +1171,7 @@ class RequestarrModal {
                         requestData.start_search = startCbTV ? startCbTV.checked : true;
                     }
                 } else {
-                    // Non-owner: pass sensible defaults for Hunt instances, let backend resolve root/quality
+                    // Non-owner with auto-approve: sensible defaults
                     if (appType === 'movie_hunt') {
                         requestData.start_search = true;
                         requestData.minimum_availability = 'released';
@@ -1156,6 +1211,7 @@ class RequestarrModal {
                                 year: String(this.core.currentModalData.year || ''),
                                 poster_path: this.core.currentModalData.poster_path || '',
                                 instance_name: instanceName,
+                                app_type: appType,
                             })
                         });
                     } catch (trackErr) {

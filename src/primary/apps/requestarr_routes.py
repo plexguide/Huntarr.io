@@ -247,8 +247,50 @@ def get_unified_collection():
 
 @requestarr_bp.route('/request', methods=['POST'])
 def request_media():
-    """Request media through app instance"""
+    """Request media through app instance.
+    Only owners and users with auto-approve may call this endpoint.
+    Non-auto-approve users must use /api/requestarr/requests (pending request flow).
+    """
     try:
+        # ── Authorization: block non-auto-approve users from the search pipeline ──
+        try:
+            from src.primary.auth import get_username_from_session, SESSION_COOKIE_NAME
+            from src.primary.utils.database import get_database as _get_db
+            session_token = request.cookies.get(SESSION_COOKIE_NAME)
+            username = get_username_from_session(session_token)
+            if not username:
+                from src.primary.settings_manager import load_settings
+                settings = load_settings("general")
+                if settings.get("local_access_bypass") or settings.get("proxy_auth_bypass"):
+                    _db = _get_db()
+                    main_user = _db.get_first_user()
+                    if main_user:
+                        username = main_user.get('username')
+            if username:
+                _db = _get_db()
+                req_user = _db.get_requestarr_user_by_username(username)
+                if req_user and req_user.get('role') != 'owner':
+                    import json as _json
+                    perms = req_user.get('permissions', {})
+                    if isinstance(perms, str):
+                        try:
+                            perms = _json.loads(perms)
+                        except Exception:
+                            perms = {}
+                    media_type_check = (request.get_json() or {}).get('media_type', 'movie')
+                    has_auto = perms.get('auto_approve', False)
+                    if media_type_check == 'tv':
+                        has_auto = has_auto or perms.get('auto_approve_tv', False)
+                    else:
+                        has_auto = has_auto or perms.get('auto_approve_movies', False)
+                    if not has_auto:
+                        return jsonify({
+                            'success': False,
+                            'message': 'Your requests require owner approval. Use the request button instead.'
+                        }), 403
+        except Exception as auth_err:
+            logger.debug(f"[Requestarr] Auth check in /request skipped: {auth_err}")
+
         data = request.get_json() or {}
         logger.info(f"[Requestarr] Received request: {data}")
         

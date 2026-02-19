@@ -194,6 +194,7 @@ def create_request():
         tvdb_id=data.get('tvdb_id'),
         instance_name=data.get('instance_name', ''),
         status=status,
+        app_type=data.get('app_type', ''),
     )
 
     if request_id:
@@ -216,7 +217,7 @@ def create_request():
 
 @requestarr_requests_bp.route('/<int:request_id>/approve', methods=['POST'])
 def approve_request(request_id):
-    """Approve a pending request (admin only)."""
+    """Approve a pending request and trigger the search/download pipeline."""
     current_user, err = _require_owner()
     if err:
         return err
@@ -230,13 +231,64 @@ def approve_request(request_id):
         responded_by=current_user.get('username', ''),
         notes=request.json.get('notes', '') if request.json else ''
     )
-    if success:
-        req['status'] = 'approved'
-        req['notes'] = (request.json or {}).get('notes', '')
-        _send_request_notification(req, 'approved', current_user.get('username'))
-        updated = db.get_requestarr_request_by_id(request_id)
-        return jsonify({'success': True, 'request': updated})
-    return jsonify({'error': 'Failed to approve request'}), 500
+    if not success:
+        return jsonify({'error': 'Failed to approve request'}), 500
+
+    req['status'] = 'approved'
+    req['notes'] = (request.json or {}).get('notes', '')
+    _send_request_notification(req, 'approved', current_user.get('username'))
+
+    # Trigger the actual search/download pipeline now that the request is approved
+    media_result = None
+    try:
+        from src.primary.apps.requestarr import requestarr_api
+
+        instance_name = req.get('instance_name', '')
+        media_type = req.get('media_type', 'movie')
+        tmdb_id = req.get('tmdb_id')
+        app_type = req.get('app_type', '').strip()
+
+        # If app_type not stored on the request, resolve from services table
+        if not app_type:
+            svc_type = 'tv' if media_type == 'tv' else 'movies'
+            all_svcs = db.get_requestarr_services(svc_type)
+            matched_svc = next((s for s in all_svcs if s.get('instance_name') == instance_name), None)
+            if not matched_svc:
+                matched_svc = next((s for s in all_svcs if s.get('is_default')), None)
+            if not matched_svc and all_svcs:
+                matched_svc = all_svcs[0]
+            if matched_svc:
+                app_type = matched_svc.get('app_type', '')
+                instance_name = matched_svc.get('instance_name', instance_name)
+
+        if not app_type:
+            app_type = 'radarr' if media_type == 'movie' else 'sonarr'
+
+        if tmdb_id:
+            media_result = requestarr_api.request_media(
+                tmdb_id=tmdb_id,
+                media_type=media_type,
+                title=req.get('title', ''),
+                year=req.get('year'),
+                overview='',
+                poster_path=req.get('poster_path', ''),
+                backdrop_path='',
+                app_type=app_type,
+                instance_name=instance_name,
+                start_search=True,
+                minimum_availability='released',
+            )
+            logger.info(f"[Requestarr] Approve triggered search for request {request_id}: {media_result}")
+        else:
+            logger.warning(f"[Requestarr] No tmdb_id for approved request {request_id}")
+    except Exception as e:
+        logger.error(f"[Requestarr] Error triggering search for approved request {request_id}: {e}", exc_info=True)
+
+    updated = db.get_requestarr_request_by_id(request_id)
+    resp = {'success': True, 'request': updated}
+    if media_result:
+        resp['media_result'] = media_result
+    return jsonify(resp)
 
 
 @requestarr_requests_bp.route('/<int:request_id>/deny', methods=['POST'])

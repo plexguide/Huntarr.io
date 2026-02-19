@@ -97,15 +97,16 @@ class RequestarrMixin:
     def create_requestarr_request(self, user_id: int, username: str, media_type: str,
                                    tmdb_id: int, title: str, year: str = None,
                                    poster_path: str = None, tvdb_id: int = None,
-                                   instance_name: str = None, status: str = 'pending') -> Optional[int]:
+                                   instance_name: str = None, status: str = 'pending',
+                                   app_type: str = '') -> Optional[int]:
         """Create a new media request. Returns the request ID or None."""
         try:
             with self.get_connection() as conn:
                 cursor = conn.execute('''
                     INSERT INTO requestarr_requests
-                    (user_id, username, media_type, tmdb_id, tvdb_id, title, year, poster_path, status, instance_name, requested_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-                ''', (user_id, username, media_type, tmdb_id, tvdb_id, title, year, poster_path, status, instance_name))
+                    (user_id, username, media_type, tmdb_id, tvdb_id, title, year, poster_path, status, instance_name, app_type, requested_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                ''', (user_id, username, media_type, tmdb_id, tvdb_id, title, year, poster_path, status, instance_name, app_type or ''))
                 conn.commit()
                 return cursor.lastrowid
         except Exception as e:

@@ -1140,6 +1140,7 @@ class HuntarrDatabase(ConfigMixin, StateMixin, UsersMixin, RequestarrMixin, Extr
                     poster_path TEXT,
                     status TEXT NOT NULL DEFAULT 'pending',
                     instance_name TEXT,
+                    app_type TEXT NOT NULL DEFAULT '',
                     requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     responded_at TIMESTAMP,
                     responded_by TEXT,
@@ -1162,6 +1163,7 @@ class HuntarrDatabase(ConfigMixin, StateMixin, UsersMixin, RequestarrMixin, Extr
                 ('responded_at', 'TIMESTAMP'),
                 ('responded_by', 'TEXT'),
                 ('notes', 'TEXT'),
+                ('app_type', "TEXT NOT NULL DEFAULT ''"),
             ]:
                 try:
                     conn.execute(f'ALTER TABLE requestarr_requests ADD COLUMN {col_def[0]} {col_def[1]}')
