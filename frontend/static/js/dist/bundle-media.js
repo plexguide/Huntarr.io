@@ -44,7 +44,8 @@
         if (partial) {
             return '<div class="media-card-status-badge partial"><i class="fas fa-bookmark"></i></div>';
         }
-        if (importable) {
+        // Non-owner users: show download icon instead of import icon (import is owner-only)
+        if (importable && window._huntarrUserRole === 'owner') {
             return '<div class="media-card-status-badge importable" title="Found on disk — importable"><i class="fas fa-file-import"></i></div>';
         }
         return '<div class="media-card-status-badge available"><i class="fas fa-download"></i></div>';

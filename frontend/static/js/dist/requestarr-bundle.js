@@ -4897,207 +4897,300 @@ class RequestarrModal {
     }
 
     renderModal(data) {
-        const isTVShow = data.media_type === 'tv';
-        
-        // For movies, combine Movie Hunt + Radarr; for TV, combine TV Hunt + Sonarr
-        let uniqueInstances = [];
-        if (isTVShow) {
-            const thInstances = (this.core.instances.tv_hunt || []).map(inst => ({
-                ...inst, appType: 'tv_hunt', compoundValue: encodeInstanceValue('tv_hunt', inst.name),
-                label: `TV Hunt \u2013 ${inst.name}`
-            }));
-            const sonarrInstances = (this.core.instances.sonarr || []).map(inst => ({
-                ...inst, appType: 'sonarr', compoundValue: encodeInstanceValue('sonarr', inst.name),
-                label: `Sonarr \u2013 ${inst.name}`
-            }));
-            const seen = new Set();
-            thInstances.forEach(inst => {
-                if (!seen.has(inst.compoundValue)) {
-                    seen.add(inst.compoundValue);
-                    uniqueInstances.push(inst);
-                }
-            });
-            sonarrInstances.forEach(inst => {
-                if (!seen.has(inst.compoundValue)) {
-                    seen.add(inst.compoundValue);
-                    uniqueInstances.push(inst);
-                }
-            });
-        } else {
-            // Movie Hunt instances first
-            const mhInstances = this.core.instances.movie_hunt || [];
-            const radarrInstances = this.core.instances.radarr || [];
-            const seen = new Set();
-            
-            mhInstances.forEach(inst => {
-                if (!seen.has(inst.name)) {
-                    seen.add(inst.name);
-                    uniqueInstances.push({
-                        ...inst,
-                        appType: 'movie_hunt',
-                        compoundValue: encodeInstanceValue('movie_hunt', inst.name),
-                        label: `Movie Hunt \u2013 ${inst.name}`
-                    });
-                }
-            });
-            
-            radarrInstances.forEach(inst => {
-                if (!seen.has(`radarr-${inst.name}`)) {
-                    seen.add(`radarr-${inst.name}`);
-                    uniqueInstances.push({
-                        ...inst,
-                        appType: 'radarr',
-                        compoundValue: encodeInstanceValue('radarr', inst.name),
-                        label: `Radarr \u2013 ${inst.name}`
-                    });
-                }
-            });
-        }
+            const isTVShow = data.media_type === 'tv';
+            const isOwner = window._huntarrUserRole === 'owner';
+            const perms = window._huntarrUserPermissions || {};
 
-        const currentlySelectedInstance = isTVShow ? (this.preferences?.tv_instance || this.core.content.selectedTVInstance) : (this.preferences?.movie_instance || this.core.content.selectedMovieInstance);
-        const rawDefault = this.suggestedInstance || currentlySelectedInstance || uniqueInstances[0]?.compoundValue || uniqueInstances[0]?.name || '';
-        
-        // Resolve legacy plain-name values to compound values for movies
-        let defaultInstance = rawDefault;
-        let isMovieHunt = false;
-        if (!isTVShow && rawDefault) {
-            const matched = uniqueInstances.find(inst => inst.compoundValue === rawDefault || inst.name === rawDefault);
-            if (matched) {
-                defaultInstance = matched.compoundValue || matched.name;
-                isMovieHunt = matched.appType === 'movie_hunt';
-            }
-        } else if (isTVShow && rawDefault) {
-            const matched = uniqueInstances.find(inst => (inst.compoundValue || inst.name) === rawDefault || inst.name === rawDefault);
-            if (matched) {
-                defaultInstance = matched.compoundValue || matched.name;
-                isMovieHunt = matched.appType === 'movie_hunt';
-            }
-        }
-        const defaultDecoded = defaultInstance ? decodeInstanceValue(defaultInstance, isTVShow ? 'sonarr' : 'radarr') : {};
-        const isTVHunt = isTVShow && defaultDecoded.appType === 'tv_hunt';
-
-        console.log('[RequestarrModal] Resolved instance:', defaultInstance, 'isMovieHunt:', isMovieHunt, 'isTVHunt:', isTVHunt);
-
-        // Populate poster
-        const posterImg = document.getElementById('requestarr-modal-poster-img');
-        if (posterImg) {
-            posterImg.src = data.poster_path || './static/images/blackout.jpg';
-        }
-
-        // Populate title
-        const titleEl = document.getElementById('requestarr-modal-title');
-        if (titleEl) titleEl.textContent = data.title || '';
-
-        // Populate label (Movie Hunt = "Add to Library", Radarr = "Request Movie")
-        const labelEl = document.getElementById('requestarr-modal-label');
-        if (labelEl) labelEl.textContent = isTVShow ? 'Request Series' : 'Request Movie';
-
-        // Populate meta (year, genres)
-        const metaEl = document.getElementById('requestarr-modal-meta');
-        if (metaEl) {
-            const parts = [];
-            if (data.year) parts.push(String(data.year));
-            if (data.genres && data.genres.length) {
-                const genreNames = data.genres
-                    .slice(0, 3)
-                    .map(g => typeof g === 'string' ? g : (g.name || ''))
-                    .filter(Boolean);
-                if (genreNames.length) parts.push(genreNames.join(', '));
-            }
-            metaEl.textContent = parts.join('  \u00B7  ');
-        }
-
-        // Populate instance dropdown
-        const instanceSelect = document.getElementById('modal-instance-select');
-        if (instanceSelect) {
-            instanceSelect.innerHTML = '';
-            const instanceInfoIcon = document.getElementById('modal-instance-info-icon');
-            if (instanceInfoIcon) instanceInfoIcon.style.display = 'none';
-            if (uniqueInstances.length === 0) {
-                instanceSelect.innerHTML = '<option value="">No Instance Configured</option>';
-                instanceSelect.classList.add('field-warning');
-                this._showInstanceInfoIcon();
-            } else {
-                instanceSelect.classList.remove('field-warning');
-                uniqueInstances.forEach(instance => {
-                    const opt = document.createElement('option');
-                    opt.value = instance.compoundValue || instance.name;
-                    opt.textContent = instance.label || `${isTVShow ? (instance.appType === 'tv_hunt' ? 'TV Hunt' : 'Sonarr') : (instance.appType === 'movie_hunt' ? 'Movie Hunt' : 'Radarr')} \u2013 ${instance.name}`;
-                    const isSelected = (instance.compoundValue || instance.name) === defaultInstance;
-                    if (isSelected) opt.selected = true;
-                    instanceSelect.appendChild(opt);
+            // For movies, combine Movie Hunt + Radarr; for TV, combine TV Hunt + Sonarr
+            let uniqueInstances = [];
+            if (isTVShow) {
+                const thInstances = (this.core.instances.tv_hunt || []).map(inst => ({
+                    ...inst, appType: 'tv_hunt', compoundValue: encodeInstanceValue('tv_hunt', inst.name),
+                    label: `TV Hunt \u2013 ${inst.name}`
+                }));
+                const sonarrInstances = (this.core.instances.sonarr || []).map(inst => ({
+                    ...inst, appType: 'sonarr', compoundValue: encodeInstanceValue('sonarr', inst.name),
+                    label: `Sonarr \u2013 ${inst.name}`
+                }));
+                const seen = new Set();
+                thInstances.forEach(inst => {
+                    if (!seen.has(inst.compoundValue)) {
+                        seen.add(inst.compoundValue);
+                        uniqueInstances.push(inst);
+                    }
                 });
-                // When no default was set, select first option so Monitor/min-availability reflect the visible selection
-                if (!defaultInstance && uniqueInstances.length > 0) {
-                    instanceSelect.selectedIndex = 0;
-                }
-            }
-            // Attach change handler
-            instanceSelect.onchange = () => this.instanceChanged(instanceSelect.value);
-        }
-
-        // Populate quality profile dropdown (TV Hunt + Movie Hunt: real profiles only, select default; Sonarr/Radarr: Any + profiles)
-        const qualitySelect = document.getElementById('modal-quality-profile');
-        const effectiveInstance = (instanceSelect && instanceSelect.value) ? instanceSelect.value : defaultInstance;
-        if (qualitySelect) {
-            const profDecoded = effectiveInstance ? decodeInstanceValue(effectiveInstance, isTVShow ? 'sonarr' : 'radarr') : {};
-            const profileKey = `${profDecoded.appType || ''}-${profDecoded.name || ''}`;
-            const profiles = this.core.qualityProfiles[profileKey] || [];
-            const useHuntProfiles = isMovieHunt || isTVHunt;
-
-            if (profiles.length === 0 && effectiveInstance) {
-                qualitySelect.innerHTML = '<option value="">Loading profiles...</option>';
-                this.core.loadQualityProfilesForInstance(profDecoded.appType, profDecoded.name).then(newProfiles => {
-                    if (newProfiles && newProfiles.length > 0) {
-                        this._populateQualityProfiles(qualitySelect, newProfiles, useHuntProfiles);
-                    } else {
-                        this._populateQualityProfiles(qualitySelect, [], useHuntProfiles);
+                sonarrInstances.forEach(inst => {
+                    if (!seen.has(inst.compoundValue)) {
+                        seen.add(inst.compoundValue);
+                        uniqueInstances.push(inst);
                     }
                 });
             } else {
-                this._populateQualityProfiles(qualitySelect, profiles, useHuntProfiles);
+                const mhInstances = this.core.instances.movie_hunt || [];
+                const radarrInstances = this.core.instances.radarr || [];
+                const seen = new Set();
+                mhInstances.forEach(inst => {
+                    if (!seen.has(inst.name)) {
+                        seen.add(inst.name);
+                        uniqueInstances.push({
+                            ...inst,
+                            appType: 'movie_hunt',
+                            compoundValue: encodeInstanceValue('movie_hunt', inst.name),
+                            label: `Movie Hunt \u2013 ${inst.name}`
+                        });
+                    }
+                });
+                radarrInstances.forEach(inst => {
+                    if (!seen.has(`radarr-${inst.name}`)) {
+                        seen.add(`radarr-${inst.name}`);
+                        uniqueInstances.push({
+                            ...inst,
+                            appType: 'radarr',
+                            compoundValue: encodeInstanceValue('radarr', inst.name),
+                            label: `Radarr \u2013 ${inst.name}`
+                        });
+                    }
+                });
             }
-        }
 
-        // Status container and request button
-        const statusContainer = document.getElementById('requestarr-modal-status-container');
-        const requestBtn = document.getElementById('modal-request-btn');
-        if (requestBtn) {
-            requestBtn.disabled = false;
-            requestBtn.classList.remove('disabled', 'success');
-            requestBtn.textContent = 'Request';
-        }
-        this._applyMovieHuntModalMode(effectiveInstance, isTVShow, labelEl, requestBtn);
+            // Populate poster
+            const posterImg = document.getElementById('requestarr-modal-poster-img');
+            if (posterImg) posterImg.src = data.poster_path || './static/images/blackout.jpg';
 
-        if (defaultInstance) {
-            // Instance exists — show checking status and load data
-            if (statusContainer) {
-                statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-loading"><i class="fas fa-spinner fa-spin"></i> Checking...</span>';
+            // Populate title
+            const titleEl = document.getElementById('requestarr-modal-title');
+            if (titleEl) titleEl.textContent = data.title || '';
+
+            // Populate label
+            const labelEl = document.getElementById('requestarr-modal-label');
+            if (labelEl) labelEl.textContent = isTVShow ? 'Request Series' : 'Request Movie';
+
+            // Populate meta (year, genres)
+            const metaEl = document.getElementById('requestarr-modal-meta');
+            if (metaEl) {
+                const parts = [];
+                if (data.year) parts.push(String(data.year));
+                if (data.genres && data.genres.length) {
+                    const genreNames = data.genres
+                        .slice(0, 3)
+                        .map(g => typeof g === 'string' ? g : (g.name || ''))
+                        .filter(Boolean);
+                    if (genreNames.length) parts.push(genreNames.join(', '));
+                }
+                metaEl.textContent = parts.join('  \u00B7  ');
             }
-            this.loadModalRootFolders(defaultInstance, isTVShow);
-            if (isTVShow) {
-                this.loadSeriesStatus(defaultInstance);
+
+            const fieldsContainer = document.querySelector('.mh-req-fields');
+            const startSearchWrap = document.getElementById('requestarr-modal-start-search-wrap');
+            const statusContainer = document.getElementById('requestarr-modal-status-container');
+            const requestBtn = document.getElementById('modal-request-btn');
+            const instanceSelect = document.getElementById('modal-instance-select');
+
+            // ── Non-owner simplified modal ──
+            if (!isOwner) {
+                // Show fields container (for the instance row) but hide everything except instance
+                if (fieldsContainer) fieldsContainer.style.display = '';
+                if (startSearchWrap) startSearchWrap.classList.add('mh-hidden');
+                this._clearImportBanner();
+
+                // Hide root folder, quality profile, monitor, movie monitor, min availability rows
+                const rootField = document.getElementById('modal-root-folder');
+                const qualityField = document.getElementById('modal-quality-profile');
+                if (rootField && rootField.closest('.mh-req-field')) rootField.closest('.mh-req-field').classList.add('mh-hidden');
+                if (qualityField && qualityField.closest('.mh-req-field')) qualityField.closest('.mh-req-field').classList.add('mh-hidden');
+                const monitorWrap = document.getElementById('requestarr-modal-monitor-wrap');
+                const movieMonitorWrap = document.getElementById('requestarr-modal-movie-monitor-wrap');
+                const minAvailWrap = document.getElementById('requestarr-modal-min-availability-wrap');
+                if (monitorWrap) monitorWrap.classList.add('mh-hidden');
+                if (movieMonitorWrap) movieMonitorWrap.classList.add('mh-hidden');
+                if (minAvailWrap) minAvailWrap.classList.add('mh-hidden');
+
+                // Resolve the page's current instance
+                const pageInstance = this.suggestedInstance
+                    || (isTVShow ? this.core.content.selectedTVInstance : this.core.content.selectedMovieInstance)
+                    || uniqueInstances[0]?.compoundValue || '';
+
+                // Populate instance dropdown with single option, greyed out
+                if (instanceSelect) {
+                    instanceSelect.innerHTML = '';
+                    const matched = uniqueInstances.find(inst => inst.compoundValue === pageInstance || inst.name === pageInstance);
+                    const opt = document.createElement('option');
+                    opt.value = pageInstance;
+                    opt.textContent = matched ? matched.label : pageInstance;
+                    instanceSelect.appendChild(opt);
+                    instanceSelect.disabled = true;
+                    instanceSelect.style.opacity = '0.6';
+                    instanceSelect.onchange = null;
+                }
+                const instanceInfoIcon = document.getElementById('modal-instance-info-icon');
+                if (instanceInfoIcon) instanceInfoIcon.style.display = 'none';
+
+                // Show permissions status row below instance (same field styling)
+                const hasAutoApprove = isTVShow
+                    ? (perms.auto_approve || perms.auto_approve_tv)
+                    : (perms.auto_approve || perms.auto_approve_movies);
+
+                // Remove any previous permissions row, then insert a new one
+                const existingPermRow = document.getElementById('requestarr-modal-permissions-row');
+                if (existingPermRow) existingPermRow.remove();
+                const permRow = document.createElement('div');
+                permRow.className = 'mh-req-field';
+                permRow.id = 'requestarr-modal-permissions-row';
+                const permLabel = document.createElement('label');
+                permLabel.textContent = 'Status';
+                const permValue = document.createElement('span');
+                permValue.className = 'mh-req-perm-status';
+                if (hasAutoApprove) {
+                    permValue.innerHTML = '<i class="fas fa-check-circle"></i> Auto-Approved';
+                    permValue.classList.add('mh-req-perm-approved');
+                } else {
+                    permValue.innerHTML = '<i class="fas fa-clock"></i> Requires Approval';
+                    permValue.classList.add('mh-req-perm-pending');
+                }
+                permRow.appendChild(permLabel);
+                permRow.appendChild(permValue);
+                // Insert after the instance field
+                const instanceField = instanceSelect ? instanceSelect.closest('.mh-req-field') : null;
+                if (instanceField && instanceField.parentNode) {
+                    instanceField.parentNode.insertBefore(permRow, instanceField.nextSibling);
+                }
+
+                // Clear status container (permissions info is now in the field row)
+                if (statusContainer) statusContainer.innerHTML = '';
+
+                // Configure request button
+                if (requestBtn) {
+                    requestBtn.disabled = !pageInstance;
+                    requestBtn.classList.remove('disabled', 'success');
+                    requestBtn.textContent = isTVShow ? 'Request Series' : 'Request Movie';
+                    if (!pageInstance) requestBtn.classList.add('disabled');
+                }
+                // Push buttons to bottom-right of the form column
+                const actionsArea = document.querySelector('.mh-req-actions');
+                if (actionsArea) actionsArea.style.marginTop = 'auto';
+                return;
+            }
+
+            // ── Owner full modal (existing logic) ──
+            if (fieldsContainer) fieldsContainer.style.display = '';
+            const actionsArea = document.querySelector('.mh-req-actions');
+            if (actionsArea) actionsArea.style.marginTop = '';
+            // Remove permissions row if present from previous non-owner render
+            const existingPermRowOwner = document.getElementById('requestarr-modal-permissions-row');
+            if (existingPermRowOwner) existingPermRowOwner.remove();
+            // Re-show root/quality fields (may have been hidden by previous non-owner render)
+            const rootField = document.getElementById('modal-root-folder');
+            const qualityField = document.getElementById('modal-quality-profile');
+            if (rootField && rootField.closest('.mh-req-field')) rootField.closest('.mh-req-field').classList.remove('mh-hidden');
+            if (qualityField && qualityField.closest('.mh-req-field')) qualityField.closest('.mh-req-field').classList.remove('mh-hidden');
+            if (instanceSelect) {
+                instanceSelect.disabled = false;
+                instanceSelect.style.opacity = '';
+            }
+
+            const currentlySelectedInstance = isTVShow ? (this.preferences?.tv_instance || this.core.content.selectedTVInstance) : (this.preferences?.movie_instance || this.core.content.selectedMovieInstance);
+            const rawDefault = this.suggestedInstance || currentlySelectedInstance || uniqueInstances[0]?.compoundValue || uniqueInstances[0]?.name || '';
+
+            let defaultInstance = rawDefault;
+            let isMovieHunt = false;
+            if (!isTVShow && rawDefault) {
+                const matched = uniqueInstances.find(inst => inst.compoundValue === rawDefault || inst.name === rawDefault);
+                if (matched) {
+                    defaultInstance = matched.compoundValue || matched.name;
+                    isMovieHunt = matched.appType === 'movie_hunt';
+                }
+            } else if (isTVShow && rawDefault) {
+                const matched = uniqueInstances.find(inst => (inst.compoundValue || inst.name) === rawDefault || inst.name === rawDefault);
+                if (matched) {
+                    defaultInstance = matched.compoundValue || matched.name;
+                    isMovieHunt = matched.appType === 'movie_hunt';
+                }
+            }
+            const defaultDecoded = defaultInstance ? decodeInstanceValue(defaultInstance, isTVShow ? 'sonarr' : 'radarr') : {};
+            const isTVHunt = isTVShow && defaultDecoded.appType === 'tv_hunt';
+
+            console.log('[RequestarrModal] Resolved instance:', defaultInstance, 'isMovieHunt:', isMovieHunt, 'isTVHunt:', isTVHunt);
+
+            if (instanceSelect) {
+                instanceSelect.innerHTML = '';
+                const instanceInfoIcon = document.getElementById('modal-instance-info-icon');
+                if (instanceInfoIcon) instanceInfoIcon.style.display = 'none';
+                if (uniqueInstances.length === 0) {
+                    instanceSelect.innerHTML = '<option value="">No Instance Configured</option>';
+                    instanceSelect.classList.add('field-warning');
+                    this._showInstanceInfoIcon();
+                } else {
+                    instanceSelect.classList.remove('field-warning');
+                    uniqueInstances.forEach(instance => {
+                        const opt = document.createElement('option');
+                        opt.value = instance.compoundValue || instance.name;
+                        opt.textContent = instance.label || `${isTVShow ? (instance.appType === 'tv_hunt' ? 'TV Hunt' : 'Sonarr') : (instance.appType === 'movie_hunt' ? 'Movie Hunt' : 'Radarr')} \u2013 ${instance.name}`;
+                        const isSelected = (instance.compoundValue || instance.name) === defaultInstance;
+                        if (isSelected) opt.selected = true;
+                        instanceSelect.appendChild(opt);
+                    });
+                    if (!defaultInstance && uniqueInstances.length > 0) {
+                        instanceSelect.selectedIndex = 0;
+                    }
+                }
+                instanceSelect.onchange = () => this.instanceChanged(instanceSelect.value);
+            }
+
+            const qualitySelect = document.getElementById('modal-quality-profile');
+            const effectiveInstance = (instanceSelect && instanceSelect.value) ? instanceSelect.value : defaultInstance;
+            if (qualitySelect) {
+                const profDecoded = effectiveInstance ? decodeInstanceValue(effectiveInstance, isTVShow ? 'sonarr' : 'radarr') : {};
+                const profileKey = `${profDecoded.appType || ''}-${profDecoded.name || ''}`;
+                const profiles = this.core.qualityProfiles[profileKey] || [];
+                const useHuntProfiles = isMovieHunt || isTVHunt;
+
+                if (profiles.length === 0 && effectiveInstance) {
+                    qualitySelect.innerHTML = '<option value="">Loading profiles...</option>';
+                    this.core.loadQualityProfilesForInstance(profDecoded.appType, profDecoded.name).then(newProfiles => {
+                        if (newProfiles && newProfiles.length > 0) {
+                            this._populateQualityProfiles(qualitySelect, newProfiles, useHuntProfiles);
+                        } else {
+                            this._populateQualityProfiles(qualitySelect, [], useHuntProfiles);
+                        }
+                    });
+                } else {
+                    this._populateQualityProfiles(qualitySelect, profiles, useHuntProfiles);
+                }
+            }
+
+            if (requestBtn) {
+                requestBtn.disabled = false;
+                requestBtn.classList.remove('disabled', 'success');
+                requestBtn.textContent = 'Request';
+            }
+            this._applyMovieHuntModalMode(effectiveInstance, isTVShow, labelEl, requestBtn);
+
+            if (defaultInstance) {
+                if (statusContainer) {
+                    statusContainer.innerHTML = '<span class="mh-req-badge mh-req-badge-loading"><i class="fas fa-spinner fa-spin"></i> Checking...</span>';
+                }
+                this.loadModalRootFolders(defaultInstance, isTVShow);
+                if (isTVShow) {
+                    this.loadSeriesStatus(defaultInstance);
+                } else {
+                    this.loadMovieStatus(defaultInstance);
+                }
             } else {
-                this.loadMovieStatus(defaultInstance);
+                if (statusContainer) {
+                    statusContainer.innerHTML = '';
+                }
+                const rootSelect = document.getElementById('modal-root-folder');
+                if (rootSelect) {
+                    rootSelect.innerHTML = '<option value="">Select an instance first</option>';
+                    rootSelect.classList.remove('field-warning');
+                }
             }
-        } else {
-            // No instance — clear status, show placeholder for root folder
-            if (statusContainer) {
-                statusContainer.innerHTML = '';
-            }
-            const rootSelect = document.getElementById('modal-root-folder');
-            if (rootSelect) {
-                rootSelect.innerHTML = '<option value="">Select an instance first</option>';
-                rootSelect.classList.remove('field-warning');
-            }
-        }
 
-        // Disable request button if no instances configured
-        if (uniqueInstances.length === 0 && requestBtn) {
-            requestBtn.disabled = true;
-            requestBtn.classList.add('disabled');
+            if (uniqueInstances.length === 0 && requestBtn) {
+                requestBtn.disabled = true;
+                requestBtn.classList.add('disabled');
+            }
         }
-    }
 
     async loadModalRootFolders(instanceName, isTVShow) {
         const rootSelect = document.getElementById('modal-root-folder');
@@ -5710,135 +5803,148 @@ class RequestarrModal {
     }
 
     async submitRequest() {
-        const instanceSelect = document.getElementById('modal-instance-select');
-        const qualityProfileEl = document.getElementById('modal-quality-profile');
-        const qualityProfile = qualityProfileEl ? qualityProfileEl.value : '';
-        const rootFolderSelect = document.getElementById('modal-root-folder');
-        const rootFolderPath = rootFolderSelect && rootFolderSelect.value ? rootFolderSelect.value : '';
-        const requestBtn = document.getElementById('modal-request-btn');
+            const isOwner = window._huntarrUserRole === 'owner';
+            const requestBtn = document.getElementById('modal-request-btn');
+            const instanceSelect = document.getElementById('modal-instance-select');
 
-        if (!instanceSelect || !instanceSelect.value) {
-            this.core.showNotification('Please select an instance', 'error');
-            return;
-        }
-
-        if (!this.core.currentModalData) {
-            this.core.showNotification('No media data available', 'error');
-            return;
-        }
-
-        const isTVShow = this.core.currentModalData.media_type === 'tv';
-
-        try {
-            // Decode compound instance value for both movies and TV
-            const decoded = decodeInstanceValue(instanceSelect.value, isTVShow ? 'sonarr' : 'radarr');
-            const instanceName = decoded.name;
-            const appType = decoded.appType;
-
-            requestBtn.disabled = true;
-            requestBtn.classList.add('pressed');
-            const isHuntApp = appType === 'movie_hunt' || appType === 'tv_hunt';
-            requestBtn.textContent = isHuntApp ? 'Adding...' : 'Requesting...';
-            
-            const requestData = {
-                tmdb_id: this.core.currentModalData.tmdb_id,
-                media_type: this.core.currentModalData.media_type,
-                title: this.core.currentModalData.title,
-                year: this.core.currentModalData.year,
-                overview: this.core.currentModalData.overview || '',
-                poster_path: this.core.currentModalData.poster_path || '',
-                backdrop_path: this.core.currentModalData.backdrop_path || '',
-                instance: instanceName,
-                app_type: appType,
-                root_folder_path: rootFolderPath || undefined,
-                quality_profile: qualityProfile
-            };
-            if (appType === 'movie_hunt') {
-                const startCb = document.getElementById('modal-start-search');
-                const minSelect = document.getElementById('modal-minimum-availability');
-                const movieMonitorSelect = document.getElementById('modal-movie-monitor');
-                requestData.start_search = startCb ? startCb.checked : true;
-                requestData.minimum_availability = (minSelect && minSelect.value) ? minSelect.value : 'released';
-                requestData.movie_monitor = (movieMonitorSelect && movieMonitorSelect.value) ? movieMonitorSelect.value : 'movie_only';
-            }
-            if (appType === 'tv_hunt') {
-                const monitorSelect = document.getElementById('modal-monitor');
-                const startCbTV = document.getElementById('modal-start-search');
-                requestData.monitor = (monitorSelect && monitorSelect.value) ? monitorSelect.value : 'all_episodes';
-                requestData.start_search = startCbTV ? startCbTV.checked : true;
+            if (!this.core.currentModalData) {
+                this.core.showNotification('No media data available', 'error');
+                return;
             }
 
-            const response = await fetch('./api/requestarr/request', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(requestData)
-            });
+            const isTVShow = this.core.currentModalData.media_type === 'tv';
 
-            const result = await response.json();
+            // Both owner and non-owner read instance from the dropdown (non-owner has it greyed out)
+            if (!instanceSelect || !instanceSelect.value) {
+                this.core.showNotification('No instance available for this request', 'error');
+                return;
+            }
 
-            if (result.success) {
-                requestBtn.textContent = isHuntApp ? 'Added \u2713' : 'Requested \u2713';
-                requestBtn.classList.add('success');
+            try {
+                const decoded = decodeInstanceValue(instanceSelect.value, isTVShow ? 'sonarr' : 'radarr');
+                const instanceName = decoded.name;
+                const appType = decoded.appType;
+                const isHuntApp = appType === 'movie_hunt' || appType === 'tv_hunt';
 
-                const successMsg = result.message || (isHuntApp ? 'Successfully added to library.' : `${isTVShow ? 'Series' : 'Movie'} requested successfully!`);
-                this.core.showNotification(successMsg, 'success');
-
-                // Also create a request tracking record
-                try {
-                    await fetch('./api/requestarr/requests', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            media_type: isTVShow ? 'tv' : 'movie',
-                            tmdb_id: this.core.currentModalData.tmdb_id,
-                            title: this.core.currentModalData.title || '',
-                            year: String(this.core.currentModalData.year || ''),
-                            poster_path: this.core.currentModalData.poster_path || '',
-                            instance_name: instanceName,
-                        })
-                    });
-                } catch (trackErr) {
-                    console.debug('[RequestarrModal] Request tracking record skipped:', trackErr);
+                if (requestBtn) {
+                    requestBtn.disabled = true;
+                    requestBtn.classList.add('pressed');
+                    requestBtn.textContent = isHuntApp ? 'Adding...' : 'Requesting...';
                 }
 
-                // Immediately sync card badge to "requested" state
-                const tmdbId = this.core.currentModalData.tmdb_id;
-                const mediaType = this.core.currentModalData.media_type;
-                this._syncCardBadge(tmdbId, false, true);
+                const requestData = {
+                    tmdb_id: this.core.currentModalData.tmdb_id,
+                    media_type: this.core.currentModalData.media_type,
+                    title: this.core.currentModalData.title,
+                    year: this.core.currentModalData.year,
+                    overview: this.core.currentModalData.overview || '',
+                    poster_path: this.core.currentModalData.poster_path || '',
+                    backdrop_path: this.core.currentModalData.backdrop_path || '',
+                    instance: instanceName,
+                    app_type: appType,
+                };
 
-                // Notify detail pages and other listeners that a request succeeded
-                window.dispatchEvent(new CustomEvent('requestarr-request-success', {
-                    detail: { tmdbId: tmdbId, mediaType: mediaType, appType: appType, instanceName: instanceName }
-                }));
-
-                // Refresh pending request badge in sidebar
-                if (window.huntarrUI && typeof window.huntarrUI._updatePendingRequestBadge === 'function') {
-                    window.huntarrUI._updatePendingRequestBadge();
+                if (isOwner) {
+                    // Owner sends full form data
+                    const qualityProfileEl = document.getElementById('modal-quality-profile');
+                    const rootFolderSelect = document.getElementById('modal-root-folder');
+                    requestData.root_folder_path = (rootFolderSelect && rootFolderSelect.value) ? rootFolderSelect.value : undefined;
+                    requestData.quality_profile = qualityProfileEl ? qualityProfileEl.value : '';
+                    if (appType === 'movie_hunt') {
+                        const startCb = document.getElementById('modal-start-search');
+                        const minSelect = document.getElementById('modal-minimum-availability');
+                        const movieMonitorSelect = document.getElementById('modal-movie-monitor');
+                        requestData.start_search = startCb ? startCb.checked : true;
+                        requestData.minimum_availability = (minSelect && minSelect.value) ? minSelect.value : 'released';
+                        requestData.movie_monitor = (movieMonitorSelect && movieMonitorSelect.value) ? movieMonitorSelect.value : 'movie_only';
+                    }
+                    if (appType === 'tv_hunt') {
+                        const monitorSelect = document.getElementById('modal-monitor');
+                        const startCbTV = document.getElementById('modal-start-search');
+                        requestData.monitor = (monitorSelect && monitorSelect.value) ? monitorSelect.value : 'all_episodes';
+                        requestData.start_search = startCbTV ? startCbTV.checked : true;
+                    }
+                } else {
+                    // Non-owner: pass sensible defaults for Hunt instances, let backend resolve root/quality
+                    if (appType === 'movie_hunt') {
+                        requestData.start_search = true;
+                        requestData.minimum_availability = 'released';
+                        requestData.movie_monitor = 'movie_only';
+                    } else if (appType === 'tv_hunt') {
+                        requestData.start_search = true;
+                        requestData.monitor = 'all_episodes';
+                    }
                 }
 
-                // Delayed re-check: the movie might download very quickly (especially Movie Hunt)
-                // Re-fetch real status and update card badge accurately
-                setTimeout(() => { this._refreshCardStatusFromAPI(tmdbId); }, 3000);
-                setTimeout(() => { this._refreshCardStatusFromAPI(tmdbId); }, 8000);
+                const response = await fetch('./api/requestarr/request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestData)
+                });
 
-                setTimeout(() => this.closeModal(), 2000);
-            } else {
-                const errorMsg = result.message || result.error || 'Request failed';
-                this.core.showNotification(errorMsg, 'error');
-                requestBtn.disabled = false;
-                requestBtn.classList.remove('success');
-                requestBtn.textContent = isHuntApp ? 'Add to Library' : 'Request';
+                const result = await response.json();
+
+                if (result.success) {
+                    if (requestBtn) {
+                        requestBtn.textContent = isHuntApp ? 'Added \u2713' : 'Requested \u2713';
+                        requestBtn.classList.add('success');
+                    }
+
+                    const successMsg = result.message || (isHuntApp ? 'Successfully added to library.' : `${isTVShow ? 'Series' : 'Movie'} requested successfully!`);
+                    this.core.showNotification(successMsg, 'success');
+
+                    // Create a request tracking record
+                    try {
+                        await fetch('./api/requestarr/requests', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                media_type: isTVShow ? 'tv' : 'movie',
+                                tmdb_id: this.core.currentModalData.tmdb_id,
+                                title: this.core.currentModalData.title || '',
+                                year: String(this.core.currentModalData.year || ''),
+                                poster_path: this.core.currentModalData.poster_path || '',
+                                instance_name: instanceName,
+                            })
+                        });
+                    } catch (trackErr) {
+                        console.debug('[RequestarrModal] Request tracking record skipped:', trackErr);
+                    }
+
+                    const tmdbId = this.core.currentModalData.tmdb_id;
+                    const mediaType = this.core.currentModalData.media_type;
+                    this._syncCardBadge(tmdbId, false, true);
+
+                    window.dispatchEvent(new CustomEvent('requestarr-request-success', {
+                        detail: { tmdbId, mediaType, appType, instanceName }
+                    }));
+
+                    if (window.huntarrUI && typeof window.huntarrUI._updatePendingRequestBadge === 'function') {
+                        window.huntarrUI._updatePendingRequestBadge();
+                    }
+
+                    setTimeout(() => { this._refreshCardStatusFromAPI(tmdbId); }, 3000);
+                    setTimeout(() => { this._refreshCardStatusFromAPI(tmdbId); }, 8000);
+                    setTimeout(() => this.closeModal(), 2000);
+                } else {
+                    const errorMsg = result.message || result.error || 'Request failed';
+                    this.core.showNotification(errorMsg, 'error');
+                    if (requestBtn) {
+                        requestBtn.disabled = false;
+                        requestBtn.classList.remove('success');
+                        requestBtn.textContent = isHuntApp ? 'Add to Library' : 'Request';
+                    }
+                }
+            } catch (error) {
+                console.error('[RequestarrModal] Error submitting request:', error);
+                this.core.showNotification(error.message || 'Request failed', 'error');
+                if (requestBtn) {
+                    requestBtn.disabled = false;
+                    requestBtn.classList.remove('success');
+                    requestBtn.textContent = 'Request';
+                }
             }
-        } catch (error) {
-            console.error('[RequestarrModal] Error submitting request:', error);
-            this.core.showNotification(error.message || 'Request failed', 'error');
-            requestBtn.disabled = false;
-            requestBtn.classList.remove('success');
-            const decoded = !instanceSelect.value ? null : (isTVShow ? decodeInstanceValue(instanceSelect.value, 'sonarr') : decodeInstanceValue(instanceSelect.value));
-            const isHuntFallback = decoded && (decoded.appType === 'movie_hunt' || decoded.appType === 'tv_hunt');
-            requestBtn.textContent = isHuntFallback ? 'Add to Library' : 'Request';
         }
-    }
 
     /**
      * Sync Discover card badges to match the real status.
@@ -5900,12 +6006,30 @@ class RequestarrModal {
     }
 
     closeModal() {
-        const modal = document.getElementById('media-modal');
-        if (modal) modal.style.display = 'none';
-        this.core.currentModalData = null;
-        this._clearImportBanner();
-        document.body.classList.remove('requestarr-modal-open');
-    }
+            const modal = document.getElementById('media-modal');
+            if (modal) modal.style.display = 'none';
+            this.core.currentModalData = null;
+            this._clearImportBanner();
+            // Reset fields visibility and instance select state for next open
+            const fieldsContainer = document.querySelector('.mh-req-fields');
+            if (fieldsContainer) fieldsContainer.style.display = '';
+            const rootField = document.getElementById('modal-root-folder');
+            const qualityField = document.getElementById('modal-quality-profile');
+            if (rootField && rootField.closest('.mh-req-field')) rootField.closest('.mh-req-field').classList.remove('mh-hidden');
+            if (qualityField && qualityField.closest('.mh-req-field')) qualityField.closest('.mh-req-field').classList.remove('mh-hidden');
+            const instanceSelect = document.getElementById('modal-instance-select');
+            if (instanceSelect) {
+                instanceSelect.disabled = false;
+                instanceSelect.style.opacity = '';
+            }
+            // Remove permissions row added by non-owner modal
+            const permRow = document.getElementById('requestarr-modal-permissions-row');
+            if (permRow) permRow.remove();
+            // Reset actions margin
+            const actionsArea = document.querySelector('.mh-req-actions');
+            if (actionsArea) actionsArea.style.marginTop = '';
+            document.body.classList.remove('requestarr-modal-open');
+        }
 }
 
 

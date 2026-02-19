@@ -57,6 +57,38 @@ def get_services():
         logger.error(f"Error getting services: {e}")
         return jsonify({'error': 'Failed to get services'}), 500
 
+@requestarr_services_bp.route('/defaults', methods=['GET'])
+def get_default_services():
+    """Get the default service for each type (movies/tv). Available to all authenticated users."""
+    # Only require authentication, not owner role
+    session_token = request.cookies.get(SESSION_COOKIE_NAME)
+    username = get_username_from_session(session_token)
+    if not username:
+        try:
+            from src.primary.settings_manager import load_settings
+            settings = load_settings("general")
+            if not (settings.get("local_access_bypass") or settings.get("proxy_auth_bypass")):
+                return jsonify({'error': 'Not authenticated'}), 401
+        except Exception:
+            return jsonify({'error': 'Not authenticated'}), 401
+    try:
+        db = get_database()
+        all_services = db.get_requestarr_services()
+        defaults = {}
+        for svc in all_services:
+            stype = svc.get('service_type')
+            if svc.get('is_default') and stype not in defaults:
+                defaults[stype] = {
+                    'app_type': svc.get('app_type'),
+                    'instance_name': svc.get('instance_name'),
+                    'service_type': stype,
+                }
+        return jsonify({'defaults': defaults})
+    except Exception as e:
+        logger.error(f"Error getting default services: {e}")
+        return jsonify({'error': 'Failed to get default services'}), 500
+
+
 
 @requestarr_services_bp.route('/available', methods=['GET'])
 def get_available_instances():

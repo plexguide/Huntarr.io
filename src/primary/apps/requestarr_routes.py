@@ -262,14 +262,32 @@ def request_media():
         
         # Extract instance name from 'instance' field (new modal format) or 'instance_name' (old format)
         instance_name = data.get('instance') or data.get('instance_name')
-        if not instance_name:
-            error_msg = 'Missing required field: instance'
-            logger.error(f"[Requestarr] {error_msg}")
-            return jsonify({'success': False, 'message': error_msg}), 400
-        
-        # Determine app_type from request; fallback for TV when quality_profile is a name (TV Hunt)
         media_type = data['media_type']
         app_type = (data.get('app_type') or '').strip() or None
+        
+        # If no instance provided (non-owner user request), resolve from default service
+        if not instance_name:
+            try:
+                from src.primary.utils.database import get_database as _get_db
+                _db = _get_db()
+                svc_type = 'tv' if media_type == 'tv' else 'movies'
+                all_svcs = _db.get_requestarr_services(svc_type)
+                default_svc = next((s for s in all_svcs if s.get('is_default')), None)
+                if not default_svc and all_svcs:
+                    default_svc = all_svcs[0]
+                if default_svc:
+                    instance_name = default_svc['instance_name']
+                    app_type = default_svc['app_type']
+                    logger.info(f"[Requestarr] Resolved default service: {app_type}/{instance_name} for {svc_type}")
+                else:
+                    error_msg = f'No service configured for {svc_type}. Ask the owner to set up Support Instances.'
+                    logger.error(f"[Requestarr] {error_msg}")
+                    return jsonify({'success': False, 'message': error_msg}), 400
+            except Exception as resolve_err:
+                logger.error(f"[Requestarr] Error resolving default service: {resolve_err}")
+                return jsonify({'success': False, 'message': 'Missing required field: instance'}), 400
+        
+        # Determine app_type from request; fallback for TV when quality_profile is a name (TV Hunt)
         if not app_type:
             app_type = 'sonarr' if media_type == 'tv' else 'radarr'
         quality_profile_raw = data.get('quality_profile')
