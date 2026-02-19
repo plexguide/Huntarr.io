@@ -1588,41 +1588,6 @@ class RequestarrSettings {
             this.hiddenMediaState.page = page;
         }
 
-        // Always refresh instance list — instances may have been added/removed since last visit
-        const instanceSelect = document.getElementById('hidden-media-instance');
-        if (instanceSelect) {
-            await this.loadHiddenMediaInstances();
-        }
-
-        // Sync state with dropdown value on initial load
-        if (instanceSelect && !this.hiddenMediaState.instanceValue) {
-            this.hiddenMediaState.instanceValue = instanceSelect.value || '';
-        }
-
-        // If still no instance selected but we have options, auto-select first instance so content can load
-        if (!this.hiddenMediaState.instanceValue && instanceSelect && instanceSelect.options && instanceSelect.options.length > 1) {
-            const firstRealOption = Array.from(instanceSelect.options).find(opt => opt.value && opt.value.includes('::'));
-            if (firstRealOption) {
-                firstRealOption.selected = true;
-                this.hiddenMediaState.instanceValue = firstRealOption.value;
-            }
-        }
-
-        // Show empty state if no instance selected
-        if (!this.hiddenMediaState.instanceValue) {
-            container.style.display = 'flex';
-            container.style.alignItems = 'center';
-            container.style.justifyContent = 'center';
-            container.innerHTML = `
-                <div style="text-align: center; color: #9ca3af; max-width: 600px;">
-                    <i class="fas fa-eye-slash" style="font-size: 64px; margin-bottom: 30px; opacity: 0.4; display: block;"></i>
-                    <p style="font-size: 20px; margin-bottom: 15px; font-weight: 500; white-space: nowrap;">No Instance Selected</p>
-                    <p style="font-size: 15px; line-height: 1.6; opacity: 0.8;">Please select an instance from the dropdown above to view your personal blacklist.</p>
-                </div>
-            `;
-            return;
-        }
-
         // Reset grid display for normal content
         container.style.display = 'grid';
         container.style.alignItems = '';
@@ -1631,15 +1596,14 @@ class RequestarrSettings {
         container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading hidden media...</p></div>';
 
         try {
-            const instanceFilter = this.parseHiddenMediaInstanceValue(this.hiddenMediaState.instanceValue);
-            const fetchKey = `${mediaType || 'all'}|${instanceFilter.appType || 'all'}|${instanceFilter.instanceName || 'all'}`;
+            const fetchKey = `${mediaType || 'all'}`;
 
             if (this.hiddenMediaFetchKey !== fetchKey) {
                 this.hiddenMediaFetchKey = fetchKey;
 
                 // Fetch personal hidden media and global blacklist in parallel
                 const [personalItems, globalItems] = await Promise.all([
-                    this.fetchHiddenMediaItems(mediaType, instanceFilter),
+                    this.fetchHiddenMediaItems(mediaType),
                     this.fetchGlobalBlacklistItems(mediaType)
                 ]);
 
@@ -1651,8 +1615,6 @@ class RequestarrSettings {
                     .filter(gi => !personalKeys.has(`${gi.tmdb_id}:${gi.media_type}`))
                     .map(gi => ({
                         ...gi,
-                        app_type: instanceFilter.appType || 'unknown',
-                        instance_name: instanceFilter.instanceName || '',
                         _source: 'global_blacklist'
                     }));
 
@@ -1692,118 +1654,10 @@ class RequestarrSettings {
             });
         }
 
-        const instanceSelect = document.getElementById('hidden-media-instance');
-        if (instanceSelect) {
-            instanceSelect.addEventListener('change', () => {
-                this.hiddenMediaState.instanceValue = instanceSelect.value || '';
-                this.hiddenMediaState.page = 1;
-                this.hiddenMediaFetchKey = null;
-                this.loadHiddenMedia(null, 1);
-            });
-        }
-
-        this.loadHiddenMediaInstances();
         this.hiddenMediaControlsInitialized = true;
     }
 
-    async loadHiddenMediaInstances() {
-        const instanceSelect = document.getElementById('hidden-media-instance');
-        if (!instanceSelect) {
-            return;
-        }
-
-        try {
-            const _ts = Date.now();
-            const [movieHuntResponse, radarrResponse, tvHuntResponse, sonarrResponse] = await Promise.all([
-                fetch(`./api/requestarr/instances/movie_hunt?t=${_ts}`, { cache: 'no-store' }),
-                fetch(`./api/requestarr/instances/radarr?t=${_ts}`, { cache: 'no-store' }),
-                fetch(`./api/requestarr/instances/tv_hunt?t=${_ts}`, { cache: 'no-store' }),
-                fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' })
-            ]);
-
-            const movieHuntData = await movieHuntResponse.json();
-            const radarrData = await radarrResponse.json();
-            const tvHuntData = await tvHuntResponse.json();
-            const sonarrData = await sonarrResponse.json();
-
-            const instanceOptions = [];
-
-            // Movie Hunt instances first
-            (movieHuntData.instances || []).forEach(instance => {
-                if (instance && instance.name) {
-                    instanceOptions.push({
-                        value: `movie_hunt::${instance.name}`,
-                        label: `Movie Hunt \u2013 ${instance.name}`
-                    });
-                }
-            });
-
-            (radarrData.instances || []).forEach(instance => {
-                if (instance && instance.name) {
-                    instanceOptions.push({
-                        value: `radarr::${instance.name}`,
-                        label: `Radarr \u2013 ${instance.name}`
-                    });
-                }
-            });
-
-            // TV Hunt instances
-            (tvHuntData.instances || []).forEach(instance => {
-                if (instance && instance.name) {
-                    instanceOptions.push({
-                        value: `tv_hunt::${instance.name}`,
-                        label: `TV Hunt \u2013 ${instance.name}`
-                    });
-                }
-            });
-
-            (sonarrData.instances || []).forEach(instance => {
-                if (instance && instance.name) {
-                    instanceOptions.push({
-                        value: `sonarr::${instance.name}`,
-                        label: `Sonarr \u2013 ${instance.name}`
-                    });
-                }
-            });
-
-            instanceSelect.innerHTML = '';
-            if (instanceOptions.length === 0) {
-                const option = document.createElement('option');
-                option.value = '';
-                option.textContent = 'No Instances Exist';
-                instanceSelect.appendChild(option);
-            } else {
-                // Add default "Select an Instance" option
-                const defaultOption = document.createElement('option');
-                defaultOption.value = '';
-                defaultOption.textContent = 'Select an Instance';
-                instanceSelect.appendChild(defaultOption);
-                
-                instanceOptions.forEach(optionData => {
-                    const option = document.createElement('option');
-                    option.value = optionData.value;
-                    option.textContent = optionData.label;
-                    instanceSelect.appendChild(option);
-                });
-            }
-        } catch (error) {
-            console.error('[RequestarrSettings] Error loading hidden media instances:', error);
-            instanceSelect.innerHTML = '<option value="">No instances available</option>';
-        }
-    }
-
-    parseHiddenMediaInstanceValue(value) {
-        if (!value) {
-            return { appType: null, instanceName: null };
-        }
-        const [appType, instanceName] = value.split('::');
-        if (!appType || !instanceName) {
-            return { appType: null, instanceName: null };
-        }
-        return { appType, instanceName };
-    }
-
-    async fetchHiddenMediaItems(mediaType, instanceFilter) {
+    async fetchHiddenMediaItems(mediaType) {
         const allItems = [];
         const pageSize = 200;
         let currentPage = 1;
@@ -1814,9 +1668,6 @@ class RequestarrSettings {
             let url = `./api/requestarr/hidden-media?page=${currentPage}&page_size=${pageSize}`;
             if (mediaType) {
                 url += `&media_type=${mediaType}`;
-            }
-            if (instanceFilter.appType && instanceFilter.instanceName) {
-                url += `&app_type=${encodeURIComponent(instanceFilter.appType)}&instance_name=${encodeURIComponent(instanceFilter.instanceName)}`;
             }
 
             const response = await fetch(url);
@@ -1918,7 +1769,7 @@ class RequestarrSettings {
                 <div style="text-align: center; color: #9ca3af; max-width: 600px;">
                     <i class="fas fa-inbox" style="font-size: 64px; margin-bottom: 30px; opacity: 0.4; display: block;"></i>
                     <p style="font-size: 20px; margin-bottom: 15px; font-weight: 500; white-space: nowrap;">No Blacklisted Media</p>
-                    <p style="font-size: 15px; line-height: 1.6; opacity: 0.8;">There are no blacklisted items for this instance.</p>
+                    <p style="font-size: 15px; line-height: 1.6; opacity: 0.8;">Items you blacklist will appear here. Blacklisted media is hidden across all instances.</p>
                 </div>
             `;
             paginationContainer.style.display = 'none';
@@ -1963,15 +1814,12 @@ class RequestarrSettings {
         const isGlobalBlacklist = item._source === 'global_blacklist';
         const isOwner = window._huntarrUserRole === 'owner';
 
-        // Scope badge: globally blacklisted items get red badge, personal get blue (non-owner only)
+        // Scope badge: globally blacklisted items get red badge, personal get purple
         let scopeBadge = '';
         if (isGlobalBlacklist) {
             scopeBadge = '<span class="hidden-scope-badge hidden-scope-blacklisted" title="Globally Blacklisted — cannot be removed by users">Globally Blacklisted</span>';
-        } else if (window._huntarrUserRole && window._huntarrUserRole !== 'owner') {
-            const isGlobal = item.is_global === true;
-            scopeBadge = isGlobal
-                ? '<span class="hidden-scope-badge hidden-scope-global" title="Hidden by owner (all users)">Global</span>'
-                : '<span class="hidden-scope-badge hidden-scope-personal" title="Hidden by you (personal)">Personal</span>';
+        } else {
+            scopeBadge = '<span class="hidden-scope-badge hidden-scope-personal" title="Hidden by you (personal)">Personal Blacklist</span>';
         }
 
         // Only show unhide button if NOT globally blacklisted (or if owner and it's a personal hide)
@@ -1982,17 +1830,10 @@ class RequestarrSettings {
 
         card.innerHTML = `
             <div class="media-card-poster">
-                ${showUnhide ? '<button class="media-card-unhide-btn" title="Unhide this media"><i class="fas fa-eye"></i></button>' : ''}
+                ${showUnhide ? '<button class="media-card-unhide-btn" title="Unblacklist"><i class="fas fa-eye"></i></button>' : ''}
                 <img src="${posterUrl}" alt="${item.title}" onerror="this.src='./static/images/blackout.jpg'">
                 <span class="media-type-badge">${typeBadgeLabel}</span>
                 ${scopeBadge}
-            </div>
-            <div class="media-card-info">
-                <div class="media-card-title" title="${item.title}">${item.title}</div>
-                <div class="media-card-meta no-hide">
-                    <span class="media-card-year">${year}</span>
-                    <span class="media-card-rating"><i class="fas fa-star"></i> ${rating}</span>
-                </div>
             </div>
         `;
         
@@ -2010,19 +1851,18 @@ class RequestarrSettings {
         if (unhideBtn) {
             unhideBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                await this.unhideMedia(item.tmdb_id, item.media_type, item.app_type, item.instance_name, item.title, card);
+                await this.unhideMedia(item.tmdb_id, item.media_type, item.title, card);
             });
         }
         
         return card;
     }
 
-    async unhideMedia(tmdbId, mediaType, appType, instanceName, title, cardElement) {
+    async unhideMedia(tmdbId, mediaType, title, cardElement) {
         const self = this;
-        const msg = `Unhide "${title}"?\n\nThis will make it visible in ${appType}/${instanceName} again.`;
         const doUnhide = async function() {
         try {
-            const response = await fetch(`./api/requestarr/hidden-media/${tmdbId}/${mediaType}/${appType}/${instanceName}`, {
+            const response = await fetch(`./api/requestarr/hidden-media/${tmdbId}/${mediaType}`, {
                 method: 'DELETE'
             });
 
@@ -2032,10 +1872,7 @@ class RequestarrSettings {
 
             // Remove from local cache and re-render
             self.hiddenMediaItems = self.hiddenMediaItems.filter(item => {
-                return !(item.tmdb_id === tmdbId &&
-                    item.media_type === mediaType &&
-                    item.app_type === appType &&
-                    item.instance_name === instanceName);
+                return !(item.tmdb_id === tmdbId && item.media_type === mediaType);
             });
             self.renderHiddenMediaPage();
 
@@ -2045,7 +1882,7 @@ class RequestarrSettings {
             if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Failed to unhide media. Please try again.', 'error');
         }
         };
-        window.HuntarrConfirm.show({ title: 'Unhide Media', message: `Unhide "${title}"?<br><br>This will make it visible in ${appType}/${instanceName} again.`, confirmLabel: 'Unhide', onConfirm: function() { doUnhide(); } });
+        window.HuntarrConfirm.show({ title: 'Unblacklist Media', message: `Remove "${title}" from your personal blacklist? It will appear in discovery again.`, confirmLabel: 'Unblacklist', onConfirm: function() { doUnhide(); } });
     }
 
     // ========================================
@@ -4043,10 +3880,10 @@ class RequestarrContent {
                 ? data.hidden_media
                 : (Array.isArray(data.items) ? data.items : []);
             
-            // Store hidden media as a Set of "tmdb_id:media_type:app_type:instance" for fast lookup
+            // Store hidden media as a Set of "tmdb_id:media_type" for fast cross-instance lookup
             this.hiddenMediaSet = new Set();
             hiddenItems.forEach(item => {
-                const key = `${item.tmdb_id}:${item.media_type}:${item.app_type}:${item.instance_name}`;
+                const key = `${item.tmdb_id}:${item.media_type}`;
                 this.hiddenMediaSet.add(key);
             });
 
@@ -4067,7 +3904,8 @@ class RequestarrContent {
 
     isMediaHidden(tmdbId, mediaType, appType, instanceName) {
         if (!this.hiddenMediaSet) return false;
-        const key = `${tmdbId}:${mediaType}:${appType}:${instanceName}`;
+        // Cross-instance: check by tmdb_id:media_type only
+        const key = `${tmdbId}:${mediaType}`;
         return this.hiddenMediaSet.has(key);
     }
 
@@ -8386,13 +8224,6 @@ window.RequestarrRequests = {
                 <button class="media-card-unhide-btn" title="Remove from Global Blacklist"><i class="fas fa-undo-alt"></i></button>
                 <img src="${posterUrl}" alt="${this._esc(item.title)}" onerror="this.src='./static/images/blackout.jpg'">
                 <span class="media-type-badge">${typeBadgeLabel}</span>
-            </div>
-            <div class="media-card-info">
-                <div class="media-card-title" title="${this._esc(item.title)}">${this._esc(item.title)}</div>
-                <div class="media-card-meta no-hide">
-                    <span class="media-card-year">${year}</span>
-                    <span class="media-card-rating"><i class="fas fa-star"></i> ${rating}</span>
-                </div>
             </div>
         `;
 

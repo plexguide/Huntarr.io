@@ -714,10 +714,10 @@ export class RequestarrContent {
                 ? data.hidden_media
                 : (Array.isArray(data.items) ? data.items : []);
             
-            // Store hidden media as a Set of "tmdb_id:media_type:app_type:instance" for fast lookup
+            // Store hidden media as a Set of "tmdb_id:media_type" for fast cross-instance lookup
             this.hiddenMediaSet = new Set();
             hiddenItems.forEach(item => {
-                const key = `${item.tmdb_id}:${item.media_type}:${item.app_type}:${item.instance_name}`;
+                const key = `${item.tmdb_id}:${item.media_type}`;
                 this.hiddenMediaSet.add(key);
             });
 
@@ -738,7 +738,8 @@ export class RequestarrContent {
 
     isMediaHidden(tmdbId, mediaType, appType, instanceName) {
         if (!this.hiddenMediaSet) return false;
-        const key = `${tmdbId}:${mediaType}:${appType}:${instanceName}`;
+        // Cross-instance: check by tmdb_id:media_type only
+        const key = `${tmdbId}:${mediaType}`;
         return this.hiddenMediaSet.has(key);
     }
 

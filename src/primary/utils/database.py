@@ -902,6 +902,13 @@ class HuntarrDatabase:
             except sqlite3.OperationalError:
                 pass  # Column already exists
             
+            # Add username column for simplified cross-instance personal blacklist
+            try:
+                conn.execute('ALTER TABLE requestarr_hidden_media ADD COLUMN username TEXT')
+                logger.info("Added username column to requestarr_hidden_media table")
+            except sqlite3.OperationalError:
+                pass  # Column already exists
+            
             # Create requestarr_global_blacklist table
             conn.execute('''
                 CREATE TABLE IF NOT EXISTS requestarr_global_blacklist (
@@ -1019,8 +1026,12 @@ class HuntarrDatabase:
             conn.execute('CREATE INDEX IF NOT EXISTS idx_reset_requests_app_processed ON reset_requests(app_type, processed)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_reset_requests_per_instance_app ON reset_requests_per_instance(app_type, instance_name, processed)')
             
-            # Hidden media filter index for requestarr (frequently filtered by media_type + app_type + instance_name)
+            # Hidden media filter index for requestarr (cross-instance: filtered by media_type + username)
             conn.execute('CREATE INDEX IF NOT EXISTS idx_hidden_media_filter ON requestarr_hidden_media(media_type, app_type, instance_name, hidden_at)')
+            try:
+                conn.execute('CREATE INDEX IF NOT EXISTS idx_hidden_media_username ON requestarr_hidden_media(tmdb_id, media_type, username)')
+            except Exception:
+                pass
             
             # ── Indexer Hunt tables ─────────────────────────────────────
             # Centralized indexer storage (global, not per-instance)
@@ -3743,25 +3754,27 @@ class HuntarrDatabase:
     # HIDDEN MEDIA MANAGEMENT
     # ========================================
     
-    def add_hidden_media(self, tmdb_id: int, media_type: str, title: str, app_type: str, instance_name: str, poster_path: str = None, user_id: int = None) -> bool:
-        """Add media to hidden list for specific instance.
-        user_id=None means global (owner), user_id=N means personal (that user only).
+    def add_hidden_media(self, tmdb_id: int, media_type: str, title: str, app_type: str = None, instance_name: str = None, poster_path: str = None, user_id: int = None, username: str = None) -> bool:
+        """Add media to hidden list.
+        username=None means global (owner), username=X means personal (that user, cross-instance).
+        app_type/instance_name kept for backward compat but no longer used as key.
         """
         try:
             with self.get_connection() as conn:
                 now = int(time.time())
                 readable_time = datetime.fromtimestamp(now).strftime('%Y-%m-%d %H:%M:%S')
                 
-                # Check if already exists for this user scope
-                if user_id is not None:
+                # Check if already exists for this user scope (cross-instance: tmdb_id + media_type + username)
+                if username:
                     existing = conn.execute(
-                        'SELECT id FROM requestarr_hidden_media WHERE tmdb_id = ? AND media_type = ? AND app_type = ? AND instance_name = ? AND user_id = ?',
-                        (tmdb_id, media_type, app_type, instance_name, user_id)
+                        'SELECT id FROM requestarr_hidden_media WHERE tmdb_id = ? AND media_type = ? AND username = ?',
+                        (tmdb_id, media_type, username)
                     ).fetchone()
                 else:
+                    # Global scope (owner): check user_id IS NULL and username IS NULL
                     existing = conn.execute(
-                        'SELECT id FROM requestarr_hidden_media WHERE tmdb_id = ? AND media_type = ? AND app_type = ? AND instance_name = ? AND user_id IS NULL',
-                        (tmdb_id, media_type, app_type, instance_name)
+                        'SELECT id FROM requestarr_hidden_media WHERE tmdb_id = ? AND media_type = ? AND user_id IS NULL AND (username IS NULL OR username = "")',
+                        (tmdb_id, media_type)
                     ).fetchone()
                 
                 if existing:
@@ -3769,71 +3782,74 @@ class HuntarrDatabase:
                 
                 conn.execute('''
                     INSERT INTO requestarr_hidden_media 
-                    (tmdb_id, media_type, title, poster_path, app_type, instance_name, hidden_at, hidden_at_readable, user_id)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (tmdb_id, media_type, title, poster_path, app_type, instance_name, now, readable_time, user_id))
+                    (tmdb_id, media_type, title, poster_path, app_type, instance_name, hidden_at, hidden_at_readable, user_id, username)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (tmdb_id, media_type, title, poster_path, app_type or '', instance_name or '', now, readable_time, user_id, username))
                 conn.commit()
                 
-                scope = f"user_id={user_id}" if user_id else "global"
-                logger.info(f"Added hidden media: {title} (TMDB ID: {tmdb_id}, Type: {media_type}, Instance: {app_type}/{instance_name}, Scope: {scope})")
+                scope = f"user={username}" if username else "global"
+                logger.info(f"Added hidden media: {title} (TMDB ID: {tmdb_id}, Type: {media_type}, Scope: {scope})")
                 return True
         except Exception as e:
             logger.error(f"Error adding hidden media: {e}")
             return False
     
-    def remove_hidden_media(self, tmdb_id: int, media_type: str, app_type: str, instance_name: str, user_id: int = None) -> bool:
-        """Remove media from hidden list for specific instance and user scope."""
+    def remove_hidden_media(self, tmdb_id: int, media_type: str, app_type: str = None, instance_name: str = None, user_id: int = None, username: str = None) -> bool:
+        """Remove media from hidden list. Cross-instance: uses tmdb_id + media_type + username."""
         try:
-            logger.debug(f"remove_hidden_media called with: tmdb_id={tmdb_id}, media_type={media_type}, app_type={app_type}, instance_name={instance_name}, user_id={user_id}")
+            logger.debug(f"remove_hidden_media called with: tmdb_id={tmdb_id}, media_type={media_type}, username={username}")
             with self.get_connection() as conn:
-                if user_id is not None:
+                if username:
+                    # Personal scope: delete by username
                     cursor = conn.execute('''
                         DELETE FROM requestarr_hidden_media 
-                        WHERE tmdb_id = ? AND media_type = ? AND app_type = ? AND instance_name = ? AND user_id = ?
-                    ''', (tmdb_id, media_type, app_type, instance_name, user_id))
+                        WHERE tmdb_id = ? AND media_type = ? AND username = ?
+                    ''', (tmdb_id, media_type, username))
                 else:
+                    # Global scope (owner): delete where user_id IS NULL and username IS NULL/empty
                     cursor = conn.execute('''
                         DELETE FROM requestarr_hidden_media 
-                        WHERE tmdb_id = ? AND media_type = ? AND app_type = ? AND instance_name = ? AND user_id IS NULL
-                    ''', (tmdb_id, media_type, app_type, instance_name))
+                        WHERE tmdb_id = ? AND media_type = ? AND user_id IS NULL AND (username IS NULL OR username = "")
+                    ''', (tmdb_id, media_type))
                 rows_deleted = cursor.rowcount
                 conn.commit()
                 
-                logger.info(f"Removed hidden media: TMDB ID {tmdb_id}, Type: {media_type}, Instance: {app_type}/{instance_name}, user_id={user_id}, Rows deleted: {rows_deleted}")
+                logger.info(f"Removed hidden media: TMDB ID {tmdb_id}, Type: {media_type}, username={username}, Rows deleted: {rows_deleted}")
                 return True
         except Exception as e:
             logger.error(f"Error removing hidden media: {e}")
             return False
     
-    def is_media_hidden(self, tmdb_id: int, media_type: str, app_type: str, instance_name: str, user_id: int = None) -> bool:
-        """Check if media is hidden for specific instance.
-        Checks both global (user_id IS NULL) and personal (user_id = N) entries.
+    def is_media_hidden(self, tmdb_id: int, media_type: str, app_type: str = None, instance_name: str = None, user_id: int = None, username: str = None) -> bool:
+        """Check if media is hidden (cross-instance).
+        Checks both global (username IS NULL) and personal (username = X) entries.
         """
         try:
             with self.get_connection() as conn:
-                if user_id is not None:
-                    # Non-owner: check global OR personal
+                if username:
+                    # Non-owner: check global OR personal by username
                     cursor = conn.execute('''
                         SELECT 1 FROM requestarr_hidden_media 
-                        WHERE tmdb_id = ? AND media_type = ? AND app_type = ? AND instance_name = ?
-                        AND (user_id IS NULL OR user_id = ?)
-                    ''', (tmdb_id, media_type, app_type, instance_name, user_id))
+                        WHERE tmdb_id = ? AND media_type = ?
+                        AND ((user_id IS NULL AND (username IS NULL OR username = "")) OR username = ?)
+                    ''', (tmdb_id, media_type, username))
                 else:
                     # Owner: check global only
                     cursor = conn.execute('''
                         SELECT 1 FROM requestarr_hidden_media 
-                        WHERE tmdb_id = ? AND media_type = ? AND app_type = ? AND instance_name = ?
-                        AND user_id IS NULL
-                    ''', (tmdb_id, media_type, app_type, instance_name))
+                        WHERE tmdb_id = ? AND media_type = ?
+                        AND user_id IS NULL AND (username IS NULL OR username = "")
+                    ''', (tmdb_id, media_type))
                 return cursor.fetchone() is not None
         except Exception as e:
             logger.error(f"Error checking if media is hidden: {e}")
             return False
     
-    def get_hidden_media(self, page: int = 1, page_size: int = 20, media_type: str = None, app_type: str = None, instance_name: str = None, user_id: int = None) -> Dict[str, Any]:
-        """Get paginated list of hidden media, optionally filtered by media_type, app_type, instance, and user.
-        For non-owner users (user_id provided): returns global (user_id IS NULL) + personal (user_id = N).
-        For owner (user_id=None): returns global items only (user_id IS NULL).
+    def get_hidden_media(self, page: int = 1, page_size: int = 20, media_type: str = None, app_type: str = None, instance_name: str = None, user_id: int = None, username: str = None) -> Dict[str, Any]:
+        """Get paginated list of hidden media, optionally filtered by media_type.
+        For non-owner users (username provided): returns global + personal (by username).
+        For owner (username=None): returns global items only.
+        Cross-instance: app_type/instance_name filters are ignored for personal items.
         """
         try:
             offset = (page - 1) * page_size
@@ -3847,22 +3863,14 @@ class HuntarrDatabase:
                     where_clauses.append("media_type = ?")
                     params.append(media_type)
                 
-                if app_type:
-                    where_clauses.append("app_type = ?")
-                    params.append(app_type)
-                
-                if instance_name:
-                    where_clauses.append("instance_name = ?")
-                    params.append(instance_name)
-                
-                # User scope filter
-                if user_id is not None:
+                # User scope filter (cross-instance)
+                if username:
                     # Non-owner: see global + their own personal items
-                    where_clauses.append("(user_id IS NULL OR user_id = ?)")
-                    params.append(user_id)
+                    where_clauses.append("((user_id IS NULL AND (username IS NULL OR username = '')) OR username = ?)")
+                    params.append(username)
                 else:
                     # Owner: see only global items
-                    where_clauses.append("user_id IS NULL")
+                    where_clauses.append("user_id IS NULL AND (username IS NULL OR username = '')")
                 
                 where_clause = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
                 
@@ -3873,7 +3881,7 @@ class HuntarrDatabase:
                 
                 # Get paginated results
                 query = f'''
-                    SELECT id, tmdb_id, media_type, title, poster_path, app_type, instance_name, hidden_at, hidden_at_readable, user_id 
+                    SELECT id, tmdb_id, media_type, title, poster_path, app_type, instance_name, hidden_at, hidden_at_readable, user_id, username 
                     FROM requestarr_hidden_media 
                     {where_clause}
                     ORDER BY hidden_at DESC 
@@ -3895,7 +3903,8 @@ class HuntarrDatabase:
                         'hidden_at': row[7],
                         'hidden_at_readable': row[8],
                         'user_id': row[9],
-                        'is_global': row[9] is None,
+                        'username': row[10],
+                        'is_global': row[9] is None and (row[10] is None or row[10] == ''),
                     })
                 
                 return {

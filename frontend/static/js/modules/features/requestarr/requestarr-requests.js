@@ -398,13 +398,6 @@ window.RequestarrRequests = {
                 <img src="${posterUrl}" alt="${this._esc(item.title)}" onerror="this.src='./static/images/blackout.jpg'">
                 <span class="media-type-badge">${typeBadgeLabel}</span>
             </div>
-            <div class="media-card-info">
-                <div class="media-card-title" title="${this._esc(item.title)}">${this._esc(item.title)}</div>
-                <div class="media-card-meta no-hide">
-                    <span class="media-card-year">${year}</span>
-                    <span class="media-card-rating"><i class="fas fa-star"></i> ${rating}</span>
-                </div>
-            </div>
         `;
 
         // Cache image in background

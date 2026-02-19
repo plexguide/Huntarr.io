@@ -97,18 +97,9 @@
         var mediaType = options.mediaType || 'movie';
         var title = options.title || 'this media';
         var posterPath = options.posterPath || null;
-        var appType = options.appType || 'movie_hunt';
-        var instanceName = options.instanceName || '';
         var cardElement = options.cardElement || null;
         var hiddenMediaSet = options.hiddenMediaSet || null;
         var onHidden = options.onHidden || null;
-
-        if (!instanceName) {
-            if (window.huntarrUI && window.huntarrUI.showNotification) {
-                window.huntarrUI.showNotification('No instance selected.', 'error');
-            }
-            return;
-        }
 
         var doPersonalBlacklist = function() {
             fetch('./api/requestarr/hidden-media', {
@@ -118,9 +109,7 @@
                     tmdb_id: tmdbId,
                     media_type: mediaType,
                     title: title,
-                    poster_path: posterPath,
-                    app_type: appType,
-                    instance_name: instanceName
+                    poster_path: posterPath
                 })
             })
             .then(function(r) {
@@ -129,7 +118,7 @@
             })
             .then(function() {
                 if (hiddenMediaSet) {
-                    var key = tmdbId + ':' + mediaType + ':' + appType + ':' + instanceName;
+                    var key = tmdbId + ':' + mediaType;
                     hiddenMediaSet.add(key);
                 }
                 animateCardRemoval(cardElement);

@@ -693,6 +693,8 @@
 .hidden-scope-personal {
     background: rgba(99, 102, 241, 0.85);
     color: #fff;
+    top: auto !important;
+    bottom: 6px;
 }
 
 .hidden-scope-blacklisted {

@@ -913,23 +913,53 @@ def _get_hidden_media_user_id():
         pass
     return None
 
+def _get_hidden_media_username():
+    """Get the current user's username for cross-instance hidden media scoping.
+    Returns None for owner (global scope), username string for non-owner (personal scope).
+    """
+    try:
+        from src.primary.auth import get_username_from_session, SESSION_COOKIE_NAME
+        from src.primary.utils.database import get_database
+        session_token = request.cookies.get(SESSION_COOKIE_NAME)
+        username = get_username_from_session(session_token)
+        if not username:
+            from src.primary.settings_manager import load_settings
+            settings = load_settings("general")
+            if settings.get("local_access_bypass") or settings.get("proxy_auth_bypass"):
+                db = get_database()
+                main_user = db.get_first_user()
+                if main_user:
+                    username = main_user.get('username')
+        if username:
+            db = get_database()
+            req_user = db.get_requestarr_user_by_username(username)
+            if req_user:
+                role = req_user.get('role', 'user')
+                if role == 'owner':
+                    return None  # Owner = global scope
+                return username  # Non-owner = personal scope (username string)
+            # Fallback: main user without requestarr record = owner
+            return None
+    except Exception:
+        pass
+    return None
+
 @requestarr_bp.route('/hidden-media', methods=['POST'])
 def add_hidden_media():
-    """Add media to hidden list"""
+    """Add media to hidden list (cross-instance by tmdb_id + media_type + username)"""
     try:
         data = request.get_json() or {}
         tmdb_id = data.get('tmdb_id')
         media_type = data.get('media_type')
         title = data.get('title')
         poster_path = data.get('poster_path')
-        app_type = data.get('app_type')
-        instance_name = data.get('instance_name')
         
-        if not all([tmdb_id, media_type, title, app_type, instance_name]):
-            return jsonify({'error': 'Missing required fields: tmdb_id, media_type, title, app_type, instance_name'}), 400
+        if not all([tmdb_id, media_type, title]):
+            return jsonify({'error': 'Missing required fields: tmdb_id, media_type, title'}), 400
         
+        username = _get_hidden_media_username()
         user_id = _get_hidden_media_user_id()
-        success = requestarr_api.db.add_hidden_media(tmdb_id, media_type, title, app_type, instance_name, poster_path, user_id=user_id)
+        success = requestarr_api.db.add_hidden_media(tmdb_id, media_type, title, poster_path=poster_path, user_id=user_id, username=username)
         
         if success:
             return jsonify({'success': True, 'message': 'Media hidden successfully'})
@@ -940,16 +970,13 @@ def add_hidden_media():
         logger.error(f"Error hiding media: {e}")
         return jsonify({'error': 'Failed to hide media'}), 500
 
-@requestarr_bp.route('/hidden-media/<int:tmdb_id>/<media_type>/<app_type>/<instance_name>', methods=['DELETE'])
-def remove_hidden_media(tmdb_id, media_type, app_type, instance_name):
-    """Remove media from hidden list (unhide) for specific instance.
-    Non-owner users can only unhide their own personal items.
-    Owner can unhide global items.
-    """
+@requestarr_bp.route('/hidden-media/<int:tmdb_id>/<media_type>', methods=['DELETE'])
+def remove_hidden_media_simple(tmdb_id, media_type):
+    """Remove media from hidden list (cross-instance, simplified route)."""
     try:
-        logger.info(f"DELETE /hidden-media called: tmdb_id={tmdb_id}, media_type={media_type}, app_type={app_type}, instance_name={instance_name}")
-        user_id = _get_hidden_media_user_id()
-        success = requestarr_api.db.remove_hidden_media(tmdb_id, media_type, app_type, instance_name, user_id=user_id)
+        logger.info(f"DELETE /hidden-media/{tmdb_id}/{media_type} called (cross-instance)")
+        username = _get_hidden_media_username()
+        success = requestarr_api.db.remove_hidden_media(tmdb_id, media_type, username=username)
         
         if success:
             logger.info(f"Successfully unhidden media: {tmdb_id}")
@@ -965,17 +992,15 @@ def remove_hidden_media(tmdb_id, media_type, app_type, instance_name):
 @requestarr_bp.route('/hidden-media', methods=['GET'])
 def get_hidden_media():
     """Get list of hidden media with pagination and optional filters.
-    Non-owner users see global + their personal items.
+    Non-owner users see global + their personal items (cross-instance).
     Owner sees global items only.
     """
     try:
         page, page_size = _safe_pagination()
         media_type = request.args.get('media_type')  # Optional filter
-        app_type = request.args.get('app_type')  # Optional filter
-        instance_name = request.args.get('instance_name')  # Optional filter
         
-        user_id = _get_hidden_media_user_id()
-        result = requestarr_api.db.get_hidden_media(page, page_size, media_type, app_type, instance_name, user_id=user_id)
+        username = _get_hidden_media_username()
+        result = requestarr_api.db.get_hidden_media(page, page_size, media_type, username=username)
         return jsonify(result)
         
     except Exception as e:
