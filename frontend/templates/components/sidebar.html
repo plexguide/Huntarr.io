@@ -51,6 +51,14 @@
                     <div class="nav-icon-wrapper"><i class="fas fa-fire"></i></div>
                     <span>Smart Hunt</span>
                 </a>
+                <a href="./#requestarr-users" class="nav-item nav-item-sub" id="requestarrUsersNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-users"></i></div>
+                    <span>Users</span>
+                </a>
+                <a href="./#requestarr-services" class="nav-item nav-item-sub" id="requestarrServicesNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-server"></i></div>
+                    <span>Services</span>
+                </a>
                 <a href="./#requestarr-settings" class="nav-item nav-item-sub" id="requestarrSettingsNav">
                     <div class="nav-icon-wrapper"><i class="fas fa-cog"></i></div>
                     <span>Settings</span>
@@ -475,6 +483,8 @@ function setActiveNavItem() {
     else if (h === '#requestarr-movies') { selector = '#requestarrMoviesNav'; group = 'sidebar-group-requests'; }
     else if (h === '#requestarr-hidden') { selector = '#requestarrHiddenNav'; group = 'sidebar-group-requests'; }
     else if (h === '#requestarr-smarthunt-settings') { selector = '#requestarrSmartHuntSettingsNav'; group = 'sidebar-group-requests'; }
+    else if (h === '#requestarr-users') { selector = '#requestarrUsersNav'; group = 'sidebar-group-requests'; }
+    else if (h === '#requestarr-services') { selector = '#requestarrServicesNav'; group = 'sidebar-group-requests'; }
     else if (h === '#requestarr-settings') { selector = '#requestarrSettingsNav'; group = 'sidebar-group-requests'; }
 
     // ── Apps ──────────────────────────────────────

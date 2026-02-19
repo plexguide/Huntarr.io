@@ -1,0 +1,516 @@
+/* ==========================================================================
+   Requestarr User Management & Services
+   ========================================================================== */
+
+/* ── User List ────────────────────────────────────────────── */
+
+.requsers-page {
+    padding: 0;
+}
+
+.requsers-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.requsers-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.requsers-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.requsers-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.requsers-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background var(--transition-fast), opacity var(--transition-fast);
+    white-space: nowrap;
+}
+
+.requsers-btn-primary {
+    background: var(--button-primary-bg);
+    color: var(--button-primary-text);
+}
+.requsers-btn-primary:hover {
+    background: var(--button-primary-hover);
+}
+
+.requsers-btn-plex {
+    background: #e5a00d;
+    color: #000;
+}
+.requsers-btn-plex:hover {
+    background: #f0b429;
+}
+
+.requsers-btn-danger {
+    background: var(--button-danger-bg);
+    color: #fff;
+}
+.requsers-btn-danger:hover {
+    background: var(--button-danger-hover);
+}
+
+.requsers-btn-sm {
+    padding: 5px 10px;
+    font-size: 0.8rem;
+}
+
+/* ── User Table ───────────────────────────────────────────── */
+
+.requsers-table-wrap {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    backdrop-filter: blur(var(--glass-blur));
+}
+
+.requsers-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.requsers-table thead {
+    background: rgba(99, 102, 241, 0.08);
+}
+
+.requsers-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.requsers-table td {
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    border-bottom: 1px solid rgba(71, 85, 105, 0.15);
+    vertical-align: middle;
+}
+
+.requsers-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.requsers-table tbody tr:hover {
+    background: rgba(99, 102, 241, 0.04);
+}
+
+.requsers-user-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.requsers-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.requsers-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.requsers-user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.requsers-user-name {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.requsers-user-email {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* ── Role Badges ──────────────────────────────────────────── */
+
+.requsers-role-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.requsers-role-owner {
+    background: rgba(234, 179, 8, 0.15);
+    color: #eab308;
+}
+
+.requsers-role-admin {
+    background: rgba(168, 85, 247, 0.15);
+    color: #a855f7;
+}
+
+.requsers-role-user {
+    background: rgba(99, 102, 241, 0.15);
+    color: #818cf8;
+}
+
+/* ── Actions ──────────────────────────────────────────────── */
+
+.requsers-actions {
+    display: flex;
+    gap: 6px;
+}
+
+/* ── Pagination ───────────────────────────────────────────── */
+
+.requsers-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border-color);
+}
+
+/* ── Modal ─────────────────────────────────────────────────── */
+
+.requsers-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.requsers-modal {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    width: 100%;
+    max-width: 520px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+}
+
+.requsers-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 0;
+}
+
+.requsers-modal-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.requsers-modal-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 4px;
+}
+.requsers-modal-close:hover {
+    color: var(--text-primary);
+}
+
+.requsers-modal-body {
+    padding: 20px 24px;
+}
+
+.requsers-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 0 24px 20px;
+}
+
+/* ── Form Fields ──────────────────────────────────────────── */
+
+.requsers-field {
+    margin-bottom: 16px;
+}
+
+.requsers-field label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.requsers-field input,
+.requsers-field select {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: var(--input-radius);
+    color: var(--input-text);
+    font-size: 0.9rem;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    box-sizing: border-box;
+}
+
+.requsers-field input:focus,
+.requsers-field select:focus {
+    outline: none;
+    border-color: var(--input-focus-border);
+    box-shadow: var(--input-focus-glow);
+}
+
+.requsers-field-hint {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    margin-top: 4px;
+}
+
+/* ── Permissions Grid ─────────────────────────────────────── */
+
+.requsers-perms-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.requsers-perm-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    font-size: 0.83rem;
+    color: var(--text-secondary);
+}
+
+.requsers-perm-item input[type="checkbox"] {
+    width: auto;
+    accent-color: var(--accent-color);
+}
+
+/* ── Services Page ────────────────────────────────────────── */
+
+.reqservices-section {
+    margin-bottom: 32px;
+}
+
+.reqservices-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.reqservices-section-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.reqservices-section-desc {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+}
+
+.reqservices-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    margin-bottom: 8px;
+    backdrop-filter: blur(var(--glass-blur));
+}
+
+.reqservices-card-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.reqservices-card-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.reqservices-card-icon.movies {
+    background: rgba(234, 179, 8, 0.12);
+    color: #eab308;
+}
+
+.reqservices-card-icon.tv {
+    background: rgba(99, 102, 241, 0.12);
+    color: #818cf8;
+}
+
+.reqservices-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.reqservices-card-name {
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.reqservices-card-type {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.reqservices-card-badges {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.reqservices-badge {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.reqservices-badge-default {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+}
+
+.reqservices-badge-4k {
+    background: rgba(234, 179, 8, 0.15);
+    color: #eab308;
+}
+
+.reqservices-card-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.reqservices-empty {
+    padding: 32px;
+    text-align: center;
+    color: var(--text-muted);
+    border: 2px dashed var(--border-color);
+    border-radius: var(--radius-lg);
+}
+
+.reqservices-empty i {
+    font-size: 2rem;
+    margin-bottom: 8px;
+    display: block;
+    opacity: 0.5;
+}
+
+/* ── Plex Import Modal ────────────────────────────────────── */
+
+.requsers-plex-list {
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.requsers-plex-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(71, 85, 105, 0.15);
+    cursor: pointer;
+}
+
+.requsers-plex-item:hover {
+    background: rgba(99, 102, 241, 0.04);
+}
+
+.requsers-plex-item input[type="checkbox"] {
+    accent-color: var(--accent-color);
+}
+
+.requsers-plex-thumb {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+    .requsers-toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .requsers-perms-grid {
+        grid-template-columns: 1fr;
+    }
+    .requsers-table th:nth-child(2),
+    .requsers-table td:nth-child(2) {
+        display: none;
+    }
+}

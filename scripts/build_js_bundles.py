@@ -121,6 +121,8 @@ BUNDLES = [
             "modules/features/requestarr/requestarr-smarthunt.js",
             "modules/features/requestarr/requestarr-controller.js",
             "modules/features/requestarr/requestarr-home.js",
+            "modules/features/requestarr/requestarr-users.js",
+            "modules/features/requestarr/requestarr-services.js",
         ],
     ),
     (

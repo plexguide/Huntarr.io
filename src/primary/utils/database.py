@@ -562,6 +562,12 @@ class HuntarrDatabase:
                 self._create_all_tables()
             else:
                 raise
+
+        # Ensure the main owner account is synced into requestarr_users
+        try:
+            self.ensure_owner_in_requestarr_users()
+        except Exception as e:
+            logger.debug(f"Owner sync to requestarr_users deferred: {e}")
                 
     def _create_all_tables(self):
         """Create all database tables"""
@@ -1042,6 +1048,43 @@ class HuntarrDatabase:
             conn.execute('CREATE INDEX IF NOT EXISTS idx_ih_history_indexer ON indexer_hunt_history(indexer_id)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_ih_history_type ON indexer_hunt_history(event_type)')
             conn.execute('CREATE INDEX IF NOT EXISTS idx_ih_history_date ON indexer_hunt_history(created_at)')
+
+            # ── Requestarr Users (multi-user request system) ────────────
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS requestarr_users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT NOT NULL UNIQUE,
+                    password TEXT NOT NULL,
+                    email TEXT DEFAULT '',
+                    role TEXT NOT NULL DEFAULT 'user',
+                    permissions TEXT NOT NULL DEFAULT '{}',
+                    plex_user_data TEXT,
+                    avatar_url TEXT,
+                    request_count INTEGER DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_requestarr_users_role ON requestarr_users(role)')
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_requestarr_users_username ON requestarr_users(username)')
+
+            # ── Requestarr Services (which instances are enabled for requests) ──
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS requestarr_services (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    service_type TEXT NOT NULL,
+                    app_type TEXT NOT NULL,
+                    instance_name TEXT NOT NULL,
+                    instance_id INTEGER,
+                    is_default INTEGER DEFAULT 0,
+                    is_4k INTEGER DEFAULT 0,
+                    enabled INTEGER DEFAULT 1,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(app_type, instance_name)
+                )
+            ''')
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_requestarr_services_type ON requestarr_services(service_type)')
 
             conn.commit()
             logger.info(f"Database initialized at: {self.db_path}")
@@ -2668,6 +2711,199 @@ class HuntarrDatabase:
             return False
 
     # Recovery Key Methods
+
+    # ── Requestarr User Management Methods ───────────────────────
+
+    def get_all_requestarr_users(self) -> list:
+        """Get all requestarr users."""
+        with self.get_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute('SELECT * FROM requestarr_users ORDER BY created_at ASC').fetchall()
+            users = []
+            for row in rows:
+                u = dict(row)
+                if u.get('plex_user_data'):
+                    try:
+                        u['plex_user_data'] = json.loads(u['plex_user_data'])
+                    except (json.JSONDecodeError, TypeError):
+                        u['plex_user_data'] = None
+                users.append(u)
+            return users
+
+    def get_requestarr_user_by_id(self, user_id: int) -> Optional[Dict[str, Any]]:
+        """Get a requestarr user by ID."""
+        with self.get_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            row = conn.execute('SELECT * FROM requestarr_users WHERE id = ?', (user_id,)).fetchone()
+            if row:
+                u = dict(row)
+                if u.get('plex_user_data'):
+                    try:
+                        u['plex_user_data'] = json.loads(u['plex_user_data'])
+                    except (json.JSONDecodeError, TypeError):
+                        u['plex_user_data'] = None
+                return u
+            return None
+
+    def get_requestarr_user_by_username(self, username: str) -> Optional[Dict[str, Any]]:
+        """Get a requestarr user by username."""
+        with self.get_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            row = conn.execute('SELECT * FROM requestarr_users WHERE username = ?', (username,)).fetchone()
+            if row:
+                u = dict(row)
+                if u.get('plex_user_data'):
+                    try:
+                        u['plex_user_data'] = json.loads(u['plex_user_data'])
+                    except (json.JSONDecodeError, TypeError):
+                        u['plex_user_data'] = None
+                return u
+            return None
+
+    def create_requestarr_user(self, username: str, password: str, email: str = '',
+                               role: str = 'user', permissions: str = '{}',
+                               plex_user_data: str = None) -> bool:
+        """Create a new requestarr user."""
+        try:
+            from src.primary.auth import hash_password
+            hashed = hash_password(password)
+            with self.get_connection() as conn:
+                conn.execute('''
+                    INSERT INTO requestarr_users (username, password, email, role, permissions, plex_user_data, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                ''', (username, hashed, email, role, permissions, plex_user_data))
+                conn.commit()
+                logger.info(f"Created requestarr user: {username} (role={role})")
+                return True
+        except Exception as e:
+            logger.error(f"Error creating requestarr user {username}: {e}")
+            return False
+
+    def update_requestarr_user(self, user_id: int, updates: Dict[str, Any]) -> bool:
+        """Update a requestarr user by ID. Pass a dict of column->value."""
+        try:
+            allowed = {'username', 'password', 'email', 'role', 'permissions', 'plex_user_data', 'avatar_url', 'request_count'}
+            filtered = {k: v for k, v in updates.items() if k in allowed}
+            if not filtered:
+                return True
+            filtered['updated_at'] = 'CURRENT_TIMESTAMP'
+            set_parts = []
+            values = []
+            for k, v in filtered.items():
+                if v == 'CURRENT_TIMESTAMP':
+                    set_parts.append(f'{k} = CURRENT_TIMESTAMP')
+                else:
+                    set_parts.append(f'{k} = ?')
+                    values.append(v)
+            values.append(user_id)
+            sql = f"UPDATE requestarr_users SET {', '.join(set_parts)} WHERE id = ?"
+            with self.get_connection() as conn:
+                conn.execute(sql, values)
+                conn.commit()
+                return True
+        except Exception as e:
+            logger.error(f"Error updating requestarr user {user_id}: {e}")
+            return False
+
+    def delete_requestarr_user(self, user_id: int) -> bool:
+        """Delete a requestarr user by ID."""
+        try:
+            with self.get_connection() as conn:
+                conn.execute('DELETE FROM requestarr_users WHERE id = ?', (user_id,))
+                conn.commit()
+                return True
+        except Exception as e:
+            logger.error(f"Error deleting requestarr user {user_id}: {e}")
+            return False
+
+    def ensure_owner_in_requestarr_users(self):
+        """Ensure the main owner account exists in requestarr_users table."""
+        try:
+            owner = self.get_first_user()
+            if not owner:
+                return
+            existing = self.get_requestarr_user_by_username(owner['username'])
+            if existing:
+                return
+            owner_perms = json.dumps({
+                'request_movies': True, 'request_tv': True,
+                'auto_approve': True, 'auto_approve_movies': True, 'auto_approve_tv': True,
+                'manage_requests': True, 'manage_users': True,
+                'view_requests': True, 'hide_media_global': True,
+            })
+            with self.get_connection() as conn:
+                conn.execute('''
+                    INSERT OR IGNORE INTO requestarr_users (username, password, email, role, permissions, created_at, updated_at)
+                    VALUES (?, ?, '', 'owner', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                ''', (owner['username'], owner['password'], owner_perms))
+                conn.commit()
+                logger.info(f"Synced owner '{owner['username']}' into requestarr_users")
+        except Exception as e:
+            logger.error(f"Error ensuring owner in requestarr_users: {e}")
+
+    # ── Requestarr Services Methods ──────────────────────────────
+
+    def get_requestarr_services(self, service_type: str = None) -> list:
+        """Get requestarr services, optionally filtered by type (movies/tv)."""
+        with self.get_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            if service_type:
+                rows = conn.execute(
+                    'SELECT * FROM requestarr_services WHERE service_type = ? ORDER BY created_at ASC',
+                    (service_type,)
+                ).fetchall()
+            else:
+                rows = conn.execute('SELECT * FROM requestarr_services ORDER BY service_type, created_at ASC').fetchall()
+            return [dict(r) for r in rows]
+
+    def add_requestarr_service(self, service_type: str, app_type: str, instance_name: str,
+                               instance_id: int = None, is_default: bool = False, is_4k: bool = False) -> bool:
+        """Add an instance as a requestarr service."""
+        try:
+            with self.get_connection() as conn:
+                conn.execute('''
+                    INSERT OR REPLACE INTO requestarr_services
+                    (service_type, app_type, instance_name, instance_id, is_default, is_4k, enabled, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                ''', (service_type, app_type, instance_name, instance_id, int(is_default), int(is_4k)))
+                conn.commit()
+                return True
+        except Exception as e:
+            logger.error(f"Error adding requestarr service: {e}")
+            return False
+
+    def remove_requestarr_service(self, service_id: int) -> bool:
+        """Remove a requestarr service by ID."""
+        try:
+            with self.get_connection() as conn:
+                conn.execute('DELETE FROM requestarr_services WHERE id = ?', (service_id,))
+                conn.commit()
+                return True
+        except Exception as e:
+            logger.error(f"Error removing requestarr service: {e}")
+            return False
+
+    def update_requestarr_service(self, service_id: int, updates: Dict[str, Any]) -> bool:
+        """Update a requestarr service."""
+        try:
+            allowed = {'is_default', 'is_4k', 'enabled'}
+            filtered = {k: v for k, v in updates.items() if k in allowed}
+            if not filtered:
+                return True
+            set_parts = [f'{k} = ?' for k in filtered]
+            set_parts.append('updated_at = CURRENT_TIMESTAMP')
+            values = list(filtered.values()) + [service_id]
+            sql = f"UPDATE requestarr_services SET {', '.join(set_parts)} WHERE id = ?"
+            with self.get_connection() as conn:
+                conn.execute(sql, values)
+                conn.commit()
+                return True
+        except Exception as e:
+            logger.error(f"Error updating requestarr service: {e}")
+            return False
+
+    # ── (end requestarr user/service methods) ────────────────────
+
     def generate_recovery_key(self, username: str) -> Optional[str]:
         """Generate a new recovery key for a user"""
         import hashlib

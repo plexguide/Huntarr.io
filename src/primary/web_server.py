@@ -313,6 +313,13 @@ app.register_blueprint(eros_bp, url_prefix='/api/eros')
 app.register_blueprint(swaparr_bp, url_prefix='/api/swaparr')
 app.register_blueprint(prowlarr_bp, url_prefix='/api/prowlarr')
 app.register_blueprint(requestarr_bp)
+
+# Import and register Requestarr user management + services blueprints
+from src.primary.routes.requestarr_users_routes import requestarr_users_bp
+from src.primary.routes.requestarr_services_routes import requestarr_services_bp
+app.register_blueprint(requestarr_users_bp)
+app.register_blueprint(requestarr_services_bp)
+
 app.register_blueprint(stateful_api, url_prefix='/api/stateful')
 app.register_blueprint(history_blueprint, url_prefix='/api/hunt-manager')
 app.register_blueprint(scheduler_api)

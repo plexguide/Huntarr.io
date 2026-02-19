@@ -139,7 +139,7 @@ export class RequestarrDiscover {
 
         if (globalSearchBar) {
             console.log(`[RequestarrDiscover] Found global search bar, applying visibility for ${view}`);
-            if (view === 'hidden' || view === 'settings' || view === 'smarthunt-settings') {
+            if (view === 'hidden' || view === 'settings' || view === 'smarthunt-settings' || view === 'users' || view === 'services') {
                 globalSearchBar.style.setProperty('display', 'none', 'important');
                 console.log('[RequestarrDiscover] Hiding global search bar');
             } else {
@@ -163,7 +163,7 @@ export class RequestarrDiscover {
         // Hide the entire header bar when settings/smarthunt-settings have their own toolbar
         const headerBar = document.querySelector('.requestarr-header-bar');
         const contentEl = document.querySelector('.requestarr-content');
-        if (view === 'settings' || view === 'smarthunt-settings') {
+        if (view === 'settings' || view === 'smarthunt-settings' || view === 'users' || view === 'services') {
             if (headerBar) headerBar.style.display = 'none';
             // Allow dropdowns to overflow outside cards in settings view
             if (contentEl) contentEl.classList.add('settings-active');
@@ -223,6 +223,16 @@ export class RequestarrDiscover {
                 break;
             case 'smarthunt-settings':
                 this.settings.loadSmartHuntSettings();
+                break;
+            case 'users':
+                if (window.RequestarrUsers && typeof window.RequestarrUsers.init === 'function') {
+                    window.RequestarrUsers.init();
+                }
+                break;
+            case 'services':
+                if (window.RequestarrServices && typeof window.RequestarrServices.init === 'function') {
+                    window.RequestarrServices.init();
+                }
                 break;
         }
     }

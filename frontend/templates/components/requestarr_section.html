@@ -4,6 +4,7 @@
     <link rel="stylesheet" href="./static/css/instance-editor.css?v=1.0.2">
     <link rel="stylesheet" href="./static/css/media-hunt-detail.css?v=1.5.0">
     <link rel="stylesheet" href="./static/css/media-hunt-tv.css?v=1.0.0">
+    <link rel="stylesheet" href="./static/css/requestarr-users.css?v=1.0.0">
     
     <div class="requestarr-content">
         <!-- Single header bar: back+breadcrumb (left) + sponsor/partner (right) — all inside the bordered toolbar -->
@@ -28,6 +29,14 @@
                 <div id="requestarr-header-hidden" class="requestarr-view-header" style="display: none;">
                     <a href="./#requestarr" class="reqset-back-btn"><i class="fas fa-arrow-left"></i> Back</a>
                     <div class="reqset-breadcrumb"><i class="fas fa-eye-slash"></i><span>Requests</span><i class="fas fa-chevron-right reqset-breadcrumb-sep"></i><span>Hidden Media</span></div>
+                </div>
+                <div id="requestarr-header-users" class="requestarr-view-header" style="display: none;">
+                    <a href="./#requestarr" class="reqset-back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+                    <div class="reqset-breadcrumb"><i class="fas fa-users"></i><span>Requests</span><i class="fas fa-chevron-right reqset-breadcrumb-sep"></i><span>Users</span></div>
+                </div>
+                <div id="requestarr-header-services" class="requestarr-view-header" style="display: none;">
+                    <a href="./#requestarr" class="reqset-back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+                    <div class="reqset-breadcrumb"><i class="fas fa-server"></i><span>Requests</span><i class="fas fa-chevron-right reqset-breadcrumb-sep"></i><span>Services</span></div>
                 </div>
             </div>
             <div class="reqset-toolbar-right">
@@ -260,6 +269,34 @@
                 <button id="hidden-next-page" class="pagination-btn">
                     Next <i class="fas fa-chevron-right"></i>
                 </button>
+            </div>
+        </div>
+
+        <!-- Users View -->
+        <div id="requestarr-users-view" class="requestarr-view" style="display: none;">
+            <div class="requsers-toolbar">
+                <button class="requsers-btn requsers-btn-primary" onclick="window.RequestarrUsers && window.RequestarrUsers.openCreateModal()">
+                    <i class="fas fa-user-plus"></i> Create Local User
+                </button>
+                <button class="requsers-btn requsers-btn-secondary" onclick="window.RequestarrUsers && window.RequestarrUsers.openPlexImportModal()">
+                    <i class="fas fa-download"></i> Import Plex Users
+                </button>
+            </div>
+            <div id="requsers-content">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading users...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Services View -->
+        <div id="requestarr-services-view" class="requestarr-view" style="display: none;">
+            <div id="reqservices-content">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading services...</p>
+                </div>
             </div>
         </div>
 
