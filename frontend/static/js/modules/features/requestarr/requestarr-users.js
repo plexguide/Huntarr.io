@@ -147,7 +147,6 @@ window.RequestarrUsers = {
                         <label>Role</label>
                         <select id="requsers-modal-role" ${isEdit && user.role === 'owner' ? 'disabled' : ''} onchange="RequestarrUsers.onRoleChange()">
                             <option value="user" ${(!isEdit || user.role === 'user') ? 'selected' : ''}>User</option>
-                            <option value="admin" ${(isEdit && user.role === 'admin') ? 'selected' : ''}>Admin</option>
                             ${isEdit && user.role === 'owner' ? '<option value="owner" selected>Owner</option>' : ''}
                         </select>
                     </div>

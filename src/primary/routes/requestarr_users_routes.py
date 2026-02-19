@@ -1,7 +1,7 @@
 """
 Requestarr User Management Routes
 Handles CRUD for local users, role management, and Plex user import.
-Admin-only endpoints (role == 'owner' or 'admin').
+Owner-only endpoints (role == 'owner').
 """
 
 from flask import Blueprint, request, jsonify
@@ -52,13 +52,13 @@ def _get_current_user():
     return None
 
 
-def _require_admin():
+def _require_owner():
     """Returns (user_dict, error_response). If error_response is not None, return it."""
     user = _get_current_user()
     if not user:
         return None, (jsonify({'error': 'Not authenticated'}), 401)
     role = user.get('role', 'user')
-    if role not in ('owner', 'admin'):
+    if role != 'owner':
         return None, (jsonify({'error': 'Insufficient permissions'}), 403)
     return user, None
 
@@ -105,17 +105,6 @@ DEFAULT_PERMISSIONS = {
         'view_requests': True,
         'hide_media_global': True,
     },
-    'admin': {
-        'request_movies': True,
-        'request_tv': True,
-        'auto_approve': True,
-        'auto_approve_movies': True,
-        'auto_approve_tv': True,
-        'manage_requests': True,
-        'manage_users': True,
-        'view_requests': True,
-        'hide_media_global': False,
-    },
     'user': {
         'request_movies': True,
         'request_tv': True,
@@ -134,8 +123,8 @@ DEFAULT_PERMISSIONS = {
 
 @requestarr_users_bp.route('', methods=['GET'])
 def list_users():
-    """List all users (admin only)."""
-    _, err = _require_admin()
+    """List all users (owner only)."""
+    _, err = _require_owner()
     if err:
         return err
     try:
@@ -149,8 +138,8 @@ def list_users():
 
 @requestarr_users_bp.route('', methods=['POST'])
 def create_user():
-    """Create a local user (admin only)."""
-    current_user, err = _require_admin()
+    """Create a local user (owner only)."""
+    current_user, err = _require_owner()
     if err:
         return err
     try:
@@ -164,8 +153,8 @@ def create_user():
             return jsonify({'error': 'Username must be at least 3 characters'}), 400
         if not password or len(password) < 8:
             return jsonify({'error': 'Password must be at least 8 characters'}), 400
-        if role not in ('admin', 'user'):
-            return jsonify({'error': 'Invalid role. Must be admin or user'}), 400
+        if role not in ('user',):
+            return jsonify({'error': 'Invalid role. Must be user'}), 400
 
         # Generate default permissions for the role
         import json
@@ -194,8 +183,8 @@ def create_user():
 
 @requestarr_users_bp.route('/<int:user_id>', methods=['PUT'])
 def update_user(user_id):
-    """Update a user (admin only)."""
-    current_user, err = _require_admin()
+    """Update a user (owner only)."""
+    current_user, err = _require_owner()
     if err:
         return err
     try:
@@ -214,7 +203,7 @@ def update_user(user_id):
             updates['username'] = data['username'].strip()
         if 'email' in data:
             updates['email'] = (data['email'] or '').strip()
-        if 'role' in data and data['role'] in ('admin', 'user'):
+        if 'role' in data and data['role'] in ('user',):
             if target.get('role') != 'owner':
                 updates['role'] = data['role']
         if 'password' in data and data['password']:
@@ -239,8 +228,8 @@ def update_user(user_id):
 
 @requestarr_users_bp.route('/<int:user_id>', methods=['DELETE'])
 def delete_user(user_id):
-    """Delete a user (admin only). Cannot delete owner."""
-    current_user, err = _require_admin()
+    """Delete a user (owner only). Cannot delete owner."""
+    current_user, err = _require_owner()
     if err:
         return err
     try:
@@ -302,8 +291,8 @@ def generate_password():
 
 @requestarr_users_bp.route('/plex/friends', methods=['GET'])
 def get_plex_friends():
-    """Get Plex friends list for import (admin only). Requires the owner to have linked Plex."""
-    _, err = _require_admin()
+    """Get Plex friends list for import (owner only). Requires the owner to have linked Plex."""
+    _, err = _require_owner()
     if err:
         return err
     try:
@@ -343,8 +332,8 @@ def get_plex_friends():
 
 @requestarr_users_bp.route('/plex/import', methods=['POST'])
 def import_plex_users():
-    """Import selected Plex friends as local users (admin only)."""
-    current_user, err = _require_admin()
+    """Import selected Plex friends as local users (owner only)."""
+    current_user, err = _require_owner()
     if err:
         return err
     try:

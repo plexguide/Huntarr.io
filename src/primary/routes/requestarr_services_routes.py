@@ -1,7 +1,7 @@
 """
 Requestarr Services Routes
 Manages which instances (Radarr, Sonarr, Movie Hunt, TV Hunt) are available for requests.
-Admin-only endpoints.
+Owner-only endpoints.
 """
 
 from flask import Blueprint, request, jsonify
@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 requestarr_services_bp = Blueprint('requestarr_services', __name__, url_prefix='/api/requestarr/services')
 
 
-def _require_admin():
-    """Check that the current user is owner or admin."""
+def _require_owner():
+    """Check that the current user is owner."""
     session_token = request.cookies.get(SESSION_COOKIE_NAME)
     username = get_username_from_session(session_token)
     if not username:
@@ -37,7 +37,7 @@ def _require_admin():
     # Check requestarr_users role, fallback to owner for main admin
     req_user = db.get_requestarr_user_by_username(username)
     role = (req_user or {}).get('role', 'owner')
-    if role not in ('owner', 'admin'):
+    if role != 'owner':
         return None, (jsonify({'error': 'Insufficient permissions'}), 403)
     return user, None
 
@@ -45,7 +45,7 @@ def _require_admin():
 @requestarr_services_bp.route('', methods=['GET'])
 def get_services():
     """Get all configured requestarr services."""
-    _, err = _require_admin()
+    _, err = _require_owner()
     if err:
         return err
     try:
@@ -63,7 +63,7 @@ def get_available_instances():
     """Get all available instances that can be added as services.
     Returns Radarr + Movie Hunt instances for movies, Sonarr + TV Hunt for TV.
     """
-    _, err = _require_admin()
+    _, err = _require_owner()
     if err:
         return err
     try:
@@ -127,7 +127,7 @@ def get_available_instances():
 @requestarr_services_bp.route('', methods=['POST'])
 def add_service():
     """Add an instance as a requestarr service."""
-    _, err = _require_admin()
+    _, err = _require_owner()
     if err:
         return err
     try:
@@ -158,7 +158,7 @@ def add_service():
 @requestarr_services_bp.route('/<int:service_id>', methods=['PUT'])
 def update_service(service_id):
     """Update a service (toggle default, 4K, enabled)."""
-    _, err = _require_admin()
+    _, err = _require_owner()
     if err:
         return err
     try:
@@ -176,7 +176,7 @@ def update_service(service_id):
 @requestarr_services_bp.route('/<int:service_id>', methods=['DELETE'])
 def remove_service(service_id):
     """Remove a service."""
-    _, err = _require_admin()
+    _, err = _require_owner()
     if err:
         return err
     try:

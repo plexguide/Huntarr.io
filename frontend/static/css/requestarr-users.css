@@ -186,11 +186,6 @@
     color: #eab308;
 }
 
-.requsers-role-admin {
-    background: rgba(168, 85, 247, 0.15);
-    color: #a855f7;
-}
-
 .requsers-role-user {
     background: rgba(99, 102, 241, 0.15);
     color: #818cf8;
@@ -718,4 +713,44 @@
 .nav-group-body.non-owner-flat .nav-item-sub {
     padding-left: 16px;
     font-size: 0.9rem;
+}
+
+/* ── Hidden Media Scope Badges ─────────────────────────────── */
+
+.hidden-scope-badge {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    padding: 2px 7px;
+    border-radius: 8px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    z-index: 2;
+}
+
+.hidden-scope-global {
+    background: rgba(234, 179, 8, 0.85);
+    color: #000;
+}
+
+.hidden-scope-personal {
+    background: rgba(99, 102, 241, 0.85);
+    color: #fff;
+}
+
+/* ── Non-owner mode: hide everything outside Requests via CSS !important ── */
+/* This is the nuclear option — no JS race condition can override these rules */
+
+body.non-owner-mode #homeNav,
+body.non-owner-mode #nav-group-core-label,
+body.non-owner-mode #nav-group-system,
+body.non-owner-mode #nav-group-apps-label,
+body.non-owner-mode #nav-group-media-hunt,
+body.non-owner-mode #nzb-hunt-sidebar-group,
+body.non-owner-mode #nav-group-apps,
+body.non-owner-mode .requestarr-header-bar,
+body.non-owner-mode .sidebar-footer {
+    display: none !important;
 }

@@ -83,9 +83,45 @@ def search_media_stream():
 
 @requestarr_bp.route('/instances', methods=['GET'])
 def get_enabled_instances():
-    """Get enabled Sonarr and Radarr instances"""
+    """Get enabled Sonarr and Radarr instances.
+    For non-owner users, only return instances configured in requestarr_services.
+    """
     try:
         instances = requestarr_api.get_enabled_instances()
+
+        # Check if the current user is non-owner — filter to services only
+        try:
+            from src.primary.auth import get_username_from_session, SESSION_COOKIE_NAME
+            from src.primary.utils.database import get_database
+            session_token = request.cookies.get(SESSION_COOKIE_NAME)
+            username = get_username_from_session(session_token)
+            if not username:
+                from src.primary.settings_manager import load_settings
+                settings = load_settings("general")
+                if settings.get("local_access_bypass") or settings.get("proxy_auth_bypass"):
+                    db = get_database()
+                    main_user = db.get_first_user()
+                    if main_user:
+                        username = main_user.get('username')
+            if username:
+                db = get_database()
+                req_user = db.get_requestarr_user_by_username(username)
+                role = (req_user or {}).get('role', 'owner')
+                if role != 'owner':
+                    # Non-owner: filter instances to only those in requestarr_services
+                    services = db.get_requestarr_services()
+                    # Build sets of allowed (app_type, instance_name) pairs
+                    allowed = set()
+                    for svc in services:
+                        allowed.add((svc.get('app_type', ''), svc.get('instance_name', '')))
+                    for key in list(instances.keys()):
+                        instances[key] = [
+                            inst for inst in instances[key]
+                            if (key, inst.get('name', '')) in allowed
+                        ]
+        except Exception as e:
+            logger.debug(f"Could not filter instances by role: {e}")
+
         return jsonify(instances)
     except Exception as e:
         logger.error(f"Error getting instances: {e}")
@@ -827,6 +863,38 @@ def get_genres(media_type):
         return jsonify({'error': 'Failed to get genres'}), 500
 
 # Hidden Media Management
+
+def _get_hidden_media_user_id():
+    """Get the current user's requestarr user_id for hidden media scoping.
+    Returns None for owner (global scope), user_id for non-owner (personal scope).
+    """
+    try:
+        from src.primary.auth import get_username_from_session, SESSION_COOKIE_NAME
+        from src.primary.utils.database import get_database
+        session_token = request.cookies.get(SESSION_COOKIE_NAME)
+        username = get_username_from_session(session_token)
+        if not username:
+            from src.primary.settings_manager import load_settings
+            settings = load_settings("general")
+            if settings.get("local_access_bypass") or settings.get("proxy_auth_bypass"):
+                db = get_database()
+                main_user = db.get_first_user()
+                if main_user:
+                    username = main_user.get('username')
+        if username:
+            db = get_database()
+            req_user = db.get_requestarr_user_by_username(username)
+            if req_user:
+                role = req_user.get('role', 'user')
+                if role == 'owner':
+                    return None  # Owner = global scope
+                return req_user.get('id')  # Non-owner = personal scope
+            # Fallback: main user without requestarr record = owner
+            return None
+    except Exception:
+        pass
+    return None
+
 @requestarr_bp.route('/hidden-media', methods=['POST'])
 def add_hidden_media():
     """Add media to hidden list"""
@@ -842,7 +910,8 @@ def add_hidden_media():
         if not all([tmdb_id, media_type, title, app_type, instance_name]):
             return jsonify({'error': 'Missing required fields: tmdb_id, media_type, title, app_type, instance_name'}), 400
         
-        success = requestarr_api.db.add_hidden_media(tmdb_id, media_type, title, app_type, instance_name, poster_path)
+        user_id = _get_hidden_media_user_id()
+        success = requestarr_api.db.add_hidden_media(tmdb_id, media_type, title, app_type, instance_name, poster_path, user_id=user_id)
         
         if success:
             return jsonify({'success': True, 'message': 'Media hidden successfully'})
@@ -855,10 +924,14 @@ def add_hidden_media():
 
 @requestarr_bp.route('/hidden-media/<int:tmdb_id>/<media_type>/<app_type>/<instance_name>', methods=['DELETE'])
 def remove_hidden_media(tmdb_id, media_type, app_type, instance_name):
-    """Remove media from hidden list (unhide) for specific instance"""
+    """Remove media from hidden list (unhide) for specific instance.
+    Non-owner users can only unhide their own personal items.
+    Owner can unhide global items.
+    """
     try:
         logger.info(f"DELETE /hidden-media called: tmdb_id={tmdb_id}, media_type={media_type}, app_type={app_type}, instance_name={instance_name}")
-        success = requestarr_api.db.remove_hidden_media(tmdb_id, media_type, app_type, instance_name)
+        user_id = _get_hidden_media_user_id()
+        success = requestarr_api.db.remove_hidden_media(tmdb_id, media_type, app_type, instance_name, user_id=user_id)
         
         if success:
             logger.info(f"Successfully unhidden media: {tmdb_id}")
@@ -873,14 +946,18 @@ def remove_hidden_media(tmdb_id, media_type, app_type, instance_name):
 
 @requestarr_bp.route('/hidden-media', methods=['GET'])
 def get_hidden_media():
-    """Get list of hidden media with pagination and optional filters"""
+    """Get list of hidden media with pagination and optional filters.
+    Non-owner users see global + their personal items.
+    Owner sees global items only.
+    """
     try:
         page, page_size = _safe_pagination()
         media_type = request.args.get('media_type')  # Optional filter
         app_type = request.args.get('app_type')  # Optional filter
         instance_name = request.args.get('instance_name')  # Optional filter
         
-        result = requestarr_api.db.get_hidden_media(page, page_size, media_type, app_type, instance_name)
+        user_id = _get_hidden_media_user_id()
+        result = requestarr_api.db.get_hidden_media(page, page_size, media_type, app_type, instance_name, user_id=user_id)
         return jsonify(result)
         
     except Exception as e:
@@ -916,8 +993,39 @@ def has_any_clients():
 
 @requestarr_bp.route('/instances/<app_type>', methods=['GET'])
 def get_instances(app_type):
-    """Get list of configured instances for an app type (radarr/sonarr/movie_hunt)"""
+    """Get list of configured instances for an app type (radarr/sonarr/movie_hunt).
+    For non-owner users, only return instances configured in requestarr_services.
+    """
     try:
+        # Helper to filter instances for non-owner users
+        def _filter_for_non_owner(app_type_key, instances_list):
+            try:
+                from src.primary.auth import get_username_from_session, SESSION_COOKIE_NAME as _SC
+                from src.primary.utils.database import get_database as _gdb
+                session_token = request.cookies.get(_SC)
+                username = get_username_from_session(session_token)
+                if not username:
+                    from src.primary.settings_manager import load_settings
+                    settings = load_settings("general")
+                    if settings.get("local_access_bypass") or settings.get("proxy_auth_bypass"):
+                        _db = _gdb()
+                        main_user = _db.get_first_user()
+                        if main_user:
+                            username = main_user.get('username')
+                if username:
+                    _db = _gdb()
+                    req_user = _db.get_requestarr_user_by_username(username)
+                    role = (req_user or {}).get('role', 'owner')
+                    if role != 'owner':
+                        services = _db.get_requestarr_services()
+                        allowed = set()
+                        for svc in services:
+                            allowed.add((svc.get('app_type', ''), svc.get('instance_name', '')))
+                        return [inst for inst in instances_list if (app_type_key, inst.get('name', '')) in allowed]
+            except Exception:
+                pass
+            return instances_list
+
         # Movie Hunt instances come from the dedicated database table
         if app_type == 'movie_hunt':
             from src.primary.utils.database import get_database
@@ -938,6 +1046,7 @@ def get_instances(app_type):
                     'id': inst.get('id'),
                     'url': 'internal'  # Movie Hunt is internal, no external URL
                 })
+            instances = _filter_for_non_owner('movie_hunt', instances)
             return jsonify({'instances': instances, 'app_type': 'movie_hunt'})
         
         # TV Hunt instances come from the dedicated database table
@@ -960,6 +1069,7 @@ def get_instances(app_type):
                     'id': inst.get('id'),
                     'url': 'internal'  # TV Hunt is internal, no external URL
                 })
+            instances = _filter_for_non_owner('tv_hunt', instances)
             return jsonify({'instances': instances, 'app_type': 'tv_hunt'})
         
         from src.primary.settings_manager import get_setting
@@ -991,6 +1101,7 @@ def get_instances(app_type):
                 'url': instance.get('api_url', '') or instance.get('url', '')
             })
         
+        instances = _filter_for_non_owner(app_type, instances)
         return jsonify({'instances': instances, 'app_type': app_type})
         
     except Exception as e:

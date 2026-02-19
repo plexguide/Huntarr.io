@@ -41,13 +41,13 @@ def _get_current_user():
     return None
 
 
-def _require_admin():
+def _require_owner():
     """Returns (user_dict, error_response)."""
     user = _get_current_user()
     if not user:
         return None, (jsonify({'error': 'Not authenticated'}), 401)
     role = user.get('role', 'user')
-    if role not in ('owner', 'admin'):
+    if role != 'owner':
         return None, (jsonify({'error': 'Insufficient permissions'}), 403)
     return user, None
 
@@ -125,7 +125,7 @@ def list_requests():
 
     db = get_database()
     role = user.get('role', 'user')
-    can_view_all = role in ('owner', 'admin') or _has_permission(user, 'view_requests')
+    can_view_all = role == 'owner' or _has_permission(user, 'view_requests')
 
     user_id_filter = None if can_view_all else user.get('id')
     requests_list = db.get_requestarr_requests(
@@ -203,7 +203,7 @@ def create_request():
 @requestarr_requests_bp.route('/<int:request_id>/approve', methods=['POST'])
 def approve_request(request_id):
     """Approve a pending request (admin only)."""
-    current_user, err = _require_admin()
+    current_user, err = _require_owner()
     if err:
         return err
     db = get_database()
@@ -228,7 +228,7 @@ def approve_request(request_id):
 @requestarr_requests_bp.route('/<int:request_id>/deny', methods=['POST'])
 def deny_request(request_id):
     """Deny a pending request (admin only)."""
-    current_user, err = _require_admin()
+    current_user, err = _require_owner()
     if err:
         return err
     db = get_database()
@@ -264,10 +264,10 @@ def delete_request(request_id):
         return jsonify({'error': 'Request not found'}), 404
 
     role = user.get('role', 'user')
-    is_admin = role in ('owner', 'admin')
+    is_owner = role == 'owner'
     is_own = req.get('user_id') == user.get('id')
 
-    if not is_admin and not (is_own and req.get('status') == 'pending'):
+    if not is_owner and not (is_own and req.get('status') == 'pending'):
         return jsonify({'error': 'Cannot delete this request'}), 403
 
     if db.delete_requestarr_request(request_id):
@@ -290,7 +290,7 @@ def pending_count():
     if not user:
         return jsonify({'count': 0})
     role = user.get('role', 'user')
-    can_view = role in ('owner', 'admin') or _has_permission(user, 'manage_requests')
+    can_view = role == 'owner' or _has_permission(user, 'manage_requests')
     if not can_view:
         return jsonify({'count': 0})
     db = get_database()

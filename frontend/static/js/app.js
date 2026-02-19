@@ -85,16 +85,20 @@ let huntarrUI = {
                 this._enableMediaHunt = generalSettings.enable_media_hunt !== false;
                 this._enableThirdPartyApps = generalSettings.enable_third_party_apps !== false;
                 // Update sidebar group visibility from database settings (nav-group-* IDs)
-                var requestsGroup = document.getElementById('nav-group-requests');
-                var mediaHuntGroup = document.getElementById('nav-group-media-hunt');
-                var nzbHuntGroup = document.getElementById('nzb-hunt-sidebar-group');
-                var appsGroup = document.getElementById('nav-group-apps');
-                var appsLabel = document.getElementById('nav-group-apps-label');
-                if (requestsGroup) requestsGroup.style.display = (generalSettings.enable_requestarr === false) ? 'none' : '';
-                if (mediaHuntGroup) mediaHuntGroup.style.display = (generalSettings.enable_media_hunt === false) ? 'none' : '';
-                if (nzbHuntGroup) nzbHuntGroup.style.display = (generalSettings.enable_media_hunt === false) ? 'none' : '';
-                if (appsGroup) appsGroup.style.display = (generalSettings.enable_third_party_apps === false) ? 'none' : '';
-                if (appsLabel) appsLabel.style.display = (generalSettings.enable_media_hunt === false && generalSettings.enable_third_party_apps === false) ? 'none' : '';
+                // IMPORTANT: Skip this for non-owner users — they are fully siloed
+                var isNonOwner = document.body.classList.contains('non-owner-mode');
+                if (!isNonOwner) {
+                    var requestsGroup = document.getElementById('nav-group-requests');
+                    var mediaHuntGroup = document.getElementById('nav-group-media-hunt');
+                    var nzbHuntGroup = document.getElementById('nzb-hunt-sidebar-group');
+                    var appsGroup = document.getElementById('nav-group-apps');
+                    var appsLabel = document.getElementById('nav-group-apps-label');
+                    if (requestsGroup) requestsGroup.style.display = (generalSettings.enable_requestarr === false) ? 'none' : '';
+                    if (mediaHuntGroup) mediaHuntGroup.style.display = (generalSettings.enable_media_hunt === false) ? 'none' : '';
+                    if (nzbHuntGroup) nzbHuntGroup.style.display = (generalSettings.enable_media_hunt === false) ? 'none' : '';
+                    if (appsGroup) appsGroup.style.display = (generalSettings.enable_third_party_apps === false) ? 'none' : '';
+                    if (appsLabel) appsLabel.style.display = (generalSettings.enable_media_hunt === false && generalSettings.enable_third_party_apps === false) ? 'none' : '';
+                }
                 if (typeof window.applyFeatureFlags === 'function') window.applyFeatureFlags();
                 
                 // Initialize originalSettings early
@@ -276,15 +280,8 @@ let huntarrUI = {
                         this._pendingBadgeInterval = setInterval(() => this._updatePendingRequestBadge(), 60000);
                     }
                 } else {
-                    // Admin and User roles: siloed to Requests only
+                    // Non-owner users: siloed to Requests only
                     this._applyNonOwnerRestrictions();
-                    // Admins get the pending badge too
-                    if (this._userRole === 'admin') {
-                        this._updatePendingRequestBadge();
-                        if (!this._pendingBadgeInterval) {
-                            this._pendingBadgeInterval = setInterval(() => this._updatePendingRequestBadge(), 60000);
-                        }
-                    }
                 }
             })
             .catch(e => {
@@ -310,96 +307,74 @@ let huntarrUI = {
     },
 
     /**
-     * Non-owner users (admin + user) are siloed to Requests only.
-     * - Hide Home, Core label, System, Apps label, Media Hunt, NZB Hunt, 3rd Party Apps, Sponsors
+     * Non-owner users are siloed to Requests only.
+     * - Hide Home, Core label, System, Apps label, Media Hunt, NZB Hunt, 3rd Party Apps
      * - Hide the Requests group header (no accordion) — show sub-items as flat top-level nav
-     * - For 'user' role: also hide admin-only items within Requests (Users, Services, Requests mgmt, Settings, Smart Hunt)
+     * - Hide owner-only items within Requests (Users, Services, Requests mgmt, Settings, Smart Hunt)
      */
     _applyNonOwnerRestrictions: function() {
-        var role = this._userRole;
+        // 1. Mark body FIRST so CSS !important rules take effect immediately
+        //    This prevents any async settings fetch from re-showing hidden elements
+        document.body.classList.add('non-owner-mode');
 
-        // 1. Hide everything outside Requests
-        var hideElements = [
-            'homeNav',                              // Home button
-            'nav-group-core-label',                 // "Core" label
-            'nav-group-system',                     // System group
-            'nav-group-apps-label',                 // "Apps" label
-            'nav-group-media-hunt',                 // Media Hunt
-            'nzb-hunt-sidebar-group',               // NZB Hunt
-            'nav-group-apps',                       // 3rd Party Apps
-            'main-sidebar-partner-projects-group',  // Sponsors
-        ];
-        hideElements.forEach(function(id) {
-            var el = document.getElementById(id);
-            if (el) el.style.display = 'none';
-        });
-
-        // 2. Hide the Requests group header (accordion toggle) — make sub-items flat
+        // 2. Inject "Request System" label above the Requests group items
         var requestsGroup = document.getElementById('nav-group-requests');
+        if (requestsGroup && !document.getElementById('non-owner-label')) {
+            var label = document.createElement('div');
+            label.id = 'non-owner-label';
+            label.className = 'nav-group';
+            label.innerHTML = '<div class="nav-group-title">Request System</div>';
+            requestsGroup.parentNode.insertBefore(label, requestsGroup);
+        }
+
+        // 3. Hide the Requests group header (accordion toggle) — make sub-items flat
         if (requestsGroup) {
             var header = requestsGroup.querySelector('.nav-group-header');
             if (header) header.style.display = 'none';
         }
 
-        // 3. Force-expand the Requests group body and promote items to top-level styling
+        // 4. Force-expand the Requests group body and promote items to top-level styling
         var requestsBody = document.getElementById('sidebar-group-requests');
         if (requestsBody) {
             requestsBody.classList.remove('collapsed');
             requestsBody.classList.add('non-owner-flat');
         }
 
-        // 4. For 'user' role, hide admin-only items within Requests
-        if (role === 'user') {
-            var hideNavItems = [
-                'requestarrSmartHuntSettingsNav',
-                'requestarrRequestsNav',
-                'requestarrUsersNav',
-                'requestarrServicesNav',
-                'requestarrSettingsNav',
-            ];
-            hideNavItems.forEach(function(id) {
-                var el = document.getElementById(id);
-                if (el) el.style.display = 'none';
-            });
-        }
+        // 5. Hide owner-only items within Requests for ALL non-owner users
+        var hideNavItems = [
+            'requestarrSmartHuntSettingsNav',
+            'requestarrRequestsNav',
+            'requestarrUsersNav',
+            'requestarrServicesNav',
+            'requestarrSettingsNav',
+        ];
+        hideNavItems.forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
 
-        // 5. Redirect if current section is not allowed
+        // 6. Redirect if current section is not allowed
         var allowedSections = [
             'requestarr', 'requestarr-discover', 'requestarr-movies',
             'requestarr-tv', 'requestarr-hidden',
         ];
-        if (role === 'admin') {
-            allowedSections.push(
-                'requestarr-requests', 'requestarr-users', 'requestarr-services',
-                'requestarr-settings', 'requestarr-smarthunt-settings'
-            );
-        }
         if (allowedSections.indexOf(this.currentSection) === -1) {
             window.location.hash = '#requestarr-discover';
         }
 
-        // 6. Hide the Requests header bar (breadcrumb) — redundant for non-owner users
+        // 7. Hide the Requests header bar (breadcrumb) — redundant for non-owner users
         var headerBar = document.querySelector('.requestarr-header-bar');
         if (headerBar) headerBar.style.display = 'none';
-
-        // 7. Mark body so CSS can adjust layout
-        document.body.classList.add('non-owner-mode');
     },
 
     isAdminOnlySection: function(section) {
         if (this._userRole === 'owner') return false;
         if (!this._userRole) return false; // not loaded yet, don't block
-        // Both admin and user roles are siloed
+        // All non-owner users are siloed to these sections only
         var allowed = [
             'requestarr', 'requestarr-discover', 'requestarr-movies',
             'requestarr-tv', 'requestarr-hidden',
         ];
-        if (this._userRole === 'admin') {
-            allowed.push(
-                'requestarr-requests', 'requestarr-users', 'requestarr-services',
-                'requestarr-settings', 'requestarr-smarthunt-settings'
-            );
-        }
         return allowed.indexOf(section) === -1;
     },
 

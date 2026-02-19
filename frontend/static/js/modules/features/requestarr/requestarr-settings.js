@@ -415,14 +415,20 @@ export class RequestarrSettings {
         const posterUrl = item.poster_path || './static/images/blackout.jpg';
         
         const typeBadgeLabel = item.media_type === 'tv' ? 'TV' : 'Movie';
+        
+        // Show scope badge for non-owner users
+        const isNonOwner = window._huntarrUserRole && window._huntarrUserRole !== 'owner';
+        const isGlobal = item.is_global === true;
+        const scopeBadge = isNonOwner ? (isGlobal
+            ? '<span class="hidden-scope-badge hidden-scope-global" title="Hidden by owner (all users)">Global</span>'
+            : '<span class="hidden-scope-badge hidden-scope-personal" title="Hidden by you (personal)">Personal</span>') : '';
 
         card.innerHTML = `
             <div class="media-card-poster">
-                <button class="media-card-unhide-btn" title="Unhide this media">
-                    <i class="fas fa-eye"></i>
-                </button>
+                ${!isGlobal || !isNonOwner ? '<button class="media-card-unhide-btn" title="Unhide this media"><i class="fas fa-eye"></i></button>' : ''}
                 <img src="${posterUrl}" alt="${item.title}" onerror="this.src='./static/images/blackout.jpg'">
                 <span class="media-type-badge">${typeBadgeLabel}</span>
+                ${scopeBadge}
             </div>
         `;
         
