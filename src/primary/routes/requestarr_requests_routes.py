@@ -133,6 +133,14 @@ def list_requests():
         media_type=media_type, limit=limit, offset=offset
     )
     total = db.get_requestarr_request_count(user_id=user_id_filter, status=status_filter)
+
+    # For owner: enrich each request with all requesters for that media item
+    if can_view_all:
+        for req in requests_list:
+            requesters = db.get_requesters_for_media(req.get('media_type', ''), req.get('tmdb_id', 0))
+            # Filter out the primary requester to show "also requested by" list
+            req['all_requesters'] = requesters
+
     return jsonify({'requests': requests_list, 'total': total})
 
 
@@ -159,10 +167,16 @@ def create_request():
 
     db = get_database()
 
-    # Check for existing request
+    # Block if globally blacklisted — even auto-approve users cannot request
+    if db.is_globally_blacklisted(tmdb_id, media_type):
+        return jsonify({'error': 'This media is on the global blacklist and cannot be requested'}), 403
+
+    # Check for existing request — denied requests CAN be re-requested by other users
     existing = db.check_existing_request(media_type, tmdb_id)
     if existing and existing.get('status') in ('pending', 'approved'):
         return jsonify({'error': 'This media has already been requested', 'existing': existing}), 409
+    if existing and existing.get('status') == 'denied' and existing.get('user_id') == user.get('id'):
+        return jsonify({'error': 'Your request for this media was denied', 'existing': existing}), 409
 
     # Check auto-approve
     auto_approve_key = 'auto_approve_movies' if media_type == 'movie' else 'auto_approve_tv'
@@ -296,3 +310,91 @@ def pending_count():
     db = get_database()
     count = db.get_requestarr_request_count(status='pending')
     return jsonify({'count': count})
+
+
+# ── Blacklist Routes ─────────────────────────────────────────
+
+@requestarr_requests_bp.route('/<int:request_id>/blacklist', methods=['POST'])
+def blacklist_request(request_id):
+    """Blacklist a request — sets status to 'blacklisted' and adds to global blacklist."""
+    current_user, err = _require_owner()
+    if err:
+        return err
+    db = get_database()
+    req = db.get_requestarr_request_by_id(request_id)
+    if not req:
+        return jsonify({'error': 'Request not found'}), 404
+
+    notes = (request.json or {}).get('notes', '')
+
+    # Update request status to blacklisted
+    db.update_requestarr_request_status(
+        request_id, 'blacklisted',
+        responded_by=current_user.get('username', ''),
+        notes=notes
+    )
+
+    # Add to global blacklist
+    db.add_to_global_blacklist(
+        tmdb_id=req.get('tmdb_id'),
+        media_type=req.get('media_type'),
+        title=req.get('title', ''),
+        year=req.get('year', ''),
+        poster_path=req.get('poster_path', ''),
+        blacklisted_by=current_user.get('username', ''),
+        notes=notes
+    )
+
+    updated = db.get_requestarr_request_by_id(request_id)
+    return jsonify({'success': True, 'request': updated})
+
+
+# ── Global Blacklist CRUD ────────────────────────────────────
+
+@requestarr_requests_bp.route('/global-blacklist', methods=['GET'])
+def get_global_blacklist():
+    """Get paginated global blacklist. Owner only."""
+    current_user, err = _require_owner()
+    if err:
+        return err
+    media_type = request.args.get('media_type', '').strip() or None
+    page = int(request.args.get('page', 1))
+    page_size = int(request.args.get('page_size', 100))
+    search = request.args.get('search', '').strip()
+
+    db = get_database()
+    result = db.get_global_blacklist(media_type=media_type, page=page, page_size=page_size)
+
+    items = result.get('items', [])
+    # Client-side search filter
+    if search:
+        search_lower = search.lower()
+        items = [i for i in items if search_lower in (i.get('title', '') or '').lower()]
+
+    return jsonify({
+        'items': items,
+        'total': len(items) if search else result.get('total', 0),
+        'page': page,
+        'page_size': page_size
+    })
+
+
+@requestarr_requests_bp.route('/global-blacklist/<int:tmdb_id>/<media_type>', methods=['DELETE'])
+def remove_from_blacklist(tmdb_id, media_type):
+    """Remove an item from the global blacklist. Owner only."""
+    current_user, err = _require_owner()
+    if err:
+        return err
+    db = get_database()
+    success = db.remove_from_global_blacklist(tmdb_id, media_type)
+    if success:
+        return jsonify({'success': True})
+    return jsonify({'error': 'Failed to remove from blacklist'}), 500
+
+
+@requestarr_requests_bp.route('/global-blacklist/check/<media_type>/<int:tmdb_id>', methods=['GET'])
+def check_blacklist(media_type, tmdb_id):
+    """Check if a media item is globally blacklisted."""
+    db = get_database()
+    blacklisted = db.is_globally_blacklisted(tmdb_id, media_type)
+    return jsonify({'blacklisted': blacklisted})

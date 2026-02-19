@@ -902,6 +902,26 @@ class HuntarrDatabase:
             except sqlite3.OperationalError:
                 pass  # Column already exists
             
+            # Create requestarr_global_blacklist table
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS requestarr_global_blacklist (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    tmdb_id INTEGER NOT NULL,
+                    media_type TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    year TEXT,
+                    poster_path TEXT,
+                    blacklisted_by TEXT,
+                    blacklisted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    notes TEXT,
+                    UNIQUE(tmdb_id, media_type)
+                )
+            ''')
+            try:
+                conn.execute('CREATE INDEX IF NOT EXISTS idx_global_blacklist_media ON requestarr_global_blacklist(media_type, tmdb_id)')
+            except Exception:
+                pass
+            
             # Add temp_2fa_secret column if it doesn't exist (for existing databases)
             try:
                 conn.execute('ALTER TABLE users ADD COLUMN temp_2fa_secret TEXT')
@@ -3001,11 +3021,12 @@ class HuntarrDatabase:
 
     def get_requestarr_requests(self, status: str = None, user_id: int = None,
                                  media_type: str = None, limit: int = 100, offset: int = 0) -> list:
-        """Get requests with optional filters."""
+        """Get requests with optional filters. Excludes old media-tracking rows."""
         try:
             with self.get_connection() as conn:
                 conn.row_factory = sqlite3.Row
-                conditions = []
+                # username != '' excludes legacy media-tracking rows that share this table
+                conditions = ["username != ''"]
                 params = []
                 if status:
                     conditions.append('status = ?')
@@ -3016,7 +3037,7 @@ class HuntarrDatabase:
                 if media_type:
                     conditions.append('media_type = ?')
                     params.append(media_type)
-                where = (' WHERE ' + ' AND '.join(conditions)) if conditions else ''
+                where = ' WHERE ' + ' AND '.join(conditions)
                 params.extend([limit, offset])
                 rows = conn.execute(
                     f'SELECT * FROM requestarr_requests{where} ORDER BY requested_at DESC LIMIT ? OFFSET ?',
@@ -3066,10 +3087,11 @@ class HuntarrDatabase:
             return False
 
     def get_requestarr_request_count(self, user_id: int = None, status: str = None) -> int:
-        """Get count of requests with optional filters."""
+        """Get count of requests with optional filters. Excludes old media-tracking rows."""
         try:
             with self.get_connection() as conn:
-                conditions = []
+                # username != '' excludes legacy media-tracking rows
+                conditions = ["username != ''"]
                 params = []
                 if user_id:
                     conditions.append('user_id = ?')
@@ -3077,7 +3099,7 @@ class HuntarrDatabase:
                 if status:
                     conditions.append('status = ?')
                     params.append(status)
-                where = (' WHERE ' + ' AND '.join(conditions)) if conditions else ''
+                where = ' WHERE ' + ' AND '.join(conditions)
                 row = conn.execute(f'SELECT COUNT(*) FROM requestarr_requests{where}', params).fetchone()
                 return row[0] if row else 0
         except Exception as e:
@@ -3085,18 +3107,100 @@ class HuntarrDatabase:
             return 0
 
     def check_existing_request(self, media_type: str, tmdb_id: int) -> Optional[Dict[str, Any]]:
-        """Check if a request already exists for this media item."""
+        """Check if a user request already exists for this media item. Excludes old media-tracking rows."""
         try:
             with self.get_connection() as conn:
                 conn.row_factory = sqlite3.Row
                 row = conn.execute(
-                    'SELECT * FROM requestarr_requests WHERE media_type = ? AND tmdb_id = ? ORDER BY requested_at DESC LIMIT 1',
+                    "SELECT * FROM requestarr_requests WHERE media_type = ? AND tmdb_id = ? AND username != '' ORDER BY requested_at DESC LIMIT 1",
                     (media_type, tmdb_id)
                 ).fetchone()
                 return dict(row) if row else None
         except Exception as e:
             logger.error(f"Error checking existing request: {e}")
             return None
+
+    def get_requesters_for_media(self, media_type: str, tmdb_id: int) -> list:
+        """Get all users who requested a specific media item. Excludes old media-tracking rows."""
+        try:
+            with self.get_connection() as conn:
+                conn.row_factory = sqlite3.Row
+                rows = conn.execute(
+                    "SELECT DISTINCT username, user_id, status, requested_at FROM requestarr_requests WHERE media_type = ? AND tmdb_id = ? AND username != '' ORDER BY requested_at ASC",
+                    (media_type, tmdb_id)
+                ).fetchall()
+                return [dict(r) for r in rows]
+        except Exception as e:
+            logger.error(f"Error getting requesters: {e}")
+            return []
+
+    # ------------------------------------------------------------------
+    # Global Blacklist CRUD
+    # ------------------------------------------------------------------
+
+    def add_to_global_blacklist(self, tmdb_id: int, media_type: str, title: str,
+                                 year: str = None, poster_path: str = None,
+                                 blacklisted_by: str = None, notes: str = None) -> bool:
+        """Add media to the global blacklist. No user can request blacklisted media."""
+        try:
+            with self.get_connection() as conn:
+                conn.execute('''
+                    INSERT OR REPLACE INTO requestarr_global_blacklist
+                    (tmdb_id, media_type, title, year, poster_path, blacklisted_by, blacklisted_at, notes)
+                    VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+                ''', (tmdb_id, media_type, title, year, poster_path, blacklisted_by, notes))
+                conn.commit()
+                return True
+        except Exception as e:
+            logger.error(f"Error adding to global blacklist: {e}")
+            return False
+
+    def remove_from_global_blacklist(self, tmdb_id: int, media_type: str) -> bool:
+        """Remove media from the global blacklist."""
+        try:
+            with self.get_connection() as conn:
+                conn.execute('DELETE FROM requestarr_global_blacklist WHERE tmdb_id = ? AND media_type = ?',
+                             (tmdb_id, media_type))
+                conn.commit()
+                return True
+        except Exception as e:
+            logger.error(f"Error removing from global blacklist: {e}")
+            return False
+
+    def is_globally_blacklisted(self, tmdb_id: int, media_type: str) -> bool:
+        """Check if media is on the global blacklist."""
+        try:
+            with self.get_connection() as conn:
+                row = conn.execute(
+                    'SELECT 1 FROM requestarr_global_blacklist WHERE tmdb_id = ? AND media_type = ?',
+                    (tmdb_id, media_type)
+                ).fetchone()
+                return row is not None
+        except Exception as e:
+            logger.error(f"Error checking global blacklist: {e}")
+            return False
+
+    def get_global_blacklist(self, media_type: str = None, page: int = 1, page_size: int = 100) -> Dict[str, Any]:
+        """Get paginated global blacklist."""
+        try:
+            with self.get_connection() as conn:
+                conn.row_factory = sqlite3.Row
+                conditions = []
+                params = []
+                if media_type:
+                    conditions.append('media_type = ?')
+                    params.append(media_type)
+                where = (' WHERE ' + ' AND '.join(conditions)) if conditions else ''
+                total = conn.execute(f'SELECT COUNT(*) FROM requestarr_global_blacklist{where}', params).fetchone()[0]
+                offset = (page - 1) * page_size
+                rows = conn.execute(
+                    f'SELECT * FROM requestarr_global_blacklist{where} ORDER BY blacklisted_at DESC LIMIT ? OFFSET ?',
+                    params + [page_size, offset]
+                ).fetchall()
+                return {'items': [dict(r) for r in rows], 'total': total, 'page': page, 'page_size': page_size}
+        except Exception as e:
+            logger.error(f"Error getting global blacklist: {e}")
+            return {'items': [], 'total': 0, 'page': page, 'page_size': page_size}
 
     def generate_recovery_key(self, username: str) -> Optional[str]:
         """Generate a new recovery key for a user"""

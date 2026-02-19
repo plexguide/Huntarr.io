@@ -4,7 +4,7 @@
     <link rel="stylesheet" href="./static/css/instance-editor.css?v=1.0.2">
     <link rel="stylesheet" href="./static/css/media-hunt-detail.css?v=1.5.0">
     <link rel="stylesheet" href="./static/css/media-hunt-tv.css?v=1.0.0">
-    <link rel="stylesheet" href="./static/css/requestarr-users.css?v=1.3.0">
+    <link rel="stylesheet" href="./static/css/requestarr-users.css?v=1.4.0">
     
     <div class="requestarr-content">
         <!-- Single header bar: back+breadcrumb (left) + sponsor/partner (right) — all inside the bordered toolbar -->
@@ -28,7 +28,7 @@
                 </div>
                 <div id="requestarr-header-hidden" class="requestarr-view-header" style="display: none;">
                     <a href="./#requestarr" class="reqset-back-btn"><i class="fas fa-arrow-left"></i> Back</a>
-                    <div class="reqset-breadcrumb"><i class="fas fa-eye-slash"></i><span>Requests</span><i class="fas fa-chevron-right reqset-breadcrumb-sep"></i><span>Hidden Media</span></div>
+                    <div class="reqset-breadcrumb"><i class="fas fa-eye-slash"></i><span>Requests</span><i class="fas fa-chevron-right reqset-breadcrumb-sep"></i><span>Personal Blacklist</span></div>
                 </div>
                 <div id="requestarr-header-users" class="requestarr-view-header" style="display: none;">
                     <a href="./#requestarr" class="reqset-back-btn"><i class="fas fa-arrow-left"></i> Back</a>
@@ -41,6 +41,10 @@
                 <div id="requestarr-header-requests" class="requestarr-view-header" style="display: none;">
                     <a href="./#requestarr" class="reqset-back-btn"><i class="fas fa-arrow-left"></i> Back</a>
                     <div class="reqset-breadcrumb"><i class="fas fa-inbox"></i><span>Requests</span><i class="fas fa-chevron-right reqset-breadcrumb-sep"></i><span>Manage Requests</span></div>
+                </div>
+                <div id="requestarr-header-global-blacklist" class="requestarr-view-header" style="display: none;">
+                    <a href="./#requestarr" class="reqset-back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+                    <div class="reqset-breadcrumb"><i class="fas fa-ban"></i><span>Requests</span><i class="fas fa-chevron-right reqset-breadcrumb-sep"></i><span>Global Blacklist</span></div>
                 </div>
             </div>
             <div class="reqset-toolbar-right">
@@ -241,12 +245,12 @@
             </div>
         </div>
 
-        <!-- Hidden Media View -->
+        <!-- Personal Blacklist View (formerly Hidden Media) -->
         <div id="requestarr-hidden-view" class="requestarr-view">
             <!-- Search Bar - Full Width -->
             <div class="hidden-media-search">
                 <i class="fas fa-search"></i>
-                <input id="hidden-media-search" class="hidden-media-search-input" type="text" placeholder="Search hidden media...">
+                <input id="hidden-media-search" class="hidden-media-search-input" type="text" placeholder="Search personal blacklist...">
             </div>
 
             <!-- Instance Selector -->
@@ -303,6 +307,7 @@
                         <option value="pending" selected>Pending</option>
                         <option value="approved">Approved</option>
                         <option value="denied">Denied</option>
+                        <option value="blacklisted">Blacklisted</option>
                     </select>
                     <select id="reqrequests-type-filter" class="control-select" onchange="window.RequestarrRequests && window.RequestarrRequests.loadRequests()">
                         <option value="">All Types</option>
@@ -316,6 +321,43 @@
                     <i class="fas fa-spinner fa-spin"></i>
                     <p>Loading requests...</p>
                 </div>
+            </div>
+        </div>
+
+        <!-- Global Blacklist View -->
+        <div id="requestarr-global-blacklist-view" class="requestarr-view" style="display: none;">
+            <!-- Search Bar - Full Width -->
+            <div class="hidden-media-search">
+                <i class="fas fa-search"></i>
+                <input id="global-blacklist-search" class="hidden-media-search-input" type="text" placeholder="Search global blacklist...">
+            </div>
+
+            <!-- Media Type Filter -->
+            <div class="hidden-media-instance-row">
+                <select id="global-blacklist-type-filter" class="control-select instance-select">
+                    <option value="">All Types</option>
+                    <option value="movie">Movies</option>
+                    <option value="tv">TV Shows</option>
+                </select>
+            </div>
+
+            <!-- Global Blacklist Grid -->
+            <div id="global-blacklist-grid" class="media-grid">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading global blacklist...</p>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div id="global-blacklist-pagination" class="pagination-container" style="display: none;">
+                <button id="global-blacklist-prev-page" class="pagination-btn">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </button>
+                <span id="global-blacklist-page-info" class="page-info">Page 1 of 1</span>
+                <button id="global-blacklist-next-page" class="pagination-btn">
+                    Next <i class="fas fa-chevron-right"></i>
+                </button>
             </div>
         </div>
 

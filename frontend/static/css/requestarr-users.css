@@ -577,6 +577,21 @@
     color: #ef4444;
 }
 
+.reqrequests-status-blacklisted {
+    background: rgba(234, 179, 8, 0.15);
+    color: #eab308;
+}
+
+.reqrequests-also {
+    font-size: 0.75rem;
+    color: var(--text-dim, #9ca3af);
+    margin-top: 4px;
+}
+.reqrequests-also i {
+    margin-right: 4px;
+    opacity: 0.7;
+}
+
 .reqrequests-actions {
     display: flex;
     gap: 6px;

@@ -377,9 +377,9 @@ def _safe_pagination():
     return page, page_size
 
 
-@requestarr_bp.route('/requests', methods=['GET'])
+@requestarr_bp.route('/requests-legacy', methods=['GET'])
 def get_requests():
-    """Get paginated list of requests"""
+    """Get paginated list of media tracking entries (legacy - use /api/requestarr/requests instead)"""
     try:
         page, page_size = _safe_pagination()
         
