@@ -203,14 +203,16 @@ export class RequestarrSettings {
 
         try {
             const _ts = Date.now();
-            const [movieHuntResponse, radarrResponse, sonarrResponse] = await Promise.all([
+            const [movieHuntResponse, radarrResponse, tvHuntResponse, sonarrResponse] = await Promise.all([
                 fetch(`./api/requestarr/instances/movie_hunt?t=${_ts}`, { cache: 'no-store' }),
                 fetch(`./api/requestarr/instances/radarr?t=${_ts}`, { cache: 'no-store' }),
+                fetch(`./api/requestarr/instances/tv_hunt?t=${_ts}`, { cache: 'no-store' }),
                 fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' })
             ]);
 
             const movieHuntData = await movieHuntResponse.json();
             const radarrData = await radarrResponse.json();
+            const tvHuntData = await tvHuntResponse.json();
             const sonarrData = await sonarrResponse.json();
 
             const instanceOptions = [];
@@ -230,6 +232,16 @@ export class RequestarrSettings {
                     instanceOptions.push({
                         value: `radarr::${instance.name}`,
                         label: `Radarr \u2013 ${instance.name}`
+                    });
+                }
+            });
+
+            // TV Hunt instances
+            (tvHuntData.instances || []).forEach(instance => {
+                if (instance && instance.name) {
+                    instanceOptions.push({
+                        value: `tv_hunt::${instance.name}`,
+                        label: `TV Hunt \u2013 ${instance.name}`
                     });
                 }
             });

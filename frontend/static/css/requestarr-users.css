@@ -337,130 +337,70 @@
 
 /* ── Services Page ────────────────────────────────────────── */
 
-.reqservices-section {
-    margin-bottom: 32px;
+/* ── Services Page (uses shared instance-card system from instances-card.css) ── */
+/* Matches Media Hunt Instances bordered-section design exactly */
+
+.reqservices-group {
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(148, 163, 184, 0.08);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 12px 0 20px 0;
 }
 
-.reqservices-section-header {
+.reqservices-group .profiles-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
-    margin-bottom: 12px;
+    gap: 16px;
+    margin-bottom: 4px;
 }
 
-.reqservices-section-title {
-    font-size: 1.15rem;
-    font-weight: 600;
-    color: var(--text-primary);
+.reqservices-group .profiles-header h3 {
     margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.reqservices-section-desc {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    margin-bottom: 16px;
-}
-
-.reqservices-card {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 16px;
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--radius-md);
-    margin-bottom: 8px;
-    backdrop-filter: blur(var(--glass-blur));
-}
-
-.reqservices-card-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.reqservices-card-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: var(--radius-sm);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1rem;
-}
-
-.reqservices-card-icon.movies {
-    background: rgba(234, 179, 8, 0.12);
-    color: #eab308;
-}
-
-.reqservices-card-icon.tv {
-    background: rgba(99, 102, 241, 0.12);
-    color: #818cf8;
-}
-
-.reqservices-card-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.reqservices-card-name {
-    font-weight: 500;
-    color: var(--text-primary);
-    font-size: 0.9rem;
-}
-
-.reqservices-card-type {
-    font-size: 0.78rem;
-    color: var(--text-muted);
-}
-
-.reqservices-card-badges {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-}
-
-.reqservices-badge {
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 0.7rem;
+    padding: 0 0 12px 0;
+    font-size: 1.1rem;
     font-weight: 600;
+    color: #f1f5f9;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
 }
 
-.reqservices-badge-default {
-    background: rgba(34, 197, 94, 0.15);
-    color: #22c55e;
+.reqservices-group .profiles-help {
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 13px;
+    margin: 12px 0 0;
 }
 
-.reqservices-badge-4k {
-    background: rgba(234, 179, 8, 0.15);
+.reqservices-group .instances-card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+    margin-top: 16px;
+    margin-bottom: 0;
+}
+
+.reqservices-group .instances-card-grid .add-instance-card {
+    min-height: 100px;
+}
+
+.reqservices-group .instances-card-grid .add-instance-card .add-icon {
+    font-size: 1.5rem;
+}
+
+.reqservices-group .instances-card-grid .add-instance-card .add-text {
+    font-size: 0.85rem;
+}
+
+/* 4K inline badge (next to instance name in card header) */
+.reqservices-badge-4k-inline {
+    font-size: 0.65rem;
+    background: rgba(234, 179, 8, 0.25);
     color: #eab308;
-}
-
-.reqservices-card-actions {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-}
-
-.reqservices-empty {
-    padding: 32px;
-    text-align: center;
-    color: var(--text-muted);
-    border: 2px dashed var(--border-color);
-    border-radius: var(--radius-lg);
-}
-
-.reqservices-empty i {
-    font-size: 2rem;
-    margin-bottom: 8px;
-    display: block;
-    opacity: 0.5;
+    padding: 2px 7px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-left: 6px;
 }
 
 /* ── Plex Import Modal ────────────────────────────────────── */

@@ -249,12 +249,10 @@ export class RequestarrContent {
         try {
             const _ts = Date.now();
             const [thResponse, sonarrResponse] = await Promise.all([
-                fetch(`./api/tv-hunt/instances?t=${_ts}`, { cache: 'no-store' }),
+                fetch(`./api/requestarr/instances/tv_hunt?t=${_ts}`, { cache: 'no-store' }),
                 fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' })
             ]);
-            let thData = await thResponse.json();
-            if (!thResponse.ok || thData.error) thData = { instances: [] };
-            else thData = { instances: (thData.instances || []).filter(i => i.enabled !== false) };
+            const thData = await thResponse.json();
             const sonarrData = await sonarrResponse.json();
 
             const allInstances = [
@@ -527,15 +525,13 @@ export class RequestarrContent {
         select.innerHTML = '<option value="">Loading instances...</option>';
 
         try {
-            // Fetch TV Hunt from Media Hunt API (canonical); Sonarr from requestarr
+            // Fetch TV Hunt and Sonarr from requestarr (filtered by services config)
             const _ts = Date.now();
             const [thResponse, sonarrResponse] = await Promise.all([
-                fetch(`./api/tv-hunt/instances?t=${_ts}`, { cache: 'no-store' }),
+                fetch(`./api/requestarr/instances/tv_hunt?t=${_ts}`, { cache: 'no-store' }),
                 fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' })
             ]);
-            let thData = await thResponse.json();
-            if (!thResponse.ok || thData.error) thData = { instances: [] };
-            else thData = { instances: (thData.instances || []).filter(i => i.enabled !== false) };
+            const thData = await thResponse.json();
             const sonarrData = await sonarrResponse.json();
 
             const thInstances = (thData.instances || []).map(inst => ({

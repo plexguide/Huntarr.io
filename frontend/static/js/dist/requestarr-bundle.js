@@ -1686,14 +1686,16 @@ class RequestarrSettings {
 
         try {
             const _ts = Date.now();
-            const [movieHuntResponse, radarrResponse, sonarrResponse] = await Promise.all([
+            const [movieHuntResponse, radarrResponse, tvHuntResponse, sonarrResponse] = await Promise.all([
                 fetch(`./api/requestarr/instances/movie_hunt?t=${_ts}`, { cache: 'no-store' }),
                 fetch(`./api/requestarr/instances/radarr?t=${_ts}`, { cache: 'no-store' }),
+                fetch(`./api/requestarr/instances/tv_hunt?t=${_ts}`, { cache: 'no-store' }),
                 fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' })
             ]);
 
             const movieHuntData = await movieHuntResponse.json();
             const radarrData = await radarrResponse.json();
+            const tvHuntData = await tvHuntResponse.json();
             const sonarrData = await sonarrResponse.json();
 
             const instanceOptions = [];
@@ -1713,6 +1715,16 @@ class RequestarrSettings {
                     instanceOptions.push({
                         value: `radarr::${instance.name}`,
                         label: `Radarr \u2013 ${instance.name}`
+                    });
+                }
+            });
+
+            // TV Hunt instances
+            (tvHuntData.instances || []).forEach(instance => {
+                if (instance && instance.name) {
+                    instanceOptions.push({
+                        value: `tv_hunt::${instance.name}`,
+                        label: `TV Hunt \u2013 ${instance.name}`
                     });
                 }
             });
@@ -3497,12 +3509,10 @@ class RequestarrContent {
         try {
             const _ts = Date.now();
             const [thResponse, sonarrResponse] = await Promise.all([
-                fetch(`./api/tv-hunt/instances?t=${_ts}`, { cache: 'no-store' }),
+                fetch(`./api/requestarr/instances/tv_hunt?t=${_ts}`, { cache: 'no-store' }),
                 fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' })
             ]);
-            let thData = await thResponse.json();
-            if (!thResponse.ok || thData.error) thData = { instances: [] };
-            else thData = { instances: (thData.instances || []).filter(i => i.enabled !== false) };
+            const thData = await thResponse.json();
             const sonarrData = await sonarrResponse.json();
 
             const allInstances = [
@@ -3775,15 +3785,13 @@ class RequestarrContent {
         select.innerHTML = '<option value="">Loading instances...</option>';
 
         try {
-            // Fetch TV Hunt from Media Hunt API (canonical); Sonarr from requestarr
+            // Fetch TV Hunt and Sonarr from requestarr (filtered by services config)
             const _ts = Date.now();
             const [thResponse, sonarrResponse] = await Promise.all([
-                fetch(`./api/tv-hunt/instances?t=${_ts}`, { cache: 'no-store' }),
+                fetch(`./api/requestarr/instances/tv_hunt?t=${_ts}`, { cache: 'no-store' }),
                 fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' })
             ]);
-            let thData = await thResponse.json();
-            if (!thResponse.ok || thData.error) thData = { instances: [] };
-            else thData = { instances: (thData.instances || []).filter(i => i.enabled !== false) };
+            const thData = await thResponse.json();
             const sonarrData = await sonarrResponse.json();
 
             const thInstances = (thData.instances || []).map(inst => ({
@@ -7456,6 +7464,8 @@ window.RequestarrUsers = {
  * Manages which instances are available for media requests.
  * Movies = Radarr + Movie Hunt instances
  * TV = Sonarr + TV Hunt instances
+ *
+ * Uses the same instance-card design system as Media Hunt Instances.
  */
 
 window.RequestarrServices = {
@@ -7495,27 +7505,38 @@ window.RequestarrServices = {
         const movieServices = this.services.filter(s => s.service_type === 'movies');
         const tvServices = this.services.filter(s => s.service_type === 'tv');
 
-        container.innerHTML = `
-            ${this._renderSection('Movies', 'movies', movieServices, 'fas fa-film')}
-            ${this._renderSection('TV', 'tv', tvServices, 'fas fa-tv')}
-        `;
+        container.innerHTML =
+            this._renderSection('Movies', 'movies', movieServices, 'fa-film') +
+            this._renderSection('TV', 'tv', tvServices, 'fa-tv');
+
+        // Wire up click handlers on the grids
+        this._wireGrid('reqservices-movies-grid', 'movies');
+        this._wireGrid('reqservices-tv-grid', 'tv');
     },
 
-    _renderSection(title, type, services, icon) {
-        const cardsHtml = services.length ? services.map(s => this._renderCard(s, type)).join('') :
-            `<div class="reqservices-empty">
-                <i class="${icon}"></i>
-                <p>No ${title.toLowerCase()} services configured</p>
-                <p style="font-size:0.8rem;">Add an instance to enable ${title.toLowerCase()} requests</p>
-            </div>`;
+    _renderSection(title, type, services, iconClass) {
+        const iconColor = type === 'movies' ? '#eab308' : '#818cf8';
+        const gridId = `reqservices-${type}-grid`;
+        const addLabel = `Add ${title} Server`;
 
-        return `<div class="reqservices-section">
-            <div class="reqservices-section-header">
-                <h3 class="reqservices-section-title"><i class="${icon}" style="color:${type === 'movies' ? '#eab308' : '#818cf8'};"></i> ${title}</h3>
-                <button class="requsers-btn requsers-btn-primary requsers-btn-sm" onclick="RequestarrServices.openAddModal('${type}')"><i class="fas fa-plus"></i> Add ${title} Server</button>
+        // Sort: default first (moves to the left)
+        services.sort((a, b) => (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0));
+
+        let cardsHtml = '';
+        services.forEach(s => { cardsHtml += this._renderCard(s, type); });
+        // Add-instance card (dashed)
+        cardsHtml += `<div class="add-instance-card" data-action="add" data-type="${type}">` +
+            `<div class="add-icon"><i class="fas fa-plus-circle"></i></div>` +
+            `<div class="add-text">${addLabel}</div></div>`;
+
+        return `<div class="settings-group instances-settings-group reqservices-group">
+            <div class="profiles-header">
+                <div>
+                    <h3><i class="fas ${iconClass}" style="color:${iconColor};margin-right:8px;"></i>${title}</h3>
+                    <p class="profiles-help">Configure your ${title.toLowerCase()} servers below. You can connect multiple servers and mark defaults.</p>
+                </div>
             </div>
-            <p class="reqservices-section-desc">Configure your ${title.toLowerCase()} server${services.length !== 1 ? 's' : ''} below. You can connect multiple servers and mark defaults.</p>
-            ${cardsHtml}
+            <div class="instance-card-grid instances-card-grid" id="${gridId}">${cardsHtml}</div>
         </div>`;
     },
 
@@ -7525,34 +7546,57 @@ window.RequestarrServices = {
             movie_hunt: 'Movie Hunt', tv_hunt: 'TV Hunt'
         }[service.app_type] || service.app_type;
 
-        const badges = [];
-        if (service.is_default) badges.push('<span class="reqservices-badge reqservices-badge-default">Default</span>');
-        if (service.is_4k) badges.push('<span class="reqservices-badge reqservices-badge-4k">4K</span>');
+        const iconClass = type === 'movies' ? 'fa-film' : 'fa-tv';
+        const isDefault = !!service.is_default;
+        const is4k = !!service.is_4k;
+        const statusClass = 'status-connected';
+        const statusIcon = 'fa-check-circle';
 
-        return `<div class="reqservices-card" data-service-id="${service.id}">
-            <div class="reqservices-card-left">
-                <div class="reqservices-card-icon ${type}"><i class="fas ${type === 'movies' ? 'fa-film' : 'fa-tv'}"></i></div>
-                <div class="reqservices-card-info">
-                    <span class="reqservices-card-name">${this._esc(service.instance_name)}</span>
-                    <span class="reqservices-card-type">${appLabel}</span>
-                </div>
-                <div class="reqservices-card-badges">${badges.join('')}</div>
+        const defaultBadge = isDefault ? ' <span class="default-badge">Default</span>' : '';
+        const fourKBadge = is4k ? ' <span class="reqservices-badge-4k-inline">4K</span>' : '';
+
+        // Default button only shown on non-default cards (like Media Hunt Instances)
+        const defaultBtn = isDefault ? '' : `<button type="button" class="btn-card set-default" data-id="${service.id}"><i class="fas fa-star"></i> Default</button>`;
+        const fourKBtn = is4k
+            ? `<button type="button" class="btn-card reqsvc-un4k" data-id="${service.id}" title="Remove 4K flag"><span style="font-weight:700;color:#eab308;">4K</span></button>`
+            : `<button type="button" class="btn-card reqsvc-set4k" data-id="${service.id}" title="Mark as 4K"><span style="font-weight:700;color:var(--text-dim);">4K</span></button>`;
+        const deleteBtn = `<button type="button" class="btn-card delete" data-id="${service.id}"><i class="fas fa-trash"></i> Delete</button>`;
+
+        return `<div class="instance-card${isDefault ? ' default-instance' : ''}" data-service-id="${service.id}">
+            <div class="instance-card-header">
+                <span class="instance-name"><i class="fas ${iconClass}" style="margin-right:8px;"></i>${this._esc(service.instance_name)}${defaultBadge}${fourKBadge}</span>
+                <div class="instance-status-icon ${statusClass}"><i class="fas ${statusIcon}"></i></div>
             </div>
-            <div class="reqservices-card-actions">
-                <button class="requsers-btn requsers-btn-sm" style="background:var(--bg-tertiary);color:var(--text-secondary);" onclick="RequestarrServices.toggleDefault(${service.id}, ${!service.is_default})" title="${service.is_default ? 'Remove default' : 'Set as default'}">
-                    <i class="fas fa-star" style="color:${service.is_default ? '#22c55e' : 'var(--text-dim)'};"></i>
-                </button>
-                <button class="requsers-btn requsers-btn-sm" style="background:var(--bg-tertiary);color:var(--text-secondary);" onclick="RequestarrServices.toggle4K(${service.id}, ${!service.is_4k})" title="${service.is_4k ? 'Remove 4K flag' : 'Mark as 4K'}">
-                    <span style="font-weight:700;font-size:0.75rem;color:${service.is_4k ? '#eab308' : 'var(--text-dim)'};">4K</span>
-                </button>
-                <button class="requsers-btn requsers-btn-danger requsers-btn-sm" onclick="RequestarrServices.removeService(${service.id})" title="Remove"><i class="fas fa-trash"></i></button>
+            <div class="instance-card-body">
+                <div class="instance-detail"><i class="fas fa-server"></i><span>${appLabel}</span></div>
             </div>
+            <div class="instance-card-footer">${defaultBtn}${fourKBtn}${deleteBtn}</div>
         </div>`;
+    },
+
+    _wireGrid(gridId, type) {
+        const grid = document.getElementById(gridId);
+        if (!grid) return;
+        grid.addEventListener('click', (e) => {
+            const addCard = e.target.closest('.add-instance-card[data-action="add"]');
+            if (addCard) { e.preventDefault(); this.openAddModal(type); return; }
+
+            const defaultBtn = e.target.closest('.btn-card.set-default');
+            if (defaultBtn) { e.stopPropagation(); this.toggleDefault(parseInt(defaultBtn.dataset.id), true); return; }
+
+            const set4kBtn = e.target.closest('.btn-card.reqsvc-set4k');
+            if (set4kBtn) { e.stopPropagation(); this.toggle4K(parseInt(set4kBtn.dataset.id), true); return; }
+
+            const un4kBtn = e.target.closest('.btn-card.reqsvc-un4k');
+            if (un4kBtn) { e.stopPropagation(); this.toggle4K(parseInt(un4kBtn.dataset.id), false); return; }
+
+            const deleteBtn = e.target.closest('.btn-card.delete');
+            if (deleteBtn) { e.stopPropagation(); this.removeService(parseInt(deleteBtn.dataset.id)); return; }
+        });
     },
 
     openAddModal(serviceType) {
         const available = (serviceType === 'movies') ? (this.available.movies || []) : (this.available.tv || []);
-        // Filter out already-added instances
         const existing = new Set(this.services.filter(s => s.service_type === serviceType).map(s => `${s.app_type}:${s.instance_name}`));
         const filtered = available.filter(a => !existing.has(`${a.app_type}:${a.instance_name}`));
 

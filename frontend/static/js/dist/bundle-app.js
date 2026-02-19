@@ -188,7 +188,7 @@ let huntarrUI = {
         } else if (this.currentSection === 'movie-hunt-home' || this.currentSection === 'movie-hunt-collection' || this.currentSection === 'media-hunt-collection' || this.currentSection === 'activity-queue' || this.currentSection === 'activity-history' || this.currentSection === 'activity-blocklist' || this.currentSection === 'activity-logs' || this.currentSection === 'logs-media-hunt' || this.currentSection === 'settings-clients' || this.currentSection === 'movie-hunt-instance-editor') {
             console.log('[huntarrUI] Initialization - showing movie hunt sidebar');
             this.showMovieHuntSidebar();
-        } else if (this.currentSection === 'requestarr' || this.currentSection === 'requestarr-discover' || this.currentSection === 'requestarr-movies' || this.currentSection === 'requestarr-tv' || this.currentSection === 'requestarr-hidden' || this.currentSection === 'requestarr-settings' || this.currentSection === 'requestarr-smarthunt-settings' || this.currentSection === 'requestarr-users' || this.currentSection === 'requestarr-services') {
+        } else if (this.currentSection === 'requestarr' || this.currentSection === 'requestarr-discover' || this.currentSection === 'requestarr-movies' || this.currentSection === 'requestarr-tv' || this.currentSection === 'requestarr-hidden' || this.currentSection === 'requestarr-settings' || this.currentSection === 'requestarr-smarthunt-settings' || this.currentSection === 'requestarr-users' || this.currentSection === 'requestarr-services' || this.currentSection === 'requestarr-requests') {
             if (this._enableRequestarr === false) {
                 console.log('[huntarrUI] Requestarr disabled - redirecting to home');
                 this.switchSection('home');
@@ -296,14 +296,18 @@ let huntarrUI = {
             .then(r => r.ok ? r.json() : null)
             .then(data => {
                 var badge = document.getElementById('requestarr-pending-badge');
-                if (!badge) return;
+                var mirrors = document.querySelectorAll('.requestarr-pending-badge-mirror');
                 var count = (data && data.count) || 0;
-                if (count > 0) {
-                    badge.textContent = count > 99 ? '99+' : String(count);
-                    badge.style.display = '';
-                } else {
-                    badge.style.display = 'none';
+                var text = count > 99 ? '99+' : String(count);
+                var show = count > 0;
+                if (badge) {
+                    badge.textContent = text;
+                    badge.style.display = show ? '' : 'none';
                 }
+                mirrors.forEach(function(m) {
+                    m.textContent = text;
+                    m.style.display = show ? '' : 'none';
+                });
             })
             .catch(function() {});
     },
@@ -349,6 +353,7 @@ let huntarrUI = {
             'requestarrUsersNav',
             'requestarrServicesNav',
             'requestarrSettingsNav',
+            'requestarrUserSupportToggle',
         ];
         hideNavItems.forEach(function(id) {
             var el = document.getElementById(id);

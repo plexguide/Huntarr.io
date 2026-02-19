@@ -2913,9 +2913,21 @@ class HuntarrDatabase:
 
     def add_requestarr_service(self, service_type: str, app_type: str, instance_name: str,
                                instance_id: int = None, is_default: bool = False, is_4k: bool = False) -> bool:
-        """Add an instance as a requestarr service."""
+        """Add an instance as a requestarr service. First in a section auto-becomes default. Only one default per service_type."""
         try:
             with self.get_connection() as conn:
+                # If no services exist yet for this type, force default
+                count = conn.execute(
+                    'SELECT COUNT(*) FROM requestarr_services WHERE service_type = ?', (service_type,)
+                ).fetchone()[0]
+                if count == 0:
+                    is_default = True
+                # If marking as default, clear other defaults in the same service_type
+                if is_default:
+                    conn.execute(
+                        'UPDATE requestarr_services SET is_default = 0, updated_at = CURRENT_TIMESTAMP WHERE service_type = ?',
+                        (service_type,)
+                    )
                 conn.execute('''
                     INSERT OR REPLACE INTO requestarr_services
                     (service_type, app_type, instance_name, instance_id, is_default, is_4k, enabled, created_at, updated_at)
@@ -2939,17 +2951,25 @@ class HuntarrDatabase:
             return False
 
     def update_requestarr_service(self, service_id: int, updates: Dict[str, Any]) -> bool:
-        """Update a requestarr service."""
+        """Update a requestarr service. Only one default per service_type."""
         try:
             allowed = {'is_default', 'is_4k', 'enabled'}
             filtered = {k: v for k, v in updates.items() if k in allowed}
             if not filtered:
                 return True
-            set_parts = [f'{k} = ?' for k in filtered]
-            set_parts.append('updated_at = CURRENT_TIMESTAMP')
-            values = list(filtered.values()) + [service_id]
-            sql = f"UPDATE requestarr_services SET {', '.join(set_parts)} WHERE id = ?"
             with self.get_connection() as conn:
+                # If setting as default, clear other defaults in the same service_type first
+                if filtered.get('is_default') and int(filtered['is_default']):
+                    row = conn.execute('SELECT service_type FROM requestarr_services WHERE id = ?', (service_id,)).fetchone()
+                    if row:
+                        conn.execute(
+                            'UPDATE requestarr_services SET is_default = 0, updated_at = CURRENT_TIMESTAMP WHERE service_type = ? AND id != ?',
+                            (row['service_type'], service_id)
+                        )
+                set_parts = [f'{k} = ?' for k in filtered]
+                set_parts.append('updated_at = CURRENT_TIMESTAMP')
+                values = list(filtered.values()) + [service_id]
+                sql = f"UPDATE requestarr_services SET {', '.join(set_parts)} WHERE id = ?"
                 conn.execute(sql, values)
                 conn.commit()
                 return True
