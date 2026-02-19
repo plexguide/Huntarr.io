@@ -4650,3 +4650,53 @@ body.requestarr-modal-open {
 .import-banner-btn.success {
     background: linear-gradient(135deg, #22c55e, #16a34a);
 }
+
+/* ── Global Blacklist Badge & Overlay on Media Cards ─────────── */
+
+.media-blacklist-badge {
+    position: absolute;
+    bottom: 6px;
+    left: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    z-index: 6;
+    background: rgba(239, 68, 68, 0.85);
+    color: #fff;
+}
+
+.media-blacklist-badge i {
+    font-size: 0.55rem;
+}
+
+.media-card-blacklist-overlay {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 10px 16px;
+    border-radius: 6px;
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #f87171;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.media-card-blacklist-overlay i {
+    font-size: 11px;
+}
+
+/* Globally Blacklisted badge in Personal Blacklist view */
+.hidden-scope-blacklisted {
+    background: rgba(239, 68, 68, 0.85);
+    color: #fff;
+}

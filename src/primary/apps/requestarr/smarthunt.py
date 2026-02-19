@@ -778,6 +778,15 @@ class SmartHuntEngine:
         except Exception as e:
             logger.warning(f"[SmartHunt] Hidden media filter failed: {e}")
 
+        # Filter out globally blacklisted media
+        try:
+            from src.primary.utils.database import get_database
+            db = get_database()
+            movie_items = [i for i in movie_items if not db.is_globally_blacklisted(i.get('tmdb_id'), 'movie')]
+            tv_items = [i for i in tv_items if not db.is_globally_blacklisted(i.get('tmdb_id'), 'tv')]
+        except Exception as e:
+            logger.warning(f"[SmartHunt] Global blacklist filter failed: {e}")
+
         # Recombine and filter out in-library items (including partial TV shows)
         all_items = movie_items + tv_items
         filtered = [

@@ -109,3 +109,27 @@ body.huntarr-confirm-modal-open .app-container {
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+/* Extra button (e.g. Global Blacklist) */
+.huntarr-confirm-modal-extra {
+    padding: 10px 20px;
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    border-radius: 8px;
+    color: #f87171;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.huntarr-confirm-modal-extra:hover {
+    background: rgba(239, 68, 68, 0.35);
+    border-color: rgba(239, 68, 68, 0.6);
+}
+.huntarr-confirm-modal-extra.danger {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #f87171;
+}
+.huntarr-confirm-modal-extra.danger:hover {
+    background: rgba(239, 68, 68, 0.35);
+}

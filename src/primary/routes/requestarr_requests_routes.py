@@ -398,3 +398,43 @@ def check_blacklist(media_type, tmdb_id):
     db = get_database()
     blacklisted = db.is_globally_blacklisted(tmdb_id, media_type)
     return jsonify({'blacklisted': blacklisted})
+
+
+@requestarr_requests_bp.route('/global-blacklist/ids', methods=['GET'])
+def get_global_blacklist_ids():
+    """Get all globally blacklisted tmdb_id:media_type pairs for frontend filtering.
+    Any authenticated user can call this — needed for discovery/search filtering."""
+    user = _get_current_user()
+    if not user:
+        return jsonify({'items': []})
+    db = get_database()
+    result = db.get_global_blacklist(page=1, page_size=10000)
+    items = [{'tmdb_id': i['tmdb_id'], 'media_type': i['media_type'], 'title': i.get('title', ''), 'poster_path': i.get('poster_path', '')} for i in result.get('items', [])]
+    return jsonify({'items': items})
+
+
+@requestarr_requests_bp.route('/global-blacklist', methods=['POST'])
+def add_to_blacklist():
+    """Add media directly to global blacklist (owner only). Used by the blacklist modal."""
+    current_user, err = _require_owner()
+    if err:
+        return err
+    data = request.json or {}
+    tmdb_id = data.get('tmdb_id')
+    media_type = data.get('media_type')
+    title = data.get('title', '')
+    if not tmdb_id or not media_type:
+        return jsonify({'error': 'tmdb_id and media_type are required'}), 400
+    db = get_database()
+    success = db.add_to_global_blacklist(
+        tmdb_id=tmdb_id,
+        media_type=media_type,
+        title=title,
+        year=data.get('year', ''),
+        poster_path=data.get('poster_path', ''),
+        blacklisted_by=current_user.get('username', ''),
+        notes=data.get('notes', '')
+    )
+    if success:
+        return jsonify({'success': True})
+    return jsonify({'error': 'Failed to add to blacklist'}), 500

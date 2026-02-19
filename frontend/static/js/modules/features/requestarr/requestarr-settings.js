@@ -153,7 +153,35 @@ export class RequestarrSettings {
 
             if (this.hiddenMediaFetchKey !== fetchKey) {
                 this.hiddenMediaFetchKey = fetchKey;
-                this.hiddenMediaItems = await this.fetchHiddenMediaItems(mediaType, instanceFilter);
+
+                // Fetch personal hidden media and global blacklist in parallel
+                const [personalItems, globalItems] = await Promise.all([
+                    this.fetchHiddenMediaItems(mediaType, instanceFilter),
+                    this.fetchGlobalBlacklistItems(mediaType)
+                ]);
+
+                // Merge: mark personal items, then add global items that aren't already in personal list
+                personalItems.forEach(item => { item._source = 'personal'; });
+
+                const personalKeys = new Set(personalItems.map(i => `${i.tmdb_id}:${i.media_type}`));
+                const mergedGlobal = globalItems
+                    .filter(gi => !personalKeys.has(`${gi.tmdb_id}:${gi.media_type}`))
+                    .map(gi => ({
+                        ...gi,
+                        app_type: instanceFilter.appType || 'unknown',
+                        instance_name: instanceFilter.instanceName || '',
+                        _source: 'global_blacklist'
+                    }));
+
+                // Mark personal items that are also globally blacklisted
+                const globalKeys = new Set(globalItems.map(gi => `${gi.tmdb_id}:${gi.media_type}`));
+                personalItems.forEach(item => {
+                    if (globalKeys.has(`${item.tmdb_id}:${item.media_type}`)) {
+                        item._source = 'global_blacklist';
+                    }
+                });
+
+                this.hiddenMediaItems = [...personalItems, ...mergedGlobal];
             }
 
             this.renderHiddenMediaPage();
@@ -325,6 +353,27 @@ export class RequestarrSettings {
         return allItems;
     }
 
+    async fetchGlobalBlacklistItems(mediaType) {
+        try {
+            const resp = await fetch('./api/requestarr/requests/global-blacklist/ids');
+            if (!resp.ok) return [];
+            const data = await resp.json();
+            let items = data.items || [];
+            if (mediaType) {
+                items = items.filter(i => i.media_type === mediaType);
+            }
+            return items.map(i => ({
+                tmdb_id: i.tmdb_id,
+                media_type: i.media_type,
+                title: i.title || '',
+                poster_path: i.poster_path || ''
+            }));
+        } catch (err) {
+            console.error('[RequestarrSettings] Error fetching global blacklist:', err);
+            return [];
+        }
+    }
+
     getFilteredHiddenMedia() {
         const query = (this.hiddenMediaState.searchQuery || '').toLowerCase();
         let filtered = this.hiddenMediaItems.slice();
@@ -428,16 +477,26 @@ export class RequestarrSettings {
         
         const typeBadgeLabel = item.media_type === 'tv' ? 'TV' : 'Movie';
         
-        // Show scope badge for non-owner users
-        const isNonOwner = window._huntarrUserRole && window._huntarrUserRole !== 'owner';
-        const isGlobal = item.is_global === true;
-        const scopeBadge = isNonOwner ? (isGlobal
-            ? '<span class="hidden-scope-badge hidden-scope-global" title="Hidden by owner (all users)">Global</span>'
-            : '<span class="hidden-scope-badge hidden-scope-personal" title="Hidden by you (personal)">Personal</span>') : '';
+        const isGlobalBlacklist = item._source === 'global_blacklist';
+        const isOwner = window._huntarrUserRole === 'owner';
+
+        // Scope badge: globally blacklisted items get red badge, personal get blue (non-owner only)
+        let scopeBadge = '';
+        if (isGlobalBlacklist) {
+            scopeBadge = '<span class="hidden-scope-badge hidden-scope-blacklisted" title="Globally Blacklisted — cannot be removed by users">Globally Blacklisted</span>';
+        } else if (window._huntarrUserRole && window._huntarrUserRole !== 'owner') {
+            const isGlobal = item.is_global === true;
+            scopeBadge = isGlobal
+                ? '<span class="hidden-scope-badge hidden-scope-global" title="Hidden by owner (all users)">Global</span>'
+                : '<span class="hidden-scope-badge hidden-scope-personal" title="Hidden by you (personal)">Personal</span>';
+        }
+
+        // Only show unhide button if NOT globally blacklisted (or if owner and it's a personal hide)
+        const showUnhide = !isGlobalBlacklist || (isOwner && item._source !== 'global_blacklist');
 
         card.innerHTML = `
             <div class="media-card-poster">
-                ${!isGlobal || !isNonOwner ? '<button class="media-card-unhide-btn" title="Unhide this media"><i class="fas fa-eye"></i></button>' : ''}
+                ${showUnhide ? '<button class="media-card-unhide-btn" title="Unhide this media"><i class="fas fa-eye"></i></button>' : ''}
                 <img src="${posterUrl}" alt="${item.title}" onerror="this.src='./static/images/blackout.jpg'">
                 <span class="media-type-badge">${typeBadgeLabel}</span>
                 ${scopeBadge}

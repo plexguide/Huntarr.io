@@ -1636,7 +1636,35 @@ class RequestarrSettings {
 
             if (this.hiddenMediaFetchKey !== fetchKey) {
                 this.hiddenMediaFetchKey = fetchKey;
-                this.hiddenMediaItems = await this.fetchHiddenMediaItems(mediaType, instanceFilter);
+
+                // Fetch personal hidden media and global blacklist in parallel
+                const [personalItems, globalItems] = await Promise.all([
+                    this.fetchHiddenMediaItems(mediaType, instanceFilter),
+                    this.fetchGlobalBlacklistItems(mediaType)
+                ]);
+
+                // Merge: mark personal items, then add global items that aren't already in personal list
+                personalItems.forEach(item => { item._source = 'personal'; });
+
+                const personalKeys = new Set(personalItems.map(i => `${i.tmdb_id}:${i.media_type}`));
+                const mergedGlobal = globalItems
+                    .filter(gi => !personalKeys.has(`${gi.tmdb_id}:${gi.media_type}`))
+                    .map(gi => ({
+                        ...gi,
+                        app_type: instanceFilter.appType || 'unknown',
+                        instance_name: instanceFilter.instanceName || '',
+                        _source: 'global_blacklist'
+                    }));
+
+                // Mark personal items that are also globally blacklisted
+                const globalKeys = new Set(globalItems.map(gi => `${gi.tmdb_id}:${gi.media_type}`));
+                personalItems.forEach(item => {
+                    if (globalKeys.has(`${item.tmdb_id}:${item.media_type}`)) {
+                        item._source = 'global_blacklist';
+                    }
+                });
+
+                this.hiddenMediaItems = [...personalItems, ...mergedGlobal];
             }
 
             this.renderHiddenMediaPage();
@@ -1808,6 +1836,27 @@ class RequestarrSettings {
         return allItems;
     }
 
+    async fetchGlobalBlacklistItems(mediaType) {
+        try {
+            const resp = await fetch('./api/requestarr/requests/global-blacklist/ids');
+            if (!resp.ok) return [];
+            const data = await resp.json();
+            let items = data.items || [];
+            if (mediaType) {
+                items = items.filter(i => i.media_type === mediaType);
+            }
+            return items.map(i => ({
+                tmdb_id: i.tmdb_id,
+                media_type: i.media_type,
+                title: i.title || '',
+                poster_path: i.poster_path || ''
+            }));
+        } catch (err) {
+            console.error('[RequestarrSettings] Error fetching global blacklist:', err);
+            return [];
+        }
+    }
+
     getFilteredHiddenMedia() {
         const query = (this.hiddenMediaState.searchQuery || '').toLowerCase();
         let filtered = this.hiddenMediaItems.slice();
@@ -1911,16 +1960,26 @@ class RequestarrSettings {
         
         const typeBadgeLabel = item.media_type === 'tv' ? 'TV' : 'Movie';
         
-        // Show scope badge for non-owner users
-        const isNonOwner = window._huntarrUserRole && window._huntarrUserRole !== 'owner';
-        const isGlobal = item.is_global === true;
-        const scopeBadge = isNonOwner ? (isGlobal
-            ? '<span class="hidden-scope-badge hidden-scope-global" title="Hidden by owner (all users)">Global</span>'
-            : '<span class="hidden-scope-badge hidden-scope-personal" title="Hidden by you (personal)">Personal</span>') : '';
+        const isGlobalBlacklist = item._source === 'global_blacklist';
+        const isOwner = window._huntarrUserRole === 'owner';
+
+        // Scope badge: globally blacklisted items get red badge, personal get blue (non-owner only)
+        let scopeBadge = '';
+        if (isGlobalBlacklist) {
+            scopeBadge = '<span class="hidden-scope-badge hidden-scope-blacklisted" title="Globally Blacklisted — cannot be removed by users">Globally Blacklisted</span>';
+        } else if (window._huntarrUserRole && window._huntarrUserRole !== 'owner') {
+            const isGlobal = item.is_global === true;
+            scopeBadge = isGlobal
+                ? '<span class="hidden-scope-badge hidden-scope-global" title="Hidden by owner (all users)">Global</span>'
+                : '<span class="hidden-scope-badge hidden-scope-personal" title="Hidden by you (personal)">Personal</span>';
+        }
+
+        // Only show unhide button if NOT globally blacklisted (or if owner and it's a personal hide)
+        const showUnhide = !isGlobalBlacklist || (isOwner && item._source !== 'global_blacklist');
 
         card.innerHTML = `
             <div class="media-card-poster">
-                ${!isGlobal || !isNonOwner ? '<button class="media-card-unhide-btn" title="Unhide this media"><i class="fas fa-eye"></i></button>' : ''}
+                ${showUnhide ? '<button class="media-card-unhide-btn" title="Unhide this media"><i class="fas fa-eye"></i></button>' : ''}
                 <img src="${posterUrl}" alt="${item.title}" onerror="this.src='./static/images/blackout.jpg'">
                 <span class="media-type-badge">${typeBadgeLabel}</span>
                 ${scopeBadge}
@@ -3965,8 +4024,11 @@ class RequestarrContent {
     async loadHiddenMediaIds() {
         try {
             // Fetch all hidden media (no pagination, we need all IDs)
-            const response = await fetch('./api/requestarr/hidden-media?page=1&page_size=10000');
-            const data = await response.json();
+            const [hiddenResp, blacklistResp] = await Promise.all([
+                fetch('./api/requestarr/hidden-media?page=1&page_size=10000'),
+                fetch('./api/requestarr/requests/global-blacklist/ids')
+            ]);
+            const data = await hiddenResp.json();
             const hiddenItems = Array.isArray(data.hidden_media)
                 ? data.hidden_media
                 : (Array.isArray(data.items) ? data.items : []);
@@ -3977,10 +4039,19 @@ class RequestarrContent {
                 const key = `${item.tmdb_id}:${item.media_type}:${item.app_type}:${item.instance_name}`;
                 this.hiddenMediaSet.add(key);
             });
-            console.log('[RequestarrContent] Loaded', this.hiddenMediaSet.size, 'hidden media items');
+
+            // Store global blacklist as a Set of "tmdb_id:media_type" for fast lookup
+            this.globalBlacklistSet = new Set();
+            const blData = await blacklistResp.json();
+            (blData.items || []).forEach(item => {
+                this.globalBlacklistSet.add(`${item.tmdb_id}:${item.media_type}`);
+            });
+
+            console.log('[RequestarrContent] Loaded', this.hiddenMediaSet.size, 'hidden media items,', this.globalBlacklistSet.size, 'global blacklist items');
         } catch (error) {
             console.error('[RequestarrContent] Error loading hidden media IDs:', error);
             this.hiddenMediaSet = new Set();
+            this.globalBlacklistSet = new Set();
         }
     }
 
@@ -3988,6 +4059,11 @@ class RequestarrContent {
         if (!this.hiddenMediaSet) return false;
         const key = `${tmdbId}:${mediaType}:${appType}:${instanceName}`;
         return this.hiddenMediaSet.has(key);
+    }
+
+    isGloballyBlacklisted(tmdbId, mediaType) {
+        if (!this.globalBlacklistSet) return false;
+        return this.globalBlacklistSet.has(`${tmdbId}:${mediaType}`);
     }
 
     renderTrendingResults(carousel, results, append) {
@@ -4007,6 +4083,7 @@ class RequestarrContent {
                     instanceName = decoded.name;
                 }
                 const tmdbId = item.tmdb_id || item.id;
+                if (tmdbId && this.isGloballyBlacklisted(tmdbId, item.media_type)) return;
                 if (tmdbId && instanceName && this.isMediaHidden(tmdbId, item.media_type, appType, instanceName)) return;
                 carousel.appendChild(this.createMediaCard(item, suggestedInstance));
             });
@@ -4089,6 +4166,7 @@ class RequestarrContent {
             if (!append) carousel.innerHTML = '';
             results.forEach(item => {
                 const tmdbId = item.tmdb_id || item.id;
+                if (tmdbId && this.isGloballyBlacklisted(tmdbId, 'movie')) return;
                 if (tmdbId && decoded.name && this.isMediaHidden(tmdbId, 'movie', decoded.appType, decoded.name)) return;
                 carousel.appendChild(this.createMediaCard(item, this.selectedMovieInstance || null));
             });
@@ -4152,6 +4230,7 @@ class RequestarrContent {
             if (!append) carousel.innerHTML = '';
             results.forEach(item => {
                 const tmdbId = item.tmdb_id || item.id;
+                if (tmdbId && this.isGloballyBlacklisted(tmdbId, 'tv')) return;
                 if (tmdbId && decoded.name && this.isMediaHidden(tmdbId, 'tv', decoded.appType, decoded.name)) return;
                 carousel.appendChild(this.createMediaCard(item, this.selectedTVInstance || null));
             });
@@ -4321,6 +4400,8 @@ class RequestarrContent {
                 data.results.forEach((item) => {
                     // Filter out hidden media (decode compound value for correct app_type)
                     const tmdbId = item.tmdb_id || item.id;
+                    // Filter globally blacklisted items
+                    if (tmdbId && this.isGloballyBlacklisted(tmdbId, 'movie')) return;
                     if (tmdbId && this.selectedMovieInstance) {
                         const dHidden = decodeInstanceValue(this.selectedMovieInstance);
                         if (this.isMediaHidden(tmdbId, 'movie', dHidden.appType, dHidden.name)) {
@@ -4434,6 +4515,8 @@ class RequestarrContent {
                 data.results.forEach((item) => {
                     // Filter out hidden media
                     const tmdbId = item.tmdb_id || item.id;
+                    // Filter globally blacklisted items
+                    if (tmdbId && this.isGloballyBlacklisted(tmdbId, 'tv')) return;
                     if (tmdbId && tvDecoded && tvDecoded.name && this.isMediaHidden(tmdbId, 'tv', tvDecoded.appType, tvDecoded.name)) {
                         return; // Skip hidden items
                     }
@@ -4552,17 +4635,23 @@ class RequestarrContent {
         const typeBadgeLabel = item.media_type === 'tv' ? 'TV' : 'Movie';
         const typeBadgeHTML = `<span class="media-type-badge">${typeBadgeLabel}</span>`;
 
+        // Check if globally blacklisted
+        const isBlacklisted = this.isGloballyBlacklisted(item.tmdb_id, item.media_type);
+        const blacklistBadgeHTML = isBlacklisted ? '<span class="media-blacklist-badge"><i class="fas fa-ban"></i> Blacklisted</span>' : '';
+        const blacklistOverlayHTML = isBlacklisted ? '<div class="media-card-blacklist-overlay"><i class="fas fa-ban"></i> Globally Blacklisted</div>' : '';
+
         card.innerHTML = `
             <div class="media-card-poster">
                 ${statusBadgeHTML}
                 <img src="${posterUrl}" alt="${item.title}" onerror="this.src='./static/images/blackout.jpg'">
                 ${typeBadgeHTML}
+                ${blacklistBadgeHTML}
                 <div class="media-card-overlay">
                     <div class="media-card-overlay-title">${item.title}</div>
                     <div class="media-card-overlay-content">
                         <div class="media-card-overlay-year">${year}</div>
                         <div class="media-card-overlay-description">${overview}</div>
-                        ${overlayActionHTML}
+                        ${isBlacklisted ? blacklistOverlayHTML : overlayActionHTML}
                     </div>
                 </div>
             </div>
@@ -7140,6 +7229,11 @@ const HomeRequestarr = {
         this.elements.searchResultsGrid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Searching...</p></div>';
 
         try {
+            // Ensure global blacklist is loaded for filtering
+            if (this.core && this.core.content && typeof this.core.content.loadHiddenMediaIds === 'function' && !this.core.content.globalBlacklistSet) {
+                await this.core.content.loadHiddenMediaIds();
+            }
+
             const movieDecoded = this._decodeInstance(this.defaultMovieInstance);
             const tvInstanceName = this.defaultTVInstance || '';
 

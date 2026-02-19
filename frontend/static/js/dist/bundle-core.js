@@ -491,6 +491,7 @@ window.HuntarrNotifications = {
             var cancelLabel  = opts.cancelLabel != null ? String(opts.cancelLabel) : 'Cancel';
             var onConfirm    = typeof opts.onConfirm === 'function' ? opts.onConfirm : function() {};
             var onCancel     = typeof opts.onCancel  === 'function' ? opts.onCancel  : function() {};
+            var extraButton  = opts.extraButton || null;
 
             var modal = ensureModalInBody();
             if (!modal) return;
@@ -500,15 +501,27 @@ window.HuntarrNotifications = {
             var messageEl  = document.getElementById('huntarr-confirm-modal-message');
             var confirmBtn = document.getElementById('huntarr-confirm-modal-confirm');
             var cancelBtn  = document.getElementById('huntarr-confirm-modal-cancel');
+            var extraBtn   = document.getElementById('huntarr-confirm-modal-extra');
 
             if (titleEl)    titleEl.textContent = title;
             if (messageEl)  messageEl.textContent = message;
             if (confirmBtn) confirmBtn.textContent = confirmLabel;
             if (cancelBtn)  cancelBtn.textContent  = cancelLabel;
 
+            // --- extra button (optional) --------------------------------------
+            if (extraBtn) {
+                if (extraButton && extraButton.label) {
+                    extraBtn.textContent = extraButton.label;
+                    extraBtn.style.display = '';
+                    extraBtn.className = 'huntarr-confirm-modal-extra';
+                    if (extraButton.className) extraBtn.classList.add(extraButton.className);
+                } else {
+                    extraBtn.style.display = 'none';
+                }
+            }
+
             // --- bind handlers fresh every time -------------------------------
-            // This avoids any stale-closure issues from a one-time initOnce().
-            var handled = false;               // guard against double-fire
+            var handled = false;
 
             function doCancel() {
                 if (handled) return;
@@ -524,6 +537,13 @@ window.HuntarrNotifications = {
                 onConfirm();
             }
 
+            function doExtra() {
+                if (handled) return;
+                handled = true;
+                closeModal();
+                if (extraButton && typeof extraButton.onClick === 'function') extraButton.onClick();
+            }
+
             var backdrop = document.getElementById('huntarr-confirm-modal-backdrop');
             var closeBtn = document.getElementById('huntarr-confirm-modal-close');
 
@@ -531,6 +551,7 @@ window.HuntarrNotifications = {
             if (closeBtn)   closeBtn.onclick = doCancel;
             if (cancelBtn)  cancelBtn.onclick = doCancel;
             if (confirmBtn) confirmBtn.onclick = doConfirm;
+            if (extraBtn)   extraBtn.onclick = doExtra;
 
             // Escape key
             function onKeyDown(e) {

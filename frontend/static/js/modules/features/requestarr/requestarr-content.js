@@ -705,8 +705,11 @@ export class RequestarrContent {
     async loadHiddenMediaIds() {
         try {
             // Fetch all hidden media (no pagination, we need all IDs)
-            const response = await fetch('./api/requestarr/hidden-media?page=1&page_size=10000');
-            const data = await response.json();
+            const [hiddenResp, blacklistResp] = await Promise.all([
+                fetch('./api/requestarr/hidden-media?page=1&page_size=10000'),
+                fetch('./api/requestarr/requests/global-blacklist/ids')
+            ]);
+            const data = await hiddenResp.json();
             const hiddenItems = Array.isArray(data.hidden_media)
                 ? data.hidden_media
                 : (Array.isArray(data.items) ? data.items : []);
@@ -717,10 +720,19 @@ export class RequestarrContent {
                 const key = `${item.tmdb_id}:${item.media_type}:${item.app_type}:${item.instance_name}`;
                 this.hiddenMediaSet.add(key);
             });
-            console.log('[RequestarrContent] Loaded', this.hiddenMediaSet.size, 'hidden media items');
+
+            // Store global blacklist as a Set of "tmdb_id:media_type" for fast lookup
+            this.globalBlacklistSet = new Set();
+            const blData = await blacklistResp.json();
+            (blData.items || []).forEach(item => {
+                this.globalBlacklistSet.add(`${item.tmdb_id}:${item.media_type}`);
+            });
+
+            console.log('[RequestarrContent] Loaded', this.hiddenMediaSet.size, 'hidden media items,', this.globalBlacklistSet.size, 'global blacklist items');
         } catch (error) {
             console.error('[RequestarrContent] Error loading hidden media IDs:', error);
             this.hiddenMediaSet = new Set();
+            this.globalBlacklistSet = new Set();
         }
     }
 
@@ -728,6 +740,11 @@ export class RequestarrContent {
         if (!this.hiddenMediaSet) return false;
         const key = `${tmdbId}:${mediaType}:${appType}:${instanceName}`;
         return this.hiddenMediaSet.has(key);
+    }
+
+    isGloballyBlacklisted(tmdbId, mediaType) {
+        if (!this.globalBlacklistSet) return false;
+        return this.globalBlacklistSet.has(`${tmdbId}:${mediaType}`);
     }
 
     renderTrendingResults(carousel, results, append) {
@@ -747,6 +764,7 @@ export class RequestarrContent {
                     instanceName = decoded.name;
                 }
                 const tmdbId = item.tmdb_id || item.id;
+                if (tmdbId && this.isGloballyBlacklisted(tmdbId, item.media_type)) return;
                 if (tmdbId && instanceName && this.isMediaHidden(tmdbId, item.media_type, appType, instanceName)) return;
                 carousel.appendChild(this.createMediaCard(item, suggestedInstance));
             });
@@ -829,6 +847,7 @@ export class RequestarrContent {
             if (!append) carousel.innerHTML = '';
             results.forEach(item => {
                 const tmdbId = item.tmdb_id || item.id;
+                if (tmdbId && this.isGloballyBlacklisted(tmdbId, 'movie')) return;
                 if (tmdbId && decoded.name && this.isMediaHidden(tmdbId, 'movie', decoded.appType, decoded.name)) return;
                 carousel.appendChild(this.createMediaCard(item, this.selectedMovieInstance || null));
             });
@@ -892,6 +911,7 @@ export class RequestarrContent {
             if (!append) carousel.innerHTML = '';
             results.forEach(item => {
                 const tmdbId = item.tmdb_id || item.id;
+                if (tmdbId && this.isGloballyBlacklisted(tmdbId, 'tv')) return;
                 if (tmdbId && decoded.name && this.isMediaHidden(tmdbId, 'tv', decoded.appType, decoded.name)) return;
                 carousel.appendChild(this.createMediaCard(item, this.selectedTVInstance || null));
             });
@@ -1061,6 +1081,8 @@ export class RequestarrContent {
                 data.results.forEach((item) => {
                     // Filter out hidden media (decode compound value for correct app_type)
                     const tmdbId = item.tmdb_id || item.id;
+                    // Filter globally blacklisted items
+                    if (tmdbId && this.isGloballyBlacklisted(tmdbId, 'movie')) return;
                     if (tmdbId && this.selectedMovieInstance) {
                         const dHidden = decodeInstanceValue(this.selectedMovieInstance);
                         if (this.isMediaHidden(tmdbId, 'movie', dHidden.appType, dHidden.name)) {
@@ -1174,6 +1196,8 @@ export class RequestarrContent {
                 data.results.forEach((item) => {
                     // Filter out hidden media
                     const tmdbId = item.tmdb_id || item.id;
+                    // Filter globally blacklisted items
+                    if (tmdbId && this.isGloballyBlacklisted(tmdbId, 'tv')) return;
                     if (tmdbId && tvDecoded && tvDecoded.name && this.isMediaHidden(tmdbId, 'tv', tvDecoded.appType, tvDecoded.name)) {
                         return; // Skip hidden items
                     }
@@ -1292,17 +1316,23 @@ export class RequestarrContent {
         const typeBadgeLabel = item.media_type === 'tv' ? 'TV' : 'Movie';
         const typeBadgeHTML = `<span class="media-type-badge">${typeBadgeLabel}</span>`;
 
+        // Check if globally blacklisted
+        const isBlacklisted = this.isGloballyBlacklisted(item.tmdb_id, item.media_type);
+        const blacklistBadgeHTML = isBlacklisted ? '<span class="media-blacklist-badge"><i class="fas fa-ban"></i> Blacklisted</span>' : '';
+        const blacklistOverlayHTML = isBlacklisted ? '<div class="media-card-blacklist-overlay"><i class="fas fa-ban"></i> Globally Blacklisted</div>' : '';
+
         card.innerHTML = `
             <div class="media-card-poster">
                 ${statusBadgeHTML}
                 <img src="${posterUrl}" alt="${item.title}" onerror="this.src='./static/images/blackout.jpg'">
                 ${typeBadgeHTML}
+                ${blacklistBadgeHTML}
                 <div class="media-card-overlay">
                     <div class="media-card-overlay-title">${item.title}</div>
                     <div class="media-card-overlay-content">
                         <div class="media-card-overlay-year">${year}</div>
                         <div class="media-card-overlay-description">${overview}</div>
-                        ${overlayActionHTML}
+                        ${isBlacklisted ? blacklistOverlayHTML : overlayActionHTML}
                     </div>
                 </div>
             </div>

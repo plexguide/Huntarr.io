@@ -110,9 +110,7 @@
             return;
         }
 
-        var msg = 'Hide "' + title + '" permanently?\n\nThis will remove it from all discovery pages. You can unhide it later from the Hidden Media page.';
-
-        var doHide = function() {
+        var doPersonalBlacklist = function() {
             fetch('./api/requestarr/hidden-media', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -126,42 +124,71 @@
                 })
             })
             .then(function(r) {
-                if (!r.ok) throw new Error('Failed to hide media');
+                if (!r.ok) throw new Error('Failed to blacklist media');
                 return r.json();
             })
             .then(function() {
-                // Track in hidden set if provided
                 if (hiddenMediaSet) {
                     var key = tmdbId + ':' + mediaType + ':' + appType + ':' + instanceName;
                     hiddenMediaSet.add(key);
                 }
-
-                // Animate card removal
                 animateCardRemoval(cardElement);
-
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
-                    window.huntarrUI.showNotification('"' + title + '" hidden.', 'success');
+                    window.huntarrUI.showNotification('"' + title + '" added to Personal Blacklist.', 'success');
                 }
-
                 if (typeof onHidden === 'function') onHidden();
             })
             .catch(function(err) {
-                console.error('[MediaUtils] Error hiding media:', err);
+                console.error('[MediaUtils] Error blacklisting media:', err);
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
-                    window.huntarrUI.showNotification('Failed to hide media.', 'error');
+                    window.huntarrUI.showNotification('Failed to blacklist media.', 'error');
                 }
             });
         };
 
+        var doGlobalBlacklist = function() {
+            fetch('./api/requestarr/requests/global-blacklist', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    tmdb_id: tmdbId,
+                    media_type: mediaType,
+                    title: title,
+                    poster_path: posterPath,
+                    year: options.year || ''
+                })
+            })
+            .then(function(r) {
+                if (!r.ok) throw new Error('Failed to globally blacklist media');
+                return r.json();
+            })
+            .then(function() {
+                animateCardRemoval(cardElement);
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('"' + title + '" added to Global Blacklist.', 'success');
+                }
+                if (typeof onHidden === 'function') onHidden();
+            })
+            .catch(function(err) {
+                console.error('[MediaUtils] Error globally blacklisting media:', err);
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('Failed to globally blacklist media.', 'error');
+                }
+            });
+        };
+
+        var isOwner = window._huntarrUserRole === 'owner';
+
         if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
             window.HuntarrConfirm.show({
-                title: 'Hide Media',
-                message: msg,
-                confirmLabel: 'Hide',
-                onConfirm: doHide
+                title: 'Blacklist Media',
+                message: 'Blacklist "' + title + '"?\n\nPersonal blacklist hides it from your discovery pages.\n' + (isOwner ? 'Global blacklist hides it for all users and blocks requests.' : ''),
+                confirmLabel: 'Personal Blacklist',
+                onConfirm: doPersonalBlacklist,
+                extraButton: isOwner ? { label: 'Global Blacklist', className: 'danger', onClick: doGlobalBlacklist } : null
             });
         } else {
-            doHide();
+            doPersonalBlacklist();
         }
     }
 

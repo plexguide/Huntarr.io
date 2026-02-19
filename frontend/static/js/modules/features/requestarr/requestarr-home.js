@@ -411,6 +411,11 @@ const HomeRequestarr = {
         this.elements.searchResultsGrid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Searching...</p></div>';
 
         try {
+            // Ensure global blacklist is loaded for filtering
+            if (this.core && this.core.content && typeof this.core.content.loadHiddenMediaIds === 'function' && !this.core.content.globalBlacklistSet) {
+                await this.core.content.loadHiddenMediaIds();
+            }
+
             const movieDecoded = this._decodeInstance(this.defaultMovieInstance);
             const tvInstanceName = this.defaultTVInstance || '';
 
