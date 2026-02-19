@@ -80,14 +80,36 @@ RequestExecutionLevel admin ; Request admin privileges
 !insertmacro MUI_LANGUAGE "English"
 
 ; Install options/components
+; --- Pre-install function: kill running Huntarr before upgrading ---
+Function .onInit
+  ; Kill any running Huntarr processes so files can be overwritten
+  nsExec::ExecToLog 'taskkill /F /IM ${EXENAME}'
+  ; Also kill by window title in case the exe name differs
+  nsExec::ExecToLog 'taskkill /F /FI "WINDOWTITLE eq Huntarr"'
+  ; Give processes time to fully terminate and release file locks
+  Sleep 2000
+FunctionEnd
+
 Section "Huntarr Application (required)" SecCore
   SectionIn RO ; Read-only, always selected
   
   ; Set output path to installation directory
   SetOutPath "$INSTDIR"
   
+  ; Kill again in case .onInit was too early (e.g. user was slow clicking Next)
+  nsExec::ExecToLog 'taskkill /F /IM ${EXENAME}'
+  Sleep 1000
+  
   ; Delete existing service if present (for upgrading from service to non-service)
   nsExec::ExecToLog '"$INSTDIR\${EXENAME}" --remove-service'
+  
+  ; Clean out old _internal directory to prevent stale files from previous versions
+  ; Wipe old binaries completely so no stale files remain after upgrade
+  RMDir /r "$INSTDIR\_internal"
+  ; Also remove old top-level exe/dlls (PyInstaller recreates them)
+  Delete "$INSTDIR\Huntarr.exe"
+  Delete "$INSTDIR\*.dll"
+  Delete "$INSTDIR\*.pyd"
   
   ; Copy all files from dist directory (PyInstaller output)
   !echo "Copying files from '${PROJECT_ROOT}\dist\Huntarr\'"
@@ -132,14 +154,15 @@ Section "Huntarr Application (required)" SecCore
   ; Create Start Menu shortcuts
   CreateDirectory "$SMPROGRAMS\${APPNAME}"
   CreateShortcut "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk" "http://localhost:9705" "" "$INSTDIR\${EXENAME}" 0
-  CreateShortcut "$SMPROGRAMS\${APPNAME}\Run ${APPNAME}.lnk" "$INSTDIR\${EXENAME}" "--no-service" "$INSTDIR\${EXENAME}" 0 SW_SHOWMINIMIZED
+  CreateShortcut "$SMPROGRAMS\${APPNAME}\Run ${APPNAME}.lnk" "$INSTDIR\${EXENAME}" "--no-service" "$INSTDIR\${EXENAME}" 0
   CreateShortcut "$SMPROGRAMS\${APPNAME}\Open ${APPNAME} Web Interface.lnk" "http://localhost:9705" "" "$INSTDIR\${EXENAME}" 0
+  CreateShortcut "$SMPROGRAMS\${APPNAME}\Stop ${APPNAME}.lnk" "$SYSDIR\taskkill.exe" "/F /IM ${EXENAME}" "$INSTDIR\${EXENAME}" 0
   CreateShortcut "$SMPROGRAMS\${APPNAME}\Uninstall.lnk" "$INSTDIR\uninstall.exe"
 SectionEnd
 
 Section "Auto-start with Windows" SecAutoStart
-  ; Create shortcut in startup folder
-  CreateShortcut "$SMSTARTUP\${APPNAME}.lnk" "$INSTDIR\${EXENAME}" "--no-service" "$INSTDIR\${EXENAME}" 0 SW_SHOWMINIMIZED
+  ; Create shortcut in startup folder (app is windowless — tray icon appears automatically)
+  CreateShortcut "$SMSTARTUP\${APPNAME}.lnk" "$INSTDIR\${EXENAME}" "--no-service" "$INSTDIR\${EXENAME}" 0
 SectionEnd
 
 ; Function to create desktop shortcut from the finish page option
@@ -160,6 +183,7 @@ Section "Uninstall"
   Delete "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk"
   Delete "$SMPROGRAMS\${APPNAME}\Run ${APPNAME}.lnk"
   Delete "$SMPROGRAMS\${APPNAME}\Open ${APPNAME} Web Interface.lnk"
+  Delete "$SMPROGRAMS\${APPNAME}\Stop ${APPNAME}.lnk"
   Delete "$SMPROGRAMS\${APPNAME}\Uninstall.lnk"
   RMDir "$SMPROGRAMS\${APPNAME}"
   

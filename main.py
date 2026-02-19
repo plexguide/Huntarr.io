@@ -235,17 +235,36 @@ def run_web_server():
 
     web_logger.info(f"Starting web server on {host}:{port} (Debug: {debug_mode})...")
     
-    # Start Windows system tray icon (non-debug, Windows-only, frozen builds)
+    # Start Windows system tray icon (Windows-only, frozen builds)
     _system_tray = None
-    if (not debug_mode
-            and sys.platform == 'win32'
-            and getattr(sys, 'frozen', False)):
+    if sys.platform == 'win32' and getattr(sys, 'frozen', False):
         try:
-            # Import from bundled resources or source tree
-            try:
-                from resources.system_tray import create_system_tray
-            except ImportError:
-                from distribution.windows.resources.system_tray import create_system_tray
+            # PyInstaller bundles resources/ as a DATA directory, not a Python
+            # package.  We must load system_tray.py by file path using importlib.
+            import importlib.util as _ilu
+
+            meipass = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+            _tray_candidates = [
+                os.path.join(meipass, 'resources', 'system_tray.py'),
+                os.path.join(os.path.dirname(sys.executable), 'resources', 'system_tray.py'),
+            ]
+            _tray_mod = None
+            for _cand in _tray_candidates:
+                if os.path.exists(_cand):
+                    web_logger.info(f"Loading system_tray module from: {_cand}")
+                    _spec = _ilu.spec_from_file_location("system_tray", _cand)
+                    _tray_mod = _ilu.module_from_spec(_spec)
+                    _spec.loader.exec_module(_tray_mod)
+                    break
+                else:
+                    web_logger.debug(f"Tray module not at: {_cand}")
+
+            if _tray_mod is None:
+                web_logger.warning(f"system_tray.py not found in any candidate path. Tried: {_tray_candidates}")
+                # Fallback: try normal import (dev/source mode)
+                from distribution.windows.resources.system_tray import create_system_tray as _create_tray
+            else:
+                _create_tray = _tray_mod.create_system_tray
 
             def _tray_shutdown():
                 """Called when user clicks Exit in the tray menu."""
@@ -254,11 +273,11 @@ def run_web_server():
                 if not shutdown_requested.is_set():
                     shutdown_requested.set()
 
-            _system_tray = create_system_tray(port=port, shutdown_callback=_tray_shutdown)
+            _system_tray = _create_tray(port=port, shutdown_callback=_tray_shutdown)
             _system_tray.start()
             web_logger.info("Windows system tray icon initialized")
         except Exception as e:
-            web_logger.warning(f"System tray not available: {e}")
+            web_logger.warning(f"System tray not available: {e}", exc_info=True)
 
     # Log the current authentication mode once at startup
     try:

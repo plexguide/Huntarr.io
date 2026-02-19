@@ -87,6 +87,13 @@ jobs:
         }
         Write-Host "Frontend templates verified in bundle."
         
+        # Verify system tray module is bundled
+        if (!(Test-Path "dist/Huntarr/_internal/resources/system_tray.py")) {
+            Write-Error "FATAL: resources/system_tray.py missing from PyInstaller bundle!"
+            exit 1
+        }
+        Write-Host "System tray module verified in bundle."
+        
     - name: Install NSIS
       run: |
         choco install nsis -y

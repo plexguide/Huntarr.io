@@ -1417,3 +1417,16 @@ from .calendar_routes import register_calendar_routes
 register_calendar_routes(common_bp)
 
 
+@common_bp.route('/api/shutdown', methods=['POST'])
+def shutdown_server():
+    """Gracefully shut down Huntarr. Used by the web UI and system tray on Windows."""
+    import signal
+    logger.info("Shutdown requested via /api/shutdown endpoint")
+    try:
+        os.kill(os.getpid(), signal.SIGTERM)
+    except Exception as e:
+        logger.error(f"Error sending SIGTERM: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+    return jsonify({"success": True, "message": "Shutdown initiated"})
+
+
