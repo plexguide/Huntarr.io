@@ -7577,6 +7577,17 @@ const RequestarrServices = {
 
         const typeSelect = document.getElementById('bundle-type-select');
         this._populateBundleInstanceSelectors(bundleType, primaryKey, memberKeys);
+
+        const primarySelect = document.getElementById('bundle-primary-select');
+        primarySelect.addEventListener('change', () => {
+            const currentMembers = Array.from(document.querySelectorAll('.bundle-member-cb:checked')).map(cb => cb.value);
+            this._populateBundleMembers(
+                document.getElementById('bundle-type-select')?.value || 'movies',
+                primarySelect.value,
+                currentMembers.filter(k => k !== primarySelect.value)
+            );
+        });
+
         if (!isEdit) {
             typeSelect.addEventListener('change', () => {
                 this._populateBundleInstanceSelectors(typeSelect.value, '', []);
@@ -7594,12 +7605,11 @@ const RequestarrServices = {
             : (this.available.tv || []);
 
         const primarySelect = document.getElementById('bundle-primary-select');
-        const membersList = document.getElementById('bundle-members-list');
-        if (!primarySelect || !membersList) return;
+        if (!primarySelect) return;
 
         if (instances.length === 0) {
             primarySelect.innerHTML = '<option value="">No instances available</option>';
-            membersList.innerHTML = '<div style="color:#64748b;font-size:13px;">No instances available</div>';
+            this._populateBundleMembers(serviceType, '', []);
             return;
         }
 
@@ -7610,7 +7620,26 @@ const RequestarrServices = {
             return `<option value="${this._esc(key)}"${sel}>${this._esc(label)}</option>`;
         }).join('');
 
-        membersList.innerHTML = instances.map(inst => {
+        const activePrimary = primarySelect.value || selectedPrimaryKey;
+        this._populateBundleMembers(serviceType, activePrimary, selectedMemberKeys);
+    },
+
+    _populateBundleMembers(serviceType, primaryKey, selectedMemberKeys) {
+        const instances = serviceType === 'movies'
+            ? (this.available.movies || [])
+            : (this.available.tv || []);
+
+        const membersList = document.getElementById('bundle-members-list');
+        if (!membersList) return;
+
+        const filtered = instances.filter(inst => `${inst.app_type}:${inst.instance_name}` !== primaryKey);
+
+        if (filtered.length === 0) {
+            membersList.innerHTML = '<div style="color:#64748b;font-size:13px;">No other instances available</div>';
+            return;
+        }
+
+        membersList.innerHTML = filtered.map(inst => {
             const key = `${inst.app_type}:${inst.instance_name}`;
             const label = `${this._appLabel(inst.app_type)} \u2013 ${inst.instance_name}`;
             const checked = selectedMemberKeys.includes(key) ? ' checked' : '';
