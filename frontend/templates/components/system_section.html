@@ -1,5 +1,14 @@
 <section id="systemSection" class="content-section" style="display: none;">
     <link rel="stylesheet" href="./static/css/system.css">
+    <!-- Page header bars for system tabs -->
+    <div id="system-header-hunt-manager" class="system-page-header" style="display: block;">
+        {% set phb_back_hash = '#home' %}{% set phb_icon = 'fa-server' %}{% set phb_section = 'System' %}{% set phb_page = 'Hunt Manager' %}
+        {% include 'components/page_header_partial.html' %}
+    </div>
+    <div id="system-header-logs" class="system-page-header" style="display: none;">
+        {% set phb_back_hash = '#home' %}{% set phb_icon = 'fa-server' %}{% set phb_section = 'System' %}{% set phb_page = 'Logs' %}
+        {% include 'components/page_header_partial.html' %}
+    </div>
     <!-- Tab panels (controlled by sidebar sub-navigation) -->
     {% include 'components/hunt_manager_section.html' %}
     {% include 'components/logs_section.html' %}

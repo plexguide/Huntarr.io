@@ -43,7 +43,7 @@ const RequestarrServices = {
     },
 
     render() {
-        const container = document.getElementById('requestarr-services-content');
+        const container = document.getElementById('requestarr-bundles-content');
         if (!container) return;
 
         const movieBundles = this.bundles.filter(b => b.service_type === 'movies');

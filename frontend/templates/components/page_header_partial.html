@@ -1,27 +1,38 @@
-{# Page header: Back + breadcrumb (icon left of parent name), optional Save or sponsor on right.
-   Matches Smart Hunt toolbar: reqset-toolbar layout, purple icon, reqset-save-btn style.
-   Usage: {{ page_header(back_href='...', parent_icon='fas fa-fire', parent_name='Requestarr', current_name='Smart Hunt') }}
-   With Save: {{ page_header(..., save_button_id='sizes-save-btn') }} — sponsor not shown when Save is present.
-   With sponsor (no Save): {{ page_header(..., sponsor_section_id='apps') }} — sponsor/partner inside header bar. #}
-{% macro page_header(back_href, parent_icon, parent_name, current_name, save_button_id=None, save_button_class=None, sponsor_section_id=None, current_name_id=None) %}
+{# Page Header Bar — reusable partial.
+    Macro usage:  from 'components/page_header_partial.html' import page_header
+                  page_header(back_href='./#home', parent_icon='fas fa-film', parent_name='Media Hunt', current_name='Discover')
+    Include usage: set phb_back_hash / phb_icon / phb_section / phb_page then include this file.
+#}
+{% macro page_header(back_href='./#home', parent_icon='fas fa-server', parent_name='Section', current_name='Page', sponsor_section_id='', save_button_id='', current_name_id='') %}
 <div class="reqset-toolbar page-header-bar">
     <div class="reqset-toolbar-left">
-        <a href="{{ back_href }}" class="reqset-back-btn">
-            <i class="fas fa-arrow-left"></i> Back
-        </a>
+        <a href="{{ back_href }}" class="reqset-back-btn"><i class="fas fa-arrow-left"></i> Back</a>
         <div class="reqset-breadcrumb">
             <i class="{{ parent_icon }}"></i>
             <span>{{ parent_name }}</span>
             <i class="fas fa-chevron-right reqset-breadcrumb-sep"></i>
-            <span {% if current_name_id %}id="{{ current_name_id }}"{% endif %}>{{ current_name }}</span>
+            <span{% if current_name_id %} id="{{ current_name_id }}"{% endif %}>{{ current_name }}</span>
         </div>
     </div>
     <div class="reqset-toolbar-right">
         {% if save_button_id %}
-        <button type="button" id="{{ save_button_id }}" class="reqset-save-btn page-header-save {% if save_button_class %}{{ save_button_class }}{% endif %}" disabled>
-            <i class="fas fa-save"></i> Save
-        </button>
+        <button id="{{ save_button_id }}" class="reqset-save-btn" style="display:none;"><i class="fas fa-save"></i> Save</button>
         {% endif %}
     </div>
 </div>
 {% endmacro %}
+{# Include-style fallback: if phb_back_hash is defined, render inline #}
+{% if phb_back_hash is defined %}
+<div class="reqset-toolbar page-header-bar">
+    <div class="reqset-toolbar-left">
+        <a href="./{{ phb_back_hash }}" class="reqset-back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+        <div class="reqset-breadcrumb">
+            <i class="fas {{ phb_icon }}"></i>
+            <span>{{ phb_section }}</span>
+            <i class="fas fa-chevron-right reqset-breadcrumb-sep"></i>
+            <span>{{ phb_page }}</span>
+        </div>
+    </div>
+    <div class="reqset-toolbar-right"></div>
+</div>
+{% endif %}

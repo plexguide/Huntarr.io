@@ -222,6 +222,12 @@ window.HuntarrNavigation = {
             p.style.display = isActive ? 'block' : 'none';
             p.classList.toggle('active', isActive);
         });
+        // Toggle page header bars
+        document.querySelectorAll('#systemSection .system-page-header').forEach(function(h) {
+            h.style.display = 'none';
+        });
+        var hdr = document.getElementById('system-header-' + tab);
+        if (hdr) hdr.style.display = 'block';
     },
 
     setupSystemTabs: function() {
