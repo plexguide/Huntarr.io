@@ -382,8 +382,7 @@
 #movie-hunt-activity-sub,
 #media-hunt-config-sub,
 #index-master-sub,
-#index-master-view-sub,
-#requestarr-user-support-sub {
+#index-master-view-sub {
     display: none;
     margin-top: 0;
 }
@@ -392,15 +391,13 @@
 #movie-hunt-activity-sub.expanded,
 #media-hunt-config-sub.expanded,
 #index-master-sub.expanded,
-#index-master-view-sub.expanded,
-#requestarr-user-support-sub.expanded {
+#index-master-view-sub.expanded {
     display: block;
 }
 
 #movie-hunt-collection-sub .nav-item-sub,
 #movie-hunt-activity-sub .nav-item-sub,
 #media-hunt-config-sub .nav-item-sub,
-#requestarr-user-support-sub .nav-item-sub,
 #index-master-sub .nav-item-sub,
 #index-master-view-sub .nav-item-sub {
     margin-top: 0;
@@ -430,25 +427,43 @@
 }
 
 /* Back button styling in config sub-group */
-.media-hunt-config-back,
-.requestarr-user-support-back {
+.media-hunt-config-back {
     opacity: 0.7;
     font-size: 0.85em;
 }
-.media-hunt-config-back:hover,
-.requestarr-user-support-back:hover {
+.media-hunt-config-back:hover {
     opacity: 1;
 }
 
-/* When user-support sub-group is expanded, hide main Requests items + other toggles */
-#sidebar-group-requests.user-support-view > #requestarrDiscoverNav,
-#sidebar-group-requests.user-support-view > #requestarrTVNav,
-#sidebar-group-requests.user-support-view > #requestarrMoviesNav,
-#sidebar-group-requests.user-support-view > #requestarrPersonalBlacklistNav,
-#sidebar-group-requests.user-support-view > #requestarrSmartHuntSettingsNav,
-#sidebar-group-requests.user-support-view > #requestarrSettingsNav,
-#sidebar-group-requests.user-support-view > #requestarrUserSupportToggle {
-    display: none !important;
+/* When user-support sub-group is expanded — REMOVED, now always visible */
+
+/* ===== USER SUPPORT INLINE LABEL ===== */
+.nav-user-support-label {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px 4px;
+    margin: 6px 10px 0 16px;
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(148, 163, 184, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    user-select: none;
+}
+
+.nav-user-support-label i {
+    font-size: 10px;
+    margin-right: 8px;
+    opacity: 0.6;
+}
+
+.nav-user-support-label .nav-badge {
+    margin-left: auto;
+}
+
+/* Deep-indented items under User Support label */
+.nav-item-deep {
+    margin-left: 28px !important;
 }
 
 /* ===== APP ICONS ===== */

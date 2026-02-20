@@ -55,34 +55,28 @@
                     <div class="nav-icon-wrapper"><i class="fas fa-cog"></i></div>
                     <span>Settings</span>
                 </a>
-                <a href="./#requestarr-requests" class="nav-item nav-item-sub" id="requestarrUserSupportToggle">
-                    <div class="nav-icon-wrapper"><i class="fas fa-headset"></i></div>
+                <div class="nav-user-support-label" id="requestarrUserSupportLabel">
+                    <i class="fas fa-headset"></i>
                     <span>User Support</span>
                     <span class="nav-badge" id="requestarr-pending-badge" style="display:none;">0</span>
-                </a>
-                <div class="nav-sub-group" id="requestarr-user-support-sub">
-                    <a href="./#requestarr-discover" class="nav-item nav-item-sub requestarr-user-support-back" id="requestarrUserSupportBackNav">
-                        <div class="nav-icon-wrapper"><i class="fas fa-arrow-left"></i></div>
-                        <span>Back</span>
-                    </a>
-                    <a href="./#requestarr-users" class="nav-item nav-item-sub" id="requestarrUsersNav">
-                        <div class="nav-icon-wrapper"><i class="fas fa-users"></i></div>
-                        <span>Users</span>
-                    </a>
-                    <a href="./#requestarr-requests" class="nav-item nav-item-sub" id="requestarrRequestsNav">
-                        <div class="nav-icon-wrapper"><i class="fas fa-inbox"></i></div>
-                        <span>Requests</span>
-                        <span class="nav-badge requestarr-pending-badge-mirror" style="display:none;">0</span>
-                    </a>
-                    <a href="./#requestarr-global-blacklist" class="nav-item nav-item-sub" id="requestarrGlobalBlacklistNav">
-                        <div class="nav-icon-wrapper"><i class="fas fa-ban"></i></div>
-                        <span>Global Blacklist</span>
-                    </a>
-                    <a href="./#requestarr-services" class="nav-item nav-item-sub" id="requestarrServicesNav">
-                        <div class="nav-icon-wrapper"><i class="fas fa-layer-group"></i></div>
-                        <span>Bundles</span>
-                    </a>
                 </div>
+                <a href="./#requestarr-users" class="nav-item nav-item-sub nav-item-deep" id="requestarrUsersNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-users"></i></div>
+                    <span>Users</span>
+                </a>
+                <a href="./#requestarr-requests" class="nav-item nav-item-sub nav-item-deep" id="requestarrRequestsNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-inbox"></i></div>
+                    <span>Requests</span>
+                    <span class="nav-badge requestarr-pending-badge-mirror" style="display:none;">0</span>
+                </a>
+                <a href="./#requestarr-global-blacklist" class="nav-item nav-item-sub nav-item-deep" id="requestarrGlobalBlacklistNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-ban"></i></div>
+                    <span>Global Blacklist</span>
+                </a>
+                <a href="./#requestarr-services" class="nav-item nav-item-sub nav-item-deep" id="requestarrServicesNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-layer-group"></i></div>
+                    <span>Bundles</span>
+                </a>
             </div>
         </div>
 
@@ -380,8 +374,7 @@ var ALL_SUB_GROUP_IDS = [
     'movie-hunt-activity-sub',
     'media-hunt-config-sub',
     'index-master-sub',
-    'index-master-view-sub',
-    'requestarr-user-support-sub'
+    'index-master-view-sub'
 ];
 
 // ── Expand / collapse helpers ────────────────────────────────
@@ -490,7 +483,7 @@ function setActiveNavItem() {
     var mhBody = document.getElementById('sidebar-group-media-hunt');
     if (mhBody) { mhBody.classList.remove('config-view'); mhBody.classList.remove('activity-view'); mhBody.classList.remove('indexmaster-view'); }
     var reqBody = document.getElementById('sidebar-group-requests');
-    if (reqBody) { reqBody.classList.remove('user-support-view'); }
+    if (reqBody) { /* kept for future use */ }
 
     var selector = null;
     var group = null;
@@ -532,16 +525,16 @@ function setActiveNavItem() {
     else if (h === '#requestarr-hidden' || h === '#requestarr-personal-blacklist') { selector = '#requestarrPersonalBlacklistNav'; group = 'sidebar-group-requests'; }
     else if (h === '#requestarr-smarthunt-settings') { selector = '#requestarrSmartHuntSettingsNav'; group = 'sidebar-group-requests'; }
     else if (h === '#requestarr-settings') { selector = '#requestarrSettingsNav'; group = 'sidebar-group-requests'; }
-    else if (h === '#requestarr-users') { selector = '#requestarrUsersNav'; group = 'sidebar-group-requests'; subToExpand = 'requestarr-user-support-sub'; if (reqBody) reqBody.classList.add('user-support-view'); }
+    else if (h === '#requestarr-users') { selector = '#requestarrUsersNav'; group = 'sidebar-group-requests'; }
     else if (h === '#requestarr-requests') {
         if (window._huntarrUserRole === 'owner') {
-            selector = '#requestarrRequestsNav'; group = 'sidebar-group-requests'; subToExpand = 'requestarr-user-support-sub'; if (reqBody) reqBody.classList.add('user-support-view');
+            selector = '#requestarrRequestsNav'; group = 'sidebar-group-requests';
         } else {
-            selector = '#requestarrUserSupportToggle'; group = 'sidebar-group-requests';
+            selector = '#requestarrRequestsNav'; group = 'sidebar-group-requests';
         }
     }
-    else if (h === '#requestarr-services') { selector = '#requestarrServicesNav'; group = 'sidebar-group-requests'; subToExpand = 'requestarr-user-support-sub'; if (reqBody) reqBody.classList.add('user-support-view'); }
-    else if (h === '#requestarr-global-blacklist') { selector = '#requestarrGlobalBlacklistNav'; group = 'sidebar-group-requests'; subToExpand = 'requestarr-user-support-sub'; if (reqBody) reqBody.classList.add('user-support-view'); }
+    else if (h === '#requestarr-services') { selector = '#requestarrServicesNav'; group = 'sidebar-group-requests'; }
+    else if (h === '#requestarr-global-blacklist') { selector = '#requestarrGlobalBlacklistNav'; group = 'sidebar-group-requests'; }
 
     // ── Apps ──────────────────────────────────────
     else if (h === '#apps' || h === '#sonarr' || h === '#instance-editor') { selector = '#appsSonarrNav'; group = 'sidebar-group-apps'; }

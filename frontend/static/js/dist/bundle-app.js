@@ -355,19 +355,16 @@ let huntarrUI = {
             'requestarrUsersNav',
             'requestarrServicesNav',
             'requestarrSettingsNav',
-            'requestarrUserSupportToggle',
+            'requestarrUserSupportLabel',
             'requestarrGlobalBlacklistNav',
+            'requestarrRequestsNav',
         ];
         hideNavItems.forEach(function(id) {
             var el = document.getElementById(id);
             if (el) el.style.display = 'none';
         });
 
-        // 5b. Show the Requests nav item (inside user-support-sub) as a flat top-level item for non-owners
-        var userSupportSub = document.getElementById('requestarr-user-support-sub');
-        if (userSupportSub) {
-            userSupportSub.classList.add('expanded');
-        }
+        // 5b. (User Support items are now always visible for owners, hidden above for non-owners)
         // Hide the Back nav inside the sub-group — not needed for non-owners
         var backNav = document.getElementById('requestarrUserSupportBackNav');
         if (backNav) backNav.style.display = 'none';
