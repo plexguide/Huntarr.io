@@ -404,6 +404,8 @@ function collapseGroup(id) {
 
 function collapseAllGroups() {
     ALL_GROUP_IDS.forEach(collapseGroup);
+    var sidebar = document.getElementById('sidebar');
+    if (sidebar) sidebar.classList.remove('requests-focused');
 }
 
 function expandSub(id) {
@@ -426,12 +428,22 @@ function expandSidebarGroup(groupId) {
         if (id === groupId) expandGroup(id);
         else collapseGroup(id);
     });
+    // Toggle requests-focused class to hide Apps sections
+    var sidebar = document.getElementById('sidebar');
+    if (sidebar) {
+        if (groupId === 'sidebar-group-requests') {
+            sidebar.classList.add('requests-focused');
+        } else {
+            sidebar.classList.remove('requests-focused');
+        }
+    }
 }
 
 // ── Click handlers on group headers ──────────────────────────
 // Map group IDs to default navigation hashes (click header → navigate to default page)
 var GROUP_DEFAULT_HASH = {
-    'sidebar-group-media-hunt': '#media-hunt-collection'
+    'sidebar-group-media-hunt': '#media-hunt-collection',
+    'sidebar-group-requests': '#requestarr-discover'
 };
 
 document.addEventListener('click', function(e) {
@@ -451,6 +463,11 @@ document.addEventListener('click', function(e) {
         }
     } else {
         collapseGroup(groupId);
+        // Remove requests-focused when collapsing Requests
+        if (groupId === 'sidebar-group-requests') {
+            var sidebar = document.getElementById('sidebar');
+            if (sidebar) sidebar.classList.remove('requests-focused');
+        }
     }
 });
 

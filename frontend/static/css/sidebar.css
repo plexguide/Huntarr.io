@@ -801,3 +801,27 @@ input:checked + .slider:before {
 }
 
 /* ===== MOBILE: sidebar hidden — see mobile.css ===== */
+
+/* ===== REQUESTS FOCUSED: hide Apps + System sections with smooth transition ===== */
+#nav-group-apps-label,
+#nav-group-media-hunt,
+#nzb-hunt-sidebar-group,
+#nav-group-apps,
+#nav-group-system {
+    transition: opacity 0.3s ease, max-height 0.35s ease, margin 0.3s ease, padding 0.3s ease;
+    max-height: 500px;
+    opacity: 1;
+    overflow: hidden;
+}
+
+.sidebar.requests-focused #nav-group-apps-label,
+.sidebar.requests-focused #nav-group-media-hunt,
+.sidebar.requests-focused #nzb-hunt-sidebar-group,
+.sidebar.requests-focused #nav-group-apps,
+.sidebar.requests-focused #nav-group-system {
+    max-height: 0;
+    opacity: 0;
+    margin: 0;
+    padding: 0;
+    pointer-events: none;
+}
