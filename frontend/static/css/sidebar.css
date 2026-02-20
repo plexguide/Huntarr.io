@@ -807,7 +807,8 @@ input:checked + .slider:before {
 #nav-group-media-hunt,
 #nzb-hunt-sidebar-group,
 #nav-group-apps,
-#nav-group-system {
+#nav-group-system,
+#nav-group-requests {
     transition: opacity 0.3s ease, max-height 0.35s ease, margin 0.3s ease, padding 0.3s ease;
     max-height: 500px;
     opacity: 1;
@@ -818,7 +819,12 @@ input:checked + .slider:before {
 .sidebar.requests-focused #nav-group-media-hunt,
 .sidebar.requests-focused #nzb-hunt-sidebar-group,
 .sidebar.requests-focused #nav-group-apps,
-.sidebar.requests-focused #nav-group-system {
+.sidebar.requests-focused #nav-group-system,
+.sidebar.system-focused #nav-group-apps-label,
+.sidebar.system-focused #nav-group-media-hunt,
+.sidebar.system-focused #nzb-hunt-sidebar-group,
+.sidebar.system-focused #nav-group-apps,
+.sidebar.system-focused #nav-group-requests {
     max-height: 0;
     opacity: 0;
     margin: 0;
