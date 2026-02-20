@@ -23,11 +23,8 @@
     flex-direction: column;
     z-index: 1000;
     flex-shrink: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden;
     position: relative;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255,255,255,0.08) transparent;
 }
 
 /* Custom scrollbar for sidebar */
@@ -118,8 +115,26 @@
 .nav-menu {
     display: flex;
     flex-direction: column;
-    padding: 8px 0 40px 0;
-    flex-grow: 1;
+    padding: 8px 0 12px 0;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.08) transparent;
+}
+
+.nav-menu::-webkit-scrollbar {
+    width: 4px;
+}
+.nav-menu::-webkit-scrollbar-track {
+    background: transparent;
+}
+.nav-menu::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+}
+.nav-menu::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.15);
 }
 
 /* Heart icon */
@@ -404,17 +419,18 @@
 /* When activity sub-group is expanded, hide main Media Hunt items + other toggles */
 #sidebar-group-media-hunt.activity-view > #movieHuntCollectionNav,
 #sidebar-group-media-hunt.activity-view > #movie-hunt-collection-sub,
-#sidebar-group-media-hunt.activity-view > #movieHuntIndexMasterNav,
 #sidebar-group-media-hunt.activity-view > #movieHuntActivityToggle,
+#sidebar-group-media-hunt.activity-view > #mediaHuntConfigLabel,
+#sidebar-group-media-hunt.activity-view > #movieHuntIndexMasterNav,
 #sidebar-group-media-hunt.activity-view > #movieHuntClientsMainNav,
+#sidebar-group-media-hunt.activity-view > #movieHuntSettingsRootFoldersNav,
+#sidebar-group-media-hunt.activity-view > #movieHuntImportMediaNav,
+#sidebar-group-media-hunt.activity-view > #movieHuntSettingsImportListsNav,
 #sidebar-group-media-hunt.activity-view > #mediaHuntAdvancedLabel,
 #sidebar-group-media-hunt.activity-view > #movieHuntSettingsMovieManagementNav,
-#sidebar-group-media-hunt.activity-view > #movieHuntImportMediaNav,
 #sidebar-group-media-hunt.activity-view > #movieHuntSettingsProfilesNav,
 #sidebar-group-media-hunt.activity-view > #movieHuntSettingsSizesNav,
-#sidebar-group-media-hunt.activity-view > #movieHuntSettingsCustomFormatsNav,
-#sidebar-group-media-hunt.activity-view > #movieHuntSettingsImportListsNav,
-#sidebar-group-media-hunt.activity-view > #movieHuntSettingsRootFoldersNav {
+#sidebar-group-media-hunt.activity-view > #movieHuntSettingsCustomFormatsNav {
     display: none !important;
 }
 
@@ -606,25 +622,15 @@
 
 /* ===== SIDEBAR FOOTER ===== */
 .sidebar-footer {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(180deg, rgba(12, 17, 28, 0.98) 0%, rgba(14, 19, 30, 0.99) 100%);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    padding: 10px 16px 12px;
+    flex-shrink: 0;
+    background: rgba(14, 19, 30, 0.98);
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    padding: 8px 16px 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     z-index: 1002;
-}
-
-.sidebar-footer-divider {
-    width: 80%;
-    height: 1px;
-    background: rgba(255, 255, 255, 0.06);
 }
 
 .sidebar-footer-info {
@@ -712,11 +718,6 @@
 .sidebar-footer-dev:hover {
     color: #94a3b8;
     text-decoration: none;
-}
-
-/* Adjust nav-menu bottom padding for sidebar footer */
-.nav-menu {
-    padding-bottom: 90px;
 }
 
 /* ===== SETTINGS SUBPANEL ===== */
@@ -820,9 +821,8 @@ input:checked + .slider:before {
 #nav-group-requests,
 #main-sidebar-partner-projects-group {
     transition: opacity 0.3s ease, max-height 0.35s ease, margin 0.3s ease, padding 0.3s ease;
-    max-height: 500px;
+    max-height: none;
     opacity: 1;
-    overflow: hidden;
 }
 
 /* ── Home reorder: move Home directly above the focused group via flex order ── */

@@ -153,10 +153,6 @@
                         <span>Calendar</span>
                     </a>
                 </div>
-                <a href="./#indexer-hunt" class="nav-item nav-item-sub" id="movieHuntIndexMasterNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-search-plus"></i></div>
-                    <span>Index Master</span>
-                </a>
                 <a href="./#activity-history" class="nav-item nav-item-sub" id="movieHuntActivityToggle">
                     <div class="nav-icon-wrapper"><i class="fas fa-clock"></i></div>
                     <span>Activity</span>
@@ -183,9 +179,29 @@
                         <span>Logs</span>
                     </a>
                 </div>
-                <a href="./#settings-clients" class="nav-item nav-item-sub" id="movieHuntClientsMainNav">
+                <div class="nav-user-support-label" id="mediaHuntConfigLabel">
+                    <i class="fas fa-sliders-h"></i>
+                    <span>Configuration</span>
+                </div>
+                <a href="./#indexer-hunt" class="nav-item nav-item-sub nav-item-deep" id="movieHuntIndexMasterNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-search-plus"></i></div>
+                    <span>Index Master</span>
+                </a>
+                <a href="./#settings-clients" class="nav-item nav-item-sub nav-item-deep" id="movieHuntClientsMainNav">
                     <div class="nav-icon-wrapper"><i class="fas fa-cloud-download-alt"></i></div>
                     <span>Clients</span>
+                </a>
+                <a href="./#settings-root-folders" class="nav-item nav-item-sub nav-item-deep" id="movieHuntSettingsRootFoldersNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-folder-open"></i></div>
+                    <span>Root Folders</span>
+                </a>
+                <a href="./#settings-import-media" class="nav-item nav-item-sub nav-item-deep" id="movieHuntImportMediaNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-file-import"></i></div>
+                    <span>Import Media</span>
+                </a>
+                <a href="./#settings-import-lists" class="nav-item nav-item-sub nav-item-deep" id="movieHuntSettingsImportListsNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-stream"></i></div>
+                    <span>Import Lists</span>
                 </a>
                 <div class="nav-user-support-label" id="mediaHuntAdvancedLabel">
                     <i class="fas fa-cog"></i>
@@ -194,10 +210,6 @@
                 <a href="./#settings-media-management" class="nav-item nav-item-sub nav-item-deep" id="movieHuntSettingsMovieManagementNav">
                     <div class="nav-icon-wrapper"><i class="fas fa-film"></i></div>
                     <span>Settings</span>
-                </a>
-                <a href="./#settings-import-media" class="nav-item nav-item-sub nav-item-deep" id="movieHuntImportMediaNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-file-import"></i></div>
-                    <span>Import Media</span>
                 </a>
                 <a href="./#settings-profiles" class="nav-item nav-item-sub nav-item-deep" id="movieHuntSettingsProfilesNav">
                     <div class="nav-icon-wrapper"><i class="fas fa-id-card"></i></div>
@@ -210,14 +222,6 @@
                 <a href="./#settings-custom-formats" class="nav-item nav-item-sub nav-item-deep" id="movieHuntSettingsCustomFormatsNav">
                     <div class="nav-icon-wrapper"><i class="fas fa-code"></i></div>
                     <span>Custom Formats</span>
-                </a>
-                <a href="./#settings-import-lists" class="nav-item nav-item-sub nav-item-deep" id="movieHuntSettingsImportListsNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-stream"></i></div>
-                    <span>Import Lists</span>
-                </a>
-                <a href="./#settings-root-folders" class="nav-item nav-item-sub nav-item-deep" id="movieHuntSettingsRootFoldersNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-folder-open"></i></div>
-                    <span>Root Folders</span>
                 </a>
                 <!-- Hidden sub-groups to avoid breaking existing JS references -->
                 <div id="index-master-view-sub" style="display:none;"></div>
@@ -335,7 +339,6 @@
                 <i class="fas fa-bug"></i>
             </a>
         </div>
-        <div class="sidebar-footer-divider"></div>
         <div class="sidebar-footer-info">
             <a href="https://github.com/plexguide/Huntarr.io/releases" target="_blank" rel="noopener" class="sidebar-footer-version-link" id="sidebar-footer-version-link" title="View releases">
                 <span class="sidebar-footer-version" id="sidebar-footer-version"></span>
@@ -502,10 +505,10 @@ function setActiveNavItem() {
 
     // ── Media Hunt > Configuration ──────────────────
     else if (h === '#media-hunt-settings' || h === '#movie-hunt-settings' || h === '#settings-instance-management') { selector = '#movieHuntSettingsMovieManagementNav'; group = 'sidebar-group-media-hunt'; }
-    else if (h === '#indexer-hunt') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
-    else if (h === '#indexer-hunt-stats') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
-    else if (h === '#indexer-hunt-history') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
-    else if (h === '#settings-clients') { selector = '#movieHuntClientsMainNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+    else if (h === '#indexer-hunt') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; }
+    else if (h === '#indexer-hunt-stats') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; }
+    else if (h === '#indexer-hunt-history') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; }
+    else if (h === '#settings-clients') { selector = '#movieHuntClientsMainNav'; group = 'sidebar-group-media-hunt'; }
     else if (h === '#settings-media-management') { selector = '#movieHuntSettingsMovieManagementNav'; group = 'sidebar-group-media-hunt'; }
     else if (h === '#settings-profiles') { selector = '#movieHuntSettingsProfilesNav'; group = 'sidebar-group-media-hunt'; }
     else if (h === '#settings-sizes') { selector = '#movieHuntSettingsSizesNav'; group = 'sidebar-group-media-hunt'; }
