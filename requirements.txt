@@ -9,7 +9,7 @@ pywin32==308; sys_platform == 'win32' # For Windows service support
 sabyenc3>=5.4.4    # Hardware-accelerated yEnc decoder (used by SABnzbd)
 apprise==1.6.0     # Added for notification support
 markdown==3.4.3    # Required by apprise
-pyyaml==6.0.2      # Required by apprise (bumped from 6.0.1 — indirect libyaml CVE-2024-35326)
+pyyaml>=6.0.2,<7   # Required by apprise (loosened for Debian/Pi compatibility — issue #747)
 
 # Transitive dependency CVE pins — these override versions pulled by direct deps
 Werkzeug>=3.1.5    # CVE-2026-21860: safe_join Windows device name bypass
