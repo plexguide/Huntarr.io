@@ -13721,7 +13721,8 @@ document.head.appendChild(styleEl);
  * Features:
  * - Provider grid for adding new connections
  * - Per-connection app/instance scope (cascading dropdowns)
- * - Grouped connection list organized by app type
+ * - Category system: "Instance Notifications" vs "User Requests"
+ * - Grouped connection list organized by category
  * - Test button in modal and in connection list
  * - Trigger checkboxes per connection
  */
@@ -13738,6 +13739,11 @@ document.head.appendChild(styleEl);
     var connections = [];
     var editingId = null;
     var editingProvider = null;
+
+    // Request trigger data (loaded from API)
+    var requestTriggerKeys = [];
+    var requestTriggerLabels = {};
+    var defaultRequestTriggers = {};
 
     // Movie Hunt and TV Hunt instances (loaded from API)
     var movieHuntInstances = [];
@@ -13771,6 +13777,11 @@ document.head.appendChild(styleEl);
         { key: 'whisparr', label: 'Whisparr', icon: 'fas fa-microphone', color: '#f472b6' },
         { key: 'eros', label: 'Eros', icon: 'fas fa-heart', color: '#fb7185' }
     ];
+
+    var CATEGORY_META = {
+        instance: { label: 'Instance Notifications', icon: 'fas fa-server', color: '#818cf8' },
+        requests: { label: 'User Requests', icon: 'fas fa-inbox', color: '#f59e0b' }
+    };
 
     function getAppInfo(key) {
         for (var i = 0; i < APP_TYPES.length; i++) {
@@ -13821,6 +13832,9 @@ document.head.appendChild(styleEl);
                 providerMeta = data.providers || {};
                 triggerKeys = data.trigger_keys || [];
                 defaultTriggers = data.default_triggers || {};
+                requestTriggerKeys = data.request_trigger_keys || [];
+                requestTriggerLabels = data.request_trigger_labels || {};
+                defaultRequestTriggers = data.default_request_triggers || {};
             });
     }
 
@@ -13911,7 +13925,7 @@ document.head.appendChild(styleEl);
     }
 
     // ------------------------------------------------------------------
-    // Render — Grouped Connection List
+    // Render — Grouped Connection List (by category, then app scope)
     // ------------------------------------------------------------------
 
     function renderConnections() {
@@ -13933,9 +13947,54 @@ document.head.appendChild(styleEl);
         empty.style.display = 'none';
         if (countEl) countEl.textContent = connections.length + ' connection' + (connections.length !== 1 ? 's' : '');
 
+        // Split by category
+        var instanceConns = [];
+        var requestConns = [];
+        connections.forEach(function (conn) {
+            if (conn.category === 'requests') {
+                requestConns.push(conn);
+            } else {
+                instanceConns.push(conn);
+            }
+        });
+
+        // Render Instance Notifications group
+        if (instanceConns.length > 0) {
+            var instHeader = document.createElement('div');
+            instHeader.className = 'notif-category-header';
+            instHeader.innerHTML =
+                '<div class="notif-category-icon" style="background:' + CATEGORY_META.instance.color + '">' +
+                    '<i class="' + CATEGORY_META.instance.icon + '"></i>' +
+                '</div>' +
+                '<span class="notif-category-label">' + CATEGORY_META.instance.label + '</span>' +
+                '<span class="notif-group-header-count">' + instanceConns.length + '</span>';
+            container.appendChild(instHeader);
+            renderConnectionsByApp(container, instanceConns);
+        }
+
+        // Render User Requests group
+        if (requestConns.length > 0) {
+            var reqHeader = document.createElement('div');
+            reqHeader.className = 'notif-category-header';
+            reqHeader.innerHTML =
+                '<div class="notif-category-icon" style="background:' + CATEGORY_META.requests.color + '">' +
+                    '<i class="' + CATEGORY_META.requests.icon + '"></i>' +
+                '</div>' +
+                '<span class="notif-category-label">' + CATEGORY_META.requests.label + '</span>' +
+                '<span class="notif-group-header-count">' + requestConns.length + '</span>';
+            container.appendChild(reqHeader);
+
+            // Request connections don't have app scope, render flat
+            requestConns.forEach(function (conn) {
+                container.appendChild(renderConnectionItem(conn));
+            });
+        }
+    }
+
+    function renderConnectionsByApp(container, conns) {
         // Group by app_scope
         var groups = {};
-        connections.forEach(function (conn) {
+        conns.forEach(function (conn) {
             var scope = conn.app_scope || 'all';
             if (!groups[scope]) groups[scope] = [];
             groups[scope].push(conn);
@@ -13943,7 +14002,6 @@ document.head.appendChild(styleEl);
 
         // Render in APP_TYPES order
         var orderedKeys = APP_TYPES.map(function (a) { return a.key; });
-        // Add any unexpected keys
         Object.keys(groups).forEach(function (k) {
             if (orderedKeys.indexOf(k) === -1) orderedKeys.push(k);
         });
@@ -13957,7 +14015,6 @@ document.head.appendChild(styleEl);
             var groupEl = document.createElement('div');
             groupEl.className = 'notif-group';
 
-            // Group header
             var header = document.createElement('div');
             header.className = 'notif-group-header';
             header.innerHTML =
@@ -13969,7 +14026,6 @@ document.head.appendChild(styleEl);
 
             groupEl.appendChild(header);
 
-            // Group body
             var body = document.createElement('div');
             body.className = 'notif-group-body';
 
@@ -13995,16 +14051,32 @@ document.head.appendChild(styleEl);
         var statusDot = conn.enabled ? 'active' : 'disabled';
         var statusText = conn.enabled ? 'Enabled' : 'Disabled';
 
-        // Instance scope label
+        var isRequests = conn.category === 'requests';
+        var catMeta = CATEGORY_META[conn.category || 'instance'];
+
+        // Instance scope label (only for instance category)
         var scopeLabel = '';
-        if (conn.instance_scope && conn.instance_scope !== 'all') {
-            scopeLabel = resolveInstanceName(conn.app_scope, conn.instance_scope);
-        } else {
-            scopeLabel = 'All Instances';
+        if (!isRequests) {
+            if (conn.instance_scope && conn.instance_scope !== 'all') {
+                scopeLabel = resolveInstanceName(conn.app_scope, conn.instance_scope);
+            } else {
+                scopeLabel = 'All Instances';
+            }
         }
 
         var el = document.createElement('div');
         el.className = 'notif-connection-item';
+        var metaHtml =
+            '<span class="notif-connection-provider-badge"><i class="' + icon + '" style="font-size:10px"></i> ' + providerName + '</span>';
+
+        if (!isRequests) {
+            metaHtml += '<span class="notif-connection-scope-badge"><i class="fas fa-filter" style="font-size:9px"></i> ' + escapeHtml(scopeLabel) + '</span>';
+        }
+
+        metaHtml +=
+            '<span class="notif-connection-status"><span class="notif-status-dot ' + statusDot + '"></span> ' + statusText + '</span>' +
+            '<span>' + activeCount + ' trigger' + (activeCount !== 1 ? 's' : '') + '</span>';
+
         el.innerHTML =
             '<div class="notif-connection-left">' +
                 '<div class="notif-connection-icon" style="background:' + color + '">' +
@@ -14012,12 +14084,7 @@ document.head.appendChild(styleEl);
                 '</div>' +
                 '<div class="notif-connection-info">' +
                     '<div class="notif-connection-name">' + escapeHtml(conn.name || providerName) + '</div>' +
-                    '<div class="notif-connection-meta">' +
-                        '<span class="notif-connection-provider-badge"><i class="' + icon + '" style="font-size:10px"></i> ' + providerName + '</span>' +
-                        '<span class="notif-connection-scope-badge"><i class="fas fa-filter" style="font-size:9px"></i> ' + escapeHtml(scopeLabel) + '</span>' +
-                        '<span class="notif-connection-status"><span class="notif-status-dot ' + statusDot + '"></span> ' + statusText + '</span>' +
-                        '<span>' + activeCount + ' trigger' + (activeCount !== 1 ? 's' : '') + '</span>' +
-                    '</div>' +
+                    '<div class="notif-connection-meta">' + metaHtml + '</div>' +
                 '</div>' +
             '</div>' +
             '<div class="notif-connection-actions">' +
@@ -14100,7 +14167,31 @@ document.head.appendChild(styleEl);
             testBtn.style.display = editingId ? '' : 'none';
         }
 
+        var existingCategory = existingConn ? (existingConn.category || 'instance') : 'instance';
+
         var html = '';
+
+        // ---- Category Selector ----
+        html += '<div class="notif-category-selector">';
+        html += '<label class="notif-category-selector-label">Notification Category</label>';
+        html += '<div class="notif-category-options">';
+        html += '<label class="notif-category-option' + (existingCategory === 'instance' ? ' selected' : '') + '" id="notifCatOptInstance">';
+        html += '<input type="radio" name="notifCategory" value="instance"' + (existingCategory === 'instance' ? ' checked' : '') + '>';
+        html += '<div class="notif-category-option-icon" style="background:' + CATEGORY_META.instance.color + '"><i class="' + CATEGORY_META.instance.icon + '"></i></div>';
+        html += '<div class="notif-category-option-text">';
+        html += '<span class="notif-category-option-name">' + CATEGORY_META.instance.label + '</span>';
+        html += '<span class="notif-category-option-desc">Grab, import, upgrade, health events</span>';
+        html += '</div>';
+        html += '</label>';
+        html += '<label class="notif-category-option' + (existingCategory === 'requests' ? ' selected' : '') + '" id="notifCatOptRequests">';
+        html += '<input type="radio" name="notifCategory" value="requests"' + (existingCategory === 'requests' ? ' checked' : '') + '>';
+        html += '<div class="notif-category-option-icon" style="background:' + CATEGORY_META.requests.color + '"><i class="' + CATEGORY_META.requests.icon + '"></i></div>';
+        html += '<div class="notif-category-option-text">';
+        html += '<span class="notif-category-option-name">' + CATEGORY_META.requests.label + '</span>';
+        html += '<span class="notif-category-option-desc">Pending, approved, denied, available</span>';
+        html += '</div>';
+        html += '</label>';
+        html += '</div></div>';
 
         // ---- Connection Name + Enabled ----
         html += '<div class="notif-name-group">';
@@ -14114,8 +14205,8 @@ document.head.appendChild(styleEl);
         html += '</div>';
         html += '</div>';
 
-        // ---- App / Instance Scope ----
-        html += '<div class="notif-scope-row">';
+        // ---- App / Instance Scope (instance category only) ----
+        html += '<div class="notif-scope-row" id="notifScopeSection"' + (existingCategory === 'requests' ? ' style="display:none"' : '') + '>';
         html += '<div class="notif-form-group" style="margin-bottom:0">';
         html += '<label>App Type</label>';
         html += '<select id="notifScopeApp">';
@@ -14165,12 +14256,12 @@ document.head.appendChild(styleEl);
             html += '</div>';
         });
 
-        // ---- Notification Triggers ----
-        html += '<div class="notif-triggers-section">';
+        // ---- Instance Triggers (instance category) ----
+        html += '<div class="notif-triggers-section" id="notifInstanceTriggersSection"' + (existingCategory === 'requests' ? ' style="display:none"' : '') + '>';
         html += '<div class="notif-triggers-title">Notification Triggers</div>';
         html += '<div class="notif-triggers-grid">';
 
-        var existingTriggers = (existingConn && existingConn.triggers) || defaultTriggers;
+        var existingTriggers = (existingConn && existingConn.triggers) || (existingCategory === 'requests' ? defaultRequestTriggers : defaultTriggers);
         var displayTriggers = triggerKeys.filter(function (k) { return k !== 'on_test'; });
 
         displayTriggers.forEach(function (key) {
@@ -14185,13 +14276,60 @@ document.head.appendChild(styleEl);
         });
         html += '</div></div>';
 
-        // ---- Include options ----
-        html += '<div class="notif-options-row">';
+        // ---- Request Triggers (requests category) ----
+        html += '<div class="notif-triggers-section" id="notifRequestTriggersSection"' + (existingCategory !== 'requests' ? ' style="display:none"' : '') + '>';
+        html += '<div class="notif-triggers-title">Request Triggers</div>';
+        html += '<div class="notif-triggers-grid">';
+
+        var existingReqTriggers = (existingConn && existingConn.category === 'requests' && existingConn.triggers) || defaultRequestTriggers;
+
+        requestTriggerKeys.forEach(function (key) {
+            var label = requestTriggerLabels[key] || key.replace(/_/g, ' ');
+            label = label.replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+            var checked = existingReqTriggers[key] ? 'checked' : (existingReqTriggers[key] === undefined && defaultRequestTriggers[key] ? 'checked' : '');
+
+            html += '<label class="notif-trigger-item">';
+            html += '<input type="checkbox" id="notifReqTrigger_' + key + '" ' + checked + '>';
+            html += '<span class="notif-trigger-label">' + label + '</span>';
+            html += '</label>';
+        });
+        html += '</div></div>';
+
+        // ---- Include options (instance category only) ----
+        html += '<div class="notif-options-row" id="notifOptionsSection"' + (existingCategory === 'requests' ? ' style="display:none"' : '') + '>';
         html += '<label><input type="checkbox" id="notifOptAppName" ' + (existingConn ? (existingConn.include_app_name ? 'checked' : '') : 'checked') + '> Include App Name</label>';
         html += '<label><input type="checkbox" id="notifOptInstance" ' + (existingConn ? (existingConn.include_instance_name ? 'checked' : '') : 'checked') + '> Include Instance Name</label>';
         html += '</div>';
 
         body.innerHTML = html;
+
+        // Wire up category selector
+        var catRadios = body.querySelectorAll('input[name="notifCategory"]');
+        catRadios.forEach(function (radio) {
+            radio.addEventListener('change', function () {
+                var cat = this.value;
+                var scopeSection = document.getElementById('notifScopeSection');
+                var instTriggers = document.getElementById('notifInstanceTriggersSection');
+                var reqTriggers = document.getElementById('notifRequestTriggersSection');
+                var optionsSection = document.getElementById('notifOptionsSection');
+                var optInstance = document.getElementById('notifCatOptInstance');
+                var optRequests = document.getElementById('notifCatOptRequests');
+
+                if (cat === 'requests') {
+                    if (scopeSection) scopeSection.style.display = 'none';
+                    if (instTriggers) instTriggers.style.display = 'none';
+                    if (reqTriggers) reqTriggers.style.display = '';
+                    if (optionsSection) optionsSection.style.display = 'none';
+                } else {
+                    if (scopeSection) scopeSection.style.display = '';
+                    if (instTriggers) instTriggers.style.display = '';
+                    if (reqTriggers) reqTriggers.style.display = 'none';
+                    if (optionsSection) optionsSection.style.display = '';
+                }
+                if (optInstance) optInstance.classList.toggle('selected', cat === 'instance');
+                if (optRequests) optRequests.classList.toggle('selected', cat === 'requests');
+            });
+        });
 
         // Wire up cascading dropdowns
         var appSelect = document.getElementById('notifScopeApp');
@@ -14200,7 +14338,6 @@ document.head.appendChild(styleEl);
             appSelect.addEventListener('change', function () {
                 populateInstanceDropdown(appSelect.value, instSelect, null);
             });
-            // Initial population
             var existingInstScope = existingConn ? existingConn.instance_scope : 'all';
             populateInstanceDropdown(appSelect.value, instSelect, existingInstScope);
         }
@@ -14299,11 +14436,19 @@ document.head.appendChild(styleEl);
         var enabled = document.getElementById('notifFieldEnabled');
         var isEnabled = enabled ? enabled.checked : true;
 
-        // Scope
-        var appScopeEl = document.getElementById('notifScopeApp');
-        var instScopeEl = document.getElementById('notifScopeInstance');
-        var appScope = appScopeEl ? appScopeEl.value : 'all';
-        var instanceScope = instScopeEl ? instScopeEl.value : 'all';
+        // Category
+        var catRadio = document.querySelector('input[name="notifCategory"]:checked');
+        var category = catRadio ? catRadio.value : 'instance';
+
+        // Scope (only for instance category)
+        var appScope = 'all';
+        var instanceScope = 'all';
+        if (category === 'instance') {
+            var appScopeEl = document.getElementById('notifScopeApp');
+            var instScopeEl = document.getElementById('notifScopeInstance');
+            appScope = appScopeEl ? appScopeEl.value : 'all';
+            instanceScope = instScopeEl ? instScopeEl.value : 'all';
+        }
 
         // Provider settings
         var settings = {};
@@ -14330,13 +14475,20 @@ document.head.appendChild(styleEl);
             return;
         }
 
-        // Triggers
+        // Triggers — pick the right set based on category
         var triggers = {};
-        var displayTriggers = triggerKeys.filter(function (k) { return k !== 'on_test'; });
-        displayTriggers.forEach(function (key) {
-            var el = document.getElementById('notifTrigger_' + key);
-            triggers[key] = el ? el.checked : false;
-        });
+        if (category === 'requests') {
+            requestTriggerKeys.forEach(function (key) {
+                var el = document.getElementById('notifReqTrigger_' + key);
+                triggers[key] = el ? el.checked : false;
+            });
+        } else {
+            var displayTriggers = triggerKeys.filter(function (k) { return k !== 'on_test'; });
+            displayTriggers.forEach(function (key) {
+                var el = document.getElementById('notifTrigger_' + key);
+                triggers[key] = el ? el.checked : false;
+            });
+        }
 
         var inclApp = document.getElementById('notifOptAppName');
         var inclInst = document.getElementById('notifOptInstance');
@@ -14347,10 +14499,11 @@ document.head.appendChild(styleEl);
             enabled: isEnabled,
             settings: settings,
             triggers: triggers,
-            include_app_name: inclApp ? inclApp.checked : true,
-            include_instance_name: inclInst ? inclInst.checked : true,
+            include_app_name: category === 'instance' ? (inclApp ? inclApp.checked : true) : false,
+            include_instance_name: category === 'instance' ? (inclInst ? inclInst.checked : true) : false,
             app_scope: appScope,
-            instance_scope: instanceScope
+            instance_scope: instanceScope,
+            category: category
         };
 
         if (editingId) payload.id = editingId;
@@ -14369,7 +14522,6 @@ document.head.appendChild(styleEl);
                 }
                 notify('Connection saved successfully', 'success');
 
-                // If new, store the id so the Test button works
                 if (!editingId && data.id) {
                     editingId = data.id;
                     var testBtn = document.getElementById('notifModalTestBtn');

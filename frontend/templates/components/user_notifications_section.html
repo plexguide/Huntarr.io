@@ -4,17 +4,14 @@
         {{ page_header(back_href='./#requestarr-users', parent_icon='fas fa-bell', parent_name='Requests', current_name='User Notifications', sponsor_section_id='user-notifications') }}
         <div class="notif-container">
 
-        <!-- Add Provider -->
+        <!-- Add New Connection -->
         <div class="notif-card" id="userNotifAddPanel">
             <div class="notif-card-header">
                 <div class="notif-card-header-left">
                     <div class="notif-card-icon notif-icon-blue">
                         <i class="fas fa-plus-circle"></i>
                     </div>
-                    <h3>Add Notification</h3>
-                </div>
-                <div style="font-size: 12px; color: var(--text-muted, #94a3b8);">
-                    Choose a provider to get started
+                    <h3>Add Connection</h3>
                 </div>
             </div>
             <div class="notif-card-body">
@@ -24,14 +21,14 @@
             </div>
         </div>
 
-        <!-- Current Settings -->
-        <div class="notif-card" id="userNotifSettingsPanel">
+        <!-- Current Connections -->
+        <div class="notif-card" id="userNotifConnectionsPanel">
             <div class="notif-card-header">
                 <div class="notif-card-header-left">
                     <div class="notif-card-icon notif-icon-slate">
                         <i class="fas fa-bell"></i>
                     </div>
-                    <h3>My Notifications</h3>
+                    <h3>Connections</h3>
                 </div>
                 <div id="userNotifCount" style="font-size: 12px; color: var(--text-muted, #94a3b8);"></div>
             </div>
@@ -39,7 +36,7 @@
                 <div class="notif-connection-list" id="userNotifList"></div>
                 <div class="notif-empty-state" id="userNotifEmpty">
                     <i class="fas fa-bell-slash"></i>
-                    <p>No personal notifications configured. Add one above to get notified about your requests.</p>
+                    <p>No notification connections configured. Add one above to get started.</p>
                 </div>
             </div>
         </div>
@@ -55,7 +52,7 @@
                     <div class="notif-card-icon" id="userNotifModalIcon" style="width:32px;height:32px;border-radius:8px;">
                         <i id="userNotifModalIconI" class="fas fa-bell"></i>
                     </div>
-                    <h3 id="userNotifModalTitle">Add Notification</h3>
+                    <h3 id="userNotifModalTitle">Add Connection</h3>
                 </div>
                 <button class="notif-modal-close" id="userNotifModalClose"><i class="fas fa-times"></i></button>
             </div>
@@ -64,7 +61,7 @@
             </div>
             <div class="notif-modal-footer">
                 <div class="notif-modal-footer-left">
-                    <button class="notif-btn notif-btn-test" id="userNotifModalTestBtn" style="display:none;">
+                    <button class="notif-btn notif-btn-test" id="userNotifModalTestBtn" disabled>
                         <i class="fas fa-paper-plane"></i> Test
                     </button>
                 </div>

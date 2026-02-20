@@ -696,3 +696,123 @@
     cursor: not-allowed;
     pointer-events: none;
 }
+
+/* ---- Category Selector (in modal) ---- */
+.notif-category-selector {
+    margin-bottom: 16px;
+}
+
+.notif-category-selector-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary, #94a3b8);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.notif-category-options {
+    display: flex;
+    gap: 10px;
+}
+
+.notif-category-option {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.notif-category-option:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.notif-category-option.selected {
+    border-color: rgba(129, 140, 248, 0.5);
+    background: rgba(129, 140, 248, 0.08);
+}
+
+.notif-category-option input[type="radio"] {
+    display: none;
+}
+
+.notif-category-option-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.notif-category-option-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.notif-category-option-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary, #e2e8f0);
+}
+
+.notif-category-option-desc {
+    font-size: 11px;
+    color: var(--text-muted, #64748b);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---- Category Headers (in connection list) ---- */
+.notif-category-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 0 8px;
+    margin-top: 8px;
+}
+
+.notif-category-header:first-child {
+    margin-top: 0;
+    padding-top: 0;
+}
+
+.notif-category-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.notif-category-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary, #e2e8f0);
+    letter-spacing: 0.3px;
+}
+
+/* ---- Mobile: stack category options vertically ---- */
+@media (max-width: 600px) {
+    .notif-category-options {
+        flex-direction: column;
+    }
+}

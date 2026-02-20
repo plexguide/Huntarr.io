@@ -1027,6 +1027,7 @@ class HuntarrDatabase(ConfigMixin, StateMixin, UsersMixin, RequestarrMixin, Extr
                     include_instance_name INTEGER DEFAULT 1,
                     app_scope TEXT NOT NULL DEFAULT 'all',
                     instance_scope TEXT NOT NULL DEFAULT 'all',
+                    category TEXT NOT NULL DEFAULT 'instance',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
@@ -1037,21 +1038,40 @@ class HuntarrDatabase(ConfigMixin, StateMixin, UsersMixin, RequestarrMixin, Extr
             except sqlite3.OperationalError:
                 conn.execute("ALTER TABLE notification_connections ADD COLUMN app_scope TEXT NOT NULL DEFAULT 'all'")
                 conn.execute("ALTER TABLE notification_connections ADD COLUMN instance_scope TEXT NOT NULL DEFAULT 'all'")
+            # Migration: add category column
+            try:
+                conn.execute('SELECT category FROM notification_connections LIMIT 1')
+            except sqlite3.OperationalError:
+                conn.execute("ALTER TABLE notification_connections ADD COLUMN category TEXT NOT NULL DEFAULT 'instance'")
 
-            # User notification settings — per-user personal notification preferences
+            # User notification connections — per-user, connection-based (mirrors admin notifications)
             conn.execute('''
-                CREATE TABLE IF NOT EXISTS user_notification_settings (
+                CREATE TABLE IF NOT EXISTS user_notification_connections (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     username TEXT NOT NULL,
+                    name TEXT NOT NULL DEFAULT 'Unnamed',
                     provider TEXT NOT NULL,
                     enabled INTEGER DEFAULT 1,
                     settings TEXT NOT NULL DEFAULT '{}',
-                    types TEXT NOT NULL DEFAULT '{}',
+                    triggers TEXT NOT NULL DEFAULT '{}',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(username, provider)
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
+            # Migrate old user_notification_settings to new table if it exists
+            try:
+                old_rows = conn.execute('SELECT * FROM user_notification_settings').fetchall()
+                if old_rows:
+                    for row in old_rows:
+                        r = dict(zip([d[0] for d in conn.execute('SELECT * FROM user_notification_settings LIMIT 0').description], row)) if not hasattr(row, 'keys') else dict(row)
+                        conn.execute('''
+                            INSERT OR IGNORE INTO user_notification_connections (username, name, provider, enabled, settings, triggers)
+                            VALUES (?, ?, ?, ?, ?, ?)
+                        ''', (r.get('username', ''), r.get('provider', 'Unknown'), r.get('provider', ''),
+                              r.get('enabled', 1), r.get('settings', '{}'), r.get('types', '{}')))
+                    conn.commit()
+            except Exception:
+                pass
             
             # Create indexes for better performance
             # Note: indexes on UNIQUE columns (app_configs.app_type, general_settings.setting_key,

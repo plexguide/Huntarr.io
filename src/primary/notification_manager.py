@@ -78,6 +78,27 @@ TRIGGER_KEYS = [
     "on_test",           # Test notification (always sent)
 ]
 
+# Request-specific trigger keys (for category='requests' connections)
+REQUEST_TRIGGER_KEYS = [
+    "request_pending",
+    "request_approved",
+    "request_denied",
+    "request_auto_approved",
+    "media_available",
+    "media_failed",
+]
+
+REQUEST_TRIGGER_LABELS = {
+    "request_pending": "Request Pending",
+    "request_approved": "Request Approved",
+    "request_denied": "Request Denied",
+    "request_auto_approved": "Request Auto-Approved",
+    "media_available": "Media Available",
+    "media_failed": "Media Failed",
+}
+
+DEFAULT_REQUEST_TRIGGERS = {k: True for k in REQUEST_TRIGGER_KEYS}
+
 # Default triggers for new connections
 DEFAULT_TRIGGERS = {
     "on_grab": True,
@@ -550,7 +571,7 @@ def _event_hex_color(event: str) -> str:
 
 def dispatch_notification(event: str, title: str, message: str, extra_data: Optional[dict] = None):
     """
-    Dispatch a notification to all enabled connections whose triggers match the event.
+    Dispatch a notification to all enabled instance-category connections whose triggers match the event.
 
     Parameters:
         event: one of TRIGGER_KEYS (e.g. "on_grab", "on_missing")
@@ -565,6 +586,10 @@ def dispatch_notification(event: str, title: str, message: str, extra_data: Opti
     sent = 0
     for conn in connections:
         if not conn.get("enabled", True):
+            continue
+
+        # Only instance-category connections for system events
+        if conn.get("category", "instance") != "instance":
             continue
 
         triggers = conn.get("triggers", {})
@@ -610,6 +635,60 @@ def dispatch_notification(event: str, title: str, message: str, extra_data: Opti
 
     if sent:
         logger.info("Dispatched '%s' notification to %d connection(s)", event, sent)
+
+
+def dispatch_request_notification(event: str, title: str, message: str):
+    """
+    Dispatch a notification to all enabled requests-category connections whose triggers match the event.
+
+    Parameters:
+        event: one of REQUEST_TRIGGER_KEYS (e.g. "request_pending", "request_approved")
+        title: notification title
+        message: notification body
+    """
+    connections = get_all_connections()
+    if not connections:
+        return
+
+    sent = 0
+    for conn in connections:
+        if not conn.get("enabled", True):
+            continue
+
+        if conn.get("category", "instance") != "requests":
+            continue
+
+        triggers = conn.get("triggers", {})
+        if isinstance(triggers, str):
+            try:
+                triggers = json.loads(triggers)
+            except (json.JSONDecodeError, TypeError):
+                triggers = {}
+
+        if not triggers.get(event, False):
+            continue
+
+        provider = conn.get("provider", "")
+        settings = conn.get("settings", {})
+        if isinstance(settings, str):
+            try:
+                settings = json.loads(settings)
+            except (json.JSONDecodeError, TypeError):
+                settings = {}
+
+        send_fn = PROVIDERS.get(provider)
+        if not send_fn:
+            continue
+
+        try:
+            ok, err = send_fn(settings, title, message, "on_request")
+            if ok:
+                sent += 1
+                logger.debug("Request notification sent via %s (conn=%s)", provider, conn.get("id"))
+            else:
+                logger.warning("Request notification failed via %s (conn=%s): %s", provider, conn.get("id"), err)
+        except Exception as e:
+            logger.error("Request notification error via %s (conn=%s): %s", provider, conn.get("id"), e)
 
 
 def test_connection(conn_id: int) -> tuple:

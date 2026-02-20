@@ -260,10 +260,14 @@ PROVIDER_META = {
 @notification_api.route("/api/notifications/providers", methods=["GET"])
 def get_providers():
     """Return available notification providers and their field definitions."""
+    from src.primary.notification_manager import REQUEST_TRIGGER_KEYS, REQUEST_TRIGGER_LABELS, DEFAULT_REQUEST_TRIGGERS
     return jsonify({
         "providers": PROVIDER_META,
         "trigger_keys": TRIGGER_KEYS,
         "default_triggers": DEFAULT_TRIGGERS,
+        "request_trigger_keys": REQUEST_TRIGGER_KEYS,
+        "request_trigger_labels": REQUEST_TRIGGER_LABELS,
+        "default_request_triggers": DEFAULT_REQUEST_TRIGGERS,
     })
 
 
