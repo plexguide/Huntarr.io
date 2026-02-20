@@ -5351,16 +5351,15 @@ class RequestarrModal {
                 if (requestBtn) { requestBtn.disabled = true; requestBtn.classList.add('disabled'); requestBtn.textContent = 'Already in library'; }
                 this._syncCardBadge(this.core.currentModalData.tmdb_id, true);
                 this._clearImportBanner();
+            } else if (status.monitored) {
+                // Movie is in the collection (monitored) but file not downloaded yet
+                container.innerHTML = '<span class="mh-req-badge mh-req-badge-lib"><i class="fas fa-bookmark"></i> In library — downloading</span>';
+                if (requestBtn) { requestBtn.disabled = true; requestBtn.classList.add('disabled'); requestBtn.textContent = 'In Library'; }
+                this._syncCardBadge(this.core.currentModalData.tmdb_id, false, true);
+                this._clearImportBanner();
             } else if (status.previously_requested) {
-                container.innerHTML = isMovieHunt
-                    ? '<span class="mh-req-badge mh-req-badge-warn"><i class="fas fa-clock"></i> Requested — waiting for download</span>'
-                    : '<span class="mh-req-badge mh-req-badge-warn"><i class="fas fa-clock"></i> Previously requested</span>';
-                if (requestBtn) {
-                    requestBtn.disabled = false;
-                    requestBtn.classList.remove('disabled');
-                    requestBtn.textContent = isMovieHunt ? 'Add to Library' : 'Request';
-                }
-                this._updateRequestButtonFromRootFolder();
+                container.innerHTML = '<span class="mh-req-badge mh-req-badge-warn"><i class="fas fa-bookmark"></i> Already requested</span>';
+                if (requestBtn) { requestBtn.disabled = true; requestBtn.classList.add('disabled'); requestBtn.textContent = 'Already Requested'; }
                 this._syncCardBadge(this.core.currentModalData.tmdb_id, false, true);
                 // Still check for importable files even if previously requested
                 if (isMovieHunt) this._checkForImport(instanceName);
@@ -5999,7 +5998,7 @@ class RequestarrModal {
             const resp = await fetch(`./api/requestarr/movie-status?tmdb_id=${tmdbId}&instance=${encodeURIComponent(decoded.name)}${appTypeParam}`);
             const data = await resp.json();
 
-            this._syncCardBadge(tmdbId, data.in_library || false, data.previously_requested || false);
+            this._syncCardBadge(tmdbId, data.in_library || false, data.previously_requested || data.monitored || false);
         } catch (err) {
             console.warn('[RequestarrModal] Failed to refresh card status from API:', err);
         }
@@ -7990,12 +7989,12 @@ window.RequestarrRequests = {
         const isOwner = window._huntarrUserRole === 'owner';
         if (req.status === 'pending' && isOwner) {
             actions = `
-                <button class="requsers-btn requsers-btn-primary requsers-btn-sm" onclick="RequestarrRequests.approveRequest(${req.id})"><i class="fas fa-check"></i> Approve</button>
-                <button class="requsers-btn requsers-btn-danger requsers-btn-sm" onclick="RequestarrRequests.denyRequest(${req.id})"><i class="fas fa-times"></i> Deny</button>
-                <button class="requsers-btn requsers-btn-sm" style="background:var(--bg-tertiary);color:#f87171;" onclick="RequestarrRequests.blacklistRequest(${req.id})" title="Blacklist"><i class="fas fa-ban"></i> Blacklist</button>`;
+                <button class="reqrequests-action-btn reqrequests-action-approve" onclick="RequestarrRequests.approveRequest(${req.id}, this)"><i class="fas fa-check"></i> Approve</button>
+                <button class="reqrequests-action-btn reqrequests-action-deny" onclick="RequestarrRequests.denyRequest(${req.id}, this)"><i class="fas fa-times"></i> Deny</button>
+                <button class="reqrequests-action-btn reqrequests-action-blacklist" onclick="RequestarrRequests.blacklistRequest(${req.id})" title="Blacklist"><i class="fas fa-ban"></i> Blacklist</button>`;
         }
         if (isOwner) {
-            actions += `<button class="requsers-btn requsers-btn-sm" style="background:var(--bg-tertiary);color:var(--text-secondary);" onclick="RequestarrRequests.deleteRequest(${req.id})" title="Delete"><i class="fas fa-trash"></i></button>`;
+            actions += `<button class="reqrequests-action-btn reqrequests-action-delete" onclick="RequestarrRequests.deleteRequest(${req.id})" title="Delete"><i class="fas fa-trash-alt"></i></button>`;
         }
 
         return `<div class="reqrequests-card" data-request-id="${req.id}">
@@ -8017,7 +8016,13 @@ window.RequestarrRequests = {
         </div>`;
     },
 
-    async approveRequest(requestId) {
+    async approveRequest(requestId, btn) {
+        // Instant feedback
+        const card = document.querySelector(`.reqrequests-card[data-request-id="${requestId}"]`);
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Approving...'; }
+        if (card) card.classList.add('reqrequests-card-processing');
+        // Disable sibling buttons
+        if (card) card.querySelectorAll('.reqrequests-action-btn').forEach(b => { if (b !== btn) b.disabled = true; });
         try {
             const resp = await fetch(`./api/requestarr/requests/${requestId}/approve`, {
                 method: 'POST',
@@ -8059,8 +8064,13 @@ window.RequestarrRequests = {
         }
     },
 
-    async denyRequest(requestId) {
+    async denyRequest(requestId, btn) {
         const notes = prompt('Reason for denial (optional):') || '';
+        // Instant feedback
+        const card = document.querySelector(`.reqrequests-card[data-request-id="${requestId}"]`);
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Denying...'; }
+        if (card) card.classList.add('reqrequests-card-processing');
+        if (card) card.querySelectorAll('.reqrequests-action-btn').forEach(b => { if (b !== btn) b.disabled = true; });
         try {
             const resp = await fetch(`./api/requestarr/requests/${requestId}/deny`, {
                 method: 'POST',
@@ -8312,8 +8322,6 @@ window.RequestarrRequests = {
             ? (item.poster_path.startsWith('http') ? item.poster_path : `https://image.tmdb.org/t/p/w185${item.poster_path}`)
             : './static/images/blackout.jpg';
         const typeBadgeLabel = item.media_type === 'tv' ? 'TV' : 'Movie';
-        const year = item.year || item.release_year || 'N/A';
-        const rating = item.vote_average ? parseFloat(item.vote_average).toFixed(1) : 'N/A';
 
         card.innerHTML = `
             <div class="media-card-poster">

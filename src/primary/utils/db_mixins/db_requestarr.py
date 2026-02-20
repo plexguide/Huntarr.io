@@ -225,6 +225,24 @@ class RequestarrMixin:
             logger.error(f"Error getting pending request tmdb_ids: {e}")
             return set()
 
+    def get_approved_request_tmdb_ids(self) -> set:
+        """Get set of tmdb_ids that have approved requests (not yet necessarily in collection)."""
+        try:
+            with self.get_connection() as conn:
+                rows = conn.execute(
+                    "SELECT tmdb_id FROM requestarr_requests WHERE status = 'approved' AND username != ''"
+                ).fetchall()
+                result = set()
+                for r in rows:
+                    try:
+                        result.add(int(r[0]))
+                    except (TypeError, ValueError):
+                        pass
+                return result
+        except Exception as e:
+            logger.error(f"Error getting approved request tmdb_ids: {e}")
+            return set()
+
     def check_existing_request(self, media_type: str, tmdb_id: int) -> Optional[Dict[str, Any]]:
         """Check if a user request already exists for this media item. Excludes old media-tracking rows."""
         try:

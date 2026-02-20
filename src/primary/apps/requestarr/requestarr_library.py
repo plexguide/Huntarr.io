@@ -639,8 +639,9 @@ class LibraryMixin:
             instance_name: Optional instance name to check. If None, checks all instances.
         """
         try:
-            # Get pending request tmdb_ids for the current user (if in a request context)
+            # Get pending + approved request tmdb_ids for badge enrichment
             pending_tmdb_ids = set()
+            approved_tmdb_ids = set()
             try:
                 from flask import request as flask_request
                 from src.primary.auth import get_username_from_session, SESSION_COOKIE_NAME
@@ -653,6 +654,8 @@ class LibraryMixin:
                     user = _db.get_user_by_username(username) or _db.get_requestarr_user_by_username(username)
                     if user:
                         pending_tmdb_ids = _db.get_pending_request_tmdb_ids(user_id=user.get('id'))
+                    # Approved requests (any user) — movies approved but possibly not yet in collection
+                    approved_tmdb_ids = _db.get_approved_request_tmdb_ids()
             except Exception:
                 pass  # Not in a request context or auth unavailable — skip pending check
 
@@ -712,6 +715,7 @@ class LibraryMixin:
             
             # Get all movies from Movie Hunt instances (batch check)
             movie_hunt_tmdb_ids = set()
+            movie_hunt_monitored_tmdb_ids = set()  # In collection but no file yet
             if use_movie_hunt or (not app_type and movie_hunt_instances):
                 import os as _os
                 for mh_inst in movie_hunt_instances:
@@ -741,6 +745,9 @@ class LibraryMixin:
                                 has_file = True
                             if has_file:
                                 movie_hunt_tmdb_ids.add(tmdb_id)
+                            else:
+                                # In collection but no file yet — treat as partial (like TV shows)
+                                movie_hunt_monitored_tmdb_ids.add(tmdb_id)
                         # Also check detected movies from root folders
                         try:
                             from src.primary.routes.media_hunt.storage import get_detected_movies_from_all_roots
@@ -751,12 +758,13 @@ class LibraryMixin:
                                     movie_hunt_tmdb_ids.add(dtmdb)
                         except Exception:
                             pass
-                        logger.info(f"Found {len(movie_hunt_tmdb_ids)} movies in Movie Hunt instance {mh_inst['name']}")
+                        logger.info(f"Found {len(movie_hunt_tmdb_ids)} movies with files + {len(movie_hunt_monitored_tmdb_ids)} monitored in Movie Hunt instance {mh_inst['name']}")
                     except Exception as e:
                         logger.error(f"Error checking Movie Hunt instance {mh_inst.get('name', '?')}: {e}")
             
             # Get all movies from filtered Radarr instances
             radarr_tmdb_ids = set()
+            radarr_monitored_tmdb_ids = set()  # In Radarr but no file yet
             for instance in radarr_instances:
                 try:
                     headers = {'X-Api-Key': instance['api_key']}
@@ -770,7 +778,10 @@ class LibraryMixin:
                         for movie in movies:
                             if movie.get('hasFile', False):  # Only count movies with files
                                 radarr_tmdb_ids.add(movie.get('tmdbId'))
-                        logger.info(f"Found {len(radarr_tmdb_ids)} movies with files in Radarr instance {instance['name']}")
+                            else:
+                                # In Radarr but no file yet — treat as partial (monitored)
+                                radarr_monitored_tmdb_ids.add(movie.get('tmdbId'))
+                        logger.info(f"Found {len(radarr_tmdb_ids)} movies with files + {len(radarr_monitored_tmdb_ids)} monitored in Radarr instance {instance['name']}")
                 except Exception as e:
                     logger.error(f"Error checking Radarr instance {instance['name']}: {e}")
             
@@ -912,11 +923,18 @@ class LibraryMixin:
                 if media_type == 'movie':
                     # Check Movie Hunt first (if applicable), then Radarr
                     item['in_library'] = tmdb_id in movie_hunt_tmdb_ids or tmdb_id in radarr_tmdb_ids
-                    item['partial'] = False
-                    item['importable'] = tmdb_id in importable_movie_ids and not item['in_library']
+                    # Movies in collection but without files yet → partial (shows bookmark, not download icon)
+                    item['partial'] = (not item['in_library']) and (tmdb_id in movie_hunt_monitored_tmdb_ids or tmdb_id in radarr_monitored_tmdb_ids)
+                    # Fallback: approved in DB but not yet in any collection → still partial
+                    if not item['in_library'] and not item['partial'] and tmdb_id in approved_tmdb_ids:
+                        item['partial'] = True
+                    item['importable'] = tmdb_id in importable_movie_ids and not item['in_library'] and not item['partial']
                 elif media_type == 'tv':
                     item['in_library'] = tmdb_id in sonarr_tmdb_ids or tmdb_id in tv_hunt_tmdb_ids
                     item['partial'] = tmdb_id in sonarr_partial_tmdb_ids or tmdb_id in tv_hunt_partial_tmdb_ids
+                    # Fallback: approved in DB but not yet in any collection → still partial
+                    if not item['in_library'] and not item['partial'] and tmdb_id in approved_tmdb_ids:
+                        item['partial'] = True
                     item['importable'] = tmdb_id in importable_tv_ids and not item['in_library'] and not item['partial']
                 else:
                     item['in_library'] = False

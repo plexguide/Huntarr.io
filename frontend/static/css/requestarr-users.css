@@ -474,31 +474,37 @@
 .reqrequests-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
 }
 
 .reqrequests-card {
     display: flex;
     align-items: center;
-    gap: 14px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 12px 16px;
-    transition: border-color 0.15s ease;
+    gap: 16px;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.08);
+    border-radius: 10px;
+    padding: 14px 18px;
+    transition: border-color 0.15s ease, opacity 0.2s ease;
 }
 
 .reqrequests-card:hover {
-    border-color: var(--accent-color);
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+.reqrequests-card-processing {
+    opacity: 0.5;
+    pointer-events: none;
 }
 
 .reqrequests-poster {
-    width: 46px;
-    height: 69px;
-    border-radius: 4px;
+    width: 48px;
+    height: 72px;
+    border-radius: 6px;
     object-fit: cover;
     flex-shrink: 0;
     background: var(--bg-tertiary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .reqrequests-info {
@@ -524,19 +530,19 @@
 .reqrequests-meta {
     display: flex;
     gap: 14px;
-    margin-top: 4px;
-    font-size: 0.8rem;
+    margin-top: 5px;
+    font-size: 0.78rem;
     color: var(--text-muted);
 }
 
 .reqrequests-meta i {
     margin-right: 4px;
-    opacity: 0.7;
+    opacity: 0.6;
 }
 
 .reqrequests-notes {
     margin-top: 4px;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: var(--text-dim);
     font-style: italic;
 }
@@ -549,37 +555,41 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 8px;
+    gap: 10px;
     flex-shrink: 0;
 }
 
 .reqrequests-status {
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 3px 10px;
-    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
     text-transform: uppercase;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.04em;
 }
 
 .reqrequests-status-pending {
-    background: rgba(234, 179, 8, 0.15);
+    background: rgba(234, 179, 8, 0.12);
     color: #eab308;
+    border: 1px solid rgba(234, 179, 8, 0.25);
 }
 
 .reqrequests-status-approved {
-    background: rgba(34, 197, 94, 0.15);
+    background: rgba(34, 197, 94, 0.12);
     color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.25);
 }
 
 .reqrequests-status-denied {
-    background: rgba(239, 68, 68, 0.15);
+    background: rgba(239, 68, 68, 0.12);
     color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
 .reqrequests-status-blacklisted {
-    background: rgba(234, 179, 8, 0.15);
-    color: #eab308;
+    background: rgba(239, 68, 68, 0.12);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
 .reqrequests-also {
@@ -595,6 +605,64 @@
 .reqrequests-actions {
     display: flex;
     gap: 6px;
+}
+
+/* ── Request Action Buttons ──────────────────────────────── */
+
+.reqrequests-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, opacity 0.15s ease, border-color 0.15s ease;
+    white-space: nowrap;
+}
+
+.reqrequests-action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.reqrequests-action-approve {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+    border-color: rgba(34, 197, 94, 0.3);
+}
+.reqrequests-action-approve:hover:not(:disabled) {
+    background: rgba(34, 197, 94, 0.25);
+}
+
+.reqrequests-action-deny {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.3);
+}
+.reqrequests-action-deny:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.25);
+}
+
+.reqrequests-action-blacklist {
+    background: rgba(234, 179, 8, 0.12);
+    color: #eab308;
+    border-color: rgba(234, 179, 8, 0.25);
+}
+.reqrequests-action-blacklist:hover:not(:disabled) {
+    background: rgba(234, 179, 8, 0.22);
+}
+
+.reqrequests-action-delete {
+    background: transparent;
+    color: var(--text-muted);
+    padding: 5px 8px;
+}
+.reqrequests-action-delete:hover:not(:disabled) {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
 }
 
 /* Mobile responsive */

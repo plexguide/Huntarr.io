@@ -663,16 +663,15 @@ class RequestarrModal {
                 if (requestBtn) { requestBtn.disabled = true; requestBtn.classList.add('disabled'); requestBtn.textContent = 'Already in library'; }
                 this._syncCardBadge(this.core.currentModalData.tmdb_id, true);
                 this._clearImportBanner();
+            } else if (status.monitored) {
+                // Movie is in the collection (monitored) but file not downloaded yet
+                container.innerHTML = '<span class="mh-req-badge mh-req-badge-lib"><i class="fas fa-bookmark"></i> In library — downloading</span>';
+                if (requestBtn) { requestBtn.disabled = true; requestBtn.classList.add('disabled'); requestBtn.textContent = 'In Library'; }
+                this._syncCardBadge(this.core.currentModalData.tmdb_id, false, true);
+                this._clearImportBanner();
             } else if (status.previously_requested) {
-                container.innerHTML = isMovieHunt
-                    ? '<span class="mh-req-badge mh-req-badge-warn"><i class="fas fa-clock"></i> Requested — waiting for download</span>'
-                    : '<span class="mh-req-badge mh-req-badge-warn"><i class="fas fa-clock"></i> Previously requested</span>';
-                if (requestBtn) {
-                    requestBtn.disabled = false;
-                    requestBtn.classList.remove('disabled');
-                    requestBtn.textContent = isMovieHunt ? 'Add to Library' : 'Request';
-                }
-                this._updateRequestButtonFromRootFolder();
+                container.innerHTML = '<span class="mh-req-badge mh-req-badge-warn"><i class="fas fa-bookmark"></i> Already requested</span>';
+                if (requestBtn) { requestBtn.disabled = true; requestBtn.classList.add('disabled'); requestBtn.textContent = 'Already Requested'; }
                 this._syncCardBadge(this.core.currentModalData.tmdb_id, false, true);
                 // Still check for importable files even if previously requested
                 if (isMovieHunt) this._checkForImport(instanceName);
@@ -1311,7 +1310,7 @@ class RequestarrModal {
             const resp = await fetch(`./api/requestarr/movie-status?tmdb_id=${tmdbId}&instance=${encodeURIComponent(decoded.name)}${appTypeParam}`);
             const data = await resp.json();
 
-            this._syncCardBadge(tmdbId, data.in_library || false, data.previously_requested || false);
+            this._syncCardBadge(tmdbId, data.in_library || false, data.previously_requested || data.monitored || false);
         } catch (err) {
             console.warn('[RequestarrModal] Failed to refresh card status from API:', err);
         }
