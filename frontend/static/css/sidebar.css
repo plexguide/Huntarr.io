@@ -835,6 +835,12 @@ input:checked + .slider:before {
     order: 10; /* just before the Apps label (order 11) and app groups (order 12+) */
 }
 
+/* Core label below Home for Requests/System focus */
+.sidebar.requests-focused #nav-group-core-label,
+.sidebar.system-focused #nav-group-core-label {
+    order: 11;
+}
+
 /* Apps label and app groups get higher order so Home sits above them */
 .sidebar.requests-focused #nav-group-requests,
 .sidebar.system-focused #nav-group-system,
@@ -860,15 +866,13 @@ input:checked + .slider:before {
     pointer-events: none;
 }
 
-/* Requests focused: hide Core + System + all Apps */
-.sidebar.requests-focused #nav-group-core-label,
+/* Requests focused: hide System + all Apps */
 .sidebar.requests-focused #nav-group-apps-label,
 .sidebar.requests-focused #nav-group-media-hunt,
 .sidebar.requests-focused #nzb-hunt-sidebar-group,
 .sidebar.requests-focused #nav-group-apps,
 .sidebar.requests-focused #nav-group-system,
-/* System focused: hide Core + Requests + all Apps */
-.sidebar.system-focused #nav-group-core-label,
+/* System focused: hide Requests + all Apps */
 .sidebar.system-focused #nav-group-apps-label,
 .sidebar.system-focused #nav-group-media-hunt,
 .sidebar.system-focused #nzb-hunt-sidebar-group,
