@@ -515,24 +515,24 @@ function setActiveNavItem() {
     }
     else if (h === '#media-hunt-instances') { selector = '#movieHuntInstancesNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
     else if (h === '#media-hunt-calendar' || h === '#movie-hunt-calendar' || h === '#tv-hunt-calendar') { selector = '#movieHuntCalendarNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
-    else if (h === '#settings-import-media') { selector = '#movieHuntImportMediaNav'; group = 'sidebar-group-media-hunt'; }
+    else if (h === '#settings-import-media') { selector = '#movieHuntImportMediaNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
     else if (h === '#activity-queue') { selector = '#movieHuntActivityQueueNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-activity-sub'; if (mhBody) mhBody.classList.add('activity-view'); }
     else if (h === '#activity-history') { selector = '#movieHuntActivityHistoryNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-activity-sub'; if (mhBody) mhBody.classList.add('activity-view'); }
     else if (h === '#activity-blocklist') { selector = '#movieHuntActivityBlocklistNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-activity-sub'; if (mhBody) mhBody.classList.add('activity-view'); }
     else if (h === '#activity-logs' || h === '#logs-media-hunt' || h === '#logs-tv-hunt') { selector = '#movieHuntActivityLogsNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-activity-sub'; if (mhBody) mhBody.classList.add('activity-view'); }
 
     // ── Media Hunt > Configuration ──────────────────
-    else if (h === '#media-hunt-settings' || h === '#movie-hunt-settings' || h === '#settings-instance-management') { selector = '#movieHuntSettingsMovieManagementNav'; group = 'sidebar-group-media-hunt'; }
-    else if (h === '#indexer-hunt') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; }
-    else if (h === '#indexer-hunt-stats') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; }
-    else if (h === '#indexer-hunt-history') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; }
-    else if (h === '#settings-clients') { selector = '#movieHuntClientsMainNav'; group = 'sidebar-group-media-hunt'; }
-    else if (h === '#settings-media-management') { selector = '#movieHuntSettingsMovieManagementNav'; group = 'sidebar-group-media-hunt'; }
-    else if (h === '#settings-profiles') { selector = '#movieHuntSettingsProfilesNav'; group = 'sidebar-group-media-hunt'; }
-    else if (h === '#settings-sizes') { selector = '#movieHuntSettingsSizesNav'; group = 'sidebar-group-media-hunt'; }
-    else if (h === '#settings-custom-formats') { selector = '#movieHuntSettingsCustomFormatsNav'; group = 'sidebar-group-media-hunt'; }
-    else if (h === '#settings-import-lists') { selector = '#movieHuntSettingsImportListsNav'; group = 'sidebar-group-media-hunt'; }
-    else if (h === '#settings-root-folders') { selector = '#movieHuntSettingsRootFoldersNav'; group = 'sidebar-group-media-hunt'; }
+    else if (h === '#media-hunt-settings' || h === '#movie-hunt-settings' || h === '#settings-instance-management') { selector = '#movieHuntSettingsMovieManagementNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+    else if (h === '#indexer-hunt') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+    else if (h === '#indexer-hunt-stats') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+    else if (h === '#indexer-hunt-history') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+    else if (h === '#settings-clients') { selector = '#movieHuntClientsMainNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+    else if (h === '#settings-media-management') { selector = '#movieHuntSettingsMovieManagementNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+    else if (h === '#settings-profiles') { selector = '#movieHuntSettingsProfilesNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+    else if (h === '#settings-sizes') { selector = '#movieHuntSettingsSizesNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+    else if (h === '#settings-custom-formats') { selector = '#movieHuntSettingsCustomFormatsNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+    else if (h === '#settings-import-lists') { selector = '#movieHuntSettingsImportListsNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+    else if (h === '#settings-root-folders') { selector = '#movieHuntSettingsRootFoldersNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
 
     // ── Requests ──────────────────────────────────
     else if (h === '#requestarr') { selector = '#requestarrDiscoverNav'; group = 'sidebar-group-requests'; }
