@@ -21,8 +21,12 @@ class RequestsMixin:
                      app_type: str, instance_name: str, quality_profile_id: int = None,
                      root_folder_path: str = None, quality_profile_name: str = None,
                      start_search: bool = True, minimum_availability: str = 'released',
-                     monitor: str = None, movie_monitor: str = None) -> Dict[str, Any]:
-        """Request media through the specified app instance"""
+                     monitor: str = None, movie_monitor: str = None,
+                     skip_tracking: bool = False) -> Dict[str, Any]:
+        """Request media through the specified app instance.
+        skip_tracking: if True, skip the legacy add_request() call (used by approve flow
+        where the requestarr_requests record already exists).
+        """
         try:
             # Movie Hunt has its own request pipeline (add to library, optionally start search)
             if app_type == 'movie_hunt':
@@ -33,7 +37,8 @@ class RequestsMixin:
                     quality_profile_name=quality_profile_name,
                     root_folder_path=root_folder_path, media_type=media_type,
                     start_search=start_search, minimum_availability=minimum_availability or 'released',
-                    movie_monitor=movie_monitor
+                    movie_monitor=movie_monitor,
+                    skip_tracking=skip_tracking
                 )
             
             # TV Hunt has its own request pipeline (add to collection, optionally start search)
@@ -45,7 +50,8 @@ class RequestsMixin:
                     quality_profile_name=quality_profile_name,
                     root_folder_path=root_folder_path,
                     start_search=start_search,
-                    monitor=monitor
+                    monitor=monitor,
+                    skip_tracking=skip_tracking
                 )
             
             # Get instance configuration first
@@ -86,10 +92,11 @@ class RequestsMixin:
                         
                         if missing_result['success']:
                             # Save request to database
-                            self.db.add_request(
-                                tmdb_id, media_type, title, year, overview, 
-                                poster_path, backdrop_path, app_type, instance_name
-                            )
+                            if not skip_tracking:
+                                self.db.add_request(
+                                    tmdb_id, media_type, title, year, overview, 
+                                    poster_path, backdrop_path, app_type, instance_name
+                                )
                             
                             missing_count = episode_count - episode_file_count
                             return {
@@ -140,10 +147,11 @@ class RequestsMixin:
                                 search_response.raise_for_status()
                                 
                                 # Save request to database
-                                self.db.add_request(
-                                    tmdb_id, media_type, title, year, overview, 
-                                    poster_path, backdrop_path, app_type, instance_name
-                                )
+                                if not skip_tracking:
+                                    self.db.add_request(
+                                        tmdb_id, media_type, title, year, overview, 
+                                        poster_path, backdrop_path, app_type, instance_name
+                                    )
                                 
                                 return {
                                     'success': True,
@@ -176,10 +184,11 @@ class RequestsMixin:
                 
                 if add_result['success']:
                     # Save request to database
-                    self.db.add_request(
-                        tmdb_id, media_type, title, year, overview, 
-                        poster_path, backdrop_path, app_type, instance_name
-                    )
+                    if not skip_tracking:
+                        self.db.add_request(
+                            tmdb_id, media_type, title, year, overview, 
+                            poster_path, backdrop_path, app_type, instance_name
+                        )
                     
                     return {
                         'success': True,
@@ -206,7 +215,7 @@ class RequestsMixin:
                                       instance_name: str, quality_profile_name: str = None,
                                       root_folder_path: str = None, media_type: str = 'movie',
                                       start_search: bool = True, minimum_availability: str = 'released',
-                                      movie_monitor: str = None) -> Dict[str, Any]:
+                                      movie_monitor: str = None, skip_tracking: bool = False) -> Dict[str, Any]:
         """Add movie to Movie Hunt library; optionally start search (indexers -> download client)."""
         try:
             # Resolve instance ID
@@ -250,8 +259,10 @@ class RequestsMixin:
                 }
             
             # Build request data for Movie Hunt's internal search+download pipeline
-            # We call the discovery module's internal functions directly
-            from src.primary.routes.media_hunt.discovery_movie import _get_collection_config
+            from src.primary.routes.media_hunt.discovery_movie import (
+                _get_collection_config, _search_newznab_movie,
+                _add_nzb_to_download_client, _collection_append
+            )
             from src.primary.routes.media_hunt.indexers import _get_indexers_config, _resolve_indexer_api_url
             from src.primary.routes.media_hunt.helpers import _movie_profiles_context
             from src.primary.routes.media_hunt.profiles import get_profile_by_name_or_default, best_result_matching_profile
@@ -260,11 +271,22 @@ class RequestsMixin:
                 _get_blocklist_source_titles, _blocklist_normalize_source_title,
                 _add_requested_queue_id, MOVIE_HUNT_DEFAULT_CATEGORY
             )
-            from src.primary.routes.media_hunt.discovery_movie import (
-                _search_newznab_movie, _add_nzb_to_download_client, _collection_append
-            )
             from src.primary.settings_manager import get_ssl_verify_setting
-            
+
+            # Always add to collection first — search is a bonus
+            _collection_append(
+                title=title, year=year_str, instance_id=instance_id, tmdb_id=tmdb_id,
+                poster_path=poster_path_str, root_folder=root_folder,
+                quality_profile=quality_profile, minimum_availability=min_avail
+            )
+            self._apply_movie_monitor(movie_monitor, tmdb_id, instance_id, root_folder, quality_profile, min_avail)
+            if not skip_tracking:
+                self.db.add_request(
+                    tmdb_id, media_type, title, year, overview,
+                    poster_path, backdrop_path, 'movie_hunt', instance_name
+                )
+
+            # Now attempt the search — failures here are non-fatal
             indexers = _get_indexers_config(instance_id)
             clients = get_movie_clients_config(instance_id)
             enabled_indexers = [i for i in indexers if i.get('enabled', True)]
@@ -272,18 +294,17 @@ class RequestsMixin:
             
             if not enabled_indexers:
                 return {
-                    'success': False,
-                    'message': 'No indexers configured or enabled in Movie Hunt. Add indexers in Movie Hunt Settings.',
-                    'status': 'no_indexers'
+                    'success': True,
+                    'message': f'"{title}" added to Movie Hunt – {instance_name}. No indexers configured — add indexers to start searching.',
+                    'status': 'added'
                 }
             if not enabled_clients:
                 return {
-                    'success': False,
-                    'message': 'No download clients configured or enabled in Movie Hunt. Add a client in Movie Hunt Settings.',
-                    'status': 'no_clients'
+                    'success': True,
+                    'message': f'"{title}" added to Movie Hunt – {instance_name}. No download clients configured — add a client to start downloading.',
+                    'status': 'added'
                 }
-            
-            year_str = str(year).strip() if year else ''
+
             query = f'{title} {year_str}'.strip()
             runtime_minutes = 90  # Default runtime
             
@@ -360,15 +381,10 @@ class RequestsMixin:
             
             if not nzb_url:
                 profile_name = (profile.get('name') or 'Standard').strip()
-                min_score = profile.get('min_custom_format_score', 0)
-                try:
-                    min_score = int(min_score)
-                except (TypeError, ValueError):
-                    min_score = 0
                 return {
-                    'success': False,
-                    'message': f'No release found matching quality profile "{profile_name}" (min score {min_score}). Try a different profile or search again later.',
-                    'status': 'no_release'
+                    'success': True,
+                    'message': f'"{title}" added to Movie Hunt – {instance_name}. No release found yet (profile "{profile_name}") — it will be grabbed automatically when available.',
+                    'status': 'added'
                 }
             
             # Send to download client
@@ -388,22 +404,6 @@ class RequestsMixin:
             if queue_id:
                 client_name = (client.get('name') or 'Download client').strip() or 'Download client'
                 _add_requested_queue_id(client_name, queue_id, instance_id, title=title, year=year_str, score=request_score, score_breakdown=request_score_breakdown)
-            
-            # Add to Movie Hunt collection (with quality and minimum_availability)
-            _collection_append(
-                title=title, year=year_str, instance_id=instance_id, tmdb_id=tmdb_id,
-                poster_path=poster_path_str, root_folder=root_folder,
-                quality_profile=quality_profile, minimum_availability=min_avail
-            )
-            
-            # Apply movie_monitor setting
-            self._apply_movie_monitor(movie_monitor, tmdb_id, instance_id, root_folder, quality_profile, min_avail)
-            
-            # Save request to Requestarr's DB for tracking
-            self.db.add_request(
-                tmdb_id, media_type, title, year, overview,
-                poster_path, backdrop_path, 'movie_hunt', instance_name
-            )
             
             return {
                 'success': True,
@@ -515,7 +515,7 @@ class RequestsMixin:
                                   poster_path: str = '', backdrop_path: str = '',
                                   instance_name: str = '', quality_profile_name: str = None,
                                   root_folder_path: str = None, start_search: bool = True,
-                                  monitor: str = None) -> Dict[str, Any]:
+                                  monitor: str = None, skip_tracking: bool = False) -> Dict[str, Any]:
         """Add TV series to TV Hunt collection; optionally start search for season 1."""
         try:
             instance_id = self._resolve_tv_hunt_instance_id(instance_name)
@@ -549,11 +549,12 @@ class RequestsMixin:
                 _merge_detected_episodes_into_collection(instance_id)
             except Exception as merge_err:
                 logger.warning(f"TV Hunt: episode merge after add failed: {merge_err}")
-            self.db.add_request(
-                tmdb_id, 'tv', title, None, overview,
-                (poster_path or '').strip(), (backdrop_path or '').strip(),
-                'tv_hunt', instance_name
-            )
+            if not skip_tracking:
+                self.db.add_request(
+                    tmdb_id, 'tv', title, None, overview,
+                    (poster_path or '').strip(), (backdrop_path or '').strip(),
+                    'tv_hunt', instance_name
+                )
             if start_search:
                 search_success, search_msg = perform_tv_hunt_request(
                     instance_id, title, season_number=1,

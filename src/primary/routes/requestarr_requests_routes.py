@@ -264,8 +264,47 @@ def approve_request(request_id):
         if not app_type:
             app_type = 'radarr' if media_type == 'movie' else 'sonarr'
 
+        # Resolve default quality profile and root folder for the instance
+        default_quality_profile = None
+        default_root_folder = None
+        try:
+            if app_type in ('movie_hunt', 'tv_hunt'):
+                # Resolve instance ID for Hunt apps
+                if app_type == 'movie_hunt':
+                    inst_id = requestarr_api._resolve_movie_hunt_instance_id(instance_name)
+                else:
+                    inst_id = requestarr_api._resolve_tv_hunt_instance_id(instance_name)
+
+                if inst_id is not None:
+                    # Get default quality profile
+                    profiles = requestarr_api.get_quality_profiles(app_type, instance_name)
+                    default_prof = next((p for p in profiles if p.get('is_default')), None)
+                    if default_prof:
+                        default_quality_profile = default_prof.get('name') or default_prof.get('id')
+                    elif profiles:
+                        default_quality_profile = profiles[0].get('name') or profiles[0].get('id')
+
+                    # Get default root folder
+                    root_folders = requestarr_api.get_root_folders(app_type, instance_name)
+                    default_rf = next((rf for rf in root_folders if rf.get('is_default')), None)
+                    if default_rf:
+                        default_root_folder = default_rf.get('path')
+                    elif root_folders:
+                        default_root_folder = root_folders[0].get('path')
+            else:
+                # Radarr/Sonarr: get root folders and quality profiles from the instance
+                root_folders = requestarr_api.get_root_folders(app_type, instance_name)
+                if root_folders:
+                    default_root_folder = root_folders[0].get('path')
+                profiles = requestarr_api.get_quality_profiles(app_type, instance_name)
+                if profiles:
+                    default_quality_profile = profiles[0].get('id')
+        except Exception as defaults_err:
+            logger.warning(f"[Requestarr] Could not resolve defaults for {app_type}/{instance_name}: {defaults_err}")
+
         if tmdb_id:
-            media_result = requestarr_api.request_media(
+            # Build kwargs with proper defaults for each app type
+            request_kwargs = dict(
                 tmdb_id=tmdb_id,
                 media_type=media_type,
                 title=req.get('title', ''),
@@ -277,7 +316,22 @@ def approve_request(request_id):
                 instance_name=instance_name,
                 start_search=True,
                 minimum_availability='released',
+                root_folder_path=default_root_folder,
+                skip_tracking=True,
             )
+
+            if app_type in ('movie_hunt', 'tv_hunt'):
+                request_kwargs['quality_profile_name'] = default_quality_profile
+            else:
+                request_kwargs['quality_profile_id'] = default_quality_profile
+
+            # Set monitor defaults per media type
+            if media_type == 'tv':
+                request_kwargs['monitor'] = 'all_episodes'
+            else:
+                request_kwargs['movie_monitor'] = 'movie_only'
+
+            media_result = requestarr_api.request_media(**request_kwargs)
             logger.info(f"[Requestarr] Approve triggered search for request {request_id}: {media_result}")
         else:
             logger.warning(f"[Requestarr] No tmdb_id for approved request {request_id}")
