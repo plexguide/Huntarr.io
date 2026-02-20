@@ -690,16 +690,60 @@ def get_proxy_settings():
     return {"http": proxy_url, "https": proxy_url}
 
 
+def _normalize_bypass_entry(entry):
+    """
+    Normalize a single proxy bypass entry so that Python's `requests` library
+    (which reads NO_PROXY) actually honours it.
+
+    Supported user inputs and their conversions:
+        *.example.com  ->  .example.com   (domain suffix match)
+        192.168.*      ->  192.168.0.0/16 (CIDR)
+        10.*           ->  10.0.0.0/8     (CIDR)
+        192.168.1.*    ->  192.168.1.0/24 (CIDR)
+        *              ->  *              (bypass everything, already supported)
+        .example.com   ->  .example.com   (already correct)
+        10.0.0.10      ->  10.0.0.10      (exact match, already correct)
+    """
+    e = entry.strip()
+    if not e:
+        return e
+
+    # *.domain -> .domain  (requests uses leading-dot for suffix matching)
+    if e.startswith("*."):
+        return e[1:]  # "*.example.com" -> ".example.com"
+
+    # IP wildcard patterns like 192.168.* or 10.*
+    # Only convert if it looks like an IP pattern (digits and dots and trailing .*)
+    if e.endswith(".*"):
+        prefix = e[:-2]  # strip trailing .*
+        octets = prefix.split(".")
+        # Validate: all parts must be numeric 0-255
+        if all(p.isdigit() and 0 <= int(p) <= 255 for p in octets):
+            num_octets = len(octets)
+            if num_octets == 1:
+                return f"{prefix}.0.0.0/8"
+            elif num_octets == 2:
+                return f"{prefix}.0.0/16"
+            elif num_octets == 3:
+                return f"{prefix}.0/24"
+
+    return e
+
+
 def get_proxy_ignored_addresses():
     """
     Get the comma-separated list of addresses that bypass the proxy.
-    Returns a list of stripped strings.
+    Returns a list of normalized strings suitable for the NO_PROXY env var.
+
+    User-friendly wildcards (*.domain, 192.168.*) are converted to formats
+    that Python's requests library actually understands (.domain, CIDR).
     """
     general = load_settings("general")
     raw = (general.get("proxy_ignored_addresses") or "").strip()
     if not raw:
         return []
-    return [a.strip() for a in raw.split(",") if a.strip()]
+    entries = [a.strip() for a in raw.split(",") if a.strip()]
+    return [_normalize_bypass_entry(e) for e in entries if _normalize_bypass_entry(e)]
 
 
 def apply_proxy_env():

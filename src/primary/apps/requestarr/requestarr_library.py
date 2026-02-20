@@ -836,18 +836,19 @@ class LibraryMixin:
                     if response.status_code == 200:
                         series_list = response.json()
                         for series in series_list:
-                            # Check if series has all episodes
                             statistics = series.get('statistics', {})
                             total_episodes = statistics.get('episodeCount', 0)
                             available_episodes = statistics.get('episodeFileCount', 0)
                             
                             tmdb_id = series.get('tmdbId')
+                            if not tmdb_id:
+                                continue
                             # Mark as in_library if all episodes are available
                             if total_episodes > 0 and available_episodes == total_episodes:
                                 sonarr_tmdb_ids.add(tmdb_id)
-                            # Mark as partial if some but not all episodes are available,
-                            # or if the series exists but has no episodes downloaded yet
-                            elif total_episodes > 0:
+                            # Mark as partial if series exists in Sonarr (monitored)
+                            # — even with 0 episodes downloaded, it's "in the library"
+                            else:
                                 sonarr_partial_tmdb_ids.add(tmdb_id)
                         logger.debug(f"Found {len(sonarr_tmdb_ids)} complete series and {len(sonarr_partial_tmdb_ids)} partial series in Sonarr instance {instance['name']}")
                 except Exception as e:
@@ -950,18 +951,25 @@ class LibraryMixin:
     def filter_available_media(self, items: List[Dict[str, Any]], media_type: str) -> List[Dict[str, Any]]:
         """
         Filter out media items that are already available in library.
-        Returns only items where in_library is False (not available).
+        Returns only items where in_library AND partial are both False.
+        
+        "Hide items in library" means hide anything the user already has
+        in their arr apps — whether fully downloaded (in_library) or just
+        monitored/partially downloaded (partial).
         
         Args:
-            items: List of media items with 'in_library' status
+            items: List of media items with 'in_library' and 'partial' status
             media_type: 'movie' or 'tv'
             
         Returns:
-            Filtered list excluding items already in library
+            Filtered list excluding items already in library or partially in library
         """
         try:
-            filtered_items = [item for item in items if not item.get('in_library', False)]
-            logger.info(f"Filtered {media_type} results: {len(items)} total -> {len(filtered_items)} not in library")
+            filtered_items = [
+                item for item in items
+                if not item.get('in_library', False) and not item.get('partial', False)
+            ]
+            logger.info(f"Filtered {media_type} results: {len(items)} total -> {len(filtered_items)} not in library (removed {len(items) - len(filtered_items)} in_library/partial)")
             return filtered_items
         except Exception as e:
             logger.error(f"Error filtering available media: {e}")
