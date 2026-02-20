@@ -324,6 +324,10 @@ app.register_blueprint(requestarr_services_bp)
 app.register_blueprint(requestarr_requests_bp)
 app.register_blueprint(requestarr_bundles_bp)
 
+# User notification settings
+from src.primary.routes.user_notification_routes import user_notification_bp
+app.register_blueprint(user_notification_bp)
+
 # Chat
 from src.primary.routes.chat_routes import chat_bp
 app.register_blueprint(chat_bp)

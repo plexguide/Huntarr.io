@@ -71,6 +71,7 @@ TRIGGER_KEYS = [
     "on_missing",        # Missing media processed
     "on_rename",         # Media renamed
     "on_delete",         # Media deleted
+    "on_request",        # Requestarr request created/approved/denied
     "on_health_issue",   # App health issue detected
     "on_app_update",     # App update available
     "on_manual_required",# Manual interaction required
@@ -85,6 +86,7 @@ DEFAULT_TRIGGERS = {
     "on_missing": True,
     "on_rename": False,
     "on_delete": True,
+    "on_request": True,
     "on_health_issue": False,
     "on_app_update": False,
     "on_manual_required": False,
@@ -429,6 +431,91 @@ def _send_apprise(settings: dict, title: str, message: str, event: str, **kw) ->
         return False, str(e)
 
 
+# ---- Gotify ----
+@register_provider("gotify")
+def _send_gotify(settings: dict, title: str, message: str, event: str, **kw) -> tuple:
+    """Send via Gotify server."""
+    server_url = settings.get("server_url", "").strip().rstrip("/")
+    app_token = settings.get("app_token", "").strip()
+    if not server_url or not app_token:
+        return False, "Gotify server URL and app token are required"
+
+    priority = int(settings.get("priority", 5))
+
+    url = f"{server_url}/message?token={app_token}"
+    payload = {
+        "title": title,
+        "message": message,
+        "priority": priority,
+        "extras": {
+            "client::display": {"contentType": "text/plain"},
+        },
+    }
+    return _http_post(url, json_body=payload)
+
+
+# ---- ntfy ----
+@register_provider("ntfy")
+def _send_ntfy(settings: dict, title: str, message: str, event: str, **kw) -> tuple:
+    """Send via ntfy.sh or self-hosted ntfy server."""
+    server_url = settings.get("server_url", "https://ntfy.sh").strip().rstrip("/")
+    topic = settings.get("topic", "").strip()
+    if not topic:
+        return False, "ntfy topic is required"
+
+    priority_map = {"1": "min", "2": "low", "3": "default", "4": "high", "5": "urgent"}
+    priority = priority_map.get(str(settings.get("priority", "3")), "default")
+
+    access_token = settings.get("access_token", "").strip()
+    username = settings.get("username", "").strip()
+    password = settings.get("password", "").strip()
+
+    headers = {
+        "Title": title,
+        "Priority": priority,
+        "Tags": event.replace("on_", ""),
+    }
+
+    if access_token:
+        headers["Authorization"] = f"Bearer {access_token}"
+    elif username and password:
+        import base64
+        creds = base64.b64encode(f"{username}:{password}".encode()).decode()
+        headers["Authorization"] = f"Basic {creds}"
+
+    url = f"{server_url}/{topic}"
+    try:
+        resp = requests.post(url, data=message.encode("utf-8"), headers=headers, timeout=15)
+        if resp.status_code >= 400:
+            return False, f"HTTP {resp.status_code}: {resp.text[:200]}"
+        return True, "OK"
+    except requests.RequestException as e:
+        return False, str(e)
+
+
+# ---- LunaSea ----
+@register_provider("lunasea")
+def _send_lunasea(settings: dict, title: str, message: str, event: str, **kw) -> tuple:
+    """Send via LunaSea webhook (Firebase Cloud Messaging)."""
+    webhook_url = settings.get("webhook_url", "").strip()
+    if not webhook_url:
+        # Build from user/device ID
+        user_id = settings.get("user_id", "").strip()
+        device_id = settings.get("device_id", "").strip()
+        if user_id:
+            webhook_url = f"https://notify.lunasea.app/v1/custom/user/{user_id}"
+        elif device_id:
+            webhook_url = f"https://notify.lunasea.app/v1/custom/device/{device_id}"
+        else:
+            return False, "LunaSea webhook URL, user ID, or device ID is required"
+
+    payload = {
+        "title": title,
+        "body": message,
+    }
+    return _http_post(webhook_url, json_body=payload)
+
+
 # ---------------------------------------------------------------------------
 # Color helpers for embeds
 # ---------------------------------------------------------------------------
@@ -440,6 +527,7 @@ _EVENT_COLORS = {
     "on_missing":    0xFBBF24,  # Amber
     "on_rename":     0xA78BFA,  # Purple
     "on_delete":     0xF87171,  # Red
+    "on_request":    0x38BDF8,  # Sky blue
     "on_health_issue": 0xF97316,  # Orange
     "on_app_update": 0x2DD4BF,  # Teal
     "on_manual_required": 0xE879F9,  # Fuchsia

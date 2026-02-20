@@ -92,6 +92,75 @@ class ExtrasMixin:
             conn.commit()
             return cursor.rowcount > 0
 
+    # ── User Notification Settings ──────────────────────────────────────
+
+    def get_user_notification_settings(self, username: str) -> List[Dict[str, Any]]:
+        """Return all notification settings for a user."""
+        with self.get_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(
+                'SELECT * FROM user_notification_settings WHERE username = ? ORDER BY provider',
+                (username,)
+            ).fetchall()
+            results = []
+            for row in rows:
+                d = dict(row)
+                for key in ('settings', 'types'):
+                    if isinstance(d.get(key), str):
+                        try:
+                            d[key] = json.loads(d[key])
+                        except (json.JSONDecodeError, TypeError):
+                            d[key] = {}
+                results.append(d)
+            return results
+
+    def get_user_notification_setting(self, username: str, provider: str) -> Optional[Dict[str, Any]]:
+        """Return a single user notification setting by username + provider."""
+        with self.get_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            row = conn.execute(
+                'SELECT * FROM user_notification_settings WHERE username = ? AND provider = ?',
+                (username, provider)
+            ).fetchone()
+            if not row:
+                return None
+            d = dict(row)
+            for key in ('settings', 'types'):
+                if isinstance(d.get(key), str):
+                    try:
+                        d[key] = json.loads(d[key])
+                    except (json.JSONDecodeError, TypeError):
+                        d[key] = {}
+            return d
+
+    def save_user_notification_setting(self, username: str, provider: str, data: Dict[str, Any]) -> bool:
+        """Create or update a user notification setting. Uses UPSERT on (username, provider)."""
+        enabled = 1 if data.get('enabled', True) else 0
+        settings_json = json.dumps(data.get('settings', {}))
+        types_json = json.dumps(data.get('types', {}))
+        with self.get_connection() as conn:
+            conn.execute('''
+                INSERT INTO user_notification_settings (username, provider, enabled, settings, types)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(username, provider) DO UPDATE SET
+                    enabled = excluded.enabled,
+                    settings = excluded.settings,
+                    types = excluded.types,
+                    updated_at = CURRENT_TIMESTAMP
+            ''', (username, provider, enabled, settings_json, types_json))
+            conn.commit()
+            return True
+
+    def delete_user_notification_setting(self, username: str, provider: str) -> bool:
+        """Delete a user notification setting."""
+        with self.get_connection() as conn:
+            cursor = conn.execute(
+                'DELETE FROM user_notification_settings WHERE username = ? AND provider = ?',
+                (username, provider)
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+
     # ── Indexer Hunt accessors ───────────────────────────────────────────
 
     def add_indexer_hunt_indexer(self, indexer_data: Dict[str, Any]) -> str:

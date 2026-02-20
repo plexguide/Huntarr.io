@@ -36,6 +36,7 @@
         on_missing: 'On Missing',
         on_rename: 'On Rename',
         on_delete: 'On Delete',
+        on_request: 'On Request',
         on_health_issue: 'On Health Issue',
         on_app_update: 'On App Update',
         on_manual_required: 'On Manual Required'
@@ -170,7 +171,7 @@
         if (!grid) return;
         grid.innerHTML = '';
 
-        var order = ['discord', 'telegram', 'slack', 'pushover', 'pushbullet', 'email', 'notifiarr', 'webhook', 'apprise'];
+        var order = ['discord', 'telegram', 'slack', 'pushover', 'pushbullet', 'email', 'gotify', 'ntfy', 'lunasea', 'notifiarr', 'webhook', 'apprise'];
 
         order.forEach(function (key) {
             var meta = providerMeta[key];

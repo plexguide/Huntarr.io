@@ -1037,6 +1037,21 @@ class HuntarrDatabase(ConfigMixin, StateMixin, UsersMixin, RequestarrMixin, Extr
             except sqlite3.OperationalError:
                 conn.execute("ALTER TABLE notification_connections ADD COLUMN app_scope TEXT NOT NULL DEFAULT 'all'")
                 conn.execute("ALTER TABLE notification_connections ADD COLUMN instance_scope TEXT NOT NULL DEFAULT 'all'")
+
+            # User notification settings — per-user personal notification preferences
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS user_notification_settings (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT NOT NULL,
+                    provider TEXT NOT NULL,
+                    enabled INTEGER DEFAULT 1,
+                    settings TEXT NOT NULL DEFAULT '{}',
+                    types TEXT NOT NULL DEFAULT '{}',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(username, provider)
+                )
+            ''')
             
             # Create indexes for better performance
             # Note: indexes on UNIQUE columns (app_configs.app_type, general_settings.setting_key,

@@ -416,7 +416,7 @@ let huntarrUI = {
         var allowed = [
             'requestarr', 'requestarr-discover', 'requestarr-movies',
             'requestarr-tv', 'requestarr-hidden', 'requestarr-personal-blacklist',
-            'requestarr-requests',
+            'requestarr-requests', 'user-notifications',
         ];
         return allowed.indexOf(section) === -1;
     },

@@ -104,7 +104,23 @@ def _send_request_notification(req_data, action, actor_username=None):
         else:
             message = f"Request update for {media_type}: {media_title} ({media_year})"
 
-        dispatch_notification('request', title, message)
+        # System-level notification (admin connections)
+        dispatch_notification('on_request', title, message)
+
+        # User-level notification (per-user settings)
+        try:
+            from src.primary.routes.user_notification_routes import dispatch_user_notification
+            event_map = {
+                'created': 'request_pending',
+                'approved': 'request_approved',
+                'denied': 'request_denied',
+                'auto_approved': 'request_auto_approved',
+            }
+            user_event = event_map.get(action)
+            if user_event and requester:
+                dispatch_user_notification(requester, user_event, title, message)
+        except Exception as ue:
+            logger.debug(f"Could not send user notification: {ue}")
     except Exception as e:
         logger.debug(f"Could not send request notification: {e}")
 

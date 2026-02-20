@@ -75,6 +75,10 @@
                     <div class="nav-icon-wrapper"><i class="fas fa-users"></i></div>
                     <span>Users</span>
                 </a>
+                <a href="./#user-notifications" class="nav-item nav-item-sub nav-item-deep" id="requestarrUserNotificationsNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-bell"></i></div>
+                    <span>User Notifications</span>
+                </a>
                 <a href="./#requestarr-global-blacklist" class="nav-item nav-item-sub nav-item-deep" id="requestarrGlobalBlacklistNav">
                     <div class="nav-icon-wrapper"><i class="fas fa-ban"></i></div>
                     <span>Global Blacklist</span>
@@ -542,6 +546,7 @@ function setActiveNavItem() {
     else if (h === '#requestarr-smarthunt-settings') { selector = '#requestarrSmartHuntSettingsNav'; group = 'sidebar-group-requests'; }
     else if (h === '#requestarr-filters' || h === '#requestarr-settings') { selector = '#requestarrSettingsNav'; group = 'sidebar-group-requests'; }
     else if (h === '#requestarr-users') { selector = '#requestarrUsersNav'; group = 'sidebar-group-requests'; }
+    else if (h === '#user-notifications') { selector = '#requestarrUserNotificationsNav'; group = 'sidebar-group-requests'; }
     else if (h === '#requestarr-requests') {
         if (window._huntarrUserRole === 'owner') {
             selector = '#requestarrRequestsNav'; group = 'sidebar-group-requests';

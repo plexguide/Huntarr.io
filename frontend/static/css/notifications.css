@@ -689,3 +689,10 @@
         padding: 10px 8px;
     }
 }
+
+/* Disabled provider card (admin hasn't enabled this provider) */
+.notif-provider-card.notif-provider-disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    pointer-events: none;
+}

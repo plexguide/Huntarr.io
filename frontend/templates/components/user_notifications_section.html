@@ -1,0 +1,80 @@
+<section id="userNotificationsSection" class="content-section" style="display: none;">
+    <div class="app-content-panel" style="padding: 20px;">
+        {% from 'components/page_header_partial.html' import page_header %}
+        {{ page_header(back_href='./#requestarr-users', parent_icon='fas fa-bell', parent_name='Requests', current_name='User Notifications', sponsor_section_id='user-notifications') }}
+        <div class="notif-container">
+
+        <!-- Add Provider -->
+        <div class="notif-card" id="userNotifAddPanel">
+            <div class="notif-card-header">
+                <div class="notif-card-header-left">
+                    <div class="notif-card-icon notif-icon-blue">
+                        <i class="fas fa-plus-circle"></i>
+                    </div>
+                    <h3>Add Notification</h3>
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted, #94a3b8);">
+                    Choose a provider to get started
+                </div>
+            </div>
+            <div class="notif-card-body">
+                <div class="notif-provider-grid" id="userNotifProviderGrid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Settings -->
+        <div class="notif-card" id="userNotifSettingsPanel">
+            <div class="notif-card-header">
+                <div class="notif-card-header-left">
+                    <div class="notif-card-icon notif-icon-slate">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <h3>My Notifications</h3>
+                </div>
+                <div id="userNotifCount" style="font-size: 12px; color: var(--text-muted, #94a3b8);"></div>
+            </div>
+            <div class="notif-card-body">
+                <div class="notif-connection-list" id="userNotifList"></div>
+                <div class="notif-empty-state" id="userNotifEmpty">
+                    <i class="fas fa-bell-slash"></i>
+                    <p>No personal notifications configured. Add one above to get notified about your requests.</p>
+                </div>
+            </div>
+        </div>
+
+        </div>
+    </div>
+
+    <!-- Edit / Add Modal -->
+    <div class="notif-modal-overlay" id="userNotifModalOverlay">
+        <div class="notif-modal" id="userNotifModal">
+            <div class="notif-modal-header">
+                <div class="notif-modal-header-left">
+                    <div class="notif-card-icon" id="userNotifModalIcon" style="width:32px;height:32px;border-radius:8px;">
+                        <i id="userNotifModalIconI" class="fas fa-bell"></i>
+                    </div>
+                    <h3 id="userNotifModalTitle">Add Notification</h3>
+                </div>
+                <button class="notif-modal-close" id="userNotifModalClose"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="notif-modal-body" id="userNotifModalBody">
+                <!-- Dynamically populated -->
+            </div>
+            <div class="notif-modal-footer">
+                <div class="notif-modal-footer-left">
+                    <button class="notif-btn notif-btn-test" id="userNotifModalTestBtn" style="display:none;">
+                        <i class="fas fa-paper-plane"></i> Test
+                    </button>
+                </div>
+                <div class="notif-modal-footer-right">
+                    <button class="notif-btn notif-btn-cancel" id="userNotifModalCancelBtn">Cancel</button>
+                    <button class="notif-btn notif-btn-save" id="userNotifModalSaveBtn"><i class="fas fa-save"></i> Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<link rel="stylesheet" href="./static/css/notifications.css">
