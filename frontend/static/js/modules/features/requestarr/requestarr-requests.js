@@ -139,6 +139,28 @@ window.RequestarrRequests = {
                 if (window.HuntarrNotifications) window.HuntarrNotifications.showNotification('Request approved', 'success');
                 await this.loadRequests();
                 this._refreshBadge();
+                // Sync card badges on discover/search pages — item is now in library
+                const req = data.request;
+                if (req && req.tmdb_id) {
+                    const tmdbId = String(req.tmdb_id);
+                    document.querySelectorAll(`.media-card[data-tmdb-id="${tmdbId}"]`).forEach(card => {
+                        const badge = card.querySelector('.media-card-status-badge');
+                        if (badge) {
+                            badge.className = 'media-card-status-badge partial';
+                            badge.innerHTML = '<i class="fas fa-bookmark"></i>';
+                        }
+                        card.classList.add('in-library');
+                        // Swap hide → delete button
+                        const hideBtn = card.querySelector('.media-card-hide-btn');
+                        if (hideBtn) {
+                            hideBtn.className = 'media-card-delete-btn';
+                            hideBtn.title = 'Remove / Delete';
+                            hideBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+                        }
+                        const requestBtn = card.querySelector('.media-card-request-btn');
+                        if (requestBtn) requestBtn.remove();
+                    });
+                }
             } else {
                 if (window.HuntarrNotifications) window.HuntarrNotifications.showNotification(data.error || 'Failed', 'error');
             }
