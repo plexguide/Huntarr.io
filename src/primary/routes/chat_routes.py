@@ -5,7 +5,6 @@ Owner has moderator powers (delete any message, clear all).
 
 from flask import Blueprint, request, jsonify
 import logging
-import html
 import time
 from src.primary.utils.database import get_database
 from src.primary.auth import get_username_from_session, SESSION_COOKIE_NAME
@@ -51,7 +50,14 @@ def _get_current_user():
     # Check requestarr users table
     req_user = db.get_requestarr_user_by_username(username)
     if req_user:
-        return {'id': req_user['id'], 'username': username, 'role': req_user.get('role', 'user')}
+        perms = req_user.get('permissions', {})
+        if isinstance(perms, str):
+            import json as _json
+            try:
+                perms = _json.loads(perms)
+            except Exception:
+                perms = {}
+        return {'id': req_user['id'], 'username': username, 'role': req_user.get('role', 'user'), 'permissions': perms}
     return None
 
 
@@ -61,11 +67,14 @@ def get_messages():
     user = _get_current_user()
     if not user:
         return jsonify({'error': 'Not authenticated'}), 401
+    # Check disable_chat permission (owner can never be disabled)
+    perms = user.get('permissions', {})
+    chat_disabled = perms.get('disable_chat', False) if user['role'] != 'owner' else False
     before_id = request.args.get('before_id', type=int)
     limit = min(request.args.get('limit', 50, type=int), 200)
     db = get_database()
     messages = db.get_chat_messages(limit=limit, before_id=before_id)
-    return jsonify({'messages': messages, 'user': {'username': user['username'], 'role': user['role']}})
+    return jsonify({'messages': messages, 'user': {'username': user['username'], 'role': user['role'], 'chat_disabled': chat_disabled}})
 
 
 @chat_bp.route('', methods=['POST'])
@@ -74,6 +83,10 @@ def send_message():
     user = _get_current_user()
     if not user:
         return jsonify({'error': 'Not authenticated'}), 401
+    # Check disable_chat permission
+    perms = user.get('permissions', {})
+    if user['role'] != 'owner' and perms.get('disable_chat', False):
+        return jsonify({'error': 'Chat is disabled for your account'}), 403
     data = request.json or {}
     message = (data.get('message') or '').strip()
     if not message:
@@ -83,8 +96,7 @@ def send_message():
     # Rate limit
     if not _check_rate_limit(user['username']):
         return jsonify({'error': 'Too many messages. Slow down.'}), 429
-    # Sanitize
-    message = html.escape(message)
+    # No html.escape here — frontend escapes via textContent/createElement
     db = get_database()
     msg_id = db.create_chat_message(user['id'], user['username'], user['role'], message)
     if msg_id:

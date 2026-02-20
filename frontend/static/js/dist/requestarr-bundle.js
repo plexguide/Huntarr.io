@@ -7220,6 +7220,7 @@ window.RequestarrUsers = {
         manage_users: 'Manage Users',
         view_requests: 'View All Requests',
         hide_media_global: 'Hide Media (Global)',
+        disable_chat: 'Disable Chat',
     },
 
     async init() {
@@ -7317,16 +7318,27 @@ window.RequestarrUsers = {
 
     _openModal(title, user) {
         const isEdit = !!user;
+        const isOwner = isEdit && user.role === 'owner';
         const perms = (user && typeof user.permissions === 'object') ? user.permissions : {};
 
         const permsHtml = Object.entries(this.permissionLabels).map(([key, label]) => {
             const checked = perms[key] ? 'checked' : '';
-            const disabled = (user && user.role === 'owner') ? 'disabled' : '';
+            const disabled = isOwner ? 'disabled' : '';
+            // Hide disable_chat for owner — owner can never be chat-disabled
+            if (key === 'disable_chat' && isOwner) return '';
             return `<label class="requsers-perm-item">
                 <input type="checkbox" name="perm_${key}" ${checked} ${disabled}>
                 <span>${label}</span>
             </label>`;
         }).join('');
+
+        // Hide password field for owner
+        const passwordFieldHtml = isOwner ? '' : `
+                    <div class="requsers-field">
+                        <label>${isEdit ? 'New Password (leave blank to keep)' : 'Password'}</label>
+                        <input type="password" id="requsers-modal-password" placeholder="${isEdit ? '••••••••' : 'Min 8 characters'}" minlength="8" autocomplete="new-password">
+                        <div class="requsers-field-hint"><a href="#" onclick="RequestarrUsers.fillGeneratedPassword();return false;">Generate random password</a></div>
+                    </div>`;
 
         const html = `<div class="requsers-modal-overlay" id="requsers-modal-overlay" onclick="if(event.target===this)RequestarrUsers.closeModal()">
             <div class="requsers-modal">
@@ -7337,22 +7349,17 @@ window.RequestarrUsers = {
                 <div class="requsers-modal-body">
                     <div class="requsers-field">
                         <label>Username</label>
-                        <input type="text" id="requsers-modal-username" value="${isEdit ? this._esc(user.username) : ''}" ${isEdit && user.role === 'owner' ? 'disabled' : ''} placeholder="Enter username" minlength="3">
+                        <input type="text" id="requsers-modal-username" value="${isEdit ? this._esc(user.username) : ''}" ${isOwner ? 'disabled' : ''} placeholder="Enter username" minlength="3">
                     </div>
                     <div class="requsers-field">
                         <label>Email (optional)</label>
                         <input type="email" id="requsers-modal-email" value="${isEdit ? this._esc(user.email || '') : ''}" placeholder="user@example.com">
-                    </div>
-                    <div class="requsers-field">
-                        <label>${isEdit ? 'New Password (leave blank to keep)' : 'Password'}</label>
-                        <input type="password" id="requsers-modal-password" placeholder="${isEdit ? '••••••••' : 'Min 8 characters'}" minlength="8" autocomplete="new-password">
-                        <div class="requsers-field-hint"><a href="#" onclick="RequestarrUsers.fillGeneratedPassword();return false;">Generate random password</a></div>
-                    </div>
+                    </div>${passwordFieldHtml}
                     <div class="requsers-field">
                         <label>Role</label>
-                        <select id="requsers-modal-role" ${isEdit && user.role === 'owner' ? 'disabled' : ''} onchange="RequestarrUsers.onRoleChange()">
+                        <select id="requsers-modal-role" ${isOwner ? 'disabled' : ''} onchange="RequestarrUsers.onRoleChange()">
                             <option value="user" ${(!isEdit || user.role === 'user') ? 'selected' : ''}>User</option>
-                            ${isEdit && user.role === 'owner' ? '<option value="owner" selected>Owner</option>' : ''}
+                            ${isOwner ? '<option value="owner" selected>Owner</option>' : ''}
                         </select>
                     </div>
                     <div class="requsers-field">
@@ -7415,7 +7422,8 @@ window.RequestarrUsers = {
     async saveUser(userId) {
         const username = (document.getElementById('requsers-modal-username').value || '').trim();
         const email = (document.getElementById('requsers-modal-email').value || '').trim();
-        const password = document.getElementById('requsers-modal-password').value;
+        const passwordEl = document.getElementById('requsers-modal-password');
+        const password = passwordEl ? passwordEl.value : '';
         const role = document.getElementById('requsers-modal-role').value;
 
         // Collect permissions

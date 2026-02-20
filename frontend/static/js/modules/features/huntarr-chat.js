@@ -11,13 +11,14 @@ window.HuntarrChat = (function() {
     let _messagesEl = null;
     let _inputEl = null;
     let _isOpen = false;
-    let _user = null;       // { username, role }
+    let _user = null;       // { username, role, chat_disabled }
     let _messages = [];
     let _pollTimer = null;
     let _lastMsgId = 0;
     let _unreadCount = 0;
     let _badgeEl = null;
     let _initialized = false;
+    let _chatDisabled = false;
 
     const POLL_OPEN = 8000;
     const POLL_CLOSED = 30000;
@@ -35,9 +36,12 @@ window.HuntarrChat = (function() {
             .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
             .then(function(data) {
                 _user = data.user;
+                _chatDisabled = data.user && data.user.chat_disabled;
                 _messages = data.messages || [];
                 if (_messages.length) _lastMsgId = _messages[_messages.length - 1].id;
                 // User is authenticated — now build the UI
+                // If chat is disabled for this user, don't show anything
+                if (_chatDisabled) return;
                 _buildDOM();
                 // Show clear button for owner
                 var clearBtn = document.getElementById('hchat-clear-btn');
@@ -201,7 +205,7 @@ window.HuntarrChat = (function() {
             if (canDelete && isSelf) {
                 html += '<button class="hchat-msg-delete" data-id="' + m.id + '" title="Delete" aria-label="Delete message"><i class="fas fa-trash-alt"></i></button>';
             }
-            html += '<div class="hchat-msg-bubble">' + _escHtml(m.message) + '</div>';
+            html += '<div class="hchat-msg-bubble">' + _escHtml(_unescHtml(m.message)) + '</div>';
             if (canDelete && !isSelf) {
                 html += '<button class="hchat-msg-delete" data-id="' + m.id + '" title="Delete" aria-label="Delete message"><i class="fas fa-trash-alt"></i></button>';
             }
@@ -326,6 +330,13 @@ window.HuntarrChat = (function() {
         var div = document.createElement('div');
         div.textContent = s;
         return div.innerHTML;
+    }
+    // Unescape HTML entities that were stored by old backend html.escape()
+    function _unescHtml(s) {
+        if (!s || s.indexOf('&') === -1) return s;
+        var div = document.createElement('div');
+        div.innerHTML = s;
+        return div.textContent || div.innerText || s;
     }
 
     return { init: init };

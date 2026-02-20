@@ -104,6 +104,7 @@ DEFAULT_PERMISSIONS = {
         'manage_users': True,
         'view_requests': True,
         'hide_media_global': True,
+        'disable_chat': False,
     },
     'user': {
         'request_movies': True,
@@ -115,6 +116,7 @@ DEFAULT_PERMISSIONS = {
         'manage_users': False,
         'view_requests': False,
         'hide_media_global': False,
+        'disable_chat': False,
     },
 }
 
