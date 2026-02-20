@@ -104,8 +104,8 @@ window.RequestarrRequests = {
                 <button class="reqrequests-action-btn reqrequests-action-deny" onclick="RequestarrRequests.denyRequest(${req.id}, this)"><i class="fas fa-times"></i> Deny</button>
                 <button class="reqrequests-action-btn reqrequests-action-blacklist" onclick="RequestarrRequests.blacklistRequest(${req.id})" title="Blacklist"><i class="fas fa-ban"></i> Blacklist</button>`;
         }
-        if (isOwner) {
-            actions += `<button class="reqrequests-action-btn reqrequests-action-delete" onclick="RequestarrRequests.deleteRequest(${req.id})" title="Delete"><i class="fas fa-trash-alt"></i></button>`;
+        if (req.status === 'pending' && !isOwner) {
+            actions = `<button class="reqrequests-action-btn reqrequests-action-withdraw" onclick="RequestarrRequests.withdrawRequest(${req.id}, this)"><i class="fas fa-undo"></i> Withdraw</button>`;
         }
 
         return `<div class="reqrequests-card" data-request-id="${req.id}">
@@ -239,6 +239,29 @@ window.RequestarrRequests = {
             });
         } else {
             if (confirm('Blacklist this request? No user will be able to request it again.')) await doBlacklist();
+        }
+    },
+
+    async withdrawRequest(requestId, btn) {
+        const card = document.querySelector(`.reqrequests-card[data-request-id="${requestId}"]`);
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Withdrawing...'; }
+        if (card) card.classList.add('reqrequests-card-processing');
+        try {
+            const resp = await fetch(`./api/requestarr/requests/${requestId}/withdraw`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            });
+            const data = await resp.json();
+            if (data.success) {
+                if (window.HuntarrNotifications) window.HuntarrNotifications.showNotification('Request withdrawn', 'success');
+                await this.loadRequests();
+                this._refreshBadge();
+            } else {
+                if (window.HuntarrNotifications) window.HuntarrNotifications.showNotification(data.error || 'Failed', 'error');
+            }
+        } catch (e) {
+            console.error('[RequestarrRequests] Withdraw error:', e);
         }
     },
 

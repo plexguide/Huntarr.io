@@ -592,6 +592,12 @@
     border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
+.reqrequests-status-withdrawn {
+    background: rgba(148, 163, 184, 0.12);
+    color: #94a3b8;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
 .reqrequests-also {
     font-size: 0.75rem;
     color: var(--text-dim, #9ca3af);
@@ -655,14 +661,13 @@
     background: rgba(234, 179, 8, 0.22);
 }
 
-.reqrequests-action-delete {
-    background: transparent;
-    color: var(--text-muted);
-    padding: 5px 8px;
+.reqrequests-action-withdraw {
+    background: rgba(148, 163, 184, 0.15);
+    color: #94a3b8;
+    border-color: rgba(148, 163, 184, 0.3);
 }
-.reqrequests-action-delete:hover:not(:disabled) {
-    color: #ef4444;
-    background: rgba(239, 68, 68, 0.1);
+.reqrequests-action-withdraw:hover:not(:disabled) {
+    background: rgba(148, 163, 184, 0.25);
 }
 
 /* Mobile responsive */

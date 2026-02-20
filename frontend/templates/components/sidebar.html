@@ -508,7 +508,13 @@ function setActiveNavItem() {
     else if (h === '#requestarr-smarthunt-settings') { selector = '#requestarrSmartHuntSettingsNav'; group = 'sidebar-group-requests'; }
     else if (h === '#requestarr-settings') { selector = '#requestarrSettingsNav'; group = 'sidebar-group-requests'; }
     else if (h === '#requestarr-users') { selector = '#requestarrUsersNav'; group = 'sidebar-group-requests'; subToExpand = 'requestarr-user-support-sub'; if (reqBody) reqBody.classList.add('user-support-view'); }
-    else if (h === '#requestarr-requests') { selector = '#requestarrRequestsNav'; group = 'sidebar-group-requests'; subToExpand = 'requestarr-user-support-sub'; if (reqBody) reqBody.classList.add('user-support-view'); }
+    else if (h === '#requestarr-requests') {
+        if (window._huntarrUserRole === 'owner') {
+            selector = '#requestarrRequestsNav'; group = 'sidebar-group-requests'; subToExpand = 'requestarr-user-support-sub'; if (reqBody) reqBody.classList.add('user-support-view');
+        } else {
+            selector = '#requestarrUserSupportToggle'; group = 'sidebar-group-requests';
+        }
+    }
     else if (h === '#requestarr-services') { selector = '#requestarrServicesNav'; group = 'sidebar-group-requests'; subToExpand = 'requestarr-user-support-sub'; if (reqBody) reqBody.classList.add('user-support-view'); }
     else if (h === '#requestarr-global-blacklist') { selector = '#requestarrGlobalBlacklistNav'; group = 'sidebar-group-requests'; subToExpand = 'requestarr-user-support-sub'; if (reqBody) reqBody.classList.add('user-support-view'); }
 

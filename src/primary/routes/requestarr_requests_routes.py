@@ -371,6 +371,37 @@ def deny_request(request_id):
     return jsonify({'error': 'Failed to deny request'}), 500
 
 
+@requestarr_requests_bp.route('/<int:request_id>/withdraw', methods=['POST'])
+def withdraw_request(request_id):
+    """Withdraw a pending request. Users can only withdraw their own pending requests."""
+    user = _get_current_user()
+    if not user:
+        return jsonify({'error': 'Not authenticated'}), 401
+
+    db = get_database()
+    req = db.get_requestarr_request_by_id(request_id)
+    if not req:
+        return jsonify({'error': 'Request not found'}), 404
+
+    if req.get('status') != 'pending':
+        return jsonify({'error': 'Only pending requests can be withdrawn'}), 400
+
+    # Users can only withdraw their own requests
+    role = user.get('role', 'user')
+    if role != 'owner' and req.get('user_id') != user.get('id'):
+        return jsonify({'error': 'You can only withdraw your own requests'}), 403
+
+    success = db.update_requestarr_request_status(
+        request_id, 'withdrawn',
+        responded_by=user.get('username', ''),
+        notes='Withdrawn by requester'
+    )
+    if success:
+        updated = db.get_requestarr_request_by_id(request_id)
+        return jsonify({'success': True, 'request': updated})
+    return jsonify({'error': 'Failed to withdraw request'}), 500
+
+
 @requestarr_requests_bp.route('/<int:request_id>', methods=['DELETE'])
 def delete_request(request_id):
     """Delete a request. Admins can delete any, users can delete their own pending requests."""
