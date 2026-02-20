@@ -122,8 +122,8 @@ let huntarrUI = {
                     window.HuntarrStats.initViewToggle();
                     window.HuntarrStats.loadMediaStats(true);
                 }
-                if ((this.currentSection === 'home' || !this.currentSection) && window.HuntarrIndexerHuntHome && typeof window.HuntarrIndexerHuntHome.load === 'function') {
-                    window.HuntarrIndexerHuntHome.load();
+                if ((this.currentSection === 'home' || !this.currentSection) && window.HuntarrIndexerHuntHome && typeof window.HuntarrIndexerHuntHome.setup === 'function') {
+                    window.HuntarrIndexerHuntHome.setup();
                 }
 
                 // Settings are loaded — now safe to check welcome preference
@@ -243,8 +243,9 @@ let huntarrUI = {
         // Setup Prowlarr status polling (refresh every 30 seconds)
         this.setupProwlarrStatusPolling();
         
-        // Setup Indexer Hunt home card (shows if indexers configured)
-        this.setupIndexerHuntHome();
+        // Setup Indexer Hunt home card — DEFERRED until feature flags are loaded
+        // (setupIndexerHuntHome is called inside the settings .then() callback to avoid
+        //  a race where _enableMediaHunt is still true when the card renders)
         
         // Fetch current user role and apply UI restrictions for non-admin users
         this.applyRoleBasedUI();

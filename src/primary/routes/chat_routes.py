@@ -67,6 +67,10 @@ def get_messages():
     user = _get_current_user()
     if not user:
         return jsonify({'error': 'Not authenticated'}), 401
+    # Check if Requests system is globally disabled
+    from src.primary.settings_manager import load_settings
+    general = load_settings('general') or {}
+    requests_disabled = general.get('enable_requestarr') is False
     # Check disable_chat permission (owner can never be disabled)
     perms = user.get('permissions', {})
     chat_disabled = perms.get('disable_chat', False) if user['role'] != 'owner' else False
@@ -74,7 +78,7 @@ def get_messages():
     limit = min(request.args.get('limit', 50, type=int), 200)
     db = get_database()
     messages = db.get_chat_messages(limit=limit, before_id=before_id)
-    return jsonify({'messages': messages, 'user': {'username': user['username'], 'role': user['role'], 'chat_disabled': chat_disabled}})
+    return jsonify({'messages': messages, 'user': {'username': user['username'], 'role': user['role'], 'chat_disabled': chat_disabled}, 'requests_disabled': requests_disabled})
 
 
 @chat_bp.route('', methods=['POST'])

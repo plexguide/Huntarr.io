@@ -32,11 +32,15 @@ window.HuntarrChat = (function() {
     }
 
     function _checkAuthAndInit() {
+        // If Requests system is disabled globally, don't show chat at all
+        if (window.huntarrUI && window.huntarrUI._enableRequestarr === false) return;
         fetch('./api/chat')
             .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
             .then(function(data) {
                 _user = data.user;
                 _chatDisabled = data.user && data.user.chat_disabled;
+                // Also check if requests are disabled (backend flag)
+                if (data.requests_disabled) { _chatDisabled = true; }
                 _messages = data.messages || [];
                 if (_messages.length) _lastMsgId = _messages[_messages.length - 1].id;
                 // User is authenticated — now build the UI
