@@ -815,21 +815,33 @@ input:checked + .slider:before {
     overflow: hidden;
 }
 
-/* Requests focused: hide Apps stuff + System */
+/* Requests focused: hide System + all Apps */
 .sidebar.requests-focused #nav-group-apps-label,
 .sidebar.requests-focused #nav-group-media-hunt,
 .sidebar.requests-focused #nzb-hunt-sidebar-group,
 .sidebar.requests-focused #nav-group-apps,
 .sidebar.requests-focused #nav-group-system,
-/* System focused: hide Requests + Apps stuff */
+/* System focused: hide Requests + all Apps */
 .sidebar.system-focused #nav-group-apps-label,
 .sidebar.system-focused #nav-group-media-hunt,
 .sidebar.system-focused #nzb-hunt-sidebar-group,
 .sidebar.system-focused #nav-group-apps,
 .sidebar.system-focused #nav-group-requests,
-/* Apps focused: hide Requests + System */
-.sidebar.apps-focused #nav-group-requests,
-.sidebar.apps-focused #nav-group-system {
+/* Media Hunt focused: hide Requests + System + NZB + 3rd Party */
+.sidebar.media-focused #nav-group-requests,
+.sidebar.media-focused #nav-group-system,
+.sidebar.media-focused #nzb-hunt-sidebar-group,
+.sidebar.media-focused #nav-group-apps,
+/* NZB Hunt focused: hide Requests + System + Media Hunt + 3rd Party */
+.sidebar.nzb-focused #nav-group-requests,
+.sidebar.nzb-focused #nav-group-system,
+.sidebar.nzb-focused #nav-group-media-hunt,
+.sidebar.nzb-focused #nav-group-apps,
+/* 3rd Party focused: hide Requests + System + Media Hunt + NZB */
+.sidebar.thirdparty-focused #nav-group-requests,
+.sidebar.thirdparty-focused #nav-group-system,
+.sidebar.thirdparty-focused #nav-group-media-hunt,
+.sidebar.thirdparty-focused #nzb-hunt-sidebar-group {
     max-height: 0;
     opacity: 0;
     margin: 0;

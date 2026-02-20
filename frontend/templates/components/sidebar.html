@@ -405,7 +405,7 @@ function collapseGroup(id) {
 function collapseAllGroups() {
     ALL_GROUP_IDS.forEach(collapseGroup);
     var sidebar = document.getElementById('sidebar');
-    if (sidebar) sidebar.classList.remove('requests-focused', 'system-focused', 'apps-focused');
+    if (sidebar) sidebar.classList.remove('requests-focused', 'system-focused', 'media-focused', 'nzb-focused', 'thirdparty-focused');
 }
 
 function expandSub(id) {
@@ -431,13 +431,17 @@ function expandSidebarGroup(groupId) {
     // Toggle focused class to hide other sections
     var sidebar = document.getElementById('sidebar');
     if (sidebar) {
-        sidebar.classList.remove('requests-focused', 'system-focused', 'apps-focused');
+        sidebar.classList.remove('requests-focused', 'system-focused', 'media-focused', 'nzb-focused', 'thirdparty-focused');
         if (groupId === 'sidebar-group-requests') {
             sidebar.classList.add('requests-focused');
         } else if (groupId === 'sidebar-group-system') {
             sidebar.classList.add('system-focused');
-        } else if (groupId === 'sidebar-group-media-hunt' || groupId === 'sidebar-group-nzb-hunt' || groupId === 'sidebar-group-apps') {
-            sidebar.classList.add('apps-focused');
+        } else if (groupId === 'sidebar-group-media-hunt') {
+            sidebar.classList.add('media-focused');
+        } else if (groupId === 'sidebar-group-nzb-hunt') {
+            sidebar.classList.add('nzb-focused');
+        } else if (groupId === 'sidebar-group-apps') {
+            sidebar.classList.add('thirdparty-focused');
         }
     }
 }
@@ -471,7 +475,7 @@ document.addEventListener('click', function(e) {
         collapseGroup(groupId);
         // Remove focused classes when collapsing
         var sidebar = document.getElementById('sidebar');
-        if (sidebar) sidebar.classList.remove('requests-focused', 'system-focused', 'apps-focused');
+        if (sidebar) sidebar.classList.remove('requests-focused', 'system-focused', 'media-focused', 'nzb-focused', 'thirdparty-focused');
     }
 });
 
