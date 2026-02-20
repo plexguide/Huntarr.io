@@ -75,7 +75,11 @@
                     <div class="instance-detail">
                         <i class="fas fa-key"></i>
                         <span>${instance.api_key ? '••••••••' + instance.api_key.slice(-4) : 'No API Key'}</span>
-                    </div>
+                    </div>${instance.external_url ? `
+                    <div class="instance-detail">
+                        <i class="fas fa-external-link-alt"></i>
+                        <span style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${instance.external_url}</span>
+                    </div>` : ''}
                 </div>
                 <div class="instance-card-footer">
                     ${footerButtons}
@@ -122,6 +126,7 @@
                 name: '',
                 api_url: '',
                 api_key: '',
+                external_url: '',
                 enabled: true,
                 hunt_missing_items: 1,
                 hunt_upgrade_items: 0,
@@ -472,6 +477,7 @@
             instance_id: instance.instance_id || '',
             api_url: instance.api_url || '',
             api_key: instance.api_key || '',
+            external_url: instance.external_url || '',
             hunt_missing_items: instance.hunt_missing_items !== undefined ? instance.hunt_missing_items : 1,
             hunt_upgrade_items: instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0,
             hunt_missing_mode: instance.hunt_missing_mode || 'seasons_packs',
@@ -589,6 +595,14 @@
                             <input type="text" id="editor-key" value="${safeInstance.api_key}" placeholder="Your API Key">
                         </div>
                         <p class="editor-help-text">Found in Settings > General in your *arr application</p>
+                    </div>
+                    
+                    <div class="editor-field-group">
+                        <div class="editor-setting-item">
+                            <label>External URL</label>
+                            <input type="text" id="editor-external-url" value="${safeInstance.external_url || ''}" placeholder="e.g. https://sonarr.mydomain.com">
+                        </div>
+                        <p class="editor-help-text">Optional. URL used for browser links (e.g. Hunt Manager "open in app"). Leave blank to use the API URL above.</p>
                     </div>
                     
                     <div class="editor-field-group editor-field-readonly">
@@ -1074,6 +1088,7 @@
             name: document.getElementById('editor-name').value,
             api_url: document.getElementById('editor-url').value,
             api_key: document.getElementById('editor-key').value,
+            external_url: (document.getElementById('editor-external-url').value || '').trim(),
             state_management_mode: document.getElementById('editor-state-mode').value,
             state_management_hours: parseInt(document.getElementById('editor-state-hours').value) || 72,
             // Additional Options

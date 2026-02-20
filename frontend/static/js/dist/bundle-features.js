@@ -3733,7 +3733,8 @@ const huntManagerModule = {
                 if (instance) {
                     console.log('Found instance:', instance);
                     return {
-                        api_url: instance.api_url || instance.url
+                        api_url: instance.api_url || instance.url,
+                        external_url: instance.external_url || ''
                     };
                 }
             }
@@ -3741,7 +3742,8 @@ const huntManagerModule = {
             else if (settingsData && settingsData.api_url && instanceName === 'Default') {
                 console.log('Using legacy single-instance settings');
                 return {
-                    api_url: settingsData.api_url
+                    api_url: settingsData.api_url,
+                    external_url: settingsData.external_url || ''
                 };
             }
             
@@ -3763,16 +3765,19 @@ const huntManagerModule = {
                 
                 if (instanceSettings && instanceSettings.api_url) {
                     let targetUrl;
+                    
+                    // Prefer external_url for browser links (issue #617)
+                    const browserUrl = instanceSettings.external_url || instanceSettings.api_url;
  
                     // If we have item details, try to create a direct link for supported apps
                     if (itemId && ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'].includes(appType.toLowerCase())) {
-                        targetUrl = this.generateDirectLink(appType, instanceSettings.api_url, itemId, title);
+                        targetUrl = this.generateDirectLink(appType, browserUrl, itemId, title);
                         console.log('Generated direct link:', targetUrl);
                     }
                     
                     // Fallback to base URL if direct link creation fails
                     if (!targetUrl) {
-                        let baseUrl = instanceSettings.api_url.replace(/\/$/, '');
+                        let baseUrl = browserUrl.replace(/\/$/, '');
                         baseUrl = baseUrl.replace(/^.*localhost:\d+\//, '');
                         
                         if (!baseUrl.match(/^https?:\/\//)) {
