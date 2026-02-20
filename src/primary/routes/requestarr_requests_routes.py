@@ -178,6 +178,10 @@ def create_request():
     if existing and existing.get('status') == 'denied' and existing.get('user_id') == user.get('id'):
         return jsonify({'error': 'Your request for this media was denied', 'existing': existing}), 409
 
+    # If a withdrawn request exists, delete it so a fresh one can be created
+    if existing and existing.get('status') == 'withdrawn':
+        db.delete_requestarr_request(existing['id'])
+
     # Check auto-approve
     auto_approve_key = 'auto_approve_movies' if media_type == 'movie' else 'auto_approve_tv'
     auto_approve = _has_permission(user, 'auto_approve') or _has_permission(user, auto_approve_key)
