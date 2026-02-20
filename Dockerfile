@@ -2,38 +2,23 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install system dependencies including net-tools for health checks, tzdata for timezone support,
-# par2 for Usenet file verification/repair, p7zip for 7z/zip extraction, gosu for PUID/PGID support,
-# ffmpeg (includes ffprobe) for media file analysis, and mediainfo as a lenient fallback for MKV files
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    net-tools \
-    curl \
-    wget \
-    nano \
-    tzdata \
-    par2 \
-    p7zip-full \
-    gosu \
-    ffmpeg \
-    mediainfo \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install unrar from RARLAB (full RAR5 support, unrar-free doesn't handle RAR5)
-# SHA256 verified to prevent supply-chain attacks from compromised downloads
-RUN wget -q https://www.rarlab.com/rar/rarlinux-x64-720.tar.gz -O /tmp/rar.tar.gz && \
-    echo "d3e7fba3272385b1d0255ee332a1e8c1a6779bb5a5ff9d4d8ac2be846e49ca46  /tmp/rar.tar.gz" | sha256sum -c - && \
-    tar xzf /tmp/rar.tar.gz -C /tmp && \
-    cp /tmp/rar/unrar /usr/local/bin/ && \
-    chmod 755 /usr/local/bin/unrar && \
-    rm -rf /tmp/rar /tmp/rar.tar.gz
-
-# Install required packages from the root requirements file.
-# sabyenc3 (SABnzbd's C/C++ yEnc decoder) needs build tools to compile.
-# We install build-essential temporarily and remove after pip to keep image small.
+# Layer 1: System deps + unrar + build tools + pip install in ONE layer.
+# Combining into a single RUN avoids re-downloading apt packages when only
+# requirements.txt changes, and keeps the final image smaller (one apt cache cleanup).
+# The COPY of requirements.txt is separate so Docker can cache this heavy layer
+# as long as requirements.txt is unchanged.
 COPY requirements.txt /app/
 RUN apt-get update && apt-get install -y --no-install-recommends \
+        net-tools curl wget nano tzdata par2 p7zip-full gosu ffmpeg mediainfo \
         build-essential python3-dev && \
+    # Install unrar from RARLAB (full RAR5 support; SHA256 verified)
+    wget -q https://www.rarlab.com/rar/rarlinux-x64-720.tar.gz -O /tmp/rar.tar.gz && \
+    echo "d3e7fba3272385b1d0255ee332a1e8c1a6779bb5a5ff9d4d8ac2be846e49ca46  /tmp/rar.tar.gz" | sha256sum -c - && \
+    tar xzf /tmp/rar.tar.gz -C /tmp && cp /tmp/rar/unrar /usr/local/bin/ && chmod 755 /usr/local/bin/unrar && \
+    rm -rf /tmp/rar /tmp/rar.tar.gz && \
+    # Install Python deps (sabyenc3 needs build-essential to compile)
     pip install --no-cache-dir -r requirements.txt && \
+    # Remove build tools to keep image lean
     apt-get purge -y build-essential python3-dev && apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 

@@ -31,6 +31,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: List files in directory
+        run: ls -la
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -69,15 +72,108 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Extract metadata for cache key
+      - name: Extract metadata
+        id: extract
+        run: |
+          echo "req_hash=${{ hashFiles('requirements.txt') }}" >> $GITHUB_OUTPUT
+
       # Build and push to both Docker Hub and GitHub Container Registry
-      - name: Build and Push
-        uses: docker/build-push-action@v5
+      # Uses GHA cache with separate scopes per platform for better hit rates
+      - name: "Build and Push (main)"
+        if: github.ref == 'refs/heads/main' && (github.event.inputs.force_push == 'true' || startsWith(github.ref, 'refs/tags/'))
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64
-          # Only push if not a PR AND (not main branch OR manual force OR tagged release)
-          push: ${{ github.event_name != 'pull_request' && (github.ref != 'refs/heads/main' || github.event.inputs.force_push == 'true' || startsWith(github.ref, 'refs/tags/')) }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: |
+            type=gha,scope=buildx-main
+            type=gha,scope=buildx-dev
+          cache-to: type=gha,mode=max,scope=buildx-main
+
+      - name: "Build and Push (dev)"
+        if: github.ref == 'refs/heads/dev'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: |
+            type=gha,scope=buildx-dev
+            type=gha,scope=buildx-main
+          cache-to: type=gha,mode=max,scope=buildx-dev
+
+      - name: "Build and Push (release - production)"
+        if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, '-beta') && !contains(github.ref, '-rc') && !contains(github.ref, '-alpha')
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: |
+            type=gha,scope=buildx-main
+            type=gha,scope=buildx-dev
+          cache-to: type=gha,mode=max,scope=buildx-main
+
+      - name: "Build and Push (release - beta)"
+        if: startsWith(github.ref, 'refs/tags/v') && (contains(github.ref, '-beta') || contains(github.ref, '-rc') || contains(github.ref, '-alpha'))
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: |
+            type=gha,scope=buildx-dev
+            type=gha,scope=buildx-main
+          cache-to: type=gha,mode=max,scope=buildx-dev
+
+      # win-* branches → beta channel
+      - name: "Build and Push (win-* branch → beta)"
+        if: startsWith(github.ref, 'refs/heads/win-')
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            huntarr/huntarr:beta
+            ghcr.io/plexguide/huntarr:beta
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: |
+            type=gha,scope=buildx-beta
+            type=gha,scope=buildx-dev
+          cache-to: type=gha,mode=max,scope=buildx-beta
+
+      - name: "Build and Push (feature branch)"
+        if: github.event_name == 'push' && !startsWith(github.ref, 'refs/heads/main') && !startsWith(github.ref, 'refs/heads/dev') && !startsWith(github.ref, 'refs/heads/win-') && !startsWith(github.ref, 'refs/tags/')
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=buildx-dev
+          cache-to: type=gha,mode=max,scope=buildx-feature
+
+      - name: "Build (PR)"
+        if: github.event_name == 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: |
+            type=gha,scope=buildx-dev
+            type=gha,scope=buildx-main

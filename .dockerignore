@@ -7,12 +7,14 @@
 .cursor
 .kiro
 .vscode
+.github
 .idea
 *.swp
 *.swo
 *~
 
 # Documentation (not needed at runtime)
+docs/
 *.md
 LICENSE
 
@@ -21,6 +23,7 @@ unraid/
 distribution/
 tests/
 venv/
+.venv/
 .env*
 
 # Docker files (prevent recursive builds)
