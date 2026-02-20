@@ -75,11 +75,11 @@ def _sanitize_user(user_dict):
         'permissions': user_dict.get('permissions', '{}'),
         'created_at': user_dict.get('created_at'),
         'plex_user_data': user_dict.get('plex_user_data'),
-        'avatar_url': None,
+        'avatar_url': user_dict.get('avatar_url') or None,
         'request_count': user_dict.get('request_count', 0),
     }
-    # Extract avatar from plex data if available
-    if isinstance(safe['plex_user_data'], dict):
+    # Extract avatar from plex data if not already set in avatar_url column
+    if not safe['avatar_url'] and isinstance(safe['plex_user_data'], dict):
         safe['avatar_url'] = safe['plex_user_data'].get('thumb')
     # Parse permissions JSON
     if isinstance(safe['permissions'], str):
@@ -265,13 +265,24 @@ def get_current_user_info():
     req_user = db.get_requestarr_user_by_username(user.get('username'))
     if req_user:
         return jsonify({'user': _sanitize_user(req_user)})
-    # Return basic info from the main users table
+    # Return basic info from the main users table (owner fallback)
+    import json as _json
+    avatar_url = None
+    plex_data = user.get('plex_user_data')
+    if isinstance(plex_data, str):
+        try:
+            plex_data = _json.loads(plex_data)
+        except Exception:
+            plex_data = None
+    if isinstance(plex_data, dict):
+        avatar_url = plex_data.get('thumb')
     return jsonify({'user': {
         'id': user.get('id'),
         'username': user.get('username'),
         'role': user.get('role', 'owner'),
         'permissions': DEFAULT_PERMISSIONS.get('owner', {}),
         'created_at': user.get('created_at'),
+        'avatar_url': avatar_url,
     }})
 
 
@@ -447,6 +458,10 @@ def import_plex_users():
                 plex_user_data=plex_data
             )
             if success:
+                # Store avatar URL directly in the avatar_url column
+                new_user = db.get_requestarr_user_by_username(username)
+                if new_user and plex_user['thumb']:
+                    db.update_requestarr_user(new_user['id'], {'avatar_url': plex_user['thumb']})
                 imported.append(username)
             else:
                 skipped.append({'id': fid, 'username': username, 'reason': 'Creation failed'})

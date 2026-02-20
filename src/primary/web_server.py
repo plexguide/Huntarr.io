@@ -370,7 +370,7 @@ def _set_response_headers(response):
         "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
         "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
         "font-src 'self' https://cdnjs.cloudflare.com; "
-        "img-src 'self' data: https://image.tmdb.org https://artworks.thetvdb.com https://*.plex.direct https://github.com https://avatars.githubusercontent.com; "
+        "img-src 'self' data: https://image.tmdb.org https://artworks.thetvdb.com https://*.plex.direct https://plex.tv https://assets.plex.tv https://github.com https://avatars.githubusercontent.com; "
         "connect-src 'self' https://api.github.com https://api.themoviedb.org; "
         f"frame-ancestors {fa};"
     )

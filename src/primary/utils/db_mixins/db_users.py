@@ -314,13 +314,29 @@ class UsersMixin:
             return False
 
     def ensure_owner_in_requestarr_users(self):
-        """Ensure the main owner account exists in requestarr_users table."""
+        """Ensure the main owner account exists in requestarr_users table.
+        Also syncs the owner's Plex avatar if available.
+        """
         try:
             owner = self.get_first_user()
             if not owner:
                 return
+            # Extract avatar from owner's plex_user_data
+            avatar_url = None
+            plex_data = owner.get('plex_user_data')
+            if isinstance(plex_data, str):
+                try:
+                    plex_data = json.loads(plex_data)
+                except Exception:
+                    plex_data = None
+            if isinstance(plex_data, dict):
+                avatar_url = plex_data.get('thumb')
+
             existing = self.get_requestarr_user_by_username(owner['username'])
             if existing:
+                # Sync avatar if owner has Plex linked but requestarr record lacks avatar
+                if avatar_url and not existing.get('avatar_url'):
+                    self.update_requestarr_user(existing['id'], {'avatar_url': avatar_url})
                 return
             owner_perms = json.dumps({
                 'request_movies': True, 'request_tv': True,
@@ -330,9 +346,9 @@ class UsersMixin:
             })
             with self.get_connection() as conn:
                 conn.execute('''
-                    INSERT OR IGNORE INTO requestarr_users (username, password, email, role, permissions, created_at, updated_at)
-                    VALUES (?, ?, '', 'owner', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                ''', (owner['username'], owner['password'], owner_perms))
+                    INSERT OR IGNORE INTO requestarr_users (username, password, email, role, permissions, avatar_url, created_at, updated_at)
+                    VALUES (?, ?, '', 'owner', ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                ''', (owner['username'], owner['password'], owner_perms, avatar_url))
                 conn.commit()
                 logger.info(f"Synced owner '{owner['username']}' into requestarr_users")
         except Exception as e:

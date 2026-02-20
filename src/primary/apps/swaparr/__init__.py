@@ -1,9 +1,6 @@
 """
 Swaparr app module for Huntarr
 Contains functionality for handling stalled downloads in Starr apps
-
-Based on the original Swaparr project by ThijmenGThN:
-https://github.com/ThijmenGThN/swaparr/releases/tag/0.10.0
 """
 
 # Add necessary imports for get_configured_instances

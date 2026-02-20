@@ -1,6 +1,5 @@
 """
 Enhanced implementation of the swaparr functionality to detect and remove stalled downloads in Starr apps.
-Based on the functionality provided by https://github.com/ThijmenGThN/swaparr/releases/tag/0.10.0
 
 Improvements in this version:
 - Better statistics tracking and reporting

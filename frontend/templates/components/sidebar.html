@@ -326,6 +326,16 @@
     </nav>
 
     <div class="sidebar-footer">
+        <div class="sidebar-user-profile" id="sidebar-user-profile">
+            <a href="#user" class="sidebar-user-link">
+                <div class="sidebar-user-avatar" id="sidebar-user-avatar"></div>
+                <div class="sidebar-user-info">
+                    <span class="sidebar-user-name" id="sidebar-user-name">Loading...</span>
+                    <span class="sidebar-user-role" id="sidebar-user-role"></span>
+                </div>
+                <i class="fas fa-cog sidebar-user-settings-icon"></i>
+            </a>
+        </div>
         <div class="sidebar-social-group">
             <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank" rel="noopener" class="sidebar-social-btn discord-btn" title="Join Discord" aria-label="Discord">
                 <i class="fab fa-discord"></i>
@@ -698,6 +708,39 @@ function setActiveNavItem() {
     });
     // Also update after a short delay to catch late localStorage writes
     setTimeout(updateSidebarVersion, 2000);
+})();
+
+// ── Sidebar User Profile ─────────────────────────────────────
+(function() {
+    function loadSidebarUser() {
+        fetch('./api/user/me', { credentials: 'include', cache: 'no-store' })
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(data) {
+                if (!data || !data.username) return;
+                var nameEl = document.getElementById('sidebar-user-name');
+                var roleEl = document.getElementById('sidebar-user-role');
+                var avatarEl = document.getElementById('sidebar-user-avatar');
+                if (nameEl) nameEl.textContent = data.username;
+                if (roleEl) {
+                    roleEl.textContent = data.role === 'owner' ? 'Owner' : 'User';
+                    roleEl.className = 'sidebar-user-role sidebar-user-role-' + data.role;
+                }
+                if (avatarEl) {
+                    var initial = (data.username || '?').charAt(0).toUpperCase();
+                    if (data.avatar_url) {
+                        avatarEl.innerHTML = '<img src="' + data.avatar_url + '" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><span class="sidebar-avatar-fallback" style="display:none;">' + initial + '</span>';
+                    } else {
+                        avatarEl.innerHTML = '<span class="sidebar-avatar-fallback">' + initial + '</span>';
+                    }
+                }
+            })
+            .catch(function() {});
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadSidebarUser);
+    } else {
+        loadSidebarUser();
+    }
 })();
 
 // ── Init ─────────────────────────────────────────────────────

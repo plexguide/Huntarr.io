@@ -560,6 +560,50 @@ def get_user_info_route():
     two_fa_status = is_2fa_enabled(username) # This function should now be defined via import
     return jsonify({"username": username, "is_2fa_enabled": two_fa_status})
 
+@common_bp.route('/api/user/me', methods=['GET'])
+def get_current_user_profile():
+    """Get current user's profile for sidebar display (avatar, username, role)."""
+    username = get_user_for_request()
+    if not username:
+        return jsonify({"error": "Not authenticated"}), 401
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        role = 'owner'
+        avatar_url = None
+
+        # Check requestarr_users first (has role info)
+        req_user = db.get_requestarr_user_by_username(username)
+        if req_user:
+            role = req_user.get('role', 'user')
+            avatar_url = req_user.get('avatar_url')
+            # Fall back to plex_user_data thumb in requestarr record
+            if not avatar_url and isinstance(req_user.get('plex_user_data'), dict):
+                avatar_url = req_user['plex_user_data'].get('thumb')
+
+        # For owner (or if no avatar found), also check main users table plex data
+        if not avatar_url:
+            main_user = db.get_user_by_username(username) or db.get_first_user()
+            if main_user:
+                plex_data = main_user.get('plex_user_data')
+                if isinstance(plex_data, str):
+                    import json as _json
+                    try:
+                        plex_data = _json.loads(plex_data)
+                    except Exception:
+                        plex_data = None
+                if isinstance(plex_data, dict):
+                    avatar_url = plex_data.get('thumb')
+
+        return jsonify({
+            'username': username,
+            'role': role,
+            'avatar_url': avatar_url,
+        })
+    except Exception as e:
+        logger.error(f"Error getting user profile: {e}")
+        return jsonify({'username': username, 'role': 'owner', 'avatar_url': None})
+
 @common_bp.route('/api/user/change-username', methods=['POST'])
 def change_username_route():
     # Get username handling bypass modes
