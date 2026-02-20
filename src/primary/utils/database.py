@@ -22,6 +22,11 @@ from src.primary.utils.db_mixins import ConfigMixin, StateMixin, UsersMixin, Req
 class HuntarrDatabase(ConfigMixin, StateMixin, UsersMixin, RequestarrMixin, ExtrasMixin, ChatMixin):
     """Database manager for all Huntarr configurations and settings"""
     
+    # Class-level corruption recovery lock — ensures only one thread recovers at a time
+    _corruption_lock = threading.Lock()
+    _corruption_recovering = False
+    _corruption_recovered_at = 0  # timestamp of last recovery
+    
     def __init__(self):
         self._thread_local = threading.local()
         self.db_path = self._get_database_path()
@@ -77,17 +82,29 @@ class HuntarrDatabase(ConfigMixin, StateMixin, UsersMixin, RequestarrMixin, Extr
         cached_conn = getattr(self._thread_local, 'conn', None)
         if cached_conn is not None:
             try:
-                cached_conn.execute("SELECT 1")
+                # Use a query that touches sqlite_master to detect corruption
+                # (SELECT 1 succeeds even on a malformed database)
+                cached_conn.execute("SELECT name FROM sqlite_master WHERE type='table' LIMIT 1").fetchone()
                 # Reset row_factory to prevent leaking Row mode across callers
                 cached_conn.row_factory = None
                 return cached_conn
-            except Exception:
-                # Connection is stale/broken, discard it
-                try:
-                    cached_conn.close()
-                except Exception:
-                    pass
-                self._thread_local.conn = None
+            except Exception as e:
+                # Connection is stale/broken — check if it's corruption
+                if self._is_corruption_error(e):
+                    logger.warning(f"Corruption detected on cached connection: {e}")
+                    try:
+                        cached_conn.close()
+                    except Exception:
+                        pass
+                    self._thread_local.conn = None
+                    self._trigger_corruption_recovery()
+                    # Fall through to create a new connection below
+                else:
+                    try:
+                        cached_conn.close()
+                    except Exception:
+                        pass
+                    self._thread_local.conn = None
         
         # No valid cached connection — create a new one with retry logic
         max_retries = 3
@@ -151,6 +168,86 @@ class HuntarrDatabase(ConfigMixin, StateMixin, UsersMixin, RequestarrMixin, Extr
             except Exception:
                 pass
             self._thread_local.conn = None
+    
+    @staticmethod
+    def _is_corruption_error(error):
+        """Check if an exception indicates database corruption."""
+        err_str = str(error).lower()
+        return ("database disk image is malformed" in err_str or
+                "file is not a database" in err_str or
+                "disk i/o error" in err_str)
+    
+    def _trigger_corruption_recovery(self):
+        """Thread-safe corruption recovery. Only one thread performs recovery;
+        others wait for it to complete, then get fresh connections.
+        
+        Returns True if recovery was performed (or already done recently), False on failure.
+        """
+        # If we recovered very recently (within 30s), don't do it again — just invalidate connection
+        if time.time() - HuntarrDatabase._corruption_recovered_at < 30:
+            self.invalidate_connection()
+            return True
+        
+        acquired = HuntarrDatabase._corruption_lock.acquire(timeout=60)
+        if not acquired:
+            logger.warning("Timed out waiting for corruption recovery lock")
+            self.invalidate_connection()
+            return False
+        
+        try:
+            # Double-check: another thread may have already recovered while we waited
+            if time.time() - HuntarrDatabase._corruption_recovered_at < 30:
+                self.invalidate_connection()
+                return True
+            
+            HuntarrDatabase._corruption_recovering = True
+            logger.error("=== DATABASE CORRUPTION DETECTED — starting automatic recovery ===")
+            
+            # Invalidate this thread's connection
+            self.invalidate_connection()
+            
+            # Attempt WAL recovery first (non-destructive)
+            if self._attempt_wal_recovery():
+                # Test if WAL recovery fixed it
+                try:
+                    test_conn = sqlite3.connect(self.db_path, timeout=10)
+                    test_conn.execute("PRAGMA integrity_check").fetchone()
+                    test_conn.close()
+                    logger.info("WAL recovery resolved the corruption")
+                    HuntarrDatabase._corruption_recovered_at = time.time()
+                    return True
+                except Exception:
+                    logger.warning("WAL recovery did not fix corruption, proceeding to full recovery")
+            
+            # Full corruption handling (backup + rebuild)
+            self._handle_database_corruption()
+            
+            # Recreate tables on the fresh database
+            self.ensure_database_exists()
+            
+            HuntarrDatabase._corruption_recovered_at = time.time()
+            logger.info("=== DATABASE CORRUPTION RECOVERY COMPLETE ===")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Database corruption recovery failed: {e}")
+            return False
+        finally:
+            HuntarrDatabase._corruption_recovering = False
+            HuntarrDatabase._corruption_lock.release()
+    
+    def _check_and_recover_corruption(self, error):
+        """Check if an error is corruption-related and trigger recovery if so.
+        
+        Call this from any except block that catches database errors.
+        Returns True if corruption was detected and recovery was triggered,
+        meaning the caller should retry or return a safe default.
+        """
+        if self._is_corruption_error(error):
+            logger.error(f"Database corruption detected during operation: {error}")
+            self._trigger_corruption_recovery()
+            return True
+        return False
     
     def _get_database_path(self) -> Path:
         """Get database path - use /config for Docker, Windows AppData, or local data directory"""

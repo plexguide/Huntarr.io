@@ -372,6 +372,10 @@ def end_cycle(app_type: str, next_cycle_time: datetime.datetime,
             logger.info(f"Ended cycle for {label} (cyclelock = False)")
     except Exception as e:
         logger.error(f"Error ending cycle for {app_type}: {e}")
+        try:
+            db._check_and_recover_corruption(e)
+        except Exception:
+            pass
 
 def reset_cycle(app_type: str, instance_name: Optional[str] = None,
                 sleep_minutes: int = 15, log_name: Optional[str] = None) -> bool:

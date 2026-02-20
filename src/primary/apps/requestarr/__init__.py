@@ -236,6 +236,10 @@ class RequestarrAPI(DiscoveryMixin, LibraryMixin, RequestsMixin):
             logger.info(f"Set default instances - Movies: {movie_instance or 'None'}, TV: {tv_instance or 'None'}")
         except Exception as e:
             logger.error(f"Error setting default instances: {e}")
+            try:
+                self.db._check_and_recover_corruption(e)
+            except Exception:
+                pass
             raise
 
     def get_modal_preferences(self) -> Dict[str, Any]:

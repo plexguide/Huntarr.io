@@ -139,6 +139,11 @@ def load_settings(app_type, use_cache=True):
             
     except Exception as e:
         settings_logger.error(f"Database error loading {app_type}: {e}")
+        try:
+            db = get_database()
+            db._check_and_recover_corruption(e)
+        except Exception:
+            pass
         raise
     
     # Load defaults to check for missing keys
@@ -287,6 +292,11 @@ def save_settings(app_name: str, settings_data: Dict[str, Any]) -> bool:
         
     except Exception as e:
         settings_logger.error(f"Database error saving {app_name}: {e}")
+        try:
+            db = get_database()
+            db._check_and_recover_corruption(e)
+        except Exception:
+            pass
         return False
     
     if success:

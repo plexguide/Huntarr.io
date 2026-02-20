@@ -859,6 +859,11 @@ def set_default_instances():
         return jsonify({'success': True})
     except Exception as e:
         logger.error(f"Error setting default instances: {e}")
+        try:
+            from src.primary.utils.database import get_database
+            get_database()._check_and_recover_corruption(e)
+        except Exception:
+            pass
         return jsonify({'success': False, 'error': 'Failed to set default instances'}), 500
 
 @requestarr_bp.route('/settings/modal-preferences', methods=['GET'])

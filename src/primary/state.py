@@ -64,6 +64,10 @@ def set_last_reset_time(reset_time: datetime.datetime, app_type: str) -> None:
         db.set_last_reset_time_state(app_type, reset_time.isoformat())
     except Exception as e:
         logger.error(f"Error writing last reset time for {app_type}: {e}")
+        try:
+            db._check_and_recover_corruption(e)
+        except Exception:
+            pass
 
 def check_state_reset(app_type: str) -> bool:
     """

@@ -58,6 +58,11 @@ def load_stats() -> Dict[str, Dict[str, int]]:
         return stats
     except Exception as e:
         logger.error(f"Error loading stats from database: {e}")
+        try:
+            db = get_database()
+            db._check_and_recover_corruption(e)
+        except Exception:
+            pass
         return get_default_stats()
 
 def get_default_stats() -> Dict[str, Dict[str, int]]:
@@ -107,6 +112,11 @@ def load_hourly_caps() -> Dict[str, Dict[str, int]]:
         return caps
     except Exception as e:
         logger.error(f"Error loading hourly caps from database: {e}")
+        try:
+            db = get_database()
+            db._check_and_recover_corruption(e)
+        except Exception:
+            pass
         return get_default_hourly_caps()
 
 def save_hourly_caps(caps: Dict[str, Dict[str, int]]) -> bool:
@@ -549,6 +559,11 @@ def get_stats() -> Dict[str, Any]:
                     stats[app_type]["instances"] = per_instance_list if per_instance_list else []
         except Exception as e:
             logger.error(f"Error attaching per-instance stats: {e}")
+            try:
+                db = get_database()
+                db._check_and_recover_corruption(e)
+            except Exception:
+                pass
         return stats
 
 def get_hourly_caps() -> Dict[str, Dict[str, int]]:
@@ -616,6 +631,11 @@ def load_hourly_caps_for_api() -> tuple:
         return caps_out, limits_out
     except Exception as e:
         logger.error(f"Error loading hourly caps for API: {e}")
+        try:
+            db = get_database()
+            db._check_and_recover_corruption(e)
+        except Exception:
+            pass
         return load_hourly_caps(), {app: _get_app_hourly_cap_limit(app) for app in ["sonarr", "radarr", "lidarr", "readarr", "whisparr", "eros", "movie_hunt", "tv_hunt"]}
 
 def reset_stats(app_type: Optional[str] = None) -> bool:

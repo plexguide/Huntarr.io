@@ -1552,6 +1552,11 @@ def _run_rss_sync_cycle(rss_logger):
             except Exception as e:
                 hunt_logger = get_logger(hunt_type)
                 hunt_logger.error("[RSS Sync] Error for %s instance %s: %s", hunt_type, instance_id, e)
+                try:
+                    from src.primary.utils.database import get_database
+                    get_database()._check_and_recover_corruption(e)
+                except Exception:
+                    pass
 
 
 def _start_rss_sync_thread():

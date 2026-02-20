@@ -73,6 +73,11 @@ def get_lock_info() -> Dict[str, Any]:
         return lock_info
     except Exception as e:
         stateful_logger.error(f"Error reading lock info from database: {e}")
+        try:
+            db = get_database()
+            db._check_and_recover_corruption(e)
+        except Exception:
+            pass
         # Return default values if there's an error
         current_time = int(time.time())
         expiration_hours = get_advanced_setting("stateful_management_hours", DEFAULT_HOURS)
@@ -182,6 +187,11 @@ def get_processed_ids(app_type: str, instance_name: str) -> Set[str]:
         return processed_ids_set
     except Exception as e:
         stateful_logger.error(f"Error reading processed IDs for {instance_name} from database: {e}")
+        try:
+            db = get_database()
+            db._check_and_recover_corruption(e)
+        except Exception:
+            pass
         return set()
 
 def add_processed_id(app_type: str, instance_name: str, media_id: str) -> bool:
