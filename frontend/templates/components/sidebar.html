@@ -368,7 +368,7 @@
                 <i class="fas fa-arrow-up"></i>
                 <span id="sidebar-footer-upgrade-version"></span>
             </a>
-            <span class="sidebar-footer-sep">&middot;</span>
+            <span class="sidebar-footer-sep" id="sidebar-footer-sep">&middot;</span>
             <a href="https://github.com/Admin9705/" target="_blank" rel="noopener" class="sidebar-footer-dev">Admin9705</a>
         </div>
     </div>
@@ -684,6 +684,7 @@ function setActiveNavItem() {
         var verEl = document.getElementById('sidebar-footer-version');
         var upgradeEl = document.getElementById('sidebar-footer-upgrade');
         var upgradeVerEl = document.getElementById('sidebar-footer-upgrade-version');
+        var sepEl = document.getElementById('sidebar-footer-sep');
         if (!verEl) return;
         try {
             var info = localStorage.getItem('huntarr-version-info');
@@ -696,10 +697,12 @@ function setActiveNavItem() {
                         parsed.latestVersion !== parsed.currentVersion) {
                         upgradeVerEl.textContent = parsed.latestVersion;
                         upgradeEl.style.display = '';
+                        if (sepEl) sepEl.style.display = 'none';
                         upgradeEl.closest('.sidebar-footer-info')
                             && upgradeEl.setAttribute('title', 'Update available: ' + parsed.latestVersion);
                     } else if (upgradeEl) {
                         upgradeEl.style.display = 'none';
+                        if (sepEl) sepEl.style.display = '';
                     }
                     return;
                 }
@@ -707,6 +710,7 @@ function setActiveNavItem() {
         } catch(e) {}
         verEl.textContent = '';
         if (upgradeEl) upgradeEl.style.display = 'none';
+        if (sepEl) sepEl.style.display = '';
     }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', updateSidebarVersion);
