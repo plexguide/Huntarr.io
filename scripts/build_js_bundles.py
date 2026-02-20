@@ -89,6 +89,7 @@ BUNDLES = [
             "modules/features/swaparr-card.js",
             "modules/features/prowlarr.js",
             "modules/features/setup-wizard.js",
+            "modules/features/huntarr-chat.js",
         ],
     ),
     (

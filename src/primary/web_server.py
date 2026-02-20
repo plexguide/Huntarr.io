@@ -322,6 +322,10 @@ app.register_blueprint(requestarr_users_bp)
 app.register_blueprint(requestarr_services_bp)
 app.register_blueprint(requestarr_requests_bp)
 
+# Chat
+from src.primary.routes.chat_routes import chat_bp
+app.register_blueprint(chat_bp)
+
 app.register_blueprint(stateful_api, url_prefix='/api/stateful')
 app.register_blueprint(history_blueprint, url_prefix='/api/hunt-manager')
 app.register_blueprint(scheduler_api)

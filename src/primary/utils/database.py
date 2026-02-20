@@ -17,9 +17,9 @@ import shutil
 
 logger = logging.getLogger(__name__)
 
-from src.primary.utils.db_mixins import ConfigMixin, StateMixin, UsersMixin, RequestarrMixin, ExtrasMixin
+from src.primary.utils.db_mixins import ConfigMixin, StateMixin, UsersMixin, RequestarrMixin, ExtrasMixin, ChatMixin
 
-class HuntarrDatabase(ConfigMixin, StateMixin, UsersMixin, RequestarrMixin, ExtrasMixin):
+class HuntarrDatabase(ConfigMixin, StateMixin, UsersMixin, RequestarrMixin, ExtrasMixin, ChatMixin):
     """Database manager for all Huntarr configurations and settings"""
     
     def __init__(self):
@@ -867,6 +867,19 @@ class HuntarrDatabase(ConfigMixin, StateMixin, UsersMixin, RequestarrMixin, Extr
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
+
+            # Create chat_messages table for lightweight in-app chat
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS chat_messages (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    username TEXT NOT NULL,
+                    role TEXT NOT NULL DEFAULT 'user',
+                    message TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_chat_messages_created ON chat_messages(created_at)')
             
             # Create requestarr_hidden_media table for permanently hidden media
             conn.execute('''

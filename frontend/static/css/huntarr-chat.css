@@ -1,0 +1,364 @@
+/* ==========================================================================
+   Huntarr Chat — floating widget
+   ========================================================================== */
+
+/* ── Floating Action Button ─────────────────────────────────── */
+.hchat-fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--accent-color);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+    z-index: 900;
+    transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+.hchat-fab:hover {
+    transform: scale(1.08);
+    background: var(--accent-hover);
+    box-shadow: 0 6px 24px rgba(99, 102, 241, 0.5);
+}
+.hchat-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    background: var(--error-color);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+    padding: 0 4px;
+    border: 2px solid var(--bg-primary);
+    pointer-events: none;
+}
+
+/* ── Chat Panel ─────────────────────────────────────────────── */
+.hchat-panel {
+    position: fixed;
+    bottom: 84px;
+    right: 24px;
+    width: 360px;
+    max-height: 520px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    z-index: 901;
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    overflow: hidden;
+}
+.hchat-panel.open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+/* ── Header ─────────────────────────────────────────────────── */
+.hchat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(99, 102, 241, 0.04));
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+.hchat-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.hchat-header-left i {
+    color: var(--accent-color);
+    font-size: 16px;
+}
+.hchat-header-left span {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.hchat-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.hchat-header-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-md);
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+.hchat-header-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-primary);
+}
+.hchat-header-btn.danger:hover {
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--error-color);
+}
+
+/* ── Messages Area ──────────────────────────────────────────── */
+.hchat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 200px;
+    max-height: 360px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.08) transparent;
+}
+.hchat-messages::-webkit-scrollbar { width: 4px; }
+.hchat-messages::-webkit-scrollbar-track { background: transparent; }
+.hchat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+
+/* ── Empty State ────────────────────────────────────────────── */
+.hchat-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: 40px 20px;
+    color: var(--text-dim);
+    text-align: center;
+    gap: 8px;
+}
+.hchat-empty i {
+    font-size: 28px;
+    opacity: 0.4;
+}
+.hchat-empty span {
+    font-size: 13px;
+}
+
+/* ── Message Bubble ─────────────────────────────────────────── */
+.hchat-msg {
+    display: flex;
+    flex-direction: column;
+    max-width: 85%;
+    position: relative;
+    group: msg;
+}
+.hchat-msg.self {
+    align-self: flex-end;
+}
+.hchat-msg.other {
+    align-self: flex-start;
+}
+.hchat-msg-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2px;
+    padding: 0 4px;
+}
+.hchat-msg-author {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+.hchat-msg.self .hchat-msg-author {
+    color: var(--accent-secondary);
+}
+.hchat-msg-role {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    line-height: 1.4;
+}
+.hchat-msg-role.owner {
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--accent-hover);
+}
+.hchat-msg-role.user {
+    background: rgba(34, 197, 94, 0.12);
+    color: var(--success-color);
+}
+.hchat-msg-time {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-left: auto;
+}
+.hchat-msg-bubble {
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--text-secondary);
+    word-break: break-word;
+    position: relative;
+}
+.hchat-msg.self .hchat-msg-bubble {
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.12);
+    border-bottom-right-radius: 4px;
+}
+.hchat-msg.other .hchat-msg-bubble {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-bottom-left-radius: 4px;
+}
+
+/* Delete button — visible on hover */
+.hchat-msg-delete {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--error-color);
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    transition: background 0.15s ease;
+}
+.hchat-msg-delete:hover {
+    background: rgba(239, 68, 68, 0.3);
+}
+.hchat-msg:hover .hchat-msg-delete {
+    display: flex;
+}
+
+/* ── Input Area ─────────────────────────────────────────────── */
+.hchat-input-area {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid var(--border-color);
+    background: rgba(15, 23, 42, 0.4);
+    flex-shrink: 0;
+}
+.hchat-input {
+    flex: 1;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 20px;
+    padding: 8px 14px;
+    font-size: 13px;
+    color: var(--input-text);
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    font-family: inherit;
+    resize: none;
+    max-height: 80px;
+    min-height: 36px;
+    line-height: 1.4;
+}
+.hchat-input::placeholder {
+    color: var(--input-placeholder);
+}
+.hchat-input:focus {
+    border-color: var(--input-focus-border);
+    box-shadow: var(--input-focus-glow);
+}
+.hchat-send {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: var(--accent-color);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+.hchat-send:hover {
+    background: var(--accent-hover);
+    transform: scale(1.06);
+}
+.hchat-send:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ── Date Separator ─────────────────────────────────────────── */
+.hchat-date-sep {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 8px 0;
+}
+.hchat-date-sep::before,
+.hchat-date-sep::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-color);
+}
+.hchat-date-sep span {
+    font-size: 10px;
+    color: var(--text-dim);
+    white-space: nowrap;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ── Mobile ─────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .hchat-fab {
+        bottom: 16px;
+        right: 16px;
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+    }
+    .hchat-panel {
+        bottom: 0;
+        right: 0;
+        left: 0;
+        width: 100%;
+        max-height: 70vh;
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        border-bottom: none;
+    }
+    .hchat-panel.open {
+        transform: translateY(0);
+    }
+    .hchat-messages {
+        max-height: calc(70vh - 130px);
+    }
+}
