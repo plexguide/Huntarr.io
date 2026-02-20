@@ -1276,6 +1276,29 @@ class HuntarrDatabase(ConfigMixin, StateMixin, UsersMixin, RequestarrMixin, Extr
             except Exception as e:
                 logger.error(f"Migration error (requestarr_requests UNIQUE drop): {e}")
 
+            # ── Instance Bundles (group services for cascading requests) ──
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS requestarr_bundles (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL UNIQUE,
+                    service_type TEXT NOT NULL,
+                    primary_service_id INTEGER NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (primary_service_id) REFERENCES requestarr_services(id) ON DELETE CASCADE
+                )
+            ''')
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS requestarr_bundle_members (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    bundle_id INTEGER NOT NULL,
+                    service_id INTEGER NOT NULL,
+                    UNIQUE(bundle_id, service_id),
+                    FOREIGN KEY (bundle_id) REFERENCES requestarr_bundles(id) ON DELETE CASCADE,
+                    FOREIGN KEY (service_id) REFERENCES requestarr_services(id) ON DELETE CASCADE
+                )
+            ''')
+
             conn.commit()
             logger.info(f"Database initialized at: {self.db_path}")
     

@@ -397,6 +397,23 @@ def request_media():
         logger.info(f"[Requestarr] Request result: {result}")
         
         if result['success']:
+            # Cascade to bundle members (fire-and-forget, non-blocking for the user)
+            try:
+                bundle_results = requestarr_api.cascade_bundle_requests(
+                    tmdb_id=data['tmdb_id'], media_type=media_type,
+                    title=data['title'], year=data.get('year'),
+                    overview=data.get('overview', ''),
+                    poster_path=data.get('poster_path', ''),
+                    backdrop_path=data.get('backdrop_path', ''),
+                    app_type=app_type, instance_name=instance_name,
+                    start_search=start_search,
+                    minimum_availability=minimum_availability,
+                    monitor=monitor, movie_monitor=movie_monitor
+                )
+                if bundle_results:
+                    result['bundle_results'] = bundle_results
+            except Exception as cascade_err:
+                logger.warning(f"[Requestarr] Bundle cascade error (non-fatal): {cascade_err}")
             return jsonify(result)
         else:
             return jsonify(result), 400

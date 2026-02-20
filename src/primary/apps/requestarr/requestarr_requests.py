@@ -1030,4 +1030,60 @@ class RequestsMixin:
                 'message': f'Error adding series to Sonarr: {str(e)}'
             }
 
+    def cascade_bundle_requests(self, tmdb_id: int, media_type: str, title: str,
+                                year, overview: str, poster_path: str, backdrop_path: str,
+                                app_type: str, instance_name: str,
+                                start_search: bool = True, minimum_availability: str = 'released',
+                                monitor: str = None, movie_monitor: str = None) -> list:
+        """After a primary request succeeds, cascade to all bundle members.
+        Returns a list of {instance_name, app_type, success, message} for each member."""
+        results = []
+        try:
+            service_id = self.db.get_service_id_by_instance(app_type, instance_name)
+            if not service_id:
+                return results
+
+            bundles = self.db.get_bundles_for_service(service_id)
+            if not bundles:
+                return results
+
+            for bundle in bundles:
+                for member in bundle.get('members', []):
+                    m_app_type = member['app_type']
+                    m_instance = member['instance_name']
+                    try:
+                        result = self.request_media(
+                            tmdb_id=tmdb_id, media_type=media_type,
+                            title=title, year=year, overview=overview,
+                            poster_path=poster_path, backdrop_path=backdrop_path,
+                            app_type=m_app_type, instance_name=m_instance,
+                            start_search=start_search,
+                            minimum_availability=minimum_availability,
+                            monitor=monitor, movie_monitor=movie_monitor,
+                            skip_tracking=True
+                        )
+                        status = result.get('status', '')
+                        # already_exists / already_complete are fine — means the member already has it
+                        success = result.get('success', False) or status in ('already_exists', 'already_complete')
+                        results.append({
+                            'bundle': bundle['name'],
+                            'instance_name': m_instance,
+                            'app_type': m_app_type,
+                            'success': success,
+                            'message': result.get('message', ''),
+                        })
+                        logger.info(f"[Bundle:{bundle['name']}] Cascade to {m_app_type}/{m_instance}: {result.get('message', '')}")
+                    except Exception as e:
+                        logger.error(f"[Bundle:{bundle['name']}] Cascade error for {m_app_type}/{m_instance}: {e}")
+                        results.append({
+                            'bundle': bundle['name'],
+                            'instance_name': m_instance,
+                            'app_type': m_app_type,
+                            'success': False,
+                            'message': str(e),
+                        })
+        except Exception as e:
+            logger.error(f"[Bundle] Error cascading requests: {e}")
+        return results
+
 # Global instance

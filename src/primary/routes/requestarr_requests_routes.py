@@ -362,6 +362,23 @@ def approve_request(request_id):
 
             media_result = requestarr_api.request_media(**request_kwargs)
             logger.info(f"[Requestarr] Approve triggered search for request {request_id}: {media_result}")
+
+            # Cascade to bundle members
+            if media_result and media_result.get('success'):
+                try:
+                    bundle_results = requestarr_api.cascade_bundle_requests(
+                        tmdb_id=tmdb_id, media_type=media_type,
+                        title=req.get('title', ''), year=req.get('year'),
+                        overview='', poster_path=req.get('poster_path', ''),
+                        backdrop_path='', app_type=app_type, instance_name=instance_name,
+                        start_search=True, minimum_availability='released',
+                        monitor='all_episodes' if media_type == 'tv' else None,
+                        movie_monitor='movie_only' if media_type != 'tv' else None
+                    )
+                    if bundle_results:
+                        logger.info(f"[Requestarr] Bundle cascade for approved request {request_id}: {len(bundle_results)} member(s)")
+                except Exception as cascade_err:
+                    logger.warning(f"[Requestarr] Bundle cascade error on approve (non-fatal): {cascade_err}")
         else:
             logger.warning(f"[Requestarr] No tmdb_id for approved request {request_id}")
     except Exception as e:

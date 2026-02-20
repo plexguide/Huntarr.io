@@ -318,9 +318,11 @@ app.register_blueprint(requestarr_bp)
 from src.primary.routes.requestarr_users_routes import requestarr_users_bp
 from src.primary.routes.requestarr_services_routes import requestarr_services_bp
 from src.primary.routes.requestarr_requests_routes import requestarr_requests_bp
+from src.primary.routes.requestarr_bundles_routes import requestarr_bundles_bp
 app.register_blueprint(requestarr_users_bp)
 app.register_blueprint(requestarr_services_bp)
 app.register_blueprint(requestarr_requests_bp)
+app.register_blueprint(requestarr_bundles_bp)
 
 # Chat
 from src.primary.routes.chat_routes import chat_bp
