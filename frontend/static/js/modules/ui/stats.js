@@ -180,6 +180,10 @@ window.HuntarrStats = {
         var ui = window.huntarrUI || {};
 
         if (!skipCache) {
+            // Skip cache if settings haven't loaded yet — prevents flash of stale data
+            // for disabled features. The settings .then() callback will call us again with skipCache=true.
+            if (!ui._settingsLoaded) skipCache = true;
+
             // Skip cache if all hunt categories are disabled — prevents flash of stale data
             var allDisabled = (ui._enableMediaHunt === false && ui._enableThirdPartyApps === false);
             if (allDisabled) skipCache = true;
@@ -979,6 +983,13 @@ window.HuntarrStats = {
     _fetchNzbHuntHomeStats: function() {
         var card = document.getElementById('nzb-hunt-home-card');
         if (!card) return;
+        // Hide if Media Hunt is disabled (NZB Hunt is under Media Hunt umbrella)
+        var ui = window.huntarrUI || {};
+        if (ui._enableMediaHunt === false) {
+            card.style.display = 'none';
+            this._stopNzbHomePoll();
+            return;
+        }
         var self = this;
 
         // First check visibility setting
@@ -1080,6 +1091,9 @@ window.HuntarrStats = {
 
     updateEmptyStateVisibility: function(forceShowGrid) {
         if (!window.huntarrUI) return;
+        
+        // Don't evaluate until settings have loaded — prevents flash of wrong state
+        if (!window.huntarrUI._settingsLoaded && !forceShowGrid) return;
         
         // If we don't have a final answer on configuration yet and aren't forcing the grid, stay quiet
         if (!window.huntarrUI.configuredAppsInitialized && !forceShowGrid) return;

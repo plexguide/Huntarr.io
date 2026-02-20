@@ -76,6 +76,7 @@ let huntarrUI = {
         this._enableNzbHunt = true;
         this._enableMediaHunt = true;
         this._enableThirdPartyApps = true;
+        this._settingsLoaded = false;
         fetch('./api/settings')
             .then(r => r.json())
             .then(all => {
@@ -84,6 +85,7 @@ let huntarrUI = {
                 this._enableNzbHunt = true;
                 this._enableMediaHunt = generalSettings.enable_media_hunt !== false;
                 this._enableThirdPartyApps = generalSettings.enable_third_party_apps !== false;
+                this._settingsLoaded = true;
                 // Update sidebar group visibility from database settings (nav-group-* IDs)
                 // IMPORTANT: Skip this for non-owner users — they are fully siloed
                 var isNonOwner = document.body.classList.contains('non-owner-mode');
