@@ -146,7 +146,6 @@ def refresh_tv_hunt_metadata(instance_id: int, stop_check=None) -> int:
                 continue
             skip, reason = _should_skip_tv_series(s)
             if skip:
-                tv_logger.debug("Metadata refresh: skipping TV tmdb_id=%s (%s)", tmdb_id, reason)
                 continue
 
             try:
@@ -218,7 +217,6 @@ def refresh_tv_hunt_metadata(instance_id: int, stop_check=None) -> int:
                 collection_modified = True
                 if series_updated:
                     refreshed += 1
-                    tv_logger.debug("Metadata refresh: updated series tmdb_id=%s", tmdb_id)
                 # Invalidate detail cache so next open shows fresh data (ties to tmdb_metadata_cache)
                 try:
                     from src.primary.utils.tmdb_metadata_cache import invalidate_tv_series
@@ -227,8 +225,8 @@ def refresh_tv_hunt_metadata(instance_id: int, stop_check=None) -> int:
                     pass
 
                 time.sleep(0.25)
-            except Exception as e:
-                tv_logger.debug("Metadata refresh TV series %s: %s", tmdb_id, e)
+            except Exception:
+                pass
 
         if collection_modified:
             db.save_app_config_for_instance('tv_hunt_collection', instance_id, {'series': collection})
@@ -269,7 +267,6 @@ def refresh_movie_hunt_metadata(instance_id: int, stop_check=None) -> int:
                 continue
             skip, reason = _should_skip_movie(item)
             if skip:
-                movie_logger.debug("Metadata refresh: skipping movie tmdb_id=%s (%s)", tmdb_id, reason)
                 continue
 
             try:
@@ -303,7 +300,6 @@ def refresh_movie_hunt_metadata(instance_id: int, stop_check=None) -> int:
                 collection_modified = True
                 if item_changed:
                     refreshed += 1
-                    movie_logger.debug("Metadata refresh: updated movie tmdb_id=%s", tmdb_id)
                 # Invalidate detail cache so next open shows fresh data (ties to tmdb_metadata_cache)
                 try:
                     from src.primary.utils.tmdb_metadata_cache import invalidate_movie
@@ -312,8 +308,8 @@ def refresh_movie_hunt_metadata(instance_id: int, stop_check=None) -> int:
                     pass
 
                 time.sleep(0.25)
-            except Exception as e:
-                movie_logger.debug("Metadata refresh movie %s: %s", tmdb_id, e)
+            except Exception:
+                pass
 
         if collection_modified:
             db.save_app_config_for_instance('movie_hunt_collection', instance_id, {'items': items})
