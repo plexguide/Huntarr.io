@@ -873,6 +873,16 @@ window.SettingsForms = {
             settings.enable_third_party_apps = !getInputValue("#disable_third_party_apps", false);
             settings.base_url = getInputValue("#base_url", "");
             settings.dev_key = getInputValue("#dev_key", "");
+            settings.show_nzb_hunt_on_home = getInputValue("#show_nzb_hunt_on_home", false);
+            settings.tmdb_image_cache_days = parseInt(container.querySelector('#tmdb_image_cache_days')?.value || '30');
+            settings.web_server_threads = parseInt(container.querySelector('#web_server_threads')?.value || '32');
+            settings.proxy_enabled = getInputValue("#proxy_enabled", false);
+            settings.proxy_type = getInputValue("#proxy_type", "http");
+            settings.proxy_hostname = getInputValue("#proxy_hostname", "");
+            settings.proxy_port = parseInt(container.querySelector('#proxy_port')?.value || '8080');
+            settings.proxy_username = getInputValue("#proxy_username", "");
+            settings.proxy_password = getInputValue("#proxy_password", "");
+            settings.proxy_ignored_addresses = getInputValue("#proxy_ignored_addresses", "");
 
             const notificationsContainer = document.querySelector("#notificationsContainer");
             const getNotificationInputValue = (id, defaultValue) => {
