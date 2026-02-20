@@ -203,57 +203,60 @@ const HomeRequestarr = {
     },
 
     async _populateInstanceDropdowns() {
-        await Promise.all([
-            this._populateMovieInstanceDropdown(),
-            this._populateTVInstanceDropdown()
-        ]);
-        if (this.elements.instanceControls) {
-            this.elements.instanceControls.style.display = 'flex';
+            // Fetch bundle dropdown options once, then populate both selects
+            try {
+                const resp = await fetch(`./api/requestarr/bundles/dropdown?t=${Date.now()}`, { cache: 'no-store' });
+                if (!resp.ok) throw new Error('Failed to fetch bundle dropdown');
+                const data = await resp.json();
+                this._bundleMovieOptions = data.movie_options || [];
+                this._bundleTVOptions = data.tv_options || [];
+            } catch (e) {
+                console.warn('[HomeRequestarr] Error fetching bundle dropdown:', e);
+                this._bundleMovieOptions = [];
+                this._bundleTVOptions = [];
+            }
+            this._populateMovieInstanceDropdown();
+            this._populateTVInstanceDropdown();
+            if (this.elements.instanceControls) {
+                this.elements.instanceControls.style.display = 'flex';
+            }
         }
-    },
+,
 
     async _populateMovieInstanceDropdown() {
-        const select = this.elements.movieInstanceSelect;
-        if (!select) return;
-        try {
-            const _ts = Date.now();
-            const [mhResponse, radarrResponse] = await Promise.all([
-                fetch(`./api/requestarr/instances/movie_hunt?t=${_ts}`, { cache: 'no-store' }),
-                fetch(`./api/requestarr/instances/radarr?t=${_ts}`, { cache: 'no-store' })
-            ]);
-            const mhData = await mhResponse.json();
-            const radarrData = await radarrResponse.json();
+            const select = this.elements.movieInstanceSelect;
+            if (!select) return;
 
-            const allInstances = [
-                ...(mhData.instances || []).map(inst => ({
-                    name: String(inst.name).trim(), appType: 'movie_hunt',
-                    label: `Movie Hunt \u2013 ${String(inst.name).trim()}`
-                })),
-                ...(radarrData.instances || []).map(inst => ({
-                    name: String(inst.name).trim(), appType: 'radarr',
-                    label: `Radarr \u2013 ${String(inst.name).trim()}`
-                }))
-            ];
-
+            const options = this._bundleMovieOptions || [];
             const previousValue = this.defaultMovieInstance || select.value || '';
+
             select.innerHTML = '';
-            if (allInstances.length === 0) {
+            if (options.length === 0) {
                 select.innerHTML = '<option value="">No movie instances</option>';
                 return;
             }
 
-            allInstances.forEach(inst => {
-                const cv = this._encodeInstance(inst.appType, inst.name);
-                const opt = document.createElement('option');
-                opt.value = cv;
-                opt.textContent = inst.label;
-                if (previousValue && (cv === previousValue || inst.name === previousValue)) opt.selected = true;
-                select.appendChild(opt);
+            let matched = null;
+            options.forEach(opt => {
+                const el = document.createElement('option');
+                const val = opt.is_bundle
+                    ? this._encodeInstance(opt.primary_app_type, opt.primary_instance_name)
+                    : opt.value;
+                el.value = val;
+                el.textContent = opt.label;
+                if (previousValue && val === previousValue) {
+                    el.selected = true;
+                    matched = val;
+                }
+                select.appendChild(el);
             });
 
-            if (select.value) {
-                this.defaultMovieInstance = select.value;
+            if (!matched && options.length > 0) {
+                select.options[0].selected = true;
+                matched = select.options[0].value;
             }
+
+            if (matched) this.defaultMovieInstance = matched;
 
             if (!select._homeChangeWired) {
                 select._homeChangeWired = true;
@@ -264,56 +267,43 @@ const HomeRequestarr = {
                     if (this._smartHunt) this._smartHunt.reload();
                 });
             }
-        } catch (error) {
-            console.error('[HomeRequestarr] Error populating movie instances:', error);
         }
-    },
+,
 
     async _populateTVInstanceDropdown() {
-        const select = this.elements.tvInstanceSelect;
-        if (!select) return;
-        try {
-            const _ts = Date.now();
-            const [thResponse, sonarrResponse] = await Promise.all([
-                fetch(`./api/tv-hunt/instances?t=${_ts}`, { cache: 'no-store' }),
-                fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' })
-            ]);
-            let thData = await thResponse.json();
-            if (!thResponse.ok || thData.error) thData = { instances: [] };
-            else thData = { instances: (thData.instances || []).filter(i => i.enabled !== false) };
-            const sonarrData = await sonarrResponse.json();
+            const select = this.elements.tvInstanceSelect;
+            if (!select) return;
 
-            const thInstances = (thData.instances || []).map(inst => ({
-                name: String(inst.name).trim(),
-                appType: 'tv_hunt',
-                label: `TV Hunt \u2013 ${String(inst.name).trim()}`
-            }));
-            const sonarrInstances = (sonarrData.instances || []).map(inst => ({
-                name: String(inst.name).trim(),
-                appType: 'sonarr',
-                label: `Sonarr \u2013 ${String(inst.name).trim()}`
-            }));
-            const allInstances = [...thInstances, ...sonarrInstances];
-
+            const options = this._bundleTVOptions || [];
             const previousValue = this.defaultTVInstance || select.value || '';
+
             select.innerHTML = '';
-            if (allInstances.length === 0) {
+            if (options.length === 0) {
                 select.innerHTML = '<option value="">No TV instances</option>';
                 return;
             }
 
-            allInstances.forEach(inst => {
-                const cv = this._encodeInstance(inst.appType, inst.name);
-                const opt = document.createElement('option');
-                opt.value = cv;
-                opt.textContent = inst.label;
-                if (previousValue && (cv === previousValue || inst.name === previousValue)) opt.selected = true;
-                select.appendChild(opt);
+            let matched = null;
+            options.forEach(opt => {
+                const el = document.createElement('option');
+                const val = opt.is_bundle
+                    ? this._encodeInstance(opt.primary_app_type, opt.primary_instance_name)
+                    : opt.value;
+                el.value = val;
+                el.textContent = opt.label;
+                if (previousValue && val === previousValue) {
+                    el.selected = true;
+                    matched = val;
+                }
+                select.appendChild(el);
             });
 
-            if (select.value) {
-                this.defaultTVInstance = select.value;
+            if (!matched && options.length > 0) {
+                select.options[0].selected = true;
+                matched = select.options[0].value;
             }
+
+            if (matched) this.defaultTVInstance = matched;
 
             if (!select._homeChangeWired) {
                 select._homeChangeWired = true;
@@ -324,10 +314,8 @@ const HomeRequestarr = {
                     if (this._smartHunt) this._smartHunt.reload();
                 });
             }
-        } catch (error) {
-            console.error('[HomeRequestarr] Error populating TV instances:', error);
         }
-    },
+,
 
     _saveServerDefaults() {
         return fetch('./api/requestarr/settings/default-instances', {

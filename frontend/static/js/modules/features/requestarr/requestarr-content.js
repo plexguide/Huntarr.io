@@ -57,18 +57,18 @@ export class RequestarrContent {
      * added/removed instances appear without a full page reload.
      */
     async refreshInstanceSelectors() {
-        // Allow _loadServerDefaults to re-fetch (instance selection may have changed)
-        this._serverDefaultsLoaded = false;
-        this._movieInstancesPopulated = false;
-        this._tvInstancesPopulated = false;
-        await this._loadServerDefaults();
-        await Promise.all([
-            this._populateDiscoverMovieInstances(),
-            this._populateDiscoverTVInstances()
-        ]);
-        await this.loadMovieInstances();
-        await this.loadTVInstances();
-    }
+            this._serverDefaultsLoaded = false;
+            this._movieInstancesPopulated = false;
+            this._tvInstancesPopulated = false;
+            this._bundleDropdownCache = null;
+            await this._loadServerDefaults();
+            await Promise.all([
+                this._populateDiscoverMovieInstances(),
+                this._populateDiscoverTVInstances()
+            ]);
+            await this.loadMovieInstances();
+            await this.loadTVInstances();
+        }
 
     // ----------------------------------------
     // SERVER-SIDE INSTANCE PERSISTENCE
@@ -182,54 +182,72 @@ export class RequestarrContent {
         ]);
     }
 
+    /**
+     * Fetch bundle dropdown options from the server (cached per refresh cycle).
+     * Returns { movie_options, tv_options } where each option has value + label.
+     * The value uses appType:instanceName format so existing code works unchanged.
+     */
+    async _fetchBundleDropdownOptions() {
+        if (this._bundleDropdownCache) return this._bundleDropdownCache;
+        try {
+            const resp = await fetch(`./api/requestarr/bundles/dropdown?t=${Date.now()}`, { cache: 'no-store' });
+            if (!resp.ok) throw new Error('Failed');
+            const data = await resp.json();
+            // Normalize: value for bundles uses primary's appType:instanceName
+            const normalize = (opts) => (opts || []).map(o => ({
+                value: o.is_bundle ? encodeInstanceValue(o.primary_app_type, o.primary_instance_name) : o.value,
+                label: o.label,
+                isBundle: o.is_bundle,
+            }));
+            this._bundleDropdownCache = {
+                movie_options: normalize(data.movie_options),
+                tv_options: normalize(data.tv_options),
+            };
+            return this._bundleDropdownCache;
+        } catch (e) {
+            console.warn('[RequestarrContent] Error fetching bundle dropdown:', e);
+            return { movie_options: [], tv_options: [] };
+        }
+    }
+
+    /**
+     * Populate a select element from bundle dropdown options.
+     */
+    _populateSelectFromOptions(select, options, savedValue) {
+        select.innerHTML = '';
+        if (options.length === 0) {
+            select.innerHTML = '<option value="">No instances configured</option>';
+            return null;
+        }
+        let matchedValue = null;
+        options.forEach(opt => {
+            const el = document.createElement('option');
+            el.value = opt.value;
+            el.textContent = opt.label;
+            if (savedValue && opt.value === savedValue) {
+                el.selected = true;
+                matchedValue = opt.value;
+            }
+            select.appendChild(el);
+        });
+        // If no match, select first
+        if (!matchedValue && options.length > 0) {
+            select.options[0].selected = true;
+            matchedValue = options[0].value;
+        }
+        return matchedValue;
+    }
+
     async _populateDiscoverMovieInstances() {
         const select = document.getElementById('discover-movie-instance-select');
         if (!select) return;
 
         try {
-            const _ts = Date.now();
-            const [mhResponse, radarrResponse] = await Promise.all([
-                fetch(`./api/requestarr/instances/movie_hunt?t=${_ts}`, { cache: 'no-store' }),
-                fetch(`./api/requestarr/instances/radarr?t=${_ts}`, { cache: 'no-store' })
-            ]);
-            const mhData = await mhResponse.json();
-            const radarrData = await radarrResponse.json();
-
-            const allInstances = [
-                ...(mhData.instances || []).map(inst => ({
-                    name: String(inst.name).trim(), _appType: 'movie_hunt',
-                    _label: `Movie Hunt \u2013 ${String(inst.name).trim()}`
-                })),
-                ...(radarrData.instances || []).map(inst => ({
-                    name: String(inst.name).trim(), _appType: 'radarr',
-                    _label: `Radarr \u2013 ${String(inst.name).trim()}`
-                }))
-            ];
-
-            // Preserve current selection before clearing
+            const dd = await this._fetchBundleDropdownOptions();
             const previousValue = this.selectedMovieInstance || select.value || '';
+            const matched = this._populateSelectFromOptions(select, dd.movie_options, previousValue);
+            if (matched) this.selectedMovieInstance = matched;
 
-            select.innerHTML = '';
-            if (allInstances.length === 0) {
-                select.innerHTML = '<option value="">No movie instances</option>';
-                return;
-            }
-
-            allInstances.forEach((inst) => {
-                const cv = encodeInstanceValue(inst._appType, inst.name);
-                const opt = document.createElement('option');
-                opt.value = cv;
-                opt.textContent = inst._label;
-                if (previousValue && (cv === previousValue || inst.name === previousValue)) opt.selected = true;
-                select.appendChild(opt);
-            });
-
-            // Update in-memory selection to match what's actually selected
-            if (select.value) {
-                this.selectedMovieInstance = select.value;
-            }
-
-            // Only attach change listener once
             if (!select._discoverChangeWired) {
                 select._discoverChangeWired = true;
                 select.addEventListener('change', async () => {
@@ -247,49 +265,11 @@ export class RequestarrContent {
         if (!select) return;
 
         try {
-            const _ts = Date.now();
-            const [thResponse, sonarrResponse] = await Promise.all([
-                fetch(`./api/requestarr/instances/tv_hunt?t=${_ts}`, { cache: 'no-store' }),
-                fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' })
-            ]);
-            const thData = await thResponse.json();
-            const sonarrData = await sonarrResponse.json();
-
-            const allInstances = [
-                ...(thData.instances || []).map(inst => ({
-                    name: String(inst.name).trim(), _appType: 'tv_hunt',
-                    _label: `TV Hunt \u2013 ${String(inst.name).trim()}`
-                })),
-                ...(sonarrData.instances || []).map(inst => ({
-                    name: String(inst.name).trim(), _appType: 'sonarr',
-                    _label: `Sonarr \u2013 ${String(inst.name).trim()}`
-                }))
-            ];
-
-            // Preserve current selection before clearing
+            const dd = await this._fetchBundleDropdownOptions();
             const previousValue = this.selectedTVInstance || select.value || '';
+            const matched = this._populateSelectFromOptions(select, dd.tv_options, previousValue);
+            if (matched) this.selectedTVInstance = matched;
 
-            select.innerHTML = '';
-            if (allInstances.length === 0) {
-                select.innerHTML = '<option value="">No TV instances</option>';
-                return;
-            }
-
-            allInstances.forEach((inst) => {
-                const cv = encodeInstanceValue(inst._appType, inst.name);
-                const opt = document.createElement('option');
-                opt.value = cv;
-                opt.textContent = inst._label;
-                if (previousValue && (cv === previousValue || inst.name === previousValue)) opt.selected = true;
-                select.appendChild(opt);
-            });
-
-            // Update in-memory selection to match what's actually selected
-            if (select.value) {
-                this.selectedTVInstance = select.value;
-            }
-
-            // Only attach change listener once
             if (!select._discoverChangeWired) {
                 select._discoverChangeWired = true;
                 select.addEventListener('change', async () => {
@@ -354,148 +334,61 @@ export class RequestarrContent {
         const select = document.getElementById('movies-instance-select');
         if (!select) return;
 
-        // Already populated? Just sync the selection and return.
         if (this._movieInstancesPopulated) {
             this._syncAllMovieSelectors();
             return;
         }
 
-        // Prevent concurrent calls (race condition protection)
-        if (this._loadingMovieInstances) {
-            console.log('[RequestarrContent] loadMovieInstances already in progress, skipping');
-            return;
-        }
+        if (this._loadingMovieInstances) return;
         this._loadingMovieInstances = true;
 
-        // Clear existing options immediately to prevent duplicates if called multiple times
         select.innerHTML = '<option value="">Loading instances...</option>';
 
         try {
-            // Fetch both Movie Hunt and Radarr instances in parallel (cache-bust for fresh data)
-            const _ts = Date.now();
-            const [mhResponse, radarrResponse] = await Promise.all([
-                fetch(`./api/requestarr/instances/movie_hunt?t=${_ts}`, { cache: 'no-store' }),
-                fetch(`./api/requestarr/instances/radarr?t=${_ts}`, { cache: 'no-store' })
-            ]);
-            const mhData = await mhResponse.json();
-            const radarrData = await radarrResponse.json();
-            
-            const mhInstances = (mhData.instances || []).map(inst => ({
-                ...inst,
-                name: String(inst.name).trim(),
-                _appType: 'movie_hunt',
-                _label: `Movie Hunt \u2013 ${String(inst.name).trim()}`
-            }));
-            const radarrInstances = (radarrData.instances || []).map(inst => ({
-                ...inst,
-                name: String(inst.name).trim(),
-                _appType: 'radarr',
-                _label: `Radarr \u2013 ${String(inst.name).trim()}`
-            }));
-            
-            // Combine: Movie Hunt first, then Radarr
-            const allInstances = [...mhInstances, ...radarrInstances];
-            console.log('[RequestarrContent] Movie Hunt instances:', mhInstances.length, 'Radarr instances:', radarrInstances.length);
-            
-            if (allInstances.length > 0) {
-                // Clear before adding real instances
-                select.innerHTML = '';
-                
-                // Server-side is the single source of truth (loaded in _loadServerDefaults)
-                const savedValue = this.selectedMovieInstance;
-                
-                // Deduplicate by compound key
-                const uniqueInstances = [];
-                const seenKeys = new Set();
-                allInstances.forEach((instance) => {
-                    if (!instance.name) return;
-                    const compoundVal = encodeInstanceValue(instance._appType, instance.name);
-                    const seenKey = compoundVal.toLowerCase();
-                    if (seenKeys.has(seenKey)) return;
-                    uniqueInstances.push({ ...instance, _compoundValue: compoundVal });
-                    seenKeys.add(seenKey);
-                });
-                console.log('[RequestarrContent] After deduplication:', uniqueInstances.length, 'unique movie instances');
-                
-                if (uniqueInstances.length === 0) {
-                    select.innerHTML = '<option value="">No movie instances configured</option>';
-                    this.selectedMovieInstance = null;
-                    return;
+            const dd = await this._fetchBundleDropdownOptions();
+            const savedValue = this.selectedMovieInstance;
+            const matched = this._populateSelectFromOptions(select, dd.movie_options, savedValue);
+
+            if (matched) {
+                this._setMovieInstance(matched);
+            } else {
+                this.selectedMovieInstance = null;
+            }
+
+            // Setup change handler (remove old listener via clone)
+            const newSelect = select.cloneNode(true);
+            if (select.parentNode) {
+                select.parentNode.replaceChild(newSelect, select);
+            } else {
+                const currentSelect = document.getElementById('movies-instance-select');
+                if (currentSelect && currentSelect.parentNode) {
+                    currentSelect.parentNode.replaceChild(newSelect, currentSelect);
+                }
+            }
+
+            newSelect.addEventListener('change', async () => {
+                await this._setMovieInstance(newSelect.value);
+
+                const grid = document.getElementById('movies-grid');
+                if (grid) {
+                    grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading movies...</p></div>';
                 }
 
-                let selectedIndex = 0;
-                
-                uniqueInstances.forEach((instance, index) => {
-                    const option = document.createElement('option');
-                    option.value = instance._compoundValue;
-                    option.textContent = instance._label;
-                    
-                    // Select based on saved server-side value
-                    if (savedValue && (instance._compoundValue === savedValue || instance.name === savedValue)) {
-                        option.selected = true;
-                        selectedIndex = index;
-                    } else if (!savedValue && index === 0) {
-                        option.selected = true;
-                    }
-                    
-                    select.appendChild(option);
-                });
-                
-                // Set initial selected instance and persist to server
-                this._setMovieInstance(uniqueInstances[selectedIndex]._compoundValue);
-                console.log(`[RequestarrContent] Using movie instance: ${this.selectedMovieInstance}`);
-                
-                // Setup change handler (remove old listener if any)
-                const newSelect = select.cloneNode(true);
-                if (select.parentNode) {
-                    select.parentNode.replaceChild(newSelect, select);
-                } else {
-                    // If select is detached, find it again in the DOM
-                    const currentSelect = document.getElementById('movies-instance-select');
-                    if (currentSelect && currentSelect.parentNode) {
-                        currentSelect.parentNode.replaceChild(newSelect, currentSelect);
-                    }
+                if (this.moviesObserver) {
+                    this.moviesObserver.disconnect();
+                    this.moviesObserver = null;
                 }
-                
-                newSelect.addEventListener('change', async () => {
-                    await this._setMovieInstance(newSelect.value);
-                    console.log(`[RequestarrContent] Switched to movie instance: ${this.selectedMovieInstance}`);
-                    
-                    // Clear the grid immediately
-                    const grid = document.getElementById('movies-grid');
-                    if (grid) {
-                        grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading movies...</p></div>';
-                    }
-                    
-                    // Disconnect infinite scroll observer during instance switch to prevent auto-loading
-                    if (this.moviesObserver) {
-                        this.moviesObserver.disconnect();
-                        this.moviesObserver = null;
-                    }
-                    
-                    // Reset pagination state
-                    this.moviesPage = 1;
-                    this.moviesHasMore = true;
-                    this.isLoadingMovies = false;
-                    
-                    // Increment request token to cancel any pending requests
-                    this.moviesRequestToken++;
-                    
-                    // Small delay to ensure state is fully reset
-                    await new Promise(resolve => setTimeout(resolve, 50));
-                    
-                    // Await the load to complete before reconnecting scroll
-                    await this.loadMovies();
-                    
-                    // Reconnect infinite scroll after load completes
-                    this.setupMoviesInfiniteScroll();
-                });
-                this._movieInstancesPopulated = true;
-            } else {
-                select.innerHTML = '<option value="">No movie instances configured</option>';
-                this.selectedMovieInstance = null;
-                this._movieInstancesPopulated = true;
-            }
+
+                this.moviesPage = 1;
+                this.moviesHasMore = true;
+                this.isLoadingMovies = false;
+                this.moviesRequestToken++;
+
+                await new Promise(resolve => setTimeout(resolve, 50));
+                await this.loadMovies();
+                this.setupMoviesInfiniteScroll();
+            });
+            this._movieInstancesPopulated = true;
         } catch (error) {
             console.error('[RequestarrContent] Error loading movie instances:', error);
             select.innerHTML = '<option value="">Error loading instances</option>';
@@ -505,161 +398,71 @@ export class RequestarrContent {
     }
 
     async loadTVInstances() {
-        const select = document.getElementById('tv-instance-select');
-        if (!select) return;
+            const select = document.getElementById('tv-instance-select');
+            if (!select) return;
 
-        // Already populated? Just sync the selection and return.
-        if (this._tvInstancesPopulated) {
-            this._syncAllTVSelectors();
-            return;
-        }
+            if (this._tvInstancesPopulated) {
+                this._syncAllTVSelectors();
+                return;
+            }
 
-        // Prevent concurrent calls (race condition protection)
-        if (this._loadingTVInstances) {
-            console.log('[RequestarrContent] loadTVInstances already in progress, skipping');
-            return;
-        }
-        this._loadingTVInstances = true;
+            if (this._loadingTVInstances) return;
+            this._loadingTVInstances = true;
 
-        // Clear existing options immediately to prevent duplicates if called multiple times
-        select.innerHTML = '<option value="">Loading instances...</option>';
+            select.innerHTML = '<option value="">Loading instances...</option>';
 
-        try {
-            // Fetch TV Hunt and Sonarr from requestarr (filtered by services config)
-            const _ts = Date.now();
-            const [thResponse, sonarrResponse] = await Promise.all([
-                fetch(`./api/requestarr/instances/tv_hunt?t=${_ts}`, { cache: 'no-store' }),
-                fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' })
-            ]);
-            const thData = await thResponse.json();
-            const sonarrData = await sonarrResponse.json();
-
-            const thInstances = (thData.instances || []).map(inst => ({
-                ...inst,
-                name: String(inst.name).trim(),
-                _appType: 'tv_hunt',
-                _label: `TV Hunt \u2013 ${String(inst.name).trim()}`
-            }));
-            const sonarrInstances = (sonarrData.instances || []).map(inst => ({
-                ...inst,
-                name: String(inst.name).trim(),
-                _appType: 'sonarr',
-                _label: `Sonarr \u2013 ${String(inst.name).trim()}`
-            }));
-
-            // Update core.instances.tv_hunt so request modal has TV Hunt options
-            this.core.instances.tv_hunt = thInstances.map(i => ({ name: i.name, id: i.id }));
-
-            // Combine: TV Hunt first, then Sonarr
-            const allInstances = [...thInstances, ...sonarrInstances];
-            console.log('[RequestarrContent] TV Hunt instances:', thInstances.length, 'Sonarr instances:', sonarrInstances.length);
-
-            if (allInstances.length > 0) {
-                // Clear again before adding real instances
-                select.innerHTML = '';
-
-                // Server-side is the single source of truth (loaded in _loadServerDefaults)
+            try {
+                const dd = await this._fetchBundleDropdownOptions();
                 const savedValue = this.selectedTVInstance;
+                const matched = this._populateSelectFromOptions(select, dd.tv_options, savedValue);
 
-                // Deduplicate by compound key
-                const uniqueInstances = [];
-                const seenKeys = new Set();
-                allInstances.forEach((instance) => {
-                    if (!instance.name) return;
-                    const compoundVal = encodeInstanceValue(instance._appType, instance.name);
-                    const seenKey = compoundVal.toLowerCase();
-                    if (seenKeys.has(seenKey)) return;
-                    uniqueInstances.push({ ...instance, _compoundValue: compoundVal });
-                    seenKeys.add(seenKey);
-                });
-                console.log('[RequestarrContent] After deduplication:', uniqueInstances.length, 'unique TV instances');
-
-                if (uniqueInstances.length === 0) {
-                    select.innerHTML = '<option value="">No TV instances configured</option>';
+                if (matched) {
+                    this._setTVInstance(matched);
+                } else {
                     this.selectedTVInstance = null;
-                    return;
                 }
 
-                let selectedIndex = 0;
-
-                uniqueInstances.forEach((instance, index) => {
-                    const option = document.createElement('option');
-                    option.value = instance._compoundValue;
-                    option.textContent = instance._label;
-
-                    // Select based on saved server-side value
-                    if (savedValue && (instance._compoundValue === savedValue || instance.name === savedValue)) {
-                        option.selected = true;
-                        selectedIndex = index;
-                    } else if (!savedValue && index === 0) {
-                        option.selected = true;
-                    }
-
-                    select.appendChild(option);
-                });
-
-                // Set initial selected instance and persist to server
-                this._setTVInstance(uniqueInstances[selectedIndex]._compoundValue);
-                console.log(`[RequestarrContent] Using TV instance: ${this.selectedTVInstance}`);
-                
-                // Setup change handler (remove old listener if any)
+                // Setup change handler (remove old listener via clone)
                 const newSelect = select.cloneNode(true);
                 if (select.parentNode) {
                     select.parentNode.replaceChild(newSelect, select);
                 } else {
-                    // If select is detached, find it again in the DOM
                     const currentSelect = document.getElementById('tv-instance-select');
                     if (currentSelect && currentSelect.parentNode) {
                         currentSelect.parentNode.replaceChild(newSelect, currentSelect);
                     }
                 }
-                
+
                 newSelect.addEventListener('change', async () => {
                     await this._setTVInstance(newSelect.value);
-                    console.log(`[RequestarrContent] Switched to TV instance: ${this.selectedTVInstance}`);
-                    
-                    // Clear the grid immediately
+
                     const grid = document.getElementById('tv-grid');
                     if (grid) {
                         grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading TV shows...</p></div>';
                     }
-                    
-                    // Disconnect infinite scroll observer during instance switch to prevent auto-loading
+
                     if (this.tvObserver) {
                         this.tvObserver.disconnect();
                         this.tvObserver = null;
                     }
-                    
-                    // Reset pagination state
+
                     this.tvPage = 1;
                     this.tvHasMore = true;
                     this.isLoadingTV = false;
-                    
-                    // Increment request token to cancel any pending requests
                     this.tvRequestToken++;
-                    
-                    // Small delay to ensure state is fully reset
+
                     await new Promise(resolve => setTimeout(resolve, 50));
-                    
-                    // Await the load to complete before reconnecting scroll
                     await this.loadTV();
-                    
-                    // Reconnect infinite scroll after load completes
                     this.setupTVInfiniteScroll();
                 });
                 this._tvInstancesPopulated = true;
-            } else {
-                select.innerHTML = '<option value="">No TV instances configured</option>';
-                this.selectedTVInstance = null;
-                this._tvInstancesPopulated = true;
+            } catch (error) {
+                console.error('[RequestarrContent] Error loading TV instances:', error);
+                select.innerHTML = '<option value="">Error loading instances</option>';
+            } finally {
+                this._loadingTVInstances = false;
             }
-        } catch (error) {
-            console.error('[RequestarrContent] Error loading TV instances:', error);
-            select.innerHTML = '<option value="">Error loading instances</option>';
-        } finally {
-            this._loadingTVInstances = false;
         }
-    }
 
     // ========================================
     // CONTENT LOADING

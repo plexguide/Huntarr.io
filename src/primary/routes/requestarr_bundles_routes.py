@@ -128,3 +128,85 @@ def delete_bundle(bundle_id):
     except Exception as e:
         logger.error(f"Error deleting bundle: {e}")
         return jsonify({'error': 'Failed to delete bundle'}), 500
+
+
+@requestarr_bundles_bp.route('/dropdown', methods=['GET'])
+def get_bundles_dropdown():
+    """Get bundles formatted for dropdown selectors.
+    Any authenticated user can call this.
+    Returns: { movie_options: [...], tv_options: [...] }
+    Each option: { value: "bundle:<id>", label: "Bundle Name", primary_app_type, primary_instance_name }
+    Unbundled instances are also included as standalone options.
+    """
+    try:
+        session_token = request.cookies.get(SESSION_COOKIE_NAME)
+        username = get_username_from_session(session_token)
+        if not username:
+            try:
+                from src.primary.settings_manager import load_settings
+                settings = load_settings("general")
+                if settings.get("local_access_bypass") or settings.get("proxy_auth_bypass"):
+                    db = get_database()
+                    user = db.get_first_user()
+                    if user:
+                        username = user.get('username')
+            except Exception:
+                pass
+        if not username:
+            return jsonify({'error': 'Not authenticated'}), 401
+
+        db = get_database()
+        bundles = db.get_bundles()
+        services = db.get_requestarr_services()
+
+        # Track which service IDs are used in bundles (as primary)
+        bundled_primary_ids = set()
+        for b in bundles:
+            bundled_primary_ids.add(b['primary_service_id'])
+
+        movie_options = []
+        tv_options = []
+
+        # Add bundles first
+        for b in bundles:
+            primary_svc = next((s for s in services if s['id'] == b['primary_service_id']), None)
+            if not primary_svc:
+                continue
+            opt = {
+                'value': f"bundle:{b['id']}",
+                'label': b['name'],
+                'primary_app_type': primary_svc['app_type'],
+                'primary_instance_name': primary_svc['instance_name'],
+                'is_bundle': True,
+                'bundle_id': b['id'],
+            }
+            if b['service_type'] == 'movies':
+                movie_options.append(opt)
+            else:
+                tv_options.append(opt)
+
+        # Add unbundled services (not used as primary in any bundle)
+        for s in services:
+            if s['id'] in bundled_primary_ids:
+                continue
+            app_label = {'radarr': 'Radarr', 'sonarr': 'Sonarr',
+                         'movie_hunt': 'Movie Hunt', 'tv_hunt': 'TV Hunt'}.get(s['app_type'], s['app_type'])
+            opt = {
+                'value': f"{s['app_type']}:{s['instance_name']}",
+                'label': f"{app_label} \u2013 {s['instance_name']}",
+                'primary_app_type': s['app_type'],
+                'primary_instance_name': s['instance_name'],
+                'is_bundle': False,
+            }
+            if s['service_type'] == 'movies':
+                movie_options.append(opt)
+            else:
+                tv_options.append(opt)
+
+        return jsonify({
+            'movie_options': movie_options,
+            'tv_options': tv_options,
+        })
+    except Exception as e:
+        logger.error(f"Error getting bundles dropdown: {e}")
+        return jsonify({'error': 'Failed to get dropdown options'}), 500

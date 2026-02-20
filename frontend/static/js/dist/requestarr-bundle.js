@@ -3223,18 +3223,18 @@ class RequestarrContent {
      * added/removed instances appear without a full page reload.
      */
     async refreshInstanceSelectors() {
-        // Allow _loadServerDefaults to re-fetch (instance selection may have changed)
-        this._serverDefaultsLoaded = false;
-        this._movieInstancesPopulated = false;
-        this._tvInstancesPopulated = false;
-        await this._loadServerDefaults();
-        await Promise.all([
-            this._populateDiscoverMovieInstances(),
-            this._populateDiscoverTVInstances()
-        ]);
-        await this.loadMovieInstances();
-        await this.loadTVInstances();
-    }
+            this._serverDefaultsLoaded = false;
+            this._movieInstancesPopulated = false;
+            this._tvInstancesPopulated = false;
+            this._bundleDropdownCache = null;
+            await this._loadServerDefaults();
+            await Promise.all([
+                this._populateDiscoverMovieInstances(),
+                this._populateDiscoverTVInstances()
+            ]);
+            await this.loadMovieInstances();
+            await this.loadTVInstances();
+        }
 
     // ----------------------------------------
     // SERVER-SIDE INSTANCE PERSISTENCE
@@ -3348,54 +3348,72 @@ class RequestarrContent {
         ]);
     }
 
+    /**
+     * Fetch bundle dropdown options from the server (cached per refresh cycle).
+     * Returns { movie_options, tv_options } where each option has value + label.
+     * The value uses appType:instanceName format so existing code works unchanged.
+     */
+    async _fetchBundleDropdownOptions() {
+        if (this._bundleDropdownCache) return this._bundleDropdownCache;
+        try {
+            const resp = await fetch(`./api/requestarr/bundles/dropdown?t=${Date.now()}`, { cache: 'no-store' });
+            if (!resp.ok) throw new Error('Failed');
+            const data = await resp.json();
+            // Normalize: value for bundles uses primary's appType:instanceName
+            const normalize = (opts) => (opts || []).map(o => ({
+                value: o.is_bundle ? encodeInstanceValue(o.primary_app_type, o.primary_instance_name) : o.value,
+                label: o.label,
+                isBundle: o.is_bundle,
+            }));
+            this._bundleDropdownCache = {
+                movie_options: normalize(data.movie_options),
+                tv_options: normalize(data.tv_options),
+            };
+            return this._bundleDropdownCache;
+        } catch (e) {
+            console.warn('[RequestarrContent] Error fetching bundle dropdown:', e);
+            return { movie_options: [], tv_options: [] };
+        }
+    }
+
+    /**
+     * Populate a select element from bundle dropdown options.
+     */
+    _populateSelectFromOptions(select, options, savedValue) {
+        select.innerHTML = '';
+        if (options.length === 0) {
+            select.innerHTML = '<option value="">No instances configured</option>';
+            return null;
+        }
+        let matchedValue = null;
+        options.forEach(opt => {
+            const el = document.createElement('option');
+            el.value = opt.value;
+            el.textContent = opt.label;
+            if (savedValue && opt.value === savedValue) {
+                el.selected = true;
+                matchedValue = opt.value;
+            }
+            select.appendChild(el);
+        });
+        // If no match, select first
+        if (!matchedValue && options.length > 0) {
+            select.options[0].selected = true;
+            matchedValue = options[0].value;
+        }
+        return matchedValue;
+    }
+
     async _populateDiscoverMovieInstances() {
         const select = document.getElementById('discover-movie-instance-select');
         if (!select) return;
 
         try {
-            const _ts = Date.now();
-            const [mhResponse, radarrResponse] = await Promise.all([
-                fetch(`./api/requestarr/instances/movie_hunt?t=${_ts}`, { cache: 'no-store' }),
-                fetch(`./api/requestarr/instances/radarr?t=${_ts}`, { cache: 'no-store' })
-            ]);
-            const mhData = await mhResponse.json();
-            const radarrData = await radarrResponse.json();
-
-            const allInstances = [
-                ...(mhData.instances || []).map(inst => ({
-                    name: String(inst.name).trim(), _appType: 'movie_hunt',
-                    _label: `Movie Hunt \u2013 ${String(inst.name).trim()}`
-                })),
-                ...(radarrData.instances || []).map(inst => ({
-                    name: String(inst.name).trim(), _appType: 'radarr',
-                    _label: `Radarr \u2013 ${String(inst.name).trim()}`
-                }))
-            ];
-
-            // Preserve current selection before clearing
+            const dd = await this._fetchBundleDropdownOptions();
             const previousValue = this.selectedMovieInstance || select.value || '';
+            const matched = this._populateSelectFromOptions(select, dd.movie_options, previousValue);
+            if (matched) this.selectedMovieInstance = matched;
 
-            select.innerHTML = '';
-            if (allInstances.length === 0) {
-                select.innerHTML = '<option value="">No movie instances</option>';
-                return;
-            }
-
-            allInstances.forEach((inst) => {
-                const cv = encodeInstanceValue(inst._appType, inst.name);
-                const opt = document.createElement('option');
-                opt.value = cv;
-                opt.textContent = inst._label;
-                if (previousValue && (cv === previousValue || inst.name === previousValue)) opt.selected = true;
-                select.appendChild(opt);
-            });
-
-            // Update in-memory selection to match what's actually selected
-            if (select.value) {
-                this.selectedMovieInstance = select.value;
-            }
-
-            // Only attach change listener once
             if (!select._discoverChangeWired) {
                 select._discoverChangeWired = true;
                 select.addEventListener('change', async () => {
@@ -3413,49 +3431,11 @@ class RequestarrContent {
         if (!select) return;
 
         try {
-            const _ts = Date.now();
-            const [thResponse, sonarrResponse] = await Promise.all([
-                fetch(`./api/requestarr/instances/tv_hunt?t=${_ts}`, { cache: 'no-store' }),
-                fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' })
-            ]);
-            const thData = await thResponse.json();
-            const sonarrData = await sonarrResponse.json();
-
-            const allInstances = [
-                ...(thData.instances || []).map(inst => ({
-                    name: String(inst.name).trim(), _appType: 'tv_hunt',
-                    _label: `TV Hunt \u2013 ${String(inst.name).trim()}`
-                })),
-                ...(sonarrData.instances || []).map(inst => ({
-                    name: String(inst.name).trim(), _appType: 'sonarr',
-                    _label: `Sonarr \u2013 ${String(inst.name).trim()}`
-                }))
-            ];
-
-            // Preserve current selection before clearing
+            const dd = await this._fetchBundleDropdownOptions();
             const previousValue = this.selectedTVInstance || select.value || '';
+            const matched = this._populateSelectFromOptions(select, dd.tv_options, previousValue);
+            if (matched) this.selectedTVInstance = matched;
 
-            select.innerHTML = '';
-            if (allInstances.length === 0) {
-                select.innerHTML = '<option value="">No TV instances</option>';
-                return;
-            }
-
-            allInstances.forEach((inst) => {
-                const cv = encodeInstanceValue(inst._appType, inst.name);
-                const opt = document.createElement('option');
-                opt.value = cv;
-                opt.textContent = inst._label;
-                if (previousValue && (cv === previousValue || inst.name === previousValue)) opt.selected = true;
-                select.appendChild(opt);
-            });
-
-            // Update in-memory selection to match what's actually selected
-            if (select.value) {
-                this.selectedTVInstance = select.value;
-            }
-
-            // Only attach change listener once
             if (!select._discoverChangeWired) {
                 select._discoverChangeWired = true;
                 select.addEventListener('change', async () => {
@@ -3520,148 +3500,61 @@ class RequestarrContent {
         const select = document.getElementById('movies-instance-select');
         if (!select) return;
 
-        // Already populated? Just sync the selection and return.
         if (this._movieInstancesPopulated) {
             this._syncAllMovieSelectors();
             return;
         }
 
-        // Prevent concurrent calls (race condition protection)
-        if (this._loadingMovieInstances) {
-            console.log('[RequestarrContent] loadMovieInstances already in progress, skipping');
-            return;
-        }
+        if (this._loadingMovieInstances) return;
         this._loadingMovieInstances = true;
 
-        // Clear existing options immediately to prevent duplicates if called multiple times
         select.innerHTML = '<option value="">Loading instances...</option>';
 
         try {
-            // Fetch both Movie Hunt and Radarr instances in parallel (cache-bust for fresh data)
-            const _ts = Date.now();
-            const [mhResponse, radarrResponse] = await Promise.all([
-                fetch(`./api/requestarr/instances/movie_hunt?t=${_ts}`, { cache: 'no-store' }),
-                fetch(`./api/requestarr/instances/radarr?t=${_ts}`, { cache: 'no-store' })
-            ]);
-            const mhData = await mhResponse.json();
-            const radarrData = await radarrResponse.json();
-            
-            const mhInstances = (mhData.instances || []).map(inst => ({
-                ...inst,
-                name: String(inst.name).trim(),
-                _appType: 'movie_hunt',
-                _label: `Movie Hunt \u2013 ${String(inst.name).trim()}`
-            }));
-            const radarrInstances = (radarrData.instances || []).map(inst => ({
-                ...inst,
-                name: String(inst.name).trim(),
-                _appType: 'radarr',
-                _label: `Radarr \u2013 ${String(inst.name).trim()}`
-            }));
-            
-            // Combine: Movie Hunt first, then Radarr
-            const allInstances = [...mhInstances, ...radarrInstances];
-            console.log('[RequestarrContent] Movie Hunt instances:', mhInstances.length, 'Radarr instances:', radarrInstances.length);
-            
-            if (allInstances.length > 0) {
-                // Clear before adding real instances
-                select.innerHTML = '';
-                
-                // Server-side is the single source of truth (loaded in _loadServerDefaults)
-                const savedValue = this.selectedMovieInstance;
-                
-                // Deduplicate by compound key
-                const uniqueInstances = [];
-                const seenKeys = new Set();
-                allInstances.forEach((instance) => {
-                    if (!instance.name) return;
-                    const compoundVal = encodeInstanceValue(instance._appType, instance.name);
-                    const seenKey = compoundVal.toLowerCase();
-                    if (seenKeys.has(seenKey)) return;
-                    uniqueInstances.push({ ...instance, _compoundValue: compoundVal });
-                    seenKeys.add(seenKey);
-                });
-                console.log('[RequestarrContent] After deduplication:', uniqueInstances.length, 'unique movie instances');
-                
-                if (uniqueInstances.length === 0) {
-                    select.innerHTML = '<option value="">No movie instances configured</option>';
-                    this.selectedMovieInstance = null;
-                    return;
+            const dd = await this._fetchBundleDropdownOptions();
+            const savedValue = this.selectedMovieInstance;
+            const matched = this._populateSelectFromOptions(select, dd.movie_options, savedValue);
+
+            if (matched) {
+                this._setMovieInstance(matched);
+            } else {
+                this.selectedMovieInstance = null;
+            }
+
+            // Setup change handler (remove old listener via clone)
+            const newSelect = select.cloneNode(true);
+            if (select.parentNode) {
+                select.parentNode.replaceChild(newSelect, select);
+            } else {
+                const currentSelect = document.getElementById('movies-instance-select');
+                if (currentSelect && currentSelect.parentNode) {
+                    currentSelect.parentNode.replaceChild(newSelect, currentSelect);
+                }
+            }
+
+            newSelect.addEventListener('change', async () => {
+                await this._setMovieInstance(newSelect.value);
+
+                const grid = document.getElementById('movies-grid');
+                if (grid) {
+                    grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading movies...</p></div>';
                 }
 
-                let selectedIndex = 0;
-                
-                uniqueInstances.forEach((instance, index) => {
-                    const option = document.createElement('option');
-                    option.value = instance._compoundValue;
-                    option.textContent = instance._label;
-                    
-                    // Select based on saved server-side value
-                    if (savedValue && (instance._compoundValue === savedValue || instance.name === savedValue)) {
-                        option.selected = true;
-                        selectedIndex = index;
-                    } else if (!savedValue && index === 0) {
-                        option.selected = true;
-                    }
-                    
-                    select.appendChild(option);
-                });
-                
-                // Set initial selected instance and persist to server
-                this._setMovieInstance(uniqueInstances[selectedIndex]._compoundValue);
-                console.log(`[RequestarrContent] Using movie instance: ${this.selectedMovieInstance}`);
-                
-                // Setup change handler (remove old listener if any)
-                const newSelect = select.cloneNode(true);
-                if (select.parentNode) {
-                    select.parentNode.replaceChild(newSelect, select);
-                } else {
-                    // If select is detached, find it again in the DOM
-                    const currentSelect = document.getElementById('movies-instance-select');
-                    if (currentSelect && currentSelect.parentNode) {
-                        currentSelect.parentNode.replaceChild(newSelect, currentSelect);
-                    }
+                if (this.moviesObserver) {
+                    this.moviesObserver.disconnect();
+                    this.moviesObserver = null;
                 }
-                
-                newSelect.addEventListener('change', async () => {
-                    await this._setMovieInstance(newSelect.value);
-                    console.log(`[RequestarrContent] Switched to movie instance: ${this.selectedMovieInstance}`);
-                    
-                    // Clear the grid immediately
-                    const grid = document.getElementById('movies-grid');
-                    if (grid) {
-                        grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading movies...</p></div>';
-                    }
-                    
-                    // Disconnect infinite scroll observer during instance switch to prevent auto-loading
-                    if (this.moviesObserver) {
-                        this.moviesObserver.disconnect();
-                        this.moviesObserver = null;
-                    }
-                    
-                    // Reset pagination state
-                    this.moviesPage = 1;
-                    this.moviesHasMore = true;
-                    this.isLoadingMovies = false;
-                    
-                    // Increment request token to cancel any pending requests
-                    this.moviesRequestToken++;
-                    
-                    // Small delay to ensure state is fully reset
-                    await new Promise(resolve => setTimeout(resolve, 50));
-                    
-                    // Await the load to complete before reconnecting scroll
-                    await this.loadMovies();
-                    
-                    // Reconnect infinite scroll after load completes
-                    this.setupMoviesInfiniteScroll();
-                });
-                this._movieInstancesPopulated = true;
-            } else {
-                select.innerHTML = '<option value="">No movie instances configured</option>';
-                this.selectedMovieInstance = null;
-                this._movieInstancesPopulated = true;
-            }
+
+                this.moviesPage = 1;
+                this.moviesHasMore = true;
+                this.isLoadingMovies = false;
+                this.moviesRequestToken++;
+
+                await new Promise(resolve => setTimeout(resolve, 50));
+                await this.loadMovies();
+                this.setupMoviesInfiniteScroll();
+            });
+            this._movieInstancesPopulated = true;
         } catch (error) {
             console.error('[RequestarrContent] Error loading movie instances:', error);
             select.innerHTML = '<option value="">Error loading instances</option>';
@@ -3671,161 +3564,71 @@ class RequestarrContent {
     }
 
     async loadTVInstances() {
-        const select = document.getElementById('tv-instance-select');
-        if (!select) return;
+            const select = document.getElementById('tv-instance-select');
+            if (!select) return;
 
-        // Already populated? Just sync the selection and return.
-        if (this._tvInstancesPopulated) {
-            this._syncAllTVSelectors();
-            return;
-        }
+            if (this._tvInstancesPopulated) {
+                this._syncAllTVSelectors();
+                return;
+            }
 
-        // Prevent concurrent calls (race condition protection)
-        if (this._loadingTVInstances) {
-            console.log('[RequestarrContent] loadTVInstances already in progress, skipping');
-            return;
-        }
-        this._loadingTVInstances = true;
+            if (this._loadingTVInstances) return;
+            this._loadingTVInstances = true;
 
-        // Clear existing options immediately to prevent duplicates if called multiple times
-        select.innerHTML = '<option value="">Loading instances...</option>';
+            select.innerHTML = '<option value="">Loading instances...</option>';
 
-        try {
-            // Fetch TV Hunt and Sonarr from requestarr (filtered by services config)
-            const _ts = Date.now();
-            const [thResponse, sonarrResponse] = await Promise.all([
-                fetch(`./api/requestarr/instances/tv_hunt?t=${_ts}`, { cache: 'no-store' }),
-                fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' })
-            ]);
-            const thData = await thResponse.json();
-            const sonarrData = await sonarrResponse.json();
-
-            const thInstances = (thData.instances || []).map(inst => ({
-                ...inst,
-                name: String(inst.name).trim(),
-                _appType: 'tv_hunt',
-                _label: `TV Hunt \u2013 ${String(inst.name).trim()}`
-            }));
-            const sonarrInstances = (sonarrData.instances || []).map(inst => ({
-                ...inst,
-                name: String(inst.name).trim(),
-                _appType: 'sonarr',
-                _label: `Sonarr \u2013 ${String(inst.name).trim()}`
-            }));
-
-            // Update core.instances.tv_hunt so request modal has TV Hunt options
-            this.core.instances.tv_hunt = thInstances.map(i => ({ name: i.name, id: i.id }));
-
-            // Combine: TV Hunt first, then Sonarr
-            const allInstances = [...thInstances, ...sonarrInstances];
-            console.log('[RequestarrContent] TV Hunt instances:', thInstances.length, 'Sonarr instances:', sonarrInstances.length);
-
-            if (allInstances.length > 0) {
-                // Clear again before adding real instances
-                select.innerHTML = '';
-
-                // Server-side is the single source of truth (loaded in _loadServerDefaults)
+            try {
+                const dd = await this._fetchBundleDropdownOptions();
                 const savedValue = this.selectedTVInstance;
+                const matched = this._populateSelectFromOptions(select, dd.tv_options, savedValue);
 
-                // Deduplicate by compound key
-                const uniqueInstances = [];
-                const seenKeys = new Set();
-                allInstances.forEach((instance) => {
-                    if (!instance.name) return;
-                    const compoundVal = encodeInstanceValue(instance._appType, instance.name);
-                    const seenKey = compoundVal.toLowerCase();
-                    if (seenKeys.has(seenKey)) return;
-                    uniqueInstances.push({ ...instance, _compoundValue: compoundVal });
-                    seenKeys.add(seenKey);
-                });
-                console.log('[RequestarrContent] After deduplication:', uniqueInstances.length, 'unique TV instances');
-
-                if (uniqueInstances.length === 0) {
-                    select.innerHTML = '<option value="">No TV instances configured</option>';
+                if (matched) {
+                    this._setTVInstance(matched);
+                } else {
                     this.selectedTVInstance = null;
-                    return;
                 }
 
-                let selectedIndex = 0;
-
-                uniqueInstances.forEach((instance, index) => {
-                    const option = document.createElement('option');
-                    option.value = instance._compoundValue;
-                    option.textContent = instance._label;
-
-                    // Select based on saved server-side value
-                    if (savedValue && (instance._compoundValue === savedValue || instance.name === savedValue)) {
-                        option.selected = true;
-                        selectedIndex = index;
-                    } else if (!savedValue && index === 0) {
-                        option.selected = true;
-                    }
-
-                    select.appendChild(option);
-                });
-
-                // Set initial selected instance and persist to server
-                this._setTVInstance(uniqueInstances[selectedIndex]._compoundValue);
-                console.log(`[RequestarrContent] Using TV instance: ${this.selectedTVInstance}`);
-                
-                // Setup change handler (remove old listener if any)
+                // Setup change handler (remove old listener via clone)
                 const newSelect = select.cloneNode(true);
                 if (select.parentNode) {
                     select.parentNode.replaceChild(newSelect, select);
                 } else {
-                    // If select is detached, find it again in the DOM
                     const currentSelect = document.getElementById('tv-instance-select');
                     if (currentSelect && currentSelect.parentNode) {
                         currentSelect.parentNode.replaceChild(newSelect, currentSelect);
                     }
                 }
-                
+
                 newSelect.addEventListener('change', async () => {
                     await this._setTVInstance(newSelect.value);
-                    console.log(`[RequestarrContent] Switched to TV instance: ${this.selectedTVInstance}`);
-                    
-                    // Clear the grid immediately
+
                     const grid = document.getElementById('tv-grid');
                     if (grid) {
                         grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading TV shows...</p></div>';
                     }
-                    
-                    // Disconnect infinite scroll observer during instance switch to prevent auto-loading
+
                     if (this.tvObserver) {
                         this.tvObserver.disconnect();
                         this.tvObserver = null;
                     }
-                    
-                    // Reset pagination state
+
                     this.tvPage = 1;
                     this.tvHasMore = true;
                     this.isLoadingTV = false;
-                    
-                    // Increment request token to cancel any pending requests
                     this.tvRequestToken++;
-                    
-                    // Small delay to ensure state is fully reset
+
                     await new Promise(resolve => setTimeout(resolve, 50));
-                    
-                    // Await the load to complete before reconnecting scroll
                     await this.loadTV();
-                    
-                    // Reconnect infinite scroll after load completes
                     this.setupTVInfiniteScroll();
                 });
                 this._tvInstancesPopulated = true;
-            } else {
-                select.innerHTML = '<option value="">No TV instances configured</option>';
-                this.selectedTVInstance = null;
-                this._tvInstancesPopulated = true;
+            } catch (error) {
+                console.error('[RequestarrContent] Error loading TV instances:', error);
+                select.innerHTML = '<option value="">Error loading instances</option>';
+            } finally {
+                this._loadingTVInstances = false;
             }
-        } catch (error) {
-            console.error('[RequestarrContent] Error loading TV instances:', error);
-            select.innerHTML = '<option value="">Error loading instances</option>';
-        } finally {
-            this._loadingTVInstances = false;
         }
-    }
 
     // ========================================
     // CONTENT LOADING
@@ -6937,57 +6740,60 @@ const HomeRequestarr = {
     },
 
     async _populateInstanceDropdowns() {
-        await Promise.all([
-            this._populateMovieInstanceDropdown(),
-            this._populateTVInstanceDropdown()
-        ]);
-        if (this.elements.instanceControls) {
-            this.elements.instanceControls.style.display = 'flex';
+            // Fetch bundle dropdown options once, then populate both selects
+            try {
+                const resp = await fetch(`./api/requestarr/bundles/dropdown?t=${Date.now()}`, { cache: 'no-store' });
+                if (!resp.ok) throw new Error('Failed to fetch bundle dropdown');
+                const data = await resp.json();
+                this._bundleMovieOptions = data.movie_options || [];
+                this._bundleTVOptions = data.tv_options || [];
+            } catch (e) {
+                console.warn('[HomeRequestarr] Error fetching bundle dropdown:', e);
+                this._bundleMovieOptions = [];
+                this._bundleTVOptions = [];
+            }
+            this._populateMovieInstanceDropdown();
+            this._populateTVInstanceDropdown();
+            if (this.elements.instanceControls) {
+                this.elements.instanceControls.style.display = 'flex';
+            }
         }
-    },
+,
 
     async _populateMovieInstanceDropdown() {
-        const select = this.elements.movieInstanceSelect;
-        if (!select) return;
-        try {
-            const _ts = Date.now();
-            const [mhResponse, radarrResponse] = await Promise.all([
-                fetch(`./api/requestarr/instances/movie_hunt?t=${_ts}`, { cache: 'no-store' }),
-                fetch(`./api/requestarr/instances/radarr?t=${_ts}`, { cache: 'no-store' })
-            ]);
-            const mhData = await mhResponse.json();
-            const radarrData = await radarrResponse.json();
+            const select = this.elements.movieInstanceSelect;
+            if (!select) return;
 
-            const allInstances = [
-                ...(mhData.instances || []).map(inst => ({
-                    name: String(inst.name).trim(), appType: 'movie_hunt',
-                    label: `Movie Hunt \u2013 ${String(inst.name).trim()}`
-                })),
-                ...(radarrData.instances || []).map(inst => ({
-                    name: String(inst.name).trim(), appType: 'radarr',
-                    label: `Radarr \u2013 ${String(inst.name).trim()}`
-                }))
-            ];
-
+            const options = this._bundleMovieOptions || [];
             const previousValue = this.defaultMovieInstance || select.value || '';
+
             select.innerHTML = '';
-            if (allInstances.length === 0) {
+            if (options.length === 0) {
                 select.innerHTML = '<option value="">No movie instances</option>';
                 return;
             }
 
-            allInstances.forEach(inst => {
-                const cv = this._encodeInstance(inst.appType, inst.name);
-                const opt = document.createElement('option');
-                opt.value = cv;
-                opt.textContent = inst.label;
-                if (previousValue && (cv === previousValue || inst.name === previousValue)) opt.selected = true;
-                select.appendChild(opt);
+            let matched = null;
+            options.forEach(opt => {
+                const el = document.createElement('option');
+                const val = opt.is_bundle
+                    ? this._encodeInstance(opt.primary_app_type, opt.primary_instance_name)
+                    : opt.value;
+                el.value = val;
+                el.textContent = opt.label;
+                if (previousValue && val === previousValue) {
+                    el.selected = true;
+                    matched = val;
+                }
+                select.appendChild(el);
             });
 
-            if (select.value) {
-                this.defaultMovieInstance = select.value;
+            if (!matched && options.length > 0) {
+                select.options[0].selected = true;
+                matched = select.options[0].value;
             }
+
+            if (matched) this.defaultMovieInstance = matched;
 
             if (!select._homeChangeWired) {
                 select._homeChangeWired = true;
@@ -6998,56 +6804,43 @@ const HomeRequestarr = {
                     if (this._smartHunt) this._smartHunt.reload();
                 });
             }
-        } catch (error) {
-            console.error('[HomeRequestarr] Error populating movie instances:', error);
         }
-    },
+,
 
     async _populateTVInstanceDropdown() {
-        const select = this.elements.tvInstanceSelect;
-        if (!select) return;
-        try {
-            const _ts = Date.now();
-            const [thResponse, sonarrResponse] = await Promise.all([
-                fetch(`./api/tv-hunt/instances?t=${_ts}`, { cache: 'no-store' }),
-                fetch(`./api/requestarr/instances/sonarr?t=${_ts}`, { cache: 'no-store' })
-            ]);
-            let thData = await thResponse.json();
-            if (!thResponse.ok || thData.error) thData = { instances: [] };
-            else thData = { instances: (thData.instances || []).filter(i => i.enabled !== false) };
-            const sonarrData = await sonarrResponse.json();
+            const select = this.elements.tvInstanceSelect;
+            if (!select) return;
 
-            const thInstances = (thData.instances || []).map(inst => ({
-                name: String(inst.name).trim(),
-                appType: 'tv_hunt',
-                label: `TV Hunt \u2013 ${String(inst.name).trim()}`
-            }));
-            const sonarrInstances = (sonarrData.instances || []).map(inst => ({
-                name: String(inst.name).trim(),
-                appType: 'sonarr',
-                label: `Sonarr \u2013 ${String(inst.name).trim()}`
-            }));
-            const allInstances = [...thInstances, ...sonarrInstances];
-
+            const options = this._bundleTVOptions || [];
             const previousValue = this.defaultTVInstance || select.value || '';
+
             select.innerHTML = '';
-            if (allInstances.length === 0) {
+            if (options.length === 0) {
                 select.innerHTML = '<option value="">No TV instances</option>';
                 return;
             }
 
-            allInstances.forEach(inst => {
-                const cv = this._encodeInstance(inst.appType, inst.name);
-                const opt = document.createElement('option');
-                opt.value = cv;
-                opt.textContent = inst.label;
-                if (previousValue && (cv === previousValue || inst.name === previousValue)) opt.selected = true;
-                select.appendChild(opt);
+            let matched = null;
+            options.forEach(opt => {
+                const el = document.createElement('option');
+                const val = opt.is_bundle
+                    ? this._encodeInstance(opt.primary_app_type, opt.primary_instance_name)
+                    : opt.value;
+                el.value = val;
+                el.textContent = opt.label;
+                if (previousValue && val === previousValue) {
+                    el.selected = true;
+                    matched = val;
+                }
+                select.appendChild(el);
             });
 
-            if (select.value) {
-                this.defaultTVInstance = select.value;
+            if (!matched && options.length > 0) {
+                select.options[0].selected = true;
+                matched = select.options[0].value;
             }
+
+            if (matched) this.defaultTVInstance = matched;
 
             if (!select._homeChangeWired) {
                 select._homeChangeWired = true;
@@ -7058,10 +6851,8 @@ const HomeRequestarr = {
                     if (this._smartHunt) this._smartHunt.reload();
                 });
             }
-        } catch (error) {
-            console.error('[HomeRequestarr] Error populating TV instances:', error);
         }
-    },
+,
 
     _saveServerDefaults() {
         return fetch('./api/requestarr/settings/default-instances', {
@@ -7610,7 +7401,7 @@ window.RequestarrUsers = {
  * TV = Sonarr + TV Hunt instances
  * Bundles = Groups of same-type services for cascading requests.
  *
- * Uses the same instance-card design system as Media Hunt Instances.
+ * Layout: Bundles on top, then Movies instances, then TV instances.
  */
 
 window.RequestarrServices = {
@@ -7663,21 +7454,19 @@ window.RequestarrServices = {
         const tvServices = this.services.filter(s => s.service_type === 'tv');
 
         container.innerHTML =
+            this._renderBundlesSection() +
             this._renderSection('Movies', 'movies', movieServices, 'fa-film') +
-            this._renderSection('TV', 'tv', tvServices, 'fa-tv') +
-            this._renderBundlesSection();
+            this._renderSection('TV', 'tv', tvServices, 'fa-tv');
 
+        this._wireBundles();
         this._wireGrid('reqservices-movies-grid', 'movies');
         this._wireGrid('reqservices-tv-grid', 'tv');
-        this._wireBundles();
     },
 
     _renderSection(title, type, services, iconClass) {
         const iconColor = type === 'movies' ? '#eab308' : '#818cf8';
         const gridId = `reqservices-${type}-grid`;
-        const addLabel = `Add ${title} Server`;
-
-        services.sort((a, b) => (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0));
+        const addLabel = `Add ${title} Instance`;
 
         let cardsHtml = '';
         services.forEach(s => { cardsHtml += this._renderCard(s, type); });
@@ -7688,8 +7477,8 @@ window.RequestarrServices = {
         return `<div class="settings-group instances-settings-group reqservices-group">
             <div class="profiles-header">
                 <div>
-                    <h3><i class="fas ${iconClass}" style="color:${iconColor};margin-right:8px;"></i>${title}</h3>
-                    <p class="profiles-help">Configure your ${title.toLowerCase()} servers below. You can connect multiple servers and mark defaults.</p>
+                    <h3><i class="fas ${iconClass}" style="color:${iconColor};margin-right:8px;"></i>${title} Instances</h3>
+                    <p class="profiles-help">Add or remove ${title.toLowerCase()} instances. Group them into bundles above to use in Requests.</p>
                 </div>
             </div>
             <div class="instance-card-grid instances-card-grid" id="${gridId}">${cardsHtml}</div>
@@ -7703,29 +7492,27 @@ window.RequestarrServices = {
         }[service.app_type] || service.app_type;
 
         const iconClass = type === 'movies' ? 'fa-film' : 'fa-tv';
-        const isDefault = !!service.is_default;
-        const is4k = !!service.is_4k;
-        const statusClass = 'status-connected';
-        const statusIcon = 'fa-check-circle';
 
-        const defaultBadge = isDefault ? ' <span class="default-badge">Default</span>' : '';
-        const fourKBadge = is4k ? ' <span class="reqservices-badge-4k-inline">4K</span>' : '';
+        // Check if this service is used in any bundle
+        const inBundles = this.bundles.filter(b =>
+            b.primary_service_id === service.id ||
+            (b.member_service_ids || []).includes(service.id)
+        );
+        const bundleBadge = inBundles.length > 0
+            ? ` <span style="font-size:10px;background:rgba(16,185,129,0.15);color:#10b981;padding:2px 6px;border-radius:4px;margin-left:6px;">${inBundles.map(b => b.name).join(', ')}</span>`
+            : '';
 
-        const defaultBtn = isDefault ? '' : `<button type="button" class="btn-card set-default" data-id="${service.id}"><i class="fas fa-star"></i> Default</button>`;
-        const fourKBtn = is4k
-            ? `<button type="button" class="btn-card reqsvc-un4k" data-id="${service.id}" title="Remove 4K flag"><span style="font-weight:700;color:#eab308;">4K</span></button>`
-            : `<button type="button" class="btn-card reqsvc-set4k" data-id="${service.id}" title="Mark as 4K"><span style="font-weight:700;color:var(--text-dim);">4K</span></button>`;
-        const deleteBtn = `<button type="button" class="btn-card delete" data-id="${service.id}"><i class="fas fa-trash"></i> Delete</button>`;
-
-        return `<div class="instance-card${isDefault ? ' default-instance' : ''}" data-service-id="${service.id}">
+        return `<div class="instance-card" data-service-id="${service.id}">
             <div class="instance-card-header">
-                <span class="instance-name"><i class="fas ${iconClass}" style="margin-right:8px;"></i>${this._esc(service.instance_name)}${defaultBadge}${fourKBadge}</span>
-                <div class="instance-status-icon ${statusClass}"><i class="fas ${statusIcon}"></i></div>
+                <span class="instance-name"><i class="fas ${iconClass}" style="margin-right:8px;"></i>${this._esc(service.instance_name)}${bundleBadge}</span>
+                <div class="instance-status-icon status-connected"><i class="fas fa-check-circle"></i></div>
             </div>
             <div class="instance-card-body">
                 <div class="instance-detail"><i class="fas fa-server"></i><span>${appLabel}</span></div>
             </div>
-            <div class="instance-card-footer">${defaultBtn}${fourKBtn}${deleteBtn}</div>
+            <div class="instance-card-footer">
+                <button type="button" class="btn-card delete" data-id="${service.id}"><i class="fas fa-trash"></i> Remove</button>
+            </div>
         </div>`;
     },
 
@@ -7741,8 +7528,8 @@ window.RequestarrServices = {
         return `<div class="settings-group instances-settings-group reqservices-group">
             <div class="profiles-header">
                 <div>
-                    <h3><i class="fas fa-layer-group" style="color:#10b981;margin-right:8px;"></i>Instance Bundles</h3>
-                    <p class="profiles-help">Bundle instances together so requests cascade automatically. The primary instance is what you browse; bundled instances receive the same requests.</p>
+                    <h3><i class="fas fa-layer-group" style="color:#10b981;margin-right:8px;"></i>Bundles</h3>
+                    <p class="profiles-help">Bundles appear in all Requests dropdowns. The primary instance is what you browse; bundled instances receive the same requests automatically.</p>
                 </div>
             </div>
             <div class="instance-card-grid instances-card-grid" id="reqservices-bundles-grid">${bundleCardsHtml}</div>
@@ -7816,7 +7603,6 @@ window.RequestarrServices = {
         const primaryId = existing ? existing.primary_service_id : '';
         const memberIds = existing ? (existing.member_service_ids || []) : [];
 
-        // Build type selector (only if creating)
         const typeSelectHtml = isEdit
             ? `<input type="hidden" id="bundle-type-select" value="${bundleType}"><div class="requsers-field"><label>Type</label><input type="text" value="${bundleType === 'movies' ? 'Movies' : 'TV'}" disabled style="opacity:0.6;"></div>`
             : `<div class="requsers-field"><label>Type</label><select id="bundle-type-select"><option value="movies">Movies</option><option value="tv">TV</option></select></div>`;
@@ -7854,7 +7640,6 @@ window.RequestarrServices = {
         this.closeModal();
         document.body.insertAdjacentHTML('beforeend', html);
 
-        // Populate dropdowns based on type
         const typeSelect = document.getElementById('bundle-type-select');
         if (isEdit) {
             this._populateBundleInstanceSelectors(bundleType, primaryId, memberIds);
@@ -7865,7 +7650,6 @@ window.RequestarrServices = {
             });
         }
 
-        // Save handler
         document.getElementById('bundle-save-btn').addEventListener('click', () => {
             this._saveBundleFromModal(editBundleId);
         });
@@ -7877,7 +7661,6 @@ window.RequestarrServices = {
         const membersList = document.getElementById('bundle-members-list');
         if (!primarySelect || !membersList) return;
 
-        // Primary dropdown
         primarySelect.innerHTML = services.length === 0
             ? '<option value="">No instances available</option>'
             : services.map(s => {
@@ -7886,7 +7669,6 @@ window.RequestarrServices = {
                 return `<option value="${s.id}"${sel}>${this._esc(label)}</option>`;
             }).join('');
 
-        // Members checkboxes
         if (services.length === 0) {
             membersList.innerHTML = '<div style="color:#6b7280;font-size:13px;">No instances available</div>';
             return;
@@ -7915,10 +7697,6 @@ window.RequestarrServices = {
         }
         if (!primaryId) {
             if (window.HuntarrNotifications) window.HuntarrNotifications.showNotification('Select a primary instance', 'error');
-            return;
-        }
-        if (memberIds.length === 0) {
-            if (window.HuntarrNotifications) window.HuntarrNotifications.showNotification('Select at least one bundled instance', 'error');
             return;
         }
 
@@ -7983,7 +7761,7 @@ window.RequestarrServices = {
         }
     },
 
-    // ── Existing service CRUD (unchanged) ────────────────────────────
+    // ── Existing service CRUD ────────────────────────────────────────
 
     _wireGrid(gridId, type) {
         const grid = document.getElementById(gridId);
@@ -7991,15 +7769,6 @@ window.RequestarrServices = {
         grid.addEventListener('click', (e) => {
             const addCard = e.target.closest('.add-instance-card[data-action="add"]');
             if (addCard) { e.preventDefault(); this.openAddModal(type); return; }
-
-            const defaultBtn = e.target.closest('.btn-card.set-default');
-            if (defaultBtn) { e.stopPropagation(); this.toggleDefault(parseInt(defaultBtn.dataset.id), true); return; }
-
-            const set4kBtn = e.target.closest('.btn-card.reqsvc-set4k');
-            if (set4kBtn) { e.stopPropagation(); this.toggle4K(parseInt(set4kBtn.dataset.id), true); return; }
-
-            const un4kBtn = e.target.closest('.btn-card.reqsvc-un4k');
-            if (un4kBtn) { e.stopPropagation(); this.toggle4K(parseInt(un4kBtn.dataset.id), false); return; }
 
             const deleteBtn = e.target.closest('.btn-card.delete');
             if (deleteBtn) { e.stopPropagation(); this.removeService(parseInt(deleteBtn.dataset.id)); return; }
@@ -8023,7 +7792,7 @@ window.RequestarrServices = {
             `<option value="${a.app_type}:${this._esc(a.instance_name)}:${a.instance_id || ''}">${this._esc(a.label)}</option>`
         ).join('');
 
-        const title = serviceType === 'movies' ? 'Add Movies Server' : 'Add TV Server';
+        const title = serviceType === 'movies' ? 'Add Movies Instance' : 'Add TV Instance';
         const html = `<div class="requsers-modal-overlay" id="requsers-modal-overlay" onclick="if(event.target===this)RequestarrServices.closeModal()">
             <div class="requsers-modal" style="max-width:420px;">
                 <div class="requsers-modal-header">
@@ -8035,20 +7804,10 @@ window.RequestarrServices = {
                         <label>Instance</label>
                         <select id="reqservices-add-select">${optionsHtml}</select>
                     </div>
-                    <div class="requsers-field" style="display:flex;gap:16px;">
-                        <label class="requsers-perm-item" style="flex:1;">
-                            <input type="checkbox" id="reqservices-add-default">
-                            <span>Default</span>
-                        </label>
-                        <label class="requsers-perm-item" style="flex:1;">
-                            <input type="checkbox" id="reqservices-add-4k">
-                            <span>4K Server</span>
-                        </label>
-                    </div>
                 </div>
                 <div class="requsers-modal-footer">
                     <button class="requsers-btn" style="background:var(--bg-tertiary);color:var(--text-secondary);" onclick="RequestarrServices.closeModal()">Cancel</button>
-                    <button class="requsers-btn requsers-btn-primary" onclick="RequestarrServices.doAdd('${serviceType}')"><i class="fas fa-plus"></i> Add Server</button>
+                    <button class="requsers-btn requsers-btn-primary" onclick="RequestarrServices.doAdd('${serviceType}')"><i class="fas fa-plus"></i> Add</button>
                 </div>
             </div>
         </div>`;
@@ -8070,8 +7829,6 @@ window.RequestarrServices = {
         const appType = parts[0];
         const instanceName = parts.slice(1, -1).join(':');
         const instanceId = parts[parts.length - 1] ? parseInt(parts[parts.length - 1]) : null;
-        const isDefault = document.getElementById('reqservices-add-default').checked;
-        const is4k = document.getElementById('reqservices-add-4k').checked;
 
         try {
             const resp = await fetch('./api/requestarr/services', {
@@ -8082,60 +7839,33 @@ window.RequestarrServices = {
                     app_type: appType,
                     instance_name: instanceName,
                     instance_id: instanceId,
-                    is_default: isDefault,
-                    is_4k: is4k,
                 }),
             });
             const data = await resp.json();
             if (data.success) {
                 this.closeModal();
-                if (window.HuntarrNotifications) window.HuntarrNotifications.showNotification('Server added', 'success');
+                if (window.HuntarrNotifications) window.HuntarrNotifications.showNotification('Instance added', 'success');
                 await this.loadServices();
                 this.render();
             } else {
-                if (window.HuntarrNotifications) window.HuntarrNotifications.showNotification(data.error || 'Failed to add server', 'error');
+                if (window.HuntarrNotifications) window.HuntarrNotifications.showNotification(data.error || 'Failed to add', 'error');
             }
         } catch (e) {
             console.error('[RequestarrServices] Error adding service:', e);
         }
     },
 
-    async toggleDefault(serviceId, value) {
-        await this._updateService(serviceId, { is_default: value ? 1 : 0 });
-    },
-
-    async toggle4K(serviceId, value) {
-        await this._updateService(serviceId, { is_4k: value ? 1 : 0 });
-    },
-
-    async _updateService(serviceId, updates) {
-        try {
-            const resp = await fetch(`./api/requestarr/services/${serviceId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updates),
-            });
-            const data = await resp.json();
-            if (data.success) {
-                await this.loadServices();
-                this.render();
-            }
-        } catch (e) {
-            console.error('[RequestarrServices] Error updating service:', e);
-        }
-    },
-
     async removeService(serviceId) {
         if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
             window.HuntarrConfirm.show({
-                title: 'Remove Server',
-                message: 'Remove this server from Requests? The instance itself will not be deleted.',
+                title: 'Remove Instance',
+                message: 'Remove this instance from Requests? The instance itself will not be deleted.',
                 confirmText: 'Remove',
                 confirmClass: 'danger',
                 onConfirm: () => this._doRemove(serviceId),
             });
         } else {
-            if (confirm('Remove this server from Requests?')) {
+            if (confirm('Remove this instance from Requests?')) {
                 await this._doRemove(serviceId);
             }
         }
@@ -8146,7 +7876,7 @@ window.RequestarrServices = {
             const resp = await fetch(`./api/requestarr/services/${serviceId}`, { method: 'DELETE' });
             const data = await resp.json();
             if (data.success) {
-                if (window.HuntarrNotifications) window.HuntarrNotifications.showNotification('Server removed', 'success');
+                if (window.HuntarrNotifications) window.HuntarrNotifications.showNotification('Instance removed', 'success');
                 await this.loadServices();
                 this.render();
             }
