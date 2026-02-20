@@ -8107,20 +8107,27 @@ window.HuntarrStats = {
         this.isLoadingStats = true;
 
         var self = this;
+        var ui = window.huntarrUI || {};
 
         if (!skipCache) {
-            var cachedStats = localStorage.getItem('huntarr-stats-cache');
-            if (cachedStats) {
-                try {
-                    var parsedStats = JSON.parse(cachedStats);
-                    var cacheAge = Date.now() - (parsedStats.timestamp || 0);
-                    // Use cache if less than 1 hour old for immediate UI
-                    if (cacheAge < 3600000) {
-                        this.updateStatsDisplay(parsedStats.stats, true);
-                        // Show grid immediately from cache so it's not blank while checking connections
-                        this.updateEmptyStateVisibility(true);
-                    }
-                } catch (e) {}
+            // Skip cache if all hunt categories are disabled — prevents flash of stale data
+            var allDisabled = (ui._enableMediaHunt === false && ui._enableThirdPartyApps === false);
+            if (allDisabled) skipCache = true;
+
+            if (!skipCache) {
+                var cachedStats = localStorage.getItem('huntarr-stats-cache');
+                if (cachedStats) {
+                    try {
+                        var parsedStats = JSON.parse(cachedStats);
+                        var cacheAge = Date.now() - (parsedStats.timestamp || 0);
+                        // Use cache if less than 1 hour old for immediate UI
+                        if (cacheAge < 3600000) {
+                            this.updateStatsDisplay(parsedStats.stats, true);
+                            // Show grid immediately from cache so it's not blank while checking connections
+                            this.updateEmptyStateVisibility(true);
+                        }
+                    } catch (e) {}
+                }
             }
         }
 
@@ -8144,6 +8151,8 @@ window.HuntarrStats = {
                     self.updateStatsDisplay(data.stats);
                     if (statsContainer) statsContainer.classList.remove('stats-loading');
                 }
+                // Always re-evaluate empty state after fresh data
+                self.updateEmptyStateVisibility();
             })
             .catch(function(error) {
                 console.error('Error fetching statistics:', error);
@@ -9005,10 +9014,28 @@ window.HuntarrStats = {
         // If we don't have a final answer on configuration yet and aren't forcing the grid, stay quiet
         if (!window.huntarrUI.configuredAppsInitialized && !forceShowGrid) return;
         
-        var anyConfigured = Object.values(window.huntarrUI.configuredApps).some(function(v) { return v === true; });
+        var ui = window.huntarrUI;
+        var mediaHuntApps = ['movie_hunt', 'tv_hunt'];
+        var thirdPartyApps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
         
-        // If we are forcing the grid (from cache), we assume there's something to show
-        if (forceShowGrid) anyConfigured = true;
+        // Check if any ENABLED app is configured
+        var anyConfigured = false;
+        if (ui.configuredApps) {
+            Object.keys(ui.configuredApps).forEach(function(app) {
+                if (!ui.configuredApps[app]) return;
+                // Skip disabled categories
+                if (mediaHuntApps.indexOf(app) !== -1 && ui._enableMediaHunt === false) return;
+                if (thirdPartyApps.indexOf(app) !== -1 && ui._enableThirdPartyApps === false) return;
+                anyConfigured = true;
+            });
+        }
+        
+        // If we are forcing the grid (from cache), check if any enabled category exists
+        if (forceShowGrid && !anyConfigured) {
+            // Don't force-show if all categories are disabled
+            var hasEnabledCategory = (ui._enableMediaHunt !== false) || (ui._enableThirdPartyApps !== false);
+            if (hasEnabledCategory) anyConfigured = true;
+        }
         
         var emptyState = document.getElementById('live-hunts-empty-state');
         var statsGrid = document.getElementById('app-stats-grid') || document.querySelector('.app-stats-grid');
@@ -9017,10 +9044,51 @@ window.HuntarrStats = {
             if (emptyState) emptyState.style.display = 'none';
             if (statsGrid) statsGrid.style.display = '';
         } else {
-            // Only show empty state if we're CERTAIN nothing is configured
-            if (window.huntarrUI.configuredAppsInitialized) {
+            // Only show empty state if we're CERTAIN nothing is configured (or all are disabled)
+            if (window.huntarrUI.configuredAppsInitialized || forceShowGrid) {
+                // Update empty state buttons based on what's enabled
+                this._updateEmptyStateButtons();
                 if (emptyState) emptyState.style.display = 'flex';
                 if (statsGrid) statsGrid.style.display = 'none';
+            }
+        }
+    },
+
+    _updateEmptyStateButtons: function() {
+        var emptyState = document.getElementById('live-hunts-empty-state');
+        if (!emptyState) return;
+        var ui = window.huntarrUI || {};
+        var mediaEnabled = ui._enableMediaHunt !== false;
+        var appsEnabled = ui._enableThirdPartyApps !== false;
+        
+        // Update the message text
+        var msgEl = emptyState.querySelector('p:nth-of-type(2)');
+        if (msgEl) {
+            if (!mediaEnabled && !appsEnabled) {
+                msgEl.textContent = 'Media Hunt and 3rd Party Apps are disabled. Enable them in Settings to get started.';
+            } else if (!mediaEnabled) {
+                msgEl.textContent = 'Get started by configuring your 3rd Party Apps, or enable Media Hunt in Settings.';
+            } else if (!appsEnabled) {
+                msgEl.textContent = 'Get started by heading to Media Hunt, or enable 3rd Party Apps in Settings.';
+            } else {
+                msgEl.textContent = 'Get started by heading to Media Hunt or configure your 3rd Party Apps.';
+            }
+        }
+        
+        // Update button visibility
+        var btns = emptyState.querySelectorAll('.action-button');
+        var separator = emptyState.querySelector('span');
+        // btns[0] = Media Hunt, btns[1] = 3rd Party Apps
+        if (btns.length >= 2) {
+            btns[0].style.display = mediaEnabled ? '' : 'none';
+            btns[1].style.display = appsEnabled ? '' : 'none';
+            if (separator) separator.style.display = (mediaEnabled && appsEnabled) ? '' : 'none';
+            // If both disabled, show a Settings button instead
+            if (!mediaEnabled && !appsEnabled) {
+                btns[0].style.display = '';
+                btns[0].innerHTML = '<i class="fas fa-cog" style="margin-right: 8px;"></i> Settings';
+                btns[0].setAttribute('onclick', "window.location.hash = '#settings'");
+                if (separator) separator.style.display = 'none';
             }
         }
     }
