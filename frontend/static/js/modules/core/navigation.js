@@ -282,62 +282,10 @@ window.HuntarrNavigation = {
     },
 
     updateMovieHuntSidebarActive: function() {
-        if (!window.huntarrUI) return;
-        const currentSection = window.huntarrUI.currentSection;
-        let sectionForNav = currentSection;
-        if (currentSection === 'instance-editor' && window.SettingsForms && window.SettingsForms._currentEditing) {
-            const appType = window.SettingsForms._currentEditing.appType;
-            if (appType === 'indexer') sectionForNav = 'indexer-hunt';
-            else if (appType === 'client') sectionForNav = 'settings-clients';
-        }
-        const collectionSections = ['movie-hunt-home', 'movie-hunt-collection', 'media-hunt-collection', 'media-hunt-instances', 'media-hunt-calendar', 'settings-clients'];
-        const activitySections = ['activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-media-hunt', 'logs-tv-hunt', 'tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist'];
-        const configSections = ['media-hunt-settings', 'movie-hunt-settings', 'settings-instance-management', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'profile-editor', 'settings-custom-formats', 'settings-import-media', 'settings-import-lists', 'settings-root-folders', 'instance-editor'];
-        const indexMasterSections = ['indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history'];
-
-        // Use hash as source of truth for sub-expansion (avoids revert when async code runs ~1s later)
-        const hashSection = (window.location.hash || '').replace(/^#+/, '').split('/')[0];
-        const hashForNav = hashSection && (configSections.indexOf(hashSection) !== -1 || activitySections.indexOf(hashSection) !== -1 || collectionSections.indexOf(hashSection) !== -1 || indexMasterSections.indexOf(hashSection) !== -1) ? hashSection : null;
-        if (hashForNav) sectionForNav = hashForNav;
-
-        const onActivity = activitySections.indexOf(sectionForNav) !== -1;
-        const onConfig = configSections.indexOf(sectionForNav) !== -1;
-
-        // Expand only the relevant sub (matches setActiveNavItem — avoids flicker when clicking Settings)
-        const colSub = document.getElementById('movie-hunt-collection-sub');
-        const actSub = document.getElementById('movie-hunt-activity-sub');
-        const cfgSub = document.getElementById('media-hunt-config-sub');
-        if (colSub) colSub.classList.toggle('expanded', !onActivity && !onConfig);
-        if (actSub) actSub.classList.toggle('expanded', onActivity);
-        if (cfgSub) cfgSub.classList.toggle('expanded', onConfig);
-
-        // Remove ALL view modes and other sub-group expansions
-        const mhBody = document.getElementById('sidebar-group-media-hunt');
-        if (mhBody) {
-            mhBody.classList.toggle('config-view', onConfig);
-            mhBody.classList.toggle('activity-view', onActivity);
-            mhBody.classList.remove('indexmaster-view');
-        }
-
-        // Highlight the active item within Media Hunt sidebar
-        const items = document.querySelectorAll('#sidebar-group-media-hunt .nav-item');
-        
-        // Mapping for sub-pages to their main nav item for highlighting
-        var navMapping = {
-            'indexer-hunt-stats': 'indexer-hunt',
-            'indexer-hunt-history': 'indexer-hunt'
-        };
-
-        var navTarget = navMapping[sectionForNav] || sectionForNav;
-
-        items.forEach(item => {
-            item.classList.remove('active');
-            const href = item.getAttribute('href') || (item.querySelector('a') && item.querySelector('a').getAttribute('href'));
-            var targetHash = (href || '').replace(/^[^#]*#/, '');
-            if (targetHash && (targetHash === navTarget || targetHash === sectionForNav)) {
-                item.classList.add('active');
-            }
-        });
+        // Sub-group expansion is handled exclusively by setActiveNavItem() in sidebar.html.
+        // This function only manages the activity-view CSS class (used by CSS to hide items)
+        // and delegates active-item highlighting to setActiveNavItem().
+        if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
 
     updateTVHuntSidebarActive: function() {
