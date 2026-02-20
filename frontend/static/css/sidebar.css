@@ -116,7 +116,7 @@
 .nav-menu {
     display: flex;
     flex-direction: column;
-    padding: 8px 0 12px 0;
+    padding: 6px 0 12px 0;
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
@@ -151,7 +151,7 @@
 
 /* ===== HOME STANDALONE ITEM ===== */
 .nav-item-home {
-    margin: 6px 10px 2px !important;
+    margin: 4px 10px 2px !important;
 }
 
 .nav-item-home .nav-icon-wrapper {
@@ -162,6 +162,17 @@
 
 .nav-item-home .nav-icon-wrapper i {
     font-size: 13px;
+}
+
+/* ===== SECTION DIVIDERS ===== */
+.nav-section-divider {
+    height: 1px;
+    margin: 6px 18px;
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(99, 102, 241, 0.1),
+        transparent
+    );
 }
 
 /* ===== NAV GROUPS ===== */
@@ -186,35 +197,35 @@
 .nav-group-header {
     display: flex;
     align-items: center;
-    padding: 7px 12px;
-    margin: 1px 10px;
+    padding: 8px 12px;
+    margin: 2px 10px;
     border-radius: 8px;
-    color: rgba(148, 163, 184, 0.7);
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1.2px;
+    color: rgba(203, 213, 225, 0.75);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0.2px;
     cursor: pointer;
     user-select: none;
     transition: all 0.2s ease;
 }
 
 .nav-group-header:hover {
-    background: rgba(99, 102, 241, 0.06);
-    color: rgba(203, 213, 225, 0.9);
+    background: rgba(99, 102, 241, 0.08);
+    color: rgba(226, 232, 240, 0.95);
 }
 
 .nav-group-header .nav-group-icon {
-    font-size: 12px;
-    width: 20px;
-    margin-right: 8px;
+    font-size: 13px;
+    width: 22px;
+    margin-right: 10px;
     text-align: center;
-    opacity: 0.6;
+    opacity: 0.55;
     transition: opacity 0.2s ease, color 0.2s ease;
 }
 
 .nav-group-header:hover .nav-group-icon {
-    opacity: 0.9;
+    opacity: 0.85;
 }
 
 .nav-group-header span {
@@ -263,15 +274,14 @@
     opacity: 0.8;
 }
 
-/* Expanded header gets accent tint */
+/* Expanded header — subtle text tint only, no background */
 .nav-group-header.expanded {
-    color: rgba(165, 180, 252, 0.8);
-    background: rgba(99, 102, 241, 0.04);
+    color: rgba(165, 180, 252, 0.9);
 }
 
 .nav-group-header.expanded .nav-group-icon {
-    color: rgba(165, 180, 252, 0.8);
-    opacity: 0.8;
+    color: rgba(165, 180, 252, 0.9);
+    opacity: 0.85;
 }
 
 /* ===== COLLAPSIBLE GROUP BODY ===== */
@@ -296,7 +306,7 @@
     align-items: center;
     padding: 0 12px;
     height: 36px;
-    color: rgba(203, 213, 225, 0.8);
+    color: rgba(203, 213, 225, 0.75);
     text-decoration: none;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     border-radius: 8px;
@@ -342,14 +352,14 @@
 
 /* ===== HOVER STATE ===== */
 .nav-item:hover {
-    background: rgba(99, 102, 241, 0.06);
+    background: rgba(99, 102, 241, 0.08);
     color: #e2e8f0;
     transform: none;
     text-decoration: none;
 }
 
 .nav-item:hover .nav-icon-wrapper i {
-    color: #94a3b8;
+    color: #a5b4fc;
 }
 
 /* ===== ACTIVE STATE — indigo ===== */
@@ -963,7 +973,7 @@ input:checked + .slider:before {
 
 /* ===== MOBILE: sidebar hidden — see mobile.css ===== */
 
-/* ===== FOCUSED MODES: hide other sections with smooth transition ===== */
+/* ===== FOCUSED MODES: hide other sections instantly ===== */
 #nav-group-core-label,
 #homeNav,
 #nav-group-apps-label,
@@ -973,7 +983,6 @@ input:checked + .slider:before {
 #nav-group-system,
 #nav-group-requests,
 #main-sidebar-partner-projects-group {
-    transition: opacity 0.3s ease, max-height 0.35s ease, margin 0.3s ease, padding 0.3s ease;
     max-height: none;
     opacity: 1;
 }
@@ -985,7 +994,7 @@ input:checked + .slider:before {
 .sidebar.media-focused #homeNav,
 .sidebar.nzb-focused #homeNav,
 .sidebar.thirdparty-focused #homeNav {
-    order: 10; /* just before the Apps label (order 11) and app groups (order 12+) */
+    order: 10;
 }
 
 /* Core label below Home for Requests/System focus */
@@ -1012,11 +1021,7 @@ input:checked + .slider:before {
 .sidebar.media-focused #main-sidebar-partner-projects-group,
 .sidebar.nzb-focused #main-sidebar-partner-projects-group,
 .sidebar.thirdparty-focused #main-sidebar-partner-projects-group {
-    max-height: 0;
-    opacity: 0;
-    margin: 0;
-    padding: 0;
-    pointer-events: none;
+    display: none;
 }
 
 /* Requests focused: hide System + all Apps */
@@ -1049,9 +1054,5 @@ input:checked + .slider:before {
 .sidebar.thirdparty-focused #nav-group-system,
 .sidebar.thirdparty-focused #nav-group-media-hunt,
 .sidebar.thirdparty-focused #nzb-hunt-sidebar-group {
-    max-height: 0;
-    opacity: 0;
-    margin: 0;
-    padding: 0;
-    pointer-events: none;
+    display: none;
 }
