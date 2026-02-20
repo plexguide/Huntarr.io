@@ -326,6 +326,7 @@
     </nav>
 
     <div class="sidebar-footer">
+        <!-- User profile row -->
         <div class="sidebar-user-profile" id="sidebar-user-profile">
             <a href="#user" class="sidebar-user-link">
                 <div class="sidebar-user-avatar" id="sidebar-user-avatar"></div>
@@ -333,9 +334,17 @@
                     <span class="sidebar-user-name" id="sidebar-user-name">Loading...</span>
                     <span class="sidebar-user-role" id="sidebar-user-role"></span>
                 </div>
-                <i class="fas fa-cog sidebar-user-settings-icon"></i>
             </a>
+            <div class="sidebar-user-actions">
+                <a href="#user" class="sidebar-action-btn" title="Settings" aria-label="User Settings">
+                    <i class="fas fa-cog"></i>
+                </a>
+                <button class="sidebar-action-btn sidebar-logout-btn" title="Logout" aria-label="Logout" onclick="fetch('./logout',{method:'POST'}).then(function(){window.location.href='./login';})">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
         </div>
+        <!-- Social icons row -->
         <div class="sidebar-social-group">
             <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank" rel="noopener" class="sidebar-social-btn discord-btn" title="Join Discord" aria-label="Discord">
                 <i class="fab fa-discord"></i>
@@ -350,6 +359,7 @@
                 <i class="fas fa-bug"></i>
             </a>
         </div>
+        <!-- Version row -->
         <div class="sidebar-footer-info">
             <a href="https://github.com/plexguide/Huntarr.io/releases" target="_blank" rel="noopener" class="sidebar-footer-version-link" id="sidebar-footer-version-link" title="View releases">
                 <span class="sidebar-footer-version" id="sidebar-footer-version"></span>
