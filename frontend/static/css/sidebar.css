@@ -688,7 +688,7 @@
     border-radius: 50%;
     flex-shrink: 0;
     overflow: hidden;
-    border: 1.5px solid rgba(99, 102, 241, 0.3);
+    border: 1.5px solid rgba(234, 179, 8, 0.5);
 }
 
 .sidebar-user-avatar img {
