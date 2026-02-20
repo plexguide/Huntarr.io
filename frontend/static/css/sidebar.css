@@ -380,7 +380,6 @@
 /* Sub-group hidden by default, shown when expanded */
 #movie-hunt-collection-sub,
 #movie-hunt-activity-sub,
-#media-hunt-config-sub,
 #index-master-sub,
 #index-master-view-sub {
     display: none;
@@ -389,7 +388,6 @@
 
 #movie-hunt-collection-sub.expanded,
 #movie-hunt-activity-sub.expanded,
-#media-hunt-config-sub.expanded,
 #index-master-sub.expanded,
 #index-master-view-sub.expanded {
     display: block;
@@ -397,22 +395,10 @@
 
 #movie-hunt-collection-sub .nav-item-sub,
 #movie-hunt-activity-sub .nav-item-sub,
-#media-hunt-config-sub .nav-item-sub,
 #index-master-sub .nav-item-sub,
 #index-master-view-sub .nav-item-sub {
     margin-top: 0;
     margin-bottom: 0;
-}
-
-/* When config sub-group is expanded, hide main Media Hunt items + other toggles */
-#sidebar-group-media-hunt.config-view > #movieHuntCollectionNav,
-#sidebar-group-media-hunt.config-view > #movie-hunt-collection-sub,
-#sidebar-group-media-hunt.config-view > #movieHuntIndexMasterNav,
-#sidebar-group-media-hunt.config-view > #movieHuntActivityToggle,
-#sidebar-group-media-hunt.config-view > #movie-hunt-activity-sub,
-#sidebar-group-media-hunt.config-view > #movieHuntClientsMainNav,
-#sidebar-group-media-hunt.config-view > #movieHuntSettingsToggle {
-    display: none !important;
 }
 
 /* When activity sub-group is expanded, hide main Media Hunt items + other toggles */
@@ -421,12 +407,18 @@
 #sidebar-group-media-hunt.activity-view > #movieHuntIndexMasterNav,
 #sidebar-group-media-hunt.activity-view > #movieHuntActivityToggle,
 #sidebar-group-media-hunt.activity-view > #movieHuntClientsMainNav,
-#sidebar-group-media-hunt.activity-view > #movieHuntSettingsToggle,
-#sidebar-group-media-hunt.activity-view > #media-hunt-config-sub {
+#sidebar-group-media-hunt.activity-view > #mediaHuntAdvancedLabel,
+#sidebar-group-media-hunt.activity-view > #movieHuntSettingsMovieManagementNav,
+#sidebar-group-media-hunt.activity-view > #movieHuntImportMediaNav,
+#sidebar-group-media-hunt.activity-view > #movieHuntSettingsProfilesNav,
+#sidebar-group-media-hunt.activity-view > #movieHuntSettingsSizesNav,
+#sidebar-group-media-hunt.activity-view > #movieHuntSettingsCustomFormatsNav,
+#sidebar-group-media-hunt.activity-view > #movieHuntSettingsImportListsNav,
+#sidebar-group-media-hunt.activity-view > #movieHuntSettingsRootFoldersNav {
     display: none !important;
 }
 
-/* Back button styling in config sub-group */
+/* Back button styling in activity sub-group */
 .media-hunt-config-back {
     opacity: 0.7;
     font-size: 0.85em;
@@ -818,41 +810,84 @@ input:checked + .slider:before {
 /* ===== MOBILE: sidebar hidden — see mobile.css ===== */
 
 /* ===== FOCUSED MODES: hide other sections with smooth transition ===== */
+#nav-group-core-label,
+#homeNav,
 #nav-group-apps-label,
 #nav-group-media-hunt,
 #nzb-hunt-sidebar-group,
 #nav-group-apps,
 #nav-group-system,
-#nav-group-requests {
+#nav-group-requests,
+#main-sidebar-partner-projects-group {
     transition: opacity 0.3s ease, max-height 0.35s ease, margin 0.3s ease, padding 0.3s ease;
     max-height: 500px;
     opacity: 1;
     overflow: hidden;
 }
 
-/* Requests focused: hide System + all Apps */
+/* ── Home reorder: move Home directly above the focused group via flex order ── */
+/* Default order (no focus): everything in DOM order */
+.sidebar.requests-focused #homeNav,
+.sidebar.system-focused #homeNav,
+.sidebar.media-focused #homeNav,
+.sidebar.nzb-focused #homeNav,
+.sidebar.thirdparty-focused #homeNav {
+    order: 10; /* just before the Apps label (order 11) and app groups (order 12+) */
+}
+
+/* Apps label and app groups get higher order so Home sits above them */
+.sidebar.requests-focused #nav-group-requests,
+.sidebar.system-focused #nav-group-system,
+.sidebar.media-focused #nav-group-apps-label,
+.sidebar.media-focused #nav-group-media-hunt,
+.sidebar.nzb-focused #nav-group-apps-label,
+.sidebar.nzb-focused #nzb-hunt-sidebar-group,
+.sidebar.thirdparty-focused #nav-group-apps-label,
+.sidebar.thirdparty-focused #nav-group-apps {
+    order: 12;
+}
+
+/* Daughter's Sponsors: only visible on home page (no focused mode) */
+.sidebar.requests-focused #main-sidebar-partner-projects-group,
+.sidebar.system-focused #main-sidebar-partner-projects-group,
+.sidebar.media-focused #main-sidebar-partner-projects-group,
+.sidebar.nzb-focused #main-sidebar-partner-projects-group,
+.sidebar.thirdparty-focused #main-sidebar-partner-projects-group {
+    max-height: 0;
+    opacity: 0;
+    margin: 0;
+    padding: 0;
+    pointer-events: none;
+}
+
+/* Requests focused: hide Core + System + all Apps */
+.sidebar.requests-focused #nav-group-core-label,
 .sidebar.requests-focused #nav-group-apps-label,
 .sidebar.requests-focused #nav-group-media-hunt,
 .sidebar.requests-focused #nzb-hunt-sidebar-group,
 .sidebar.requests-focused #nav-group-apps,
 .sidebar.requests-focused #nav-group-system,
-/* System focused: hide Requests + all Apps */
+/* System focused: hide Core + Requests + all Apps */
+.sidebar.system-focused #nav-group-core-label,
 .sidebar.system-focused #nav-group-apps-label,
 .sidebar.system-focused #nav-group-media-hunt,
 .sidebar.system-focused #nzb-hunt-sidebar-group,
 .sidebar.system-focused #nav-group-apps,
 .sidebar.system-focused #nav-group-requests,
-/* Media Hunt focused: hide Requests + System + NZB + 3rd Party */
+/* Media Hunt focused: hide Core + Requests + System + NZB + 3rd Party */
+.sidebar.media-focused #nav-group-core-label,
 .sidebar.media-focused #nav-group-requests,
 .sidebar.media-focused #nav-group-system,
 .sidebar.media-focused #nzb-hunt-sidebar-group,
 .sidebar.media-focused #nav-group-apps,
-/* NZB Hunt focused: hide Requests + System + Media Hunt + 3rd Party */
+/* NZB Hunt focused: hide Core + Requests + System + Media Hunt + 3rd Party */
+.sidebar.nzb-focused #nav-group-core-label,
 .sidebar.nzb-focused #nav-group-requests,
 .sidebar.nzb-focused #nav-group-system,
 .sidebar.nzb-focused #nav-group-media-hunt,
 .sidebar.nzb-focused #nav-group-apps,
-/* 3rd Party focused: hide Requests + System + Media Hunt + NZB */
+/* 3rd Party focused: hide Core + Requests + System + Media Hunt + NZB */
+.sidebar.thirdparty-focused #nav-group-core-label,
 .sidebar.thirdparty-focused #nav-group-requests,
 .sidebar.thirdparty-focused #nav-group-system,
 .sidebar.thirdparty-focused #nav-group-media-hunt,
