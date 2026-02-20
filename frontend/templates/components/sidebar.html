@@ -47,34 +47,38 @@
                     <div class="nav-icon-wrapper"><i class="fas fa-eye-slash"></i></div>
                     <span>Personal Blacklist</span>
                 </a>
-                <a href="./#requestarr-smarthunt-settings" class="nav-item nav-item-sub" id="requestarrSmartHuntSettingsNav">
+                <div class="nav-user-support-label" id="requestarrConfigLabel">
+                    <i class="fas fa-sliders-h"></i>
+                    <span>Configuration</span>
+                </div>
+                <a href="./#requestarr-services" class="nav-item nav-item-sub nav-item-deep" id="requestarrServicesNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-layer-group"></i></div>
+                    <span>Bundles</span>
+                </a>
+                <a href="./#requestarr-smarthunt-settings" class="nav-item nav-item-sub nav-item-deep" id="requestarrSmartHuntSettingsNav">
                     <div class="nav-icon-wrapper"><i class="fas fa-fire"></i></div>
                     <span>Smart Hunt</span>
                 </a>
-                <a href="./#requestarr-settings" class="nav-item nav-item-sub" id="requestarrSettingsNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-cog"></i></div>
-                    <span>Settings</span>
+                <a href="./#requestarr-filters" class="nav-item nav-item-sub nav-item-deep" id="requestarrSettingsNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-filter"></i></div>
+                    <span>Filters</span>
                 </a>
                 <div class="nav-user-support-label" id="requestarrUserSupportLabel">
                     <i class="fas fa-headset"></i>
                     <span>User Support</span>
                 </div>
-                <a href="./#requestarr-users" class="nav-item nav-item-sub nav-item-deep" id="requestarrUsersNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-users"></i></div>
-                    <span>Users</span>
-                </a>
                 <a href="./#requestarr-requests" class="nav-item nav-item-sub nav-item-deep" id="requestarrRequestsNav">
                     <div class="nav-icon-wrapper"><i class="fas fa-inbox"></i></div>
                     <span>Requests</span>
                     <span class="nav-badge requestarr-pending-badge-mirror" style="display:none;">0</span>
                 </a>
+                <a href="./#requestarr-users" class="nav-item nav-item-sub nav-item-deep" id="requestarrUsersNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-users"></i></div>
+                    <span>Users</span>
+                </a>
                 <a href="./#requestarr-global-blacklist" class="nav-item nav-item-sub nav-item-deep" id="requestarrGlobalBlacklistNav">
                     <div class="nav-icon-wrapper"><i class="fas fa-ban"></i></div>
                     <span>Global Blacklist</span>
-                </a>
-                <a href="./#requestarr-services" class="nav-item nav-item-sub nav-item-deep" id="requestarrServicesNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-layer-group"></i></div>
-                    <span>Bundles</span>
                 </a>
             </div>
         </div>
@@ -516,7 +520,7 @@ function setActiveNavItem() {
     else if (h === '#requestarr-movies') { selector = '#requestarrMoviesNav'; group = 'sidebar-group-requests'; }
     else if (h === '#requestarr-hidden' || h === '#requestarr-personal-blacklist') { selector = '#requestarrPersonalBlacklistNav'; group = 'sidebar-group-requests'; }
     else if (h === '#requestarr-smarthunt-settings') { selector = '#requestarrSmartHuntSettingsNav'; group = 'sidebar-group-requests'; }
-    else if (h === '#requestarr-settings') { selector = '#requestarrSettingsNav'; group = 'sidebar-group-requests'; }
+    else if (h === '#requestarr-filters' || h === '#requestarr-settings') { selector = '#requestarrSettingsNav'; group = 'sidebar-group-requests'; }
     else if (h === '#requestarr-users') { selector = '#requestarrUsersNav'; group = 'sidebar-group-requests'; }
     else if (h === '#requestarr-requests') {
         if (window._huntarrUserRole === 'owner') {
