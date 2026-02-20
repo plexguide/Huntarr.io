@@ -631,6 +631,7 @@ class LibraryMixin:
         Adds status flags to each item:
         - 'in_library': Complete (all episodes for TV, has file for movies)
         - 'partial': TV shows with some but not all episodes
+        - 'pending': Item has a pending request from the current user
         
         Args:
             items: List of media items to check
@@ -638,6 +639,23 @@ class LibraryMixin:
             instance_name: Optional instance name to check. If None, checks all instances.
         """
         try:
+            # Get pending request tmdb_ids for the current user (if in a request context)
+            pending_tmdb_ids = set()
+            try:
+                from flask import request as flask_request
+                from src.primary.auth import get_username_from_session, SESSION_COOKIE_NAME
+                from src.primary.utils.database import get_database as _get_db
+                session_token = flask_request.cookies.get(SESSION_COOKIE_NAME)
+                username = get_username_from_session(session_token)
+                if username:
+                    _db = _get_db()
+                    # Owner is in `users` table, non-owner users are in `requestarr_users`
+                    user = _db.get_user_by_username(username) or _db.get_requestarr_user_by_username(username)
+                    if user:
+                        pending_tmdb_ids = _db.get_pending_request_tmdb_ids(user_id=user.get('id'))
+            except Exception:
+                pass  # Not in a request context or auth unavailable — skip pending check
+
             # Get enabled instances
             instances = self.get_enabled_instances()
             
@@ -646,6 +664,7 @@ class LibraryMixin:
                 for item in items:
                     item['in_library'] = False
                     item['partial'] = False
+                    item['pending'] = False
                 return items
             
             # Filter instances based on app_type and instance_name if provided
@@ -903,6 +922,9 @@ class LibraryMixin:
                     item['in_library'] = False
                     item['partial'] = False
                     item['importable'] = False
+
+                # Pending request badge: only show if NOT already in library or partial
+                item['pending'] = (tmdb_id in pending_tmdb_ids) and not item['in_library'] and not item['partial']
             
             return items
             
@@ -912,6 +934,7 @@ class LibraryMixin:
             for item in items:
                 item['in_library'] = False
                 item['partial'] = False
+                item['pending'] = False
             return items
     
     def filter_available_media(self, items: List[Dict[str, Any]], media_type: str) -> List[Dict[str, Any]]:

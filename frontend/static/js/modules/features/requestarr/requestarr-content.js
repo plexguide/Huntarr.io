@@ -1296,13 +1296,14 @@ export class RequestarrContent {
         const inLibrary = item.in_library || false;
         const partial = item.partial || false;
         const importable = item.importable || false;
+        const pending = item.pending || false;
         const hasInstance = item.media_type === 'movie'
             ? ((this.core.instances.radarr || []).length > 0 || (this.core.instances.movie_hunt || []).length > 0)
             : ((this.core.instances.sonarr || []).length > 0 || (this.core.instances.tv_hunt || []).length > 0);
         const metaClassName = hasInstance ? 'media-card-meta' : 'media-card-meta no-hide';
         
         // Determine status badge (shared utility)
-        const statusBadgeHTML = window.MediaUtils ? window.MediaUtils.getStatusBadge(inLibrary, partial, hasInstance, importable) : '';
+        const statusBadgeHTML = window.MediaUtils ? window.MediaUtils.getStatusBadge(inLibrary, partial, hasInstance, importable, pending) : '';
         
         if (inLibrary || partial) {
             card.classList.add('in-library');
@@ -1398,7 +1399,8 @@ export class RequestarrContent {
             const liveInLibrary = card.classList.contains('in-library');
             const liveBadge = card.querySelector('.media-card-status-badge');
             const livePartial = liveBadge ? liveBadge.classList.contains('partial') : false;
-            const shouldOpenModal = !liveInLibrary && !livePartial;
+            const livePending = liveBadge ? liveBadge.classList.contains('pending') : false;
+            const shouldOpenModal = !liveInLibrary && !livePartial || livePending;
 
             if (item.media_type === 'movie') {
                 if (!shouldOpenModal && window.RequestarrDetail && window.RequestarrDetail.openDetail) {

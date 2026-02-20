@@ -34,13 +34,16 @@
      * @param {boolean} hasInstance - An instance is configured
      * @returns {string} HTML string
      */
-    function getStatusBadge(inLibrary, partial, hasInstance, importable) {
+    function getStatusBadge(inLibrary, partial, hasInstance, importable, pending) {
         if (!hasInstance) return '';
         if (inLibrary) {
             return '<div class="media-card-status-badge complete"><i class="fas fa-check"></i></div>';
         }
         if (partial) {
             return '<div class="media-card-status-badge partial"><i class="fas fa-bookmark"></i></div>';
+        }
+        if (pending) {
+            return '<div class="media-card-status-badge pending"><i class="fas fa-clock"></i></div>';
         }
         // Non-owner users: show download icon instead of import icon (import is owner-only)
         if (importable && window._huntarrUserRole === 'owner') {

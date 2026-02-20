@@ -1117,7 +1117,7 @@ class RequestarrModal {
 
                         const tmdbId = this.core.currentModalData.tmdb_id;
                         const mediaType = this.core.currentModalData.media_type;
-                        this._syncCardBadge(tmdbId, false, true);
+                        this._syncCardBadge(tmdbId, false, false, true);
                         window.dispatchEvent(new CustomEvent('requestarr-request-success', {
                             detail: { tmdbId, mediaType, appType, instanceName }
                         }));
@@ -1261,8 +1261,9 @@ class RequestarrModal {
      * @param {number|string} tmdbId
      * @param {boolean} inLibrary  - Movie is downloaded / fully available
      * @param {boolean} requested  - Movie is requested but not yet downloaded
+     * @param {boolean} pending    - Request is pending approval (non-auto-approve user)
      */
-    _syncCardBadge(tmdbId, inLibrary, requested) {
+    _syncCardBadge(tmdbId, inLibrary, requested, pending) {
         const cards = document.querySelectorAll(`.media-card[data-tmdb-id="${tmdbId}"]`);
         cards.forEach((card) => {
             const badge = card.querySelector('.media-card-status-badge');
@@ -1271,6 +1272,10 @@ class RequestarrModal {
                     badge.className = 'media-card-status-badge complete';
                     badge.innerHTML = '<i class="fas fa-check"></i>';
                     card.classList.add('in-library');
+                } else if (pending) {
+                    badge.className = 'media-card-status-badge pending';
+                    badge.innerHTML = '<i class="fas fa-clock"></i>';
+                    // Do NOT add in-library class — pending is not in collection
                 } else if (requested) {
                     badge.className = 'media-card-status-badge partial';
                     badge.innerHTML = '<i class="fas fa-bookmark"></i>';

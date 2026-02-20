@@ -200,6 +200,31 @@ class RequestarrMixin:
             logger.error(f"Error counting requestarr requests: {e}")
             return 0
 
+    def get_pending_request_tmdb_ids(self, user_id: int = None) -> set:
+        """Get set of tmdb_ids that have pending requests.
+        If user_id is provided, only returns pending requests for that user."""
+        try:
+            with self.get_connection() as conn:
+                if user_id:
+                    rows = conn.execute(
+                        "SELECT tmdb_id, media_type FROM requestarr_requests WHERE status = 'pending' AND username != '' AND user_id = ?",
+                        (user_id,)
+                    ).fetchall()
+                else:
+                    rows = conn.execute(
+                        "SELECT tmdb_id, media_type FROM requestarr_requests WHERE status = 'pending' AND username != ''"
+                    ).fetchall()
+                result = set()
+                for r in rows:
+                    try:
+                        result.add(int(r[0]))
+                    except (TypeError, ValueError):
+                        pass
+                return result
+        except Exception as e:
+            logger.error(f"Error getting pending request tmdb_ids: {e}")
+            return set()
+
     def check_existing_request(self, media_type: str, tmdb_id: int) -> Optional[Dict[str, Any]]:
         """Check if a user request already exists for this media item. Excludes old media-tracking rows."""
         try:

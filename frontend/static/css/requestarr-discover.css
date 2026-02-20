@@ -414,6 +414,12 @@
     border: 2px solid #b45309;
 }
 
+/* Pending - Orange/amber clock icon (request awaiting approval) */
+.media-card-status-badge.pending {
+    background: #f59e0b;
+    border: 2px solid #d97706;
+}
+
 /* In library: no button, so push title and text lower in the overlay */
 .media-card.in-library .media-card-overlay {
     justify-content: flex-end;
