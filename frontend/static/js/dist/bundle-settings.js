@@ -15071,6 +15071,7 @@ document.head.appendChild(styleEl);
         if (!saveButton) saveButton = document.getElementById("settings-save-button");
         if (!saveButton) return;
 
+        saveButton.style.display = '';
         saveButton.disabled = true;
         saveButton.classList.remove("mset-save-active");
 

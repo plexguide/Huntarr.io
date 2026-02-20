@@ -593,6 +593,43 @@
     background: rgba(71, 85, 105, 0.2);
     color: #94a3b8;
 }
+/* Recommended Plex card — prominent styling */
+.setup-plex-card-recommended {
+    position: relative;
+    border-color: rgba(99, 102, 241, 0.4);
+    background: rgba(99, 102, 241, 0.06);
+    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.15), 0 4px 16px rgba(99, 102, 241, 0.08);
+}
+.setup-plex-card-recommended:hover {
+    border-color: rgba(99, 102, 241, 0.6);
+    background: rgba(99, 102, 241, 0.1);
+    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.25), 0 6px 20px rgba(99, 102, 241, 0.12);
+}
+.setup-plex-card-recommended .setup-plex-card-icon {
+    background: rgba(99, 102, 241, 0.2);
+    color: #a5b4fc;
+}
+.setup-plex-badge {
+    position: absolute;
+    top: -9px;
+    right: 16px;
+    background: linear-gradient(135deg, #6366f1, #818cf8);
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+/* Dim the skip card to make recommended stand out */
+.setup-plex-card-skip {
+    opacity: 0.7;
+}
+.setup-plex-card-skip:hover {
+    opacity: 1;
+}
 .setup-plex-card-body {
     flex: 1;
 }
