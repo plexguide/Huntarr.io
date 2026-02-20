@@ -802,7 +802,7 @@ input:checked + .slider:before {
 
 /* ===== MOBILE: sidebar hidden — see mobile.css ===== */
 
-/* ===== REQUESTS FOCUSED: hide Apps + System sections with smooth transition ===== */
+/* ===== FOCUSED MODES: hide other sections with smooth transition ===== */
 #nav-group-apps-label,
 #nav-group-media-hunt,
 #nzb-hunt-sidebar-group,
@@ -815,16 +815,21 @@ input:checked + .slider:before {
     overflow: hidden;
 }
 
+/* Requests focused: hide Apps stuff + System */
 .sidebar.requests-focused #nav-group-apps-label,
 .sidebar.requests-focused #nav-group-media-hunt,
 .sidebar.requests-focused #nzb-hunt-sidebar-group,
 .sidebar.requests-focused #nav-group-apps,
 .sidebar.requests-focused #nav-group-system,
+/* System focused: hide Requests + Apps stuff */
 .sidebar.system-focused #nav-group-apps-label,
 .sidebar.system-focused #nav-group-media-hunt,
 .sidebar.system-focused #nzb-hunt-sidebar-group,
 .sidebar.system-focused #nav-group-apps,
-.sidebar.system-focused #nav-group-requests {
+.sidebar.system-focused #nav-group-requests,
+/* Apps focused: hide Requests + System */
+.sidebar.apps-focused #nav-group-requests,
+.sidebar.apps-focused #nav-group-system {
     max-height: 0;
     opacity: 0;
     margin: 0;

@@ -405,7 +405,7 @@ function collapseGroup(id) {
 function collapseAllGroups() {
     ALL_GROUP_IDS.forEach(collapseGroup);
     var sidebar = document.getElementById('sidebar');
-    if (sidebar) sidebar.classList.remove('requests-focused', 'system-focused');
+    if (sidebar) sidebar.classList.remove('requests-focused', 'system-focused', 'apps-focused');
 }
 
 function expandSub(id) {
@@ -428,14 +428,16 @@ function expandSidebarGroup(groupId) {
         if (id === groupId) expandGroup(id);
         else collapseGroup(id);
     });
-    // Toggle requests-focused class to hide Apps sections
+    // Toggle focused class to hide other sections
     var sidebar = document.getElementById('sidebar');
     if (sidebar) {
-        sidebar.classList.remove('requests-focused', 'system-focused');
+        sidebar.classList.remove('requests-focused', 'system-focused', 'apps-focused');
         if (groupId === 'sidebar-group-requests') {
             sidebar.classList.add('requests-focused');
         } else if (groupId === 'sidebar-group-system') {
             sidebar.classList.add('system-focused');
+        } else if (groupId === 'sidebar-group-media-hunt' || groupId === 'sidebar-group-nzb-hunt' || groupId === 'sidebar-group-apps') {
+            sidebar.classList.add('apps-focused');
         }
     }
 }
@@ -445,7 +447,9 @@ function expandSidebarGroup(groupId) {
 var GROUP_DEFAULT_HASH = {
     'sidebar-group-media-hunt': '#media-hunt-collection',
     'sidebar-group-requests': '#requestarr-discover',
-    'sidebar-group-system': '#settings'
+    'sidebar-group-system': '#settings',
+    'sidebar-group-nzb-hunt': '#nzb-hunt-home',
+    'sidebar-group-apps': '#sonarr'
 };
 
 document.addEventListener('click', function(e) {
@@ -467,7 +471,7 @@ document.addEventListener('click', function(e) {
         collapseGroup(groupId);
         // Remove focused classes when collapsing
         var sidebar = document.getElementById('sidebar');
-        if (sidebar) sidebar.classList.remove('requests-focused', 'system-focused');
+        if (sidebar) sidebar.classList.remove('requests-focused', 'system-focused', 'apps-focused');
     }
 });
 
