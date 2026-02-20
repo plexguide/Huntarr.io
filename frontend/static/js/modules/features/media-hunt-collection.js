@@ -46,11 +46,12 @@
         _collectionScrollObserver: null,
         _movieInstanceId: null,
         _tvInstanceId: null,
+        _initialized: false,
         sortBy: 'title.asc',
         viewMode: 'posters',
         hiddenMediaSet: new Set(),
 
-        init: function() {
+        init: function(forceRefresh) {
             var hash = window.location.hash || '';
             var tvMatch = hash.match(/media-hunt-collection\/tv\/(\d+)/);
             var pendingTmdbId = tvMatch ? parseInt(tvMatch[1], 10) : null;
@@ -58,6 +59,18 @@
                 window.TVHuntCollection.showMainView();
             }
             if (!hasDualDropdowns()) return;
+
+            // Cache guard: if collection is already loaded, just show it without re-fetching
+            var grid = document.getElementById('media-hunt-collection-grid');
+            if (!forceRefresh && this._initialized && grid && grid.children.length > 0 && !grid.querySelector('.loading-spinner')) {
+                // Re-attach visibility listener and refresh interval that cleanup() removed
+                this._setupAutoRefresh();
+                if (pendingTmdbId && window.RequestarrTVDetail) {
+                    window.RequestarrTVDetail.openDetail({ tmdb_id: pendingTmdbId, id: pendingTmdbId });
+                }
+                return;
+            }
+
             window._mediaHuntCollectionUnified = true;
             window.TVHuntCollection._prefix = 'media-hunt-collection';
             window.MovieHuntCollection._prefix = 'media-hunt-collection';
@@ -114,7 +127,10 @@
                 self.setupSort();
                 self.setupViewMode();
                 self.setupSearch();
-                self.loadHiddenMediaIds().then(function() { onInstanceChange(); });
+                self.loadHiddenMediaIds().then(function() {
+                    onInstanceChange();
+                    self._initialized = true;
+                });
             });
 
             var onInstanceChange = function() {
@@ -145,23 +161,24 @@
                 window.TVHuntCollection.setupBackButton();
             }
 
-            // Remove any existing refresh listeners before adding new ones
-            self.cleanup();
+            // Set up auto-refresh (visibility change + periodic interval)
+            self._setupAutoRefresh();
+        },
 
-            // Refresh collection when window regains focus (e.g. after import completes in another tab)
+        _setupAutoRefresh: function() {
+            var self = this;
+            self.cleanup(); // remove any stale listeners first
             self._onVisibilityChange = function() {
-                if (document.visibilityState === 'visible' && self._movieInstanceId || self._tvInstanceId) {
+                if (document.visibilityState === 'visible' && (self._movieInstanceId || self._tvInstanceId)) {
                     self.loadCombinedCollection();
                 }
             };
             document.addEventListener('visibilitychange', self._onVisibilityChange);
-
-            // Periodic refresh while on collection view (catches imports that complete in background)
             self._collectionRefreshInterval = setInterval(function() {
                 if (document.visibilityState === 'visible' && (self._movieInstanceId || self._tvInstanceId)) {
                     self.loadCombinedCollection();
                 }
-            }, 90000); // 90 seconds
+            }, 90000);
         },
 
         cleanup: function() {
