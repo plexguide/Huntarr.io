@@ -789,17 +789,12 @@
 .sidebar-footer-info {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0 4px;
+    justify-content: center;
+    gap: 4px;
+    padding: 0 10px;
     font-size: 10px;
     font-weight: 500;
     color: #475569;
-}
-
-.sidebar-footer-left {
-    display: flex;
-    align-items: center;
-    gap: 4px;
 }
 
 .sidebar-footer-version-link {
@@ -842,7 +837,7 @@
     transition: all 0.2s ease;
     vertical-align: middle;
     position: relative;
-    top: 1.5px;
+    top: 0;
 }
 
 .sidebar-footer-upgrade:hover {
@@ -862,7 +857,10 @@
     color: #6ee7b7;
 }
 
-/* separator removed — version row now uses space-between layout */
+.sidebar-footer-sep {
+    color: #334155;
+    font-size: 10px;
+}
 
 .sidebar-footer-dev {
     color: #64748b;
