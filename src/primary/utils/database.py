@@ -834,6 +834,7 @@ class HuntarrDatabase(ConfigMixin, StateMixin, UsersMixin, RequestarrMixin, Extr
             ''')
 
             # Create requestarr_requests table for tracking media requests
+            # NOTE: No UNIQUE constraint — multiple users can request the same media
             conn.execute('''
                 CREATE TABLE IF NOT EXISTS requestarr_requests (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -847,8 +848,7 @@ class HuntarrDatabase(ConfigMixin, StateMixin, UsersMixin, RequestarrMixin, Extr
                     app_type TEXT NOT NULL,
                     instance_name TEXT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(tmdb_id, media_type, app_type, instance_name)
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
 
@@ -1175,6 +1175,69 @@ class HuntarrDatabase(ConfigMixin, StateMixin, UsersMixin, RequestarrMixin, Extr
                 conn.execute('CREATE INDEX IF NOT EXISTS idx_requestarr_requests_media ON requestarr_requests(media_type, tmdb_id)')
             except Exception:
                 pass  # Indexes may already exist or columns missing
+
+            # ── Migration: drop old UNIQUE(tmdb_id, media_type, app_type, instance_name) ──
+            # Multiple users can now request the same media item, so the old
+            # per-media uniqueness constraint must go.
+            try:
+                row = conn.execute(
+                    "SELECT sql FROM sqlite_master WHERE type='table' AND name='requestarr_requests'"
+                ).fetchone()
+                if row and row[0] and 'UNIQUE' in row[0]:
+                    logger.info("Migrating requestarr_requests: dropping UNIQUE constraint")
+                    conn.execute('''
+                        CREATE TABLE IF NOT EXISTS requestarr_requests_new (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            user_id INTEGER NOT NULL DEFAULT 0,
+                            username TEXT NOT NULL DEFAULT '',
+                            media_type TEXT NOT NULL DEFAULT 'movie',
+                            tmdb_id INTEGER NOT NULL DEFAULT 0,
+                            tvdb_id INTEGER,
+                            title TEXT NOT NULL DEFAULT '',
+                            year TEXT,
+                            poster_path TEXT,
+                            status TEXT NOT NULL DEFAULT 'pending',
+                            instance_name TEXT,
+                            app_type TEXT NOT NULL DEFAULT '',
+                            requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            responded_at TIMESTAMP,
+                            responded_by TEXT,
+                            notes TEXT
+                        )
+                    ''')
+                    # Copy existing data — map old columns to new where they overlap
+                    conn.execute('''
+                        INSERT INTO requestarr_requests_new
+                            (id, user_id, username, media_type, tmdb_id, tvdb_id, title, year,
+                             poster_path, status, instance_name, app_type, requested_at,
+                             responded_at, responded_by, notes)
+                        SELECT id,
+                               COALESCE(user_id, 0),
+                               COALESCE(username, ''),
+                               COALESCE(media_type, 'movie'),
+                               COALESCE(tmdb_id, 0),
+                               tvdb_id,
+                               COALESCE(title, ''),
+                               year,
+                               poster_path,
+                               COALESCE(status, 'pending'),
+                               instance_name,
+                               COALESCE(app_type, ''),
+                               COALESCE(requested_at, CURRENT_TIMESTAMP),
+                               responded_at,
+                               responded_by,
+                               notes
+                        FROM requestarr_requests
+                    ''')
+                    conn.execute('DROP TABLE requestarr_requests')
+                    conn.execute('ALTER TABLE requestarr_requests_new RENAME TO requestarr_requests')
+                    # Recreate indexes on the new table
+                    conn.execute('CREATE INDEX IF NOT EXISTS idx_requestarr_requests_user ON requestarr_requests(user_id)')
+                    conn.execute('CREATE INDEX IF NOT EXISTS idx_requestarr_requests_status ON requestarr_requests(status)')
+                    conn.execute('CREATE INDEX IF NOT EXISTS idx_requestarr_requests_media ON requestarr_requests(media_type, tmdb_id)')
+                    logger.info("Migration complete: UNIQUE constraint removed from requestarr_requests")
+            except Exception as e:
+                logger.error(f"Migration error (requestarr_requests UNIQUE drop): {e}")
 
             conn.commit()
             logger.info(f"Database initialized at: {self.db_path}")

@@ -645,6 +645,26 @@ def get_series_status():
             status = requestarr_api.get_series_status_from_tv_hunt(tmdb_id, instance_name)
         else:
             status = requestarr_api.get_series_status_from_sonarr(tmdb_id, instance_name)
+
+        # Enrich with user-specific pending request info
+        if not status.get('exists'):
+            try:
+                from src.primary.auth import get_username_from_session, SESSION_COOKIE_NAME
+                from src.primary.utils.database import get_database
+                session_token = request.cookies.get(SESSION_COOKIE_NAME)
+                username = get_username_from_session(session_token)
+                if username:
+                    db = get_database()
+                    user = db.get_user_by_username(username) or db.get_requestarr_user_by_username(username)
+                    if user:
+                        user_req = db.check_user_existing_request('tv', tmdb_id, user.get('id'))
+                        if user_req and user_req.get('status') == 'pending':
+                            status['user_has_pending'] = True
+                        elif user_req and user_req.get('status') == 'approved':
+                            status['previously_requested'] = True
+            except Exception:
+                pass
+
         return jsonify(status)
         
     except Exception as e:
@@ -668,6 +688,27 @@ def get_movie_status():
         else:
             # Default: Get movie status from Radarr
             status = requestarr_api.get_movie_status_from_radarr(tmdb_id, instance_name)
+
+        # Enrich with user-specific pending request info
+        # If the media is not in library, check if THIS user already has a pending request
+        if not status.get('in_library'):
+            try:
+                from src.primary.auth import get_username_from_session, SESSION_COOKIE_NAME
+                from src.primary.utils.database import get_database
+                session_token = request.cookies.get(SESSION_COOKIE_NAME)
+                username = get_username_from_session(session_token)
+                if username:
+                    db = get_database()
+                    user = db.get_user_by_username(username) or db.get_requestarr_user_by_username(username)
+                    if user:
+                        user_req = db.check_user_existing_request('movie', tmdb_id, user.get('id'))
+                        if user_req and user_req.get('status') == 'pending':
+                            status['user_has_pending'] = True
+                        elif user_req and user_req.get('status') == 'approved':
+                            status['previously_requested'] = True
+            except Exception:
+                pass
+
         return jsonify(status)
         
     except Exception as e:

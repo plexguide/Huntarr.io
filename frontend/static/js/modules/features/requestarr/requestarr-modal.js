@@ -669,6 +669,12 @@ class RequestarrModal {
                 if (requestBtn) { requestBtn.disabled = true; requestBtn.classList.add('disabled'); requestBtn.textContent = 'In Library'; }
                 this._syncCardBadge(this.core.currentModalData.tmdb_id, false, true);
                 this._clearImportBanner();
+            } else if (status.user_has_pending) {
+                // THIS user already has a pending request
+                container.innerHTML = '<span class="mh-req-badge mh-req-badge-warn"><i class="fas fa-clock"></i> Pending approval</span>';
+                if (requestBtn) { requestBtn.disabled = true; requestBtn.classList.add('disabled'); requestBtn.textContent = 'Pending Approval'; }
+                this._syncCardBadge(this.core.currentModalData.tmdb_id, false, false, true);
+                if (isMovieHunt) this._checkForImport(instanceName);
             } else if (status.previously_requested) {
                 container.innerHTML = '<span class="mh-req-badge mh-req-badge-warn"><i class="fas fa-bookmark"></i> Already requested</span>';
                 if (requestBtn) { requestBtn.disabled = true; requestBtn.classList.add('disabled'); requestBtn.textContent = 'Already Requested'; }

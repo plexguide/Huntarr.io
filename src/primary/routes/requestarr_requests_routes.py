@@ -134,12 +134,24 @@ def list_requests():
     )
     total = db.get_requestarr_request_count(user_id=user_id_filter, status=status_filter)
 
-    # For owner: enrich each request with all requesters for that media item
+    # For owner: enrich each request with all requesters AND consolidate
+    # so the same media item appears as ONE card with all requesters listed
     if can_view_all:
+        seen = {}  # key: (media_type, tmdb_id) -> consolidated request
+        consolidated = []
         for req in requests_list:
-            requesters = db.get_requesters_for_media(req.get('media_type', ''), req.get('tmdb_id', 0))
-            # Filter out the primary requester to show "also requested by" list
+            key = (req.get('media_type', ''), req.get('tmdb_id', 0))
+            requesters = db.get_requesters_for_media(key[0], key[1])
             req['all_requesters'] = requesters
+            if key in seen:
+                # Already have a card for this media — skip duplicate
+                # But update the existing card's all_requesters if needed
+                seen[key]['all_requesters'] = requesters
+                continue
+            seen[key] = req
+            consolidated.append(req)
+        requests_list = consolidated
+        total = len(consolidated)
 
     return jsonify({'requests': requests_list, 'total': total})
 
@@ -171,16 +183,16 @@ def create_request():
     if db.is_globally_blacklisted(tmdb_id, media_type):
         return jsonify({'error': 'This media is on the global blacklist and cannot be requested'}), 403
 
-    # Check for existing request — denied requests CAN be re-requested by other users
-    existing = db.check_existing_request(media_type, tmdb_id)
-    if existing and existing.get('status') in ('pending', 'approved'):
-        return jsonify({'error': 'This media has already been requested', 'existing': existing}), 409
-    if existing and existing.get('status') == 'denied' and existing.get('user_id') == user.get('id'):
-        return jsonify({'error': 'Your request for this media was denied', 'existing': existing}), 409
+    # Check THIS user's existing request for this media
+    user_existing = db.check_user_existing_request(media_type, tmdb_id, user.get('id'))
+    if user_existing and user_existing.get('status') in ('pending', 'approved'):
+        return jsonify({'error': 'You have already requested this', 'existing': user_existing}), 409
+    if user_existing and user_existing.get('status') == 'denied':
+        return jsonify({'error': 'Your request for this media was denied', 'existing': user_existing}), 409
 
-    # If a withdrawn request exists, delete it so a fresh one can be created
-    if existing and existing.get('status') == 'withdrawn':
-        db.delete_requestarr_request(existing['id'])
+    # If this user's withdrawn request exists, delete it so a fresh one can be created
+    if user_existing and user_existing.get('status') == 'withdrawn':
+        db.delete_requestarr_request(user_existing['id'])
 
     # Check auto-approve
     auto_approve_key = 'auto_approve_movies' if media_type == 'movie' else 'auto_approve_tv'
@@ -237,6 +249,19 @@ def approve_request(request_id):
     )
     if not success:
         return jsonify({'error': 'Failed to approve request'}), 500
+
+    # Also approve all other pending requests for the same media (consolidated)
+    try:
+        other_pending = db.get_all_pending_requests_for_media(req.get('media_type', ''), req.get('tmdb_id', 0))
+        for other in other_pending:
+            if other['id'] != request_id:
+                db.update_requestarr_request_status(
+                    other['id'], 'approved',
+                    responded_by=current_user.get('username', ''),
+                    notes=request.json.get('notes', '') if request.json else ''
+                )
+    except Exception as e:
+        logger.warning(f"[Requestarr] Error approving related requests: {e}")
 
     req['status'] = 'approved'
     req['notes'] = (request.json or {}).get('notes', '')
@@ -367,6 +392,19 @@ def deny_request(request_id):
         notes=notes
     )
     if success:
+        # Also deny all other pending requests for the same media (consolidated)
+        try:
+            other_pending = db.get_all_pending_requests_for_media(req.get('media_type', ''), req.get('tmdb_id', 0))
+            for other in other_pending:
+                if other['id'] != request_id:
+                    db.update_requestarr_request_status(
+                        other['id'], 'denied',
+                        responded_by=current_user.get('username', ''),
+                        notes=notes
+                    )
+        except Exception as e:
+            logger.warning(f"[Requestarr] Error denying related requests: {e}")
+
         req['status'] = 'denied'
         req['notes'] = notes
         _send_request_notification(req, 'denied', current_user.get('username'))
@@ -432,10 +470,16 @@ def delete_request(request_id):
 
 @requestarr_requests_bp.route('/check/<media_type>/<int:tmdb_id>', methods=['GET'])
 def check_request(media_type, tmdb_id):
-    """Check if a request exists for a given media item."""
+    """Check if the current user has a request for a given media item."""
+    user = _get_current_user()
     db = get_database()
-    existing = db.check_existing_request(media_type, tmdb_id)
-    return jsonify({'exists': existing is not None, 'request': existing})
+    if user:
+        # Check THIS user's request first
+        user_req = db.check_user_existing_request(media_type, tmdb_id, user.get('id'))
+        if user_req:
+            return jsonify({'exists': True, 'request': user_req})
+    # No user-specific request found
+    return jsonify({'exists': False, 'request': None})
 
 
 @requestarr_requests_bp.route('/pending-count', methods=['GET'])
@@ -474,6 +518,19 @@ def blacklist_request(request_id):
         responded_by=current_user.get('username', ''),
         notes=notes
     )
+
+    # Also blacklist all other pending requests for the same media (consolidated)
+    try:
+        other_pending = db.get_all_pending_requests_for_media(req.get('media_type', ''), req.get('tmdb_id', 0))
+        for other in other_pending:
+            if other['id'] != request_id:
+                db.update_requestarr_request_status(
+                    other['id'], 'blacklisted',
+                    responded_by=current_user.get('username', ''),
+                    notes=notes
+                )
+    except Exception as e:
+        logger.warning(f"[Requestarr] Error blacklisting related requests: {e}")
 
     # Add to global blacklist
     db.add_to_global_blacklist(

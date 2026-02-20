@@ -5357,6 +5357,12 @@ class RequestarrModal {
                 if (requestBtn) { requestBtn.disabled = true; requestBtn.classList.add('disabled'); requestBtn.textContent = 'In Library'; }
                 this._syncCardBadge(this.core.currentModalData.tmdb_id, false, true);
                 this._clearImportBanner();
+            } else if (status.user_has_pending) {
+                // THIS user already has a pending request
+                container.innerHTML = '<span class="mh-req-badge mh-req-badge-warn"><i class="fas fa-clock"></i> Pending approval</span>';
+                if (requestBtn) { requestBtn.disabled = true; requestBtn.classList.add('disabled'); requestBtn.textContent = 'Pending Approval'; }
+                this._syncCardBadge(this.core.currentModalData.tmdb_id, false, false, true);
+                if (isMovieHunt) this._checkForImport(instanceName);
             } else if (status.previously_requested) {
                 container.innerHTML = '<span class="mh-req-badge mh-req-badge-warn"><i class="fas fa-bookmark"></i> Already requested</span>';
                 if (requestBtn) { requestBtn.disabled = true; requestBtn.classList.add('disabled'); requestBtn.textContent = 'Already Requested'; }
@@ -7981,7 +7987,8 @@ window.RequestarrRequests = {
                 .filter(r => r.username !== req.username)
                 .map(r => this._esc(r.username));
             if (others.length > 0) {
-                requestersHtml = `<div class="reqrequests-also"><i class="fas fa-users"></i> Also requested by: ${others.join(', ')}</div>`;
+                const demandLabel = req.all_requesters.length >= 3 ? ' <span class="reqrequests-demand">High demand</span>' : '';
+                requestersHtml = `<div class="reqrequests-also"><i class="fas fa-users"></i> ${req.all_requesters.length} users requested${demandLabel} &mdash; also: ${others.join(', ')}</div>`;
             }
         }
 

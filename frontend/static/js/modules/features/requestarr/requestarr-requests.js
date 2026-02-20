@@ -92,7 +92,8 @@ window.RequestarrRequests = {
                 .filter(r => r.username !== req.username)
                 .map(r => this._esc(r.username));
             if (others.length > 0) {
-                requestersHtml = `<div class="reqrequests-also"><i class="fas fa-users"></i> Also requested by: ${others.join(', ')}</div>`;
+                const demandLabel = req.all_requesters.length >= 3 ? ' <span class="reqrequests-demand">High demand</span>' : '';
+                requestersHtml = `<div class="reqrequests-also"><i class="fas fa-users"></i> ${req.all_requesters.length} users requested${demandLabel} &mdash; also: ${others.join(', ')}</div>`;
             }
         }
 

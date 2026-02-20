@@ -257,6 +257,34 @@ class RequestarrMixin:
             logger.error(f"Error checking existing request: {e}")
             return None
 
+    def check_user_existing_request(self, media_type: str, tmdb_id: int, user_id: int) -> Optional[Dict[str, Any]]:
+        """Check if a specific user already has a request for this media item."""
+        try:
+            with self.get_connection() as conn:
+                conn.row_factory = sqlite3.Row
+                row = conn.execute(
+                    "SELECT * FROM requestarr_requests WHERE media_type = ? AND tmdb_id = ? AND user_id = ? AND username != '' ORDER BY requested_at DESC LIMIT 1",
+                    (media_type, tmdb_id, user_id)
+                ).fetchone()
+                return dict(row) if row else None
+        except Exception as e:
+            logger.error(f"Error checking user existing request: {e}")
+            return None
+
+    def get_all_pending_requests_for_media(self, media_type: str, tmdb_id: int) -> list:
+        """Get all pending requests for a specific media item (for bulk approve/deny)."""
+        try:
+            with self.get_connection() as conn:
+                conn.row_factory = sqlite3.Row
+                rows = conn.execute(
+                    "SELECT * FROM requestarr_requests WHERE media_type = ? AND tmdb_id = ? AND status = 'pending' AND username != ''",
+                    (media_type, tmdb_id)
+                ).fetchall()
+                return [dict(r) for r in rows]
+        except Exception as e:
+            logger.error(f"Error getting pending requests for media: {e}")
+            return []
+
     def get_requesters_for_media(self, media_type: str, tmdb_id: int) -> list:
         """Get all users who requested a specific media item. Excludes old media-tracking rows."""
         try:

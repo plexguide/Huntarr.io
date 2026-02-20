@@ -607,6 +607,19 @@
     margin-right: 4px;
     opacity: 0.7;
 }
+.reqrequests-demand {
+    display: inline-block;
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-left: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+}
 
 .reqrequests-actions {
     display: flex;
