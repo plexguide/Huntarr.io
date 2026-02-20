@@ -69,7 +69,7 @@ def _get_all_available_instances():
         radarr_config = load_settings('radarr')
         for inst in (radarr_config.get('instances') or []):
             name = (inst.get('name') or '').strip()
-            if name and inst.get('url') and inst.get('api_key'):
+            if name and inst.get('api_url') and inst.get('api_key'):
                 result['movies'].append({'app_type': 'radarr', 'instance_name': name})
     except Exception:
         pass
@@ -85,7 +85,7 @@ def _get_all_available_instances():
         sonarr_config = load_settings('sonarr')
         for inst in (sonarr_config.get('instances') or []):
             name = (inst.get('name') or '').strip()
-            if name and inst.get('url') and inst.get('api_key'):
+            if name and inst.get('api_url') and inst.get('api_key'):
                 result['tv'].append({'app_type': 'sonarr', 'instance_name': name})
     except Exception:
         pass
