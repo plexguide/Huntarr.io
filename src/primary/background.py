@@ -80,6 +80,7 @@ def _responsive_sleep(
     """
     elapsed = 0
     instances = instances_for_reset or []
+    _db_error_logged = False  # Throttle DB error logging to avoid log flooding
     while elapsed < sleep_seconds:
         if stop_event.is_set():
             app_logger.info("Stop event detected during sleep. Breaking out of sleep cycle.")
@@ -95,10 +96,6 @@ def _responsive_sleep(
                         f"!!! RESET REQUEST DETECTED !!! Manual cycle reset triggered for {app_type} instance {inst.get('instance_name', iname)}. Starting new cycle immediately."
                     )
                     db.mark_reset_request_processed(app_type, iname)
-                    # Set next_cycle_time to NOW so _get_instances_due_and_sleep considers
-                    # this instance "due immediately" on the next loop iteration.
-                    # (set_sleep_data_per_instance treats None as "keep current", so we
-                    #  must pass an explicit past/current time to override the future time)
                     try:
                         user_tz = _get_user_timezone()
                         now_iso = datetime.datetime.now(user_tz).replace(microsecond=0).isoformat()
@@ -111,8 +108,15 @@ def _responsive_sleep(
                     except Exception as clear_err:
                         app_logger.warning(f"Could not update next_cycle_time for reset: {clear_err}")
                     return
+            _db_error_logged = False  # Reset on success
         except Exception as e:
-            app_logger.error(f"Error checking reset request during sleep for {app_type}: {e}", exc_info=True)
+            if not _db_error_logged:
+                app_logger.error(f"Error checking reset request during sleep for {app_type}: {e}", exc_info=True)
+                _db_error_logged = True
+            # On DB errors, sleep longer to avoid hammering a corrupted DB
+            stop_event.wait(min(wait_interval * 10, 30))
+            elapsed += min(wait_interval * 10, 30)
+            continue
         stop_event.wait(wait_interval)
         elapsed += wait_interval
 

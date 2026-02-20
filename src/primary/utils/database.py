@@ -44,19 +44,23 @@ class HuntarrDatabase(ConfigMixin, StateMixin, UsersMixin, RequestarrMixin, Extr
         return _ctx()
 
     def _configure_connection(self, conn):
-        """Configure SQLite connection with Synology NAS compatible settings.
+        """Configure SQLite connection with NAS-safe settings.
         
         Memory note: cache_size is PER CONNECTION and Huntarr uses thread-local
         connections.  With 32 Waitress threads + background threads (~42 total),
         the old 16 MB setting meant 42 × 16 MB ≈ 672 MB of RAM just for SQLite
         page cache.  Reduced to 2 MB (still generous for a small config DB).
+        
+        NAS safety: mmap_size is disabled (set to 0) because memory-mapped I/O
+        is unreliable on network filesystems (Unraid, Synology, NFS, CIFS).
+        This is a known cause of "database disk image is malformed" errors.
         """
         conn.execute('PRAGMA foreign_keys = ON')
         conn.execute('PRAGMA journal_mode = WAL')
         conn.execute('PRAGMA synchronous = NORMAL')
         conn.execute('PRAGMA cache_size = -2000')   # 2 MB per connection (was 16 MB — caused 600 MB+ RAM usage)
         conn.execute('PRAGMA temp_store = MEMORY')
-        conn.execute('PRAGMA mmap_size = 67108864')  # 64 MB (was 256 MB — excessive for small config DB)
+        conn.execute('PRAGMA mmap_size = 0')         # DISABLED — mmap causes corruption on NAS/network storage
         conn.execute('PRAGMA wal_autocheckpoint = 1000')
         conn.execute('PRAGMA busy_timeout = 30000')
         conn.execute('PRAGMA auto_vacuum = INCREMENTAL')
@@ -121,6 +125,8 @@ class HuntarrDatabase(ConfigMixin, StateMixin, UsersMixin, RequestarrMixin, Extr
                         # Final attempt: corruption is real, handle it
                         logger.error(f"Database corruption confirmed after {max_retries} attempts: {e}")
                         self._handle_database_corruption()
+                        # Invalidate any cached connections across threads
+                        self._thread_local.conn = None
                         # Try connecting again after recovery
                         conn = sqlite3.connect(self.db_path, timeout=30)
                         self._configure_connection(conn)
@@ -542,6 +548,24 @@ class HuntarrDatabase(ConfigMixin, StateMixin, UsersMixin, RequestarrMixin, Extr
         if self.db_path.exists() and wal_path.exists():
             logger.info("Database WAL file detected on startup — performing recovery checkpoint...")
             self._attempt_wal_recovery()
+        
+        # Quick integrity check on startup to catch corruption early
+        if self.db_path.exists():
+            try:
+                conn = sqlite3.connect(self.db_path, timeout=30)
+                conn.execute('PRAGMA busy_timeout = 30000')
+                result = conn.execute("PRAGMA quick_check").fetchone()
+                conn.close()
+                if result and result[0] != 'ok':
+                    logger.error(f"Database quick_check failed on startup: {result[0]}. Attempting recovery...")
+                    self._handle_database_corruption()
+            except (sqlite3.DatabaseError, sqlite3.OperationalError) as e:
+                error_str = str(e).lower()
+                if "malformed" in error_str or "not a database" in error_str:
+                    logger.error(f"Database corruption detected on startup: {e}. Attempting recovery...")
+                    self._handle_database_corruption()
+                else:
+                    logger.warning(f"Database startup check warning: {e}")
         
         # Create all tables with corruption recovery
         try:
