@@ -318,11 +318,11 @@ def app_specific_loop(app_type: str) -> None:
             media_hunt_types = ['movie_hunt', 'tv_hunt']
             third_party_types = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros']
             if app_type in media_hunt_types and general_settings.get('enable_media_hunt') is False:
-                app_logger.debug(f"[{app_type.upper()}] Media Hunt disabled in settings. Sleeping 60s.")
+                app_logger.debug(f"[{app_type.upper()}] Media Hunt disabled in settings.")
                 stop_event.wait(60)
                 continue
             if app_type in third_party_types and general_settings.get('enable_third_party_apps') is False:
-                app_logger.debug(f"[{app_type.upper()}] 3rd Party Apps disabled in settings. Sleeping 60s.")
+                app_logger.debug(f"[{app_type.upper()}] 3rd Party Apps disabled in settings.")
                 stop_event.wait(60)
                 continue
         except Exception:
@@ -522,8 +522,6 @@ def app_specific_loop(app_type: str) -> None:
                         clear_instance_log_context()
                     return (False, instance_name, False, False)
                 try:
-                    # Use instance details for connection check
-                    app_logger.debug(f"Checking connection to {app_type} instance '{instance_name}' at {api_url} with timeout {api_timeout}s")
                     connected = check_connection(api_url, api_key, api_timeout=api_timeout)
                     if not connected:
                         app_logger.warning(f"Failed to connect to {app_type} instance '{instance_name}' at {api_url}. Skipping.")
@@ -532,7 +530,6 @@ def app_specific_loop(app_type: str) -> None:
                         if clear_instance_log_context:
                             clear_instance_log_context()
                         return (False, instance_name, False, False)
-                    app_logger.debug(f"Successfully connected to {app_type} instance: {instance_name}")
                 except Exception as e:
                     app_logger.error(f"Error connecting to {app_type} instance '{instance_name}': {e}", exc_info=True)
                     if end_cycle:
@@ -981,9 +978,6 @@ def app_specific_loop(app_type: str) -> None:
             )
         user_tz = _get_user_timezone()
         now_user_tz = datetime.datetime.now(user_tz).replace(microsecond=0)
-        app_logger.debug(f"Current time ({user_tz}): {now_user_tz.strftime('%Y-%m-%d %H:%M:%S')}")
-        app_logger.info(f"Sleep duration: {sleep_seconds:.0f} seconds before next cycle")
-        app_logger.debug(f"Sleeping for {sleep_seconds:.0f} seconds before next cycle...")
         # Responsive wait: wake every second to check stop_event and per-instance reset requests
         _responsive_sleep(app_type, sleep_seconds, app_logger, all_instances, wait_interval=1)
                 

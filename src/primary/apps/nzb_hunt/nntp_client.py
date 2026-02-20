@@ -91,7 +91,6 @@ class NNTPConnection:
             except Exception:
                 pass
             
-            logger.debug(f"Connected to {self.host}:{self.port}")
             return True
         except Exception as e:
             logger.error(f"Failed to connect to {self.host}:{self.port}: {e}")
@@ -660,10 +659,10 @@ class NNTPManager:
         if not tasks:
             return
 
-        logger.info(f"Pre-warming {len(tasks)} NNTP connections across {len(pools)} servers...")
+        logger.debug(f"Pre-warming {len(tasks)} NNTP connections across {len(pools)} servers...")
         from concurrent.futures import ThreadPoolExecutor as _TPE
         with _TPE(max_workers=min(max_workers, len(tasks))) as executor:
             list(executor.map(_open_one, tasks))
 
         total = sum(len(p._connections) for p in pools)
-        logger.info(f"Pre-warm complete: {total} connections ready")
+        logger.debug(f"Pre-warm complete: {total} connections ready")

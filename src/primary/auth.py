@@ -435,13 +435,8 @@ def authenticate_request():
         '/api/logs/', '/api/cycle/', '/api/hourly-caps', '/api/swaparr/status'
     ])
 
-    if not is_polling_endpoint:
-        pass  # Path checking debug removed to reduce log spam
-
-    # FIRST: Always allow setup and user page access - this handles returns from external auth like Plex
+    # FIRST: Always allow setup and user page access
     if request.path.endswith('/setup') or request.path.endswith('/user'):
-        if not is_polling_endpoint:
-            logger.debug(f"Allowing setup/user page access for path: {request.path}")
         return None
 
     # Skip authentication for static files, API setup, health check path, ping, github sponsors, and version endpoint
@@ -450,10 +445,6 @@ def authenticate_request():
 
     # Skip authentication for login pages, Plex auth endpoints, recovery key endpoints, and setup-related user endpoints
     if request.path.endswith('/login') or request.path.startswith('/api/login') or request.path.startswith('/api/auth/plex') or request.path.startswith('/auth/recovery-key') or '/api/user/2fa/' in request.path or request.path.endswith('/api/settings/general'):
-        if not is_polling_endpoint:
-            # Reduced logging frequency for common paths to prevent spam
-            if hash(request.path) % 20 == 0:  # Log ~5% of auth skips
-                logger.debug(f"Skipping authentication for login/plex/recovery/2fa/settings path '{request.path}'")
         return None
     
     # Cached auth checks — avoids hitting the database on every single request
@@ -468,8 +459,6 @@ def authenticate_request():
             _auth_cache["user_exists_ts"] = now
     
     if not _user_exists:
-        if not is_polling_endpoint:
-            logger.debug(f"No user exists, redirecting to setup")
         # Return JSON for API calls so the frontend doesn't try to parse HTML
         if request.path.startswith("/api/"):
             from flask import jsonify as _jsonify
@@ -504,8 +493,6 @@ def authenticate_request():
         return None
     
     remote_addr = request.remote_addr
-    if not is_polling_endpoint:
-        pass  # IP address debug removed to reduce log spam
     
     if local_access_bypass:
         # Common local network IP ranges
@@ -536,7 +523,6 @@ def authenticate_request():
         # Check if request is coming through a proxy
         forwarded_for = request.headers.get('X-Forwarded-For')
         if forwarded_for:
-            logger.debug(f"X-Forwarded-For header detected: {forwarded_for}")
             # Take the first IP in the chain which is typically the client's real IP
             possible_client_ip = forwarded_for.split(',')[0].strip()
             
@@ -554,8 +540,6 @@ def authenticate_request():
                     break
                     
         if is_local:
-            if not is_polling_endpoint:
-                logger.debug(f"Local network access from {remote_addr} - Authentication bypassed! (Local Bypass Mode)")
             _auto_clear_setup_progress()
             return None
         else:
@@ -566,8 +550,6 @@ def authenticate_request():
     # logged-in users aren't kicked back to setup by stale records.
     session_id = request.cookies.get(SESSION_COOKIE_NAME)
     if session_id and verify_session(session_id):
-        if not is_polling_endpoint:
-            pass  # Session valid - debug spam removed
         _auto_clear_setup_progress()
         return None
     
@@ -585,36 +567,17 @@ def authenticate_request():
             _auth_cache["setup_in_progress_ts"] = now
     
     if _setup_in_progress:
-        if not is_polling_endpoint:
-            logger.debug(f"Setup is in progress, redirecting to setup")
         if request.path.startswith("/api/"):
             from flask import jsonify as _jsonify
             return _jsonify({"error": "Setup in progress", "setup_required": True}), 503
         return redirect(get_base_url_path() + url_for("common.setup"))
     
-    # Use less verbose logging for polling endpoints
-    if is_polling_endpoint:
-        # Only log occasionally for polling endpoints to reduce spam
-        import random
-        if random.random() < 0.1:  # Log only 10% of polling auth failures
-            logger.debug(f"No valid session for polling endpoint '{request.path}', session_id: {session_id}")
-    else:
-        logger.debug(f"No valid session for path '{request.path}', session_id: {session_id}")
-    
     # For API calls, return 401 Unauthorized as proper JSON
     if request.path.startswith("/api/"):
-        # Return 401 with less verbose logging for polling endpoints
-        if is_polling_endpoint:
-            # Don't log every 401 for polling endpoints
-            pass
-        else:
-            logger.debug(f"Returning 401 for API path '{request.path}'")
         from flask import jsonify as _jsonify
         return _jsonify({"error": "Unauthorized"}), 401
     
     # No valid session, redirect to login
-    if not is_polling_endpoint:
-        logger.debug(f"Redirecting to login for path '{request.path}'")
     return redirect(get_base_url_path() + url_for("common.login_route"))
 
 def logout(session_id: str):

@@ -62,7 +62,6 @@ def save_swaparr_stats(stats: Dict[str, int]) -> bool:
         for stat_key, value in stats.items():
             db.set_swaparr_stat(stat_key, value)
         
-        logger.debug(f"Saved Swaparr stats to database: {stats}")
         return True
     except Exception as e:
         logger.error(f"Error saving Swaparr stats to database: {e}")
@@ -88,7 +87,6 @@ def increment_swaparr_stat(stat_type: str, count: int = 1) -> bool:
         try:
             db = get_database()
             db.increment_swaparr_stat(stat_type, count)
-            logger.debug(f"Incremented Swaparr {stat_type} by {count}")
             return True
         except Exception as e:
             logger.error(f"Error incrementing Swaparr {stat_type}: {e}")

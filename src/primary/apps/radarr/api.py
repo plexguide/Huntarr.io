@@ -387,7 +387,7 @@ def get_cutoff_unmet_movies_random_page(api_url: str, api_key: str, api_timeout:
     
     # If we have few enough records that they fit in one page, just return them
     if total_records <= page_size:
-        radarr_logger.info(f"🎯 All {len(records)} movies fit in one page, returning them directly")
+        radarr_logger.debug(f"All {len(records)} movies fit in one page, returning them directly")
         return records
     
     # Pick a random page (excluding page 1 since we already have it)
@@ -410,9 +410,9 @@ def get_cutoff_unmet_movies_random_page(api_url: str, api_key: str, api_timeout:
     # Randomly sample from the page if we have more than requested
     if len(records) > count:
         records = random.sample(records, count)
-        radarr_logger.info(f"🎯 Randomly selected {len(records)} movies from the page")
+        radarr_logger.debug(f"Randomly selected {len(records)} movies from the page")
     
-    radarr_logger.info(f"✅ Returning {len(records)} cutoff unmet movies from random sampling")
+    radarr_logger.debug(f"Returning {len(records)} cutoff unmet movies from random sampling")
     return records
 
 def movie_search(api_url: str, api_key: str, api_timeout: int, movie_ids: List[int]) -> Optional[int]:
@@ -752,11 +752,11 @@ def get_movies_with_missing_random_page(api_url: str, api_key: str, api_timeout:
             # Select random movies from this page
             if len(records) > count:
                 selected_records = random.sample(records, count)
-                radarr_logger.info(f"🎯 Randomly selected {len(selected_records)} missing movies from page {random_page}")
+                radarr_logger.debug(f"Randomly selected {len(selected_records)} missing movies from page {random_page}")
                 return selected_records
             else:
                 # If we have fewer movies than requested, return all of them
-                radarr_logger.info(f"✅ Returning all {len(records)} missing movies from page {random_page} (fewer than requested {count})")
+                radarr_logger.debug(f"Returning all {len(records)} missing movies from page {random_page} (fewer than requested {count})")
                 return records
                 
         except Exception as e:

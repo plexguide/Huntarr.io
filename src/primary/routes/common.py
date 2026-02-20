@@ -291,8 +291,6 @@ def login_route():
             # Call verify_user which now returns (auth_success, needs_2fa)
             auth_success, needs_2fa = verify_user(username, password, twoFactorCode)
             
-            logger.debug(f"Auth result for '{username}': success={auth_success}, needs_2fa={needs_2fa}")
-
             if auth_success:
                 # User is authenticated (password correct, and 2FA if needed was correct)
                 _clear_login_attempts(client_ip)
@@ -302,13 +300,11 @@ def login_route():
                 response = jsonify({"success": True, "redirect": redirect_url})
                 is_https = request.headers.get('X-Forwarded-Proto') == 'https' or request.is_secure
                 response.set_cookie(SESSION_COOKIE_NAME, session_token, httponly=True, samesite='Lax', path=_cookie_path(), secure=is_https)
-                logger.debug(f"User '{username}' logged in successfully.")
                 return response
             elif needs_2fa:
                 # Authentication failed *because* 2FA was required (or code was invalid)
                 # The specific reason (missing vs invalid code) is logged in verify_user
                 logger.warning(f"Login failed for '{username}': 2FA required or invalid.")
-                logger.debug(f"Returning 2FA required response: {{\"success\": False, \"requires_2fa\": True, \"requiresTwoFactor\": True, \"error\": \"Invalid or missing 2FA code\"}}")
                 
                 # Use all common variations of the 2FA flag to ensure compatibility
                 return jsonify({
@@ -365,7 +361,6 @@ def login_route():
             logger.error(f"Error checking for Plex users: {e}")
             plex_auth_enabled = False
         
-        logger.debug("Displaying login page.")
         return render_template('login.html', plex_auth_enabled=plex_auth_enabled)
 
 @common_bp.route('/logout', methods=['POST'])

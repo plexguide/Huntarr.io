@@ -89,9 +89,6 @@ def check_state_reset(app_type: str) -> bool:
     delta = now - last_reset
     hours_passed = delta.total_seconds() / 3600
     
-    # Log every cycle to help diagnose state reset issues
-    logger.debug(f"State check for {app_type}: {hours_passed:.1f} hours since last reset (interval: {reset_interval}h)")
-    
     if hours_passed >= reset_interval:
         logger.warning(f"State files for {app_type} will be reset after {hours_passed:.1f} hours (interval: {reset_interval}h)")
         logger.warning(f"This will cause all previously processed media to be eligible for processing again")

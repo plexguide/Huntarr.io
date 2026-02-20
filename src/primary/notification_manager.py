@@ -627,7 +627,6 @@ def dispatch_notification(event: str, title: str, message: str, extra_data: Opti
             ok, err = send_fn(settings, full_title, message, event, extra_data=extra_data)
             if ok:
                 sent += 1
-                logger.debug("Notification sent via %s (conn=%s)", provider, conn.get("id"))
             else:
                 logger.warning("Notification failed via %s (conn=%s): %s", provider, conn.get("id"), err)
         except Exception as e:
@@ -684,7 +683,6 @@ def dispatch_request_notification(event: str, title: str, message: str):
             ok, err = send_fn(settings, title, message, "on_request")
             if ok:
                 sent += 1
-                logger.debug("Request notification sent via %s (conn=%s)", provider, conn.get("id"))
             else:
                 logger.warning("Request notification failed via %s (conn=%s): %s", provider, conn.get("id"), err)
         except Exception as e:

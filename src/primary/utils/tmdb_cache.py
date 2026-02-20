@@ -94,7 +94,6 @@ class TMDBImageCache:
             with open(meta_path, 'w') as f:
                 f.write(str(time.time()))
             
-            logger.debug(f"Cached TMDB image: {url}")
             return cache_path
         except Exception as e:
             logger.error(f"Failed to cache image from {url}: {e}")

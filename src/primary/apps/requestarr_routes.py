@@ -292,7 +292,7 @@ def request_media():
             logger.debug(f"[Requestarr] Auth check in /request skipped: {auth_err}")
 
         data = request.get_json() or {}
-        logger.info(f"[Requestarr] Received request: {data}")
+        logger.debug(f"[Requestarr] Received request: {data}")
         
         # Validate required fields
         required_fields = ['tmdb_id', 'media_type', 'title']
@@ -320,7 +320,7 @@ def request_media():
                 if default_svc:
                     instance_name = default_svc['instance_name']
                     app_type = default_svc['app_type']
-                    logger.info(f"[Requestarr] Resolved default service: {app_type}/{instance_name} for {svc_type}")
+                    logger.debug(f"[Requestarr] Resolved default service: {app_type}/{instance_name} for {svc_type}")
                 else:
                     error_msg = f'No service configured for {svc_type}. Ask the owner to set up Support Instances.'
                     logger.error(f"[Requestarr] {error_msg}")
@@ -342,9 +342,9 @@ def request_media():
                     th_instances = requestarr_api.get_enabled_instances().get('tv_hunt', [])
                     if any(inst.get('name') == instance_name for inst in th_instances):
                         app_type = 'tv_hunt'
-                        logger.info(f"[Requestarr] Inferred app_type=tv_hunt (instance '{instance_name}' in TV Hunt, profile name '{quality_profile_raw}')")
+                        logger.debug(f"[Requestarr] Inferred app_type=tv_hunt (instance '{instance_name}' in TV Hunt, profile name '{quality_profile_raw}')")
         
-        logger.info(f"[Requestarr] Processing {media_type} request for '{data['title']}' to {app_type} instance '{instance_name}'")
+        logger.debug(f"[Requestarr] Processing {media_type} request for '{data['title']}' to {app_type} instance '{instance_name}'")
         
         # Get quality_profile from request, convert empty string to None
         quality_profile = data.get('quality_profile')
@@ -394,7 +394,7 @@ def request_media():
             movie_monitor=movie_monitor
         )
         
-        logger.info(f"[Requestarr] Request result: {result}")
+        logger.debug(f"[Requestarr] Request result: {result}")
         
         if result['success']:
             # Cascade to bundle members (fire-and-forget, non-blocking for the user)
@@ -490,7 +490,7 @@ def get_trending():
                 tv_app_type = tv_app_type or 'sonarr'
                 tv_instance_name = tv_instance_name or raw_tv
         
-        logger.info(f"[get_trending] Using instances - movie: {movie_app_type}:{movie_instance_name}, tv: {tv_app_type}:{tv_instance_name}")
+        logger.debug(f"[get_trending] Using instances - movie: {movie_app_type}:{movie_instance_name}, tv: {tv_app_type}:{tv_instance_name}")
         
         results = requestarr_api.get_trending(
             time_window,
@@ -515,7 +515,7 @@ def get_popular_movies():
         # Log instance parameters
         app_type = request.args.get('app_type')
         instance_name = request.args.get('instance_name')
-        logger.info(f"GET /discover/movies - page: {page}, app_type: {app_type}, instance_name: {instance_name}")
+        logger.debug(f"GET /discover/movies - page: {page}, app_type: {app_type}, instance_name: {instance_name}")
         
         # Collect filter parameters
         filter_params = {}
@@ -580,7 +580,7 @@ def get_popular_tv():
         # Log instance parameters
         app_type = request.args.get('app_type')
         instance_name = request.args.get('instance_name')
-        logger.info(f"GET /discover/tv - page: {page}, app_type: {app_type}, instance_name: {instance_name}")
+        logger.debug(f"GET /discover/tv - page: {page}, app_type: {app_type}, instance_name: {instance_name}")
         
         # Collect filter parameters
         filter_params = {}
@@ -840,7 +840,7 @@ def get_default_instances():
     """Get default instance settings for discovery"""
     try:
         defaults = requestarr_api.get_default_instances()
-        logger.info(f"GET default instances - Returning: {defaults}")
+        logger.debug(f"GET default instances - Returning: {defaults}")
         return jsonify({'success': True, 'defaults': defaults})
     except Exception as e:
         logger.error(f"Error getting default instances: {e}")

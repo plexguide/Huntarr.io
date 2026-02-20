@@ -796,7 +796,7 @@ class RequestsMixin:
             profiles = None
             for attempt in range(max_retries):
                 try:
-                    logger.info(f"Fetching quality profiles from Radarr (attempt {attempt+1}/{max_retries})")
+                    logger.debug(f"Fetching quality profiles from Radarr (attempt {attempt+1}/{max_retries})")
                     profiles_response = requests.get(
                         f"{url}/api/v3/qualityprofile",
                         headers={'X-Api-Key': api_key},
@@ -954,7 +954,7 @@ class RequestsMixin:
             profiles = None
             for attempt in range(max_retries):
                 try:
-                    logger.info(f"Fetching quality profiles from Sonarr (attempt {attempt+1}/{max_retries})")
+                    logger.debug(f"Fetching quality profiles from Sonarr (attempt {attempt+1}/{max_retries})")
                     profiles_response = requests.get(
                         f"{url}/api/v3/qualityprofile",
                         headers={'X-Api-Key': api_key},

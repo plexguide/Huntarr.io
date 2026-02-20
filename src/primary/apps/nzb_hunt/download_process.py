@@ -343,6 +343,55 @@ class DownloadManagerProxy:
     def has_servers(self) -> bool:
         return self.get_status().get("servers_configured", False)
 
+    def _get_folders(self) -> dict:
+        """Get configured folder settings (read-only, reads config directly)."""
+        try:
+            import json, os
+            config_dir = os.environ.get("CONFIG_DIR", "/config")
+            config_path = os.path.join(config_dir, "nzb_hunt_config.json")
+            if os.path.exists(config_path):
+                with open(config_path, "r") as f:
+                    cfg = json.load(f)
+                return cfg.get("folders", {
+                    "download_folder": "/downloads",
+                    "temp_folder": "/downloads/incomplete",
+                })
+        except Exception:
+            pass
+        return {
+            "download_folder": "/downloads",
+            "temp_folder": "/downloads/incomplete",
+        }
+
+    def _temp_to_complete_base(self, temp_folder: str) -> str:
+        """Derive complete base from temp: /downloads/incomplete -> /downloads/complete."""
+        import os
+        if not temp_folder or temp_folder.rstrip("/") == "":
+            return "/downloads/complete"
+        parent = os.path.dirname(temp_folder.rstrip(os.sep))
+        if not parent or parent == temp_folder:
+            return "/downloads/complete"
+        return os.path.join(parent, "complete")
+
+    def _get_category_folder(self, category: str) -> Optional[str]:
+        """Get the completed download folder for a category."""
+        import os
+        if not category:
+            return None
+        folders = self._get_folders()
+        temp_folder = folders.get("temp_folder", "/downloads/incomplete")
+        complete_base = self._temp_to_complete_base(temp_folder)
+        return os.path.join(complete_base, category)
+
+    def _get_category_temp_folder(self, category: str) -> Optional[str]:
+        """Get the incomplete (temp) folder for a category."""
+        import os
+        if not category:
+            return None
+        folders = self._get_folders()
+        temp_folder = folders.get("temp_folder", "/downloads/incomplete")
+        return os.path.join(temp_folder, category)
+
     # ── Mutating methods (forwarded to child process) ──
 
     def add_nzb(self, **kwargs) -> Tuple[bool, str, str]:

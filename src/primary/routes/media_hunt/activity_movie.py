@@ -864,17 +864,11 @@ def _get_activity_queue(instance_id):
     clients = get_movie_clients_config(instance_id)
     enabled = [c for c in clients if c.get('enabled', True)]
     if not enabled:
-        movie_hunt_logger.debug("Queue: no download clients configured or enabled. Add SABnzbd/NZBGet/NZB Hunt in Settings -> Movie Hunt -> Clients (total in config: %s).", len(clients))
         return [], 0
-    movie_hunt_logger.debug("Queue: fetching from %s download client(s)", len(enabled))
     all_items = []
     for client in enabled:
         items = _get_download_client_queue(client, instance_id)
         all_items.extend(items)
-    if all_items:
-        movie_hunt_logger.debug("Queue: returning %s item(s) from download client(s)", len(all_items))
-    else:
-        movie_hunt_logger.debug("Queue: no items in download client(s)")
     return all_items, len(all_items)
 
 

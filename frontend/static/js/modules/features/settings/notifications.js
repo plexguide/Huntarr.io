@@ -627,7 +627,7 @@
 
         // Show modal
         overlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
+        document.body.classList.add('notif-modal-open');
 
         setTimeout(function () {
             var first = body.querySelector('input[type="text"], input[type="password"]');
@@ -678,7 +678,7 @@
         var overlay = document.getElementById('notifModalOverlay');
         if (overlay) {
             overlay.classList.remove('active');
-            document.body.style.overflow = '';
+            document.body.classList.remove('notif-modal-open');
         }
         editingId = null;
         editingProvider = null;

@@ -75,7 +75,7 @@ class RequestarrAPI(DiscoveryMixin, LibraryMixin, RequestsMixin):
 
             for attempt in range(max_retries):
                 try:
-                    logger.info(f"Fetching quality profiles from {app_type}/{instance_name} (attempt {attempt+1}/{max_retries})")
+                    logger.debug(f"Fetching quality profiles from {app_type}/{instance_name} (attempt {attempt+1}/{max_retries})")
                     headers = {'X-Api-Key': api_key}
                     response = requests.get(
                         f"{url}/api/v3/qualityprofile",

@@ -1004,7 +1004,6 @@ def api_app_status(app_name):
                     api_timeout = settings_manager.get_setting(app_name, "api_timeout", 10) # Get global timeout
                     
                     if total_configured > 0:
-                        web_logger.debug(f"Checking connection for {total_configured} {app_name.capitalize()} instances...")
                         if hasattr(api_module, 'check_connection'):
                             check_connection_func = getattr(api_module, 'check_connection')
                             for instance in instances:
@@ -1012,16 +1011,10 @@ def api_app_status(app_name):
                                 inst_key = instance.get("api_key") or ""
                                 inst_name = instance.get("instance_name", "Default")
                                 try:
-                                    # Use a short timeout per instance check (Movie Hunt has no API URL/key; check_connection returns True)
                                     if check_connection_func(inst_url, inst_key, min(api_timeout or 10, 5)):
-                                        web_logger.debug(f"{app_name.capitalize()} instance '{inst_name}' connected successfully.")
                                         connected_count += 1
-                                    else:
-                                        web_logger.debug(f"{app_name.capitalize()} instance '{inst_name}' connection check failed.")
                                 except Exception as e:
                                     web_logger.error(f"Error checking connection for {app_name.capitalize()} instance '{inst_name}': {str(e)}")
-                        else:
-                            web_logger.warning(f"check_connection function not found in {app_name} API module")
                 
                 # Prepare multi-instance response
                 response_data = {"total_configured": total_configured, "connected_count": connected_count}

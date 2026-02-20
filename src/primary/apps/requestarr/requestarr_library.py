@@ -61,7 +61,6 @@ class LibraryMixin:
             # Find series with matching TMDB ID
             for series in series_list:
                 series_tmdb = series.get('tmdbId')
-                logger.debug(f"Checking series: {series.get('title')} - TMDB ID: {series_tmdb}")
                 
                 # Only check tmdbId field (tvdbId is TVDB, not TMDB)
                 if series_tmdb == tmdb_id:
@@ -209,7 +208,7 @@ class LibraryMixin:
                         # Not in Requestarr DB but in Sonarr with no episodes = requested elsewhere
                         previously_requested = True
                     
-                    logger.info(f"Found series in Sonarr: {series.get('title')} - {available_episodes}/{total_episodes} episodes, missing: {missing_episodes}, previously_requested: {previously_requested}")
+                    logger.debug(f"Found series in Sonarr: {series.get('title')} - {available_episodes}/{total_episodes} episodes, missing: {missing_episodes}, previously_requested: {previously_requested}")
                     
                     path_val = (series.get('path') or series.get('Path') or series.get('rootFolderPath') or series.get('RootFolderPath') or '').strip()
                     return {
@@ -460,7 +459,7 @@ class LibraryMixin:
                 movie_tmdb = movie.get('tmdbId')
                 if movie_tmdb == tmdb_id:
                     has_file = movie.get('hasFile', False)
-                    logger.info(f"Found movie in Radarr: {movie.get('title')} - Has file: {has_file}")
+                    logger.debug(f"Found movie in Radarr: {movie.get('title')} - Has file: {has_file}")
                     
                     # Check if previously requested
                     # Priority: Requestarr DB > Radarr status
@@ -679,7 +678,6 @@ class LibraryMixin:
             use_tv_hunt = False
             
             if app_type and instance_name:
-                logger.info(f"Filtering instances - app_type: {app_type}, instance_name: {instance_name}")
                 if app_type == 'movie_hunt':
                     # Movie Hunt handles movies — skip Radarr, Sonarr, TV Hunt
                     movie_hunt_instances = [inst for inst in movie_hunt_instances if inst['name'] == instance_name]
@@ -687,7 +685,6 @@ class LibraryMixin:
                     sonarr_instances = []
                     tv_hunt_instances = []
                     use_movie_hunt = True
-                    logger.info(f"Using Movie Hunt instance: {[inst['name'] for inst in movie_hunt_instances]}")
                 elif app_type == 'tv_hunt':
                     # TV Hunt handles TV — skip Sonarr, Radarr
                     tv_hunt_instances = [inst for inst in tv_hunt_instances if inst['name'] == instance_name]
@@ -695,23 +692,18 @@ class LibraryMixin:
                     radarr_instances = []
                     movie_hunt_instances = []
                     use_tv_hunt = True
-                    logger.info(f"Using TV Hunt instance: {[inst['name'] for inst in tv_hunt_instances]}")
                 elif app_type == 'radarr':
-                    original_count = len(radarr_instances)
                     radarr_instances = [inst for inst in radarr_instances if inst['name'] == instance_name]
                     sonarr_instances = []
                     tv_hunt_instances = []
                     movie_hunt_instances = []
-                    logger.info(f"Filtered Radarr instances from {original_count} to {len(radarr_instances)}: {[inst['name'] for inst in radarr_instances]}")
                 elif app_type == 'sonarr':
-                    original_count = len(sonarr_instances)
                     sonarr_instances = [inst for inst in sonarr_instances if inst['name'] == instance_name]
                     radarr_instances = []
                     tv_hunt_instances = []
                     movie_hunt_instances = []
-                    logger.info(f"Filtered Sonarr instances from {original_count} to {len(sonarr_instances)}: {[inst['name'] for inst in sonarr_instances]}")
             else:
-                logger.info(f"No instance filtering - checking all instances (Radarr: {len(radarr_instances)}, Sonarr: {len(sonarr_instances)}, Movie Hunt: {len(movie_hunt_instances)}, TV Hunt: {len(tv_hunt_instances)})")
+                logger.debug(f"No instance filtering - checking all instances (Radarr: {len(radarr_instances)}, Sonarr: {len(sonarr_instances)}, Movie Hunt: {len(movie_hunt_instances)}, TV Hunt: {len(tv_hunt_instances)})")
             
             # Get all movies from Movie Hunt instances (batch check)
             movie_hunt_tmdb_ids = set()
@@ -758,7 +750,7 @@ class LibraryMixin:
                                     movie_hunt_tmdb_ids.add(dtmdb)
                         except Exception:
                             pass
-                        logger.info(f"Found {len(movie_hunt_tmdb_ids)} movies with files + {len(movie_hunt_monitored_tmdb_ids)} monitored in Movie Hunt instance {mh_inst['name']}")
+                        logger.debug(f"Found {len(movie_hunt_tmdb_ids)} movies with files + {len(movie_hunt_monitored_tmdb_ids)} monitored in Movie Hunt instance {mh_inst['name']}")
                     except Exception as e:
                         logger.error(f"Error checking Movie Hunt instance {mh_inst.get('name', '?')}: {e}")
             
@@ -781,7 +773,7 @@ class LibraryMixin:
                             else:
                                 # In Radarr but no file yet — treat as partial (monitored)
                                 radarr_monitored_tmdb_ids.add(movie.get('tmdbId'))
-                        logger.info(f"Found {len(radarr_tmdb_ids)} movies with files + {len(radarr_monitored_tmdb_ids)} monitored in Radarr instance {instance['name']}")
+                        logger.debug(f"Found {len(radarr_tmdb_ids)} movies with files + {len(radarr_monitored_tmdb_ids)} monitored in Radarr instance {instance['name']}")
                 except Exception as e:
                     logger.error(f"Error checking Radarr instance {instance['name']}: {e}")
             
@@ -826,7 +818,7 @@ class LibraryMixin:
                                 # In collection but no episodes downloaded yet — mark as partial
                                 # so the card shows the bookmark icon (not download)
                                 tv_hunt_partial_tmdb_ids.add(tmdb_id)
-                        logger.info(f"Found {len(tv_hunt_tmdb_ids)} complete + {len(tv_hunt_partial_tmdb_ids)} partial series in TV Hunt instance {th_inst['name']} (IDs: complete={tv_hunt_tmdb_ids}, partial={tv_hunt_partial_tmdb_ids})")
+                        logger.debug(f"Found {len(tv_hunt_tmdb_ids)} complete + {len(tv_hunt_partial_tmdb_ids)} partial series in TV Hunt instance {th_inst['name']} (IDs: complete={tv_hunt_tmdb_ids}, partial={tv_hunt_partial_tmdb_ids})")
                     except Exception as e:
                         logger.error(f"Error checking TV Hunt instance {th_inst.get('name', '?')}: {e}")
             
@@ -857,7 +849,7 @@ class LibraryMixin:
                             # or if the series exists but has no episodes downloaded yet
                             elif total_episodes > 0:
                                 sonarr_partial_tmdb_ids.add(tmdb_id)
-                        logger.info(f"Found {len(sonarr_tmdb_ids)} complete series and {len(sonarr_partial_tmdb_ids)} partial series in Sonarr instance {instance['name']}")
+                        logger.debug(f"Found {len(sonarr_tmdb_ids)} complete series and {len(sonarr_partial_tmdb_ids)} partial series in Sonarr instance {instance['name']}")
                 except Exception as e:
                     logger.error(f"Error checking Sonarr instance {instance['name']}: {e}")
             

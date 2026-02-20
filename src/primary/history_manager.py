@@ -66,7 +66,7 @@ def add_history_entry(app_type, entry_data):
             # Add additional fields for compatibility
             entry["app_type"] = app_type  # Include app_type in the entry for display in UI
             
-            logger.info(f"Added history entry for {app_type}-{instance_display}: {entry_data['name']}")
+            logger.debug(f"Added history entry for {app_type}-{instance_display}: {entry_data['name']}")
             
             # Send notification about this history entry
             try:

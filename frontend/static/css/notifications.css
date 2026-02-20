@@ -322,13 +322,16 @@
 }
 
 /* ---- Modal ---- */
+body.notif-modal-open { overflow: hidden; }
+body.notif-modal-open .app-container { filter: blur(10px); }
+
 .notif-modal-overlay {
     position: fixed;
     inset: 0;
     z-index: 10000;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     display: flex;
     align-items: center;
     justify-content: center;

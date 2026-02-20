@@ -124,17 +124,17 @@ class DiscoveryMixin:
             
             # Check library status separately for movies and TV shows using their respective instances
             if movie_results and movie_instance:
-                logger.info(f"[get_trending] Checking {len(movie_results)} movies against {movie_app_type} instance: {movie_instance}")
+                logger.debug(f"[get_trending] Checking {len(movie_results)} movies against {movie_app_type} instance: {movie_instance}")
                 movie_results = self.check_library_status_batch(movie_results, app_type=movie_app_type, instance_name=movie_instance)
             elif movie_results:
-                logger.info(f"[get_trending] Checking {len(movie_results)} movies against all instances")
+                logger.debug(f"[get_trending] Checking {len(movie_results)} movies against all instances")
                 movie_results = self.check_library_status_batch(movie_results)
             
             if tv_results and tv_instance:
-                logger.info(f"[get_trending] Checking {len(tv_results)} TV shows against {tv_app_type} instance: {tv_instance}")
+                logger.debug(f"[get_trending] Checking {len(tv_results)} TV shows against {tv_app_type} instance: {tv_instance}")
                 tv_results = self.check_library_status_batch(tv_results, app_type=tv_app_type, instance_name=tv_instance)
             elif tv_results:
-                logger.info(f"[get_trending] Checking {len(tv_results)} TV shows against all TV instances")
+                logger.debug(f"[get_trending] Checking {len(tv_results)} TV shows against all TV instances")
                 tv_results = self.check_library_status_batch(tv_results)
             
             # Combine and sort by popularity
@@ -208,7 +208,7 @@ class DiscoveryMixin:
             if kwargs.get('vote_count.lte'):
                 params['vote_count.lte'] = kwargs['vote_count.lte']
             
-            logger.info(f"Fetching movies from TMDB - Page: {page}, Sort: {params['sort_by']}")
+            logger.debug(f"Fetching movies from TMDB - Page: {page}, Sort: {params['sort_by']}")
 
             from src.primary.utils.tmdb_metadata_cache import get_discover, set_discover
 
@@ -251,7 +251,7 @@ class DiscoveryMixin:
                     'popularity': item.get('popularity', 0)
                 })
             
-            logger.info(f"Found {len(all_results)} movies on page {page}")
+            logger.debug(f"Found {len(all_results)} movies on page {page}")
             
             # Check library status for all items - pass instance info if available from kwargs
             app_type = kwargs.get('app_type', 'radarr')
@@ -259,11 +259,9 @@ class DiscoveryMixin:
             
             if instance_name:
                 logger.debug(f"Checking library status for {app_type} instance: {instance_name}")
-                logger.info(f"[get_popular_movies] Calling check_library_status_batch WITH {app_type} instance: {instance_name}")
                 all_results = self.check_library_status_batch(all_results, app_type, instance_name)
             else:
                 # No instance specified, check all instances (old behavior)
-                logger.info(f"[get_popular_movies] Calling check_library_status_batch WITHOUT instance")
                 all_results = self.check_library_status_batch(all_results)
             
             return all_results
@@ -329,7 +327,7 @@ class DiscoveryMixin:
             if kwargs.get('vote_count.lte'):
                 params['vote_count.lte'] = kwargs['vote_count.lte']
             
-            logger.info(f"Fetching TV shows from TMDB - Page: {page}, Sort: {params['sort_by']}")
+            logger.debug(f"Fetching TV shows from TMDB - Page: {page}, Sort: {params['sort_by']}")
             logger.debug(f"TMDB Request URL: {url}")
             logger.debug(f"TMDB Request Params: {params}")
 
@@ -374,7 +372,7 @@ class DiscoveryMixin:
                     'popularity': item.get('popularity', 0)
                 })
             
-            logger.info(f"Found {len(all_results)} TV shows on page {page}")
+            logger.debug(f"Found {len(all_results)} TV shows on page {page}")
             
             # Check library status for all items - pass instance info if available from kwargs
             app_type = kwargs.get('app_type', 'sonarr')
@@ -382,11 +380,9 @@ class DiscoveryMixin:
             
             if instance_name:
                 logger.debug(f"Checking library status for Sonarr instance: {instance_name}")
-                logger.info(f"[get_popular_tv] Calling check_library_status_batch WITH instance: {instance_name}")
                 all_results = self.check_library_status_batch(all_results, app_type, instance_name)
             else:
                 # No instance specified, check all instances (old behavior)
-                logger.info(f"[get_popular_tv] Calling check_library_status_batch WITHOUT instance")
                 all_results = self.check_library_status_batch(all_results)
             
             return all_results

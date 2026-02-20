@@ -649,7 +649,7 @@ class RequestarrMixin:
                 "date_time_readable": date_time_readable
             }
             
-            logger.info(f"Added hunt history entry for {app_type}-{instance_name}: {processed_info}")
+            logger.debug(f"Added hunt history entry for {app_type}-{instance_name}: {processed_info}")
             return entry
     
     def get_hunt_history(self, app_type: str = None, search_query: str = None, 

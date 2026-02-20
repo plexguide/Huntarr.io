@@ -338,7 +338,7 @@ def get_queue_items(app_name, api_url, api_key, api_timeout=120):
             SWAPARR_STATS['errors_encountered'] += 1
             break
     
-    swaparr_logger.info(f"Fetched {len(all_records)} queue items for {app_name} using {page} API calls")
+    swaparr_logger.debug(f"Fetched {len(all_records)} queue items for {app_name} using {page} API calls")
     
     # Normalize the response based on app type
     if app_name in ["radarr", "whisparr", "eros"]:
@@ -552,12 +552,10 @@ def delete_download(app_name, api_url, api_key, download_id, remove_from_client=
 
 def process_stalled_downloads(app_name, instance_name, instance_data, settings):
     """Process stalled downloads for a specific app instance."""
-    swaparr_logger.debug(f"Checking download queue for {app_name} instance: {instance_name}")
     
     try:
         # Check if instance has Swaparr enabled
         if not instance_data.get("swaparr_enabled", False):
-            swaparr_logger.debug(f"Swaparr not enabled for {app_name} instance: {instance_name}, skipping")
             return 0  # Return 0 processed
         
         # Check for disabled setting during processing (every 10 items to avoid excessive I/O)
@@ -570,10 +568,7 @@ def process_stalled_downloads(app_name, instance_name, instance_data, settings):
         queue_response = get_queue_items(app_name, instance_data["api_url"], instance_data["api_key"])
         queue_items = queue_response
         
-        swaparr_logger.debug(f"Found {len(queue_items)} downloads in queue for {app_name} instance: {instance_name}")
-        
         if len(queue_items) == 0:
-            swaparr_logger.debug(f"No downloads to process for {app_name} instance: {instance_name}")
             return 0
         
         # Load strike data and removed items for this app
@@ -968,15 +963,12 @@ def run_swaparr():
             # Debug log the swaparr_enabled status
             swaparr_enabled = app_settings.get("swaparr_enabled", False)
             instance_name = app_settings.get('instance_name', 'Unknown')
-            swaparr_logger.debug(f"Checking {app_name} instance '{instance_name}' - swaparr_enabled: {swaparr_enabled}")
             
             # Skip instances that don't have Swaparr enabled
             if not swaparr_enabled:
-                swaparr_logger.debug(f"Skipping {app_name} instance '{instance_name}' - Swaparr not enabled for this instance")
                 continue
             
             swaparr_enabled_instances += 1
-            swaparr_logger.debug(f"Processing {app_name} instance '{instance_name}' - Swaparr enabled")
             
             # Check if Swaparr has been disabled during processing
             current_settings = load_settings("swaparr")

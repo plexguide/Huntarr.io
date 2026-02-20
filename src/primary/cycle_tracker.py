@@ -70,7 +70,6 @@ def update_sleep_json(app_type: str, next_cycle_time: datetime.datetime, cyclelo
     try:
         display = log_name if log_name is not None else instance_name
         label = f"{app_type}" + (f" instance {display}" if display else "")
-        logger.debug(f"Updating sleep data for {label}, cyclelock: {cyclelock}")
         
         user_tz = _get_user_timezone()
         if next_cycle_time.tzinfo is None:
@@ -103,7 +102,7 @@ def update_sleep_json(app_type: str, next_cycle_time: datetime.datetime, cyclelo
                 last_cycle_start=current_data.get('last_cycle_start'),
                 last_cycle_end=current_data.get('last_cycle_end')
             )
-        logger.info(f"Updated sleep data for {label}: next_cycle={next_cycle_time.isoformat()}, cyclelock={cyclelock}")
+        logger.debug(f"Updated sleep data for {label}: next_cycle={next_cycle_time.isoformat()}, cyclelock={cyclelock}")
     except Exception as e:
         logger.error(f"Error updating sleep data for {app_type}: {e}")
 

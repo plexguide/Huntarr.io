@@ -1386,7 +1386,6 @@ class NZBHuntDownloadManager:
                         time.sleep(server_backoff)
                         server_backoff = min(server_backoff * 2, 10.0)
                 else:
-                    logger.debug("NZB Hunt: no servers in config, waiting %.0fs...", server_backoff)
                     time.sleep(server_backoff)
                     server_backoff = min(server_backoff * 2, 10.0)
 
@@ -1397,7 +1396,6 @@ class NZBHuntDownloadManager:
                     if servers:
                         self._nntp.configure(servers)
                     else:
-                        logger.debug("NZB Hunt: no servers configured, waiting...")
                         time.sleep(5)
                         continue
 

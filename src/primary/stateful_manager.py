@@ -270,7 +270,6 @@ def is_processed(app_type: str, instance_name: str, media_id: str) -> bool:
                         
                         # If state management is disabled for this instance, always return False (not processed)
                         if instance_mode == 'disabled':
-                            stateful_logger.debug(f"State management disabled for {app_type}/{instance_name}, treating item {media_id} as unprocessed")
                             return False
                         break
         except Exception as e:
@@ -282,10 +281,6 @@ def is_processed(app_type: str, instance_name: str, media_id: str) -> bool:
         # Converting media_id to string since some callers might pass an integer
         media_id_str = str(media_id)
         is_in_db = db.is_processed(app_type, instance_name, media_id_str)
-        
-        # Only log at debug level — skip the expensive get_processed_ids() call
-        # that was previously fetching ALL IDs just to log the count
-        stateful_logger.debug(f"is_processed check: {app_type}/{instance_name}, ID:{media_id_str}, Found:{is_in_db}")
         
         return is_in_db
     except Exception as e:

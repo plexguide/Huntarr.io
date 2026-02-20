@@ -40,10 +40,8 @@ def clear_cache(app_name=None):
     with _cache_lock:
         if app_name:
             _settings_cache.pop(app_name, None)
-            settings_logger.debug(f"Clearing cache for {app_name}")
         else:
             _settings_cache.clear()
-            settings_logger.debug("Clearing entire settings cache")
         settings_cache = _settings_cache
 
 def load_default_app_settings(app_name: str) -> Dict[str, Any]:
@@ -139,8 +137,6 @@ def load_settings(app_type, use_cache=True):
                 _ensure_config_exists(app_type)
                 current_settings = db.get_app_config(app_type) or {}
             
-        settings_logger.debug(f"Loaded {app_type} settings from database")
-        
     except Exception as e:
         settings_logger.error(f"Database error loading {app_type}: {e}")
         raise
@@ -185,11 +181,6 @@ def save_settings(app_name: str, settings_data: Dict[str, Any]) -> bool:
     if app_name not in KNOWN_APP_TYPES:
          settings_logger.error(f"Attempted to save settings for unknown app type: {app_name}")
          return False
-    
-    # Debug: Log the data being saved, especially for general settings
-    if app_name == 'general':
-        settings_logger.debug(f"Saving general settings: {settings_data}")
-        settings_logger.debug(f"Apprise URLs being saved: {settings_data.get('apprise_urls', 'NOT_FOUND')}")
     
     # Validate and enforce hourly_cap maximum limit of 400
     if 'hourly_cap' in settings_data:
@@ -404,7 +395,6 @@ def get_configured_apps() -> List[str]:
         if settings.get("api_url") and settings.get("api_key"):
             configured.append(app_name)
     
-    settings_logger.debug(f"Configured apps: {configured}")
     return configured
 
 def apply_timezone(timezone: str) -> bool:
