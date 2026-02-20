@@ -362,8 +362,6 @@ const HomeRequestarr = {
     },
 
     handleSearch(query) {
-        if (!this.enableRequestarr) return;
-
         if (this.searchTimeout) {
             clearTimeout(this.searchTimeout);
         }
@@ -401,7 +399,6 @@ const HomeRequestarr = {
     },
 
     async performSearch(query) {
-        if (!this.enableRequestarr) return;
         this.showResults();
 
         if (!this.elements.searchResultsGrid) {
@@ -417,11 +414,11 @@ const HomeRequestarr = {
             }
 
             const movieDecoded = this._decodeInstance(this.defaultMovieInstance);
-            const tvInstanceName = this.defaultTVInstance || '';
+            const tvDecoded = this._decodeInstance(this.defaultTVInstance);
 
             const [moviesResponse, tvResponse] = await Promise.all([
                 fetch(`./api/requestarr/search?q=${encodeURIComponent(query)}&app_type=${encodeURIComponent(movieDecoded.appType)}&instance_name=${encodeURIComponent(movieDecoded.name)}`),
-                fetch(`./api/requestarr/search?q=${encodeURIComponent(query)}&app_type=sonarr&instance_name=${encodeURIComponent(tvInstanceName)}`)
+                fetch(`./api/requestarr/search?q=${encodeURIComponent(query)}&app_type=${encodeURIComponent(tvDecoded.appType)}&instance_name=${encodeURIComponent(tvDecoded.name)}`)
             ]);
 
             const moviesData = await moviesResponse.json();
