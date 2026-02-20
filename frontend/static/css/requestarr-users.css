@@ -717,3 +717,16 @@ body.non-owner-mode #nav-group-apps,
 body.non-owner-mode .requestarr-header-bar {
     display: none !important;
 }
+
+/* Non-owner: force the user-support-sub visible so Requests nav shows */
+body.non-owner-mode #requestarr-user-support-sub {
+    display: block !important;
+}
+
+/* Non-owner: hide all owner-only items inside the sub-group */
+body.non-owner-mode #requestarrUserSupportBackNav,
+body.non-owner-mode #requestarrUsersNav,
+body.non-owner-mode #requestarrServicesNav,
+body.non-owner-mode #requestarrGlobalBlacklistNav {
+    display: none !important;
+}

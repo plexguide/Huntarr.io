@@ -4,7 +4,7 @@
     <link rel="stylesheet" href="./static/css/instance-editor.css?v=1.0.2">
     <link rel="stylesheet" href="./static/css/media-hunt-detail.css?v=1.5.0">
     <link rel="stylesheet" href="./static/css/media-hunt-tv.css?v=1.0.0">
-    <link rel="stylesheet" href="./static/css/requestarr-users.css?v=1.4.3">
+    <link rel="stylesheet" href="./static/css/requestarr-users.css?v=1.4.4">
     
     <div class="requestarr-content">
         <!-- Single header bar: back+breadcrumb (left) + sponsor/partner (right) — all inside the bordered toolbar -->
@@ -296,8 +296,8 @@
             <div class="requsers-toolbar">
                 <div class="reqrequests-filters">
                     <select id="reqrequests-status-filter" class="control-select" onchange="window.RequestarrRequests && window.RequestarrRequests.loadRequests()">
-                        <option value="">All Statuses</option>
-                        <option value="pending" selected>Pending</option>
+                        <option value="" selected>All Statuses</option>
+                        <option value="pending">Pending</option>
                         <option value="approved">Approved</option>
                         <option value="denied">Denied</option>
                         <option value="blacklisted">Blacklisted</option>

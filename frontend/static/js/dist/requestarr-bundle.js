@@ -7899,6 +7899,11 @@ window.RequestarrRequests = {
     _glBlacklistInitialized: false,
 
     async init() {
+        // For non-owner users, hide the filter controls (read-only view)
+        if (window._huntarrUserRole && window._huntarrUserRole !== 'owner') {
+            var filters = document.querySelector('.reqrequests-filters');
+            if (filters) filters.style.display = 'none';
+        }
         await this.loadRequests();
     },
 
@@ -7933,10 +7938,13 @@ window.RequestarrRequests = {
         const container = document.getElementById('reqrequests-content');
         if (!container) return;
 
+        const isOwner = window._huntarrUserRole === 'owner';
+        const emptyMsg = isOwner ? 'No requests found' : 'You haven\'t made any requests yet';
+
         if (!this.requests.length) {
             container.innerHTML = `<div class="reqrequests-empty">
                 <i class="fas fa-inbox" style="font-size:2rem;color:var(--text-dim);margin-bottom:12px;"></i>
-                <p style="color:var(--text-muted);">No requests found</p>
+                <p style="color:var(--text-muted);">${emptyMsg}</p>
             </div>`;
             return;
         }
@@ -7972,13 +7980,16 @@ window.RequestarrRequests = {
         }
 
         let actions = '';
-        if (req.status === 'pending') {
+        const isOwner = window._huntarrUserRole === 'owner';
+        if (req.status === 'pending' && isOwner) {
             actions = `
                 <button class="requsers-btn requsers-btn-primary requsers-btn-sm" onclick="RequestarrRequests.approveRequest(${req.id})"><i class="fas fa-check"></i> Approve</button>
                 <button class="requsers-btn requsers-btn-danger requsers-btn-sm" onclick="RequestarrRequests.denyRequest(${req.id})"><i class="fas fa-times"></i> Deny</button>
                 <button class="requsers-btn requsers-btn-sm" style="background:var(--bg-tertiary);color:#f87171;" onclick="RequestarrRequests.blacklistRequest(${req.id})" title="Blacklist"><i class="fas fa-ban"></i> Blacklist</button>`;
         }
-        actions += `<button class="requsers-btn requsers-btn-sm" style="background:var(--bg-tertiary);color:var(--text-secondary);" onclick="RequestarrRequests.deleteRequest(${req.id})" title="Delete"><i class="fas fa-trash"></i></button>`;
+        if (isOwner) {
+            actions += `<button class="requsers-btn requsers-btn-sm" style="background:var(--bg-tertiary);color:var(--text-secondary);" onclick="RequestarrRequests.deleteRequest(${req.id})" title="Delete"><i class="fas fa-trash"></i></button>`;
+        }
 
         return `<div class="reqrequests-card" data-request-id="${req.id}">
             <img class="reqrequests-poster" src="${posterUrl}" alt="" onerror="this.src='./static/images/blackout.jpg'">

@@ -349,21 +349,34 @@ let huntarrUI = {
         // 5. Hide owner-only items within Requests for ALL non-owner users
         var hideNavItems = [
             'requestarrSmartHuntSettingsNav',
-            'requestarrRequestsNav',
             'requestarrUsersNav',
             'requestarrServicesNav',
             'requestarrSettingsNav',
             'requestarrUserSupportToggle',
+            'requestarrGlobalBlacklistNav',
         ];
         hideNavItems.forEach(function(id) {
             var el = document.getElementById(id);
             if (el) el.style.display = 'none';
         });
 
+        // 5b. Show the Requests nav item (inside user-support-sub) as a flat top-level item for non-owners
+        var userSupportSub = document.getElementById('requestarr-user-support-sub');
+        if (userSupportSub) {
+            userSupportSub.classList.add('expanded');
+        }
+        // Hide the Back nav inside the sub-group — not needed for non-owners
+        var backNav = document.getElementById('requestarrUserSupportBackNav');
+        if (backNav) backNav.style.display = 'none';
+        // Show only the Requests nav item from the sub-group
+        var requestsNav = document.getElementById('requestarrRequestsNav');
+        if (requestsNav) requestsNav.style.display = '';
+
         // 6. Redirect if current section is not allowed
         var allowedSections = [
             'requestarr', 'requestarr-discover', 'requestarr-movies',
             'requestarr-tv', 'requestarr-hidden', 'requestarr-personal-blacklist',
+            'requestarr-requests',
         ];
         if (allowedSections.indexOf(this.currentSection) === -1) {
             window.location.hash = '#requestarr-discover';
@@ -381,6 +394,7 @@ let huntarrUI = {
         var allowed = [
             'requestarr', 'requestarr-discover', 'requestarr-movies',
             'requestarr-tv', 'requestarr-hidden', 'requestarr-personal-blacklist',
+            'requestarr-requests',
         ];
         return allowed.indexOf(section) === -1;
     },
