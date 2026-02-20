@@ -383,7 +383,6 @@ window.HuntarrStats = {
         var cssClass = app.replace(/-/g, '');
         card.innerHTML =
             '<div class="card-drag-handle" title="Drag to reorder"><i class="fas fa-grip-vertical"></i></div>' +
-            '<div class="status-container"><span class="status-badge"></span></div>' +
             '<div class="hourly-cap-container">' +
                 '<div class="hourly-cap-status">' +
                     '<span class="hourly-cap-icon"></span>' +

@@ -496,6 +496,28 @@
     margin-left: auto;
 }
 
+/* Badge on nav-item (e.g. Requests sub-item) — match group header circle style */
+.nav-item .nav-badge {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    max-width: 20px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 0.65rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #ef4444;
+    color: #fff;
+    margin-left: auto;
+    line-height: 1;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    flex-grow: 0;
+}
+
 /* Deep-indented items under User Support label */
 .nav-item-deep {
     margin-left: 28px !important;
@@ -767,11 +789,17 @@
 .sidebar-footer-info {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 4px;
+    justify-content: space-between;
+    padding: 0 4px;
     font-size: 10px;
     font-weight: 500;
     color: #475569;
+}
+
+.sidebar-footer-left {
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .sidebar-footer-version-link {
@@ -834,10 +862,7 @@
     color: #6ee7b7;
 }
 
-.sidebar-footer-sep {
-    color: #334155;
-    font-size: 10px;
-}
+/* separator removed — version row now uses space-between layout */
 
 .sidebar-footer-dev {
     color: #64748b;

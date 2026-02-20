@@ -165,6 +165,9 @@
 /* ── App Stats Grid — tighter gap ───────────────────────────────── */
 #homeSection .app-stats-grid {
     gap: 14px !important;
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)) !important;
+    align-items: stretch !important;
 }
 
 /* ── FORCE-HIDE old static template cards ──────────────────────── */
@@ -182,9 +185,11 @@
     border-radius: 10px !important;
     box-shadow: none !important;
     backdrop-filter: none !important;
-    min-height: auto !important;
     padding: 0 16px 0 16px !important;
     transition: border-color 0.2s, background 0.2s !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
 }
 
 #homeSection .app-stats-card:hover {

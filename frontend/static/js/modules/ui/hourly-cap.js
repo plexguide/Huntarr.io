@@ -53,7 +53,7 @@ function getInstanceNameForCard(card) {
  * @param {Object} limits - Limits: per-app number or per-instance (limits[app].instances[instanceName])
  */
 function updateHourlyCapDisplay(caps, limits) {
-    const apps = ['movie_hunt', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr'];
+    const apps = ['movie_hunt', 'tv_hunt', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr'];
 
     apps.forEach(app => {
         if (!caps[app]) return;

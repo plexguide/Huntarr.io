@@ -29,7 +29,7 @@ function updateApiProgress(appName, used, total) {
 }
 
 function syncProgressBarsWithApiCounts() {
-    const apps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+    const apps = ['movie_hunt', 'tv_hunt', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
     apps.forEach(app => {
         const cards = document.querySelectorAll('.app-stats-card.' + app);
         cards.forEach(card => {
@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
     syncProgressBarsWithApiCounts();
     
     // Watch each card's count/limit (hourly-cap.js updates them); sync that card's bar when changed
-    const apps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+    const apps = ['movie_hunt', 'tv_hunt', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
     apps.forEach(app => {
         document.querySelectorAll('.app-stats-card.' + app).forEach(card => {
             const countEl = card.querySelector('.hourly-cap-text span');

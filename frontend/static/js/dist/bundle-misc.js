@@ -8313,7 +8313,6 @@ window.HuntarrStats = {
         var cssClass = app.replace(/-/g, '');
         card.innerHTML =
             '<div class="card-drag-handle" title="Drag to reorder"><i class="fas fa-grip-vertical"></i></div>' +
-            '<div class="status-container"><span class="status-badge"></span></div>' +
             '<div class="hourly-cap-container">' +
                 '<div class="hourly-cap-status">' +
                     '<span class="hourly-cap-icon"></span>' +
@@ -9141,7 +9140,7 @@ function updateApiProgress(appName, used, total) {
 }
 
 function syncProgressBarsWithApiCounts() {
-    const apps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+    const apps = ['movie_hunt', 'tv_hunt', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
     apps.forEach(app => {
         const cards = document.querySelectorAll('.app-stats-card.' + app);
         cards.forEach(card => {
@@ -9162,7 +9161,7 @@ document.addEventListener('DOMContentLoaded', function() {
     syncProgressBarsWithApiCounts();
     
     // Watch each card's count/limit (hourly-cap.js updates them); sync that card's bar when changed
-    const apps = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
+    const apps = ['movie_hunt', 'tv_hunt', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros'];
     apps.forEach(app => {
         document.querySelectorAll('.app-stats-card.' + app).forEach(card => {
             const countEl = card.querySelector('.hourly-cap-text span');
@@ -10326,7 +10325,7 @@ function getInstanceNameForCard(card) {
  * @param {Object} limits - Limits: per-app number or per-instance (limits[app].instances[instanceName])
  */
 function updateHourlyCapDisplay(caps, limits) {
-    const apps = ['movie_hunt', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr'];
+    const apps = ['movie_hunt', 'tv_hunt', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'swaparr'];
 
     apps.forEach(app => {
         if (!caps[app]) return;
