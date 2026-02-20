@@ -1,7 +1,8 @@
 """
 Requestarr Instance Bundles Routes
-CRUD for instance bundles — groups of services that cascade requests.
-Owner-only endpoints.
+CRUD for instance bundles — groups of instances that cascade requests.
+Bundles reference instances by app_type + instance_name directly (no services table dependency).
+Owner-only endpoints (except dropdown which is available to all authenticated users).
 """
 
 from flask import Blueprint, request, jsonify
@@ -41,6 +42,63 @@ def _require_owner():
     return user, None
 
 
+def _require_auth():
+    """Check that the current user is authenticated (any role)."""
+    session_token = request.cookies.get(SESSION_COOKIE_NAME)
+    username = get_username_from_session(session_token)
+    if not username:
+        try:
+            from src.primary.settings_manager import load_settings
+            settings = load_settings("general")
+            if settings.get("local_access_bypass") or settings.get("proxy_auth_bypass"):
+                return True, None
+        except Exception:
+            pass
+        return False, (jsonify({'error': 'Not authenticated'}), 401)
+    return True, None
+
+
+def _get_all_available_instances():
+    """Discover all known instances from settings/DB. Returns {movies: [...], tv: [...]}."""
+    from src.primary.settings_manager import load_settings
+    db = get_database()
+    result = {'movies': [], 'tv': []}
+
+    # Radarr instances
+    try:
+        radarr_config = load_settings('radarr')
+        for inst in (radarr_config.get('instances') or []):
+            name = (inst.get('name') or '').strip()
+            if name and inst.get('url') and inst.get('api_key'):
+                result['movies'].append({'app_type': 'radarr', 'instance_name': name})
+    except Exception:
+        pass
+
+    # Movie Hunt instances
+    for inst in (db.get_movie_hunt_instances() or []):
+        name = (inst.get('name') or '').strip()
+        if name:
+            result['movies'].append({'app_type': 'movie_hunt', 'instance_name': name})
+
+    # Sonarr instances
+    try:
+        sonarr_config = load_settings('sonarr')
+        for inst in (sonarr_config.get('instances') or []):
+            name = (inst.get('name') or '').strip()
+            if name and inst.get('url') and inst.get('api_key'):
+                result['tv'].append({'app_type': 'sonarr', 'instance_name': name})
+    except Exception:
+        pass
+
+    # TV Hunt instances
+    for inst in (db.get_tv_hunt_instances() or []):
+        name = (inst.get('name') or '').strip()
+        if name:
+            result['tv'].append({'app_type': 'tv_hunt', 'instance_name': name})
+
+    return result
+
+
 @requestarr_bundles_bp.route('', methods=['GET'])
 def get_bundles():
     """Get all bundles, optionally filtered by ?type=movies|tv."""
@@ -67,18 +125,19 @@ def create_bundle():
         data = request.json or {}
         name = (data.get('name') or '').strip()
         service_type = (data.get('service_type') or '').strip()
-        primary_service_id = data.get('primary_service_id')
-        member_service_ids = data.get('member_service_ids', [])
+        primary_app_type = (data.get('primary_app_type') or '').strip()
+        primary_instance_name = (data.get('primary_instance_name') or '').strip()
+        members = data.get('members', [])
 
         if not name:
             return jsonify({'error': 'Bundle name is required'}), 400
         if service_type not in ('movies', 'tv'):
             return jsonify({'error': 'service_type must be movies or tv'}), 400
-        if not primary_service_id:
-            return jsonify({'error': 'primary_service_id is required'}), 400
+        if not primary_app_type or not primary_instance_name:
+            return jsonify({'error': 'primary_app_type and primary_instance_name are required'}), 400
 
         db = get_database()
-        bundle_id = db.create_bundle(name, service_type, primary_service_id, member_service_ids)
+        bundle_id = db.create_bundle(name, service_type, primary_app_type, primary_instance_name, members)
         if bundle_id:
             bundle = db.get_bundle_by_id(bundle_id)
             return jsonify({'success': True, 'bundle': bundle}), 201
@@ -98,12 +157,14 @@ def update_bundle(bundle_id):
         data = request.json or {}
         db = get_database()
         name = data.get('name')
-        primary_service_id = data.get('primary_service_id')
-        member_service_ids = data.get('member_service_ids')
+        primary_app_type = data.get('primary_app_type')
+        primary_instance_name = data.get('primary_instance_name')
+        members = data.get('members')
 
         success = db.update_bundle(bundle_id, name=name,
-                                   primary_service_id=primary_service_id,
-                                   member_service_ids=member_service_ids)
+                                   primary_app_type=primary_app_type,
+                                   primary_instance_name=primary_instance_name,
+                                   members=members)
         if success:
             bundle = db.get_bundle_by_id(bundle_id)
             return jsonify({'success': True, 'bundle': bundle})
@@ -132,51 +193,37 @@ def delete_bundle(bundle_id):
 
 @requestarr_bundles_bp.route('/dropdown', methods=['GET'])
 def get_bundles_dropdown():
-    """Get bundles formatted for dropdown selectors.
+    """Get bundles + unbundled instances formatted for dropdown selectors.
     Any authenticated user can call this.
     Returns: { movie_options: [...], tv_options: [...] }
-    Each option: { value: "bundle:<id>", label: "Bundle Name", primary_app_type, primary_instance_name }
-    Unbundled instances are also included as standalone options.
+    Bundles first, then unbundled instances.
     """
+    _, err = _require_auth()
+    if err:
+        return err
     try:
-        session_token = request.cookies.get(SESSION_COOKIE_NAME)
-        username = get_username_from_session(session_token)
-        if not username:
-            try:
-                from src.primary.settings_manager import load_settings
-                settings = load_settings("general")
-                if settings.get("local_access_bypass") or settings.get("proxy_auth_bypass"):
-                    db = get_database()
-                    user = db.get_first_user()
-                    if user:
-                        username = user.get('username')
-            except Exception:
-                pass
-        if not username:
-            return jsonify({'error': 'Not authenticated'}), 401
-
         db = get_database()
         bundles = db.get_bundles()
-        services = db.get_requestarr_services()
+        available = _get_all_available_instances()
 
-        # Track which service IDs are used in bundles (as primary)
-        bundled_primary_ids = set()
+        app_labels = {'radarr': 'Radarr', 'sonarr': 'Sonarr',
+                      'movie_hunt': 'Movie Hunt', 'tv_hunt': 'TV Hunt'}
+
+        # Track which instances are used as primary in a bundle
+        bundled_primaries = set()
         for b in bundles:
-            bundled_primary_ids.add(b['primary_service_id'])
+            bundled_primaries.add((b['primary_app_type'], b['primary_instance_name']))
 
         movie_options = []
         tv_options = []
 
         # Add bundles first
         for b in bundles:
-            primary_svc = next((s for s in services if s['id'] == b['primary_service_id']), None)
-            if not primary_svc:
-                continue
             opt = {
                 'value': f"bundle:{b['id']}",
                 'label': b['name'],
-                'primary_app_type': primary_svc['app_type'],
-                'primary_instance_name': primary_svc['instance_name'],
+                'primary_app_type': b['primary_app_type'],
+                'primary_instance_name': b['primary_instance_name'],
                 'is_bundle': True,
                 'bundle_id': b['id'],
             }
@@ -185,23 +232,32 @@ def get_bundles_dropdown():
             else:
                 tv_options.append(opt)
 
-        # Add unbundled services (not used as primary in any bundle)
-        for s in services:
-            if s['id'] in bundled_primary_ids:
+        # Add unbundled instances
+        for inst in available.get('movies', []):
+            key = (inst['app_type'], inst['instance_name'])
+            if key in bundled_primaries:
                 continue
-            app_label = {'radarr': 'Radarr', 'sonarr': 'Sonarr',
-                         'movie_hunt': 'Movie Hunt', 'tv_hunt': 'TV Hunt'}.get(s['app_type'], s['app_type'])
-            opt = {
-                'value': f"{s['app_type']}:{s['instance_name']}",
-                'label': f"{app_label} \u2013 {s['instance_name']}",
-                'primary_app_type': s['app_type'],
-                'primary_instance_name': s['instance_name'],
+            label = f"{app_labels.get(inst['app_type'], inst['app_type'])} \u2013 {inst['instance_name']}"
+            movie_options.append({
+                'value': f"{inst['app_type']}:{inst['instance_name']}",
+                'label': label,
+                'primary_app_type': inst['app_type'],
+                'primary_instance_name': inst['instance_name'],
                 'is_bundle': False,
-            }
-            if s['service_type'] == 'movies':
-                movie_options.append(opt)
-            else:
-                tv_options.append(opt)
+            })
+
+        for inst in available.get('tv', []):
+            key = (inst['app_type'], inst['instance_name'])
+            if key in bundled_primaries:
+                continue
+            label = f"{app_labels.get(inst['app_type'], inst['app_type'])} \u2013 {inst['instance_name']}"
+            tv_options.append({
+                'value': f"{inst['app_type']}:{inst['instance_name']}",
+                'label': label,
+                'primary_app_type': inst['app_type'],
+                'primary_instance_name': inst['instance_name'],
+                'is_bundle': False,
+            })
 
         return jsonify({
             'movie_options': movie_options,
@@ -210,3 +266,17 @@ def get_bundles_dropdown():
     except Exception as e:
         logger.error(f"Error getting bundles dropdown: {e}")
         return jsonify({'error': 'Failed to get dropdown options'}), 500
+
+
+@requestarr_bundles_bp.route('/available', methods=['GET'])
+def get_available_instances():
+    """Get all available instances for bundle creation. Owner-only."""
+    _, err = _require_owner()
+    if err:
+        return err
+    try:
+        available = _get_all_available_instances()
+        return jsonify(available)
+    except Exception as e:
+        logger.error(f"Error getting available instances: {e}")
+        return jsonify({'error': 'Failed to get available instances'}), 500

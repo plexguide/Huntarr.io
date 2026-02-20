@@ -1276,26 +1276,83 @@ class HuntarrDatabase(ConfigMixin, StateMixin, UsersMixin, RequestarrMixin, Extr
             except Exception as e:
                 logger.error(f"Migration error (requestarr_requests UNIQUE drop): {e}")
 
-            # ── Instance Bundles (group services for cascading requests) ──
+            # ── Instance Bundles (v2: references app_type+instance_name directly) ──
+            # Migrate from v1 (service_id based) to v2 (app_type+instance_name based)
+            try:
+                cols = [r[1] for r in conn.execute('PRAGMA table_info(requestarr_bundles)').fetchall()]
+                if 'primary_service_id' in cols and 'primary_app_type' not in cols:
+                    logger.info("Migrating requestarr_bundles from v1 (service_id) to v2 (app_type+instance_name)")
+                    # Read old data with service lookups
+                    old_bundles = conn.execute('''
+                        SELECT b.id, b.name, b.service_type, s.app_type, s.instance_name
+                        FROM requestarr_bundles b
+                        LEFT JOIN requestarr_services s ON s.id = b.primary_service_id
+                    ''').fetchall()
+                    old_members = conn.execute('''
+                        SELECT bm.bundle_id, s.app_type, s.instance_name
+                        FROM requestarr_bundle_members bm
+                        LEFT JOIN requestarr_services s ON s.id = bm.service_id
+                    ''').fetchall()
+                    conn.execute('DROP TABLE IF EXISTS requestarr_bundle_members')
+                    conn.execute('DROP TABLE IF EXISTS requestarr_bundles')
+                    # Create v2 tables (below) then re-insert
+                    conn.execute('''
+                        CREATE TABLE IF NOT EXISTS requestarr_bundles (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            name TEXT NOT NULL UNIQUE,
+                            service_type TEXT NOT NULL,
+                            primary_app_type TEXT NOT NULL,
+                            primary_instance_name TEXT NOT NULL,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )
+                    ''')
+                    conn.execute('''
+                        CREATE TABLE IF NOT EXISTS requestarr_bundle_members (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            bundle_id INTEGER NOT NULL,
+                            app_type TEXT NOT NULL,
+                            instance_name TEXT NOT NULL,
+                            UNIQUE(bundle_id, app_type, instance_name),
+                            FOREIGN KEY (bundle_id) REFERENCES requestarr_bundles(id) ON DELETE CASCADE
+                        )
+                    ''')
+                    for ob in old_bundles:
+                        if ob[3] and ob[4]:  # app_type and instance_name resolved
+                            conn.execute('''
+                                INSERT OR IGNORE INTO requestarr_bundles (id, name, service_type, primary_app_type, primary_instance_name)
+                                VALUES (?, ?, ?, ?, ?)
+                            ''', (ob[0], ob[1], ob[2], ob[3], ob[4]))
+                    for om in old_members:
+                        if om[1] and om[2]:
+                            conn.execute('''
+                                INSERT OR IGNORE INTO requestarr_bundle_members (bundle_id, app_type, instance_name)
+                                VALUES (?, ?, ?)
+                            ''', (om[0], om[1], om[2]))
+                    conn.commit()
+                    logger.info("Migration complete: requestarr_bundles v2")
+            except Exception as e:
+                logger.error(f"Migration error (requestarr_bundles v2): {e}")
+
             conn.execute('''
                 CREATE TABLE IF NOT EXISTS requestarr_bundles (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL UNIQUE,
                     service_type TEXT NOT NULL,
-                    primary_service_id INTEGER NOT NULL,
+                    primary_app_type TEXT NOT NULL,
+                    primary_instance_name TEXT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (primary_service_id) REFERENCES requestarr_services(id) ON DELETE CASCADE
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
             conn.execute('''
                 CREATE TABLE IF NOT EXISTS requestarr_bundle_members (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     bundle_id INTEGER NOT NULL,
-                    service_id INTEGER NOT NULL,
-                    UNIQUE(bundle_id, service_id),
-                    FOREIGN KEY (bundle_id) REFERENCES requestarr_bundles(id) ON DELETE CASCADE,
-                    FOREIGN KEY (service_id) REFERENCES requestarr_services(id) ON DELETE CASCADE
+                    app_type TEXT NOT NULL,
+                    instance_name TEXT NOT NULL,
+                    UNIQUE(bundle_id, app_type, instance_name),
+                    FOREIGN KEY (bundle_id) REFERENCES requestarr_bundles(id) ON DELETE CASCADE
                 )
             ''')
 

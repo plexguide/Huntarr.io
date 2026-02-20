@@ -1097,10 +1097,10 @@ class RequestarrMixin:
             bundles = [dict(r) for r in rows]
             for b in bundles:
                 members = conn.execute(
-                    'SELECT service_id FROM requestarr_bundle_members WHERE bundle_id = ?',
+                    'SELECT app_type, instance_name FROM requestarr_bundle_members WHERE bundle_id = ?',
                     (b['id'],)
                 ).fetchall()
-                b['member_service_ids'] = [m['service_id'] for m in members]
+                b['members'] = [{'app_type': m['app_type'], 'instance_name': m['instance_name']} for m in members]
             return bundles
 
     def get_bundle_by_id(self, bundle_id: int) -> Optional[dict]:
@@ -1112,18 +1112,18 @@ class RequestarrMixin:
                 return None
             b = dict(row)
             members = conn.execute(
-                'SELECT service_id FROM requestarr_bundle_members WHERE bundle_id = ?',
+                'SELECT app_type, instance_name FROM requestarr_bundle_members WHERE bundle_id = ?',
                 (bundle_id,)
             ).fetchall()
-            b['member_service_ids'] = [m['service_id'] for m in members]
+            b['members'] = [{'app_type': m['app_type'], 'instance_name': m['instance_name']} for m in members]
             return b
 
-    def create_bundle(self, name: str, service_type: str, primary_service_id: int,
-                      member_service_ids: List[int] = None) -> Optional[int]:
-        """Create a bundle. Auto-suffixes name with -1, -2 etc on collision. Returns bundle ID."""
+    def create_bundle(self, name: str, service_type: str, primary_app_type: str,
+                      primary_instance_name: str, members: list = None) -> Optional[int]:
+        """Create a bundle. members is a list of {app_type, instance_name} dicts.
+        Auto-suffixes name with -1, -2 etc on collision. Returns bundle ID."""
         try:
             with self.get_connection() as conn:
-                # Ensure unique name
                 base_name = name.strip()
                 final_name = base_name
                 suffix = 0
@@ -1137,34 +1137,39 @@ class RequestarrMixin:
                     final_name = f"{base_name}-{suffix}"
 
                 cursor = conn.execute('''
-                    INSERT INTO requestarr_bundles (name, service_type, primary_service_id)
-                    VALUES (?, ?, ?)
-                ''', (final_name, service_type, primary_service_id))
+                    INSERT INTO requestarr_bundles (name, service_type, primary_app_type, primary_instance_name)
+                    VALUES (?, ?, ?, ?)
+                ''', (final_name, service_type, primary_app_type, primary_instance_name))
                 bundle_id = cursor.lastrowid
 
-                # Add members (excluding primary — primary is implicit)
-                for sid in (member_service_ids or []):
-                    if sid != primary_service_id:
-                        try:
-                            conn.execute(
-                                'INSERT INTO requestarr_bundle_members (bundle_id, service_id) VALUES (?, ?)',
-                                (bundle_id, sid)
-                            )
-                        except sqlite3.IntegrityError:
-                            pass  # duplicate
+                for m in (members or []):
+                    m_app = m.get('app_type', '')
+                    m_inst = m.get('instance_name', '')
+                    if not m_app or not m_inst:
+                        continue
+                    # Skip if same as primary (primary is implicit)
+                    if m_app == primary_app_type and m_inst == primary_instance_name:
+                        continue
+                    try:
+                        conn.execute(
+                            'INSERT INTO requestarr_bundle_members (bundle_id, app_type, instance_name) VALUES (?, ?, ?)',
+                            (bundle_id, m_app, m_inst)
+                        )
+                    except sqlite3.IntegrityError:
+                        pass
                 conn.commit()
                 return bundle_id
         except Exception as e:
             logger.error(f"Error creating bundle: {e}")
             return None
 
-    def update_bundle(self, bundle_id: int, name: str = None, primary_service_id: int = None,
-                      member_service_ids: List[int] = None) -> bool:
-        """Update a bundle's name, primary, and/or members."""
+    def update_bundle(self, bundle_id: int, name: str = None, primary_app_type: str = None,
+                      primary_instance_name: str = None, members: list = None) -> bool:
+        """Update a bundle's name, primary, and/or members.
+        members is a list of {app_type, instance_name} dicts."""
         try:
             with self.get_connection() as conn:
                 if name is not None:
-                    # Ensure unique name (excluding self)
                     base_name = name.strip()
                     final_name = base_name
                     suffix = 0
@@ -1181,25 +1186,31 @@ class RequestarrMixin:
                         'UPDATE requestarr_bundles SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
                         (final_name, bundle_id)
                     )
-                if primary_service_id is not None:
+                if primary_app_type is not None and primary_instance_name is not None:
                     conn.execute(
-                        'UPDATE requestarr_bundles SET primary_service_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-                        (primary_service_id, bundle_id)
+                        'UPDATE requestarr_bundles SET primary_app_type = ?, primary_instance_name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                        (primary_app_type, primary_instance_name, bundle_id)
                     )
-                if member_service_ids is not None:
+                if members is not None:
                     # Get current primary
-                    row = conn.execute('SELECT primary_service_id FROM requestarr_bundles WHERE id = ?', (bundle_id,)).fetchone()
-                    pid = (primary_service_id if primary_service_id is not None else (row[0] if row else 0))
+                    row = conn.execute('SELECT primary_app_type, primary_instance_name FROM requestarr_bundles WHERE id = ?', (bundle_id,)).fetchone()
+                    p_app = primary_app_type if primary_app_type is not None else (row[0] if row else '')
+                    p_inst = primary_instance_name if primary_instance_name is not None else (row[1] if row else '')
                     conn.execute('DELETE FROM requestarr_bundle_members WHERE bundle_id = ?', (bundle_id,))
-                    for sid in member_service_ids:
-                        if sid != pid:
-                            try:
-                                conn.execute(
-                                    'INSERT INTO requestarr_bundle_members (bundle_id, service_id) VALUES (?, ?)',
-                                    (bundle_id, sid)
-                                )
-                            except sqlite3.IntegrityError:
-                                pass
+                    for m in members:
+                        m_app = m.get('app_type', '')
+                        m_inst = m.get('instance_name', '')
+                        if not m_app or not m_inst:
+                            continue
+                        if m_app == p_app and m_inst == p_inst:
+                            continue
+                        try:
+                            conn.execute(
+                                'INSERT INTO requestarr_bundle_members (bundle_id, app_type, instance_name) VALUES (?, ?, ?)',
+                                (bundle_id, m_app, m_inst)
+                            )
+                        except sqlite3.IntegrityError:
+                            pass
                 conn.commit()
                 return True
         except Exception as e:
@@ -1218,36 +1229,26 @@ class RequestarrMixin:
             logger.error(f"Error deleting bundle: {e}")
             return False
 
-    def get_bundles_for_service(self, service_id: int) -> list:
-        """Get all bundles where this service is the primary.
+    def get_bundles_for_instance(self, app_type: str, instance_name: str) -> list:
+        """Get all bundles where this instance is the primary.
         Returns list of bundles with member details for cascading requests."""
         with self.get_connection() as conn:
             conn.row_factory = sqlite3.Row
             bundles = conn.execute(
-                'SELECT * FROM requestarr_bundles WHERE primary_service_id = ?',
-                (service_id,)
+                'SELECT * FROM requestarr_bundles WHERE primary_app_type = ? AND primary_instance_name = ?',
+                (app_type, instance_name)
             ).fetchall()
             result = []
             for b in bundles:
                 bd = dict(b)
-                members = conn.execute('''
-                    SELECT bm.service_id, s.app_type, s.instance_name, s.service_type
-                    FROM requestarr_bundle_members bm
-                    JOIN requestarr_services s ON s.id = bm.service_id
-                    WHERE bm.bundle_id = ?
-                ''', (bd['id'],)).fetchall()
-                bd['members'] = [dict(m) for m in members]
+                members = conn.execute(
+                    'SELECT app_type, instance_name FROM requestarr_bundle_members WHERE bundle_id = ?',
+                    (bd['id'],)
+                ).fetchall()
+                bd['members'] = [{'app_type': m['app_type'], 'instance_name': m['instance_name']} for m in members]
                 result.append(bd)
             return result
 
-    def get_service_id_by_instance(self, app_type: str, instance_name: str) -> Optional[int]:
-        """Get the service ID for a given app_type + instance_name."""
-        with self.get_connection() as conn:
-            row = conn.execute(
-                'SELECT id FROM requestarr_services WHERE app_type = ? AND instance_name = ?',
-                (app_type, instance_name)
-            ).fetchone()
-            return row[0] if row else None
 
     # ------------------------------------------------------------------
     # Notification Connections CRUD

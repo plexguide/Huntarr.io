@@ -1039,11 +1039,7 @@ class RequestsMixin:
         Returns a list of {instance_name, app_type, success, message} for each member."""
         results = []
         try:
-            service_id = self.db.get_service_id_by_instance(app_type, instance_name)
-            if not service_id:
-                return results
-
-            bundles = self.db.get_bundles_for_service(service_id)
+            bundles = self.db.get_bundles_for_instance(app_type, instance_name)
             if not bundles:
                 return results
 
@@ -1063,7 +1059,6 @@ class RequestsMixin:
                             skip_tracking=True
                         )
                         status = result.get('status', '')
-                        # already_exists / already_complete are fine — means the member already has it
                         success = result.get('success', False) or status in ('already_exists', 'already_complete')
                         results.append({
                             'bundle': bundle['name'],
