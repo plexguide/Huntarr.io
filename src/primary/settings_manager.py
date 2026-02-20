@@ -645,6 +645,76 @@ def get_ssl_verify_setting():
     return get_advanced_setting("ssl_verify", True)  # Default to True for security
 
 
+def get_proxy_settings():
+    """
+    Build a requests-compatible proxies dict from general settings.
+    Returns None if proxy is disabled, otherwise returns {'http': url, 'https': url}.
+    """
+    general = load_settings("general")
+    if not general.get("proxy_enabled", False):
+        return None
+    ptype = general.get("proxy_type", "http")
+    host = (general.get("proxy_hostname") or "").strip()
+    port = general.get("proxy_port", 8080)
+    user = (general.get("proxy_username") or "").strip()
+    pwd = (general.get("proxy_password") or "").strip()
+    if not host:
+        return None
+    # Build scheme
+    if ptype == "socks5":
+        scheme = "socks5h"
+    elif ptype == "socks4":
+        scheme = "socks4"
+    else:
+        scheme = "http"
+    # Build auth portion
+    if user and pwd:
+        from urllib.parse import quote
+        auth = f"{quote(user, safe='')}:{quote(pwd, safe='')}@"
+    elif user:
+        from urllib.parse import quote
+        auth = f"{quote(user, safe='')}@"
+    else:
+        auth = ""
+    proxy_url = f"{scheme}://{auth}{host}:{port}"
+    return {"http": proxy_url, "https": proxy_url}
+
+
+def get_proxy_ignored_addresses():
+    """
+    Get the comma-separated list of addresses that bypass the proxy.
+    Returns a list of stripped strings.
+    """
+    general = load_settings("general")
+    raw = (general.get("proxy_ignored_addresses") or "").strip()
+    if not raw:
+        return []
+    return [a.strip() for a in raw.split(",") if a.strip()]
+
+
+def apply_proxy_env():
+    """
+    Apply proxy settings as environment variables so the `requests` library
+    (and any other HTTP client that respects standard proxy env vars) picks
+    them up automatically. Call at startup and whenever proxy settings change.
+    """
+    proxies = get_proxy_settings()
+    if proxies:
+        os.environ["HTTP_PROXY"] = proxies["http"]
+        os.environ["HTTPS_PROXY"] = proxies["https"]
+        ignored = get_proxy_ignored_addresses()
+        if ignored:
+            os.environ["NO_PROXY"] = ",".join(ignored)
+        elif "NO_PROXY" in os.environ:
+            del os.environ["NO_PROXY"]
+        settings_logger.info("Proxy enabled: %s", proxies["http"].split("@")[-1] if "@" in proxies["http"] else proxies["http"])
+    else:
+        # Clear proxy env vars if proxy is disabled
+        for key in ("HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY"):
+            os.environ.pop(key, None)
+        settings_logger.debug("Proxy disabled, env vars cleared")
+
+
 def get_frame_ancestors_setting():
     """
     Get the CSP frame-ancestors setting.

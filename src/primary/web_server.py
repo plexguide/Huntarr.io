@@ -816,6 +816,15 @@ def save_general_settings():
             except Exception as e:
                 general_logger.error(f"Error refreshing log handlers: {e}")
         
+        # Re-apply proxy environment variables if proxy settings changed
+        proxy_keys = ["proxy_enabled", "proxy_type", "proxy_hostname", "proxy_port",
+                       "proxy_username", "proxy_password", "proxy_ignored_addresses"]
+        if any(key in data for key in proxy_keys):
+            try:
+                settings_manager.apply_proxy_env()
+            except Exception as e:
+                general_logger.error(f"Error applying proxy settings: {e}")
+        
         # Return all settings
         return jsonify(settings_manager.get_all_settings())
     else:

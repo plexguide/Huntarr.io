@@ -592,6 +592,13 @@ def main():
             huntarr_logger.info("Sponsors database refreshed from manifest.json")
         except Exception as sponsor_error:
             huntarr_logger.warning(f"Failed to refresh sponsors on startup: {sponsor_error}")
+
+        # Apply proxy settings from database to environment variables
+        try:
+            from primary.settings_manager import apply_proxy_env
+            apply_proxy_env()
+        except Exception as proxy_error:
+            huntarr_logger.warning(f"Failed to apply proxy settings: {proxy_error}")
         
     except Exception as e:
         huntarr_logger.error(f"Failed to initialize databases: {e}")

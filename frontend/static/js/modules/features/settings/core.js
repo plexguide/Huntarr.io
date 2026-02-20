@@ -790,6 +790,13 @@ window.SettingsForms = {
                 base_url: getVal('base_url', ''),
                 dev_key: getVal('dev_key', ''),
                 web_server_threads: parseInt(container.querySelector('#web_server_threads')?.value || '32'),
+                proxy_enabled: getVal('proxy_enabled', false),
+                proxy_type: getVal('proxy_type', 'http'),
+                proxy_hostname: getVal('proxy_hostname', ''),
+                proxy_port: parseInt(container.querySelector('#proxy_port')?.value || '8080'),
+                proxy_username: getVal('proxy_username', ''),
+                proxy_password: getVal('proxy_password', ''),
+                proxy_ignored_addresses: getVal('proxy_ignored_addresses', ''),
             };
         }
         if (section === 'notifications') {

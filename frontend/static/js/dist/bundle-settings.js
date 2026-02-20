@@ -792,6 +792,13 @@ window.SettingsForms = {
                 base_url: getVal('base_url', ''),
                 dev_key: getVal('dev_key', ''),
                 web_server_threads: parseInt(container.querySelector('#web_server_threads')?.value || '32'),
+                proxy_enabled: getVal('proxy_enabled', false),
+                proxy_type: getVal('proxy_type', 'http'),
+                proxy_hostname: getVal('proxy_hostname', ''),
+                proxy_port: parseInt(container.querySelector('#proxy_port')?.value || '8080'),
+                proxy_username: getVal('proxy_username', ''),
+                proxy_password: getVal('proxy_password', ''),
+                proxy_ignored_addresses: getVal('proxy_ignored_addresses', ''),
             };
         }
         if (section === 'notifications') {
@@ -14825,11 +14832,11 @@ document.head.appendChild(styleEl);
                     </div>
                 </div>
 
-                <!-- Security card -->
+                <!-- Security & Networking card -->
                 <div class="mset-card">
                     <div class="mset-card-header">
                         <div class="mset-card-icon mset-icon-amber"><i class="fas fa-shield-alt"></i></div>
-                        <h3>Security</h3>
+                        <h3>Security &amp; Networking</h3>
                     </div>
                     <div class="mset-card-body">
                         <div class="setting-item">
@@ -14858,6 +14865,47 @@ document.head.appendChild(styleEl);
                             </select>
                             <input type="text" id="frame_ancestors_custom" class="mset-input" placeholder="'self' https://organizr.local https://homepage.local" value="${settings.frame_ancestors && settings.frame_ancestors !== "'self'" && settings.frame_ancestors !== "*" ? settings.frame_ancestors : ""}" style="margin-top: 8px; display: ${settings.frame_ancestors && settings.frame_ancestors !== "'self'" && settings.frame_ancestors !== "*" ? "block" : "none"};">
                             <p class="setting-help">Allow Huntarr to be embedded in iframes (e.g. Organizr, Homepage). Custom origins use CSP frame-ancestors syntax.</p>
+                        </div>
+                        <div style="margin-top: 18px; border-top: 1px solid rgba(148, 163, 184, 0.08); padding-top: 15px;">
+                            <div class="setting-item flex-row">
+                                <label for="proxy_enabled">Use Proxy:</label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="proxy_enabled" ${settings.proxy_enabled === true ? "checked" : ""}>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <p class="setting-help">Route outbound HTTP requests through a proxy server (HTTP, SOCKS4, or SOCKS5).</p>
+                            <div id="proxy-fields" style="display: ${settings.proxy_enabled ? "block" : "none"}; margin-top: 12px;">
+                                <div class="setting-item">
+                                    <label for="proxy_type">Proxy Type:</label>
+                                    <select id="proxy_type" class="mset-select">
+                                        <option value="http" ${(settings.proxy_type || "http") === "http" ? "selected" : ""}>HTTP(S)</option>
+                                        <option value="socks4" ${settings.proxy_type === "socks4" ? "selected" : ""}>SOCKS4</option>
+                                        <option value="socks5" ${settings.proxy_type === "socks5" ? "selected" : ""}>SOCKS5 (Tor supported)</option>
+                                    </select>
+                                </div>
+                                <div class="setting-item">
+                                    <label for="proxy_hostname">Hostname:</label>
+                                    <input type="text" id="proxy_hostname" value="${settings.proxy_hostname || ""}" placeholder="proxy.example.com" class="mset-input">
+                                </div>
+                                <div class="setting-item">
+                                    <label for="proxy_port">Port:</label>
+                                    <input type="number" id="proxy_port" value="${settings.proxy_port || 8080}" min="1" max="65535" class="mset-input" style="max-width: 120px;">
+                                </div>
+                                <div class="setting-item">
+                                    <label for="proxy_username">Username:</label>
+                                    <input type="text" id="proxy_username" value="${settings.proxy_username || ""}" placeholder="Optional" class="mset-input" autocomplete="off">
+                                </div>
+                                <div class="setting-item">
+                                    <label for="proxy_password">Password:</label>
+                                    <input type="password" id="proxy_password" value="${settings.proxy_password || ""}" placeholder="Optional" class="mset-input" autocomplete="off">
+                                </div>
+                                <div class="setting-item">
+                                    <label for="proxy_ignored_addresses">Bypassed Addresses:</label>
+                                    <input type="text" id="proxy_ignored_addresses" value="${settings.proxy_ignored_addresses || ""}" placeholder="localhost, 192.168.*, *.local" class="mset-input">
+                                    <p class="setting-help">Comma-separated list of domains/IPs that bypass the proxy. Wildcards (*) supported.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -14911,6 +14959,24 @@ document.head.appendChild(styleEl);
 
             </div>
         `;
+
+        // Proxy toggle: show/hide proxy fields
+        var proxyToggle = container.querySelector('#proxy_enabled');
+        var proxyFields = container.querySelector('#proxy-fields');
+        if (proxyToggle && proxyFields) {
+            proxyToggle.addEventListener('change', function() {
+                proxyFields.style.display = proxyToggle.checked ? 'block' : 'none';
+            });
+        }
+
+        // Frame ancestors: show/hide custom input
+        var frameSelect = container.querySelector('#frame_ancestors');
+        var frameCustom = container.querySelector('#frame_ancestors_custom');
+        if (frameSelect && frameCustom) {
+            frameSelect.addEventListener('change', function() {
+                frameCustom.style.display = frameSelect.value === 'custom' ? 'block' : 'none';
+            });
+        }
 
         // Reset Media Hunt Wizard button
         var resetWizardBtn = container.querySelector('#reset-media-hunt-wizard-btn');
