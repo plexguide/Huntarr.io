@@ -39,7 +39,7 @@ def process_missing_items(
     Returns:
         True if any items were processed, False otherwise.
     """
-    whisparr_logger.info("Starting missing items processing cycle for Whisparr.")
+    whisparr_logger.info(f"Missing: checking for {hunt_missing_items} items for '{instance_name}'")
     processed_any = False
     
     # Reset state files if enough time has passed
@@ -137,7 +137,7 @@ def process_missing_items(
         missing_items, "whisparr", instance_key,
         get_id_fn=lambda item: item.get("id"), logger=whisparr_logger
     )
-    whisparr_logger.info(f"Found {len(unprocessed_items)} unprocessed items out of {len(missing_items)} total items with missing files.")
+    whisparr_logger.info(f"Missing: {len(unprocessed_items)} unprocessed of {len(missing_items)} total items")
     
     if not unprocessed_items:
         whisparr_logger.info(f"No unprocessed items found for {instance_name}. All available items have been processed.")
@@ -147,10 +147,9 @@ def process_missing_items(
     processing_done = False
     
     # Select items to search based on configuration
-    whisparr_logger.info(f"Randomly selecting up to {hunt_missing_items} missing items.")
     items_to_search = random.sample(unprocessed_items, min(len(unprocessed_items), hunt_missing_items))
     
-    whisparr_logger.info(f"Selected {len(items_to_search)} missing items to search.")
+    whisparr_logger.info(f"Missing: selected {len(items_to_search)} items for search:")
 
     # Process selected items
     for item in items_to_search:
@@ -204,20 +203,13 @@ def process_missing_items(
             # Increment the hunted statistics for Whisparr
             increment_stat("whisparr", "hunted", 1, instance_key)
             whisparr_logger.debug(f"Incremented whisparr hunted statistics by 1")
-
-            # Log progress
-            current_limit = app_settings.get("hunt_missing_items", app_settings.get("hunt_missing_scenes", 1))
-            whisparr_logger.info(f"Processed {items_processed}/{current_limit} missing items this cycle.")
         else:
             whisparr_logger.warning(f"Failed to trigger search command for item ID {item_id}.")
             # Do not mark as processed if search couldn't be triggered
             continue
     
     # Log final status
-    if items_processed > 0:
-        whisparr_logger.info(f"Completed processing {items_processed} missing items for this cycle.")
-    else:
-        whisparr_logger.info("No new missing items were processed in this run.")
+    whisparr_logger.info(f"Missing: processed {items_processed} of {len(items_to_search)} items")
         
     return processing_done
 

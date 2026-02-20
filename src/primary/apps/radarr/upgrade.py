@@ -72,7 +72,7 @@ def process_cutoff_upgrades(
     Returns:
         True if any movies were processed for upgrades, False otherwise.
     """
-    radarr_logger.info("Starting quality cutoff upgrades processing cycle for Radarr.")
+    radarr_logger.info(f"Upgrade: checking for {hunt_upgrade_movies} movies for '{instance_name}'")
     processed_any = False
     
     # Extract common settings using shared utility
@@ -261,16 +261,15 @@ def process_cutoff_upgrades(
         upgrade_eligible_data, "radarr", instance_key,
         get_id_fn=lambda m: m.get("id"), logger=radarr_logger
     )
-    radarr_logger.info(f"Found {len(unprocessed_movies)} unprocessed movies for upgrade out of {len(upgrade_eligible_data)} total.")
+    radarr_logger.info(f"Upgrade: {len(unprocessed_movies)} unprocessed of {len(upgrade_eligible_data)} total movies")
     
     if not unprocessed_movies:
         radarr_logger.info("No upgradeable movies found to process (after filtering already processed). Skipping.")
         return False
         
-    radarr_logger.info(f"Randomly selecting up to {hunt_upgrade_movies} movies for upgrade search.")
     movies_to_process = random.sample(unprocessed_movies, min(hunt_upgrade_movies, len(unprocessed_movies)))
         
-    radarr_logger.info(f"Selected {len(movies_to_process)} movies to search for upgrades.")
+    radarr_logger.info(f"Upgrade: selected {len(movies_to_process)} movies for search:")
     processed_count = 0
     processed_something = False
     
@@ -323,6 +322,6 @@ def process_cutoff_upgrades(
             radarr_logger.warning(f"  - Failed to trigger search for quality upgrade.")
             
     # Log final status
-    radarr_logger.info(f"Completed processing {processed_count} movies for quality upgrades.")
+    radarr_logger.info(f"Upgrade: processed {processed_count} of {len(movies_to_process)} movies")
     
     return processed_something

@@ -111,9 +111,7 @@ def process_missing_movies(
     # App-specific settings
     skip_future_releases = app_settings.get("skip_future_releases", True)
     
-    radarr_logger.info("=== Radarr Missing Movies Settings ===")
-    radarr_logger.debug(f"Instance Name: {instance_name}")
-    radarr_logger.info("Starting missing movies processing cycle for Radarr.")
+    radarr_logger.info(f"Missing: checking for {hunt_missing_movies} movies in instance '{instance_name}'")
     
     if not validate_settings(api_url, api_key, hunt_missing_movies, "radarr", radarr_logger):
         return False
@@ -124,7 +122,7 @@ def process_missing_movies(
         return False
     
     # Get missing movies 
-    radarr_logger.info("Retrieving movies with missing files...")
+    radarr_logger.info("Retrieving missing movies...")
     # Use efficient random page selection instead of fetching all movies
     missing_movies = radarr_api.get_movies_with_missing_random_page(
         api_url, api_key, api_timeout, monitored_only, hunt_missing_movies * 2
@@ -234,25 +232,20 @@ def process_missing_movies(
         missing_movies, "radarr", instance_key,
         get_id_fn=lambda m: m.get("id"), logger=radarr_logger
     )
-    radarr_logger.info(f"Found {len(unprocessed_movies)} unprocessed missing movies out of {len(missing_movies)} total.")
+    radarr_logger.info(f"Missing: {len(unprocessed_movies)} unprocessed of {len(missing_movies)} total movies")
     
     if not unprocessed_movies:
-        radarr_logger.info("No unprocessed missing movies found. All available movies have been processed.")
+        radarr_logger.info("All missing movies already processed. Skipping.")
         return False
     
     # Always use random selection for missing movies
-    radarr_logger.info(f"Using random selection for missing movies")
     if len(unprocessed_movies) > hunt_missing_movies:
         movies_to_process = random.sample(unprocessed_movies, hunt_missing_movies)
     else:
         movies_to_process = unprocessed_movies
     
-    radarr_logger.info(f"Selected {len(movies_to_process)} movies to process.")
-    
-    # Add detailed logging for selected movies
-    if movies_to_process:
-        radarr_logger.info(f"Movies selected for processing in this cycle:")
-        for idx, movie in enumerate(movies_to_process):
+    radarr_logger.info(f"Missing: selected {len(movies_to_process)} movies for search:")
+    for idx, movie in enumerate(movies_to_process):
             movie_id = movie.get("id")
             movie_title = movie.get("title", "Unknown Title")
             year = movie.get("year", "Unknown Year")
@@ -298,5 +291,5 @@ def process_missing_movies(
         else:
             radarr_logger.warning(f"Failed to trigger search for movie '{movie_title}'")
     
-    radarr_logger.info(f"Finished processing missing movies. Processed {movies_processed} of {len(movies_to_process)} selected movies.")
+    radarr_logger.info(f"Missing: processed {movies_processed} of {len(movies_to_process)} movies")
     return processed_any

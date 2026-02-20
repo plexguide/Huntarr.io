@@ -37,7 +37,7 @@ def process_cutoff_upgrades(
     Returns:
         True if any books were processed for upgrades, False otherwise.
     """
-    readarr_logger.info("Starting quality cutoff upgrades processing cycle for Readarr.")
+    readarr_logger.info(f"Upgrade: checking for {hunt_upgrade_books} books for '{instance_name}'")
     
     # Reset state files if enough time has passed
     check_state_reset("readarr")
@@ -54,8 +54,6 @@ def process_cutoff_upgrades(
     monitored_only = s['monitored_only']
     hunt_upgrade_books = s['hunt_count']
     tag_settings = s['tag_settings']
-    
-    readarr_logger.info(f"Using API timeout of {api_timeout} seconds for Readarr")
     
     # App-specific settings
     upgrade_selection_method = (app_settings.get("upgrade_selection_method") or "cutoff").strip().lower()
@@ -148,17 +146,15 @@ def process_cutoff_upgrades(
         upgrade_eligible_data, "readarr", instance_key,
         get_id_fn=lambda b: b.get("id"), logger=readarr_logger
     )
-    readarr_logger.info(f"Found {len(unprocessed_books)} unprocessed books out of {len(upgrade_eligible_data)} total books eligible for upgrade.")
+    readarr_logger.info(f"Upgrade: {len(unprocessed_books)} unprocessed of {len(upgrade_eligible_data)} total books")
     
     if not unprocessed_books:
         readarr_logger.info(f"No unprocessed books found for {instance_name}. All available books have been processed.")
         return False
 
-    # Always randomly select books to process
-    readarr_logger.info(f"Randomly selecting up to {hunt_upgrade_books} books for upgrade search.")
     books_to_process = random.sample(unprocessed_books, min(hunt_upgrade_books, len(unprocessed_books)))
 
-    readarr_logger.info(f"Selected {len(books_to_process)} books to search for upgrades.")
+    readarr_logger.info(f"Upgrade: selected {len(books_to_process)} books for search:")
     processed_count = 0
     processed_something = False
 
@@ -244,6 +240,6 @@ def process_cutoff_upgrades(
     else:
         readarr_logger.error(f"Failed to trigger search for book upgrades.")
 
-    readarr_logger.info(f"Completed processing {processed_count} books for upgrade this cycle.")
+    readarr_logger.info(f"Upgrade: processed {processed_count} books")
     
     return processed_something

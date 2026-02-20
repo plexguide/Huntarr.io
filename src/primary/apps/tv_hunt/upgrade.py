@@ -131,7 +131,7 @@ def process_cutoff_upgrades(
     Returns:
         True if any episodes were processed for upgrades, False otherwise
     """
-    tv_hunt_logger.info("=== Starting TV Hunt Quality Cutoff Upgrades ===")
+    tv_hunt_logger.info(f"Upgrade: checking for {hunt_upgrade_episodes} episodes for '{instance_name}'")
     
     processed_any = False
     instance_id = app_settings.get('instance_id')
@@ -164,11 +164,10 @@ def process_cutoff_upgrades(
     tv_hunt_logger.info(f"Randomly selecting up to {hunt_upgrade_episodes} episodes for quality upgrade.")
     episodes_to_upgrade = random.sample(upgrade_eligible, min(len(upgrade_eligible), hunt_upgrade_episodes))
     
-    tv_hunt_logger.info(f"Selected {len(episodes_to_upgrade)} episodes to search for upgrades.")
+    tv_hunt_logger.info(f"Upgrade: selected {len(episodes_to_upgrade)} episodes for search:")
     
     # Log selected episodes
     if episodes_to_upgrade:
-        tv_hunt_logger.info("Episodes selected for upgrade processing in this cycle:")
         for idx, episode in enumerate(episodes_to_upgrade):
             series_title = episode.get('series_title', 'Unknown')
             season = episode.get('season', 0)
@@ -237,5 +236,5 @@ def process_cutoff_upgrades(
         else:
             tv_hunt_logger.warning(f"  - Failed to trigger upgrade search for '{series_title}' S{season:02d}E{episode_num:02d}: {msg}")
     
-    tv_hunt_logger.info(f"=== Completed TV Hunt Upgrade Cycle: Processed {processed_count} of {len(episodes_to_upgrade)} selected episodes ===")
+    tv_hunt_logger.info(f"Upgrade: processed {processed_count} of {len(episodes_to_upgrade)} episodes")
     return processed_any

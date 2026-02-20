@@ -39,7 +39,7 @@ def process_cutoff_upgrades(
     Returns:
         True if any items were processed for upgrades, False otherwise.
     """
-    eros_logger.info("Starting quality cutoff upgrades processing cycle for Eros.")
+    eros_logger.info(f"Upgrade: checking for {hunt_upgrade_items} items for '{instance_name}'")
     processed_any = False
     
     # Reset state files if enough time has passed
@@ -103,7 +103,7 @@ def process_cutoff_upgrades(
         upgrade_eligible_data, "eros", instance_key,
         get_id_fn=lambda item: item.get("id"), logger=eros_logger
     )
-    eros_logger.info(f"Found {len(unprocessed_items)} unprocessed items out of {len(upgrade_eligible_data)} total items eligible for quality upgrade.")
+    eros_logger.info(f"Upgrade: {len(unprocessed_items)} unprocessed of {len(upgrade_eligible_data)} total items")
     
     if not unprocessed_items:
         eros_logger.info(f"No unprocessed items found for {instance_name}. All available items have been processed.")
@@ -112,11 +112,9 @@ def process_cutoff_upgrades(
     items_processed = 0
     processing_done = False
     
-    # Always use random selection for upgrades
-    eros_logger.info(f"Randomly selecting up to {hunt_upgrade_items} items for quality upgrade.")
     items_to_upgrade = random.sample(unprocessed_items, min(len(unprocessed_items), hunt_upgrade_items))
     
-    eros_logger.info(f"Selected {len(items_to_upgrade)} items for quality upgrade.")
+    eros_logger.info(f"Upgrade: selected {len(items_to_upgrade)} items for search:")
     
     # Process selected items
     for item in items_to_upgrade:
@@ -186,19 +184,12 @@ def process_cutoff_upgrades(
             # Increment the upgraded statistics for Eros
             increment_stat("eros", "upgraded", 1, instance_key)
             eros_logger.debug(f"Incremented eros upgraded statistics by 1")
-            
-            # Log progress
-            current_limit = app_settings.get("hunt_upgrade_items", app_settings.get("hunt_upgrade_scenes", 1))
-            eros_logger.info(f"Processed {items_processed}/{current_limit} items for quality upgrade this cycle.")
         else:
             eros_logger.warning(f"Failed to trigger search command for item ID {item_id}.")
             # Do not mark as processed if search couldn't be triggered
             continue
     
     # Log final status
-    if items_processed > 0:
-        eros_logger.info(f"Completed processing {items_processed} items for quality upgrade for this cycle.")
-    else:
-        eros_logger.info("No new items were processed for quality upgrade in this run.")
+    eros_logger.info(f"Upgrade: processed {items_processed} of {len(items_to_upgrade)} items")
         
     return processing_done

@@ -204,7 +204,7 @@ def process_cutoff_upgrades(
     Returns:
         True if any movies were processed for upgrades, False otherwise
     """
-    movie_hunt_logger.info("=== Starting Movie Hunt Quality Cutoff Upgrades ===")
+    movie_hunt_logger.info(f"Upgrade: checking for {hunt_upgrade_movies} movies for '{instance_name}'")
     
     processed_any = False
     instance_id = app_settings.get('instance_id')
@@ -237,11 +237,10 @@ def process_cutoff_upgrades(
     movie_hunt_logger.info(f"Randomly selecting up to {hunt_upgrade_movies} movies for quality upgrade.")
     movies_to_upgrade = random.sample(upgrade_eligible, min(len(upgrade_eligible), hunt_upgrade_movies))
     
-    movie_hunt_logger.info(f"Selected {len(movies_to_upgrade)} movies to search for upgrades.")
+    movie_hunt_logger.info(f"Upgrade: selected {len(movies_to_upgrade)} movies for search:")
     
     # Log selected movies
     if movies_to_upgrade:
-        movie_hunt_logger.info("Movies selected for upgrade processing in this cycle:")
         for idx, movie in enumerate(movies_to_upgrade):
             title = movie.get('title', 'Unknown')
             year = movie.get('year', '')
@@ -303,5 +302,5 @@ def process_cutoff_upgrades(
         else:
             movie_hunt_logger.warning(f"  - Failed to trigger upgrade search for '{title}' ({year}): {msg}")
     
-    movie_hunt_logger.info(f"=== Completed Movie Hunt Upgrade Cycle: Processed {processed_count} of {len(movies_to_upgrade)} selected movies ===")
+    movie_hunt_logger.info(f"Upgrade: processed {processed_count} of {len(movies_to_upgrade)} movies")
     return processed_any

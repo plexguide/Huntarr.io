@@ -39,7 +39,7 @@ def process_missing_items(
     Returns:
         True if any items were processed, False otherwise.
     """
-    eros_logger.info("Starting missing items processing cycle for Eros.")
+    eros_logger.info(f"Missing: checking for {hunt_missing_items} items for '{instance_name}'")
     processed_any = False
     
     # Reset state files if enough time has passed
@@ -128,7 +128,7 @@ def process_missing_items(
         missing_items, "eros", instance_key,
         get_id_fn=lambda item: item.get("id"), logger=eros_logger
     )
-    eros_logger.info(f"Found {len(unprocessed_items)} unprocessed items out of {len(missing_items)} total items with missing files.")
+    eros_logger.info(f"Missing: {len(unprocessed_items)} unprocessed of {len(missing_items)} total items")
     
     if not unprocessed_items:
         eros_logger.info(f"No unprocessed items found for {instance_name}. All available items have been processed.")
@@ -138,10 +138,9 @@ def process_missing_items(
     processing_done = False
     
     # Select items to search based on configuration
-    eros_logger.info(f"Randomly selecting up to {hunt_missing_items} missing items.")
     items_to_search = random.sample(unprocessed_items, min(len(unprocessed_items), hunt_missing_items))
     
-    eros_logger.info(f"Selected {len(items_to_search)} missing items to search.")
+    eros_logger.info(f"Missing: selected {len(items_to_search)} items for search:")
 
     # Process selected items
     for item in items_to_search:
@@ -204,20 +203,13 @@ def process_missing_items(
             # Increment the hunted statistics for Eros
             increment_stat("eros", "hunted", 1, instance_key)
             eros_logger.debug(f"Incremented eros hunted statistics by 1")
-
-            # Log progress
-            current_limit = app_settings.get("hunt_missing_items", app_settings.get("hunt_missing_scenes", 1))
-            eros_logger.info(f"Processed {items_processed}/{current_limit} missing items this cycle.")
         else:
             eros_logger.warning(f"Failed to trigger search command for item ID {item_id}.")
             # Do not mark as processed if search couldn't be triggered
             continue
     
     # Log final status
-    if items_processed > 0:
-        eros_logger.info(f"Completed processing {items_processed} missing items for this cycle.")
-    else:
-        eros_logger.info("No new missing items were processed in this run.")
+    eros_logger.info(f"Missing: processed {items_processed} of {len(items_to_search)} items")
         
     return processing_done
 

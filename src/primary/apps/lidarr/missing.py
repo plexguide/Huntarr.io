@@ -63,8 +63,7 @@ def process_missing_albums(
     # Make sure any requested stop function is executable
     stop_check = stop_check if callable(stop_check) else lambda: False
     
-    lidarr_logger.info(f"Looking for missing albums for {instance_name}")
-    lidarr_logger.debug(f"Processing up to {hunt_missing_items} missing items in {hunt_missing_mode} mode")
+    lidarr_logger.info(f"Missing: checking for {hunt_missing_items} {hunt_missing_mode}s for '{instance_name}'")
     
     # Reset state files if enough time has passed
     check_state_reset("lidarr")
@@ -95,7 +94,7 @@ def process_missing_albums(
                 lidarr_logger.info("No missing albums found.")
                 return False
             
-            lidarr_logger.info(f"Retrieved {len(missing_albums_data)} missing albums from random page selection.")
+            lidarr_logger.info(f"Missing: {len(unprocessed_entities)} unprocessed of {len(missing_albums_data)} total albums")
 
             # Filter out albums whose artist has an exempt tag (issue #676)
             missing_albums_data = filter_exempt_items(
@@ -156,11 +155,9 @@ def process_missing_albums(
             target_entities = list(items_by_artist.keys())
             
             # Filter out already processed artists
-            lidarr_logger.info(f"Found {len(target_entities)} artists with missing albums before filtering")
             unprocessed_entities = [eid for eid in target_entities 
                                    if not is_processed("lidarr", instance_key, str(eid))]
-            
-            lidarr_logger.info(f"Found {len(unprocessed_entities)} unprocessed artists out of {len(target_entities)} total")
+            lidarr_logger.info(f"Missing: {len(unprocessed_entities)} unprocessed of {len(target_entities)} total artists")
             search_entity_type = "artist"
         else:
             # Fallback case - this should not normally be reached
@@ -173,15 +170,12 @@ def process_missing_albums(
             
         # Select entities to search
         entities_to_search_ids = random.sample(unprocessed_entities, min(len(unprocessed_entities), total_items_to_process))
-        lidarr_logger.info(f"Randomly selected {len(entities_to_search_ids)} {search_entity_type}s to search.")
+        lidarr_logger.info(f"Missing: selected {len(entities_to_search_ids)} {search_entity_type}s for search:")
         lidarr_logger.debug(f"Unprocessed entities: {unprocessed_entities}")
         lidarr_logger.debug(f"Entities to search: {entities_to_search_ids}")
 
         # --- Trigger Search (Artist or Album) ---
         if hunt_missing_mode == "artist":
-            lidarr_logger.info(f"Artist-based missing mode selected")
-            lidarr_logger.info(f"Found {len(entities_to_search_ids)} unprocessed artists to search.")
-            
             # Prepare a list for artist details log
             artist_details_log = []
             
@@ -193,7 +187,7 @@ def process_missing_albums(
                 if artist_data:
                     artist_details[artist_id] = artist_data
             
-            lidarr_logger.info(f"Artists selected for processing in this cycle:")
+            lidarr_logger.info(f"Missing: selected {len(entities_to_search_ids)} artists for search:")
             for i, artist_id in enumerate(entities_to_search_ids):
                 # Get artist name and any additional details
                 artist_name = f"Artist ID {artist_id}" # Default if name not found
@@ -284,7 +278,7 @@ def process_missing_albums(
             for album_id in album_ids_to_search:
                 album_details[album_id] = lidarr_api.get_albums(api_url, api_key, api_timeout, album_id)
             
-            lidarr_logger.info(f"Albums selected for processing in this cycle:")
+            lidarr_logger.info(f"Missing: selected {len(album_ids_to_search)} albums for search:")
             for idx, album_id in enumerate(album_ids_to_search):
                 album_info = missing_items_dict.get(album_id)
                 if album_info:
@@ -364,5 +358,5 @@ def process_missing_albums(
         lidarr_logger.error(f"An error occurred during missing album processing for {instance_name}: {e}", exc_info=True)
         return False
 
-    lidarr_logger.info(f"Missing album processing finished for {instance_name}. Processed {processed_count} items/searches ({len(processed_artists_or_albums)} unique {search_entity_type}s).")
+    lidarr_logger.info(f"Missing: processed {processed_count} {search_entity_type}s")
     return processed_count > 0

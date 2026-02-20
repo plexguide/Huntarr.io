@@ -36,7 +36,6 @@ def process_missing_books(
     Returns:
         True if any books were processed, False otherwise.
     """
-    readarr_logger.info("Starting missing books processing cycle for Readarr.")
     processed_any = False
     
     # Reset state files if enough time has passed
@@ -53,7 +52,7 @@ def process_missing_books(
     hunt_missing_books = s['hunt_count']
     tag_settings = s['tag_settings']
     
-    readarr_logger.info(f"Using API timeout of {api_timeout} seconds for Readarr")
+    readarr_logger.info(f"Missing: checking for {hunt_missing_books} books for '{instance_name}'")
     
     if not validate_settings(api_url, api_key, hunt_missing_books, "readarr", readarr_logger):
         return False
@@ -99,29 +98,23 @@ def process_missing_books(
         missing_books_data, "readarr", instance_key,
         get_id_fn=lambda b: b.get("id"), logger=readarr_logger
     )
-    readarr_logger.info(f"Found {len(unprocessed_books)} unprocessed missing books out of {len(missing_books_data)} total.")
+    readarr_logger.info(f"Missing: {len(unprocessed_books)} unprocessed of {len(missing_books_data)} total books")
     
     if not unprocessed_books:
         readarr_logger.info("No unprocessed missing books found. All available books have been processed.")
         return False
 
     # Select individual books to process (fixed: was selecting authors, now selects books)
-    readarr_logger.info(f"Randomly selecting up to {hunt_missing_books} individual books to search.")
     books_to_process = random.sample(unprocessed_books, min(hunt_missing_books, len(unprocessed_books)))
 
-    readarr_logger.info(f"Selected {len(books_to_process)} individual books to search for missing items.")
-    
-    # Add detailed logging for selected books
-    if books_to_process:
-        readarr_logger.info(f"Books selected for processing in this cycle:")
-        for idx, book in enumerate(books_to_process):
-            book_id = book.get("id")
-            book_title = book.get("title", "Unknown Title")
-            author_id = book.get("authorId", "Unknown")
-            readarr_logger.info(f"  {idx+1}. '{book_title}' (ID: {book_id}, Author ID: {author_id})")
+    readarr_logger.info(f"Missing: selected {len(books_to_process)} books for search:")
+    for idx, book in enumerate(books_to_process):
+        book_id = book.get("id")
+        book_title = book.get("title", "Unknown Title")
+        author_id = book.get("authorId", "Unknown")
+        readarr_logger.info(f"  {idx+1}. '{book_title}' (ID: {book_id}, Author ID: {author_id})")
 
     processed_count = 0
-    processed_books = [] # Track book titles processed
 
     # Process each individual book
     for book in books_to_process:
@@ -165,9 +158,7 @@ def process_missing_books(
             readarr_logger.debug(f"Logged missing book history entry: {media_name} (ID: {book_id})")
             
             processed_count += 1
-            processed_books.append(f"'{book_title}' by {author_name}")
             processed_any = True
-            readarr_logger.info(f"Processed {processed_count}/{len(books_to_process)} books for missing search this cycle.")
         else:
             readarr_logger.error(f"Failed to trigger search for book '{book_title}' by {author_name}.")
 
@@ -175,15 +166,6 @@ def process_missing_books(
             readarr_logger.info(f"Reached target of {hunt_missing_books} books processed for this cycle.")
             break
 
-    if processed_books:
-        # Log first few books, then summarize if there are many
-        if len(processed_books) <= 3:
-            books_list = ', '.join(processed_books)
-            readarr_logger.info(f'Completed processing {processed_count} books for missing search this cycle: {books_list}')
-        else:
-            first_books = ', '.join(processed_books[:3])
-            readarr_logger.info(f'Completed processing {processed_count} books for missing search this cycle: {first_books} and {len(processed_books)-3} others')
-    else:
-        readarr_logger.info(f"Completed processing {processed_count} books for missing search this cycle.")
+    readarr_logger.info(f"Missing: processed {processed_count} of {len(books_to_process)} books")
 
     return processed_any

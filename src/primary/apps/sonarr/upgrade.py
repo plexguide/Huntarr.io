@@ -53,7 +53,7 @@ def process_cutoff_upgrades(
         method = "cutoff"
     tag_label = (upgrade_tag or "").strip()
         
-    sonarr_logger.info(f"Checking for {hunt_upgrade_items} quality upgrades for instance '{instance_name}'...")
+    sonarr_logger.info(f"Upgrade: checking for {hunt_upgrade_items} items for '{instance_name}'")
     
     # Use custom tags if provided, otherwise use defaults
     if custom_tags is None:
@@ -141,7 +141,7 @@ def process_cutoff_upgrades(
                              api_url, api_key, api_timeout, series_id,
                              sonarr_logger, f"series {series_id}")
                 processed_count += 1
-        sonarr_logger.info(f"Finished tag-based upgrade cycle: processed {processed_count} series.")
+        sonarr_logger.info(f"Upgrade: processed {processed_count} series (tag-based)")
         return processed_count > 0
     
     sonarr_logger.info(f"Using {upgrade_mode.upper()} mode for quality upgrades")
@@ -323,7 +323,7 @@ def process_upgrade_seasons_mode(
         else:
             sonarr_logger.debug(f"Skipping already processed season ID: {season_id} ({series_title} - Season {season_number})")
     
-    sonarr_logger.info(f"Found {len(unprocessed_seasons)} unprocessed seasons out of {len(available_seasons)} total seasons with cutoff unmet episodes.")
+    sonarr_logger.info(f"Upgrade: {len(unprocessed_seasons)} unprocessed of {len(available_seasons)} total seasons")
     
     if not unprocessed_seasons:
         sonarr_logger.info("All seasons with cutoff unmet episodes have been processed.")
@@ -333,7 +333,7 @@ def process_upgrade_seasons_mode(
     random.shuffle(unprocessed_seasons)
     seasons_to_process = unprocessed_seasons[:hunt_upgrade_items]
     
-    sonarr_logger.info(f"Selected {len(seasons_to_process)} seasons with cutoff unmet episodes to process")
+    sonarr_logger.info(f"Upgrade: selected {len(seasons_to_process)} seasons for search:")
     
     # Log selected seasons
     for idx, (series_id, season_number, episode_count, series_title) in enumerate(seasons_to_process):
@@ -435,7 +435,7 @@ def process_upgrade_seasons_mode(
         else:
             sonarr_logger.error(f"Failed to trigger season pack search command for {series_title} Season {season_number}")
     
-    sonarr_logger.info("Finished quality cutoff upgrades processing cycle (season mode) for Sonarr.")
+    sonarr_logger.info(f"Upgrade: processed seasons in season-pack mode")
     return processed_any
 
 def process_upgrade_shows_mode(
@@ -625,7 +625,7 @@ def process_upgrade_shows_mode(
         else:
             sonarr_logger.error(f"Failed to trigger upgrade search command for {series_title}")
     
-    sonarr_logger.info("Finished quality cutoff upgrades processing cycle (show mode) for Sonarr.")
+    sonarr_logger.info("Upgrade: processed shows in show mode")
     return processed_any
 
 def process_upgrade_episodes_mode(
@@ -816,7 +816,7 @@ def process_upgrade_episodes_mode(
         else:
             sonarr_logger.error(f"Failed to trigger upgrade search for episode: {series_title} - {season_episode}")
     
-    sonarr_logger.info(f"Processed {processed_count} individual episode upgrades for Sonarr.")
+    sonarr_logger.info(f"Upgrade: processed {processed_count} individual episodes")
     sonarr_logger.warning("Episodes mode upgrade processing complete - consider using Season Packs mode for better efficiency")
     return processed_any
 
