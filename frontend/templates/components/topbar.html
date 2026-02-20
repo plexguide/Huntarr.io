@@ -9,21 +9,14 @@
     <div class="topbar-section center"></div>
     
     <div class="topbar-section right">
-        <a href="https://github.com/plexguide/huntarr" target="_blank" rel="noopener" class="topbar-chip star-chip" title="GitHub Stars">
+        <a href="https://github.com/plexguide/huntarr" target="_blank" rel="noopener" class="topbar-chip star-chip" title="Star on GitHub">
             <span class="chip-icon"><i class="fas fa-star"></i></span>
             <span id="github-stars-value" class="chip-value">--</span>
         </a>
-        <a href="https://plexguide.github.io/Huntarr.io/donate.html" target="_blank" rel="noopener noreferrer" class="topbar-sponsor-btn" title="Become a Sponsor">
+        <a href="https://plexguide.github.io/Huntarr.io/donate.html" target="_blank" rel="noopener noreferrer" class="topbar-sponsor-btn" title="Sponsor">
             <i class="fas fa-heart"></i>
-            <span>Become a Sponsor</span>
+            <span>Sponsor</span>
         </a>
-        <div class="user-info" id="userInfoContainer">
-            <div class="user-avatar" id="userAvatar">
-                <i class="fas fa-user"></i>
-            </div>
-            <span id="username">User</span>
-            <a href="#" id="logoutLink" class="logout-btn" title="Sign out"><i class="fas fa-sign-out-alt"></i></a>
-        </div>
     </div>
 </div>
 
@@ -170,107 +163,49 @@
 
     /* ===== STAR CHIP ===== */
     .star-chip {
-        background: rgba(255, 193, 7, 0.10);
-        border-color: rgba(255, 193, 7, 0.25);
-        color: #f5d060;
+        background: rgba(255, 193, 7, 0.06);
+        border-color: rgba(255, 193, 7, 0.15);
+        color: #fbbf24;
     }
     
     .star-chip .chip-icon { 
-        color: #ffd700;
-        filter: drop-shadow(0 0 2px rgba(255, 215, 0, 0.5));
+        color: #fbbf24;
     }
-    .star-chip .chip-value { color: #f5d060; font-weight: 800; }
+    .star-chip .chip-value { color: #fbbf24; font-weight: 700; }
     
     .star-chip:hover {
-        background: rgba(255, 193, 7, 0.18);
-        border-color: rgba(255, 193, 7, 0.4);
-        box-shadow: 0 2px 10px rgba(255, 193, 7, 0.2);
+        background: rgba(255, 193, 7, 0.12);
+        border-color: rgba(255, 193, 7, 0.3);
+        box-shadow: 0 2px 8px rgba(255, 193, 7, 0.12);
     }
 
     /* ===== SPONSOR BUTTON ===== */
     .topbar-sponsor-btn {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        height: 28px;
-        padding: 0 12px;
-        border-radius: 14px;
-        font-size: 12px;
+        gap: 5px;
+        height: 26px;
+        padding: 0 10px;
+        border-radius: 13px;
+        font-size: 11px;
         font-weight: 600;
         text-decoration: none;
-        color: #f87171;
-        background: rgba(239, 68, 68, 0.08);
-        border: 1px solid rgba(239, 68, 68, 0.2);
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        color: #f472b6;
+        background: rgba(236, 72, 153, 0.06);
+        border: 1px solid rgba(236, 72, 153, 0.15);
+        transition: all 0.2s ease;
         white-space: nowrap;
     }
     .topbar-sponsor-btn i {
-        font-size: 11px;
-        color: #ef4444;
+        font-size: 10px;
+        color: #ec4899;
     }
     .topbar-sponsor-btn:hover {
-        background: rgba(239, 68, 68, 0.16);
-        border-color: rgba(239, 68, 68, 0.4);
-        color: #fca5a5;
-        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15);
+        background: rgba(236, 72, 153, 0.12);
+        border-color: rgba(236, 72, 153, 0.3);
+        color: #f9a8d4;
+        box-shadow: 0 2px 8px rgba(236, 72, 153, 0.12);
         transform: translateY(-1px);
-        text-decoration: none;
-    }
-
-    /* ===== USER INFO ===== */
-    .user-info {
-        display: none;
-        align-items: center;
-        gap: 8px;
-        height: 30px;
-        padding: 0 10px 0 4px;
-        background: rgba(255, 255, 255, 0.03);
-        border-radius: 15px;
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    .user-info:hover {
-        background: rgba(255, 255, 255, 0.06);
-        border-color: rgba(255, 255, 255, 0.1);
-    }
-    
-    .user-avatar {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 11px;
-        color: #ffffff;
-        font-weight: 700;
-        flex-shrink: 0;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-    }
-    
-    #username {
-        font-weight: 600;
-        color: #c8d0dc;
-        font-size: 12px;
-        letter-spacing: 0.2px;
-    }
-    
-    .logout-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: rgba(231, 76, 60, 0.6);
-        transition: all 0.2s ease;
-        font-size: 12px;
-        padding: 2px;
-        text-decoration: none;
-    }
-    
-    .logout-btn:hover {
-        color: #e74c3c;
-        transform: scale(1.15);
         text-decoration: none;
     }
 
@@ -291,51 +226,10 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const versionElement = document.getElementById('version-value');
-        const latestVersionElement = document.getElementById('latest-version-value');
         const starsElement = document.getElementById('github-stars-value');
-        const avatarElement = document.getElementById('userAvatar');
-        const usernameElement = document.getElementById('username');
-        
-        // Update avatar with first letter of username
-        function updateAvatar() {
-            if (usernameElement && avatarElement) {
-                const name = usernameElement.textContent || 'U';
-                const firstLetter = name.charAt(0).toUpperCase();
-                avatarElement.textContent = firstLetter;
-            }
-        }
-        
-        // Watch for username changes to update avatar
-        const usernameObserver = new MutationObserver(function() {
-            updateAvatar();
-        });
-        if (usernameElement) {
-            usernameObserver.observe(usernameElement, { childList: true, characterData: true, subtree: true });
-        }
         
         function updateVersionInfo() {
             try {
-                const versionInfo = localStorage.getItem('huntarr-version-info');
-                if (versionInfo) {
-                    const parsedInfo = JSON.parse(versionInfo);
-                    if (parsedInfo.currentVersion && versionElement) {
-                        versionElement.textContent = parsedInfo.currentVersion;
-                        versionElement.style.display = 'inline';
-                    }
-                    if (parsedInfo.latestVersion && latestVersionElement) {
-                        latestVersionElement.textContent = parsedInfo.latestVersion;
-                        latestVersionElement.style.display = 'inline';
-                    }
-                    if (parsedInfo.betaVersion) {
-                        const betaVersionElement = document.getElementById('beta-version-value');
-                        if (betaVersionElement) {
-                            betaVersionElement.textContent = parsedInfo.betaVersion;
-                            betaVersionElement.style.display = 'inline';
-                        }
-                    }
-                }
-                
                 const starsInfo = localStorage.getItem('huntarr-github-stars');
                 if (starsInfo && starsElement) {
                     try {
@@ -352,25 +246,10 @@
             }
         }
         
-        function showFallbacks() {
-            setTimeout(() => {
-                if (versionElement && (versionElement.style.display === 'none' || !versionElement.textContent)) {
-                    versionElement.textContent = 'N/A';
-                    versionElement.style.display = 'inline';
-                }
-                if (latestVersionElement && (latestVersionElement.style.display === 'none' || !latestVersionElement.textContent)) {
-                    latestVersionElement.textContent = 'N/A';
-                    latestVersionElement.style.display = 'inline';
-                }
-            }, 3000);
-        }
-        
         updateVersionInfo();
-        updateAvatar();
-        showFallbacks();
         
         window.addEventListener('storage', function(e) {
-            if (e.key === 'huntarr-version-info' || e.key === 'huntarr-github-stars') {
+            if (e.key === 'huntarr-github-stars') {
                 updateVersionInfo();
             }
         });

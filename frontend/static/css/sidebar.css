@@ -71,6 +71,7 @@
 .logo-container {
     display: flex;
     align-items: center;
+    justify-content: center;
     padding: 16px 18px 14px;
     position: relative;
     flex-shrink: 0;
