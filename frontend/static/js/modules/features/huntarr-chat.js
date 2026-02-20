@@ -26,9 +26,28 @@ window.HuntarrChat = (function() {
     function init() {
         if (_initialized) return;
         _initialized = true;
-        _buildDOM();
-        _loadMessages();
-        _startPolling();
+        // Don't build DOM yet — wait until we confirm auth
+        _checkAuthAndInit();
+    }
+
+    function _checkAuthAndInit() {
+        fetch('./api/chat')
+            .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
+            .then(function(data) {
+                _user = data.user;
+                _messages = data.messages || [];
+                if (_messages.length) _lastMsgId = _messages[_messages.length - 1].id;
+                // User is authenticated — now build the UI
+                _buildDOM();
+                // Show clear button for owner
+                var clearBtn = document.getElementById('hchat-clear-btn');
+                if (clearBtn) clearBtn.style.display = _user.role === 'owner' ? '' : 'none';
+                _renderMessages();
+                _startPolling();
+            })
+            .catch(function() {
+                // Not authenticated (login page) — do nothing, no FAB
+            });
     }
 
     // ── Build DOM ─────────────────────────────────────────────
@@ -106,21 +125,7 @@ window.HuntarrChat = (function() {
         }
     }
 
-    // ── Load Messages ─────────────────────────────────────────
-    function _loadMessages() {
-        fetch('./api/chat')
-            .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
-            .then(function(data) {
-                _user = data.user;
-                _messages = data.messages || [];
-                if (_messages.length) _lastMsgId = _messages[_messages.length - 1].id;
-                // Show clear button for owner
-                var clearBtn = document.getElementById('hchat-clear-btn');
-                if (clearBtn) clearBtn.style.display = _user.role === 'owner' ? '' : 'none';
-                _renderMessages();
-            })
-            .catch(function() { /* not logged in or error — hide fab */ });
-    }
+    // ── Load Messages (replaced by _checkAuthAndInit on first load) ──
 
     // ── Poll for new messages ─────────────────────────────────
     function _startPolling() {
