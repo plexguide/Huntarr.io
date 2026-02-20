@@ -91,9 +91,9 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 20px 10px 16px;
-    background: rgba(0, 0, 0, 0.15);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    padding: 10px 18px 10px 16px;
+    background: transparent;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.06);
     border-radius: 12px 12px 0 0;
     margin: -1px -1px 0 -1px;
 }
@@ -105,8 +105,9 @@
 }
 
 .home-section-icon {
-    color: #f59e0b;
-    font-size: 0.85rem;
+    color: #818cf8;
+    font-size: 0.82rem;
+    opacity: 0.7;
 }
 
 .home-section-title {
@@ -210,25 +211,14 @@
     border: none !important;
     box-shadow: none !important;
 }
-/* Movie Hunt & TV Hunt (Huntarr) gold ring glow — same ring style as other apps */
-#homeSection .app-stats-card.movie_hunt .app-icon-wrapper::before,
-#homeSection .app-stats-card.tv_hunt .app-icon-wrapper::before {
-    content: '' !important;
-    position: absolute !important;
-    top: -4px; left: -4px; right: -4px; bottom: -4px;
-    border-radius: 50%;
-    border: 2px solid rgba(245, 158, 11, 0.8);
-    box-shadow: 0 0 15px rgba(245, 158, 11, 0.6);
+/* Movie Hunt & TV Hunt (Huntarr) — subtle amber glow, no heavy rings */
+#homeSection .app-stats-card.movie_hunt .app-icon-wrapper,
+#homeSection .app-stats-card.tv_hunt .app-icon-wrapper {
+    position: relative;
 }
-#homeSection .app-stats-card.movie_hunt .app-icon-wrapper::after,
-#homeSection .app-stats-card.tv_hunt .app-icon-wrapper::after {
-    content: '' !important;
-    position: absolute !important;
-    top: -8px; left: -8px; right: -8px; bottom: -8px;
-    border-radius: 50%;
-    border: 2px solid rgba(245, 158, 11, 0.4);
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
-    opacity: 0.5;
+#homeSection .app-stats-card.movie_hunt .app-icon-wrapper .app-logo,
+#homeSection .app-stats-card.tv_hunt .app-icon-wrapper .app-logo {
+    filter: drop-shadow(0 2px 8px rgba(245, 158, 11, 0.35));
 }
 
 #homeSection .app-icon-wrapper .app-logo {
@@ -337,13 +327,13 @@
     letter-spacing: 0.02em !important;
 }
 
-/* ── Home Instance Selectors ──────────────────────────────────── */
+/* ── Home Instance Selectors — modern chip pills ─────────────── */
 #homeSection .home-instance-controls {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 12px;
-    margin: 0 0 14px 0;
+    gap: 8px;
+    margin: 12px 0 14px 0;
     padding: 0;
 }
 
@@ -352,14 +342,30 @@
 }
 
 #homeSection .home-instance-controls .instance-select {
-    background: rgba(30, 41, 59, 0.7) !important;
-    border: 1px solid rgba(148, 163, 184, 0.12) !important;
-    border-radius: 8px !important;
+    background: rgba(30, 41, 59, 0.6) !important;
+    border: 1px solid rgba(99, 102, 241, 0.15) !important;
+    border-radius: 20px !important;
+    color: #cbd5e1 !important;
+    padding: 7px 16px 7px 12px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    min-width: 140px;
+    letter-spacing: 0.01em;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 10px center !important;
+    padding-right: 28px !important;
+}
+
+#homeSection .home-instance-controls .instance-select:hover {
+    border-color: rgba(99, 102, 241, 0.35) !important;
+    background: rgba(99, 102, 241, 0.08) !important;
     color: #e2e8f0 !important;
-    padding: 8px 14px !important;
-    font-size: 13px !important;
-    min-width: 180px;
-    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 #homeSection .home-instance-controls .instance-select:focus {
@@ -573,8 +579,8 @@
     grid-column: unset;
     border-radius: 10px;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.05);
+    background: rgba(15, 23, 42, 0.35);
     /* Extend into container padding so headers touch the border */
     margin: 0 -16px;
     padding: 0 16px;
@@ -584,9 +590,9 @@
     margin-bottom: 0;
     margin-left: -16px;
     margin-right: -16px;
-    padding: 12px 20px 12px 16px;
-    background: linear-gradient(145deg, rgba(30, 41, 59, 0.7), rgba(22, 30, 45, 0.6));
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 10px 20px 10px 16px;
+    background: rgba(15, 23, 42, 0.4);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.04);
     border-radius: 0;
 }
 
@@ -608,12 +614,12 @@
     text-align: left;
     padding: 8px 20px;
     color: #475569;
-    font-size: 0.68rem;
-    font-weight: 700;
+    font-size: 0.65rem;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-    background: rgba(15, 23, 42, 0.3);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.04);
+    background: transparent;
 }
 
 .app-list-table tbody tr {
@@ -1658,9 +1664,9 @@
 .prowlarr-health-indicator {
     margin-top: 10px;
     padding: 8px 12px;
-    background-color: rgba(32, 38, 50, 0.6);
-    border-radius: 6px;
-    border-left: 3px solid #6366f1;
+    background: rgba(15, 23, 42, 0.4);
+    border-radius: 8px;
+    border-left: 3px solid rgba(99, 102, 241, 0.4);
 }
 
 .health-status-text {
@@ -1670,11 +1676,11 @@
 }
 
 .prowlarr-main-card {
-    background-color: rgba(32, 38, 50, 0.6);
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 15px;
-    border: 1px solid rgba(90, 109, 137, 0.2);
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.6) 100%);
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    border: 1px solid rgba(99, 102, 241, 0.1);
 }
 
 .prowlarr-header-section {
@@ -1692,44 +1698,45 @@
 
 .prowlarr-info h4 {
     margin: 0;
-    color: var(--text-primary);
-    font-size: 1.2em;
+    color: #e2e8f0;
+    font-size: 1.1em;
     font-weight: 600;
+    letter-spacing: 0.01em;
 }
 
 .prowlarr-subcards {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 15px;
+    gap: 12px;
 }
 
 .prowlarr-subcard {
-    background-color: rgba(24, 28, 37, 0.6);
-    border-radius: 8px;
-    border: 1px solid rgba(90, 109, 137, 0.2);
+    background: rgba(15, 23, 42, 0.5);
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.06);
     overflow: hidden;
 }
 
 .subcard-header {
-    background-color: rgba(64, 70, 84, 0.6);
-    padding: 10px 15px;
-    border-bottom: 1px solid rgba(90, 109, 137, 0.2);
+    background: rgba(30, 41, 59, 0.4);
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.05);
 }
 
 .subcard-header h5 {
     margin: 0;
-    color: var(--text-primary);
-    font-size: 0.9em;
+    color: #cbd5e1;
+    font-size: 0.82em;
     font-weight: 600;
     display: flex;
     align-items: center;
     gap: 8px;
-    transition: all 0.3s ease;
+    letter-spacing: 0.01em;
 }
 
 .subcard-header i {
-    font-size: 0.8em;
-    color: var(--accent-color);
+    font-size: 0.75em;
+    color: #818cf8;
 }
 
 .indexers-list { padding: 15px; }
@@ -1739,15 +1746,16 @@
     justify-content: space-between;
     align-items: center;
     padding: 8px 0;
-    border-bottom: 1px solid rgba(90, 109, 137, 0.1);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.05);
 }
 
 .indexer-item:last-child { border-bottom: none; }
 
 .indexer-name {
     font-weight: 500;
-    color: var(--text-primary);
-    transition: all 0.2s ease;
+    color: #e2e8f0;
+    font-size: 0.88rem;
+    transition: color 0.2s ease;
 }
 
 .indexer-name.hoverable { cursor: pointer; position: relative; }
@@ -1773,15 +1781,16 @@
 .indexer-name.hovered::after { width: 100%; }
 
 .indexer-status {
-    font-size: 0.8em;
+    font-size: 0.72em;
     padding: 2px 8px;
-    border-radius: 4px;
-    font-weight: 500;
+    border-radius: 10px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
 }
 
-.indexer-status.active   { background-color: rgba(16, 185, 129, 0.2); color: #10b981; }
-.indexer-status.throttled { background-color: rgba(245, 158, 11, 0.2); color: #f59e0b; }
-.indexer-status.failed   { background-color: rgba(239, 68, 68, 0.2); color: #ef4444; }
+.indexer-status.active   { background: rgba(16, 185, 129, 0.12); color: #34d399; }
+.indexer-status.throttled { background: rgba(245, 158, 11, 0.12); color: #fbbf24; }
+.indexer-status.failed   { background: rgba(239, 68, 68, 0.12); color: #f87171; }
 
 .loading-text {
     color: var(--text-secondary);
@@ -1790,23 +1799,23 @@
 }
 
 .statistics-content {
-    padding: 12px;
+    padding: 10px;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    gap: 8px;
 }
 
 /* Prowlarr statistics: keep 2-column grid from .statistics-content (matching 9.2.0) */
 
 .stat-card {
-    background: linear-gradient(135deg, rgba(16, 20, 28, 0.8) 0%, rgba(30, 35, 45, 0.6) 100%);
-    border: 1px solid rgba(90, 109, 137, 0.15);
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.06);
     border-radius: 8px;
     padding: 10px 12px;
     text-align: center;
     position: relative;
     overflow: hidden;
-    transition: all 0.3s ease;
+    transition: border-color 0.2s ease, background 0.2s ease;
     height: 60px;
     display: flex;
     flex-direction: column;
@@ -1815,9 +1824,9 @@
 }
 
 .stat-card:hover {
-    transform: translateY(-2px);
-    border-color: rgba(90, 109, 137, 0.3);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transform: none;
+    border-color: rgba(99, 102, 241, 0.15);
+    background: rgba(15, 23, 42, 0.75);
 }
 
 .stat-card::before {
@@ -1827,10 +1836,10 @@
     height: 2px;
     background: var(--accent-color);
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.2s ease;
 }
 
-.stat-card:hover::before { opacity: 1; }
+.stat-card:hover::before { opacity: 0.5; }
 
 /* Prowlarr stat-label (inside stat-card, not the app stats one) */
 .stat-card .stat-label {
@@ -1869,11 +1878,11 @@
 
 /* Prowlarr legend */
 .prowlarr-legend {
-    margin-top: 15px;
-    padding: 12px 15px;
-    background-color: rgba(16, 20, 28, 0.6);
-    border-radius: 6px;
-    border: 1px solid rgba(90, 109, 137, 0.1);
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: rgba(15, 23, 42, 0.4);
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.05);
 }
 
 .legend-title {

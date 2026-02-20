@@ -752,8 +752,11 @@
 /* ===== SIDEBAR FOOTER ===== */
 .sidebar-footer {
     flex-shrink: 0;
-    background: rgba(14, 19, 30, 0.98);
-    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    background: linear-gradient(180deg,
+        rgba(14, 19, 30, 0.6) 0%,
+        rgba(14, 19, 30, 0.98) 30%
+    );
+    border-top: 1px solid rgba(99, 102, 241, 0.06);
     padding: 8px 10px 6px;
     display: flex;
     flex-direction: column;

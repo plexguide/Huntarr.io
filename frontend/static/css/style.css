@@ -504,7 +504,7 @@ body:has(.app-container) {
     backdrop-filter: blur(var(--glass-blur, 12px));
     -webkit-backdrop-filter: blur(var(--glass-blur, 12px));
     border: 1px solid var(--glass-border, rgba(99, 102, 241, 0.08));
-    border-radius: 12px;
+    border-radius: 14px;
     padding: 24px;
     margin: 12px 0 20px 0;
     position: relative;
@@ -513,10 +513,12 @@ body:has(.app-container) {
 .settings-group h3 {
     margin: 0 0 18px 0;
     padding: 0 0 12px 0;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #f1f5f9;
+    border-bottom: 1px solid rgba(99, 102, 241, 0.06);
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
     background: none;
     box-shadow: none;
     text-shadow: none;
@@ -630,11 +632,13 @@ body:has(.app-container) {
 input:checked + .toggle-slider {
     background: #6366f1;
     border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
 }
 
 input:checked + .toggle-slider:before {
     transform: translateX(20px);
     background: #fff;
+    box-shadow: 0 0 6px rgba(99, 102, 241, 0.3);
 }
 
 input:disabled + .toggle-slider {

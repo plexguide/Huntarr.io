@@ -41,12 +41,14 @@
     opacity: 1;
 }
 
-/* Navy-blue overlay for readability */
+/* Navy-blue overlay for readability — with subtle indigo tint */
 .login-backdrop-overlay {
     position: fixed;
     inset: 0;
     z-index: 1;
     background:
+        /* Subtle indigo tint at center */
+        radial-gradient(ellipse at center, rgba(99, 102, 241, 0.04) 0%, transparent 60%),
         /* Center radial darken — navy blue */
         radial-gradient(ellipse at center, rgba(15, 23, 42, 0.62) 0%, rgba(15, 23, 42, 0.42) 50%, rgba(15, 23, 42, 0.52) 100%),
         /* Vignette — navy blue */
@@ -63,13 +65,35 @@
     width: 420px;
     max-width: 92%;
     background: rgba(11, 15, 25, 0.72);
-    backdrop-filter: blur(20px) saturate(1.1);
-    -webkit-backdrop-filter: blur(20px) saturate(1.1);
+    backdrop-filter: blur(24px) saturate(1.15);
+    -webkit-backdrop-filter: blur(24px) saturate(1.15);
     border-radius: 20px;
-    border: 1px solid rgba(148, 163, 184, 0.06);
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(99, 102, 241, 0.08);
+    box-shadow:
+        0 8px 40px rgba(0, 0, 0, 0.35),
+        0 0 0 1px rgba(99, 102, 241, 0.04),
+        0 0 80px -20px rgba(99, 102, 241, 0.08);
     overflow: hidden;
     animation: loginCardIn 0.4s ease;
+}
+
+/* Indigo accent line at top of login card — matches sidebar/topbar design */
+.login-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(99, 102, 241, 0.4) 20%,
+        #6366f1 50%,
+        rgba(99, 102, 241, 0.4) 80%,
+        transparent
+    );
+    z-index: 10;
+    opacity: 0.7;
 }
 
 @keyframes loginCardIn {
@@ -81,8 +105,8 @@
 .login-header {
     padding: 32px 0 20px;
     text-align: center;
-    background: transparent;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.06);
+    background: linear-gradient(180deg, rgba(99, 102, 241, 0.03) 0%, transparent 100%);
+    border-bottom: 1px solid rgba(99, 102, 241, 0.06);
 }
 
 .login-logo {
@@ -90,11 +114,12 @@
     height: 64px;
     margin-bottom: 10px;
     border-radius: 14px;
-    filter: drop-shadow(0 4px 8px rgba(15, 23, 42, 0.4));
-    transition: transform 0.3s ease;
+    filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.2));
+    transition: transform 0.3s ease, filter 0.3s ease;
 }
 .login-logo:hover {
     transform: scale(1.05);
+    filter: drop-shadow(0 4px 16px rgba(99, 102, 241, 0.35));
 }
 
 .login-header h1 {

@@ -409,7 +409,7 @@
     backdrop-filter: blur(var(--glass-blur, 12px));
     -webkit-backdrop-filter: blur(var(--glass-blur, 12px));
     border: 1px solid var(--glass-border, rgba(99, 102, 241, 0.08));
-    border-radius: 12px;
+    border-radius: 14px;
     padding: 24px;
     margin-bottom: 20px;
     position: relative;
@@ -418,11 +418,12 @@
 .settings-group h3 {
     margin: 0 0 18px 0;
     padding: 0 0 12px 0;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #f1f5f9;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
-    letter-spacing: 0.3px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid rgba(99, 102, 241, 0.06);
     background: none;
     box-shadow: none;
     text-shadow: none;

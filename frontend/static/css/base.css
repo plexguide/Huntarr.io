@@ -36,25 +36,24 @@ body {
     overflow: auto !important;
 }
 
-/* Scrollbar styling — indigo-tinted */
+/* Scrollbar styling — indigo-tinted, thin */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-    background: rgba(15, 23, 42, 0.5);
-    border-radius: 4px;
+    background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(99, 102, 241, 0.2);
-    border-radius: 4px;
+    background: rgba(99, 102, 241, 0.15);
+    border-radius: 3px;
     transition: background-color var(--transition-base);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(99, 102, 241, 0.35);
+    background: rgba(99, 102, 241, 0.3);
 }
 
 /* Allow scrolling on main elements */
@@ -68,6 +67,7 @@ body, html, .main-content, .section-wrapper {
 .single-scroll-container {
     scrollbar-width: thin !important;
     overflow-y: auto !important;
+    scrollbar-color: rgba(99, 102, 241, 0.15) transparent;
 }
 
 /* Hide scrollbars on all table elements */
@@ -81,8 +81,8 @@ html::-webkit-scrollbar,
 .content-section::-webkit-scrollbar,
 .main-content::-webkit-scrollbar,
 .section-wrapper::-webkit-scrollbar {
-    width: 8px !important;
-    height: 8px !important;
+    width: 6px !important;
+    height: 6px !important;
     display: block !important;
 }
 

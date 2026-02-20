@@ -68,13 +68,13 @@
     --glass-bg:         rgba(17, 24, 39, 0.65);
     --glass-border:     rgba(99, 102, 241, 0.08);
     --glass-blur:       12px;
-    --glass-shadow:     0 4px 24px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(99, 102, 241, 0.04);
+    --glass-shadow:     0 2px 16px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(99, 102, 241, 0.04);
 
     /* ── Form Inputs ─────────────────────────────────────────── */
     --input-bg:         rgba(15, 23, 42, 0.6);
     --input-border:     rgba(71, 85, 105, 0.4);
     --input-focus-border: rgba(99, 102, 241, 0.5);
-    --input-focus-glow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    --input-focus-glow: 0 0 0 2px rgba(99, 102, 241, 0.08);
     --input-text:       #e2e8f0;
     --input-placeholder: #64748b;
     --input-height:     42px;
