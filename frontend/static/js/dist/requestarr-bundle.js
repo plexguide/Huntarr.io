@@ -7307,62 +7307,111 @@ window.RequestarrUsers = {
                 if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
                     window.HuntarrConfirm.show({
                         title: 'Plex Account Not Linked',
-                        message: 'No Plex account is linked. Would you like to link your Plex account now? Once linked, you can import your Plex friends as users.',
+                        message: 'No Plex account is linked. Would you like to link your Plex account now? Once linked, you can import your Plex users.',
                         confirmLabel: 'Link Plex',
                         onConfirm: () => { this._startPlexLinkFromUsers(); }
                     });
                 }
                 return;
             }
-            const friends = data.friends || [];
-            if (!friends.length) {
-                if (window.HuntarrNotifications) window.HuntarrNotifications.showNotification('No Plex friends found', 'info');
+            const allUsers = data.friends || [];
+            // Split into importable and already-imported
+            const importable = allUsers.filter(f => !f.already_imported);
+            const alreadyImported = allUsers.filter(f => f.already_imported);
+
+            if (!allUsers.length) {
+                if (window.HuntarrNotifications) window.HuntarrNotifications.showNotification('No Plex users found with server access', 'info');
                 return;
             }
 
-            const listHtml = friends.map(f => `
-                <label class="requsers-plex-item">
-                    <input type="checkbox" value="${f.id}" data-username="${this._esc(f.username)}">
-                    ${f.thumb ? `<img class="requsers-plex-thumb" src="${f.thumb}" alt="">` : '<div class="requsers-avatar" style="width:32px;height:32px;font-size:0.7rem;">' + (f.username || '?').substring(0, 2).toUpperCase() + '</div>'}
+            const renderUserRow = (f, disabled) => {
+                const initial = (f.username || '?').charAt(0).toUpperCase();
+                const avatarHtml = f.thumb
+                    ? `<img class="requsers-plex-thumb" src="${f.thumb}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="requsers-plex-avatar-fallback" style="display:none;">${initial}</div>`
+                    : `<div class="requsers-plex-avatar-fallback">${initial}</div>`;
+                const disabledAttr = disabled ? 'disabled' : '';
+                const dimClass = disabled ? 'requsers-plex-item-disabled' : '';
+                return `<label class="requsers-plex-item ${dimClass}">
+                    <input type="checkbox" value="${f.id}" data-username="${this._esc(f.username)}" ${disabledAttr}>
+                    <div class="requsers-plex-avatar-wrap">${avatarHtml}</div>
                     <div class="requsers-user-info">
                         <span class="requsers-user-name">${this._esc(f.username)}</span>
                         ${f.email ? `<span class="requsers-user-email">${this._esc(f.email)}</span>` : ''}
                     </div>
-                </label>
-            `).join('');
+                    ${disabled ? '<span class="requsers-plex-imported-badge">Imported</span>' : ''}
+                </label>`;
+            };
+
+            const importableHtml = importable.map(f => renderUserRow(f, false)).join('');
+            const alreadyHtml = alreadyImported.map(f => renderUserRow(f, true)).join('');
+            const selectAllDisabled = importable.length === 0 ? 'disabled' : '';
 
             const html = `<div class="requsers-modal-overlay" id="requsers-plex-modal-overlay" onclick="if(event.target===this)RequestarrUsers.closeModal()">
-                <div class="requsers-modal">
+                <div class="requsers-modal" style="max-width:500px;">
                     <div class="requsers-modal-header">
                         <h3 class="requsers-modal-title"><i class="fas fa-download" style="color:#e5a00d;margin-right:6px;"></i> Import Plex Users</h3>
                         <button class="requsers-modal-close" onclick="RequestarrUsers.closeModal()"><i class="fas fa-times"></i></button>
                     </div>
                     <div class="requsers-modal-body">
-                        <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:12px;">Select friends to import as local users with the "User" role.</p>
-                        <div class="requsers-plex-list">${listHtml}</div>
+                        <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:12px;">Select Plex users with server access to import with the "User" role.</p>
+                        <div class="requsers-plex-select-all">
+                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                <input type="checkbox" id="requsers-plex-select-all-cb" ${selectAllDisabled} onchange="RequestarrUsers.toggleSelectAll(this.checked)">
+                                <span style="font-weight:600;font-size:0.85rem;color:var(--text-secondary);">USER</span>
+                            </label>
+                            <span style="font-size:0.78rem;color:var(--text-muted);">${importable.length} available${alreadyImported.length ? `, ${alreadyImported.length} already imported` : ''}</span>
+                        </div>
+                        <div class="requsers-plex-list">${importableHtml}${alreadyHtml}</div>
                     </div>
                     <div class="requsers-modal-footer">
                         <button class="requsers-btn" style="background:var(--bg-tertiary);color:var(--text-secondary);" onclick="RequestarrUsers.closeModal()">Cancel</button>
-                        <button class="requsers-btn requsers-btn-plex" id="requsers-plex-import-btn" onclick="RequestarrUsers.doPlexImport()"><i class="fas fa-download"></i> Import Selected</button>
+                        <button class="requsers-btn requsers-btn-plex" id="requsers-plex-import-btn" onclick="RequestarrUsers.doPlexImport()"><i class="fas fa-download"></i> Import</button>
                     </div>
                 </div>
             </div>`;
 
             this.closeModal();
             document.body.insertAdjacentHTML('beforeend', html);
+            // Attach change listeners to individual checkboxes for select-all sync
+            const plexOverlay = document.getElementById('requsers-plex-modal-overlay');
+            if (plexOverlay) {
+                plexOverlay.querySelectorAll('.requsers-plex-list input[type="checkbox"]:not(:disabled)').forEach(cb => {
+                    cb.addEventListener('change', () => this._updateSelectAllState());
+                });
+            }
         } catch (e) {
             console.error('[RequestarrUsers] Error opening Plex import:', e);
-            if (window.HuntarrNotifications) window.HuntarrNotifications.showNotification('Failed to load Plex friends', 'error');
+            if (window.HuntarrNotifications) window.HuntarrNotifications.showNotification('Failed to load Plex users', 'error');
+        }
+    },
+
+    toggleSelectAll(checked) {
+        const overlay = document.getElementById('requsers-plex-modal-overlay');
+        if (!overlay) return;
+        overlay.querySelectorAll('.requsers-plex-list input[type="checkbox"]:not(:disabled)').forEach(cb => {
+            cb.checked = checked;
+        });
+    },
+
+    _updateSelectAllState() {
+        const overlay = document.getElementById('requsers-plex-modal-overlay');
+        if (!overlay) return;
+        const allCbs = overlay.querySelectorAll('.requsers-plex-list input[type="checkbox"]:not(:disabled)');
+        const checkedCbs = overlay.querySelectorAll('.requsers-plex-list input[type="checkbox"]:not(:disabled):checked');
+        const selectAllCb = document.getElementById('requsers-plex-select-all-cb');
+        if (selectAllCb && allCbs.length > 0) {
+            selectAllCb.checked = checkedCbs.length === allCbs.length;
+            selectAllCb.indeterminate = checkedCbs.length > 0 && checkedCbs.length < allCbs.length;
         }
     },
 
     async doPlexImport() {
         const overlay = document.getElementById('requsers-plex-modal-overlay');
         if (!overlay) return;
-        const checked = overlay.querySelectorAll('input[type="checkbox"]:checked');
+        const checked = overlay.querySelectorAll('.requsers-plex-list input[type="checkbox"]:checked:not(:disabled)');
         const friendIds = Array.from(checked).map(cb => parseInt(cb.value)).filter(v => !isNaN(v));
         if (!friendIds.length) {
-            if (window.HuntarrNotifications) window.HuntarrNotifications.showNotification('Select at least one friend to import', 'warning');
+            if (window.HuntarrNotifications) window.HuntarrNotifications.showNotification('Select at least one user to import', 'warning');
             return;
         }
 

@@ -291,50 +291,110 @@ def generate_password():
 
 # ── Plex Import ──────────────────────────────────────────────
 
+def _fetch_plex_users(plex_token):
+    """Fetch all Plex users with server/library access using the XML users API.
+    Returns a list of dicts with id, username, email, thumb.
+    Falls back to the v2 friends endpoint if the XML endpoint fails.
+    """
+    import requests as req
+    import xml.etree.ElementTree as ET
+
+    users = {}
+
+    # Primary: XML endpoint returns all users who have access to your server
+    try:
+        resp = req.get(
+            'https://plex.tv/api/users',
+            headers={'X-Plex-Token': plex_token, 'Accept': 'application/xml'},
+            timeout=15,
+        )
+        if resp.status_code == 200:
+            root = ET.fromstring(resp.content)
+            for user_el in root.findall('User'):
+                uid = int(user_el.get('id', 0))
+                if uid == 0:
+                    continue
+                users[uid] = {
+                    'id': uid,
+                    'username': user_el.get('username') or user_el.get('title', ''),
+                    'email': user_el.get('email', ''),
+                    'thumb': user_el.get('thumb', ''),
+                }
+    except Exception as e:
+        logger.warning(f"Plex XML users endpoint failed, falling back to v2/friends: {e}")
+
+    # Fallback / supplement: v2 friends endpoint (JSON, may have extra data)
+    try:
+        resp = req.get(
+            'https://plex.tv/api/v2/friends',
+            headers={'X-Plex-Token': plex_token, 'Accept': 'application/json'},
+            timeout=15,
+        )
+        if resp.status_code == 200:
+            for f in resp.json():
+                uid = f.get('id')
+                if not uid:
+                    continue
+                if uid not in users:
+                    users[uid] = {
+                        'id': uid,
+                        'username': f.get('username') or f.get('title', ''),
+                        'email': f.get('email', ''),
+                        'thumb': f.get('thumb', ''),
+                    }
+                else:
+                    # Supplement missing fields from friends data
+                    if not users[uid]['thumb'] and f.get('thumb'):
+                        users[uid]['thumb'] = f['thumb']
+                    if not users[uid]['email'] and f.get('email'):
+                        users[uid]['email'] = f['email']
+    except Exception as e:
+        logger.warning(f"Plex v2/friends endpoint failed: {e}")
+
+    if not users:
+        raise RuntimeError("Could not fetch Plex users from any endpoint")
+
+    return sorted(users.values(), key=lambda u: (u.get('username') or '').lower())
+
+
 @requestarr_users_bp.route('/plex/friends', methods=['GET'])
 def get_plex_friends():
-    """Get Plex friends list for import (owner only). Requires the owner to have linked Plex."""
+    """Get Plex users with server access for import (owner only).
+    Filters out users that are already imported.
+    """
     _, err = _require_owner()
     if err:
         return err
     try:
         db = get_database()
-        # Get the owner's Plex token
         owner = db.get_first_user()
         if not owner or not owner.get('plex_token'):
             return jsonify({'error': 'No Plex account linked. Link your Plex account in User settings first.'}), 400
 
-        import requests as req
-        plex_token = owner['plex_token']
-        resp = req.get(
-            'https://plex.tv/api/v2/friends',
-            headers={
-                'X-Plex-Token': plex_token,
-                'Accept': 'application/json',
-            },
-            timeout=15
-        )
-        if resp.status_code != 200:
-            return jsonify({'error': f'Plex API returned {resp.status_code}'}), 502
+        plex_users = _fetch_plex_users(owner['plex_token'])
 
-        friends = resp.json()
+        # Get existing usernames to mark already-imported users
+        existing_users = db.get_all_requestarr_users()
+        existing_names = {u.get('username', '').lower() for u in existing_users}
+
         result = []
-        for f in friends:
+        for u in plex_users:
             result.append({
-                'id': f.get('id'),
-                'username': f.get('username') or f.get('title', ''),
-                'email': f.get('email', ''),
-                'thumb': f.get('thumb', ''),
+                'id': u['id'],
+                'username': u['username'],
+                'email': u['email'],
+                'thumb': u['thumb'],
+                'already_imported': u['username'].lower() in existing_names,
             })
         return jsonify({'friends': result})
     except Exception as e:
-        logger.error(f"Error fetching Plex friends: {e}")
-        return jsonify({'error': 'Failed to fetch Plex friends'}), 500
+        logger.error(f"Error fetching Plex users: {e}")
+        return jsonify({'error': 'Failed to fetch Plex users'}), 500
 
 
 @requestarr_users_bp.route('/plex/import', methods=['POST'])
 def import_plex_users():
-    """Import selected Plex friends as local users (owner only)."""
+    """Import selected Plex users as local users (owner only)."""
     current_user, err = _require_owner()
     if err:
         return err
@@ -342,52 +402,40 @@ def import_plex_users():
         data = request.json or {}
         friend_ids = data.get('friend_ids', [])
         if not friend_ids:
-            return jsonify({'error': 'No friends selected'}), 400
+            return jsonify({'error': 'No users selected'}), 400
 
         db = get_database()
         owner = db.get_first_user()
         if not owner or not owner.get('plex_token'):
             return jsonify({'error': 'No Plex account linked'}), 400
 
-        import requests as req
         import json
-        plex_token = owner['plex_token']
-        resp = req.get(
-            'https://plex.tv/api/v2/friends',
-            headers={'X-Plex-Token': plex_token, 'Accept': 'application/json'},
-            timeout=15
-        )
-        if resp.status_code != 200:
-            return jsonify({'error': 'Failed to fetch Plex friends'}), 502
-
-        friends = resp.json()
-        friends_map = {f.get('id'): f for f in friends}
+        plex_users = _fetch_plex_users(owner['plex_token'])
+        users_map = {u['id']: u for u in plex_users}
 
         imported = []
         skipped = []
         for fid in friend_ids:
-            friend = friends_map.get(fid)
-            if not friend:
-                skipped.append({'id': fid, 'reason': 'Not found in friends list'})
+            plex_user = users_map.get(fid)
+            if not plex_user:
+                skipped.append({'id': fid, 'reason': 'Not found in Plex users'})
                 continue
 
-            username = friend.get('username') or friend.get('title', f'plex_{fid}')
-            email = friend.get('email', '')
+            username = plex_user['username'] or f'plex_{fid}'
+            email = plex_user['email']
 
-            # Check if already exists
             existing = db.get_requestarr_user_by_username(username)
             if existing:
                 skipped.append({'id': fid, 'username': username, 'reason': 'Already exists'})
                 continue
 
-            # Generate random password (Plex users won't use it directly)
             temp_password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(24))
             permissions = json.dumps(DEFAULT_PERMISSIONS['user'])
             plex_data = json.dumps({
-                'plex_id': friend.get('id'),
+                'plex_id': plex_user['id'],
                 'username': username,
                 'email': email,
-                'thumb': friend.get('thumb', ''),
+                'thumb': plex_user['thumb'],
             })
 
             success = db.create_requestarr_user(

@@ -406,7 +406,7 @@
 /* ── Plex Import Modal ────────────────────────────────────── */
 
 .requsers-plex-list {
-    max-height: 350px;
+    max-height: 450px;
     overflow-y: auto;
 }
 
@@ -427,11 +427,64 @@
     accent-color: var(--accent-color);
 }
 
+.requsers-plex-avatar-wrap {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    position: relative;
+}
+
 .requsers-plex-thumb {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     object-fit: cover;
+}
+
+.requsers-plex-avatar-fallback {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.4), rgba(139, 92, 246, 0.4));
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #e2e8f0;
+}
+
+.requsers-plex-select-all {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(71, 85, 105, 0.25);
+    margin-bottom: 4px;
+}
+
+.requsers-plex-select-all input[type="checkbox"] {
+    accent-color: var(--accent-color);
+}
+
+.requsers-plex-item-disabled {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+.requsers-plex-imported-badge {
+    margin-left: auto;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: rgba(34, 197, 94, 0.12);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    flex-shrink: 0;
 }
 
 /* ── Responsive ───────────────────────────────────────────── */
