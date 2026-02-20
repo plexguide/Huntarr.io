@@ -76,9 +76,6 @@
                 </div>
                 <h2>Plex Login</h2>
             </div>
-            <div class="plex-pin-display">
-                <p id="plexPinCode" class="plex-pin-code"></p>
-            </div>
             <div class="plex-status" id="plexStatus"></div>
             <button class="modal-close" id="plexModalClose">
                 <i class="fas fa-times"></i>
@@ -246,26 +243,11 @@
         const plexLoginButton = document.getElementById('plexLoginButton');
         const plexModal = document.getElementById('plexModal');
         const plexModalClose = document.getElementById('plexModalClose');
-        const plexPinCode = document.getElementById('plexPinCode');
         const plexStatus = document.getElementById('plexStatus');
 
         let currentPinId = null;
         let pinCheckInterval = null;
-
-        // Check if returning from Plex authentication
-        const plexLogin = localStorage.getItem('huntarr-plex-login');
-        const plexPinId = localStorage.getItem('huntarr-plex-pin-id');
-
-        if (plexLogin === 'true' && plexPinId) {
-            localStorage.removeItem('huntarr-plex-login');
-            localStorage.removeItem('huntarr-plex-pin-id');
-            plexModal.style.display = 'block';
-            const pinCodeValue = plexPinId.substring(0, 4) + '-' + plexPinId.substring(4);
-            plexPinCode.textContent = pinCodeValue;
-            currentPinId = plexPinId;
-            setPlexStatus('waiting', 'Completing authentication...');
-            startPinChecking();
-        }
+        let plexPopup = null;
 
         plexLoginButton.addEventListener('click', function() { startPlexAuthentication(); });
         plexModalClose.addEventListener('click', function() { stopPlexAuthentication(); plexModal.style.display = 'none'; });
@@ -273,13 +255,12 @@
 
         function startPlexAuthentication() {
             plexModal.style.display = 'block';
-            plexPinCode.textContent = '';
             setPlexStatus('waiting', '<i class="fas fa-spinner spinner"></i> Creating Plex PIN...');
 
             HuntarrUtils.fetchWithTimeout('./api/auth/plex/pin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ login_mode: true })
+                body: JSON.stringify({ login_mode: true, popup_mode: true })
             })
             .then(response => {
                 if (!response.ok) return response.json().then(data => { throw new Error(data.error || 'Server error: ' + response.status); }).catch(() => { throw new Error('HTTP error: ' + response.status); });
@@ -288,16 +269,15 @@
             .then(data => {
                 if (data.success) {
                     currentPinId = data.pin_id;
-                    const hashPart = data.auth_url.split('#')[1];
-                    if (hashPart) {
-                        const urlParams = new URLSearchParams(hashPart.substring(1));
-                        const pinCode = urlParams.get('code');
-                        plexPinCode.textContent = pinCode || 'PIN-' + currentPinId;
-                    } else { plexPinCode.textContent = 'PIN-' + currentPinId; }
-                    setPlexStatus('waiting', 'You will be redirected to Plex to sign in. After signing in, you will be brought back here automatically.');
-                    localStorage.setItem('huntarr-plex-pin-id', currentPinId);
-                    localStorage.setItem('huntarr-plex-login', 'true');
-                    setTimeout(() => { window.location.href = data.auth_url; }, 2000);
+                    setPlexStatus('waiting', '<i class="fas fa-external-link-alt"></i> A Plex window has opened. Please sign in there.');
+
+                    // Open Plex auth in a popup window
+                    const w = 600, h = 700;
+                    const left = Math.max(0, Math.round(window.screenX + (window.outerWidth - w) / 2));
+                    const top = Math.max(0, Math.round(window.screenY + (window.outerHeight - h) / 2));
+                    plexPopup = window.open(data.auth_url, 'PlexAuth', 'width=' + w + ',height=' + h + ',left=' + left + ',top=' + top + ',toolbar=no,menubar=no,scrollbars=yes');
+
+                    startPinChecking();
                 } else { setPlexStatus('error', 'Failed to create Plex PIN: ' + (data.error || 'Unknown error')); }
             })
             .catch(error => { setPlexStatus('error', 'Failed to create Plex PIN: ' + error.message); });
@@ -307,11 +287,19 @@
             if (pinCheckInterval) clearInterval(pinCheckInterval);
             pinCheckInterval = setInterval(() => {
                 if (!currentPinId) return;
+                // Close modal if user closed the popup manually
+                if (plexPopup && plexPopup.closed) {
+                    setPlexStatus('waiting', '<i class="fas fa-hourglass-half"></i> Checking if authentication completed...');
+                }
                 HuntarrUtils.fetchWithTimeout('./api/auth/plex/check/' + currentPinId, { method: 'GET' })
                     .then(response => response.json().then(data => ({ data, status: response.status })))
                     .then(({ data, status }) => {
                         if (data.success) {
-                            if (data.claimed) { setPlexStatus('success', '<i class="fas fa-check"></i> Plex authenticated! Logging in...'); loginWithPlexToken(data.token, data.user_data); }
+                            if (data.claimed) {
+                                setPlexStatus('success', '<i class="fas fa-check"></i> Plex authenticated! Logging in...');
+                                if (plexPopup && !plexPopup.closed) plexPopup.close();
+                                loginWithPlexToken(data.token, data.user_data);
+                            }
                         } else { setPlexStatus('error', 'Error checking PIN: ' + (data.error || 'Unknown error')); stopPlexAuthentication(); }
                     })
                     .catch(error => { setPlexStatus('error', 'Network error checking PIN status'); stopPlexAuthentication(); });
@@ -340,7 +328,12 @@
             .finally(() => { stopPlexAuthentication(); });
         }
 
-        function stopPlexAuthentication() { if (pinCheckInterval) { clearInterval(pinCheckInterval); pinCheckInterval = null; } currentPinId = null; }
+        function stopPlexAuthentication() {
+            if (pinCheckInterval) { clearInterval(pinCheckInterval); pinCheckInterval = null; }
+            if (plexPopup && !plexPopup.closed) plexPopup.close();
+            plexPopup = null;
+            currentPinId = null;
+        }
         function setPlexStatus(type, message) { plexStatus.className = 'plex-status ' + type; plexStatus.innerHTML = message; }
         {% endif %}
 

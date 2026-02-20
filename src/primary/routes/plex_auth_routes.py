@@ -26,14 +26,13 @@ def create_pin():
         # Check if we're in setup mode or user mode
         setup_mode = False
         user_mode = False
+        popup_mode = False
         if request.json:
             setup_mode = request.json.get('setup_mode', False)
             user_mode = request.json.get('user_mode', False)
+            popup_mode = request.json.get('popup_mode', False)
         
-        # Add debugging
-        logger.info(f"create_pin called with setup_mode: {setup_mode}, user_mode: {user_mode}, request.json: {request.json}")
-        
-        pin_data = create_plex_pin(setup_mode=setup_mode, user_mode=user_mode)
+        pin_data = create_plex_pin(setup_mode=setup_mode, user_mode=user_mode, popup_mode=popup_mode)
         if pin_data:
             logger.info(f"PIN created successfully: {pin_data['id']}, auth_url: {pin_data['auth_url']}")
             return jsonify({

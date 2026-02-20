@@ -889,13 +889,14 @@ def get_client_identifier() -> str:
         logger.info(f"Generated new Plex Client Identifier: {PLEX_CLIENT_IDENTIFIER}")
     return PLEX_CLIENT_IDENTIFIER
 
-def create_plex_pin(setup_mode: bool = False, user_mode: bool = False) -> Optional[Dict[str, Union[str, int]]]:
+def create_plex_pin(setup_mode: bool = False, user_mode: bool = False, popup_mode: bool = False) -> Optional[Dict[str, Union[str, int]]]:
     """
     Create a Plex PIN for authentication
     
     Args:
         setup_mode: If True, redirect to setup page
         user_mode: If True, redirect to user page
+        popup_mode: If True, omit forwardUrl (popup window closes itself, parent polls)
     
     Returns:
         Dict with pin details or None if failed
@@ -928,23 +929,25 @@ def create_plex_pin(setup_mode: bool = False, user_mode: bool = False) -> Option
             'expires_at': time.time() + 600  # 10 minutes
         }
         
-        # Create auth URL with redirect URI for main window flow
-        host_url = request.host_url.rstrip('/') if request else 'http://localhost:9705'
-        base_path = get_base_url_path()
-
-        if setup_mode:
-            redirect_uri = f"{host_url}{base_path}/setup"
-        elif user_mode:
-            redirect_uri = f"{host_url}{base_path}/user"
+        logger.info(f"Created Plex PIN: {pin_id} (setup_mode: {setup_mode}, user_mode: {user_mode}, popup_mode: {popup_mode})")
+        
+        if popup_mode:
+            # Popup flow: no forwardUrl — parent window polls for PIN claim
+            hosted_login_url = f"https://app.plex.tv/auth#?clientID={client_id}&code={pin_code}&context%5Bdevice%5D%5Bproduct%5D={PLEX_PRODUCT_NAME}"
         else:
-            redirect_uri = f"{host_url}{base_path}/"
-        
-        logger.info(f"Created Plex PIN: {pin_id} (setup_mode: {setup_mode}, user_mode: {user_mode})")
-        logger.info(f"Plex redirect_uri set to: {redirect_uri}")
-        
-        # Use Plex hosted login URL with forward URL for redirect support
-        # This is the correct Plex OAuth approach according to official documentation
-        hosted_login_url = f"https://app.plex.tv/auth#?clientID={client_id}&code={pin_code}&context%5Bdevice%5D%5Bproduct%5D={PLEX_PRODUCT_NAME}&forwardUrl={redirect_uri}"
+            # Redirect flow: include forwardUrl for legacy/setup support
+            host_url = request.host_url.rstrip('/') if request else 'http://localhost:9705'
+            base_path = get_base_url_path()
+
+            if setup_mode:
+                redirect_uri = f"{host_url}{base_path}/setup"
+            elif user_mode:
+                redirect_uri = f"{host_url}{base_path}/user"
+            else:
+                redirect_uri = f"{host_url}{base_path}/"
+            
+            logger.info(f"Plex redirect_uri set to: {redirect_uri}")
+            hosted_login_url = f"https://app.plex.tv/auth#?clientID={client_id}&code={pin_code}&context%5Bdevice%5D%5Bproduct%5D={PLEX_PRODUCT_NAME}&forwardUrl={redirect_uri}"
         
         return {
             'id': pin_id,
