@@ -426,20 +426,8 @@ def link_account():
 
 @plex_auth_bp.route('/api/auth/plex/unlink', methods=['POST'])
 def unlink_plex_account():
-    """Unlink Plex account from local user"""
+    """Unlink Plex account from local user — always proceeds regardless of session state"""
     try:
-        # Check if user is authenticated via session
-        session_id = request.cookies.get(SESSION_COOKIE_NAME)
-        if not session_id or not verify_session(session_id):
-            # Return a helpful message explaining what to do
-            logger.warning("Unlink attempt failed: User session expired or invalid")
-            return jsonify({
-                'success': False, 
-                'error': 'Session expired. Please log out and log back in with your username and password, then try unlinking again.',
-                'session_expired': True
-            }), 401
-        
-        # Since user is authenticated, we can directly unlink without username validation
         if unlink_plex_from_user():
             return jsonify({'success': True, 'message': 'Plex account unlinked successfully'})
         else:
@@ -447,7 +435,6 @@ def unlink_plex_account():
             
     except Exception as e:
         logger.error(f"Error unlinking Plex account: {str(e)}")
-        # Check if this is the specific Plex-only user error
         if "Plex-only user must set a local password" in str(e):
             return jsonify({
                 'success': False, 

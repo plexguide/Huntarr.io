@@ -310,7 +310,15 @@ window.RequestarrUsers = {
             const resp = await fetch('./api/requestarr/users/plex/friends');
             const data = await resp.json();
             if (data.error) {
-                if (window.HuntarrNotifications) window.HuntarrNotifications.showNotification(data.error, 'error');
+                // No Plex linked — offer to link it right here via popup
+                if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                    window.HuntarrConfirm.show({
+                        title: 'Plex Account Not Linked',
+                        message: 'No Plex account is linked. Would you like to link your Plex account now? Once linked, you can import your Plex friends as users.',
+                        confirmLabel: 'Link Plex',
+                        onConfirm: () => { this._startPlexLinkFromUsers(); }
+                    });
+                }
                 return;
             }
             const friends = data.friends || [];
@@ -396,5 +404,117 @@ window.RequestarrUsers = {
         const div = document.createElement('div');
         div.textContent = str;
         return div.innerHTML;
+    },
+
+    /**
+     * Start Plex account linking directly from the Users page via popup flow.
+     * On success, automatically opens the Plex import modal.
+     */
+    _startPlexLinkFromUsers() {
+        // Create a status overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'requsers-plex-link-overlay';
+        overlay.style.cssText = 'position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.7);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;';
+        overlay.innerHTML = `
+            <div style="background:linear-gradient(180deg,rgba(22,26,34,0.98),rgba(18,22,30,0.95));border-radius:15px;padding:30px;width:400px;max-width:90%;box-shadow:0 8px 30px rgba(0,0,0,0.5);border:1px solid rgba(90,109,137,0.15);color:#f8f9fa;text-align:center;">
+                <div style="font-size:40px;color:#e69500;margin-bottom:10px;"><i class="fas fa-tv"></i></div>
+                <h2 style="margin:0 0 15px;">Link Plex Account</h2>
+                <div id="requsers-plex-link-status" class="plex-status waiting" style="margin:15px 0;padding:10px;border-radius:8px;background:rgba(255,193,7,0.2);border:1px solid rgba(255,193,7,0.3);color:#ffc107;">
+                    <i class="fas fa-spinner fa-spin"></i> Preparing Plex authentication...
+                </div>
+                <button id="requsers-plex-link-cancel" class="action-button secondary-button" style="margin-top:10px;">Cancel</button>
+            </div>`;
+        document.body.appendChild(overlay);
+
+        const statusEl = document.getElementById('requsers-plex-link-status');
+        const cancelBtn = document.getElementById('requsers-plex-link-cancel');
+        let plexPopup = null;
+        let pollInterval = null;
+        let pinId = null;
+
+        const cleanup = () => {
+            if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+            if (plexPopup && !plexPopup.closed) plexPopup.close();
+            plexPopup = null;
+            const el = document.getElementById('requsers-plex-link-overlay');
+            if (el) el.remove();
+        };
+
+        cancelBtn.addEventListener('click', cleanup);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) cleanup(); });
+
+        // Request PIN with popup_mode
+        fetch('./api/auth/plex/pin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_mode: true, popup_mode: true })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) {
+                statusEl.className = 'plex-status error';
+                statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ' + (data.error || 'Failed to create PIN');
+                return;
+            }
+            pinId = data.pin_id;
+            statusEl.innerHTML = '<i class="fas fa-external-link-alt"></i> A Plex window has opened. Please sign in there.';
+
+            // Open popup
+            const w = 600, h = 700;
+            const left = Math.max(0, Math.round(window.screenX + (window.outerWidth - w) / 2));
+            const top = Math.max(0, Math.round(window.screenY + (window.outerHeight - h) / 2));
+            plexPopup = window.open(data.auth_url, 'PlexAuth', `width=${w},height=${h},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes`);
+
+            // Poll for claim
+            pollInterval = setInterval(() => {
+                fetch(`./api/auth/plex/check/${pinId}`)
+                    .then(r => r.json())
+                    .then(d => {
+                        if (d.success && d.claimed) {
+                            clearInterval(pollInterval); pollInterval = null;
+                            if (plexPopup && !plexPopup.closed) plexPopup.close();
+                            statusEl.className = 'plex-status success';
+                            statusEl.innerHTML = '<i class="fas fa-check"></i> Plex authenticated! Linking account...';
+                            // Link the account
+                            fetch('./api/auth/plex/link', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
+                                body: JSON.stringify({ token: d.token, setup_mode: true })
+                            })
+                            .then(r => r.json())
+                            .then(linkResult => {
+                                if (linkResult.success) {
+                                    statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Plex linked! Loading friends...';
+                                    setTimeout(() => {
+                                        cleanup();
+                                        this.openPlexImportModal();
+                                    }, 1000);
+                                } else {
+                                    statusEl.className = 'plex-status error';
+                                    statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ' + (linkResult.error || 'Linking failed');
+                                }
+                            })
+                            .catch(() => {
+                                statusEl.className = 'plex-status error';
+                                statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Network error linking account';
+                            });
+                        }
+                    })
+                    .catch(() => {});
+            }, 2000);
+
+            // 10 min timeout
+            setTimeout(() => {
+                if (pollInterval) {
+                    cleanup();
+                    if (window.HuntarrNotifications) window.HuntarrNotifications.showNotification('Plex authentication timed out', 'error');
+                }
+            }, 600000);
+        })
+        .catch(() => {
+            statusEl.className = 'plex-status error';
+            statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Network error creating PIN';
+        });
     },
 };
