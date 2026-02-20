@@ -8111,10 +8111,13 @@ window.HuntarrChat = (function() {
             html += '<span class="hchat-msg-role ' + m.role + '">' + m.role + '</span>';
             html += '<span class="hchat-msg-time">' + _formatTime(m.created_at) + '</span>';
             html += '</div>';
-            html += '<div class="hchat-msg-bubble">';
-            html += _escHtml(m.message);
-            if (canDelete) {
-                html += '<button class="hchat-msg-delete" data-id="' + m.id + '" title="Delete"><i class="fas fa-times"></i></button>';
+            html += '<div class="hchat-msg-row">';
+            if (canDelete && isSelf) {
+                html += '<button class="hchat-msg-delete" data-id="' + m.id + '" title="Delete" aria-label="Delete message"><i class="fas fa-trash-alt"></i></button>';
+            }
+            html += '<div class="hchat-msg-bubble">' + _escHtml(m.message) + '</div>';
+            if (canDelete && !isSelf) {
+                html += '<button class="hchat-msg-delete" data-id="' + m.id + '" title="Delete" aria-label="Delete message"><i class="fas fa-trash-alt"></i></button>';
             }
             html += '</div></div>';
         }

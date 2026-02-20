@@ -6,6 +6,7 @@ Owner has moderator powers (delete any message, clear all).
 from flask import Blueprint, request, jsonify
 import logging
 import html
+import time
 from src.primary.utils.database import get_database
 from src.primary.auth import get_username_from_session, SESSION_COOKIE_NAME
 
@@ -15,10 +16,30 @@ chat_bp = Blueprint('chat', __name__, url_prefix='/api/chat')
 
 MAX_MESSAGE_LENGTH = 500
 
+# Simple per-user rate limiting: {username: [timestamp, ...]}
+_rate_limits = {}
+RATE_LIMIT_WINDOW = 10  # seconds
+RATE_LIMIT_MAX = 5      # max messages per window
+
+
+def _check_rate_limit(username):
+    """Returns True if allowed, False if rate-limited."""
+    now = time.time()
+    if username not in _rate_limits:
+        _rate_limits[username] = []
+    # Prune old entries
+    _rate_limits[username] = [t for t in _rate_limits[username] if now - t < RATE_LIMIT_WINDOW]
+    if len(_rate_limits[username]) >= RATE_LIMIT_MAX:
+        return False
+    _rate_limits[username].append(now)
+    return True
+
 
 def _get_current_user():
     """Get the current authenticated user with role info."""
     session_token = request.cookies.get(SESSION_COOKIE_NAME)
+    if not session_token:
+        return None
     username = get_username_from_session(session_token)
     if not username:
         return None
@@ -59,6 +80,9 @@ def send_message():
         return jsonify({'error': 'Message cannot be empty'}), 400
     if len(message) > MAX_MESSAGE_LENGTH:
         return jsonify({'error': f'Message too long (max {MAX_MESSAGE_LENGTH} chars)'}), 400
+    # Rate limit
+    if not _check_rate_limit(user['username']):
+        return jsonify({'error': 'Too many messages. Slow down.'}), 429
     # Sanitize
     message = html.escape(message)
     db = get_database()
