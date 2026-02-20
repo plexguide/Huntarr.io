@@ -218,11 +218,11 @@ window.RequestarrServices = {
                     <button class="requsers-modal-close" onclick="RequestarrServices.closeModal()"><i class="fas fa-times"></i></button>
                 </div>
                 <div class="requsers-modal-body">
+                    ${typeSelectHtml}
                     <div class="requsers-field">
                         <label>Bundle Name</label>
                         <input type="text" id="bundle-name-input" value="${this._esc(bundleName)}" placeholder="e.g. Movies1" maxlength="50">
                     </div>
-                    ${typeSelectHtml}
                     <div class="requsers-field">
                         <label>Primary Instance</label>
                         <select id="bundle-primary-select"><option value="">Loading...</option></select>
