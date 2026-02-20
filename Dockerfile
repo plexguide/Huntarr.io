@@ -8,14 +8,23 @@ WORKDIR /app
 # The COPY of requirements.txt is separate so Docker can cache this heavy layer
 # as long as requirements.txt is unchanged.
 COPY requirements.txt /app/
+
+# TARGETARCH is set automatically by Docker Buildx (amd64 or arm64)
+ARG TARGETARCH
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
         net-tools curl wget nano tzdata par2 p7zip-full gosu ffmpeg mediainfo \
         build-essential python3-dev && \
-    # Install unrar from RARLAB (full RAR5 support; SHA256 verified)
-    wget -q https://www.rarlab.com/rar/rarlinux-x64-720.tar.gz -O /tmp/rar.tar.gz && \
-    echo "d3e7fba3272385b1d0255ee332a1e8c1a6779bb5a5ff9d4d8ac2be846e49ca46  /tmp/rar.tar.gz" | sha256sum -c - && \
-    tar xzf /tmp/rar.tar.gz -C /tmp && cp /tmp/rar/unrar /usr/local/bin/ && chmod 755 /usr/local/bin/unrar && \
-    rm -rf /tmp/rar /tmp/rar.tar.gz && \
+    # Install unrar: RARLAB binary on amd64 (full RAR5), Debian package on arm64
+    if [ "$TARGETARCH" = "amd64" ]; then \
+        wget -q https://www.rarlab.com/rar/rarlinux-x64-720.tar.gz -O /tmp/rar.tar.gz && \
+        echo "d3e7fba3272385b1d0255ee332a1e8c1a6779bb5a5ff9d4d8ac2be846e49ca46  /tmp/rar.tar.gz" | sha256sum -c - && \
+        tar xzf /tmp/rar.tar.gz -C /tmp && cp /tmp/rar/unrar /usr/local/bin/ && chmod 755 /usr/local/bin/unrar && \
+        rm -rf /tmp/rar /tmp/rar.tar.gz; \
+    else \
+        apt-get install -y --no-install-recommends unrar-free && \
+        ln -sf /usr/bin/unrar-free /usr/local/bin/unrar; \
+    fi && \
     # Install Python deps (sabyenc3 needs build-essential to compile)
     pip install --no-cache-dir -r requirements.txt && \
     # Remove build tools to keep image lean
