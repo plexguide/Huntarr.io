@@ -314,63 +314,87 @@ let huntarrUI = {
     },
 
     /**
-     * Non-owner users are siloed to Requests only.
-     * - Hide Home, Core label, System, Apps label, Media Hunt, NZB Hunt, 3rd Party Apps
-     * - Hide the Requests group header (no accordion) — show sub-items as flat top-level nav
-     * - Hide owner-only items within Requests (Users, Services, Requests mgmt, Settings, Smart Hunt)
+     * Non-owner users get a completely separate sidebar.
+     * We nuke the owner nav-menu and build a clean standalone one.
      */
     _applyNonOwnerRestrictions: function() {
-        // 1. Mark body FIRST so CSS !important rules take effect immediately
-        //    This prevents any async settings fetch from re-showing hidden elements
+        // 1. Mark body so CSS rules apply
         document.body.classList.add('non-owner-mode');
 
-        // 2. Inject "Request System" label above the Requests group items
-        var requestsGroup = document.getElementById('nav-group-requests');
-        if (requestsGroup && !document.getElementById('non-owner-label')) {
-            var label = document.createElement('div');
-            label.id = 'non-owner-label';
-            label.className = 'nav-group';
-            label.innerHTML = '<div class="nav-group-title">Request System</div>';
-            requestsGroup.parentNode.insertBefore(label, requestsGroup);
+        // 2. Replace the entire nav-menu with a standalone non-owner sidebar
+        var navMenu = document.querySelector('#sidebar .nav-menu');
+        if (navMenu && !document.getElementById('non-owner-nav')) {
+            // Grab the Daughter's Sponsors data before we nuke the menu
+            var sponsorNav = document.getElementById('sidebar-partner-projects-nav');
+            var sponsorHref = sponsorNav ? sponsorNav.getAttribute('href') : '#';
+            var sponsorTarget = sponsorNav ? sponsorNav.getAttribute('target') : '_blank';
+            var sponsorNameEl = document.getElementById('sidebar-partner-projects-name');
+            var sponsorName = sponsorNameEl ? sponsorNameEl.textContent : 'Loading...';
+
+            // Build the non-owner nav
+            var nav = document.createElement('nav');
+            nav.className = 'nav-menu';
+            nav.id = 'non-owner-nav';
+
+            var items = [
+                { id: 'requestarrDiscoverNav', hash: '#requestarr-discover', icon: 'fas fa-compass', label: 'Discover' },
+                { id: 'requestarrTVNav', hash: '#requestarr-tv', icon: 'fas fa-tv', label: 'TV Shows' },
+                { id: 'requestarrMoviesNav', hash: '#requestarr-movies', icon: 'fas fa-film', label: 'Movies' },
+                { id: 'requestarrPersonalBlacklistNav', hash: '#requestarr-personal-blacklist', icon: 'fas fa-eye-slash', label: 'Personal Blacklist' },
+                { id: 'requestarrRequestsNav', hash: '#requestarr-requests', icon: 'fas fa-inbox', label: 'Requests' }
+            ];
+
+            // Section label
+            nav.innerHTML = '<div class="nav-group"><div class="nav-group-title">Request System</div></div>';
+
+            // Nav items — all same level, same style
+            items.forEach(function(item) {
+                var a = document.createElement('a');
+                a.href = './' + item.hash;
+                a.className = 'nav-item non-owner-nav-item';
+                a.id = item.id;
+                a.innerHTML = '<div class="nav-icon-wrapper"><i class="' + item.icon + '"></i></div><span>' + item.label + '</span>';
+                nav.appendChild(a);
+            });
+
+            // Daughter's Sponsors — always visible
+            var sponsorGroup = document.createElement('div');
+            sponsorGroup.className = 'nav-group';
+            sponsorGroup.id = 'main-sidebar-partner-projects-group';
+            sponsorGroup.innerHTML =
+                '<div class="nav-group-title">Daughter\'s Sponsors</div>' +
+                '<a href="' + sponsorHref + '" target="' + sponsorTarget + '" rel="noopener noreferrer" class="nav-item" id="sidebar-partner-projects-nav">' +
+                    '<div class="nav-icon-wrapper"><i class="fas fa-heart" style="color: #ec4899;"></i></div>' +
+                    '<span id="sidebar-partner-projects-name">' + sponsorName + '</span>' +
+                '</a>';
+            nav.appendChild(sponsorGroup);
+
+            navMenu.parentNode.replaceChild(nav, navMenu);
+
+            // Set up active highlighting for the non-owner nav
+            function setNonOwnerActive() {
+                var h = window.location.hash || '#requestarr-discover';
+                nav.querySelectorAll('.non-owner-nav-item').forEach(function(el) { el.classList.remove('active'); });
+                var map = {
+                    '#requestarr-discover': 'requestarrDiscoverNav',
+                    '#requestarr': 'requestarrDiscoverNav',
+                    '#requestarr-tv': 'requestarrTVNav',
+                    '#requestarr-movies': 'requestarrMoviesNav',
+                    '#requestarr-hidden': 'requestarrPersonalBlacklistNav',
+                    '#requestarr-personal-blacklist': 'requestarrPersonalBlacklistNav',
+                    '#requestarr-requests': 'requestarrRequestsNav'
+                };
+                var targetId = map[h];
+                if (targetId) {
+                    var el = document.getElementById(targetId);
+                    if (el) el.classList.add('active');
+                }
+            }
+            window.addEventListener('hashchange', setNonOwnerActive);
+            setNonOwnerActive();
         }
 
-        // 3. Hide the Requests group header (accordion toggle) — make sub-items flat
-        if (requestsGroup) {
-            var header = requestsGroup.querySelector('.nav-group-header');
-            if (header) header.style.display = 'none';
-        }
-
-        // 4. Force-expand the Requests group body and promote items to top-level styling
-        var requestsBody = document.getElementById('sidebar-group-requests');
-        if (requestsBody) {
-            requestsBody.classList.remove('collapsed');
-            requestsBody.classList.add('non-owner-flat');
-        }
-
-        // 5. Hide owner-only items within Requests for ALL non-owner users
-        var hideNavItems = [
-            'requestarrSmartHuntSettingsNav',
-            'requestarrUsersNav',
-            'requestarrServicesNav',
-            'requestarrSettingsNav',
-            'requestarrUserSupportLabel',
-            'requestarrGlobalBlacklistNav',
-            'requestarrRequestsNav',
-        ];
-        hideNavItems.forEach(function(id) {
-            var el = document.getElementById(id);
-            if (el) el.style.display = 'none';
-        });
-
-        // 5b. (User Support items are now always visible for owners, hidden above for non-owners)
-        // Hide the Back nav inside the sub-group — not needed for non-owners
-        var backNav = document.getElementById('requestarrUserSupportBackNav');
-        if (backNav) backNav.style.display = 'none';
-        // Show only the Requests nav item from the sub-group
-        var requestsNav = document.getElementById('requestarrRequestsNav');
-        if (requestsNav) requestsNav.style.display = '';
-
-        // 6. Redirect if current section is not allowed
+        // 3. Redirect if current section is not allowed
         var allowedSections = [
             'requestarr', 'requestarr-discover', 'requestarr-movies',
             'requestarr-tv', 'requestarr-hidden', 'requestarr-personal-blacklist',
@@ -380,7 +404,7 @@ let huntarrUI = {
             window.location.hash = '#requestarr-discover';
         }
 
-        // 7. Hide the Requests header bar (breadcrumb) — redundant for non-owner users
+        // 4. Hide the Requests header bar (breadcrumb) — redundant for non-owner users
         var headerBar = document.querySelector('.requestarr-header-bar');
         if (headerBar) headerBar.style.display = 'none';
     },

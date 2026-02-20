@@ -745,15 +745,85 @@
     background: var(--bg-hover);
 }
 
-/* ── Non-owner flat sidebar (no accordion, sub-items as top-level) ── */
+/* ── Non-owner flat sidebar (standalone nav, replaces owner sidebar entirely) ── */
 
-.nav-group-body.non-owner-flat {
-    display: block !important;
+.non-owner-nav-item {
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    height: 36px;
+    color: rgba(203, 213, 225, 0.8);
+    text-decoration: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 8px;
+    margin: 1px 10px;
+    position: relative;
+    cursor: pointer;
 }
 
-.nav-group-body.non-owner-flat .nav-item-sub {
-    padding-left: 16px;
-    font-size: 0.9rem;
+.non-owner-nav-item span {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.non-owner-nav-item .nav-icon-wrapper {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 10px;
+    flex-shrink: 0;
+    border-radius: 7px;
+    background: transparent;
+    border: none;
+    position: relative;
+}
+
+.non-owner-nav-item .nav-icon-wrapper i {
+    font-size: 14px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(148, 163, 184, 0.7);
+}
+
+.non-owner-nav-item:hover {
+    background: rgba(99, 102, 241, 0.06);
+    color: #e2e8f0;
+    text-decoration: none;
+}
+
+.non-owner-nav-item.active {
+    background: rgba(99, 102, 241, 0.1);
+    color: #a5b4fc;
+}
+
+.non-owner-nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 6px;
+    bottom: 6px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: #6366f1;
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
+}
+
+.non-owner-nav-item.active .nav-icon-wrapper i {
+    color: #a5b4fc;
+    filter: drop-shadow(0 0 3px rgba(99, 102, 241, 0.4));
+}
+
+.non-owner-nav-item.active span {
+    font-weight: 600;
+    color: #a5b4fc;
 }
 
 /* ── Hidden Media Scope Badges ─────────────────────────────── */
@@ -790,30 +860,8 @@
     bottom: 6px;
 }
 
-/* ── Non-owner mode: hide everything outside Requests via CSS !important ── */
-/* This is the nuclear option — no JS race condition can override these rules */
+/* ── Non-owner mode: hide elements outside the standalone sidebar ── */
 
-body.non-owner-mode #homeNav,
-body.non-owner-mode #nav-group-core-label,
-body.non-owner-mode #nav-group-system,
-body.non-owner-mode #nav-group-apps-label,
-body.non-owner-mode #nav-group-media-hunt,
-body.non-owner-mode #nzb-hunt-sidebar-group,
-body.non-owner-mode #nav-group-apps,
-body.non-owner-mode #main-sidebar-partner-projects-group,
 body.non-owner-mode .requestarr-header-bar {
-    display: none !important;
-}
-
-/* Non-owner: force the user-support-sub visible so Requests nav shows */
-body.non-owner-mode #requestarr-user-support-sub {
-    display: block !important;
-}
-
-/* Non-owner: hide all owner-only items inside the sub-group */
-body.non-owner-mode #requestarrUserSupportBackNav,
-body.non-owner-mode #requestarrUsersNav,
-body.non-owner-mode #requestarrServicesNav,
-body.non-owner-mode #requestarrGlobalBlacklistNav {
     display: none !important;
 }
