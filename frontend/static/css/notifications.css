@@ -323,7 +323,6 @@
 
 /* ---- Modal ---- */
 body.notif-modal-open { overflow: hidden; }
-body.notif-modal-open #notificationsSection > .app-content-panel { filter: blur(10px); pointer-events: none; }
 
 .notif-modal-overlay {
     position: fixed;

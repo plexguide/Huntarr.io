@@ -14375,6 +14375,9 @@ document.head.appendChild(styleEl);
             populateInstanceDropdown(appSelect.value, instSelect, existingInstScope);
         }
 
+        // Move overlay to body so backdrop-filter covers sidebar/topbar
+        document.body.appendChild(overlay);
+
         // Show modal
         overlay.classList.add('active');
         document.body.classList.add('notif-modal-open');
@@ -14429,6 +14432,11 @@ document.head.appendChild(styleEl);
         if (overlay) {
             overlay.classList.remove('active');
             document.body.classList.remove('notif-modal-open');
+            // Move overlay back into the section so it can be found next time
+            var section = document.getElementById('notificationsSection');
+            if (section && overlay.parentNode === document.body) {
+                section.appendChild(overlay);
+            }
         }
         editingId = null;
         editingProvider = null;
