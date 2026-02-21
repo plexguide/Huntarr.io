@@ -84,6 +84,10 @@
                     <div class="nav-icon-wrapper"><i class="fas fa-ban"></i></div>
                     <span>Global Blacklist</span>
                 </a>
+                <a href="./#notifications" class="nav-item nav-item-sub nav-item-deep" id="requestarrNotificationsNav" data-notifications-source="requests">
+                    <div class="nav-icon-wrapper"><i class="fas fa-bell"></i></div>
+                    <span>Notifications</span>
+                </a>
             </div>
         </div>
 
@@ -581,7 +585,14 @@ function setActiveNavItem() {
     else if (h === '#logs') { selector = '#mainSystemLogsNav'; group = 'sidebar-group-system'; }
     else if (h === '#settings') { selector = '#mainSettingsMainNav'; group = 'sidebar-group-system'; }
     else if (h === '#scheduling') { selector = '#mainSettingsSchedulingNav'; group = 'sidebar-group-system'; }
-    else if (h === '#notifications') { selector = '#mainSettingsNotificationsNav'; group = 'sidebar-group-system'; }
+    else if (h === '#notifications') {
+        // Check if user navigated here from Requests sidebar
+        if (window._notificationsFromRequests) {
+            selector = '#requestarrNotificationsNav'; group = 'sidebar-group-requests';
+        } else {
+            selector = '#mainSettingsNotificationsNav'; group = 'sidebar-group-system';
+        }
+    }
     else if (h === '#backup-restore') { selector = '#mainSettingsBackupRestoreNav'; group = 'sidebar-group-system'; }
     else if (h === '#settings-logs') { selector = '#mainSettingsLogsNav'; group = 'sidebar-group-system'; }
     else if (h === '#user') { selector = '#mainSettingsUserNav'; group = 'sidebar-group-system'; }
@@ -760,6 +771,18 @@ function setActiveNavItem() {
 })();
 
 // ── Init ─────────────────────────────────────────────────────
+// Track which sidebar context Notifications was opened from
+window._notificationsFromRequests = false;
+document.addEventListener('click', function(e) {
+    var navItem = e.target.closest('.nav-item');
+    if (!navItem) return;
+    if (navItem.id === 'requestarrNotificationsNav') {
+        window._notificationsFromRequests = true;
+    } else if (navItem.id === 'mainSettingsNotificationsNav') {
+        window._notificationsFromRequests = false;
+    }
+});
+
 window.addEventListener('hashchange', setActiveNavItem);
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setActiveNavItem);

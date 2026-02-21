@@ -14199,7 +14199,8 @@ document.head.appendChild(styleEl);
             testBtn.style.display = editingId ? '' : 'none';
         }
 
-        var existingCategory = existingConn ? (existingConn.category || 'instance') : 'instance';
+        var defaultCategory = window._notificationsFromRequests ? 'requests' : 'instance';
+        var existingCategory = existingConn ? (existingConn.category || 'instance') : defaultCategory;
 
         var html = '';
 
