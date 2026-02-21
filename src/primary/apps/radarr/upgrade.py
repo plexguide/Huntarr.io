@@ -72,7 +72,6 @@ def process_cutoff_upgrades(
     Returns:
         True if any movies were processed for upgrades, False otherwise.
     """
-    radarr_logger.info(f"Upgrade: checking for {hunt_upgrade_movies} movies for '{instance_name}'")
     processed_any = False
     
     # Extract common settings using shared utility
@@ -85,6 +84,8 @@ def process_cutoff_upgrades(
     monitored_only = s['monitored_only']
     hunt_upgrade_movies = s['hunt_count']
     tag_settings = s['tag_settings']
+    
+    radarr_logger.info(f"Upgrade: checking for {hunt_upgrade_movies} movies for '{instance_name}'")
     
     # App-specific settings
     skip_future_releases = app_settings.get("skip_future_releases", True)

@@ -204,12 +204,12 @@ def process_cutoff_upgrades(
     Returns:
         True if any movies were processed for upgrades, False otherwise
     """
-    movie_hunt_logger.info(f"Upgrade: checking for {hunt_upgrade_movies} movies for '{instance_name}'")
-    
     processed_any = False
     instance_id = app_settings.get('instance_id')
     instance_name = app_settings.get("instance_name", "Default")
     hunt_upgrade_movies = app_settings.get('hunt_upgrade_movies', 0)
+    
+    movie_hunt_logger.info(f"Upgrade: checking for {hunt_upgrade_movies} movies for '{instance_name}'")
     
     if not instance_id:
         movie_hunt_logger.warning("No instance_id in app_settings, skipping upgrade cycle.")

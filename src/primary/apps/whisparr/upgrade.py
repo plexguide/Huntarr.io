@@ -39,7 +39,6 @@ def process_cutoff_upgrades(
     Returns:
         True if any items were processed for upgrades, False otherwise.
     """
-    whisparr_logger.info(f"Upgrade: checking for {hunt_upgrade_items} items for '{instance_name}'")
     processed_any = False
     
     # Reset state files if enough time has passed
@@ -58,6 +57,8 @@ def process_cutoff_upgrades(
     monitored_only = s['monitored_only']
     hunt_upgrade_items = s['hunt_count']
     tag_settings = extract_tag_settings(app_settings)
+    
+    whisparr_logger.info(f"Upgrade: checking for {hunt_upgrade_items} items for '{instance_name}'")
     
     whisparr_logger.debug(f"Using Whisparr V2 API for instance: {instance_name}")
 

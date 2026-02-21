@@ -131,12 +131,12 @@ def process_cutoff_upgrades(
     Returns:
         True if any episodes were processed for upgrades, False otherwise
     """
-    tv_hunt_logger.info(f"Upgrade: checking for {hunt_upgrade_episodes} episodes for '{instance_name}'")
-    
     processed_any = False
     instance_id = app_settings.get('instance_id')
     instance_name = app_settings.get("instance_name", "Default")
     hunt_upgrade_episodes = app_settings.get('hunt_upgrade_episodes', 0)
+    
+    tv_hunt_logger.info(f"Upgrade: checking for {hunt_upgrade_episodes} episodes for '{instance_name}'")
     
     if not instance_id:
         tv_hunt_logger.warning("No instance_id in app_settings, skipping upgrade cycle.")

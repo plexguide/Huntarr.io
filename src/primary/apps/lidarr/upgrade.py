@@ -36,7 +36,6 @@ def process_cutoff_upgrades(
     Returns:
         bool: True if any items were processed, False otherwise.
     """
-    lidarr_logger.info(f"Upgrade: checking for {hunt_upgrade_items} albums for '{instance_name}'")
     processed_any = False
 
     # Extract common settings using shared utility
@@ -50,6 +49,8 @@ def process_cutoff_upgrades(
     hunt_upgrade_items = s['hunt_count']
     command_wait_delay = s['command_wait_delay']
     command_wait_attempts = s['command_wait_attempts']
+    
+    lidarr_logger.info(f"Upgrade: checking for {hunt_upgrade_items} albums for '{instance_name}'")
     
     # App-specific settings
     upgrade_selection_method = (app_settings.get("upgrade_selection_method") or "cutoff").strip().lower()

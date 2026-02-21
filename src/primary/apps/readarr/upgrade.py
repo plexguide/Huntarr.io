@@ -37,8 +37,6 @@ def process_cutoff_upgrades(
     Returns:
         True if any books were processed for upgrades, False otherwise.
     """
-    readarr_logger.info(f"Upgrade: checking for {hunt_upgrade_books} books for '{instance_name}'")
-    
     # Reset state files if enough time has passed
     check_state_reset("readarr")
     
@@ -54,6 +52,8 @@ def process_cutoff_upgrades(
     monitored_only = s['monitored_only']
     hunt_upgrade_books = s['hunt_count']
     tag_settings = s['tag_settings']
+    
+    readarr_logger.info(f"Upgrade: checking for {hunt_upgrade_books} books for '{instance_name}'")
     
     # App-specific settings
     upgrade_selection_method = (app_settings.get("upgrade_selection_method") or "cutoff").strip().lower()
