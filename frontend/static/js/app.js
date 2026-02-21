@@ -188,7 +188,7 @@ let huntarrUI = {
         } else if (this.currentSection === 'movie-hunt-home' || this.currentSection === 'movie-hunt-collection' || this.currentSection === 'media-hunt-collection' || this.currentSection === 'activity-queue' || this.currentSection === 'activity-history' || this.currentSection === 'activity-blocklist' || this.currentSection === 'activity-logs' || this.currentSection === 'logs-media-hunt' || this.currentSection === 'settings-clients' || this.currentSection === 'movie-hunt-instance-editor') {
             console.log('[huntarrUI] Initialization - showing movie hunt sidebar');
             this.showMovieHuntSidebar();
-        } else if (this.currentSection === 'requestarr' || this.currentSection === 'requestarr-discover' || this.currentSection === 'requestarr-movies' || this.currentSection === 'requestarr-tv' || this.currentSection === 'requestarr-hidden' || this.currentSection === 'requestarr-personal-blacklist' || this.currentSection === 'requestarr-filters' || this.currentSection === 'requestarr-settings' || this.currentSection === 'requestarr-smarthunt-settings' || this.currentSection === 'requestarr-users' || this.currentSection === 'requestarr-bundles' || this.currentSection === 'requestarr-requests' || this.currentSection === 'requestarr-global-blacklist') {
+        } else if (this.currentSection === 'requestarr' || this.currentSection === 'requestarr-discover' || this.currentSection === 'requestarr-movies' || this.currentSection === 'requestarr-tv' || this.currentSection === 'requestarr-smarthunt' || this.currentSection === 'requestarr-hidden' || this.currentSection === 'requestarr-personal-blacklist' || this.currentSection === 'requestarr-filters' || this.currentSection === 'requestarr-settings' || this.currentSection === 'requestarr-smarthunt-settings' || this.currentSection === 'requestarr-users' || this.currentSection === 'requestarr-bundles' || this.currentSection === 'requestarr-requests' || this.currentSection === 'requestarr-global-blacklist') {
             if (this._enableRequestarr === false) {
                 console.log('[huntarrUI] Requestarr disabled - redirecting to home');
                 this.switchSection('home');
@@ -340,6 +340,7 @@ let huntarrUI = {
                 { id: 'requestarrDiscoverNav', hash: '#requestarr-discover', icon: 'fas fa-compass', label: 'Discover' },
                 { id: 'requestarrTVNav', hash: '#requestarr-tv', icon: 'fas fa-tv', label: 'TV Shows' },
                 { id: 'requestarrMoviesNav', hash: '#requestarr-movies', icon: 'fas fa-film', label: 'Movies' },
+                { id: 'requestarrSmartHuntNav', hash: '#requestarr-smarthunt', icon: 'fas fa-fire', label: 'Smart Hunt' },
                 { id: 'requestarrPersonalBlacklistNav', hash: '#requestarr-personal-blacklist', icon: 'fas fa-eye-slash', label: 'Personal Blacklist' },
                 { id: 'requestarrRequestsNav', hash: '#requestarr-requests', icon: 'fas fa-inbox', label: 'Requests' }
             ];
@@ -380,6 +381,7 @@ let huntarrUI = {
                     '#requestarr': 'requestarrDiscoverNav',
                     '#requestarr-tv': 'requestarrTVNav',
                     '#requestarr-movies': 'requestarrMoviesNav',
+                    '#requestarr-smarthunt': 'requestarrSmartHuntNav',
                     '#requestarr-hidden': 'requestarrPersonalBlacklistNav',
                     '#requestarr-personal-blacklist': 'requestarrPersonalBlacklistNav',
                     '#requestarr-requests': 'requestarrRequestsNav'
@@ -397,8 +399,8 @@ let huntarrUI = {
         // 3. Redirect if current section is not allowed
         var allowedSections = [
             'requestarr', 'requestarr-discover', 'requestarr-movies',
-            'requestarr-tv', 'requestarr-hidden', 'requestarr-personal-blacklist',
-            'requestarr-requests',
+            'requestarr-tv', 'requestarr-smarthunt', 'requestarr-hidden',
+            'requestarr-personal-blacklist', 'requestarr-requests',
         ];
         if (allowedSections.indexOf(this.currentSection) === -1) {
             window.location.hash = '#requestarr-discover';
@@ -415,8 +417,8 @@ let huntarrUI = {
         // All non-owner users are siloed to these sections only
         var allowed = [
             'requestarr', 'requestarr-discover', 'requestarr-movies',
-            'requestarr-tv', 'requestarr-hidden', 'requestarr-personal-blacklist',
-            'requestarr-requests',
+            'requestarr-tv', 'requestarr-smarthunt', 'requestarr-hidden',
+            'requestarr-personal-blacklist', 'requestarr-requests',
         ];
         return allowed.indexOf(section) === -1;
     },

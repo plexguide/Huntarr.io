@@ -25,6 +25,16 @@ export class RequestarrContent {
         this.selectedTVInstance = null;
         this._serverDefaultsLoaded = false;
         
+        // Smart Hunt grid state
+        this.smarthuntPage = 0;
+        this.smarthuntHasMore = true;
+        this.isLoadingSmartHunt = false;
+        this.smarthuntObserver = null;
+        this.smarthuntRequestToken = 0;
+        this._smarthuntAllResults = [];
+        this._shFilters = null;
+        this._smarthuntInstancesPopulated = false;
+
         // Hidden media tracking
         this.hiddenMediaSet = new Set();
 
@@ -137,7 +147,7 @@ export class RequestarrContent {
      * Sync every movie-instance dropdown on the page to the current value.
      */
     _syncAllMovieSelectors() {
-        const ids = ['movies-instance-select', 'discover-movie-instance-select', 'home-movie-instance-select'];
+        const ids = ['movies-instance-select', 'discover-movie-instance-select', 'home-movie-instance-select', 'smarthunt-movie-instance-select'];
         ids.forEach(id => {
             const el = document.getElementById(id);
             if (el && el.value !== this.selectedMovieInstance) {
@@ -154,7 +164,7 @@ export class RequestarrContent {
      * Sync every TV-instance dropdown on the page to the current value.
      */
     _syncAllTVSelectors() {
-        const ids = ['tv-instance-select', 'discover-tv-instance-select', 'home-tv-instance-select'];
+        const ids = ['tv-instance-select', 'discover-tv-instance-select', 'home-tv-instance-select', 'smarthunt-tv-instance-select'];
         ids.forEach(id => {
             const el = document.getElementById(id);
             if (el && el.value !== this.selectedTVInstance) {
@@ -1071,6 +1081,382 @@ export class RequestarrContent {
         if (this.tvHasMore && !this.isLoadingTV) {
             this.tvPage++;
             this.loadTV(this.tvPage);
+        }
+    }
+
+    // ========================================
+    // SMART HUNT GRID
+    // ========================================
+
+    async loadSmartHuntGrid() {
+        const grid = document.getElementById('smarthunt-grid');
+        if (!grid) return;
+
+        // Populate instance selectors on first load
+        if (!this._smarthuntInstancesPopulated) {
+            await this._populateSmartHuntInstances();
+            this._smarthuntInstancesPopulated = true;
+        }
+
+        // Wire filter button once
+        this._wireSmartHuntFilters();
+
+        if (this.isLoadingSmartHunt) return;
+        this.isLoadingSmartHunt = true;
+
+        // Reset on first page
+        if (this.smarthuntPage === 0) {
+            this._smarthuntAllResults = [];
+            grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading Smart Hunt...</p></div>';
+        }
+
+        const requestToken = ++this.smarthuntRequestToken;
+        const nextPage = this.smarthuntPage + 1;
+
+        try {
+            const results = await this._fetchSmartHuntPage(nextPage);
+
+            // Stale check
+            if (requestToken !== this.smarthuntRequestToken) return;
+
+            // Store raw results
+            this._smarthuntAllResults = (this._smarthuntAllResults || []).concat(results);
+
+            this.smarthuntPage = nextPage;
+            this.smarthuntHasMore = nextPage < 5 && results.length > 0;
+
+            // Re-render with filters
+            this._renderSmartHuntGrid();
+        } catch (error) {
+            console.error('[RequestarrContent] Error loading Smart Hunt:', error);
+            if (this.smarthuntPage === 0) {
+                grid.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load Smart Hunt results</p>';
+            }
+        } finally {
+            this.isLoadingSmartHunt = false;
+
+            // Check if sentinel is already visible and load more
+            const sentinel = document.getElementById('smarthunt-scroll-sentinel');
+            if (sentinel && this.smarthuntHasMore) {
+                const rect = sentinel.getBoundingClientRect();
+                const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+                if (rect.top <= viewportHeight + 200) {
+                    this.loadMoreSmartHunt();
+                }
+            }
+        }
+    }
+
+    _renderSmartHuntGrid() {
+        const grid = document.getElementById('smarthunt-grid');
+        if (!grid) return;
+
+        grid.innerHTML = '';
+        const all = this._smarthuntAllResults || [];
+        const filtered = this._applySmartHuntFilters(all);
+
+        if (filtered.length === 0) {
+            grid.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No results match your filters</p>';
+            return;
+        }
+
+        filtered.forEach(item => {
+            const tmdbId = item.tmdb_id || item.id;
+            if (tmdbId && this.isGloballyBlacklisted(tmdbId, item.media_type || 'movie')) return;
+            const suggestedInstance = item.media_type === 'tv'
+                ? this.selectedTVInstance
+                : this.selectedMovieInstance;
+            grid.appendChild(this.createMediaCard(item, suggestedInstance));
+        });
+    }
+
+    _applySmartHuntFilters(results) {
+        const f = this._shFilters || {};
+        return results.filter(item => {
+            // Hide library items
+            if (f.hideAvailable && (item.in_library || item.partial)) return false;
+            // Media type
+            if (f.mediaType && f.mediaType !== 'all' && item.media_type !== f.mediaType) return false;
+            // Year range
+            const year = item.year || 0;
+            if (f.yearMin && year < f.yearMin) return false;
+            if (f.yearMax && year > f.yearMax) return false;
+            // Rating range
+            const rating = item.vote_average || 0;
+            if (f.ratingMin !== undefined && f.ratingMin > 0 && rating < f.ratingMin) return false;
+            if (f.ratingMax !== undefined && f.ratingMax < 10 && rating > f.ratingMax) return false;
+            // Vote count range
+            const votes = item.vote_count || 0;
+            if (f.votesMin !== undefined && f.votesMin > 0 && votes < f.votesMin) return false;
+            if (f.votesMax !== undefined && f.votesMax < 10000 && votes > f.votesMax) return false;
+            return true;
+        });
+    }
+
+    _wireSmartHuntFilters() {
+        const filterBtn = document.getElementById('smarthunt-filter-btn');
+        if (!filterBtn || filterBtn._shWired) return;
+        filterBtn._shWired = true;
+
+        // Initialize filter state
+        const currentYear = new Date().getFullYear();
+        const maxYear = currentYear + 3;
+        this._shFilters = {
+            hideAvailable: false,
+            mediaType: 'all',
+            yearMin: 1900,
+            yearMax: maxYear,
+            ratingMin: 0,
+            ratingMax: 10,
+            votesMin: 0,
+            votesMax: 10000
+        };
+        this._shMaxYear = maxYear;
+
+        // Set dynamic max year on sliders
+        const yearMinEl = document.getElementById('sh-filter-year-min');
+        const yearMaxEl = document.getElementById('sh-filter-year-max');
+        if (yearMinEl) { yearMinEl.max = maxYear; }
+        if (yearMaxEl) { yearMaxEl.max = maxYear; yearMaxEl.value = maxYear; }
+
+        // Open modal on button click
+        filterBtn.addEventListener('click', () => this._openSmartHuntFilterModal());
+
+        // Global close function for onclick handlers in HTML
+        window._closeSmartHuntFilters = () => this._closeSmartHuntFilterModal();
+
+        // Wire all filter inputs for auto-apply
+        const hideAvail = document.getElementById('sh-hide-available');
+        if (hideAvail) {
+            hideAvail.addEventListener('change', () => {
+                this._shFilters.hideAvailable = hideAvail.checked;
+                this._shAutoApply();
+            });
+        }
+
+        const mediaType = document.getElementById('sh-media-type');
+        if (mediaType) {
+            mediaType.addEventListener('change', () => {
+                this._shFilters.mediaType = mediaType.value;
+                this._shAutoApply();
+            });
+        }
+
+        // Year sliders
+        if (yearMinEl && yearMaxEl) {
+            const updateYear = () => {
+                let min = parseInt(yearMinEl.value), max = parseInt(yearMaxEl.value);
+                if (min > max) yearMinEl.value = max;
+                this._updateShSliderRange('sh-year', yearMinEl, yearMaxEl);
+                const display = document.getElementById('sh-year-display');
+                if (display) display.textContent = `From ${yearMinEl.value} to ${yearMaxEl.value}`;
+            };
+            yearMinEl.addEventListener('input', updateYear);
+            yearMaxEl.addEventListener('input', updateYear);
+            yearMinEl.addEventListener('change', () => { this._shFilters.yearMin = parseInt(yearMinEl.value); this._shAutoApply(); });
+            yearMaxEl.addEventListener('change', () => { this._shFilters.yearMax = parseInt(yearMaxEl.value); this._shAutoApply(); });
+            this._updateShSliderRange('sh-year', yearMinEl, yearMaxEl);
+        }
+
+        // Rating sliders
+        const ratingMinEl = document.getElementById('sh-filter-rating-min');
+        const ratingMaxEl = document.getElementById('sh-filter-rating-max');
+        if (ratingMinEl && ratingMaxEl) {
+            const updateRating = () => {
+                let min = parseFloat(ratingMinEl.value), max = parseFloat(ratingMaxEl.value);
+                if (min > max) ratingMinEl.value = max;
+                this._updateShSliderRange('sh-rating', ratingMinEl, ratingMaxEl);
+                const display = document.getElementById('sh-rating-display');
+                if (display) display.textContent = `Ratings between ${parseFloat(ratingMinEl.value).toFixed(1)} and ${parseFloat(ratingMaxEl.value).toFixed(1)}`;
+            };
+            ratingMinEl.addEventListener('input', updateRating);
+            ratingMaxEl.addEventListener('input', updateRating);
+            ratingMinEl.addEventListener('change', () => { this._shFilters.ratingMin = parseFloat(ratingMinEl.value); this._shAutoApply(); });
+            ratingMaxEl.addEventListener('change', () => { this._shFilters.ratingMax = parseFloat(ratingMaxEl.value); this._shAutoApply(); });
+            this._updateShSliderRange('sh-rating', ratingMinEl, ratingMaxEl);
+        }
+
+        // Votes sliders
+        const votesMinEl = document.getElementById('sh-filter-votes-min');
+        const votesMaxEl = document.getElementById('sh-filter-votes-max');
+        if (votesMinEl && votesMaxEl) {
+            const updateVotes = () => {
+                let min = parseInt(votesMinEl.value), max = parseInt(votesMaxEl.value);
+                if (min > max) votesMinEl.value = max;
+                this._updateShSliderRange('sh-votes', votesMinEl, votesMaxEl);
+                const display = document.getElementById('sh-votes-display');
+                if (display) display.textContent = `Number of votes between ${votesMinEl.value} and ${votesMaxEl.value}`;
+            };
+            votesMinEl.addEventListener('input', updateVotes);
+            votesMaxEl.addEventListener('input', updateVotes);
+            votesMinEl.addEventListener('change', () => { this._shFilters.votesMin = parseInt(votesMinEl.value); this._shAutoApply(); });
+            votesMaxEl.addEventListener('change', () => { this._shFilters.votesMax = parseInt(votesMaxEl.value); this._shAutoApply(); });
+            this._updateShSliderRange('sh-votes', votesMinEl, votesMaxEl);
+        }
+    }
+
+    _updateShSliderRange(prefix, minInput, maxInput) {
+        const rangeEl = document.getElementById(`${prefix}-range`);
+        if (!rangeEl) return;
+        const min = parseFloat(minInput.value);
+        const max = parseFloat(maxInput.value);
+        const lo = parseFloat(minInput.min);
+        const hi = parseFloat(minInput.max);
+        const pctMin = ((min - lo) / (hi - lo)) * 100;
+        const pctMax = ((max - lo) / (hi - lo)) * 100;
+        rangeEl.style.left = pctMin + '%';
+        rangeEl.style.width = (pctMax - pctMin) + '%';
+    }
+
+    _shAutoApply() {
+        this._updateShFilterDisplay();
+        this._renderSmartHuntGrid();
+    }
+
+    _updateShFilterDisplay() {
+        let count = 0;
+        const f = this._shFilters || {};
+        if (f.hideAvailable) count++;
+        if (f.mediaType && f.mediaType !== 'all') count++;
+        if (f.yearMin > 1900 || (f.yearMax < this._shMaxYear)) count++;
+        if (f.ratingMin > 0 || f.ratingMax < 10) count++;
+        if (f.votesMin > 0 || f.votesMax < 10000) count++;
+
+        const text = count === 0 ? '0 Active Filters' : count === 1 ? '1 Active Filter' : `${count} Active Filters`;
+        const btnCount = document.getElementById('smarthunt-filter-count');
+        if (btnCount) btnCount.textContent = text;
+        const modalCount = document.getElementById('sh-filter-active-count');
+        if (modalCount) modalCount.textContent = text;
+    }
+
+    _openSmartHuntFilterModal() {
+        const modal = document.getElementById('smarthunt-filter-modal');
+        if (modal) {
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('show'), 10);
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    _closeSmartHuntFilterModal() {
+        const modal = document.getElementById('smarthunt-filter-modal');
+        if (modal) {
+            modal.classList.remove('show');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
+            }, 150);
+        }
+    }
+
+    async _fetchSmartHuntPage(page) {
+        const movieInst = this.selectedMovieInstance || '';
+        const tvInst = this.selectedTVInstance || '';
+
+        let movieAppType = 'radarr', movieName = '';
+        if (movieInst && movieInst.includes(':')) {
+            const idx = movieInst.indexOf(':');
+            movieAppType = movieInst.substring(0, idx);
+            movieName = movieInst.substring(idx + 1);
+        } else {
+            movieName = movieInst;
+        }
+
+        let tvAppType = 'sonarr', tvName = '';
+        if (tvInst && tvInst.includes(':')) {
+            const idx = tvInst.indexOf(':');
+            tvAppType = tvInst.substring(0, idx);
+            tvName = tvInst.substring(idx + 1);
+        } else {
+            tvName = tvInst;
+        }
+
+        const params = new URLSearchParams({
+            page: String(page),
+            movie_app_type: movieAppType,
+            movie_instance_name: movieName,
+            tv_app_type: tvAppType,
+            tv_instance_name: tvName,
+        });
+
+        const resp = await fetch(`./api/requestarr/smarthunt?${params.toString()}&_=${Date.now()}`, { cache: 'no-store' });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        if (data.error) throw new Error(data.error);
+        return data.results || [];
+    }
+
+    async _populateSmartHuntInstances() {
+        const movieSelect = document.getElementById('smarthunt-movie-instance-select');
+        const tvSelect = document.getElementById('smarthunt-tv-instance-select');
+        if (!movieSelect && !tvSelect) return;
+
+        try {
+            const dd = await this._fetchBundleDropdownOptions();
+
+            if (movieSelect) {
+                this._populateSelectFromOptions(movieSelect, dd.movie_options, this.selectedMovieInstance);
+                if (!movieSelect._shChangeWired) {
+                    movieSelect._shChangeWired = true;
+                    movieSelect.addEventListener('change', async () => {
+                        await this._setMovieInstance(movieSelect.value);
+                        this._reloadSmartHuntGrid();
+                    });
+                }
+            }
+
+            if (tvSelect) {
+                this._populateSelectFromOptions(tvSelect, dd.tv_options, this.selectedTVInstance);
+                if (!tvSelect._shChangeWired) {
+                    tvSelect._shChangeWired = true;
+                    tvSelect.addEventListener('change', async () => {
+                        await this._setTVInstance(tvSelect.value);
+                        this._reloadSmartHuntGrid();
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('[RequestarrContent] Error populating Smart Hunt instances:', error);
+        }
+    }
+
+    _reloadSmartHuntGrid() {
+        this.smarthuntPage = 0;
+        this.smarthuntHasMore = true;
+        this.isLoadingSmartHunt = false;
+        this.smarthuntRequestToken++;
+        this._smarthuntAllResults = [];
+        if (this.smarthuntObserver) {
+            this.smarthuntObserver.disconnect();
+            this.smarthuntObserver = null;
+        }
+        this.loadSmartHuntGrid();
+        this.setupSmartHuntInfiniteScroll();
+    }
+
+    setupSmartHuntInfiniteScroll() {
+        const sentinel = document.getElementById('smarthunt-scroll-sentinel');
+        if (!sentinel || this.smarthuntObserver) return;
+
+        this.smarthuntObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (!entry.isIntersecting) return;
+                if (this.smarthuntHasMore && !this.isLoadingSmartHunt) {
+                    this.loadMoreSmartHunt();
+                }
+            });
+        }, {
+            root: null,
+            rootMargin: '200px 0px',
+            threshold: 0
+        });
+
+        this.smarthuntObserver.observe(sentinel);
+    }
+
+    loadMoreSmartHunt() {
+        if (this.smarthuntHasMore && !this.isLoadingSmartHunt) {
+            this.loadSmartHuntGrid();
         }
     }
 

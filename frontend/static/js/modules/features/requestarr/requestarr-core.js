@@ -139,7 +139,7 @@ export class RequestarrDiscover {
 
         if (globalSearchBar) {
             console.log(`[RequestarrDiscover] Found global search bar, applying visibility for ${view}`);
-            if (view === 'hidden' || view === 'settings' || view === 'smarthunt-settings' || view === 'users' || view === 'bundles' || view === 'requests' || view === 'global-blacklist') {
+            if (view === 'hidden' || view === 'settings' || view === 'smarthunt-settings' || view === 'smarthunt' || view === 'users' || view === 'bundles' || view === 'requests' || view === 'global-blacklist') {
                 globalSearchBar.style.setProperty('display', 'none', 'important');
                 console.log('[RequestarrDiscover] Hiding global search bar');
             } else {
@@ -225,6 +225,12 @@ export class RequestarrDiscover {
                 break;
             case 'smarthunt-settings':
                 this.settings.loadSmartHuntSettings();
+                break;
+            case 'smarthunt':
+                this.content.setupInstanceSelectors().then(() => {
+                    this.content.loadSmartHuntGrid();
+                    this.content.setupSmartHuntInfiniteScroll();
+                });
                 break;
             case 'users':
                 if (window.RequestarrUsers && typeof window.RequestarrUsers.init === 'function') {

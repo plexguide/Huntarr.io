@@ -22,6 +22,10 @@
                     <a href="./#requestarr" class="reqset-back-btn"><i class="fas fa-arrow-left"></i> Back</a>
                     <div class="reqset-breadcrumb"><i class="fas fa-film"></i><span>Requests</span><i class="fas fa-chevron-right reqset-breadcrumb-sep"></i><span>Movies</span></div>
                 </div>
+                <div id="requestarr-header-smarthunt" class="requestarr-view-header" style="display: none;">
+                    <a href="./#requestarr" class="reqset-back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+                    <div class="reqset-breadcrumb"><i class="fas fa-fire"></i><span>Requests</span><i class="fas fa-chevron-right reqset-breadcrumb-sep"></i><span>Smart Hunt</span></div>
+                </div>
                 <div id="requestarr-header-tv" class="requestarr-view-header" style="display: none;">
                     <a href="./#requestarr" class="reqset-back-btn"><i class="fas fa-arrow-left"></i> Back</a>
                     <div class="reqset-breadcrumb"><i class="fas fa-tv"></i><span>Requests</span><i class="fas fa-chevron-right reqset-breadcrumb-sep"></i><span>TV Shows</span></div>
@@ -203,6 +207,40 @@
             <!-- Infinite scroll sentinel -->
             <div class="load-more-container">
                 <div id="movies-scroll-sentinel" style="height: 1px; width: 100%;"></div>
+            </div>
+        </div>
+
+        <!-- Smart Hunt View -->
+        <div id="requestarr-smarthunt-view" class="requestarr-view" style="display: none;">
+            <!-- Controls Bar -->
+            <div class="movies-controls">
+                <div class="instance-selector-container">
+                    <select id="smarthunt-movie-instance-select" class="control-select instance-select">
+                        <option value="">Loading movie instances...</option>
+                    </select>
+                </div>
+                <div class="instance-selector-container">
+                    <select id="smarthunt-tv-instance-select" class="control-select instance-select">
+                        <option value="">Loading TV instances...</option>
+                    </select>
+                </div>
+                <button class="filter-button" id="smarthunt-filter-btn">
+                    <i class="fas fa-filter"></i>
+                    <span id="smarthunt-filter-count">0 Active Filters</span>
+                </button>
+            </div>
+
+            <!-- Smart Hunt Grid -->
+            <div id="smarthunt-grid" class="media-grid">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading Smart Hunt...</p>
+                </div>
+            </div>
+
+            <!-- Infinite scroll sentinel -->
+            <div class="load-more-container">
+                <div id="smarthunt-scroll-sentinel" style="height: 1px; width: 100%;"></div>
             </div>
         </div>
 
@@ -471,6 +509,80 @@
                         </div>
                     </div>
 
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Smart Hunt Filters Side Panel -->
+    <div id="smarthunt-filter-modal" class="filter-panel" style="display: none;">
+        <div class="filter-backdrop" onclick="window._closeSmartHuntFilters && window._closeSmartHuntFilters()"></div>
+        <div class="filter-panel-content">
+            <div class="filter-panel-header">
+                <h2>Filters</h2>
+                <button class="filter-close" onclick="window._closeSmartHuntFilters && window._closeSmartHuntFilters()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="filter-panel-body">
+                <div class="filter-active-badge">
+                    <span id="sh-filter-active-count">0 Active Filters</span>
+                </div>
+                
+                <!-- Hide items in library -->
+                <div class="filter-group">
+                    <label class="filter-toggle-label">
+                        <input type="checkbox" id="sh-hide-available" class="filter-checkbox">
+                        <span class="filter-toggle-text">Hide items in library</span>
+                    </label>
+                    <small class="filter-help">Only show titles you don't have yet</small>
+                </div>
+
+                <!-- Media Type -->
+                <div class="filter-group">
+                    <label class="filter-label">Media Type</label>
+                    <select id="sh-media-type" class="control-select" style="width: 100%;">
+                        <option value="all">All (Movies & TV)</option>
+                        <option value="movie">Movies Only</option>
+                        <option value="tv">TV Shows Only</option>
+                    </select>
+                </div>
+                
+                <!-- Year Range -->
+                <div class="filter-group">
+                    <label class="filter-label">Year</label>
+                    <div class="filter-range-text" id="sh-year-display">All years</div>
+                    <div class="dual-range-slider">
+                        <div class="slider-track"></div>
+                        <div class="slider-range" id="sh-year-range"></div>
+                        <input type="range" id="sh-filter-year-min" class="range-min" value="1900" min="1900" max="2029" step="1">
+                        <input type="range" id="sh-filter-year-max" class="range-max" value="2029" min="1900" max="2029" step="1">
+                    </div>
+                </div>
+                
+                <!-- TMDB User Score -->
+                <div class="filter-group">
+                    <label class="filter-label">TMDB User Score</label>
+                    <div class="filter-range-text" id="sh-rating-display">Ratings between 0 and 10</div>
+                    <div class="dual-range-slider">
+                        <div class="slider-track"></div>
+                        <div class="slider-range" id="sh-rating-range"></div>
+                        <input type="range" id="sh-filter-rating-min" class="range-min" value="0" min="0" max="10" step="0.1">
+                        <input type="range" id="sh-filter-rating-max" class="range-max" value="10" min="0" max="10" step="0.1">
+                    </div>
+                </div>
+                
+                <!-- TMDB User Vote Count -->
+                <div class="filter-group">
+                    <label class="filter-label">TMDB User Vote Count</label>
+                    <div class="filter-range-text" id="sh-votes-display">Number of votes between 0 and 10000</div>
+                    <div class="dual-range-slider">
+                        <div class="slider-track"></div>
+                        <div class="slider-range" id="sh-votes-range"></div>
+                        <input type="range" id="sh-filter-votes-min" class="range-min" value="0" min="0" max="10000" step="10">
+                        <input type="range" id="sh-filter-votes-max" class="range-max" value="10000" min="0" max="10000" step="10">
+                    </div>
                 </div>
             </div>
         </div>
