@@ -539,6 +539,10 @@ def _match_folder_to_tmdb(parsed):
             'strategy': strategy,
         })
 
+    def _has_strong_match():
+        """Return True if we already have a match with score >= 85."""
+        return any(m['score'] >= 85 for m in matches)
+
     # Strategy 1: Direct TMDB ID
     if embedded_tmdb_id:
         data = _lookup_tmdb_by_id(embedded_tmdb_id)
@@ -546,25 +550,25 @@ def _match_folder_to_tmdb(parsed):
             _add_result(data, 'tmdb_id', bonus=20)
 
     # Strategy 2: IMDB ID -> TMDB
-    if embedded_imdb_id:
+    if embedded_imdb_id and not _has_strong_match():
         data = _lookup_tmdb_by_imdb(embedded_imdb_id)
         if data:
             _add_result(data, 'imdb_id', bonus=15)
 
     # Strategy 3: Title + Year search
-    if title:
+    if title and not _has_strong_match():
         results = _search_tmdb(title, year=year if year else None)
         for r in results:
             _add_result(r, 'title_year' if year else 'title_only')
 
     # Strategy 4: Title only (if we searched with year and got < 3 results)
-    if title and year and len(matches) < 3:
+    if title and year and len(matches) < 3 and not _has_strong_match():
         results = _search_tmdb(title)
         for r in results:
             _add_result(r, 'title_only')
 
     # Strategy 5: Simplified title (remove common prefixes/suffixes/articles)
-    if title and len(matches) < 3:
+    if title and len(matches) < 3 and not _has_strong_match():
         simplified = re.sub(r'^(the|a|an|el|la|le|les|der|die|das)\s+', '', title.lower(), flags=re.IGNORECASE)
         # Remove "Part X", "Vol X", etc.
         simplified = re.sub(r'\s*(part|vol|volume)\s*\d+\s*$', '', simplified, flags=re.IGNORECASE)
@@ -748,7 +752,6 @@ def _process_one_unmapped_item(item, tmdb_delay=0.2):
         item['best_match'] = None
         item['status'] = 'no_match'
     item['processed_at'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-    time.sleep(tmdb_delay)
     return True
 
 
@@ -760,13 +763,16 @@ def run_import_media_scan(instance_id, max_match=None, lightweight=False, rescor
     """Run a full scan cycle for an instance:
     1. Scan root folders for unmapped items
     2. Merge with existing unmapped config (keep user confirmations)
-    3. Process unmatched items through TMDB (one at a time, save after each)
+    3. Process unmatched items through TMDB (concurrently, batch save)
     4. Save results
     max_match: None = process all pending; int = limit (e.g. for background scans).
-    lightweight: if True, use longer delays (1s) between TMDB calls.
+    lightweight: if True, use fewer concurrent workers.
     rescore: if True, re-process all 'matched' items to refresh scores.
     """
-    tmdb_delay = 1.0 if lightweight else 0.2
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    BATCH_SAVE_SIZE = 25  # Save to DB every N processed items
+    CONCURRENCY = 4 if lightweight else 8  # Parallel TMDB lookups
+
     if not _scan_lock.acquire(blocking=False):
         logger.info("Import Media: scan already in progress, skipping")
         return False
@@ -803,23 +809,33 @@ def run_import_media_scan(instance_id, max_match=None, lightweight=False, rescor
                 new_item['status'] = 'pending'
                 merged.append(new_item)
 
-        # Step 3: Process one item at a time, save after each (avoids stall/timeout)
-        pending_count = len([i for i in merged if i.get('status') in ('pending', None)])
+        # Step 3: Process pending items concurrently
+        pending = [i for i in merged if i.get('status') in ('pending', None)]
+        pending_count = len(pending)
         if pending_count:
-            logger.info("Import Media: processing %d pending items (one at a time)", pending_count)
+            logger.info("Import Media: processing %d pending items (%d concurrent)", pending_count, CONCURRENCY)
+
+        if max_match is not None:
+            pending = pending[:max_match]
+
         processed = 0
-        while True:
-            pending = [i for i in merged if i.get('status') in ('pending', None)]
-            if not pending:
-                break
-            if max_match is not None and processed >= max_match:
-                break
-            item = pending[0]
-            if _process_one_unmapped_item(item, tmdb_delay=tmdb_delay):
-                processed += 1
-                config['items'] = merged
-                config['last_scan'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-                _save_unmapped_config(config, instance_id)
+        unsaved = 0
+
+        with ThreadPoolExecutor(max_workers=CONCURRENCY) as pool:
+            futures = {pool.submit(_process_one_unmapped_item, item): item for item in pending}
+            for future in as_completed(futures):
+                try:
+                    if future.result():
+                        processed += 1
+                        unsaved += 1
+                except Exception as exc:
+                    logger.warning("Import Media: item processing error: %s", exc)
+                # Batch save
+                if unsaved >= BATCH_SAVE_SIZE:
+                    config['items'] = merged
+                    config['last_scan'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+                    _save_unmapped_config(config, instance_id)
+                    unsaved = 0
 
         config['items'] = merged
         config['last_scan'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')

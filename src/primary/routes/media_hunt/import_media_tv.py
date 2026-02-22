@@ -447,6 +447,10 @@ def _match_series_to_tmdb(parsed, seasons_on_disk=None):
             'strategy': strategy,
         })
 
+    def _has_strong_match():
+        """Return True if we already have a match with score >= 85."""
+        return any(m['score'] >= 85 for m in matches)
+
     # 1. Direct TMDB ID
     if embedded_tmdb:
         data = _lookup_tmdb_tv_by_id(embedded_tmdb)
@@ -454,25 +458,25 @@ def _match_series_to_tmdb(parsed, seasons_on_disk=None):
             _add(data, 'tmdb_id', bonus=25)
 
     # 2. TVDB ID -> TMDB
-    if embedded_tvdb:
+    if embedded_tvdb and not _has_strong_match():
         data = _lookup_tmdb_by_tvdb(embedded_tvdb)
         if data:
             _add(data, 'tvdb_id', bonus=20)
 
     # 3. Title + year
-    if title:
+    if title and not _has_strong_match():
         results = _search_tmdb_tv(title, year=year if year else None)
         for r in results:
             _add(r, 'title_year' if year else 'title_only')
 
     # 4. Title only (if year search gave few results)
-    if title and year and len(matches) < 3:
+    if title and year and len(matches) < 3 and not _has_strong_match():
         results = _search_tmdb_tv(title)
         for r in results:
             _add(r, 'title_only')
 
     # 5. Simplified title (articles)
-    if title and len(matches) < 3:
+    if title and len(matches) < 3 and not _has_strong_match():
         simplified = re.sub(r'^(the|a|an)\s+', '', title.lower(), flags=re.IGNORECASE).strip()
         if simplified and simplified != title.lower():
             results = _search_tmdb_tv(simplified, year=year if year else None)
@@ -589,7 +593,6 @@ def _process_one_unmapped_item(item, tmdb_delay=0.2):
         item['best_match'] = None
         item['status'] = 'no_match'
     item['processed_at'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-    time.sleep(tmdb_delay)
     return True
 
 
@@ -599,7 +602,10 @@ def run_import_media_scan(instance_id, max_match=None, lightweight=False, rescor
     rescore: if True, re-process all 'matched' items to refresh scores with
     the latest scoring algorithm.
     """
-    tmdb_delay = 1.0 if lightweight else 0.2
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    BATCH_SAVE_SIZE = 25  # Save to DB every N processed items
+    CONCURRENCY = 8       # Parallel TMDB lookups
+
     if not _scan_lock.acquire(blocking=False):
         logger.info("TV Import Media: scan already in progress, skipping")
         return False
@@ -633,22 +639,32 @@ def run_import_media_scan(instance_id, max_match=None, lightweight=False, rescor
                 new_item['status'] = 'pending'
                 merged.append(new_item)
 
-        pending_count = len([i for i in merged if i.get('status') in ('pending', None)])
+        pending = [i for i in merged if i.get('status') in ('pending', None)]
+        pending_count = len(pending)
         if pending_count:
-            logger.info("TV Import Media: processing %d pending (one at a time)", pending_count)
+            logger.info("TV Import Media: processing %d pending items (%d concurrent)", pending_count, CONCURRENCY)
+
+        if max_match is not None:
+            pending = pending[:max_match]
+
         processed = 0
-        while True:
-            pending = [i for i in merged if i.get('status') in ('pending', None)]
-            if not pending:
-                break
-            if max_match is not None and processed >= max_match:
-                break
-            item = pending[0]
-            if _process_one_unmapped_item(item, tmdb_delay=tmdb_delay):
-                processed += 1
-                config['items'] = merged
-                config['last_scan'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-                _save_unmapped_config(config, instance_id)
+        unsaved = 0
+
+        with ThreadPoolExecutor(max_workers=CONCURRENCY) as pool:
+            futures = {pool.submit(_process_one_unmapped_item, item): item for item in pending}
+            for future in as_completed(futures):
+                try:
+                    if future.result():
+                        processed += 1
+                        unsaved += 1
+                except Exception as exc:
+                    logger.warning("TV Import Media: item processing error: %s", exc)
+                # Batch save
+                if unsaved >= BATCH_SAVE_SIZE:
+                    config['items'] = merged
+                    config['last_scan'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+                    _save_unmapped_config(config, instance_id)
+                    unsaved = 0
 
         config['items'] = merged
         config['last_scan'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
