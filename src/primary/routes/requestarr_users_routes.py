@@ -123,6 +123,21 @@ DEFAULT_PERMISSIONS = {
 
 # ── Routes ───────────────────────────────────────────────────
 
+@requestarr_users_bp.route('/has-non-owner', methods=['GET'])
+def has_non_owner_users():
+    """Check if non-owner requestarr users exist. Owner only."""
+    _, err = _require_owner()
+    if err:
+        return err
+    try:
+        db = get_database()
+        users = db.get_all_requestarr_users()
+        has_non_owner = any(u.get('role') != 'owner' for u in users)
+        return jsonify({'has_non_owner': has_non_owner})
+    except Exception as e:
+        logger.error(f"Error checking non-owner users: {e}")
+        return jsonify({'error': 'Failed to check users'}), 500
+
 @requestarr_users_bp.route('', methods=['GET'])
 def list_users():
     """List all users (owner only)."""

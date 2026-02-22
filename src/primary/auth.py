@@ -243,6 +243,67 @@ def _auto_clear_setup_progress():
     except Exception as e:
         logger.debug(f"_auto_clear_setup_progress: {e}")
 
+def _ensure_bypass_session():
+    """Create a session cookie for the owner when in bypass mode.
+    
+    If the user already has a valid session cookie, this is a no-op.
+    Otherwise, creates a new session for the first (owner) user and
+    sets the cookie via Flask's after_this_request hook.
+    """
+    session_id = request.cookies.get(SESSION_COOKIE_NAME)
+    if session_id and verify_session(session_id):
+        return  # Already has a valid session
+    
+    try:
+        db = get_database()
+        first_user = db.get_first_user()
+        if not first_user:
+            return
+        
+        username = first_user.get('username')
+        session_token = create_session(username)
+        session[SESSION_COOKIE_NAME] = session_token
+        
+        from flask import after_this_request
+        @after_this_request
+        def set_bypass_cookie(response):
+            is_https = request.headers.get('X-Forwarded-Proto') == 'https' or request.is_secure
+            base_url = settings_manager.get_setting('general', 'base_url', '').strip()
+            cookie_path = '/'
+            if base_url and base_url != '/':
+                cookie_path = '/' + base_url.strip('/')
+            response.set_cookie(SESSION_COOKIE_NAME, session_token, httponly=True, samesite='Lax', path=cookie_path, secure=is_https)
+            return response
+        
+        logger.debug(f"Bypass session created for owner '{username}'")
+    except Exception as e:
+        logger.error(f"Error creating bypass session: {e}")
+
+def _is_local_request():
+    """Check if the current request originates from a local network."""
+    local_networks = [
+        '127.0.0.1', '::1',
+        '10.', '172.16.', '172.17.', '172.18.', '172.19.',
+        '172.20.', '172.21.', '172.22.', '172.23.', '172.24.',
+        '172.25.', '172.26.', '172.27.', '172.28.', '172.29.',
+        '172.30.', '172.31.', '192.168.'
+    ]
+    
+    def _check_ip(ip):
+        for network in local_networks:
+            if ip == network or (network.endswith('.') and ip.startswith(network)):
+                return True
+        return False
+    
+    forwarded_for = request.headers.get('X-Forwarded-For')
+    if forwarded_for:
+        client_ip = forwarded_for.split(',')[0].strip()
+        if _check_ip(client_ip):
+            return True
+    
+    remote_addr = request.remote_addr or '127.0.0.1'
+    return _check_ip(remote_addr)
+
 def user_exists() -> bool:
     """Check if a user has been created"""
     db = get_database()
@@ -490,6 +551,7 @@ def authenticate_request():
     # Checked before is_setup_in_progress so "No Login Mode" users aren't blocked
     if proxy_auth_bypass:
         _auto_clear_setup_progress()
+        _ensure_bypass_session()
         return None
     
     remote_addr = request.remote_addr
@@ -541,6 +603,7 @@ def authenticate_request():
                     
         if is_local:
             _auto_clear_setup_progress()
+            _ensure_bypass_session()
             return None
         else:
             if not is_polling_endpoint:

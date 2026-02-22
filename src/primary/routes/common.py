@@ -352,6 +352,41 @@ def login_route():
         except Exception as e:
             logger.error(f"Error checking setup progress in login route: {e}")
         
+        # If bypass mode is active, redirect to home instead of showing login
+        try:
+            from src.primary.settings_manager import load_settings
+            from src.primary.auth import _is_local_request
+            settings = load_settings("general")
+            proxy_auth_bypass = settings.get("proxy_auth_bypass", False)
+            local_access_bypass = settings.get("local_access_bypass", False)
+            
+            should_bypass = proxy_auth_bypass
+            if not should_bypass and local_access_bypass:
+                should_bypass = _is_local_request()
+            
+            if should_bypass:
+                from src.primary import settings_manager as sm
+                from src.primary.utils.database import get_database as _get_db
+                base_url = sm.get_setting('general', 'base_url', '').strip()
+                if base_url and base_url != '/':
+                    base_url = '/' + base_url.strip('/')
+                else:
+                    base_url = ''
+                
+                # Create session for owner and redirect
+                db = _get_db()
+                first_user = db.get_first_user()
+                if first_user:
+                    session_token = create_session(first_user['username'])
+                    session[SESSION_COOKIE_NAME] = session_token
+                    response = redirect(base_url + '/')
+                    is_https = request.headers.get('X-Forwarded-Proto') == 'https' or request.is_secure
+                    response.set_cookie(SESSION_COOKIE_NAME, session_token, httponly=True, samesite='Lax', path=_cookie_path(), secure=is_https)
+                    logger.info(f"Bypass mode active, auto-logging in as '{first_user['username']}' and redirecting to home")
+                    return response
+        except Exception as e:
+            logger.error(f"Error checking bypass mode in login route: {e}")
+        
         # Check if any users have Plex authentication configured
         try:
             from src.primary.utils.database import get_database

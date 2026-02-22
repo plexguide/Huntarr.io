@@ -5225,15 +5225,39 @@ class UserModule {
             var select = document.getElementById('userAuthMode');
             if (!select) return;
 
-            if (general.auth_mode) {
-                select.value = general.auth_mode;
-            } else if (general.proxy_auth_bypass) {
-                select.value = 'no_login';
-            } else if (general.local_access_bypass) {
-                select.value = 'local_bypass';
-            } else {
-                select.value = 'login';
+            // Check if non-owner users exist
+            var hasNonOwner = false;
+            try {
+                const nonOwnerResp = await fetch('./api/requestarr/users/has-non-owner', { credentials: 'include' });
+                if (nonOwnerResp.ok) {
+                    const nonOwnerData = await nonOwnerResp.json();
+                    hasNonOwner = nonOwnerData.has_non_owner === true;
+                }
+            } catch (e) { /* ignore */ }
+
+            // Hide or show "No Login" option based on non-owner users
+            var noLoginOption = select.querySelector('option[value="no_login"]');
+            if (noLoginOption) {
+                noLoginOption.style.display = hasNonOwner ? 'none' : '';
+                noLoginOption.disabled = hasNonOwner;
             }
+
+            // Determine current mode
+            var currentMode = 'login';
+            if (general.auth_mode) {
+                currentMode = general.auth_mode;
+            } else if (general.proxy_auth_bypass) {
+                currentMode = 'no_login';
+            } else if (general.local_access_bypass) {
+                currentMode = 'local_bypass';
+            }
+
+            // If non-owner users exist and mode is no_login, downgrade to local_bypass
+            if (hasNonOwner && currentMode === 'no_login') {
+                currentMode = 'local_bypass';
+            }
+
+            select.value = currentMode;
             // Update description
             select.dispatchEvent(new Event('change'));
         } catch (e) {

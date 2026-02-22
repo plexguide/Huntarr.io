@@ -733,6 +733,20 @@ def save_general_settings():
     
     # If auth_mode is explicitly set, ensure the bypass flags match it
     if auth_mode:
+        # If trying to set no_login, check if non-owner requestarr users exist
+        if auth_mode == 'no_login':
+            try:
+                from src.primary.utils.database import get_database
+                db = get_database()
+                all_req_users = db.get_all_requestarr_users()
+                non_owner_users = [u for u in all_req_users if u.get('role') != 'owner']
+                if non_owner_users:
+                    general_logger.warning("Cannot set no_login mode: non-owner users exist. Downgrading to local_bypass.")
+                    auth_mode = 'local_bypass'
+                    data['auth_mode'] = 'local_bypass'
+            except Exception as e:
+                general_logger.error(f"Error checking requestarr users for auth mode: {e}")
+        
         if auth_mode == 'local_bypass':
             data['local_access_bypass'] = True
             data['proxy_auth_bypass'] = False
