@@ -251,3 +251,6 @@ huntarr.db
 /settings/
 /stateful/
 /tally/
+
+# Workspace files
+*.code-workspace

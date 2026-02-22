@@ -38,6 +38,9 @@ __pycache__
 # Node (Dockerfile runs npm install fresh)
 node_modules
 
+# Workspace files
+*.code-workspace
+
 # OS files
 .DS_Store
 Thumbs.db
