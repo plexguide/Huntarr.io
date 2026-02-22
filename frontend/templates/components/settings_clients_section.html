@@ -28,10 +28,10 @@
                         </div>
                     </div>
                     <div class="client-rec-card">
-                        <div class="client-rec-icon"><i class="fas fa-server"></i></div>
+                        <div class="client-rec-icon"><i class="fas fa-magnet"></i></div>
                         <div class="client-rec-body">
-                            <div class="client-rec-name">SABnzbd / NZBGet</div>
-                            <div class="client-rec-desc">External clients. Requires host, port, and API key configuration. If running in Docker, you'll likely need Remote Path Mappings below.</div>
+                            <div class="client-rec-name">Tor Hunt <span class="client-rec-tag">Built-in</span></div>
+                            <div class="client-rec-desc">Built-in torrent client. No external software needed — handles torrents directly inside Huntarr.</div>
                         </div>
                     </div>
                 </div>
@@ -141,7 +141,7 @@
                 </button>
                 <div class="client-type-modal-header-overlay">
                     <h2 class="client-type-modal-title">Add Download Client</h2>
-                    <p class="client-type-modal-subtitle">Only usenet clients are supported. Torrent support is coming soon.</p>
+                    <p class="client-type-modal-subtitle">Select your preferred download client type.</p>
                 </div>
             </div>
             <div class="client-type-modal-body">
@@ -157,21 +157,11 @@
                         <div class="client-type-option-badge">Recommended</div>
                         <div class="client-type-option-check"><i class="fas fa-check-circle"></i></div>
                     </div>
-                    <div class="client-type-option" data-client-type="sabnzbd" id="client-type-option-sabnzbd">
-                        <div class="client-type-option-icon"><i class="fas fa-download"></i></div>
+                    <div class="client-type-option" data-client-type="torhunt" id="client-type-option-torhunt">
+                        <div class="client-type-option-icon" style="background: rgba(168, 85, 247, 0.15); color: #a855f7;"><i class="fas fa-magnet"></i></div>
                         <div class="client-type-option-body">
-                            <div class="client-type-option-name">SABnzbd <span class="client-type-option-tag" style="background:rgba(245,158,11,0.2);color:#f59e0b;">Beta</span></div>
-                            <div class="client-type-option-warning" style="display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:0.8rem;color:#f59e0b;"><i class="fas fa-exclamation-triangle"></i> Support under development</div>
-                            <div class="client-type-option-desc">External usenet client. Requires host, port, and API key. May work but is not fully polished.</div>
-                        </div>
-                        <div class="client-type-option-check"><i class="fas fa-check-circle"></i></div>
-                    </div>
-                    <div class="client-type-option" data-client-type="nzbget" id="client-type-option-nzbget">
-                        <div class="client-type-option-icon"><i class="fas fa-download"></i></div>
-                        <div class="client-type-option-body">
-                            <div class="client-type-option-name">NZBGet <span class="client-type-option-tag" style="background:rgba(245,158,11,0.2);color:#f59e0b;">Beta</span></div>
-                            <div class="client-type-option-warning" style="display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:0.8rem;color:#f59e0b;"><i class="fas fa-exclamation-triangle"></i> Support under development</div>
-                            <div class="client-type-option-desc">External usenet client. Requires host, port, and password. May work but is not fully polished.</div>
+                            <div class="client-type-option-name">Tor Hunt <span class="client-type-option-tag">Built-in</span></div>
+                            <div class="client-type-option-desc">Built-in torrent client. No external software or remote path mappings needed.</div>
                         </div>
                         <div class="client-type-option-check"><i class="fas fa-check-circle"></i></div>
                     </div>
@@ -942,7 +932,7 @@
             return;
         }
         var hasNzbHunt = clients.some(function(c) { return (c.type || '').toLowerCase() === 'nzbhunt'; });
-        var hasExternal = clients.some(function(c) { var t = (c.type || '').toLowerCase(); return t === 'sabnzbd' || t === 'nzbget'; });
+        var hasExternal = clients.some(function(c) { var t = (c.type || '').toLowerCase(); return t === 'qbittorrent'; });
         // Show appropriate notice
         if (hasExternal) {
             nzbhuntNotice.style.display = 'none';
@@ -1013,7 +1003,7 @@
     function selectClientType(type) {
         closeClientTypeModal();
         if (window.SettingsForms && window.SettingsForms.openClientEditor) {
-            var defaultName = type === 'nzbhunt' ? 'NZB Hunt' : type === 'sabnzbd' ? 'SABnzbd' : type === 'nzbget' ? 'NZBGet' : type;
+            var defaultName = type === 'nzbhunt' ? 'NZB Hunt' : type === 'torhunt' ? 'Tor Hunt' : type === 'qbittorrent' ? 'qBittorrent' : type;
             var payload = { name: defaultName, type: type, host: '', port: 8080, enabled: true, category: 'movies', recent_priority: 'default', older_priority: 'default', client_priority: 1 };
             if (type === 'nzbhunt') {
                 payload.host = 'internal';
@@ -1089,7 +1079,7 @@
                 if (!instance) {
                     var card = editBtn.closest('.instance-card');
                     var nameEl = card ? card.querySelector('.instance-name span') : null;
-                    var type = card ? (card.getAttribute('data-type') || 'nzbget') : 'nzbget';
+                    var type = card ? (card.getAttribute('data-type') || 'nzbhunt') : 'nzbhunt';
                     var enabled = card ? (card.getAttribute('data-enabled') !== 'false') : true;
                     var bodyDetails = card ? card.querySelectorAll('.instance-card-body .instance-detail span') : [];
                     var hostPort = bodyDetails[1] ? bodyDetails[1].textContent.trim() : '';

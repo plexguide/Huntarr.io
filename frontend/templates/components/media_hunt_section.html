@@ -6,7 +6,8 @@
     <link rel="stylesheet" href="./static/css/home.css">
     <div class="requestarr-content media-hunt-content">
         {% from 'components/page_header_partial.html' import page_header %}
-        {{ page_header(back_href='./#home', parent_icon='fas fa-film', parent_name='Media Hunt', current_name='Discover', sponsor_section_id='media-hunt') }}
+        {{ page_header(back_href='./#home', parent_icon='fas fa-film', parent_name='Media Hunt',
+        current_name='Discover', sponsor_section_id='media-hunt') }}
         <div id="media-hunt-beta-notice" class="media-hunt-beta-notice" role="status">
             <i class="fas fa-flask" aria-hidden="true"></i>
             <span id="media-hunt-beta-text"><strong>Beta feature:</strong> Media Hunt is in active development.</span>
@@ -22,7 +23,8 @@
         <div id="media-hunt-main-view" class="requestarr-view" style="display: block;">
             <div class="movies-controls">
                 <div class="instance-selector-container">
-                    <select id="media-hunt-instance-select" class="control-select instance-select" aria-label="Instance">
+                    <select id="media-hunt-instance-select" class="control-select instance-select"
+                        aria-label="Instance">
                         <option value="">Loading instances...</option>
                     </select>
                 </div>
@@ -74,12 +76,14 @@
                     </div>
                     <div class="setup-wizard-step-info">
                         <span class="setup-wizard-step-title">Add an Instance</span>
-                        <span class="setup-wizard-step-subtitle">Connect a Movie Hunt or TV Hunt instance to your media server</span>
+                        <span class="setup-wizard-step-subtitle">Connect a Movie Hunt or TV Hunt instance to your media
+                            server</span>
                     </div>
                     <i class="fas fa-chevron-down setup-wizard-step-chevron"></i>
                 </div>
                 <div class="setup-wizard-step-body" id="setup-step-body-1">
-                    <p>Configure at least one Movie Hunt or TV Hunt instance to connect Huntarr to your media library.</p>
+                    <p>Configure at least one Movie Hunt or TV Hunt instance to connect Huntarr to your media library.
+                    </p>
                     <button type="button" class="setup-wizard-action-btn" data-wizard-nav="media-hunt-instances">
                         <i class="fas fa-layer-group"></i> Configure Instances
                     </button>
@@ -100,9 +104,12 @@
                 </div>
                 <div class="setup-wizard-step-body" id="setup-step-body-2">
                     <p><strong>Two steps:</strong></p>
-                    <ol style="margin: 12px 0 16px 0; padding-left: 20px; color: #94a3b8; font-size: 0.9rem; line-height: 1.7;">
-                        <li><strong>Add to the Index Master Pool</strong> — Add your indexers (API keys, URLs) to the central pool.</li>
-                        <li><strong>Assign to each instance</strong> — The pool is just a pool. You must import indexers into each Movie Hunt and TV Hunt instance for them to be used.</li>
+                    <ol
+                        style="margin: 12px 0 16px 0; padding-left: 20px; color: #94a3b8; font-size: 0.9rem; line-height: 1.7;">
+                        <li><strong>Add to the Index Master Pool</strong> — Add your indexers (API keys, URLs) to the
+                            central pool.</li>
+                        <li><strong>Assign to each instance</strong> — The pool is just a pool. You must import indexers
+                            into each Movie Hunt and TV Hunt instance for them to be used.</li>
                     </ol>
                     <button type="button" class="setup-wizard-action-btn" data-wizard-nav="indexer-hunt">
                         <i class="fas fa-search-plus"></i> Add Indexer
@@ -123,7 +130,10 @@
                     <i class="fas fa-chevron-down setup-wizard-step-chevron"></i>
                 </div>
                 <div class="setup-wizard-step-body" id="setup-step-body-3">
-                    <p>Root folders tell Huntarr where your media files are stored. <strong>You must configure root folders for every instance</strong> — each Movie Hunt and TV Hunt instance has its own. Use the instance dropdown on the Root Folders page to switch between instances and add folders for each.</p>
+                    <p>Root folders tell Huntarr where your media files are stored. <strong>You must configure root
+                            folders for every instance</strong> — each Movie Hunt and TV Hunt instance has its own. Use
+                        the instance dropdown on the Root Folders page to switch between instances and add folders for
+                        each.</p>
                     <button type="button" class="setup-wizard-action-btn" data-wizard-nav="settings-root-folders">
                         <i class="fas fa-folder-open"></i> Configure Root Folders
                     </button>
@@ -138,12 +148,15 @@
                     </div>
                     <div class="setup-wizard-step-info">
                         <span class="setup-wizard-step-title">Download Client</span>
-                        <span class="setup-wizard-step-subtitle">Add a usenet download client — <strong>NZB Hunt recommended</strong> for simplicity</span>
+                        <span class="setup-wizard-step-subtitle">Add a usenet download client — <strong>NZB Hunt
+                                recommended</strong> for simplicity</span>
                     </div>
                     <i class="fas fa-chevron-down setup-wizard-step-chevron"></i>
                 </div>
                 <div class="setup-wizard-step-body" id="setup-step-body-4">
-                    <p>A download client handles NZB downloads. We recommend <strong>NZB Hunt</strong> (built-in) — it requires zero configuration and no remote path mappings. SABnzbd and NZBGet are also supported if you prefer an external client. <em>Only usenet is supported currently; torrent support is coming soon.</em></p>
+                    <p>A download client handles downloads. We recommend <strong>NZB Hunt</strong> (built-in usenet) or
+                        <strong>Tor Hunt</strong> (built-in torrent) — they require zero configuration and no remote
+                        path mappings. qBittorrent is also supported if you prefer an external torrent client.</p>
                     <button type="button" class="setup-wizard-action-btn" data-wizard-nav="settings-clients">
                         <i class="fas fa-cloud-download-alt"></i> Add Client
                     </button>
@@ -183,67 +196,83 @@
     <!-- Media Hunt Collection: Movie Hunt + TV Hunt instance dropdowns, combined library view -->
     <div id="media-hunt-collection-view" class="media-hunt-collection-view" style="display: none;">
         <div style="padding: 0 0 20px 0;">
-        {% from 'components/page_header_partial.html' import page_header %}
-        {{ page_header(back_href='./#home', parent_icon='fas fa-folder-open', parent_name='Media Hunt', current_name='Collections', sponsor_section_id='media-hunt-collection') }}
+            {% from 'components/page_header_partial.html' import page_header %}
+            {{ page_header(back_href='./#home', parent_icon='fas fa-folder-open', parent_name='Media Hunt',
+            current_name='Collections', sponsor_section_id='media-hunt-collection') }}
 
-        <div id="media-hunt-collection-content-wrapper" style="display: none;">
-        <div class="global-search-bar" style="margin-bottom: 12px;">
-            <i class="fas fa-search"></i>
-            <input type="text" id="media-hunt-collection-search-input" placeholder="Search" aria-label="Search collection">
-        </div>
-        <div id="media-hunt-collection-search-results-view" class="requestarr-view" style="display: none;">
-            <h2 class="search-results-title">Search Results</h2>
-            <div id="media-hunt-collection-search-results-grid" class="search-results-grid"></div>
-        </div>
-        <div id="media-hunt-collection-main-content">
-            <div class="discover-instance-controls media-hunt-collection-controls" style="margin-bottom: 20px;">
-                <div class="instance-selector-container">
-                    <select id="media-hunt-collection-movie-instance-select" class="control-select instance-select" aria-label="Movie Hunt Instance">
-                        <option value="">Loading Movie Hunt instances...</option>
-                    </select>
+            <div id="media-hunt-collection-content-wrapper" style="display: none;">
+                <div class="global-search-bar" style="margin-bottom: 12px;">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="media-hunt-collection-search-input" placeholder="Search"
+                        aria-label="Search collection">
                 </div>
-                <div class="instance-selector-container">
-                    <select id="media-hunt-collection-tv-instance-select" class="control-select instance-select" aria-label="TV Hunt Instance">
-                        <option value="">Loading TV Hunt instances...</option>
-                    </select>
+                <div id="media-hunt-collection-search-results-view" class="requestarr-view" style="display: none;">
+                    <h2 class="search-results-title">Search Results</h2>
+                    <div id="media-hunt-collection-search-results-grid" class="search-results-grid"></div>
                 </div>
-                <div class="sort-dropdown">
-                    <select id="media-hunt-collection-sort" class="control-select">
-                        <option value="title.asc">Title (A-Z)</option>
-                        <option value="title.desc">Title (Z-A)</option>
-                        <option value="year.desc">Year (newest)</option>
-                        <option value="year.asc">Year (oldest)</option>
-                    </select>
+                <div id="media-hunt-collection-main-content">
+                    <div class="discover-instance-controls media-hunt-collection-controls" style="margin-bottom: 20px;">
+                        <div class="instance-selector-container">
+                            <select id="media-hunt-collection-movie-instance-select"
+                                class="control-select instance-select" aria-label="Movie Hunt Instance">
+                                <option value="">Loading Movie Hunt instances...</option>
+                            </select>
+                        </div>
+                        <div class="instance-selector-container">
+                            <select id="media-hunt-collection-tv-instance-select" class="control-select instance-select"
+                                aria-label="TV Hunt Instance">
+                                <option value="">Loading TV Hunt instances...</option>
+                            </select>
+                        </div>
+                        <div class="sort-dropdown">
+                            <select id="media-hunt-collection-sort" class="control-select">
+                                <option value="title.asc">Title (A-Z)</option>
+                                <option value="title.desc">Title (Z-A)</option>
+                                <option value="year.desc">Year (newest)</option>
+                                <option value="year.asc">Year (oldest)</option>
+                            </select>
+                        </div>
+                        <div class="view-mode-selector">
+                            <select id="media-hunt-collection-view-mode" class="control-select">
+                                <option value="posters">Posters</option>
+                                <option value="table">Table</option>
+                                <option value="overview">Overview</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="media-hunt-collection-grid" class="media-grid">
+                        <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading collection...</p>
+                        </div>
+                    </div>
+                    <div id="media-hunt-collection-scroll-sentinel" style="height: 1px; width: 100%;"
+                        aria-hidden="true"></div>
+                    <div id="media-hunt-collection-table" class="media-table-container" style="display: none;">
+                        <table class="media-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 60px;"></th>
+                                    <th>Title</th>
+                                    <th style="width: 80px;">Year</th>
+                                    <th style="width: 80px;">Type</th>
+                                </tr>
+                            </thead>
+                            <tbody id="media-hunt-collection-table-body"></tbody>
+                        </table>
+                    </div>
+                    <div id="media-hunt-collection-overview" class="media-overview-container" style="display: none;">
+                        <div id="media-hunt-collection-overview-list"></div>
+                    </div>
                 </div>
-                <div class="view-mode-selector">
-                    <select id="media-hunt-collection-view-mode" class="control-select">
-                        <option value="posters">Posters</option>
-                        <option value="table">Table</option>
-                        <option value="overview">Overview</option>
-                    </select>
+                <div id="media-hunt-collection-series-detail-view" class="tv-hunt-series-detail-view"
+                    style="display: none;">
+                    <div class="series-detail-header">
+                        <button type="button" class="back-btn" id="media-hunt-collection-series-back-btn"><i
+                                class="fas fa-arrow-left"></i> Back to Collection</button>
+                    </div>
+                    <div id="media-hunt-collection-series-detail-content"></div>
                 </div>
             </div>
-            <div id="media-hunt-collection-grid" class="media-grid">
-                <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading collection...</p></div>
-            </div>
-            <div id="media-hunt-collection-scroll-sentinel" style="height: 1px; width: 100%;" aria-hidden="true"></div>
-            <div id="media-hunt-collection-table" class="media-table-container" style="display: none;">
-                <table class="media-table">
-                    <thead><tr><th style="width: 60px;"></th><th>Title</th><th style="width: 80px;">Year</th><th style="width: 80px;">Type</th></tr></thead>
-                    <tbody id="media-hunt-collection-table-body"></tbody>
-                </table>
-            </div>
-            <div id="media-hunt-collection-overview" class="media-overview-container" style="display: none;">
-                <div id="media-hunt-collection-overview-list"></div>
-            </div>
-        </div>
-        <div id="media-hunt-collection-series-detail-view" class="tv-hunt-series-detail-view" style="display: none;">
-            <div class="series-detail-header">
-                <button type="button" class="back-btn" id="media-hunt-collection-series-back-btn"><i class="fas fa-arrow-left"></i> Back to Collection</button>
-            </div>
-            <div id="media-hunt-collection-series-detail-content"></div>
-        </div>
-        </div>
         </div>
     </div>
 
@@ -271,7 +300,8 @@
                     <label class="filter-label">Genres</label>
                     <div class="selected-genres-container" id="media-hunt-selected-genres" style="display: none;"></div>
                     <div class="genre-select-wrapper">
-                        <input type="text" id="media-hunt-genre-search-input" class="genre-search-input" placeholder="Select genres..." readonly>
+                        <input type="text" id="media-hunt-genre-search-input" class="genre-search-input"
+                            placeholder="Select genres..." readonly>
                         <div id="media-hunt-genre-dropdown" class="genre-dropdown" style="display: none;">
                             <div id="media-hunt-genre-list" class="genre-list"></div>
                         </div>
@@ -283,8 +313,10 @@
                     <div class="dual-range-slider">
                         <div class="slider-track"></div>
                         <div class="slider-range" id="media-hunt-year-range"></div>
-                        <input type="range" id="media-hunt-filter-year-min" class="range-min" value="1900" min="1900" max="2029" step="1">
-                        <input type="range" id="media-hunt-filter-year-max" class="range-max" value="2029" min="1900" max="2029" step="1">
+                        <input type="range" id="media-hunt-filter-year-min" class="range-min" value="1900" min="1900"
+                            max="2029" step="1">
+                        <input type="range" id="media-hunt-filter-year-max" class="range-max" value="2029" min="1900"
+                            max="2029" step="1">
                     </div>
                 </div>
                 <div class="filter-group">
@@ -293,8 +325,10 @@
                     <div class="dual-range-slider">
                         <div class="slider-track"></div>
                         <div class="slider-range" id="media-hunt-runtime-range"></div>
-                        <input type="range" id="media-hunt-filter-runtime-min" class="range-min" value="0" min="0" max="400" step="1">
-                        <input type="range" id="media-hunt-filter-runtime-max" class="range-max" value="400" min="0" max="400" step="1">
+                        <input type="range" id="media-hunt-filter-runtime-min" class="range-min" value="0" min="0"
+                            max="400" step="1">
+                        <input type="range" id="media-hunt-filter-runtime-max" class="range-max" value="400" min="0"
+                            max="400" step="1">
                     </div>
                 </div>
                 <div class="filter-group">
@@ -303,18 +337,23 @@
                     <div class="dual-range-slider">
                         <div class="slider-track"></div>
                         <div class="slider-range" id="media-hunt-rating-range"></div>
-                        <input type="range" id="media-hunt-filter-rating-min" class="range-min" value="0" min="0" max="10" step="0.1">
-                        <input type="range" id="media-hunt-filter-rating-max" class="range-max" value="10" min="0" max="10" step="0.1">
+                        <input type="range" id="media-hunt-filter-rating-min" class="range-min" value="0" min="0"
+                            max="10" step="0.1">
+                        <input type="range" id="media-hunt-filter-rating-max" class="range-max" value="10" min="0"
+                            max="10" step="0.1">
                     </div>
                 </div>
                 <div class="filter-group">
                     <label class="filter-label">TMDB User Vote Count</label>
-                    <div class="filter-range-text" id="media-hunt-votes-display">Number of votes between 0 and 10000</div>
+                    <div class="filter-range-text" id="media-hunt-votes-display">Number of votes between 0 and 10000
+                    </div>
                     <div class="dual-range-slider">
                         <div class="slider-track"></div>
                         <div class="slider-range" id="media-hunt-votes-range"></div>
-                        <input type="range" id="media-hunt-filter-votes-min" class="range-min" value="0" min="0" max="10000" step="10">
-                        <input type="range" id="media-hunt-filter-votes-max" class="range-max" value="10000" min="0" max="10000" step="10">
+                        <input type="range" id="media-hunt-filter-votes-min" class="range-min" value="0" min="0"
+                            max="10000" step="10">
+                        <input type="range" id="media-hunt-filter-votes-max" class="range-max" value="10000" min="0"
+                            max="10000" step="10">
                     </div>
                 </div>
             </div>

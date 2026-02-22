@@ -1,319 +1,457 @@
 <section id="activitySection" class="content-section" style="display: none;">
     <link rel="stylesheet" href="./static/css/instance-editor.css?v=1.0.2">
     <div class="app-content-panel" style="padding: 20px;">
-    {% from 'components/page_header_partial.html' import page_header %}
-    {{ page_header(back_href='./#media-hunt-collection', parent_icon='fas fa-clock', parent_name='Activity', current_name='History', current_name_id='activityCurrentViewLabel', sponsor_section_id='activity') }}
-    <div id="activity-unable-to-load" class="activity-unable-to-load" style="display: none;">
-        <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
-        <p class="no-instances-title">Unable to load</p>
-        <p class="no-instances-desc">Could not load instance data. Please refresh the page.</p>
-    </div>
-    <div id="activity-content-wrapper" style="display: none;">
-    <!-- Toolbar: same design as main system Logs -->
-    <div id="activityQueueToolbar" class="logs-toolbar">
-        <div class="logs-toolbar-row">
-            <div class="logs-filters">
-                <div class="logs-filter-chip">
-                    <i class="fas fa-film"></i>
-                    <select id="activity-combined-instance-select" class="chip-select" aria-label="Movie Hunt or TV Hunt instance">
-                        <option value="">Loading...</option>
-                    </select>
-                </div>
-            </div>
-            <div class="logs-search-bar">
-                <i class="fas fa-search"></i>
-                <input type="text" id="activitySearchInput" placeholder="Search...">
-            </div>
-            <button type="button" id="activitySearchButton" class="logs-btn logs-btn-search" title="Search">
-                <i class="fas fa-search"></i>
-            </button>
-            <button type="button" id="activityRefreshButton" class="logs-btn" title="Refresh">
-                <i class="fas fa-sync-alt"></i>
-            </button>
-            <button type="button" id="activityRemoveSelectedButton" class="logs-btn logs-btn-danger" title="Remove Selected" style="display: none;">
-                <i class="fas fa-trash-alt"></i>
-            </button>
+        {% from 'components/page_header_partial.html' import page_header %}
+        {{ page_header(back_href='./#media-hunt-collection', parent_icon='fas fa-clock', parent_name='Activity',
+        current_name='History', current_name_id='activityCurrentViewLabel', sponsor_section_id='activity') }}
+        <div id="activity-unable-to-load" class="activity-unable-to-load" style="display: none;">
+            <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+            <p class="no-instances-title">Unable to load</p>
+            <p class="no-instances-desc">Could not load instance data. Please refresh the page.</p>
         </div>
-        <div class="logs-toolbar-meta">
-            <div class="logs-connection-dot">
-                <span class="logs-page-info" style="color: #64748b;">Queue</span>
-            </div>
-            <div class="logs-pagination">
-                <span class="logs-page-size">
-                    Show
-                    <select id="activityPageSize" class="chip-select chip-select-sm">
-                        <option value="10">10</option>
-                        <option value="20" selected>20</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                    </select>
-                </span>
-                <div class="logs-page-nav">
-                    <button type="button" id="activityPrevPage" class="logs-page-btn" title="Previous Page"><i class="fas fa-chevron-left"></i></button>
-                    <span id="activityPageInfo" class="logs-page-info">Page <span id="activityCurrentPage">1</span> of <span id="activityTotalPages">1</span></span>
-                    <button type="button" id="activityNextPage" class="logs-page-btn" title="Next Page"><i class="fas fa-chevron-right"></i></button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Queue view -->
-    <div id="activity-queue-view" class="activity-view" style="display: none;">
-        <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
-            <i class="fas fa-info-circle" style="color: #818cf8; font-size: 1rem;"></i>
-            <span style="color: #94a3b8; font-size: 0.9rem;">This queue tracks downloads sent to <strong style="color: #e2e8f0;">SABnzbd</strong> and <strong style="color: #e2e8f0;">NZBGet</strong>. For NZB Hunt (built-in) downloads, check the NZB Hunt section.</span>
-        </div>
-        <div class="logs-table-wrapper">
-            <table class="logs-data-table">
-                <thead>
-                    <tr>
-                        <th class="col-select" style="width: 40px;"><input type="checkbox" id="activityQueueSelectAll" title="Select all"></th>
-                        <th class="col-movie">MOVIE</th>
-                        <th class="col-languages">LANGUAGES</th>
-                        <th class="col-quality">QUALITY</th>
-                        <th class="col-formats">FORMATS</th>
-                        <th class="col-scoring">SCORING</th>
-                        <th class="col-time-left">TIME LEFT</th>
-                        <th class="col-progress">PROGRESS</th>
-                    </tr>
-                </thead>
-                <tbody id="activityQueueTableBody"></tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- History view -->
-    <div id="activity-history-view" class="activity-view" style="display: none;">
-        <div class="logs-table-wrapper">
-            <table class="logs-data-table">
-                <thead>
-                    <tr>
-                        <th class="col-movie">MOVIE</th>
-                        <th class="col-languages">LANGUAGES</th>
-                        <th class="col-quality">QUALITY</th>
-                        <th class="col-formats">FORMATS</th>
-                        <th class="col-date">DATE</th>
-                    </tr>
-                </thead>
-                <tbody id="activityHistoryTableBody"></tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- Blocklist view -->
-    <div id="activity-blocklist-view" class="activity-view" style="display: none;">
-        <div class="logs-table-wrapper">
-            <table class="logs-data-table">
-                <thead>
-                    <tr>
-                        <th class="col-movie">MOVIE TITLE</th>
-                        <th class="col-source">SOURCE TITLE</th>
-                        <th class="col-reason">REASON FAILED</th>
-                        <th class="col-date">DATE</th>
-                        <th class="col-actions" style="width: 90px;"></th>
-                    </tr>
-                </thead>
-                <tbody id="activityBlocklistTableBody"></tbody>
-            </table>
-        </div>
-        <div id="activityBlocklistDetailsModal" class="activity-blocklist-modal" style="display: none;" role="dialog" aria-label="Blocklist entry details">
-            <div class="activity-blocklist-modal-content">
-                <div class="activity-blocklist-modal-header">
-                    <h3>Details</h3>
-                    <button type="button" class="activity-blocklist-modal-close" aria-label="Close">&times;</button>
-                </div>
-                <div class="activity-blocklist-modal-body">
-                    <p><strong>Name</strong><br><span id="activityBlocklistModalName"></span></p>
-                    <p><strong>Reason Failed</strong><br><span id="activityBlocklistModalReason"></span></p>
-                    <p><strong>Date</strong><br><span id="activityBlocklistModalDate"></span></p>
-                </div>
-                <div class="activity-blocklist-modal-footer">
-                    <button type="button" class="btn-primary-outline activity-blocklist-modal-close-btn">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Movie Hunt Logs view (independent of main Huntarr logs) -->
-    <div id="activity-logs-view" class="activity-view" style="display: none;">
-        <div class="logs-header">
-            <div class="logs-controls">
-                <div class="control-group">
-                    <div class="log-level-filter">
-                        <label for="activityLogLevelSelect">
-                            <i class="fas fa-filter"></i>
-                            <span>Level:</span>
-                        </label>
-                        <select id="activityLogLevelSelect" class="styled-select">
-                            <option value="all">All Levels</option>
-                            <option value="debug" id="activityLogLevelOptionDebug">DEBUG</option>
-                            <option value="info" selected>INFO</option>
-                            <option value="warning">WARNING</option>
-                            <option value="error">ERROR</option>
-                        </select>
+        <div id="activity-content-wrapper" style="display: none;">
+            <!-- Toolbar: same design as main system Logs -->
+            <div id="activityQueueToolbar" class="logs-toolbar">
+                <div class="logs-toolbar-row">
+                    <div class="logs-filters">
+                        <div class="logs-filter-chip">
+                            <i class="fas fa-film"></i>
+                            <select id="activity-combined-instance-select" class="chip-select"
+                                aria-label="Movie Hunt or TV Hunt instance">
+                                <option value="">Loading...</option>
+                            </select>
+                        </div>
                     </div>
-                </div>
-                <div class="control-group main-search">
-                    <div class="log-search">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" id="activityLogSearchInput" placeholder="Search logs...">
-                        <button id="activityLogSearchButton">Search</button>
+                    <div class="logs-search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="activitySearchInput" placeholder="Search...">
                     </div>
-                </div>
-                <div class="control-group">
-                    <button type="button" id="activityLogClearButton" class="btn-danger-outline">
-                        <i class="fas fa-trash-alt"></i> Clear
+                    <button type="button" id="activitySearchButton" class="logs-btn logs-btn-search" title="Search">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button type="button" id="activityRefreshButton" class="logs-btn" title="Refresh">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button type="button" id="activityRemoveSelectedButton" class="logs-btn logs-btn-danger"
+                        title="Remove Selected" style="display: none;">
+                        <i class="fas fa-trash-alt"></i>
                     </button>
                 </div>
+                <div class="logs-toolbar-meta">
+                    <div class="logs-connection-dot">
+                        <span class="logs-page-info" style="color: #64748b;">Queue</span>
+                    </div>
+                    <div class="logs-pagination">
+                        <span class="logs-page-size">
+                            Show
+                            <select id="activityPageSize" class="chip-select chip-select-sm">
+                                <option value="10">10</option>
+                                <option value="20" selected>20</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </span>
+                        <div class="logs-page-nav">
+                            <button type="button" id="activityPrevPage" class="logs-page-btn" title="Previous Page"><i
+                                    class="fas fa-chevron-left"></i></button>
+                            <span id="activityPageInfo" class="logs-page-info">Page <span
+                                    id="activityCurrentPage">1</span> of <span id="activityTotalPages">1</span></span>
+                            <button type="button" id="activityNextPage" class="logs-page-btn" title="Next Page"><i
+                                    class="fas fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="logs-pagination-bar">
-                <div class="connection-status-wrapper">
-                    Status: <span id="activityLogConnectionStatus" class="status-disconnected">Disconnected</span>
+
+            <!-- Queue view -->
+            <div id="activity-queue-view" class="activity-view" style="display: none;">
+                <div
+                    style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-info-circle" style="color: #818cf8; font-size: 1rem;"></i>
+                    <span style="color: #94a3b8; font-size: 0.9rem;">This queue tracks downloads sent to your configured
+                        download clients (NZB Hunt, Tor Hunt, qBittorrent).</span>
                 </div>
-                <div class="pagination-info">
-                    <span id="activityLogPageInfo">Page <span id="activityLogCurrentPage">1</span> of <span id="activityLogTotalPages">1</span></span>
+                <div class="logs-table-wrapper">
+                    <table class="logs-data-table">
+                        <thead>
+                            <tr>
+                                <th class="col-select" style="width: 40px;"><input type="checkbox"
+                                        id="activityQueueSelectAll" title="Select all"></th>
+                                <th class="col-movie">MOVIE</th>
+                                <th class="col-languages">LANGUAGES</th>
+                                <th class="col-quality">QUALITY</th>
+                                <th class="col-formats">FORMATS</th>
+                                <th class="col-scoring">SCORING</th>
+                                <th class="col-time-left">TIME LEFT</th>
+                                <th class="col-progress">PROGRESS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activityQueueTableBody"></tbody>
+                    </table>
                 </div>
-                <div class="pagination-actions">
-                    <button id="activityLogPrevPage" class="pagination-btn" title="Previous Page"><i class="fas fa-chevron-left"></i></button>
-                    <button id="activityLogNextPage" class="pagination-btn" title="Next Page"><i class="fas fa-chevron-right"></i></button>
+            </div>
+
+            <!-- History view -->
+            <div id="activity-history-view" class="activity-view" style="display: none;">
+                <div class="logs-table-wrapper">
+                    <table class="logs-data-table">
+                        <thead>
+                            <tr>
+                                <th class="col-movie">MOVIE</th>
+                                <th class="col-languages">LANGUAGES</th>
+                                <th class="col-quality">QUALITY</th>
+                                <th class="col-formats">FORMATS</th>
+                                <th class="col-date">DATE</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activityHistoryTableBody"></tbody>
+                    </table>
                 </div>
-                <div class="page-size-selector">
-                    <span>Show:</span>
-                    <select id="activityLogPageSize" class="mini-select">
-                        <option value="20" selected>20</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                        <option value="200">200</option>
-                    </select>
+            </div>
+
+            <!-- Blocklist view -->
+            <div id="activity-blocklist-view" class="activity-view" style="display: none;">
+                <div class="logs-table-wrapper">
+                    <table class="logs-data-table">
+                        <thead>
+                            <tr>
+                                <th class="col-movie">MOVIE TITLE</th>
+                                <th class="col-source">SOURCE TITLE</th>
+                                <th class="col-reason">REASON FAILED</th>
+                                <th class="col-date">DATE</th>
+                                <th class="col-actions" style="width: 90px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="activityBlocklistTableBody"></tbody>
+                    </table>
+                </div>
+                <div id="activityBlocklistDetailsModal" class="activity-blocklist-modal" style="display: none;"
+                    role="dialog" aria-label="Blocklist entry details">
+                    <div class="activity-blocklist-modal-content">
+                        <div class="activity-blocklist-modal-header">
+                            <h3>Details</h3>
+                            <button type="button" class="activity-blocklist-modal-close"
+                                aria-label="Close">&times;</button>
+                        </div>
+                        <div class="activity-blocklist-modal-body">
+                            <p><strong>Name</strong><br><span id="activityBlocklistModalName"></span></p>
+                            <p><strong>Reason Failed</strong><br><span id="activityBlocklistModalReason"></span></p>
+                            <p><strong>Date</strong><br><span id="activityBlocklistModalDate"></span></p>
+                        </div>
+                        <div class="activity-blocklist-modal-footer">
+                            <button type="button"
+                                class="btn-primary-outline activity-blocklist-modal-close-btn">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Movie Hunt Logs view (independent of main Huntarr logs) -->
+            <div id="activity-logs-view" class="activity-view" style="display: none;">
+                <div class="logs-header">
+                    <div class="logs-controls">
+                        <div class="control-group">
+                            <div class="log-level-filter">
+                                <label for="activityLogLevelSelect">
+                                    <i class="fas fa-filter"></i>
+                                    <span>Level:</span>
+                                </label>
+                                <select id="activityLogLevelSelect" class="styled-select">
+                                    <option value="all">All Levels</option>
+                                    <option value="debug" id="activityLogLevelOptionDebug">DEBUG</option>
+                                    <option value="info" selected>INFO</option>
+                                    <option value="warning">WARNING</option>
+                                    <option value="error">ERROR</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="control-group main-search">
+                            <div class="log-search">
+                                <i class="fas fa-search search-icon"></i>
+                                <input type="text" id="activityLogSearchInput" placeholder="Search logs...">
+                                <button id="activityLogSearchButton">Search</button>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <button type="button" id="activityLogClearButton" class="btn-danger-outline">
+                                <i class="fas fa-trash-alt"></i> Clear
+                            </button>
+                        </div>
+                    </div>
+                    <div class="logs-pagination-bar">
+                        <div class="connection-status-wrapper">
+                            Status: <span id="activityLogConnectionStatus"
+                                class="status-disconnected">Disconnected</span>
+                        </div>
+                        <div class="pagination-info">
+                            <span id="activityLogPageInfo">Page <span id="activityLogCurrentPage">1</span> of <span
+                                    id="activityLogTotalPages">1</span></span>
+                        </div>
+                        <div class="pagination-actions">
+                            <button id="activityLogPrevPage" class="pagination-btn" title="Previous Page"><i
+                                    class="fas fa-chevron-left"></i></button>
+                            <button id="activityLogNextPage" class="pagination-btn" title="Next Page"><i
+                                    class="fas fa-chevron-right"></i></button>
+                        </div>
+                        <div class="page-size-selector">
+                            <span>Show:</span>
+                            <select id="activityLogPageSize" class="mini-select">
+                                <option value="20" selected>20</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                                <option value="200">200</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="logs-table-wrapper">
+                    <table class="logs-data-table">
+                        <thead>
+                            <tr>
+                                <th class="col-time">TIME</th>
+                                <th class="col-level">LEVEL</th>
+                                <th class="col-app">APP</th>
+                                <th class="col-message">MESSAGE</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activityLogsContainer">
+                            <!-- Movie Hunt log entries -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="activityEmptyState" class="empty-state-card" style="display: none;">
+                <div class="empty-state-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <h3 id="activityEmptyTitle">No items found</h3>
+                <p id="activityEmptyMessage">Items will appear here when available.</p>
+            </div>
+
+            <div id="activityLoading" class="loading-overlay" style="display: none;">
+                <div class="loading-spinner-container">
+                    <i class="fas fa-circle-notch fa-spin fa-3x"></i>
+                    <p>Loading...</p>
                 </div>
             </div>
         </div>
-        <div class="logs-table-wrapper">
-            <table class="logs-data-table">
-                <thead>
-                    <tr>
-                        <th class="col-time">TIME</th>
-                        <th class="col-level">LEVEL</th>
-                        <th class="col-app">APP</th>
-                        <th class="col-message">MESSAGE</th>
-                    </tr>
-                </thead>
-                <tbody id="activityLogsContainer">
-                    <!-- Movie Hunt log entries -->
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div id="activityEmptyState" class="empty-state-card" style="display: none;">
-        <div class="empty-state-icon">
-            <i class="fas fa-clock"></i>
-        </div>
-        <h3 id="activityEmptyTitle">No items found</h3>
-        <p id="activityEmptyMessage">Items will appear here when available.</p>
-    </div>
-
-    <div id="activityLoading" class="loading-overlay" style="display: none;">
-        <div class="loading-spinner-container">
-            <i class="fas fa-circle-notch fa-spin fa-3x"></i>
-            <p>Loading...</p>
-        </div>
-    </div>
-    </div>
     </div>
 </section>
 
 <style>
-/* No-instances warning box (same style as Media Management) */
-#activitySection .activity-no-instances {
-    text-align: center; padding: 64px 24px; width: 100%; box-sizing: border-box;
-    margin: 20px; background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(148, 163, 184, 0.08);
-    border-radius: 12px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-}
-#activitySection .activity-no-instances i.fa-cube { font-size: 3rem; color: #334155; margin-bottom: 16px; display: block; }
-#activitySection .activity-no-instances .no-instances-title { font-size: 1.2rem; font-weight: 600; color: #f1f5f9; margin: 0 0 8px 0; }
-#activitySection .activity-no-instances .no-instances-desc { font-size: 0.95rem; color: #94a3b8; line-height: 1.6; margin: 0 auto 24px auto; max-width: 400px; }
-#activitySection .activity-no-instances .no-instances-action-btn {
-    display: inline-flex; align-items: center; gap: 8px; background: rgba(99, 102, 241, 0.2);
-    border: 1px solid rgba(99, 102, 241, 0.4); color: #818cf8; padding: 10px 20px; border-radius: 8px;
-    text-decoration: none; font-weight: 500; transition: background 0.2s, border-color 0.2s;
-}
-#activitySection .activity-no-instances .no-instances-action-btn:hover {
-    background: rgba(99, 102, 241, 0.3); border-color: rgba(99, 102, 241, 0.5);
-}
-/* Activity: empty state, loading, blocklist modal — toolbar/table use logs.css */
-#activitySection .logs-table-wrapper { margin-top: 0; margin-bottom: 16px; }
-#activitySection .col-select { width: 40px; text-align: center; }
-#activitySection .col-select input[type="checkbox"] { cursor: pointer; }
-#activitySection .empty-state-card {
-    text-align: center;
-    padding: 60px 20px;
-    background: rgba(30, 41, 59, 0.3);
-    border-radius: 12px;
-    border: 1px dashed #334155;
-    margin-top: 20px;
-}
-#activitySection .empty-state-icon { color: #334155; font-size: 4rem; margin-bottom: 20px; }
-#activitySection .empty-state-card h3 { color: #f1f5f9; margin-bottom: 10px; }
-#activitySection .empty-state-card p { color: #64748b; }
-#activitySection .loading-overlay { text-align: center; padding: 60px 20px; }
-#activitySection .loading-spinner-container { color: #6366f1; }
-#activitySection .loading-spinner-container p { margin-top: 15px; color: #94a3b8; }
+    /* No-instances warning box (same style as Media Management) */
+    #activitySection .activity-no-instances {
+        text-align: center;
+        padding: 64px 24px;
+        width: 100%;
+        box-sizing: border-box;
+        margin: 20px;
+        background: rgba(15, 23, 42, 0.4);
+        border: 1px solid rgba(148, 163, 184, 0.08);
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    }
 
-.activity-blocklist-modal {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.6);
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-.activity-blocklist-modal-content {
-    background: #1e293b;
-    border: 1px solid #334155;
-    border-radius: 12px;
-    max-width: 560px;
-    width: 100%;
-    max-height: 90vh;
-    overflow: auto;
-}
-.activity-blocklist-modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    border-bottom: 1px solid #334155;
-}
-.activity-blocklist-modal-header h3 { margin: 0; color: #f1f5f9; font-size: 1.1rem; }
-.activity-blocklist-modal-close {
-    background: none;
-    border: none;
-    color: #94a3b8;
-    font-size: 1.5rem;
-    cursor: pointer;
-    padding: 0 4px;
-    line-height: 1;
-}
-.activity-blocklist-modal-close:hover { color: #f1f5f9; }
-.activity-blocklist-modal-body { padding: 20px; }
-.activity-blocklist-modal-body p { margin: 0 0 16px; color: #e2e8f0; font-size: 0.9em; }
-.activity-blocklist-modal-body p:last-child { margin-bottom: 0; }
-.activity-blocklist-modal-body strong { color: #94a3b8; display: block; margin-bottom: 4px; }
-.activity-blocklist-modal-footer { padding: 12px 20px; border-top: 1px solid #334155; text-align: right; }
-.activity-blocklist-modal-footer .btn-primary-outline { margin: 0; }
-#activitySection .col-reason { max-width: 280px; }
-#activitySection .col-actions { text-align: right; }
-#activitySection .activity-blocklist-btn-info,
-#activitySection .activity-blocklist-btn-remove {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 6px 10px;
-    color: #94a3b8;
-    font-size: 1rem;
-}
-#activitySection .activity-blocklist-btn-info:hover { color: #6366f1; }
-#activitySection .activity-blocklist-btn-remove:hover { color: #ef4444; }
+    #activitySection .activity-no-instances i.fa-cube {
+        font-size: 3rem;
+        color: #334155;
+        margin-bottom: 16px;
+        display: block;
+    }
+
+    #activitySection .activity-no-instances .no-instances-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #f1f5f9;
+        margin: 0 0 8px 0;
+    }
+
+    #activitySection .activity-no-instances .no-instances-desc {
+        font-size: 0.95rem;
+        color: #94a3b8;
+        line-height: 1.6;
+        margin: 0 auto 24px auto;
+        max-width: 400px;
+    }
+
+    #activitySection .activity-no-instances .no-instances-action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(99, 102, 241, 0.2);
+        border: 1px solid rgba(99, 102, 241, 0.4);
+        color: #818cf8;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: background 0.2s, border-color 0.2s;
+    }
+
+    #activitySection .activity-no-instances .no-instances-action-btn:hover {
+        background: rgba(99, 102, 241, 0.3);
+        border-color: rgba(99, 102, 241, 0.5);
+    }
+
+    /* Activity: empty state, loading, blocklist modal — toolbar/table use logs.css */
+    #activitySection .logs-table-wrapper {
+        margin-top: 0;
+        margin-bottom: 16px;
+    }
+
+    #activitySection .col-select {
+        width: 40px;
+        text-align: center;
+    }
+
+    #activitySection .col-select input[type="checkbox"] {
+        cursor: pointer;
+    }
+
+    #activitySection .empty-state-card {
+        text-align: center;
+        padding: 60px 20px;
+        background: rgba(30, 41, 59, 0.3);
+        border-radius: 12px;
+        border: 1px dashed #334155;
+        margin-top: 20px;
+    }
+
+    #activitySection .empty-state-icon {
+        color: #334155;
+        font-size: 4rem;
+        margin-bottom: 20px;
+    }
+
+    #activitySection .empty-state-card h3 {
+        color: #f1f5f9;
+        margin-bottom: 10px;
+    }
+
+    #activitySection .empty-state-card p {
+        color: #64748b;
+    }
+
+    #activitySection .loading-overlay {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+    #activitySection .loading-spinner-container {
+        color: #6366f1;
+    }
+
+    #activitySection .loading-spinner-container p {
+        margin-top: 15px;
+        color: #94a3b8;
+    }
+
+    .activity-blocklist-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .activity-blocklist-modal-content {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        max-width: 560px;
+        width: 100%;
+        max-height: 90vh;
+        overflow: auto;
+    }
+
+    .activity-blocklist-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid #334155;
+    }
+
+    .activity-blocklist-modal-header h3 {
+        margin: 0;
+        color: #f1f5f9;
+        font-size: 1.1rem;
+    }
+
+    .activity-blocklist-modal-close {
+        background: none;
+        border: none;
+        color: #94a3b8;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0 4px;
+        line-height: 1;
+    }
+
+    .activity-blocklist-modal-close:hover {
+        color: #f1f5f9;
+    }
+
+    .activity-blocklist-modal-body {
+        padding: 20px;
+    }
+
+    .activity-blocklist-modal-body p {
+        margin: 0 0 16px;
+        color: #e2e8f0;
+        font-size: 0.9em;
+    }
+
+    .activity-blocklist-modal-body p:last-child {
+        margin-bottom: 0;
+    }
+
+    .activity-blocklist-modal-body strong {
+        color: #94a3b8;
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    .activity-blocklist-modal-footer {
+        padding: 12px 20px;
+        border-top: 1px solid #334155;
+        text-align: right;
+    }
+
+    .activity-blocklist-modal-footer .btn-primary-outline {
+        margin: 0;
+    }
+
+    #activitySection .col-reason {
+        max-width: 280px;
+    }
+
+    #activitySection .col-actions {
+        text-align: right;
+    }
+
+    #activitySection .activity-blocklist-btn-info,
+    #activitySection .activity-blocklist-btn-remove {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 6px 10px;
+        color: #94a3b8;
+        font-size: 1rem;
+    }
+
+    #activitySection .activity-blocklist-btn-info:hover {
+        color: #6366f1;
+    }
+
+    #activitySection .activity-blocklist-btn-remove:hover {
+        color: #ef4444;
+    }
 </style>

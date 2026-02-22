@@ -2,7 +2,7 @@
  * Media Hunt Instance Editor – unified Movie + TV per-instance hunt settings.
  * Part 1: MovieHuntInstanceEditor (movie mode). Uses media-hunt-instance-editor-* container IDs.
  */
-(function() {
+(function () {
     'use strict';
 
     var baseUrl = (typeof window !== 'undefined' && window.HUNTARR_BASE_URL) ? window.HUNTARR_BASE_URL.replace(/\/$/, '') : '';
@@ -60,7 +60,7 @@
         var upgradeTagGroupDisplay = (safe.upgrade_selection_method || 'cutoff') === 'tags' ? 'flex' : 'none';
         var statefulBlockDisplay = safe.state_management_mode === 'disabled' ? 'none' : 'block';
 
-        var exemptTagsHtml = (safe.exempt_tags || []).map(function(tag) {
+        var exemptTagsHtml = (safe.exempt_tags || []).map(function (tag) {
             return '<span class="exempt-tag-chip" data-tag="' + escapeAttr(tag) + '" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; background: #dc2626; color: #fff; border-radius: 6px; font-size: 0.875rem;">' +
                 '<span class="exempt-tag-remove" style="cursor: pointer;">×</span><span>' + escapeHtml(tag) + '</span></span>';
         }).join('');
@@ -91,7 +91,7 @@
             '<p class="editor-help-text">Stable identifier for this instance (assigned automatically; cannot be changed)</p></div>' +
             '<div class="editor-field-group"><div class="editor-setting-item"><label>Category Name</label>' +
             '<input type="text" id="mh-editor-category-name" value="' + escapeAttr('Movies-' + ((safe.name || '').trim() || 'Unnamed').replace(/ /g, '_')) + '" readonly disabled style="opacity: 0.8; cursor: not-allowed; background: rgba(148,163,184,0.1);"></div>' +
-            '<p class="editor-help-text">For NZB Hunt this is automatic. SABNZBD and NZBGet require this exact category to be configured.</p></div>' +
+            '<p class="editor-help-text">For NZB Hunt this is automatic. External clients (e.g. qBittorrent) require this exact category to be configured.</p></div>' +
             '</div>' +
             '<div class="editor-section">' +
             '<div class="editor-section-title"><div class="section-title-text"><span class="section-title-icon accent-search"><i class="fas fa-search"></i></span>SEARCH SETTINGS</div></div>' +
@@ -184,13 +184,13 @@
     }
 
     function collectFormData() {
-        var get = function(id) { var el = document.getElementById(id); return el ? el.value : null; };
-        var getNum = function(id, def) { var v = get(id); if (v === null || v === '') return def; var n = parseInt(v, 10); return isNaN(n) ? def : n; };
-        var getCheck = function(id) { var el = document.getElementById(id); return el ? !!el.checked : false; };
+        var get = function (id) { var el = document.getElementById(id); return el ? el.value : null; };
+        var getNum = function (id, def) { var v = get(id); if (v === null || v === '') return def; var n = parseInt(v, 10); return isNaN(n) ? def : n; };
+        var getCheck = function (id) { var el = document.getElementById(id); return el ? !!el.checked : false; };
         var tags = [];
         var list = document.getElementById('mh-editor-exempt-tags-list');
         if (list) {
-            list.querySelectorAll('.exempt-tag-chip').forEach(function(chip) {
+            list.querySelectorAll('.exempt-tag-chip').forEach(function (chip) {
                 var t = chip.getAttribute('data-tag');
                 if (t) tags.push(t);
             });
@@ -252,8 +252,8 @@
             if (saveBtn) { saveBtn.disabled = false; saveBtn.classList.add('enabled'); }
         }
         addBtn.addEventListener('click', addTag);
-        input.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); addTag(); } });
-        list.addEventListener('click', function(e) {
+        input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); addTag(); } });
+        list.addEventListener('click', function (e) {
             var remove = e.target.classList.contains('exempt-tag-remove') ? e.target : e.target.closest('.exempt-tag-remove');
             if (remove) {
                 var chip = remove.closest('.exempt-tag-chip');
@@ -279,11 +279,11 @@
         container.addEventListener('change', markDirty);
         var stateMode = document.getElementById('mh-editor-state-mode');
         var upgradeMethod = document.getElementById('mh-editor-upgrade-method');
-        if (stateMode) stateMode.addEventListener('change', function() {
+        if (stateMode) stateMode.addEventListener('change', function () {
             var block = document.getElementById('mh-editor-stateful-block');
             if (block) block.style.display = stateMode.value === 'disabled' ? 'none' : 'block';
         });
-        if (upgradeMethod) upgradeMethod.addEventListener('change', function() {
+        if (upgradeMethod) upgradeMethod.addEventListener('change', function () {
             var group = container.querySelector('.editor-upgrade-tag-group');
             if (group) group.style.display = upgradeMethod.value === 'tags' ? 'flex' : 'none';
             var upgradeItemsSection = container.querySelector('.mh-editor-upgrade-items-tag-section');
@@ -303,7 +303,7 @@
         var statusPill = container ? container.querySelector('.mh-info-status-pill') : null;
         var enabledIconEl = document.getElementById('mh-editor-enabled-icon');
         if (enabledSelect && statusPill) {
-            enabledSelect.addEventListener('change', function() {
+            enabledSelect.addEventListener('change', function () {
                 var on = enabledSelect.value === 'true';
                 statusPill.className = 'mh-info-status-pill ' + (on ? 'mh-info-status-enabled' : 'mh-info-status-disabled');
                 statusPill.innerHTML = on ? '<i class="fas fa-check-circle" style="margin-right: 6px;"></i>Enabled' : 'Disabled';
@@ -320,33 +320,33 @@
         if (!countEl || !nextEl || !instanceName) return;
         var url = api('./api/stateful/summary?app_type=movie_hunt&instance_name=' + encodeURIComponent(instanceName));
         fetch(url, { cache: 'no-store' })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
                 countEl.textContent = (data && data.processed_count !== undefined) ? data.processed_count : 0;
                 nextEl.textContent = (data && data.next_reset_time) ? data.next_reset_time : 'N/A';
             })
-            .catch(function() {
+            .catch(function () {
                 countEl.textContent = '0';
                 nextEl.textContent = 'N/A';
             });
     }
 
-    var addInstanceCardHtml = function(appType, iconClass, label) {
+    var addInstanceCardHtml = function (appType, iconClass, label) {
         return '<div class="add-instance-card" data-app-type="' + appType + '"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">' + (label || 'Add Instance') + '</div></div>';
     };
 
     window.MovieHuntInstanceEditor = {
-        loadInstanceList: function() {
+        loadInstanceList: function () {
             var grid = document.getElementById('movie-hunt-settings-instances-grid');
             if (!grid) return;
             grid.innerHTML = '<div style="color: #94a3b8;">Loading...</div>';
             fetch(api('./api/movie-hunt/instances'), { cache: 'no-store' })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
                     var list = data.instances || [];
                     var currentId = (data.current_instance_id != null) ? parseInt(data.current_instance_id, 10) : (list[0] ? list[0].id : null);
                     grid.innerHTML = '';
-                    list.forEach(function(inst) {
+                    list.forEach(function (inst) {
                         var enabled = inst.enabled !== false;
                         var statusClass = enabled ? 'status-connected' : 'status-disabled';
                         var statusIcon = enabled ? 'fa-check-circle' : 'fa-minus-circle';
@@ -367,8 +367,8 @@
                     var addCard = document.createElement('div');
                     addCard.innerHTML = addInstanceCardHtml('media-hunt-instance-movie', 'fa-film', 'Add Movie Instance');
                     grid.appendChild(addCard.firstElementChild);
-                    grid.querySelectorAll('.btn-card.edit').forEach(function(btn) {
-                        btn.addEventListener('click', function(e) {
+                    grid.querySelectorAll('.btn-card.edit').forEach(function (btn) {
+                        btn.addEventListener('click', function (e) {
                             e.stopPropagation();
                             window.MovieHuntInstanceEditor.openEditor(
                                 btn.getAttribute('data-id'),
@@ -376,29 +376,29 @@
                             );
                         });
                     });
-                    grid.querySelectorAll('.btn-card.set-default').forEach(function(btn) {
-                        btn.addEventListener('click', function(e) {
+                    grid.querySelectorAll('.btn-card.set-default').forEach(function (btn) {
+                        btn.addEventListener('click', function (e) {
                             e.stopPropagation();
                             window.MovieHuntInstanceEditor.setDefault(btn.getAttribute('data-id'));
                         });
                     });
-                    grid.querySelectorAll('.btn-card.delete').forEach(function(btn) {
-                        btn.addEventListener('click', function(e) {
+                    grid.querySelectorAll('.btn-card.delete').forEach(function (btn) {
+                        btn.addEventListener('click', function (e) {
                             e.stopPropagation();
                             var name = btn.getAttribute('data-name') || ('Instance ' + btn.getAttribute('data-id'));
-                            var doDelete = function() { window.MovieHuntInstanceEditor.deleteInstance(btn.getAttribute('data-id')); };
+                            var doDelete = function () { window.MovieHuntInstanceEditor.deleteInstance(btn.getAttribute('data-id')); };
                             if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
                                 window.HuntarrConfirm.show({ title: 'Delete Instance', message: 'Delete Movie Hunt instance "' + (name || '') + '"? All settings and collection data for this instance will be permanently removed.', confirmLabel: 'Delete', onConfirm: doDelete });
                             } else if (confirm('Delete "' + name + '"? This cannot be undone.')) { doDelete(); }
                         });
                     });
                 })
-                .catch(function() {
+                .catch(function () {
                     grid.innerHTML = '<div style="color: #f87171;">Failed to load instances.</div>';
                 });
         },
 
-        setDefault: function(instanceId) {
+        setDefault: function (instanceId) {
             if (!instanceId) return;
             var self = this;
             fetch(api('./api/movie-hunt/instances/current'), {
@@ -406,8 +406,8 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ instance_id: parseInt(instanceId, 10) })
             })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
                     if (data.success) {
                         if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Default instance updated', 'success');
                         self.loadInstanceList();
@@ -415,17 +415,17 @@
                         window.huntarrUI.showNotification(data.error, 'error');
                     }
                 })
-                .catch(function() {
+                .catch(function () {
                     if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Failed to set default instance', 'error');
                 });
         },
 
-        deleteInstance: function(instanceId) {
+        deleteInstance: function (instanceId) {
             if (!instanceId) return;
             var self = this;
             fetch(api('./api/movie-hunt/instances/' + instanceId), { method: 'DELETE' })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
                     if (data.success) {
                         if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Instance deleted', 'success');
                         self.loadInstanceList();
@@ -433,21 +433,21 @@
                         window.huntarrUI.showNotification(data.error || 'Failed to delete', 'error');
                     }
                 })
-                .catch(function() {
+                .catch(function () {
                     if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Failed to delete instance', 'error');
                 });
         },
 
-        openEditor: function(instanceId, instanceName) {
+        openEditor: function (instanceId, instanceName) {
             _currentInstanceId = instanceId;
             _currentInstanceName = instanceName || ('Instance ' + instanceId);
             _editorDirty = false;
             var self = this;
             fetch(api('./api/movie-hunt/instances/' + instanceId + '/settings'), { cache: 'no-store' })
-                .then(function(r) {
-                    return r.json().then(function(data) { return { ok: r.ok, data: data }; });
+                .then(function (r) {
+                    return r.json().then(function (data) { return { ok: r.ok, data: data }; });
                 })
-                .then(function(result) {
+                .then(function (result) {
                     if (!result.ok || result.data.error) {
                         var msg = (result.data && result.data.error) ? result.data.error : 'Failed to load settings';
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
@@ -472,7 +472,7 @@
                     if (appIcon) appIcon.className = 'fas fa-film';
                     var backBtn = document.getElementById('media-hunt-instance-editor-back');
                     var saveBtn = document.getElementById('media-hunt-instance-editor-save');
-                    if (backBtn) backBtn.onclick = function() {
+                    if (backBtn) backBtn.onclick = function () {
                         if (!_editorDirty) {
                             window.huntarrUI.switchSection('media-hunt-instances');
                             return;
@@ -483,10 +483,10 @@
                                 message: 'You have unsaved changes that will be lost if you leave.',
                                 confirmLabel: 'Go Back',
                                 cancelLabel: 'Leave',
-                                onConfirm: function() {
+                                onConfirm: function () {
                                     // Stay on the editor — modal just closes, user can save manually
                                 },
-                                onCancel: function() { window.huntarrUI.switchSection('media-hunt-instances'); }
+                                onCancel: function () { window.huntarrUI.switchSection('media-hunt-instances'); }
                             });
                         } else {
                             if (confirm('You have unsaved changes that will be lost. Leave anyway?')) {
@@ -494,9 +494,9 @@
                             }
                         }
                     };
-                    if (saveBtn) saveBtn.onclick = function() { self.saveEditor(); };
+                    if (saveBtn) saveBtn.onclick = function () { self.saveEditor(); };
                     var resetBtn = document.getElementById('mh-editor-reset-state');
-                    if (resetBtn) resetBtn.onclick = function() { self.resetState(instanceId); };
+                    if (resetBtn) resetBtn.onclick = function () { self.resetState(instanceId); };
 
                     // Debug Manager: Reset Media Collection
                     self.setupResetCollectionModal(instanceId, _currentInstanceName);
@@ -505,14 +505,14 @@
                         window.huntarrUI.switchSection('movie-hunt-instance-editor');
                     }
                 })
-                .catch(function(err) {
+                .catch(function (err) {
                     if (window.huntarrUI && window.huntarrUI.showNotification) {
                         window.huntarrUI.showNotification('Failed to load settings: ' + (err.message || 'Request failed'), 'error');
                     }
                 });
         },
 
-        saveEditor: function() {
+        saveEditor: function () {
             if (!_currentInstanceId) return;
             var payload = collectFormData();
             var saveBtn = document.getElementById('media-hunt-instance-editor-save');
@@ -523,8 +523,8 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
                     if (data.error) {
                         if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(data.error, 'error');
                         if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-save"></i> Save'; saveBtn.classList.add('enabled'); }
@@ -534,33 +534,33 @@
                     if (saveBtn) {
                         saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved!';
                         saveBtn.classList.remove('enabled');
-                        setTimeout(function() {
+                        setTimeout(function () {
                             saveBtn.innerHTML = '<i class="fas fa-save"></i> Save';
                             saveBtn.disabled = true;
                         }, 2000);
                     }
                 })
-                .catch(function() {
+                .catch(function () {
                     if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Failed to save settings', 'error');
                     if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-save"></i> Save'; saveBtn.classList.add('enabled'); }
                 });
         },
 
-        resetState: function(instanceId) {
+        resetState: function (instanceId) {
             if (!instanceId) return;
             function doReset() {
                 fetch(api('./api/movie-hunt/instances/' + instanceId + '/reset-state'), { method: 'POST' })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (data.error && window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification(data.error, 'error');
-                    } else if (window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification('State reset.', 'success');
-                    }
-                })
-                .catch(function() {
-                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Reset request failed', 'error');
-                });
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        if (data.error && window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification(data.error, 'error');
+                        } else if (window.huntarrUI && window.huntarrUI.showNotification) {
+                            window.huntarrUI.showNotification('State reset.', 'success');
+                        }
+                    })
+                    .catch(function () {
+                        if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Reset request failed', 'error');
+                    });
             }
             if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
                 window.HuntarrConfirm.show({
@@ -575,7 +575,7 @@
             }
         },
 
-        setupResetCollectionModal: function(instanceId, instanceName) {
+        setupResetCollectionModal: function (instanceId, instanceName) {
             var resetBtn = document.getElementById('mh-editor-reset-collection');
             var modal = document.getElementById('mh-reset-collection-modal');
             var backdrop = document.getElementById('mh-reset-collection-backdrop');
@@ -606,14 +606,14 @@
 
             // Enable/disable confirm button based on input match
             if (input && confirmBtn) {
-                input.addEventListener('input', function() {
+                input.addEventListener('input', function () {
                     var val = (input.value || '').trim();
                     var match = val === expectedName;
                     confirmBtn.disabled = !match;
                     confirmBtn.style.opacity = match ? '1' : '0.5';
                     if (errorEl) { errorEl.style.display = 'none'; }
                 });
-                input.addEventListener('keydown', function(e) {
+                input.addEventListener('keydown', function (e) {
                     if (e.key === 'Enter' && !confirmBtn.disabled) {
                         confirmBtn.click();
                     }
@@ -621,7 +621,7 @@
             }
 
             if (confirmBtn) {
-                confirmBtn.onclick = function() {
+                confirmBtn.onclick = function () {
                     var val = (input ? input.value : '').trim();
                     if (val !== expectedName) {
                         if (errorEl) {
@@ -632,7 +632,7 @@
                     }
                     confirmBtn.disabled = true;
                     confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Deleting...';
-                    self.resetCollection(instanceId, function(success) {
+                    self.resetCollection(instanceId, function (success) {
                         if (success) {
                             closeModal();
                         } else {
@@ -644,12 +644,12 @@
             }
         },
 
-        resetCollection: function(instanceId, callback) {
+        resetCollection: function (instanceId, callback) {
             fetch(api('./api/movie-hunt/instances/' + instanceId + '/reset-collection'), {
                 method: 'DELETE'
             })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
                     if (data.success) {
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
                             window.huntarrUI.showNotification(data.message || 'Media collection has been reset.', 'success');
@@ -663,7 +663,7 @@
                         if (callback) callback(false);
                     }
                 })
-                .catch(function(err) {
+                .catch(function (err) {
                     var msg = (err && err.message) ? err.message : 'Request failed.';
                     if (window.huntarrUI && window.huntarrUI.showNotification) {
                         window.huntarrUI.showNotification(msg, 'error');
@@ -678,7 +678,7 @@
  * Media Hunt Instance Editor – Part 2: TVHuntInstanceEditor (TV mode).
  * Uses same media-hunt-instance-editor-* container IDs.
  */
-(function() {
+(function () {
     'use strict';
 
     var baseUrl = (typeof window !== 'undefined' && window.HUNTARR_BASE_URL) ? window.HUNTARR_BASE_URL.replace(/\/$/, '') : '';
@@ -722,7 +722,7 @@
         var infoStatusClass = safe.enabled ? 'th-info-status-enabled' : 'th-info-status-disabled';
         var infoStatusText = safe.enabled ? 'Enabled' : 'Disabled';
 
-        var exemptTagsHtml = (safe.exempt_tags || []).map(function(tag) {
+        var exemptTagsHtml = (safe.exempt_tags || []).map(function (tag) {
             return '<span class="exempt-tag-chip" data-tag="' + escapeAttr(tag) + '" style="display:inline-flex;align-items:center;gap:6px;padding:4px 8px;background:#dc2626;color:#fff;border-radius:6px;font-size:0.875rem;">' +
                 '<span class="exempt-tag-remove" style="cursor:pointer;">&times;</span><span>' + escapeHtml(tag) + '</span></span>';
         }).join('');
@@ -735,7 +735,7 @@
             '<div class="editor-field-group"><div class="editor-setting-item"><label>Enable Status</label><select id="th-editor-enabled"><option value="true"' + (safe.enabled ? ' selected' : '') + '>Enabled</option><option value="false"' + (!safe.enabled ? ' selected' : '') + '>Disabled</option></select></div><p class="editor-help-text">Enable or disable this instance</p></div>' +
             '<div class="editor-field-group"><div class="editor-setting-item"><label>Name</label><input type="text" id="th-editor-name" value="' + escapeAttr(safe.name) + '" placeholder="e.g. Main TV" maxlength="64"></div><p class="editor-help-text">A friendly name to identify this instance</p></div>' +
             '<div class="editor-field-group"><div class="editor-setting-item"><label>Instance ID</label><input type="text" id="th-editor-instance-id" value="' + escapeAttr(safe.instance_id) + '" readonly disabled style="opacity:0.8;cursor:not-allowed;"></div><p class="editor-help-text">Stable identifier (auto-assigned, cannot change)</p></div>' +
-            '<div class="editor-field-group"><div class="editor-setting-item"><label>Category Name</label><input type="text" id="th-editor-category-name" value="' + escapeAttr('TV-' + ((safe.name || '').trim() || 'Unnamed').replace(/ /g, '_')) + '" readonly disabled style="opacity:0.8;cursor:not-allowed;background:rgba(148,163,184,0.1);"></div><p class="editor-help-text">For NZB Hunt this is automatic. SABNZBD and NZBGet require this exact category to be configured.</p></div>' +
+            '<div class="editor-field-group"><div class="editor-setting-item"><label>Category Name</label><input type="text" id="th-editor-category-name" value="' + escapeAttr('TV-' + ((safe.name || '').trim() || 'Unnamed').replace(/ /g, '_')) + '" readonly disabled style="opacity:0.8;cursor:not-allowed;background:rgba(148,163,184,0.1);"></div><p class="editor-help-text">For NZB Hunt this is automatic. External clients (e.g. qBittorrent) require this exact category to be configured.</p></div>' +
             '</div>' +
             // SEARCH SETTINGS
             '<div class="editor-section"><div class="editor-section-title"><div class="section-title-text"><span class="section-title-icon accent-search"><i class="fas fa-search"></i></span>SEARCH SETTINGS</div></div>' +
@@ -780,12 +780,12 @@
     }
 
     function collectFormData() {
-        var get = function(id) { var el = document.getElementById(id); return el ? el.value : null; };
-        var getNum = function(id, def) { var v = get(id); if (v === null || v === '') return def; var n = parseInt(v, 10); return isNaN(n) ? def : n; };
-        var getCheck = function(id) { var el = document.getElementById(id); return el ? !!el.checked : false; };
+        var get = function (id) { var el = document.getElementById(id); return el ? el.value : null; };
+        var getNum = function (id, def) { var v = get(id); if (v === null || v === '') return def; var n = parseInt(v, 10); return isNaN(n) ? def : n; };
+        var getCheck = function (id) { var el = document.getElementById(id); return el ? !!el.checked : false; };
         var tags = [];
         var list = document.getElementById('th-editor-exempt-tags-list');
-        if (list) list.querySelectorAll('.exempt-tag-chip').forEach(function(chip) { var t = chip.getAttribute('data-tag'); if (t) tags.push(t); });
+        if (list) list.querySelectorAll('.exempt-tag-chip').forEach(function (chip) { var t = chip.getAttribute('data-tag'); if (t) tags.push(t); });
         var enabledVal = get('th-editor-enabled');
         return {
             enabled: enabledVal === 'true',
@@ -830,8 +830,8 @@
             if (saveBtn) { saveBtn.disabled = false; saveBtn.classList.add('enabled'); }
         }
         addBtn.addEventListener('click', addTag);
-        input.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); addTag(); } });
-        list.addEventListener('click', function(e) {
+        input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); addTag(); } });
+        list.addEventListener('click', function (e) {
             var remove = e.target.classList.contains('exempt-tag-remove') ? e.target : e.target.closest('.exempt-tag-remove');
             if (remove) {
                 var chip = remove.closest('.exempt-tag-chip');
@@ -853,11 +853,11 @@
         container.addEventListener('change', markDirty);
         var stateMode = document.getElementById('th-editor-state-mode');
         var upgradeMethod = document.getElementById('th-editor-upgrade-method');
-        if (stateMode) stateMode.addEventListener('change', function() {
+        if (stateMode) stateMode.addEventListener('change', function () {
             var block = document.getElementById('th-editor-stateful-block');
             if (block) block.style.display = stateMode.value === 'disabled' ? 'none' : 'block';
         });
-        if (upgradeMethod) upgradeMethod.addEventListener('change', function() {
+        if (upgradeMethod) upgradeMethod.addEventListener('change', function () {
             var group = container.querySelector('.editor-upgrade-tag-group');
             if (group) group.style.display = upgradeMethod.value === 'tags' ? 'flex' : 'none';
         });
@@ -874,7 +874,7 @@
         var enabledSelect = document.getElementById('th-editor-enabled');
         var statusPill = container ? container.querySelector('.th-info-status-pill') : null;
         if (enabledSelect && statusPill) {
-            enabledSelect.addEventListener('change', function() {
+            enabledSelect.addEventListener('change', function () {
                 var on = enabledSelect.value === 'true';
                 statusPill.className = 'th-info-status-pill ' + (on ? 'th-info-status-enabled' : 'th-info-status-disabled');
                 statusPill.innerHTML = on ? '<i class="fas fa-check-circle" style="margin-right:6px;"></i>Enabled' : 'Disabled';
@@ -889,7 +889,7 @@
     function renderTVInstanceCards(grid, list, currentId) {
         grid.innerHTML = '';
         currentId = (currentId != null) ? parseInt(currentId, 10) : (list && list[0] ? list[0].id : null);
-        (list || []).forEach(function(inst) {
+        (list || []).forEach(function (inst) {
             var enabled = inst.enabled !== false;
             var statusClass = enabled ? 'status-connected' : 'status-disabled';
             var statusIcon = enabled ? 'fa-check-circle' : 'fa-minus-circle';
@@ -910,8 +910,8 @@
         var addCard = document.createElement('div');
         addCard.innerHTML = addInstanceCardHtml('media-hunt-instance-tv', 'fa-tv', 'Add TV Instance');
         grid.appendChild(addCard.firstElementChild);
-        grid.querySelectorAll('.btn-card.edit').forEach(function(btn) {
-            btn.addEventListener('click', function(e) {
+        grid.querySelectorAll('.btn-card.edit').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
                 e.stopPropagation();
                 window.TVHuntInstanceEditor.openEditor(
                     btn.getAttribute('data-id'),
@@ -919,17 +919,17 @@
                 );
             });
         });
-        grid.querySelectorAll('.btn-card.set-default').forEach(function(btn) {
-            btn.addEventListener('click', function(e) {
+        grid.querySelectorAll('.btn-card.set-default').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
                 e.stopPropagation();
                 window.TVHuntInstanceEditor.setDefault(btn.getAttribute('data-id'));
             });
         });
-        grid.querySelectorAll('.btn-card.delete').forEach(function(btn) {
-            btn.addEventListener('click', function(e) {
+        grid.querySelectorAll('.btn-card.delete').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
                 e.stopPropagation();
                 var name = btn.getAttribute('data-name') || ('Instance ' + btn.getAttribute('data-id'));
-                var doDelete = function() { window.TVHuntInstanceEditor.deleteInstance(btn.getAttribute('data-id')); };
+                var doDelete = function () { window.TVHuntInstanceEditor.deleteInstance(btn.getAttribute('data-id')); };
                 if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
                     window.HuntarrConfirm.show({ title: 'Delete Instance', message: 'Delete TV Hunt instance "' + (name || '') + '"? All settings and collection data for this instance will be permanently removed.', confirmLabel: 'Delete', onConfirm: doDelete });
                 } else if (confirm('Delete "' + name + '"? This cannot be undone.')) { doDelete(); }
@@ -938,17 +938,17 @@
     }
 
     window.TVHuntInstanceEditor = {
-        loadInstanceList: function() {
+        loadInstanceList: function () {
             var grid = document.getElementById('tv-hunt-settings-instances-grid');
             if (!grid) return;
             grid.innerHTML = '<div style="color: #94a3b8;">Loading...</div>';
             var url = api('./api/tv-hunt/instances') + '?t=' + (Date.now ? Date.now() : new Date().getTime());
             fetch(url, { cache: 'no-store', credentials: 'same-origin' })
-                .then(function(r) {
-                    if (!r.ok) return r.json().then(function(data) { return { instances: data.instances || [], error: data.error }; });
+                .then(function (r) {
+                    if (!r.ok) return r.json().then(function (data) { return { instances: data.instances || [], error: data.error }; });
                     return r.json();
                 })
-                .then(function(data) {
+                .then(function (data) {
                     var list = (data && data.instances) ? data.instances : [];
                     var currentId = (data && data.current_instance_id != null) ? data.current_instance_id : null;
                     var err = data && data.error;
@@ -957,7 +957,7 @@
                         window.huntarrUI.showNotification(err, 'error');
                     }
                 })
-                .catch(function() {
+                .catch(function () {
                     var errDiv = document.createElement('div');
                     errDiv.style.cssText = 'color: #f87171; margin-bottom: 12px;';
                     errDiv.textContent = 'Failed to load instances. You can still add a new TV instance below.';
@@ -967,7 +967,7 @@
                 });
         },
 
-        setDefault: function(instanceId) {
+        setDefault: function (instanceId) {
             if (!instanceId) return;
             var self = this;
             fetch(api('./api/tv-hunt/instances/current'), {
@@ -975,8 +975,8 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ instance_id: parseInt(instanceId, 10) })
             })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
                     if (data.success) {
                         if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Default instance updated', 'success');
                         self.loadInstanceList();
@@ -984,17 +984,17 @@
                         window.huntarrUI.showNotification(data.error, 'error');
                     }
                 })
-                .catch(function() {
+                .catch(function () {
                     if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Failed to set default instance', 'error');
                 });
         },
 
-        deleteInstance: function(instanceId) {
+        deleteInstance: function (instanceId) {
             if (!instanceId) return;
             var self = this;
             fetch(api('./api/tv-hunt/instances/' + instanceId), { method: 'DELETE' })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
                     if (data.success) {
                         if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Instance deleted', 'success');
                         self.loadInstanceList();
@@ -1002,67 +1002,67 @@
                         window.huntarrUI.showNotification(data.error || 'Failed to delete', 'error');
                     }
                 })
-                .catch(function() {
+                .catch(function () {
                     if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Failed to delete instance', 'error');
                 });
         },
 
-        openEditor: function(instanceId, instanceName) {
+        openEditor: function (instanceId, instanceName) {
             _currentInstanceId = instanceId;
             _currentInstanceName = instanceName || ('Instance ' + instanceId);
             _editorDirty = false;
             var self = this;
             fetch(api('./api/tv-hunt/instances/' + instanceId + '/settings'), { cache: 'no-store' })
-            .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
-            .then(function(result) {
-                if (!result.ok || result.data.error) {
-                    if (window.huntarrUI) window.huntarrUI.showNotification(result.data.error || 'Failed to load settings', 'error');
-                    return;
-                }
-                var contentEl = document.getElementById('media-hunt-instance-editor-content');
-                if (contentEl) {
-                    contentEl.innerHTML = buildEditorHtml(result.data);
-                    setupExemptTagsListeners(contentEl);
-                    setupChangeDetection(contentEl);
-                }
-                var breadcrumb = document.getElementById('media-hunt-instance-editor-instance-name');
-                if (breadcrumb) breadcrumb.textContent = _currentInstanceName;
-                var appNameEl = document.getElementById('media-hunt-instance-editor-app-name');
-                if (appNameEl) appNameEl.textContent = 'TV Hunt';
-                var appIcon = document.getElementById('media-hunt-instance-editor-app-icon');
-                if (appIcon) appIcon.className = 'fas fa-tv';
+                .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
+                .then(function (result) {
+                    if (!result.ok || result.data.error) {
+                        if (window.huntarrUI) window.huntarrUI.showNotification(result.data.error || 'Failed to load settings', 'error');
+                        return;
+                    }
+                    var contentEl = document.getElementById('media-hunt-instance-editor-content');
+                    if (contentEl) {
+                        contentEl.innerHTML = buildEditorHtml(result.data);
+                        setupExemptTagsListeners(contentEl);
+                        setupChangeDetection(contentEl);
+                    }
+                    var breadcrumb = document.getElementById('media-hunt-instance-editor-instance-name');
+                    if (breadcrumb) breadcrumb.textContent = _currentInstanceName;
+                    var appNameEl = document.getElementById('media-hunt-instance-editor-app-name');
+                    if (appNameEl) appNameEl.textContent = 'TV Hunt';
+                    var appIcon = document.getElementById('media-hunt-instance-editor-app-icon');
+                    if (appIcon) appIcon.className = 'fas fa-tv';
 
-                var backBtn = document.getElementById('media-hunt-instance-editor-back');
-                var saveBtn = document.getElementById('media-hunt-instance-editor-save');
-                if (backBtn) backBtn.onclick = function() {
-                    if (!_editorDirty) { window.huntarrUI.switchSection('media-hunt-instances'); return; }
-                    window.HuntarrConfirm.show({
-                        title: 'Unsaved Changes',
-                        message: 'You have unsaved changes that will be lost if you leave.',
-                        confirmLabel: 'Go Back',
-                        cancelLabel: 'Leave',
-                        onConfirm: function() {},
-                        onCancel: function() { window.huntarrUI.switchSection('media-hunt-instances'); }
-                    });
-                };
-                if (saveBtn) saveBtn.onclick = function() { self.saveEditor(); };
+                    var backBtn = document.getElementById('media-hunt-instance-editor-back');
+                    var saveBtn = document.getElementById('media-hunt-instance-editor-save');
+                    if (backBtn) backBtn.onclick = function () {
+                        if (!_editorDirty) { window.huntarrUI.switchSection('media-hunt-instances'); return; }
+                        window.HuntarrConfirm.show({
+                            title: 'Unsaved Changes',
+                            message: 'You have unsaved changes that will be lost if you leave.',
+                            confirmLabel: 'Go Back',
+                            cancelLabel: 'Leave',
+                            onConfirm: function () { },
+                            onCancel: function () { window.huntarrUI.switchSection('media-hunt-instances'); }
+                        });
+                    };
+                    if (saveBtn) saveBtn.onclick = function () { self.saveEditor(); };
 
-                var resetBtn = document.getElementById('th-editor-reset-state');
-                if (resetBtn) resetBtn.onclick = function() { self.resetState(instanceId); };
+                    var resetBtn = document.getElementById('th-editor-reset-state');
+                    if (resetBtn) resetBtn.onclick = function () { self.resetState(instanceId); };
 
-                var resetCollBtn = document.getElementById('th-editor-reset-collection');
-                if (resetCollBtn) resetCollBtn.onclick = function() { self.resetCollection(instanceId); };
+                    var resetCollBtn = document.getElementById('th-editor-reset-collection');
+                    if (resetCollBtn) resetCollBtn.onclick = function () { self.resetCollection(instanceId); };
 
-                if (window.huntarrUI && window.huntarrUI.switchSection) {
-                    window.huntarrUI.switchSection('tv-hunt-instance-editor');
-                }
-            })
-            .catch(function(err) {
-                if (window.huntarrUI) window.huntarrUI.showNotification('Failed to load settings: ' + (err.message || ''), 'error');
-            });
+                    if (window.huntarrUI && window.huntarrUI.switchSection) {
+                        window.huntarrUI.switchSection('tv-hunt-instance-editor');
+                    }
+                })
+                .catch(function (err) {
+                    if (window.huntarrUI) window.huntarrUI.showNotification('Failed to load settings: ' + (err.message || ''), 'error');
+                });
         },
 
-        saveEditor: function() {
+        saveEditor: function () {
             if (!_currentInstanceId) return;
             var payload = collectFormData();
             var saveBtn = document.getElementById('media-hunt-instance-editor-save');
@@ -1072,56 +1072,56 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (data.error) {
-                    if (window.huntarrUI) window.huntarrUI.showNotification(data.error, 'error');
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.error) {
+                        if (window.huntarrUI) window.huntarrUI.showNotification(data.error, 'error');
+                        if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-save"></i> Save'; saveBtn.classList.add('enabled'); }
+                        return;
+                    }
+                    _editorDirty = false;
+                    if (saveBtn) {
+                        saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved!';
+                        saveBtn.classList.remove('enabled');
+                        setTimeout(function () { saveBtn.innerHTML = '<i class="fas fa-save"></i> Save'; saveBtn.disabled = true; }, 2000);
+                    }
+                })
+                .catch(function () {
+                    if (window.huntarrUI) window.huntarrUI.showNotification('Failed to save settings', 'error');
                     if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-save"></i> Save'; saveBtn.classList.add('enabled'); }
-                    return;
-                }
-                _editorDirty = false;
-                if (saveBtn) {
-                    saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved!';
-                    saveBtn.classList.remove('enabled');
-                    setTimeout(function() { saveBtn.innerHTML = '<i class="fas fa-save"></i> Save'; saveBtn.disabled = true; }, 2000);
-                }
-            })
-            .catch(function() {
-                if (window.huntarrUI) window.huntarrUI.showNotification('Failed to save settings', 'error');
-                if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-save"></i> Save'; saveBtn.classList.add('enabled'); }
-            });
+                });
         },
 
-        resetState: function(instanceId) {
+        resetState: function (instanceId) {
             window.HuntarrConfirm.show({
                 title: 'Reset State',
                 message: 'Reset processed state for this TV Hunt instance?',
                 confirmLabel: 'Reset',
-                onConfirm: function() {
+                onConfirm: function () {
                     fetch(api('./api/tv-hunt/instances/' + instanceId + '/reset-state'), { method: 'POST' })
-                    .then(function(r) { return r.json(); })
-                    .then(function(data) {
-                        if (data.error) { window.huntarrUI.showNotification(data.error, 'error'); }
-                        else { window.huntarrUI.showNotification('State reset.', 'success'); }
-                    })
-                    .catch(function() { window.huntarrUI.showNotification('Reset request failed', 'error'); });
+                        .then(function (r) { return r.json(); })
+                        .then(function (data) {
+                            if (data.error) { window.huntarrUI.showNotification(data.error, 'error'); }
+                            else { window.huntarrUI.showNotification('State reset.', 'success'); }
+                        })
+                        .catch(function () { window.huntarrUI.showNotification('Reset request failed', 'error'); });
                 }
             });
         },
 
-        resetCollection: function(instanceId) {
+        resetCollection: function (instanceId) {
             window.HuntarrConfirm.show({
                 title: 'Reset TV Collection',
                 message: 'This will permanently delete ALL TV series from this instance\'s collection. This cannot be undone.',
                 confirmLabel: 'Delete All',
-                onConfirm: function() {
+                onConfirm: function () {
                     fetch(api('./api/tv-hunt/instances/' + instanceId + '/reset-collection'), { method: 'DELETE' })
-                    .then(function(r) { return r.json(); })
-                    .then(function(data) {
-                        if (data.success) { window.huntarrUI.showNotification(data.message || 'TV collection reset.', 'success'); }
-                        else { window.huntarrUI.showNotification(data.error || 'Failed to reset.', 'error'); }
-                    })
-                    .catch(function() { window.huntarrUI.showNotification('Request failed.', 'error'); });
+                        .then(function (r) { return r.json(); })
+                        .then(function (data) {
+                            if (data.success) { window.huntarrUI.showNotification(data.message || 'TV collection reset.', 'success'); }
+                            else { window.huntarrUI.showNotification(data.error || 'Failed to reset.', 'error'); }
+                        })
+                        .catch(function () { window.huntarrUI.showNotification('Request failed.', 'error'); });
                 }
             });
         }

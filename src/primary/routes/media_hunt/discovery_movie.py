@@ -159,11 +159,10 @@ def _search_newznab_movie(base_url, api_key, query, categories, timeout=15):
 # --- Send NZB to download client ---
 
 def _add_nzb_to_download_client(client, nzb_url, nzb_name, category, verify_ssl, indexer="", instance_id=None, instance_name=None):
-    """Send NZB URL to NZB Hunt, SABnzbd, or NZBGet. Returns (success, message, queue_id).
-    Uses instance-based category (Movies-InstanceName) for NZB Hunt, SABnzbd, NZBGet - users must configure same in SABNZBD/NZBGet."""
+    """Send NZB/torrent URL to NZB Hunt or Tor Hunt. Returns (success, message, queue_id)."""
     from .helpers import _get_movie_hunt_instance_display_name, _instance_name_to_category
 
-    client_type = (client.get('type') or 'nzbget').strip().lower()
+    client_type = (client.get('type') or 'nzbhunt').strip().lower()
     inst_name = (instance_name or "").strip() or (_get_movie_hunt_instance_display_name(instance_id) if instance_id is not None else "")
     if inst_name:
         cat = _instance_name_to_category(inst_name, "Movies")
@@ -193,50 +192,7 @@ def _add_nzb_to_download_client(client, nzb_url, nzb_name, category, verify_ssl,
             )
             return success, message, queue_id
 
-        host = (client.get('host') or '').strip()
-        if not host:
-            return False, 'Download client has no host', None
-        if not (host.startswith('http://') or host.startswith('https://')):
-            host = f'http://{host}'
-        port = client.get('port', 8080)
-        base_url = f'{host.rstrip("/")}:{port}'
-
-        if client_type == 'sabnzbd':
-            api_key = (client.get('api_key') or '').strip()
-            url = f'{base_url}/api'
-            params = {'mode': 'addurl', 'name': nzb_url, 'output': 'json'}
-            if api_key:
-                params['apikey'] = api_key
-            if cat:
-                params['cat'] = cat
-            r = requests.get(url, params=params, timeout=15, verify=verify_ssl)
-            r.raise_for_status()
-            data = r.json()
-            if data.get('status') is True or data.get('nzo_ids'):
-                nzo_ids = data.get('nzo_ids') or []
-                queue_id = nzo_ids[0] if nzo_ids else None
-                return True, 'Added to SABnzbd', queue_id
-            return False, data.get('error', 'SABnzbd returned an error'), None
-        elif client_type == 'nzbget':
-            jsonrpc_url = f'{base_url}/jsonrpc'
-            username = (client.get('username') or '').strip()
-            password = (client.get('password') or '').strip()
-            auth = (username, password) if (username or password) else None
-            nzb_filename = (nzb_name or '').strip() or (nzb_url.split('/')[-1].split('?')[0] if nzb_url else '') or 'download.nzb'
-            payload = {
-                'method': 'append',
-                'params': [nzb_filename, nzb_url, cat, 0, False, False, '', 0, 'SCORE', False, []],
-                'id': 1
-            }
-            r = requests.post(jsonrpc_url, json=payload, auth=auth, timeout=15, verify=verify_ssl)
-            r.raise_for_status()
-            data = r.json()
-            if data.get('result') and data.get('result') != 0:
-                return True, 'Added to NZBGet', data.get('result')
-            err = data.get('error', {})
-            return False, err.get('message', 'NZBGet returned an error'), None
-
-        elif client_type in ('torhunt', 'tor_hunt', 'qbittorrent'):
+        if client_type in ('torhunt', 'tor_hunt', 'qbittorrent'):
             from src.primary.apps.tor_hunt.tor_hunt_manager import get_manager as get_tor_manager
             tor_mgr = get_tor_manager()
             if not tor_mgr.has_connection():
@@ -255,7 +211,7 @@ def _add_nzb_to_download_client(client, nzb_url, nzb_name, category, verify_ssl,
             return False, msg or 'Failed to add torrent', None
 
         return False, f'Unknown client type: {client_type}', None
-    except requests.RequestException as e:
+    except Exception as e:
         return False, str(e) or 'Connection failed', None
 
 

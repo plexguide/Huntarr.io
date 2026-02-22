@@ -29,129 +29,6 @@ from .clients import get_movie_clients_config
 from ...utils.logger import logger
 
 
-# --- SABnzbd history lookup ---
-
-def _get_sabnzbd_history_item(client, queue_id):
-    """Get a specific item from SABnzbd history by nzo_id."""
-    try:
-        base_url = _download_client_base_url(client)
-        if not base_url:
-            return None
-
-        api_key = (client.get('api_key') or '').strip()
-        url = f"{base_url}/api"
-        params = {'mode': 'history', 'output': 'json', 'limit': 500}
-        if api_key:
-            params['apikey'] = api_key
-
-        from src.primary.settings_manager import get_ssl_verify_setting
-        verify_ssl = get_ssl_verify_setting()
-
-        r = requests.get(url, params=params, timeout=10, verify=verify_ssl)
-        r.raise_for_status()
-        data = r.json()
-
-        raw_slots = data.get('history', {}).get('slots', [])
-        if isinstance(raw_slots, dict):
-            slots = list(raw_slots.values())
-        elif isinstance(raw_slots, list):
-            slots = raw_slots
-        else:
-            slots = []
-
-        def _normalize_nzo_id(nzo_id):
-            s = str(nzo_id).strip()
-            for prefix in ('SABnzbd_nzo_', 'sabnzbd_nzo_'):
-                if s.lower().startswith(prefix.lower()):
-                    return s[len(prefix):].strip()
-            return s
-
-        queue_id_str = str(queue_id).strip()
-        queue_id_norm = _normalize_nzo_id(queue_id_str)
-        for slot in slots:
-            if not isinstance(slot, dict):
-                continue
-            slot_id = slot.get('nzo_id') or slot.get('id')
-            if slot_id is None:
-                continue
-            slot_id_str = str(slot_id).strip()
-            if slot_id_str == queue_id_str or _normalize_nzo_id(slot_id_str) == queue_id_norm:
-                return {
-                    'status': slot.get('status', ''),
-                    'storage': slot.get('storage', ''),
-                    'name': slot.get('name', ''),
-                    'category': slot.get('category', ''),
-                    'fail_message': (slot.get('fail_message') or '').strip() or '',
-                    'nzb_name': (slot.get('nzb_name') or '').strip() or ''
-                }
-
-        sample_ids = [str(s.get('nzo_id') or s.get('id')) for s in slots[:5] if isinstance(s, dict)]
-        movie_hunt_logger.info(
-            "Import: nzo_id %s not found in SAB history (history has %s entries). Sample ids: %s",
-            queue_id_str, len(slots), sample_ids
-        )
-        return None
-
-    except Exception as e:
-        movie_hunt_logger.error("Import: error fetching SABnzbd history for queue id %s: %s", queue_id, e)
-        return None
-
-
-# --- NZBGet history lookup ---
-
-def _get_nzbget_history_item(client, queue_id):
-    """Get a specific item from NZBGet history by NZBID."""
-    try:
-        base_url = _download_client_base_url(client)
-        if not base_url:
-            return None
-
-        jsonrpc_url = f"{base_url}/jsonrpc"
-        username = (client.get('username') or '').strip()
-        password = (client.get('password') or '').strip()
-        auth = (username, password) if (username or password) else None
-
-        from src.primary.settings_manager import get_ssl_verify_setting
-        verify_ssl = get_ssl_verify_setting()
-
-        payload = {'method': 'history', 'params': [False], 'id': 1}
-        r = requests.post(jsonrpc_url, json=payload, auth=auth, timeout=15, verify=verify_ssl)
-        r.raise_for_status()
-        data = r.json()
-
-        result = data.get('result') if isinstance(data.get('result'), list) else []
-        queue_id_str = str(queue_id).strip()
-
-        for item in result:
-            if not isinstance(item, dict):
-                continue
-            nzb_id = item.get('NZBID') or item.get('ID')
-            if nzb_id is None:
-                continue
-            if str(nzb_id).strip() == queue_id_str:
-                status = (item.get('Status') or '').strip()
-                dest_dir = (item.get('DestDir') or item.get('FinalDir') or '').strip()
-                nzb_name = (item.get('NZBName') or item.get('NZBFilename') or item.get('Name') or '').strip()
-                return {
-                    'status': status,
-                    'storage': dest_dir,
-                    'name': nzb_name,
-                    'category': (item.get('Category') or '').strip(),
-                    'fail_message': '',
-                }
-
-        sample_ids = [str(i.get('NZBID') or i.get('ID')) for i in result[:5] if isinstance(i, dict)]
-        movie_hunt_logger.info(
-            "Import: NZBID %s not found in NZBGet history (history has %s entries). Sample ids: %s",
-            queue_id_str, len(result), sample_ids
-        )
-        return None
-
-    except Exception as e:
-        movie_hunt_logger.error("Import: error fetching NZBGet history for queue id %s: %s", queue_id, e)
-        return None
-
-
 # --- NZB Hunt history lookup ---
 
 def _get_nzb_hunt_history_item(queue_id):
@@ -234,7 +111,7 @@ def _check_and_import_completed(client_name, queue_item, instance_id):
             movie_hunt_logger.warning("Import: download client '%s' not found in config", client_name)
             return
 
-        client_type = (client.get('type') or 'nzbget').strip().lower()
+        client_type = (client.get('type') or 'nzbhunt').strip().lower()
         queue_id = queue_item.get('id')
         title = queue_item.get('title', '').strip()
         year = queue_item.get('year', '').strip()
@@ -291,97 +168,6 @@ def _check_and_import_completed(client_name, queue_item, instance_id):
                 return
 
             release_name = (nzb_hunt_history.get('name') or '').strip()
-            if release_name and release_name.endswith('.nzb'):
-                release_name = release_name[:-4]
-
-        # ── SABnzbd ──
-        elif client_type == 'sabnzbd':
-            movie_hunt_logger.info(
-                "Import: item left queue (nzo_id=%s, title='%s'). Checking SAB history for completed download.",
-                queue_id, title
-            )
-            history_item = _get_sabnzbd_history_item(client, queue_id)
-
-            if not history_item:
-                movie_hunt_logger.warning(
-                    "Import: item left queue but not found in SAB history (nzo_id=%s, title='%s'). "
-                    "If the download completed in SAB, refresh the Queue page to trigger another check, or SAB may use a different id in history.",
-                    queue_id, title
-                )
-                return
-
-            status = history_item.get('status', '')
-            storage_path = (history_item.get('storage') or '').strip()
-            movie_hunt_logger.info(
-                "Import: download completed for '%s' (%s). SAB status=%s, SAB storage path=%s",
-                title, year or 'no year', status, storage_path or '(empty)'
-            )
-
-            if status.lower() != 'completed':
-                source_title = (history_item.get('name') or history_item.get('nzb_name') or '').strip()
-                if source_title and source_title.endswith('.nzb'):
-                    source_title = source_title[:-4]
-                reason_failed = (history_item.get('fail_message') or '').strip() or status or 'Download failed'
-                _blocklist_add(movie_title=title, year=year, source_title=source_title, reason_failed=reason_failed, instance_id=instance_id)
-                movie_hunt_logger.warning(
-                    "Import: download '%s' (%s) did not complete (status: %s). Added to blocklist: %s",
-                    title, year, status, source_title or '(no name)'
-                )
-                return
-
-            download_path = storage_path
-
-            if not download_path:
-                movie_hunt_logger.error("Import: no storage path in history for '%s' (%s). Cannot import.", title, year)
-                return
-
-            release_name = (history_item.get('name') or history_item.get('nzb_name') or '').strip()
-            if release_name and release_name.endswith('.nzb'):
-                release_name = release_name[:-4]
-
-        # ── NZBGet ──
-        elif client_type == 'nzbget':
-            movie_hunt_logger.info(
-                "Import: item left queue (NZBID=%s, title='%s'). Checking NZBGet history for completed download.",
-                queue_id, title
-            )
-            history_item = _get_nzbget_history_item(client, queue_id)
-
-            if not history_item:
-                movie_hunt_logger.warning(
-                    "Import: item left queue but not found in NZBGet history (NZBID=%s, title='%s'). "
-                    "If the download completed in NZBGet, refresh the Queue page to trigger another check.",
-                    queue_id, title
-                )
-                return
-
-            status = history_item.get('status', '')
-            storage_path = (history_item.get('storage') or '').strip()
-            movie_hunt_logger.info(
-                "Import: download completed for '%s' (%s). NZBGet status=%s, NZBGet dest path=%s",
-                title, year or 'no year', status, storage_path or '(empty)'
-            )
-
-            # NZBGet uses SUCCESS/FAILURE/DELETED as status values
-            if not status.upper().startswith('SUCCESS'):
-                source_title = (history_item.get('name') or '').strip()
-                if source_title and source_title.endswith('.nzb'):
-                    source_title = source_title[:-4]
-                reason_failed = status or 'Download failed'
-                _blocklist_add(movie_title=title, year=year, source_title=source_title, reason_failed=reason_failed, instance_id=instance_id)
-                movie_hunt_logger.warning(
-                    "Import: download '%s' (%s) did not complete (status: %s). Added to blocklist: %s",
-                    title, year, status, source_title or '(no name)'
-                )
-                return
-
-            download_path = storage_path
-
-            if not download_path:
-                movie_hunt_logger.error("Import: no dest path in NZBGet history for '%s' (%s). Cannot import.", title, year)
-                return
-
-            release_name = (history_item.get('name') or '').strip()
             if release_name and release_name.endswith('.nzb'):
                 release_name = release_name[:-4]
 
@@ -498,7 +284,7 @@ def _prune_requested_queue_ids(client_name, current_queue_ids, instance_id):
 
     if removed:
         movie_hunt_logger.info(
-            "Import: %s item(s) left queue for client '%s', checking SAB history and running import.",
+            "Import: %s item(s) left queue for client '%s', checking history and running import.",
             len(removed), client_name
         )
     for item in removed:
@@ -698,8 +484,8 @@ def _get_tor_hunt_completed_path(torrent_hash, title, year, instance_id):
 
 
 def _get_download_client_queue(client, instance_id):
-    """Fetch queue from one download client (NZB Hunt, SABnzbd, NZBGet, or Tor Hunt/qBittorrent)."""
-    client_type = (client.get('type') or 'nzbget').strip().lower()
+    """Fetch queue from one download client (NZB Hunt or Tor Hunt/qBittorrent)."""
+    client_type = (client.get('type') or 'nzbhunt').strip().lower()
     name = (client.get('name') or 'Download client').strip() or 'Download client'
 
     if client_type in ('nzbhunt', 'nzb_hunt'):
@@ -708,202 +494,15 @@ def _get_download_client_queue(client, instance_id):
     if client_type in ('torhunt', 'tor_hunt', 'qbittorrent'):
         return _get_tor_hunt_queue(client, name, instance_id)
 
-    base_url = _download_client_base_url(client)
-    if not base_url:
-        return []
-    # Use instance-based category (Movies-InstanceName) to match what discovery sends.
-    inst_name = _get_movie_hunt_instance_display_name(instance_id)
-    if inst_name:
-        expected_cat = _instance_name_to_category(inst_name, "Movies")
-    else:
-        raw_cat = (client.get('category') or '').strip()
-        if raw_cat.lower() in ('default', '*', ''):
-            expected_cat = MOVIE_HUNT_DEFAULT_CATEGORY
-        else:
-            expected_cat = raw_cat or MOVIE_HUNT_DEFAULT_CATEGORY
-    allowed_cats = frozenset((expected_cat.lower(),))
-    requested_ids = _get_requested_queue_ids(instance_id).get(name, set())
-    try:
-        from src.primary.settings_manager import get_ssl_verify_setting
-        verify_ssl = get_ssl_verify_setting()
-    except Exception:
-        verify_ssl = True
-    items = []
-    current_queue_ids = set()
-    try:
-        if client_type == 'sabnzbd':
-            api_key = (client.get('api_key') or '').strip()
-            url = '%s/api' % base_url
-            params = {'mode': 'queue', 'output': 'json'}
-            if api_key:
-                params['apikey'] = api_key
-            movie_hunt_logger.debug("Queue: requesting SABnzbd queue from %s (%s)", name, base_url)
-            try:
-                r = requests.get(url, params=params, timeout=15, verify=verify_ssl)
-                r.raise_for_status()
-            except requests.RequestException as e:
-                movie_hunt_logger.warning("Queue: SABnzbd request failed for %s: %s", name, e)
-                return []
-            data = r.json()
-            if not isinstance(data, dict):
-                movie_hunt_logger.warning("Queue: SABnzbd returned non-dict for %s", name)
-                return []
-            sab_error = data.get('error') or data.get('error_msg')
-            if sab_error:
-                movie_hunt_logger.warning("Queue: SABnzbd %s returned error: %s", name, sab_error)
-                return []
-            slots_raw = (data.get('queue') or {}).get('slots') or data.get('slots') or []
-            if isinstance(slots_raw, dict):
-                slots = list(slots_raw.values())
-            elif isinstance(slots_raw, list):
-                slots = slots_raw
-            else:
-                slots = []
-            if not slots and (data.get('queue') or data):
-                movie_hunt_logger.debug("Queue: SABnzbd %s returned 0 slots (response keys: %s)", name, list(data.keys()))
-            for slot in slots:
-                if not isinstance(slot, dict):
-                    continue
-                nzo_id = slot.get('nzo_id') or slot.get('id')
-                if nzo_id is not None:
-                    current_queue_ids.add(str(nzo_id))
-                slot_cat = (slot.get('category') or slot.get('cat') or '').strip().lower()
-                if slot_cat not in allowed_cats:
-                    continue
-                if nzo_id is None:
-                    continue
-                if str(nzo_id) not in requested_ids:
-                    continue
-                filename = (slot.get('filename') or slot.get('name') or '-').strip()
-                if not filename:
-                    filename = '-'
-                display = _get_requested_display(name, nzo_id, instance_id)
-                display_name = _format_queue_display_name(filename, display.get('title'), display.get('year'))
-                scoring_str = _format_queue_scoring(display.get('score'), display.get('score_breakdown'))
-                size_mb = slot.get('mb') or slot.get('size') or 0
-                try:
-                    size_mb = float(size_mb)
-                except (TypeError, ValueError):
-                    size_mb = 0
-                mbleft = slot.get('mbleft')
-                try:
-                    mbleft = float(mbleft) if mbleft is not None else None
-                except (TypeError, ValueError):
-                    mbleft = None
-                size_bytes = size_mb * (1024 * 1024) if size_mb else 0
-                bytes_left = None
-                if mbleft is not None and size_mb and size_mb > 0:
-                    bytes_left = mbleft * (1024 * 1024)
-                else:
-                    raw_left = slot.get('bytes_left') or slot.get('sizeleft') or slot.get('size_left')
-                    try:
-                        bytes_left = float(raw_left) if raw_left is not None else None
-                    except (TypeError, ValueError):
-                        bytes_left = None
-                if size_bytes and size_bytes > 0 and bytes_left is not None:
-                    try:
-                        pct = round((float(size_bytes - bytes_left) / float(size_bytes)) * 100)
-                        progress = str(min(100, max(0, pct))) + '%'
-                    except (TypeError, ZeroDivisionError):
-                        progress = '-'
-                else:
-                    progress = slot.get('percentage') or '-'
-                if progress == '100%':
-                    progress = 'Pending Import'
-                time_left = slot.get('time_left') or slot.get('timeleft') or '-'
-                quality_str = _extract_quality_from_filename(filename)
-                formats_str = _extract_formats_from_filename(filename)
-                items.append({
-                    'id': nzo_id,
-                    'movie': display_name,
-                    'title': display_name,
-                    'year': None,
-                    'languages': '-',
-                    'quality': quality_str,
-                    'formats': formats_str,
-                    'scoring': scoring_str,
-                    'time_left': time_left,
-                    'progress': progress,
-                    'instance_name': name,
-                    'original_release': filename,
-                })
-            _prune_requested_queue_ids(name, current_queue_ids, instance_id)
-        elif client_type == 'nzbget':
-            jsonrpc_url = '%s/jsonrpc' % base_url
-            username = (client.get('username') or '').strip()
-            password = (client.get('password') or '').strip()
-            auth = (username, password) if (username or password) else None
-            payload = {'method': 'listgroups', 'params': [0], 'id': 1}
-            r = requests.post(jsonrpc_url, json=payload, auth=auth, timeout=15, verify=verify_ssl)
-            r.raise_for_status()
-            data = r.json()
-            result = data.get('result') if isinstance(data.get('result'), list) else []
-            for grp in result:
-                if not isinstance(grp, dict):
-                    continue
-                nzb_id = grp.get('NZBID') or grp.get('ID')
-                if nzb_id is not None:
-                    current_queue_ids.add(str(nzb_id))
-                grp_cat = (grp.get('Category') or grp.get('category') or '').strip().lower()
-                if grp_cat not in allowed_cats:
-                    continue
-                if nzb_id is None:
-                    continue
-                if str(nzb_id) not in requested_ids:
-                    continue
-                nzb_name = (grp.get('NZBName') or grp.get('NZBFilename') or grp.get('Name') or '-').strip()
-                if not nzb_name:
-                    nzb_name = '-'
-                display = _get_requested_display(name, nzb_id, instance_id)
-                display_name = _format_queue_display_name(nzb_name, display.get('title'), display.get('year'))
-                scoring_str = _format_queue_scoring(display.get('score'), display.get('score_breakdown'))
-                size_mb = grp.get('FileSizeMB') or 0
-                try:
-                    size_mb = float(size_mb)
-                except (TypeError, ValueError):
-                    size_mb = 0
-                remaining_mb = grp.get('RemainingSizeMB') or 0
-                try:
-                    remaining_mb = float(remaining_mb)
-                except (TypeError, ValueError):
-                    remaining_mb = 0
-                if size_mb and size_mb > 0 and remaining_mb is not None:
-                    try:
-                        pct = round((float(size_mb - remaining_mb) / float(size_mb)) * 100)
-                        progress = str(min(100, max(0, pct))) + '%'
-                    except (TypeError, ZeroDivisionError):
-                        progress = '-'
-                else:
-                    progress = '-'
-                if progress == '100%':
-                    progress = 'Pending Import'
-                quality_str = _extract_quality_from_filename(nzb_name)
-                formats_str = _extract_formats_from_filename(nzb_name)
-                items.append({
-                    'id': nzb_id,
-                    'movie': display_name,
-                    'title': display_name,
-                    'year': None,
-                    'languages': '-',
-                    'quality': quality_str,
-                    'formats': formats_str,
-                    'scoring': scoring_str,
-                    'time_left': '-',
-                    'progress': progress,
-                    'instance_name': name,
-                    'original_release': nzb_name,
-                })
-            _prune_requested_queue_ids(name, current_queue_ids, instance_id)
-    except Exception as e:
-        logger.debug("Movie Hunt activity queue from download client %s: %s", name, e)
-    return items
+    movie_hunt_logger.debug("Queue: unsupported client type '%s' for '%s'", client_type, name)
+    return []
 
 
 def _delete_from_download_client(client, item_ids):
     """Delete queue items from one download client by id(s). Returns (removed_count, error_message)."""
     if not item_ids:
         return 0, None
-    client_type = (client.get('type') or 'nzbget').strip().lower()
+    client_type = (client.get('type') or 'nzbhunt').strip().lower()
     name = (client.get('name') or 'Download client').strip() or 'Download client'
 
     if client_type in ('nzbhunt', 'nzb_hunt'):
@@ -934,55 +533,7 @@ def _delete_from_download_client(client, item_ids):
         except Exception as e:
             return 0, str(e) or 'Delete failed'
 
-    base_url = _download_client_base_url(client)
-    if not base_url:
-        return 0, 'Invalid client'
-    try:
-        from src.primary.settings_manager import get_ssl_verify_setting
-        verify_ssl = get_ssl_verify_setting()
-    except Exception:
-        verify_ssl = True
-    removed = 0
-    try:
-        if client_type == 'sabnzbd':
-            api_key = (client.get('api_key') or '').strip()
-            url = '%s/api' % base_url
-            for iid in item_ids:
-                params = {'mode': 'queue', 'name': 'delete', 'value': str(iid), 'output': 'json'}
-                if api_key:
-                    params['apikey'] = api_key
-                r = requests.get(url, params=params, timeout=15, verify=verify_ssl)
-                r.raise_for_status()
-                data = r.json()
-                if data.get('status') is True and not data.get('error'):
-                    removed += 1
-                else:
-                    err = data.get('error') or data.get('error_msg')
-                    if err:
-                        movie_hunt_logger.warning("Queue: SABnzbd delete failed for %s: %s", name, err)
-        elif client_type == 'nzbget':
-            jsonrpc_url = '%s/jsonrpc' % base_url
-            username = (client.get('username') or '').strip()
-            password = (client.get('password') or '').strip()
-            auth = (username, password) if (username or password) else None
-            ids_int = []
-            for iid in item_ids:
-                try:
-                    ids_int.append(int(iid))
-                except (TypeError, ValueError):
-                    pass
-            if ids_int:
-                payload = {'method': 'editqueue', 'params': ['GroupDelete', '', ids_int], 'id': 1}
-                r = requests.post(jsonrpc_url, json=payload, auth=auth, timeout=15, verify=verify_ssl)
-                r.raise_for_status()
-                data = r.json()
-                if data.get('result') is True:
-                    removed = len(ids_int)
-    except Exception as e:
-        return removed, str(e) or 'Delete failed'
-    failed = len(item_ids) - removed
-    err = ('Failed to remove %d item(s) from %s' % (failed, name)) if failed else None
-    return removed, err
+    return 0, f'Unsupported client type: {client_type}'
 
 
 # --- Background poller ---

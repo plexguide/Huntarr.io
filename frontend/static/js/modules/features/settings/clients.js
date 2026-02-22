@@ -11,7 +11,7 @@
 
     Forms.renderClientCard = function(client, index) {
         const name = (client.name || 'Unnamed').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const type = (client.type || 'nzbget').replace(/"/g, '&quot;');
+        const type = (client.type || 'nzbhunt').replace(/"/g, '&quot;');
         const isNzbHunt = type === 'nzbhunt';
         const isQBit = type === 'qbittorrent';
         const isTorHunt = type === 'torhunt' || type === 'tor_hunt';

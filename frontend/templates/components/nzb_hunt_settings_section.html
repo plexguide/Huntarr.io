@@ -15,7 +15,8 @@
                 </div>
             </div>
             <div class="reqset-toolbar-right">
-                <button type="button" id="nzb-save-advanced-header" class="reqset-save-btn page-header-save" style="display: none;">
+                <button type="button" id="nzb-save-advanced-header" class="reqset-save-btn page-header-save"
+                    style="display: none;">
                     <i class="fas fa-save"></i> Save
                 </button>
                 <span id="nzb-hunt-settings-sponsor-slot">
@@ -30,14 +31,18 @@
 
             <!-- Temporary Folder -->
             <div class="nzb-settings-group" style="padding-bottom: 12px;">
-                <h3 style="margin-bottom: 8px;"><i class="fas fa-folder-open" style="color: #f59e0b; margin-right: 8px;"></i>Temporary Folder</h3>
+                <h3 style="margin-bottom: 8px;"><i class="fas fa-folder-open"
+                        style="color: #f59e0b; margin-right: 8px;"></i>Temporary Folder</h3>
                 <div class="nzb-folder-row" style="margin-top: 0;">
                     <div class="nzb-folder-label" style="min-width: 0; flex: 0 0 auto;">
-                        <span class="nzb-folder-desc" style="margin: 0;">In-progress downloads are stored here until finished.</span>
+                        <span class="nzb-folder-desc" style="margin: 0;">In-progress downloads are stored here until
+                            finished.</span>
                     </div>
                     <div class="nzb-folder-input-group">
-                        <input type="text" id="nzb-temp-folder" class="nzb-folder-input" value="/downloads/incomplete" autocomplete="off" />
-                        <button type="button" class="nzb-btn-browse" id="nzb-browse-temp-folder"><i class="fas fa-folder-open"></i> Browse</button>
+                        <input type="text" id="nzb-temp-folder" class="nzb-folder-input" value="/downloads/incomplete"
+                            autocomplete="off" />
+                        <button type="button" class="nzb-btn-browse" id="nzb-browse-temp-folder"><i
+                                class="fas fa-folder-open"></i> Browse</button>
                     </div>
                 </div>
             </div>
@@ -45,7 +50,9 @@
             <!-- Completed Categories (auto-generated from Movie Hunt + TV Hunt instances) -->
             <div class="nzb-settings-group" style="margin-top: 20px; margin-bottom: 24px;">
                 <h3><i class="fas fa-tags" style="color: #a78bfa; margin-right: 8px;"></i>Completed Categories</h3>
-                <p class="nzb-settings-help">Categories are auto-generated from Movie Hunt and TV Hunt instances (e.g. Movies-Movie_Star, TV-Movie_Star). Required for NZB Hunt, SABnzbd, and NZBGet. Folders are created automatically.</p>
+                <p class="nzb-settings-help">Categories are auto-generated from Movie Hunt and TV Hunt instances (e.g.
+                    Movies-Movie_Star, TV-Movie_Star). Required for NZB Hunt. External clients (e.g. qBittorrent)
+                    require this exact category to be configured. Folders are created automatically.</p>
 
                 <!-- Category cards (read-only, no Add/Edit/Delete) -->
                 <div class="nzb-cat-grid" id="nzb-cat-grid">
@@ -58,7 +65,8 @@
         <!-- ═══════ Servers Panel ═══════ -->
         <div class="nzb-settings-panel" data-settings-panel="servers" style="display: none;">
             <!-- Continue to Setup Guide banner (shown when wizard incomplete) -->
-            <div id="nzb-servers-setup-wizard-continue-banner" class="setup-wizard-continue-banner" style="display: none; margin-bottom: 16px;">
+            <div id="nzb-servers-setup-wizard-continue-banner" class="setup-wizard-continue-banner"
+                style="display: none; margin-bottom: 16px;">
                 <i class="fas fa-arrow-right"></i>
                 <span>Done adding servers? Continue to the next step in the Setup Guide.</span>
                 <button type="button" class="setup-wizard-continue-btn" data-wizard-nav="media-hunt-collection">
@@ -67,20 +75,29 @@
             </div>
             <div class="nzb-settings-group">
                 <h3><i class="fas fa-server" style="color: #6366f1; margin-right: 8px;"></i>Usenet Servers</h3>
-                <p class="nzb-settings-help">Add your Usenet provider connections. Servers are tried in priority order (lower number = higher priority).</p>
+                <p class="nzb-settings-help">Add your Usenet provider connections. Servers are tried in priority order
+                    (lower number = higher priority).</p>
                 <div class="nzb-servers-guidance">
                     <div class="nzb-servers-guidance-card">
                         <div class="nzb-servers-guidance-icon"><i class="fas fa-info-circle"></i></div>
                         <div class="nzb-servers-guidance-body">
                             <div class="nzb-servers-guidance-title">What is a Usenet server?</div>
-                            <div class="nzb-servers-guidance-text">A Usenet server is where NZB downloads are actually fetched from. You need a subscription to a Usenet provider (e.g. Easynews, Newshosting, Frugal Usenet). Your provider will give you a <strong>host</strong>, <strong>port</strong>, <strong>username</strong>, and <strong>password</strong> to connect.</div>
+                            <div class="nzb-servers-guidance-text">A Usenet server is where NZB downloads are actually
+                                fetched from. You need a subscription to a Usenet provider (e.g. Easynews, Newshosting,
+                                Frugal Usenet). Your provider will give you a <strong>host</strong>,
+                                <strong>port</strong>, <strong>username</strong>, and <strong>password</strong> to
+                                connect.</div>
                         </div>
                     </div>
                     <div class="nzb-servers-guidance-card">
-                        <div class="nzb-servers-guidance-icon nzb-servers-guidance-icon-tip"><i class="fas fa-lightbulb"></i></div>
+                        <div class="nzb-servers-guidance-icon nzb-servers-guidance-icon-tip"><i
+                                class="fas fa-lightbulb"></i></div>
                         <div class="nzb-servers-guidance-body">
                             <div class="nzb-servers-guidance-title">Tip: Multiple servers</div>
-                            <div class="nzb-servers-guidance-text">You can add multiple servers for better completion rates. Use <strong>Priority 0</strong> for your main provider and a higher number for backfill/block accounts. Same-priority servers work in parallel; lower priority is used as fallback.</div>
+                            <div class="nzb-servers-guidance-text">You can add multiple servers for better completion
+                                rates. Use <strong>Priority 0</strong> for your main provider and a higher number for
+                                backfill/block accounts. Same-priority servers work in parallel; lower priority is used
+                                as fallback.</div>
                         </div>
                     </div>
                 </div>
@@ -95,7 +112,8 @@
         </div>
 
         <!-- ═══════ Advanced Panel (includes Processing + Post-Processing) ═══════ -->
-        <div class="nzb-settings-panel" data-settings-panel="advanced" id="nzb-hunt-settings-advanced" style="display: none;">
+        <div class="nzb-settings-panel" data-settings-panel="advanced" id="nzb-hunt-settings-advanced"
+            style="display: none;">
             <div class="nzb-adv-grid">
                 <!-- Performance Tuning -->
                 <div class="nzb-adv-card">
@@ -103,27 +121,37 @@
                         <span class="nzb-adv-card-icon nzb-adv-icon-amber"><i class="fas fa-sliders-h"></i></span>
                         <h3>Performance Tuning</h3>
                     </div>
-                    <p class="nzb-adv-card-desc">Fine-tune download performance, CPU usage, and resource limits. These settings help balance speed against system load.</p>
+                    <p class="nzb-adv-card-desc">Fine-tune download performance, CPU usage, and resource limits. These
+                        settings help balance speed against system load.</p>
                     <div class="nzb-adv-card-body">
                         <div class="nzb-adv-setting">
                             <label class="nzb-adv-setting-label">Receive Threads</label>
-                            <p class="nzb-adv-setting-help">Number of threads used to read and decode download data. Lower values reduce CPU usage; higher values may improve download speed on fast connections.</p>
+                            <p class="nzb-adv-setting-help">Number of threads used to read and decode download data.
+                                Lower values reduce CPU usage; higher values may improve download speed on fast
+                                connections.</p>
                             <div class="nzb-adv-setting-input">
-                                <input type="number" id="nzb-adv-receive-threads" class="nzb-folder-input" value="2" min="1" max="8" style="text-align: center; max-width: 100px;" />
+                                <input type="number" id="nzb-adv-receive-threads" class="nzb-folder-input" value="2"
+                                    min="1" max="8" style="text-align: center; max-width: 100px;" />
                             </div>
                         </div>
                         <div class="nzb-adv-setting">
                             <label class="nzb-adv-setting-label">CPU Throttle</label>
-                            <p class="nzb-adv-setting-help">A small delay added between data reads to reduce CPU load. Higher values use less CPU but may reduce download speed. Value of 10 = 1ms. Set to 0 only if max connections don't reach full speed.</p>
+                            <p class="nzb-adv-setting-help">A small delay added between data reads to reduce CPU load.
+                                Higher values use less CPU but may reduce download speed. Value of 10 = 1ms. Set to 0
+                                only if max connections don't reach full speed.</p>
                             <div class="nzb-adv-setting-input">
-                                <input type="number" id="nzb-adv-sleep-time" class="nzb-folder-input" value="10" min="0" max="100" style="text-align: center; max-width: 100px;" />
+                                <input type="number" id="nzb-adv-sleep-time" class="nzb-folder-input" value="10" min="0"
+                                    max="100" style="text-align: center; max-width: 100px;" />
                             </div>
                         </div>
                         <div class="nzb-adv-setting">
                             <label class="nzb-adv-setting-label">Concurrent Unpack Limit</label>
-                            <p class="nzb-adv-setting-help">Maximum number of simultaneous unpack operations. Limits disk I/O strain when multiple downloads finish at once. Increase on fast storage (SSD/NVMe), decrease on slower drives.</p>
+                            <p class="nzb-adv-setting-help">Maximum number of simultaneous unpack operations. Limits
+                                disk I/O strain when multiple downloads finish at once. Increase on fast storage
+                                (SSD/NVMe), decrease on slower drives.</p>
                             <div class="nzb-adv-setting-input">
-                                <input type="number" id="nzb-adv-unpack-threads" class="nzb-folder-input" value="3" min="1" max="10" style="text-align: center; max-width: 100px;" />
+                                <input type="number" id="nzb-adv-unpack-threads" class="nzb-folder-input" value="3"
+                                    min="1" max="10" style="text-align: center; max-width: 100px;" />
                             </div>
                         </div>
                     </div>
@@ -135,28 +163,37 @@
                         <span class="nzb-adv-card-icon nzb-adv-icon-blue"><i class="fas fa-shield-alt"></i></span>
                         <h3>Download Protection</h3>
                     </div>
-                    <p class="nzb-adv-card-desc">Control how downloads are filtered and validated to prevent wasting bandwidth on bad or oversized NZBs.</p>
+                    <p class="nzb-adv-card-desc">Control how downloads are filtered and validated to prevent wasting
+                        bandwidth on bad or oversized NZBs.</p>
                     <div class="nzb-adv-card-body">
                         <div class="nzb-adv-setting">
                             <label class="nzb-adv-setting-label">Download Size Limit</label>
-                            <p class="nzb-adv-setting-help">Downloads exceeding this size are automatically paused with low priority. Useful for preventing unexpectedly large grabs. Set to 0 for no limit.</p>
+                            <p class="nzb-adv-setting-help">Downloads exceeding this size are automatically paused with
+                                low priority. Useful for preventing unexpectedly large grabs. Set to 0 for no limit.</p>
                             <div class="nzb-adv-setting-input">
-                                <input type="text" id="nzb-adv-size-limit" class="nzb-folder-input" value="" placeholder="e.g. 25G" autocomplete="off" style="max-width: 140px;" />
+                                <input type="text" id="nzb-adv-size-limit" class="nzb-folder-input" value=""
+                                    placeholder="e.g. 25G" autocomplete="off" style="max-width: 140px;" />
                                 <span class="nzb-adv-size-hint">K / M / G</span>
                             </div>
                         </div>
                         <div class="nzb-adv-setting">
                             <label class="nzb-adv-setting-label">Minimum Completion Rate (%)</label>
-                            <p class="nzb-adv-setting-help">Downloads with availability below this percentage are aborted early via pre-check. A perfect download with 10% par2 files is 110%. Anything below 100% is unrepairable by definition.</p>
+                            <p class="nzb-adv-setting-help">Downloads with availability below this percentage are
+                                aborted early via pre-check. A perfect download with 10% par2 files is 110%. Anything
+                                below 100% is unrepairable by definition.</p>
                             <div class="nzb-adv-setting-input">
-                                <input type="number" id="nzb-adv-completion-rate" class="nzb-folder-input" value="100.2" min="90" max="120" step="0.1" style="text-align: center; max-width: 100px;" />
+                                <input type="number" id="nzb-adv-completion-rate" class="nzb-folder-input" value="100.2"
+                                    min="90" max="120" step="0.1" style="text-align: center; max-width: 100px;" />
                             </div>
                         </div>
                         <div class="nzb-adv-setting">
                             <label class="nzb-adv-setting-label">NZB Fetch Retries</label>
-                            <p class="nzb-adv-setting-help">How many times to retry when fetching an NZB from an indexer fails. Each retry waits progressively longer (60s, 120s, 180s&hellip;). Only applies to temporary server errors.</p>
+                            <p class="nzb-adv-setting-help">How many times to retry when fetching an NZB from an indexer
+                                fails. Each retry waits progressively longer (60s, 120s, 180s&hellip;). Only applies to
+                                temporary server errors.</p>
                             <div class="nzb-adv-setting-input">
-                                <input type="number" id="nzb-adv-url-retries" class="nzb-folder-input" value="10" min="0" max="50" style="text-align: center; max-width: 100px;" />
+                                <input type="number" id="nzb-adv-url-retries" class="nzb-folder-input" value="10"
+                                    min="0" max="50" style="text-align: center; max-width: 100px;" />
                             </div>
                         </div>
                     </div>
@@ -168,18 +205,21 @@
                         <span class="nzb-adv-card-icon nzb-adv-icon-teal"><i class="fas fa-cogs"></i></span>
                         <h3>Processing</h3>
                     </div>
-                    <p class="nzb-adv-card-desc">Configure how NZB Hunt handles downloads, retries, and connection behavior.</p>
+                    <p class="nzb-adv-card-desc">Configure how NZB Hunt handles downloads, retries, and connection
+                        behavior.</p>
                     <div class="nzb-adv-card-body">
                         <div class="nzb-adv-setting">
                             <label class="nzb-adv-setting-label">Maximum retries</label>
                             <p class="nzb-adv-setting-help">Maximum number of retry attempts per article per server.</p>
                             <div class="nzb-adv-setting-input">
-                                <input type="number" id="nzb-proc-max-retries" class="nzb-folder-input" value="3" min="0" max="10" style="text-align: center; max-width: 100px;" />
+                                <input type="number" id="nzb-proc-max-retries" class="nzb-folder-input" value="3"
+                                    min="0" max="10" style="text-align: center; max-width: 100px;" />
                             </div>
                         </div>
                         <div class="nzb-adv-setting">
                             <label class="nzb-adv-setting-label">Abort jobs that cannot be completed</label>
-                            <p class="nzb-adv-setting-help">When during download it becomes clear that too much data is missing, abort the job.</p>
+                            <p class="nzb-adv-setting-help">When during download it becomes clear that too much data is
+                                missing, abort the job.</p>
                             <div class="nzb-adv-setting-input">
                                 <label class="nzb-toggle-row nzb-toggle-row-huntarr" style="margin:0;">
                                     <input type="checkbox" id="nzb-proc-abort-hopeless" checked />
@@ -189,22 +229,27 @@
                         </div>
                         <div class="nzb-adv-setting" id="nzb-proc-abort-threshold-row">
                             <label class="nzb-adv-setting-label">Abort threshold (%)</label>
-                            <p class="nzb-adv-setting-help">Abort download when this percentage of articles is missing.</p>
+                            <p class="nzb-adv-setting-help">Abort download when this percentage of articles is missing.
+                            </p>
                             <div class="nzb-adv-setting-input">
-                                <input type="number" id="nzb-proc-abort-threshold" class="nzb-folder-input" value="5" min="1" max="50" step="1" style="text-align: center; max-width: 100px;" />
+                                <input type="number" id="nzb-proc-abort-threshold" class="nzb-folder-input" value="5"
+                                    min="1" max="50" step="1" style="text-align: center; max-width: 100px;" />
                             </div>
                         </div>
                         <div class="nzb-adv-setting">
                             <label class="nzb-adv-setting-label">Propagation delay</label>
-                            <p class="nzb-adv-setting-help">Posts will be paused until they are at least this age (minutes). Setting job priority to Force will skip the delay.</p>
+                            <p class="nzb-adv-setting-help">Posts will be paused until they are at least this age
+                                (minutes). Setting job priority to Force will skip the delay.</p>
                             <div class="nzb-adv-setting-input">
-                                <input type="number" id="nzb-proc-propagation-delay" class="nzb-folder-input" value="0" min="0" max="1440" style="text-align: center; max-width: 100px;" />
+                                <input type="number" id="nzb-proc-propagation-delay" class="nzb-folder-input" value="0"
+                                    min="0" max="1440" style="text-align: center; max-width: 100px;" />
                                 <span class="nzb-adv-size-hint">mins</span>
                             </div>
                         </div>
                         <div class="nzb-adv-setting">
                             <label class="nzb-adv-setting-label">Disconnect on empty queue</label>
-                            <p class="nzb-adv-setting-help">Disconnect from Usenet server(s) when queue is empty or paused.</p>
+                            <p class="nzb-adv-setting-help">Disconnect from Usenet server(s) when queue is empty or
+                                paused.</p>
                             <div class="nzb-adv-setting-input">
                                 <label class="nzb-toggle-row nzb-toggle-row-huntarr" style="margin:0;">
                                     <input type="checkbox" id="nzb-proc-disconnect-empty" checked />
@@ -216,9 +261,11 @@
                         <div class="nzb-adv-setting-group-title">Duplicate Detection</div>
                         <div class="nzb-adv-setting">
                             <label class="nzb-adv-setting-label">Identical download detection</label>
-                            <p class="nzb-adv-setting-help">Reject downloads that are byte-for-byte identical to an item already in the queue. Uses NZB content hash.</p>
+                            <p class="nzb-adv-setting-help">Reject downloads that are byte-for-byte identical to an item
+                                already in the queue. Uses NZB content hash.</p>
                             <div class="nzb-adv-setting-input">
-                                <select id="nzb-proc-identical-detection" class="nzb-form-select" style="max-width: 100px;">
+                                <select id="nzb-proc-identical-detection" class="nzb-form-select"
+                                    style="max-width: 100px;">
                                     <option value="on" selected>On</option>
                                     <option value="off">Off</option>
                                 </select>
@@ -226,7 +273,8 @@
                         </div>
                         <div class="nzb-adv-setting">
                             <label class="nzb-adv-setting-label">Smart duplicate detection</label>
-                            <p class="nzb-adv-setting-help">Reject downloads that match the same release (by filename analysis). Detects same movie/episode from different indexers.</p>
+                            <p class="nzb-adv-setting-help">Reject downloads that match the same release (by filename
+                                analysis). Detects same movie/episode from different indexers.</p>
                             <div class="nzb-adv-setting-input">
                                 <select id="nzb-proc-smart-detection" class="nzb-form-select" style="max-width: 100px;">
                                     <option value="on" selected>On</option>
@@ -236,7 +284,8 @@
                         </div>
                         <div class="nzb-adv-setting">
                             <label class="nzb-adv-setting-label">Allow proper releases</label>
-                            <p class="nzb-adv-setting-help">Bypass smart duplicate detection when PROPER, REAL, or REPACK is detected in the new download name. Allows upgrades.</p>
+                            <p class="nzb-adv-setting-help">Bypass smart duplicate detection when PROPER, REAL, or
+                                REPACK is detected in the new download name. Allows upgrades.</p>
                             <div class="nzb-adv-setting-input">
                                 <label class="nzb-toggle-row nzb-toggle-row-huntarr" style="margin:0;">
                                     <input type="checkbox" id="nzb-proc-allow-proper" checked />
@@ -253,11 +302,13 @@
                         <span class="nzb-adv-card-icon nzb-adv-icon-purple"><i class="fas fa-magic"></i></span>
                         <h3>Post-Processing</h3>
                     </div>
-                    <p class="nzb-adv-card-desc">Configure unpacking, encrypted RAR handling, and unwanted file filtering.</p>
+                    <p class="nzb-adv-card-desc">Configure unpacking, encrypted RAR handling, and unwanted file
+                        filtering.</p>
                     <div class="nzb-adv-card-body">
                         <div class="nzb-adv-setting">
                             <label class="nzb-adv-setting-label">Direct Unpack</label>
-                            <p class="nzb-adv-setting-help">Jobs will start unpacking during downloading. Only works for jobs that do not need repair.</p>
+                            <p class="nzb-adv-setting-help">Jobs will start unpacking during downloading. Only works for
+                                jobs that do not need repair.</p>
                             <div class="nzb-adv-setting-input">
                                 <label class="nzb-toggle-row nzb-toggle-row-huntarr" style="margin:0;">
                                     <input type="checkbox" id="nzb-proc-direct-unpack" />
@@ -267,7 +318,8 @@
                         </div>
                         <div class="nzb-adv-setting">
                             <label class="nzb-adv-setting-label">Action when encrypted RAR is downloaded</label>
-                            <p class="nzb-adv-setting-help">In case of &ldquo;Pause&rdquo;, you'll need to set a password and resume the job.</p>
+                            <p class="nzb-adv-setting-help">In case of &ldquo;Pause&rdquo;, you'll need to set a
+                                password and resume the job.</p>
                             <div class="nzb-adv-setting-input">
                                 <select id="nzb-proc-encrypted-rar" class="nzb-form-select" style="max-width: 180px;">
                                     <option value="pause">Pause</option>
@@ -278,14 +330,16 @@
                         </div>
                         <div class="nzb-adv-setting">
                             <label class="nzb-adv-setting-label">Unwanted extensions</label>
-                            <p class="nzb-adv-setting-help">Comma-separated list of unwanted file extensions. For example: <code>exe, com, bat</code></p>
+                            <p class="nzb-adv-setting-help">Comma-separated list of unwanted file extensions. For
+                                example: <code>exe, com, bat</code></p>
                             <div class="nzb-adv-setting-input" style="flex-wrap: wrap; gap: 10px;">
                                 <select id="nzb-proc-unwanted-action" class="nzb-form-select" style="max-width: 130px;">
                                     <option value="off" selected>Off</option>
                                     <option value="blacklist">Blacklist</option>
                                     <option value="abort">Abort</option>
                                 </select>
-                                <input type="text" id="nzb-proc-unwanted-ext" class="nzb-folder-input" value="exe" placeholder="exe, com, bat" autocomplete="off" style="max-width: 180px;" />
+                                <input type="text" id="nzb-proc-unwanted-ext" class="nzb-folder-input" value="exe"
+                                    placeholder="exe, com, bat" autocomplete="off" style="max-width: 180px;" />
                             </div>
                         </div>
                     </div>
@@ -304,32 +358,41 @@
             <div class="nzb-browse-header">
                 <h2>File Browser</h2>
                 <div class="nzb-browse-header-actions">
-                    <button type="button" class="nzb-browse-new-folder-btn" id="nzb-browse-new-folder" title="Create new folder">
+                    <button type="button" class="nzb-browse-new-folder-btn" id="nzb-browse-new-folder"
+                        title="Create new folder">
                         <i class="fas fa-folder-plus"></i> New Folder
                     </button>
-                    <button type="button" class="nzb-browse-close" id="nzb-browse-close" aria-label="Close"><i class="fas fa-times"></i></button>
+                    <button type="button" class="nzb-browse-close" id="nzb-browse-close" aria-label="Close"><i
+                            class="fas fa-times"></i></button>
                 </div>
             </div>
             <div class="nzb-browse-body">
                 <label>Start typing or select a path below</label>
                 <input type="text" id="nzb-browse-path-input" placeholder="/" autocomplete="off" />
                 <div class="nzb-browse-up-row">
-                    <button type="button" class="nzb-browse-up-btn" id="nzb-browse-up"><i class="fas fa-arrow-up"></i> Go Back</button>
+                    <button type="button" class="nzb-browse-up-btn" id="nzb-browse-up"><i class="fas fa-arrow-up"></i>
+                        Go Back</button>
                 </div>
                 <!-- Inline new-folder row (hidden by default) -->
                 <div id="nzb-browse-new-folder-row" class="nzb-browse-inline-row" style="display: none;">
                     <i class="fas fa-folder-plus"></i>
-                    <input type="text" id="nzb-browse-new-folder-input" class="nzb-browse-inline-input" placeholder="Folder name" autocomplete="off" />
-                    <button type="button" class="nzb-browse-inline-ok" id="nzb-browse-new-folder-confirm"><i class="fas fa-check"></i></button>
-                    <button type="button" class="nzb-browse-inline-cancel" id="nzb-browse-new-folder-cancel"><i class="fas fa-times"></i></button>
+                    <input type="text" id="nzb-browse-new-folder-input" class="nzb-browse-inline-input"
+                        placeholder="Folder name" autocomplete="off" />
+                    <button type="button" class="nzb-browse-inline-ok" id="nzb-browse-new-folder-confirm"><i
+                            class="fas fa-check"></i></button>
+                    <button type="button" class="nzb-browse-inline-cancel" id="nzb-browse-new-folder-cancel"><i
+                            class="fas fa-times"></i></button>
                 </div>
                 <!-- Inline delete confirm row (hidden by default) -->
-                <div id="nzb-browse-delete-confirm-row" class="nzb-browse-inline-row nzb-browse-delete-row" style="display: none;">
+                <div id="nzb-browse-delete-confirm-row" class="nzb-browse-inline-row nzb-browse-delete-row"
+                    style="display: none;">
                     <i class="fas fa-exclamation-triangle"></i>
                     <span id="nzb-browse-delete-name"></span>
                     <span class="nzb-browse-delete-hint">Must be empty to delete.</span>
-                    <button type="button" class="nzb-browse-inline-danger" id="nzb-browse-delete-yes"><i class="fas fa-trash"></i> Delete</button>
-                    <button type="button" class="nzb-browse-inline-cancel" id="nzb-browse-delete-no"><i class="fas fa-times"></i></button>
+                    <button type="button" class="nzb-browse-inline-danger" id="nzb-browse-delete-yes"><i
+                            class="fas fa-trash"></i> Delete</button>
+                    <button type="button" class="nzb-browse-inline-cancel" id="nzb-browse-delete-no"><i
+                            class="fas fa-times"></i></button>
                 </div>
                 <div id="nzb-browse-list" class="nzb-browse-list"></div>
             </div>
@@ -340,4 +403,3 @@
         </div>
     </div>
 </section>
-

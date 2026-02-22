@@ -378,7 +378,7 @@ def _grab_tv_release(release, series_item, instance_id, log):
         return False
 
     client = clients[0]
-    client_type = (client.get('type') or 'nzbget').strip().lower()
+    client_type = (client.get('type') or 'nzbhunt').strip().lower()
     nzb_url = release.get('nzb_url', '')
     title = release.get('title', 'Unknown')
 
@@ -392,12 +392,6 @@ def _grab_tv_release(release, series_item, instance_id, log):
     if client_type in ('nzbhunt', 'nzb_hunt'):
         from src.primary.routes.media_hunt.discovery_tv import _send_to_nzb_hunt
         success, _ = _send_to_nzb_hunt(nzb_url, title, category, instance_id=instance_id)
-    elif client_type == 'sabnzbd':
-        from src.primary.routes.media_hunt.discovery_tv import _send_to_sabnzbd
-        success, _ = _send_to_sabnzbd(client, nzb_url, title, category)
-    elif client_type == 'nzbget':
-        from src.primary.routes.media_hunt.discovery_tv import _send_to_nzbget
-        success, _ = _send_to_nzbget(client, nzb_url, title, category)
     elif client_type in ('torhunt', 'tor_hunt', 'qbittorrent'):
         from src.primary.routes.media_hunt.discovery_tv import _send_to_tor_hunt
         success, _ = _send_to_tor_hunt(nzb_url, title, category)

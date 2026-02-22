@@ -7,7 +7,7 @@
 
 Object.assign(huntarrUI, {
 
-    switchSection: function(section) {
+    switchSection: function (section) {
         console.log(`[huntarrUI] *** SWITCH SECTION CALLED *** section: ${section}, current: ${this.currentSection}`);
         // Redirect legacy Movie Hunt home to Media Collection (discovery is under Requestarr)
         if (section === 'movie-hunt-home') section = 'movie-hunt-collection';
@@ -59,7 +59,7 @@ Object.assign(huntarrUI, {
                     return; // User chose to stay and save changes
                 }
             }
-            
+
             // Check for unsaved Settings changes if leaving Settings section
             if (this.currentSection === 'settings' && window.SettingsForms && typeof window.SettingsForms.checkUnsavedChanges === 'function') {
                 if (!window.SettingsForms.checkUnsavedChanges()) {
@@ -67,7 +67,7 @@ Object.assign(huntarrUI, {
                     return; // User chose to stay and save changes
                 }
             }
-            
+
             // Check for unsaved Notifications changes if leaving Notifications section
             if (this.currentSection === 'notifications' && window.SettingsForms && typeof window.SettingsForms.checkUnsavedChanges === 'function') {
                 if (!window.SettingsForms.checkUnsavedChanges()) {
@@ -75,7 +75,7 @@ Object.assign(huntarrUI, {
                     return; // User chose to stay and save changes
                 }
             }
-            
+
             // Check for unsaved App instance changes if leaving Apps section
             const appSections = ['apps'];
             if (appSections.includes(this.currentSection) && window.SettingsForms && typeof window.SettingsForms.checkUnsavedChanges === 'function') {
@@ -84,7 +84,7 @@ Object.assign(huntarrUI, {
                     return; // User chose to stay and save changes
                 }
             }
-            
+
             // Check for unsaved Prowlarr changes if leaving Prowlarr section
             if (this.currentSection === 'prowlarr' && window.SettingsForms && typeof window.SettingsForms.checkUnsavedChanges === 'function') {
                 if (!window.SettingsForms.checkUnsavedChanges()) {
@@ -92,10 +92,10 @@ Object.assign(huntarrUI, {
                     return; // User chose to stay and save changes
                 }
             }
-            
+
             // Check for unsaved Profile Editor changes if leaving Profile Editor
             if (this.currentSection === 'profile-editor' && section !== 'profile-editor' && window.SettingsForms && typeof window.SettingsForms.isProfileEditorDirty === 'function' && window.SettingsForms.isProfileEditorDirty()) {
-                window.SettingsForms.confirmLeaveProfileEditor(function(result) {
+                window.SettingsForms.confirmLeaveProfileEditor(function (result) {
                     if (result === 'save') {
                         window.SettingsForms.saveProfileFromEditor(section);
                     } else if (result === 'discard') {
@@ -107,7 +107,7 @@ Object.assign(huntarrUI, {
 
             // Check for unsaved Movie Management changes if leaving Movie Management
             if (this.currentSection === 'settings-media-management' && section !== 'settings-media-management' && window.MovieManagement && typeof window.MovieManagement.isDirty === 'function' && window.MovieManagement.isDirty()) {
-                window.MovieManagement.confirmLeave(function(result) {
+                window.MovieManagement.confirmLeave(function (result) {
                     if (result === 'save') {
                         window.MovieManagement.save(section);
                     } else if (result === 'discard') {
@@ -119,7 +119,7 @@ Object.assign(huntarrUI, {
 
             // Check for unsaved TV Management changes if leaving TV Management
             if (this.currentSection === 'tv-hunt-settings-tv-management' && section !== 'tv-hunt-settings-tv-management' && window.TVManagement && typeof window.TVManagement.isDirty === 'function' && window.TVManagement.isDirty()) {
-                window.TVManagement.confirmLeave(function(result) {
+                window.TVManagement.confirmLeave(function (result) {
                     if (result === 'save') {
                         window.TVManagement.save(section);
                     } else if (result === 'discard') {
@@ -135,7 +135,7 @@ Object.assign(huntarrUI, {
                     if (result === 'save') {
                         // true means navigate back after save
                         window.SettingsForms._instanceEditorNextSection = section;
-                        window.SettingsForms.saveInstanceFromEditor(true); 
+                        window.SettingsForms.saveInstanceFromEditor(true);
                     } else if (result === 'discard') {
                         window.SettingsForms.cancelInstanceEditor(section);
                     }
@@ -148,11 +148,11 @@ Object.assign(huntarrUI, {
                 window.NzbHunt._confirmLeaveServerEditor(section);
                 return;
             }
-            
+
             // Don't refresh page when navigating to/from instance editor or between app sections
             const noRefreshSections = ['home', 'instance-editor', 'profile-editor', 'movie-hunt-instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'media-hunt-collection', 'media-hunt-calendar', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-media-hunt', 'movie-hunt-settings', 'media-hunt-settings', 'media-hunt-instances', 'settings-instance-management', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-import-media', 'settings-custom-formats', 'settings-root-folders', 'tv-hunt-collection', 'media-hunt-collection', 'tv-hunt-settings', 'media-hunt-settings', 'tv-hunt-settings-profiles', 'tv-hunt-settings-sizes', 'tv-hunt-settings-custom-formats', 'tv-hunt-settings-indexers', 'tv-hunt-settings-clients', 'tv-hunt-settings-import-lists', 'tv-hunt-settings-root-folders', 'tv-hunt-settings-tv-management', 'tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist', 'tv-hunt-instance-editor', 'logs-tv-hunt', 'system', 'hunt-manager', 'logs', 'about', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-folders', 'nzb-hunt-servers', 'nzb-hunt-advanced', 'nzb-hunt-settings', 'nzb-hunt-settings-folders', 'nzb-hunt-settings-servers', 'nzb-hunt-settings-processing', 'nzb-hunt-settings-advanced', 'nzb-hunt-server-editor', 'tor-hunt-home', 'tor-hunt-settings', 'requestarr', 'requestarr-discover', 'requestarr-movies', 'requestarr-tv', 'requestarr-hidden', 'requestarr-personal-blacklist', 'requestarr-filters', 'requestarr-settings', 'requestarr-smarthunt', 'requestarr-smarthunt-settings', 'requestarr-users', 'requestarr-bundles', 'requestarr-requests', 'requestarr-global-blacklist', 'indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history'];
             const skipRefresh = noRefreshSections.includes(section) || noRefreshSections.includes(this.currentSection);
-            
+
             if (!skipRefresh) {
                 console.log(`[huntarrUI] User switching from ${this.currentSection} to ${section}, refreshing page...`);
                 // Store the target section in localStorage so we can navigate to it after refresh
@@ -163,7 +163,7 @@ Object.assign(huntarrUI, {
                 console.log(`[huntarrUI] Switching from ${this.currentSection} to ${section} without page refresh (app/editor navigation)`);
             }
         }
-        
+
         // Stop stats polling when leaving home section
         if (window.HuntarrStats) window.HuntarrStats.stopPolling();
 
@@ -192,17 +192,17 @@ Object.assign(huntarrUI, {
             s.classList.remove('active');
             s.style.display = 'none';
         });
-        
+
         // Additionally, make sure scheduling section is completely hidden
         if (section !== 'scheduling' && this.elements.schedulingSection) {
             this.elements.schedulingSection.style.display = 'none';
         }
-        
+
         // Update navigation
         this.elements.navItems.forEach(item => {
             item.classList.remove('active');
         });
-        
+
         // Show selected section
         let newTitle = 'Home'; // Default title
         const sponsorsSection = document.getElementById('sponsorsSection'); // Get sponsors section element
@@ -214,13 +214,13 @@ Object.assign(huntarrUI, {
             if (this.elements.homeNav) this.elements.homeNav.classList.add('active');
             newTitle = 'Home';
             this.currentSection = 'home';
-            
+
             // Show main sidebar when returning to home
             this.showMainSidebar();
-            
+
             // Disconnect logs if switching away from logs
-            this.disconnectAllEventSources(); 
-            
+            this.disconnectAllEventSources();
+
             // Check app connections when returning to home page to update status
             // This will call updateEmptyStateVisibility() after all checks complete
             this.checkAppConnections();
@@ -253,7 +253,7 @@ Object.assign(huntarrUI, {
             newTitle = 'Logs';
             this.currentSection = section;
             this.showMovieHuntSidebar();
-            _checkLogsMediaHuntInstances(function(state) {
+            _checkLogsMediaHuntInstances(function (state) {
                 var noInst = document.getElementById('logs-media-hunt-no-instances');
                 var noIdx = document.getElementById('logs-media-hunt-no-indexers');
                 var noCli = document.getElementById('logs-media-hunt-no-clients');
@@ -286,20 +286,20 @@ Object.assign(huntarrUI, {
             var systemSection = document.getElementById('systemSection');
             systemSection.classList.add('active');
             systemSection.style.display = 'block';
-            
+
             // Determine which tab to show
             var activeTab = section === 'system' ? 'hunt-manager' : section;
             if (window.HuntarrNavigation) window.HuntarrNavigation.switchSystemTab(activeTab);
-            
+
             // Set title based on active tab
             var tabTitles = { 'hunt-manager': 'Hunt Manager', 'logs': 'Logs' };
             newTitle = tabTitles[activeTab] || 'System';
             this.currentSection = section === 'system' ? 'hunt-manager' : section;
-            
+
             // Expand System group in unified sidebar
             if (typeof expandSidebarGroup === 'function') expandSidebarGroup('sidebar-group-system');
             if (typeof setActiveNavItem === 'function') setActiveNavItem();
-            
+
             // Initialize the active tab's module
             if (activeTab === 'hunt-manager') {
                 if (typeof huntManagerModule !== 'undefined') huntManagerModule.refresh();
@@ -365,7 +365,7 @@ Object.assign(huntarrUI, {
                 if (typeof window.NzbHunt.initSettings === 'function') window.NzbHunt.initSettings();
                 if (typeof window.NzbHunt._populateServerEditorForm === 'function') window.NzbHunt._populateServerEditorForm();
             }
-        // ── Tor Hunt sections ─────────────────────────────────────────
+            // ── Tor Hunt sections ─────────────────────────────────────────
         } else if (section === 'tor-hunt-home' && document.getElementById('tor-hunt-section')) {
             if (this._enableMediaHunt === false) { this.switchSection('home'); return; }
             document.getElementById('tor-hunt-section').classList.add('active');
@@ -392,7 +392,7 @@ Object.assign(huntarrUI, {
             if (window.TorHunt && typeof window.TorHunt.showView === 'function') {
                 window.TorHunt.showView('settings');
             }
-        // ── Indexer Hunt sections ──────────────────────────────────────
+            // ── Indexer Hunt sections ──────────────────────────────────────
         } else if (section === 'indexer-hunt' && document.getElementById('indexer-hunt-section')) {
             document.getElementById('indexer-hunt-section').classList.add('active');
             document.getElementById('indexer-hunt-section').style.display = 'block';
@@ -437,7 +437,7 @@ Object.assign(huntarrUI, {
             newTitle = 'Logs';
             this.currentSection = section;
             this.showTVHuntSidebar();
-            _checkLogsMediaHuntInstances(function(state) {
+            _checkLogsMediaHuntInstances(function (state) {
                 var noInst = document.getElementById('logs-media-hunt-no-instances');
                 var noIdx = document.getElementById('logs-media-hunt-no-indexers');
                 var noCli = document.getElementById('logs-media-hunt-no-clients');
@@ -473,7 +473,7 @@ Object.assign(huntarrUI, {
             }
             document.getElementById('mediaHuntSection').classList.add('active');
             document.getElementById('mediaHuntSection').style.display = 'block';
-            ['mediaHuntInstanceManagementSection', 'mediaHuntInstanceEditorSection', 'tvHuntSettingsCustomFormatsSection', 'mediaHuntProfilesSection', 'tvHuntSettingsIndexersSection', 'tvHuntSettingsClientsSection', 'tvHuntSettingsRootFoldersSection', 'mediaHuntSettingsImportMediaSection', 'tvHuntSettingsTVManagementSection', 'tvManagementSection', 'tvHuntSettingsImportListsSection'].forEach(function(id) {
+            ['mediaHuntInstanceManagementSection', 'mediaHuntInstanceEditorSection', 'tvHuntSettingsCustomFormatsSection', 'mediaHuntProfilesSection', 'tvHuntSettingsIndexersSection', 'tvHuntSettingsClientsSection', 'tvHuntSettingsRootFoldersSection', 'mediaHuntSettingsImportMediaSection', 'tvHuntSettingsTVManagementSection', 'tvManagementSection', 'tvHuntSettingsImportListsSection'].forEach(function (id) {
                 var el = document.getElementById(id);
                 if (el) { el.classList.remove('active'); el.style.display = 'none'; }
             });
@@ -498,7 +498,7 @@ Object.assign(huntarrUI, {
             // ── Setup Wizard gate — show wizard if setup is incomplete ──
             var _hash = window.location.hash || '';
             if (window.SetupWizard && typeof window.SetupWizard.check === 'function') {
-                window.SetupWizard.check(function(needsWizard) {
+                window.SetupWizard.check(function (needsWizard) {
                     if (needsWizard) {
                         window.SetupWizard.show();
                     } else {
@@ -620,7 +620,7 @@ Object.assign(huntarrUI, {
             this.currentSection = 'tv-hunt-settings-clients';
             this.showTVHuntSidebar();
             if (window.TVHuntInstanceDropdown && window.TVHuntInstanceDropdown.attach) {
-                window.TVHuntInstanceDropdown.attach('tv-hunt-settings-clients-instance-select', function() {
+                window.TVHuntInstanceDropdown.attach('tv-hunt-settings-clients-instance-select', function () {
                     if (window.TVHuntSettingsForms && typeof window.TVHuntSettingsForms.refreshClientsList === 'function') {
                         window.TVHuntSettingsForms.refreshClientsList();
                     }
@@ -718,7 +718,7 @@ Object.assign(huntarrUI, {
             if (hNav) hNav.setAttribute('href', './#tv-hunt-activity-history');
             if (bNav) bNav.setAttribute('href', './#tv-hunt-activity-blocklist');
             // Hide all TV Hunt settings/main sections
-            ['mediaHuntSection', 'mediaHuntInstanceManagementSection', 'mediaHuntInstanceEditorSection', 'tvHuntSettingsCustomFormatsSection', 'mediaHuntProfilesSection', 'tvHuntSettingsIndexersSection', 'tvHuntSettingsClientsSection', 'tvHuntSettingsRootFoldersSection', 'mediaHuntSettingsImportMediaSection', 'tvHuntSettingsTVManagementSection', 'tvManagementSection', 'tvHuntSettingsImportListsSection'].forEach(function(id) {
+            ['mediaHuntSection', 'mediaHuntInstanceManagementSection', 'mediaHuntInstanceEditorSection', 'tvHuntSettingsCustomFormatsSection', 'mediaHuntProfilesSection', 'tvHuntSettingsIndexersSection', 'tvHuntSettingsClientsSection', 'tvHuntSettingsRootFoldersSection', 'mediaHuntSettingsImportMediaSection', 'tvHuntSettingsTVManagementSection', 'tvManagementSection', 'tvHuntSettingsImportListsSection'].forEach(function (id) {
                 var el = document.getElementById(id);
                 if (el) { el.classList.remove('active'); el.style.display = 'none'; }
             });
@@ -794,7 +794,7 @@ Object.assign(huntarrUI, {
                 if (document.getElementById('tvHuntSettingsClientsSection')) { document.getElementById('tvHuntSettingsClientsSection').classList.remove('active'); document.getElementById('tvHuntSettingsClientsSection').style.display = 'none'; }
                 if (document.getElementById('tvHuntSettingsRootFoldersSection')) { document.getElementById('tvHuntSettingsRootFoldersSection').classList.remove('active'); document.getElementById('tvHuntSettingsRootFoldersSection').style.display = 'none'; }
                 if (document.getElementById('tvHuntSettingsTVManagementSection')) { document.getElementById('tvHuntSettingsTVManagementSection').classList.remove('active'); document.getElementById('tvHuntSettingsTVManagementSection').style.display = 'none'; }
-            if (document.getElementById('tvManagementSection')) { document.getElementById('tvManagementSection').classList.remove('active'); document.getElementById('tvManagementSection').style.display = 'none'; }
+                if (document.getElementById('tvManagementSection')) { document.getElementById('tvManagementSection').classList.remove('active'); document.getElementById('tvManagementSection').style.display = 'none'; }
                 if (document.getElementById('tvHuntSettingsImportListsSection')) { document.getElementById('tvHuntSettingsImportListsSection').classList.remove('active'); document.getElementById('tvHuntSettingsImportListsSection').style.display = 'none'; }
                 if (document.getElementById('mediaHuntSection')) { document.getElementById('mediaHuntSection').classList.remove('active'); document.getElementById('mediaHuntSection').style.display = 'none'; }
                 if (document.getElementById('mediaHuntCalendarSection')) { document.getElementById('mediaHuntCalendarSection').classList.remove('active'); document.getElementById('mediaHuntCalendarSection').style.display = 'none'; }
@@ -822,10 +822,10 @@ Object.assign(huntarrUI, {
             if (document.getElementById('requestarrNav')) document.getElementById('requestarrNav').classList.add('active');
             newTitle = 'Discover';
             this.currentSection = 'requestarr';
-            
+
             // Switch to Requestarr sidebar
             this.showRequestarrSidebar();
-            
+
             // Show discover view by default
             this.runWhenRequestarrReady('discover', () => {
                 if (window.RequestarrDiscover && typeof window.RequestarrDiscover.switchView === 'function') {
@@ -838,10 +838,10 @@ Object.assign(huntarrUI, {
             if (document.getElementById('requestarrDiscoverNav')) document.getElementById('requestarrDiscoverNav').classList.add('active');
             newTitle = 'Discover';
             this.currentSection = 'requestarr-discover';
-            
+
             // Switch to Requestarr sidebar
             this.showRequestarrSidebar();
-            
+
             // Show discover view
             this.runWhenRequestarrReady('discover', () => {
                 if (window.RequestarrDiscover && typeof window.RequestarrDiscover.switchView === 'function') {
@@ -851,17 +851,17 @@ Object.assign(huntarrUI, {
         } else if (section === 'requestarr-movies' && document.getElementById('requestarr-section')) {
             document.getElementById('requestarr-section').classList.add('active');
             document.getElementById('requestarr-section').style.display = 'block';
-            
+
             // Check if we came from Movie Search in Movie Hunt sidebar
             var fromMovieSearch = false;
-            try { fromMovieSearch = sessionStorage.getItem('requestarr-from-movie-search'); sessionStorage.removeItem('requestarr-from-movie-search'); } catch (err) {}
-            
+            try { fromMovieSearch = sessionStorage.getItem('requestarr-from-movie-search'); sessionStorage.removeItem('requestarr-from-movie-search'); } catch (err) { }
+
             if (fromMovieSearch) {
                 // Keep Movie Hunt sidebar group active with Movie Search highlighted
                 this.showMovieHuntSidebar();
                 // Clear all Media Hunt nav items first
                 var movieHuntNavItems = document.querySelectorAll('#sidebar-group-media-hunt .nav-item');
-                if (movieHuntNavItems.length) movieHuntNavItems.forEach(function(el) { el.classList.remove('active'); });
+                if (movieHuntNavItems.length) movieHuntNavItems.forEach(function (el) { el.classList.remove('active'); });
                 // Then highlight only Movie Search
                 if (document.getElementById('movieHuntMovieSearchNav')) document.getElementById('movieHuntMovieSearchNav').classList.add('active');
             } else {
@@ -869,10 +869,10 @@ Object.assign(huntarrUI, {
                 if (document.getElementById('requestarrMoviesNav')) document.getElementById('requestarrMoviesNav').classList.add('active');
                 this.showRequestarrSidebar();
             }
-            
+
             newTitle = 'Movies';
             this.currentSection = 'requestarr-movies';
-            
+
             // Force movies view layout immediately
             const viewIds = [
                 'requestarr-discover-view',
@@ -911,10 +911,10 @@ Object.assign(huntarrUI, {
             if (document.getElementById('requestarrTVNav')) document.getElementById('requestarrTVNav').classList.add('active');
             newTitle = 'TV Shows';
             this.currentSection = 'requestarr-tv';
-            
+
             // Switch to Requestarr sidebar
             this.showRequestarrSidebar();
-            
+
             // Show TV view
             this.runWhenRequestarrReady('tv', () => {
                 if (window.RequestarrDiscover && typeof window.RequestarrDiscover.switchView === 'function') {
@@ -927,10 +927,10 @@ Object.assign(huntarrUI, {
             if (document.getElementById('requestarrPersonalBlacklistNav')) document.getElementById('requestarrPersonalBlacklistNav').classList.add('active');
             newTitle = 'Personal Blacklist';
             this.currentSection = 'requestarr-personal-blacklist';
-            
+
             // Switch to Requestarr sidebar
             this.showRequestarrSidebar();
-            
+
             // Show hidden view
             this.runWhenRequestarrReady('hidden', () => {
                 if (window.RequestarrDiscover && typeof window.RequestarrDiscover.switchView === 'function') {
@@ -943,10 +943,10 @@ Object.assign(huntarrUI, {
             if (document.getElementById('requestarrSettingsNav')) document.getElementById('requestarrSettingsNav').classList.add('active');
             newTitle = 'Filters';
             this.currentSection = 'requestarr-filters';
-            
+
             // Switch to Requestarr sidebar
             this.showRequestarrSidebar();
-            
+
             // Show settings view
             this.runWhenRequestarrReady('settings', () => {
                 if (window.RequestarrDiscover && typeof window.RequestarrDiscover.switchView === 'function') {
@@ -959,10 +959,10 @@ Object.assign(huntarrUI, {
             if (document.getElementById('requestarrSmartHuntNav')) document.getElementById('requestarrSmartHuntNav').classList.add('active');
             newTitle = 'Smart Hunt';
             this.currentSection = 'requestarr-smarthunt';
-            
+
             // Switch to Requestarr sidebar
             this.showRequestarrSidebar();
-            
+
             // Show Smart Hunt view
             this.runWhenRequestarrReady('smarthunt', () => {
                 if (window.RequestarrDiscover && typeof window.RequestarrDiscover.switchView === 'function') {
@@ -975,10 +975,10 @@ Object.assign(huntarrUI, {
             if (document.getElementById('requestarrSmartHuntSettingsNav')) document.getElementById('requestarrSmartHuntSettingsNav').classList.add('active');
             newTitle = 'Smart Hunt';
             this.currentSection = 'requestarr-smarthunt-settings';
-            
+
             // Switch to Requestarr sidebar
             this.showRequestarrSidebar();
-            
+
             // Show Smart Hunt settings view
             this.runWhenRequestarrReady('smarthunt-settings', () => {
                 if (window.RequestarrDiscover && typeof window.RequestarrDiscover.switchView === 'function') {
@@ -991,10 +991,10 @@ Object.assign(huntarrUI, {
             if (document.getElementById('requestarrUsersNav')) document.getElementById('requestarrUsersNav').classList.add('active');
             newTitle = 'Users';
             this.currentSection = 'requestarr-users';
-            
+
             // Switch to Requestarr sidebar
             this.showRequestarrSidebar();
-            
+
             // Show users view
             this.runWhenRequestarrReady('users', () => {
                 if (window.RequestarrDiscover && typeof window.RequestarrDiscover.switchView === 'function') {
@@ -1007,10 +1007,10 @@ Object.assign(huntarrUI, {
             if (document.getElementById('requestarrBundlesNav')) document.getElementById('requestarrBundlesNav').classList.add('active');
             newTitle = 'Bundles';
             this.currentSection = 'requestarr-bundles';
-            
+
             // Switch to Requestarr sidebar
             this.showRequestarrSidebar();
-            
+
             // Show bundles view
             this.runWhenRequestarrReady('bundles', () => {
                 if (window.RequestarrDiscover && typeof window.RequestarrDiscover.switchView === 'function') {
@@ -1023,10 +1023,10 @@ Object.assign(huntarrUI, {
             if (document.getElementById('requestarrRequestsNav')) document.getElementById('requestarrRequestsNav').classList.add('active');
             newTitle = 'Requests';
             this.currentSection = 'requestarr-requests';
-            
+
             // Switch to Requestarr sidebar
             this.showRequestarrSidebar();
-            
+
             // Show requests view
             this.runWhenRequestarrReady('requests', () => {
                 if (window.RequestarrDiscover && typeof window.RequestarrDiscover.switchView === 'function') {
@@ -1039,10 +1039,10 @@ Object.assign(huntarrUI, {
             if (document.getElementById('requestarrGlobalBlacklistNav')) document.getElementById('requestarrGlobalBlacklistNav').classList.add('active');
             newTitle = 'Global Blacklist';
             this.currentSection = 'requestarr-global-blacklist';
-            
+
             // Switch to Requestarr sidebar
             this.showRequestarrSidebar();
-            
+
             // Show global blacklist view
             this.runWhenRequestarrReady('global-blacklist', () => {
                 if (window.RequestarrDiscover && typeof window.RequestarrDiscover.switchView === 'function') {
@@ -1061,10 +1061,10 @@ Object.assign(huntarrUI, {
             if (document.getElementById('appsSonarrNav')) document.getElementById('appsSonarrNav').classList.add('active');
             newTitle = 'Sonarr';
             this.currentSection = 'sonarr';
-            
+
             // Switch to Apps sidebar
             this.showAppsSidebar();
-            
+
             // Initialize app module for sonarr
             if (typeof appsModule !== 'undefined') {
                 appsModule.init('sonarr');
@@ -1075,10 +1075,10 @@ Object.assign(huntarrUI, {
             if (document.getElementById('appsRadarrNav')) document.getElementById('appsRadarrNav').classList.add('active');
             newTitle = 'Radarr';
             this.currentSection = 'radarr';
-            
+
             // Switch to Apps sidebar
             this.showAppsSidebar();
-            
+
             // Initialize app module for radarr
             if (typeof appsModule !== 'undefined') {
                 appsModule.init('radarr');
@@ -1089,10 +1089,10 @@ Object.assign(huntarrUI, {
             if (document.getElementById('appsLidarrNav')) document.getElementById('appsLidarrNav').classList.add('active');
             newTitle = 'Lidarr';
             this.currentSection = 'lidarr';
-            
+
             // Switch to Apps sidebar
             this.showAppsSidebar();
-            
+
             // Initialize app module for lidarr
             if (typeof appsModule !== 'undefined') {
                 appsModule.init('lidarr');
@@ -1103,10 +1103,10 @@ Object.assign(huntarrUI, {
             if (document.getElementById('appsReadarrNav')) document.getElementById('appsReadarrNav').classList.add('active');
             newTitle = 'Readarr';
             this.currentSection = 'readarr';
-            
+
             // Switch to Apps sidebar
             this.showAppsSidebar();
-            
+
             // Initialize app module for readarr
             if (typeof appsModule !== 'undefined') {
                 appsModule.init('readarr');
@@ -1117,10 +1117,10 @@ Object.assign(huntarrUI, {
             if (document.getElementById('appsWhisparrNav')) document.getElementById('appsWhisparrNav').classList.add('active');
             newTitle = 'Whisparr V2';
             this.currentSection = 'whisparr';
-            
+
             // Switch to Apps sidebar
             this.showAppsSidebar();
-            
+
             // Initialize app module for whisparr
             if (typeof appsModule !== 'undefined') {
                 appsModule.init('whisparr');
@@ -1131,10 +1131,10 @@ Object.assign(huntarrUI, {
             if (document.getElementById('appsErosNav')) document.getElementById('appsErosNav').classList.add('active');
             newTitle = 'Whisparr V3';
             this.currentSection = 'eros';
-            
+
             // Switch to Apps sidebar
             this.showAppsSidebar();
-            
+
             // Initialize app module for eros
             if (typeof appsModule !== 'undefined') {
                 appsModule.init('eros');
@@ -1145,10 +1145,10 @@ Object.assign(huntarrUI, {
             if (document.getElementById('appsSwaparrNav')) document.getElementById('appsSwaparrNav').classList.add('active');
             newTitle = 'Swaparr';
             this.currentSection = 'swaparr';
-            
+
             // Show Apps sidebar (Swaparr lives under Apps)
             this.showAppsSidebar();
-            
+
             // Initialize Swaparr section
             this.initializeSwaparr();
         } else if (section === 'settings' && document.getElementById('settingsSection')) {
@@ -1528,10 +1528,10 @@ Object.assign(huntarrUI, {
             if (document.getElementById('appsProwlarrNav')) document.getElementById('appsProwlarrNav').classList.add('active');
             newTitle = 'Prowlarr';
             this.currentSection = 'prowlarr';
-            
+
             // Switch to Apps sidebar for prowlarr
             this.showAppsSidebar();
-            
+
             // Initialize prowlarr settings if not already done
             this.initializeProwlarr();
         } else if (section === 'user' && document.getElementById('userSection')) {
@@ -1553,8 +1553,8 @@ Object.assign(huntarrUI, {
                 this.showMovieHuntSidebar();
                 this._highlightMovieHuntNavForEditor('indexer');
             } else if (window.SettingsForms && window.SettingsForms._currentEditing && window.SettingsForms._currentEditing.appType === 'client') {
-                var ct = (window.SettingsForms._currentEditing.originalInstance && window.SettingsForms._currentEditing.originalInstance.type) ? String(window.SettingsForms._currentEditing.originalInstance.type).toLowerCase() : 'nzbget';
-                newTitle = (ct === 'nzbhunt' ? 'NZB Hunt (Built-in)' : ct === 'sabnzbd' ? 'SABnzbd' : ct === 'nzbget' ? 'NZBGet' : ct) + ' Connection Settings';
+                var ct = (window.SettingsForms._currentEditing.originalInstance && window.SettingsForms._currentEditing.originalInstance.type) ? String(window.SettingsForms._currentEditing.originalInstance.type).toLowerCase() : 'nzbhunt';
+                newTitle = (ct === 'nzbhunt' ? 'NZB Hunt (Built-in)' : ct === 'torhunt' ? 'Tor Hunt (Built-in)' : ct === 'qbittorrent' ? 'qBittorrent' : ct) + ' Connection Settings';
                 this.showMovieHuntSidebar();
                 this._highlightMovieHuntNavForEditor('client');
             } else {
@@ -1575,7 +1575,7 @@ Object.assign(huntarrUI, {
             if (this.elements.homeNav) this.elements.homeNav.classList.add('active');
             newTitle = 'Home';
             this.currentSection = 'home';
-            
+
             // Show main sidebar
             this.showMainSidebar();
         }

@@ -3,7 +3,7 @@
  * Separate from Client Management (clients.js). Attaches to window.SettingsForms.
  * Load after settings/core.js and instance-editor.js.
  */
-(function() {
+(function () {
     'use strict';
     if (typeof window.SettingsForms === 'undefined') return;
 
@@ -11,8 +11,6 @@
 
     var CLIENT_TYPES = [
         { value: 'nzbhunt', label: 'NZB Hunt (Built-in)' },
-        { value: 'nzbget', label: 'NZBGet' },
-        { value: 'sabnzbd', label: 'SABnzbd' },
         { value: 'torhunt', label: 'Tor Hunt (Built-in)' },
         { value: 'qbittorrent', label: 'qBittorrent' }
     ];
@@ -25,13 +23,13 @@
         { value: 'low', label: 'Low' }
     ];
 
-    Forms.openClientEditor = function(isAdd, index, instance) {
+    Forms.openClientEditor = function (isAdd, index, instance) {
         const inst = instance || {};
         this._currentEditing = { appType: 'client', index: index, isAdd: isAdd, originalInstance: JSON.parse(JSON.stringify(inst)) };
 
-        const typeRaw = (inst.type || 'nzbget').toLowerCase().trim();
-        const typeVal = CLIENT_TYPES.some(function(o) { return o.value === typeRaw; }) ? typeRaw : 'nzbget';
-        const clientDisplayName = (CLIENT_TYPES.find(function(o) { return o.value === typeVal; }) || { label: typeVal }).label;
+        const typeRaw = (inst.type || 'nzbhunt').toLowerCase().trim();
+        const typeVal = CLIENT_TYPES.some(function (o) { return o.value === typeRaw; }) ? typeRaw : 'nzbhunt';
+        const clientDisplayName = (CLIENT_TYPES.find(function (o) { return o.value === typeVal; }) || { label: typeVal }).label;
 
         const titleEl = document.getElementById('instance-editor-title');
         if (titleEl) {
@@ -53,7 +51,7 @@
         const enabledSelect = document.getElementById('editor-client-enabled');
         const enableIcon = document.getElementById('client-enable-status-icon');
         if (enabledSelect && enableIcon) {
-            enabledSelect.addEventListener('change', function() {
+            enabledSelect.addEventListener('change', function () {
                 const isEnabled = enabledSelect.value === 'true';
                 enableIcon.className = isEnabled ? 'fas fa-check-circle' : 'fas fa-minus-circle';
                 enableIcon.style.color = isEnabled ? '#10b981' : '#ef4444';
@@ -68,14 +66,14 @@
             const apiKeyEl = document.getElementById('editor-client-apikey');
             const usernameEl = document.getElementById('editor-client-username');
             const passwordEl = document.getElementById('editor-client-password');
-            
+
             if (hostEl) hostEl.addEventListener('input', () => this.checkClientConnection());
             if (portEl) portEl.addEventListener('input', () => this.checkClientConnection());
             if (apiKeyEl) apiKeyEl.addEventListener('input', () => this.checkClientConnection());
             if (usernameEl) usernameEl.addEventListener('input', () => this.checkClientConnection());
             if (passwordEl) passwordEl.addEventListener('input', () => this.checkClientConnection());
         }
-        
+
         // Initial connection check (skip for NZB Hunt and Tor Hunt - built-in, no status needed)
         if (typeVal !== 'nzbhunt' && typeVal !== 'torhunt') {
             this.checkClientConnection();
@@ -86,19 +84,19 @@
         }
     };
 
-    Forms.generateClientEditorHtml = function(instance) {
+    Forms.generateClientEditorHtml = function (instance) {
         const name = (instance.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-        const typeRaw = (instance.type || 'nzbget').toLowerCase().trim();
-        const typeVal = CLIENT_TYPES.some(function(o) { return o.value === typeRaw; }) ? typeRaw : 'nzbget';
+        const typeRaw = (instance.type || 'nzbhunt').toLowerCase().trim();
+        const typeVal = CLIENT_TYPES.some(function (o) { return o.value === typeRaw; }) ? typeRaw : 'nzbhunt';
         const isQBit = typeVal === 'qbittorrent';
         const isTorHunt = typeVal === 'torhunt' || typeVal === 'tor_hunt';
         const host = (instance.host || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-        const defaultPort = typeVal === 'nzbget' ? '6789' : (isQBit ? '8080' : '8080');
+        const defaultPort = isQBit ? '8080' : '8080';
         const port = instance.port !== undefined && instance.port !== '' ? String(instance.port) : defaultPort;
         const username = (instance.username || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         const enabled = instance.enabled !== false;
         const isEdit = !!(instance.name && instance.name.trim());
-        
+
         const apiKeyPlaceholder = isEdit && (instance.api_key_last4 || '')
             ? ('Enter new key or leave blank to keep existing (••••' + (instance.api_key_last4 || '') + ')')
             : 'Enter API key';
@@ -113,10 +111,10 @@
         let clientPriority = parseInt(instance.client_priority, 10);
         if (isNaN(clientPriority) || clientPriority < 1 || clientPriority > 99) clientPriority = 50;
 
-        const recentOptionsHtml = PRIORITY_OPTIONS.map(function(o) {
+        const recentOptionsHtml = PRIORITY_OPTIONS.map(function (o) {
             return '<option value="' + o.value + '"' + (recentPriority === o.value ? ' selected' : '') + '>' + o.label + '</option>';
         }).join('');
-        const olderOptionsHtml = PRIORITY_OPTIONS.map(function(o) {
+        const olderOptionsHtml = PRIORITY_OPTIONS.map(function (o) {
             return '<option value="' + o.value + '"' + (olderPriority === o.value ? ' selected' : '') + '>' + o.label + '</option>';
         }).join('');
 
@@ -189,7 +187,7 @@
                     ${!isNzbHunt && !isTorHunt ? `
                     <div class="editor-field-group"${hideForNzbHunt}>
                         <label for="editor-client-name">Name</label>
-                        <input type="text" id="editor-client-name" value="${name}" placeholder="${typeVal === 'sabnzbd' ? 'e.g. My SABnzbd' : (isQBit ? 'e.g. My qBittorrent' : 'e.g. My NZBGet')}" />
+                        <input type="text" id="editor-client-name" value="${name}" placeholder="${isQBit ? 'e.g. My qBittorrent' : 'e.g. My Client'}" />
                         <p class="editor-help-text">A friendly name to identify this client</p>
                     </div>
                     ` : ''}
@@ -201,7 +199,7 @@
                     <div class="editor-field-group"${hideForNzbHunt}>
                         <label for="editor-client-port">Port</label>
                         <input type="number" id="editor-client-port" value="${port}" placeholder="${defaultPort}" min="1" max="65535" />
-                        <p class="editor-help-text">Port number for your download client (SABnzbd default: 8080, NZBGet default: 6789, qBittorrent default: 8080)</p>
+                        <p class="editor-help-text">Port number for your download client (qBittorrent default: 8080)</p>
                     </div>
                     <div class="editor-field-group"${hideApiKey}>
                         <label for="editor-client-apikey">API Key</label>
@@ -211,7 +209,7 @@
                     <div class="editor-field-group"${hideForNzbHunt}>
                         <label for="editor-client-username">Username</label>
                         <input type="text" id="editor-client-username" value="${username}" placeholder="Username (if required)" autocomplete="off" />
-                        <p class="editor-help-text">Username for basic authentication (NZBGet typically requires this)</p>
+                        <p class="editor-help-text">Username for basic authentication</p>
                     </div>
                     <div class="editor-field-group"${hideForNzbHunt}>
                         <label for="editor-client-password">Password</label>
@@ -248,7 +246,7 @@
         `;
     };
 
-    Forms.saveClientFromEditor = function() {
+    Forms.saveClientFromEditor = function () {
         if (!this._currentEditing || this._currentEditing.appType !== 'client') return;
         const nameEl = document.getElementById('editor-client-name');
         const hostEl = document.getElementById('editor-client-host');
@@ -264,13 +262,13 @@
 
         const type = (this._currentEditing && this._currentEditing.originalInstance && this._currentEditing.originalInstance.type)
             ? String(this._currentEditing.originalInstance.type).trim().toLowerCase()
-            : 'nzbget';
+            : 'nzbhunt';
         const isNzbHuntType = (type === 'nzbhunt' || type === 'nzb_hunt');
         const isQBitType = (type === 'qbittorrent');
         const isTorHuntType = (type === 'torhunt' || type === 'tor_hunt');
         const name = (isNzbHuntType || isTorHuntType) ? (isNzbHuntType ? 'NZB Hunt' : 'Tor Hunt') : (nameEl ? nameEl.value.trim() : '');
         const host = hostEl ? hostEl.value.trim() : '';
-        const portDefault = type === 'nzbget' ? 6789 : 8080;
+        const portDefault = 8080;
         let port = portDefault;
         if (portEl && portEl.value.trim() !== '') {
             const p = parseInt(portEl.value, 10);
@@ -321,10 +319,10 @@
         const method = isAdd ? 'POST' : 'PUT';
 
         fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-            .then(function(r) {
-                return r.json().then(function(data) { return { ok: r.ok, data: data }; });
+            .then(function (r) {
+                return r.json().then(function (data) { return { ok: r.ok, data: data }; });
             })
-            .then(function(result) {
+            .then(function (result) {
                 if (!result.ok) {
                     var msg = (result.data && result.data.error) ? result.data.error : 'Save failed';
                     if (window.huntarrUI && window.huntarrUI.showNotification) {
@@ -355,57 +353,57 @@
                     }
                 }
             })
-            .catch(function(err) {
+            .catch(function (err) {
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
                     window.huntarrUI.showNotification(err.message || 'Failed to save client', 'error');
                 }
             });
     };
 
-    Forms.checkClientConnection = function() {
+    Forms.checkClientConnection = function () {
         const container = document.getElementById('client-connection-status-container');
         const hostEl = document.getElementById('editor-client-host');
         const portEl = document.getElementById('editor-client-port');
         const apiKeyEl = document.getElementById('editor-client-apikey');
         const usernameEl = document.getElementById('editor-client-username');
         const passwordEl = document.getElementById('editor-client-password');
-        
+
         if (!container) return;
-        
+
         container.style.display = 'flex';
         container.style.justifyContent = 'flex-end';
-        
+
         // Get client type
         const type = (this._currentEditing && this._currentEditing.originalInstance && this._currentEditing.originalInstance.type)
             ? String(this._currentEditing.originalInstance.type).trim().toLowerCase()
-            : 'nzbget';
-        
+            : 'nzbhunt';
+
         // NZB Hunt and Tor Hunt (built-in) - no connection status; managed in their own Settings
         if (type === 'nzbhunt' || type === 'nzb_hunt' || type === 'torhunt' || type === 'tor_hunt') {
             if (container) container.style.display = 'none';
             return;
         }
-        
+
         const host = hostEl ? hostEl.value.trim() : '';
         const port = portEl ? portEl.value.trim() : '';
         const apiKey = apiKeyEl ? apiKeyEl.value.trim() : '';
         const username = usernameEl ? usernameEl.value.trim() : '';
         const password = passwordEl ? passwordEl.value.trim() : '';
-        
+
         // Check if minimum requirements are met
         if (!host || !port) {
             container.innerHTML = '<span class="connection-status" style="background: rgba(251, 191, 36, 0.1); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.2);"><i class="fas fa-exclamation-triangle"></i><span>Enter host and port</span></span>';
             return;
         }
-        
+
         // Show checking status
         container.innerHTML = '<span class="connection-status checking"><i class="fas fa-spinner fa-spin"></i><span>Checking...</span></span>';
-        
+
         // Test connection
         fetch('./api/clients/test-connection', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
+            body: JSON.stringify({
                 type: type,
                 host: host,
                 port: parseInt(port, 10) || 8080,
@@ -414,17 +412,17 @@
                 password: password
             })
         })
-        .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
-        .then(function(result) {
-            const data = result.data || {};
-            if (data.success === true) {
-                container.innerHTML = '<span class="connection-status success"><i class="fas fa-check-circle"></i><span>Connected</span></span>';
-            } else {
-                container.innerHTML = '<span class="connection-status error"><i class="fas fa-times-circle"></i><span>' + (data.message || data.error || 'Connection failed') + '</span></span>';
-            }
-        })
-        .catch(function(err) {
-            container.innerHTML = '<span class="connection-status error"><i class="fas fa-times-circle"></i><span>' + (err.message || 'Connection failed') + '</span></span>';
-        });
+            .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
+            .then(function (result) {
+                const data = result.data || {};
+                if (data.success === true) {
+                    container.innerHTML = '<span class="connection-status success"><i class="fas fa-check-circle"></i><span>Connected</span></span>';
+                } else {
+                    container.innerHTML = '<span class="connection-status error"><i class="fas fa-times-circle"></i><span>' + (data.message || data.error || 'Connection failed') + '</span></span>';
+                }
+            })
+            .catch(function (err) {
+                container.innerHTML = '<span class="connection-status error"><i class="fas fa-times-circle"></i><span>' + (err.message || 'Connection failed') + '</span></span>';
+            });
     };
 })();

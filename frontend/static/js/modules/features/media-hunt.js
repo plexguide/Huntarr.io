@@ -2,7 +2,7 @@
  * Media Hunt – unified discover for Movie Hunt and TV Hunt.
  * Mode from window._mediaHuntSectionMode ('movie' | 'tv'). Uses #media-hunt-* elements.
  */
-(function() {
+(function () {
     'use strict';
 
     const SEARCH_DEBOUNCE_MS = 500;
@@ -36,8 +36,8 @@
 
             if (betaEl) {
                 betaEl.innerHTML = mode === 'movie'
-                    ? '<strong>Beta feature:</strong> Movie Hunt is in active development. Things may be broken and will change quickly. There is little to no support until it is officially released. Only USENET (SABnzbd, NZBGet) is supported for now. <a href="https://plexguide.github.io/Huntarr.io/apps/movie-hunt.html#docker" target="_blank" rel="noopener">Wiki &amp; Docker setup <i class="fas fa-external-link-alt" style="font-size: 0.85em;"></i></a>'
-                    : '<strong>Beta feature:</strong> TV Hunt is in active development. Things may be broken and will change quickly. Only USENET (SABnzbd, NZBGet) is supported for now.';
+                    ? '<strong>Beta feature:</strong> Movie Hunt is in active development. Things may be broken and will change quickly. There is little to no support until it is officially released. <a href="https://plexguide.github.io/Huntarr.io/apps/movie-hunt.html#docker" target="_blank" rel="noopener">Wiki &amp; Docker setup <i class="fas fa-external-link-alt" style="font-size: 0.85em;"></i></a>'
+                    : '<strong>Beta feature:</strong> TV Hunt is in active development. Things may be broken and will change quickly.';
             }
             if (searchInput) searchInput.placeholder = mode === 'movie' ? 'Search Movies' : 'Search TV Shows';
             if (loadingText) loadingText.textContent = mode === 'movie' ? 'Loading movies...' : 'Loading TV shows...';
@@ -62,7 +62,7 @@
                         { v: 'name.asc', l: 'Title (A-Z)' },
                         { v: 'name.desc', l: 'Title (Z-A)' }
                     ];
-                opts.forEach(function(o) {
+                opts.forEach(function (o) {
                     const opt = document.createElement('option');
                     opt.value = o.v;
                     opt.textContent = o.l;
@@ -134,7 +134,7 @@
             const self = this;
             const input = document.getElementById('media-hunt-search-input');
             if (!input) return;
-            input.addEventListener('input', function() {
+            input.addEventListener('input', function () {
                 if (self.searchTimeout) clearTimeout(self.searchTimeout);
                 const query = (input.value || '').trim();
                 if (!query) {
@@ -143,7 +143,7 @@
                     else self.loadDiscover();
                     return;
                 }
-                self.searchTimeout = setTimeout(function() { self.performSearch(query); }, SEARCH_DEBOUNCE_MS);
+                self.searchTimeout = setTimeout(function () { self.performSearch(query); }, SEARCH_DEBOUNCE_MS);
             });
         },
 
@@ -160,32 +160,32 @@
 
             if (mode === 'movie') {
                 fetch('./api/requestarr/search?q=' + encodeURIComponent(query) + '&app_type=radarr&instance_name=search')
-                    .then(function(r) { return r.json(); })
-                    .then(function(data) {
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
                         const results = data.results || [];
                         grid.innerHTML = '';
                         if (results.length > 0) {
-                            results.forEach(function(item) { grid.appendChild(window.MediaHunt.createCard(item)); });
+                            results.forEach(function (item) { grid.appendChild(window.MediaHunt.createCard(item)); });
                         } else {
                             grid.innerHTML = '<p style="color: #888; text-align: center; padding: 60px; width: 100%;">No movies found</p>';
                         }
                     })
-                    .catch(function() {
+                    .catch(function () {
                         grid.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 60px; width: 100%;">Search failed</p>';
                     });
             } else {
                 fetch('./api/tv-hunt/search?q=' + encodeURIComponent(query))
-                    .then(function(r) { return r.json(); })
-                    .then(function(data) {
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
                         const results = data.results || [];
                         grid.innerHTML = '';
                         if (results.length > 0) {
-                            results.forEach(function(show) { grid.appendChild(window.MediaHunt.createShowCard(show)); });
+                            results.forEach(function (show) { grid.appendChild(window.MediaHunt.createShowCard(show)); });
                         } else {
                             grid.innerHTML = '<p style="color: #888; text-align: center; padding: 60px; width: 100%;">No results found.</p>';
                         }
                     })
-                    .catch(function() {
+                    .catch(function () {
                         grid.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 60px; width: 100%;">Search failed</p>';
                     });
             }
@@ -202,7 +202,7 @@
             const self = this;
             const sortSelect = document.getElementById('media-hunt-sort');
             if (!sortSelect) return;
-            sortSelect.addEventListener('change', function() {
+            sortSelect.addEventListener('change', function () {
                 self._currentSort = sortSelect.value;
                 self.page = 1;
                 self.hasMore = true;
@@ -221,7 +221,7 @@
         setupFilterButton() {
             const btn = document.getElementById('media-hunt-filter-btn');
             if (btn) {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function () {
                     if (window.MediaHuntFilters && window.MediaHuntFilters.openFiltersModal) {
                         window.MediaHuntFilters.openFiltersModal();
                     }
@@ -249,8 +249,8 @@
             else url += '&sort_by=' + encodeURIComponent(this.getSortParam());
 
             fetch(url)
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
                     if (token !== window.MediaHunt.requestToken) return;
                     if (page === 1) grid.innerHTML = '';
                     else {
@@ -259,17 +259,17 @@
                     }
                     const results = data.results || [];
                     if (results.length > 0) {
-                        results.forEach(function(item) { grid.appendChild(window.MediaHunt.createCard(item)); });
+                        results.forEach(function (item) { grid.appendChild(window.MediaHunt.createCard(item)); });
                     } else if (page === 1) {
                         grid.innerHTML = '<p style="color: #888; text-align: center; width: 100%; padding: 40px;">No movies found</p>';
                     }
                     window.MediaHunt.hasMore = data.has_more !== false && results.length >= 20;
                 })
-                .catch(function() {
+                .catch(function () {
                     if (page === 1) grid.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load movies</p>';
                     window.MediaHunt.hasMore = false;
                 })
-                .finally(function() {
+                .finally(function () {
                     window.MediaHunt.loading = false;
                     window.MediaHunt.page = page;
                     const sentinel = document.getElementById('media-hunt-scroll-sentinel');
@@ -293,15 +293,15 @@
             const self = this;
             const sortParam = (document.getElementById('media-hunt-sort') && document.getElementById('media-hunt-sort').value) || 'popularity.desc';
             fetch('./api/tv-hunt/discover/tv?page=' + this.page + '&sort_by=' + encodeURIComponent(sortParam))
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
                     const results = data.results || [];
                     if (self.page === 1) grid.innerHTML = '';
-                    results.forEach(function(show) { grid.appendChild(window.MediaHunt.createShowCard(show)); });
+                    results.forEach(function (show) { grid.appendChild(window.MediaHunt.createShowCard(show)); });
                     self.hasMore = results.length >= 20;
                     self.loading = false;
                 })
-                .catch(function() {
+                .catch(function () {
                     if (self.page === 1) grid.innerHTML = '<p style="color: #ef4444; text-align: center; width: 100%; padding: 40px;">Failed to load TV shows.</p>';
                     self.loading = false;
                 });
@@ -313,8 +313,8 @@
             const self = this;
             const scrollRoot = document.querySelector('.main-content') || null;
             this.observer = new IntersectionObserver(
-                function(entries) {
-                    entries.forEach(function(entry) {
+                function (entries) {
+                    entries.forEach(function (entry) {
                         if (!entry.isIntersecting) return;
                         if (getMode() === 'movie') {
                             if (self.hasMore && !self.loading) self.loadMovies(self.page + 1);
@@ -370,7 +370,7 @@
                 status: inLibrary ? 'available' : (partial ? 'requested' : 'requested'),
                 hasFile: inLibrary,
                 appType: 'movie_hunt',
-                onDeleted: function() { window.MediaUtils.animateCardRemoval(cardElement); }
+                onDeleted: function () { window.MediaUtils.animateCardRemoval(cardElement); }
             });
         },
 
@@ -413,7 +413,7 @@
             const requestBtn = card.querySelector('.media-card-request-btn');
             const hideBtnEl = card.querySelector('.media-card-hide-btn');
             const deleteBtnEl = card.querySelector('.media-card-delete-btn');
-            const openRequestModal = function() {
+            const openRequestModal = function () {
                 const id = item.tmdb_id || item.id;
                 if (id && window.RequestarrDiscover && window.RequestarrDiscover.modal) {
                     let suggestedInstance = null;
@@ -426,7 +426,7 @@
                     window.RequestarrDiscover.modal.openModal(id, 'movie', suggestedInstance);
                 }
             };
-            const openDetailPage = function() {
+            const openDetailPage = function () {
                 if (window.RequestarrDetail) {
                     window.RequestarrDetail.openDetail(item);
                 } else {
@@ -435,10 +435,10 @@
             };
             // When not in library and not requested: any click opens modal. When requested or in library: click opens detail page.
             const shouldOpenModal = !inLibrary && !partial;
-            if (hideBtnEl) hideBtnEl.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); window.MediaHunt.hideMediaFromHome(item, card); });
-            if (deleteBtnEl) deleteBtnEl.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); window.MediaHunt.openDeleteModalFromHome(item, card); });
+            if (hideBtnEl) hideBtnEl.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); window.MediaHunt.hideMediaFromHome(item, card); });
+            if (deleteBtnEl) deleteBtnEl.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); window.MediaHunt.openDeleteModalFromHome(item, card); });
             card.style.cursor = 'pointer';
-            card.addEventListener('click', function(e) {
+            card.addEventListener('click', function (e) {
                 if (hideBtnEl && (e.target === hideBtnEl || hideBtnEl.contains(e.target))) return;
                 if (deleteBtnEl && (e.target === deleteBtnEl || deleteBtnEl.contains(e.target))) return;
                 if (requestBtn && (e.target === requestBtn || requestBtn.contains(e.target))) { e.preventDefault(); e.stopPropagation(); openRequestModal(); return; }
@@ -480,13 +480,13 @@
                     instance_id: instId,
                 })
             })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
                     if (data.exists && window.huntarrUI) window.huntarrUI.showNotification('Series already in collection.', 'info');
                     else if (data.success && window.huntarrUI) window.huntarrUI.showNotification('Added to collection!', 'success');
                     else if (window.huntarrUI) window.huntarrUI.showNotification(data.error || 'Failed to add.', 'error');
                 })
-                .catch(function() {
+                .catch(function () {
                     if (window.huntarrUI) window.huntarrUI.showNotification('Network error adding to collection.', 'error');
                 });
         },
@@ -507,12 +507,12 @@
 
             const addBtn = card.querySelector('.add-to-collection-btn');
             if (addBtn) {
-                addBtn.addEventListener('click', function(e) {
+                addBtn.addEventListener('click', function (e) {
                     e.stopPropagation();
                     if (window.MediaHunt && window.MediaHunt.addToCollection) window.MediaHunt.addToCollection(show);
                 });
             }
-            card.addEventListener('click', function() {
+            card.addEventListener('click', function () {
                 if (window.RequestarrTVDetail) {
                     window.RequestarrTVDetail.openDetail({ tmdb_id: show.id, id: show.id, title: show.name || show.title, poster_path: show.poster_path });
                 }

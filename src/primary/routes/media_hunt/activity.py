@@ -80,110 +80,6 @@ def register_tv_activity_routes(bp, get_instance_id):
             tv_hunt_logger.error("Import: error getting NZB Hunt path for '%s': %s", series_title, e)
             return None
 
-    def _get_sabnzbd_history_item(client, queue_id):
-        """Get a specific item from SABnzbd history by nzo_id."""
-        try:
-            base_url = _download_client_base_url(client)
-            if not base_url:
-                return None
-            api_key = (client.get('api_key') or '').strip()
-            url = f"{base_url}/api"
-            params = {'mode': 'history', 'output': 'json', 'limit': 500}
-            if api_key:
-                params['apikey'] = api_key
-            from src.primary.settings_manager import get_ssl_verify_setting
-            verify_ssl = get_ssl_verify_setting()
-            r = requests.get(url, params=params, timeout=10, verify=verify_ssl)
-            r.raise_for_status()
-            data = r.json()
-            raw_slots = data.get('history', {}).get('slots', [])
-            if isinstance(raw_slots, dict):
-                slots = list(raw_slots.values())
-            elif isinstance(raw_slots, list):
-                slots = raw_slots
-            else:
-                slots = []
-
-            def _normalize_nzo_id(nzo_id):
-                s = str(nzo_id).strip()
-                for prefix in ('SABnzbd_nzo_', 'sabnzbd_nzo_'):
-                    if s.lower().startswith(prefix.lower()):
-                        return s[len(prefix):].strip()
-                return s
-
-            queue_id_str = str(queue_id).strip()
-            queue_id_norm = _normalize_nzo_id(queue_id_str)
-            for slot in slots:
-                if not isinstance(slot, dict):
-                    continue
-                slot_id = slot.get('nzo_id') or slot.get('id')
-                if slot_id is None:
-                    continue
-                slot_id_str = str(slot_id).strip()
-                if slot_id_str == queue_id_str or _normalize_nzo_id(slot_id_str) == queue_id_norm:
-                    return {
-                        'status': slot.get('status', ''),
-                        'storage': slot.get('storage', ''),
-                        'name': slot.get('name', ''),
-                        'category': slot.get('category', ''),
-                        'fail_message': (slot.get('fail_message') or '').strip() or '',
-                        'nzb_name': (slot.get('nzb_name') or '').strip() or '',
-                    }
-            return None
-        except Exception as e:
-            tv_hunt_logger.error("Import: error fetching SABnzbd history for TV queue id %s: %s", queue_id, e)
-            return None
-
-    def _get_nzbget_history_item(client, queue_id):
-        """Get a specific item from NZBGet history by NZBID."""
-        try:
-            base_url = _download_client_base_url(client)
-            if not base_url:
-                return None
-
-            jsonrpc_url = f"{base_url}/jsonrpc"
-            username = (client.get('username') or '').strip()
-            password = (client.get('password') or '').strip()
-            auth = (username, password) if (username or password) else None
-
-            from src.primary.settings_manager import get_ssl_verify_setting
-            verify_ssl = get_ssl_verify_setting()
-
-            payload = {'method': 'history', 'params': [False], 'id': 1}
-            r = requests.post(jsonrpc_url, json=payload, auth=auth, timeout=15, verify=verify_ssl)
-            r.raise_for_status()
-            data = r.json()
-
-            result = data.get('result') if isinstance(data.get('result'), list) else []
-            queue_id_str = str(queue_id).strip()
-
-            for item in result:
-                if not isinstance(item, dict):
-                    continue
-                nzb_id = item.get('NZBID') or item.get('ID')
-                if nzb_id is None:
-                    continue
-                if str(nzb_id).strip() == queue_id_str:
-                    status = (item.get('Status') or '').strip()
-                    dest_dir = (item.get('DestDir') or item.get('FinalDir') or '').strip()
-                    nzb_name = (item.get('NZBName') or item.get('NZBFilename') or item.get('Name') or '').strip()
-                    return {
-                        'status': status,
-                        'storage': dest_dir,
-                        'name': nzb_name,
-                        'category': (item.get('Category') or '').strip(),
-                        'fail_message': '',
-                    }
-
-            tv_hunt_logger.info(
-                "Import: NZBID %s not found in NZBGet history (%s entries)",
-                queue_id_str, len(result),
-            )
-            return None
-
-        except Exception as e:
-            tv_hunt_logger.error("Import: error fetching NZBGet history for TV queue id %s: %s", queue_id, e)
-            return None
 
     def _tv_blocklist_add(series_title, source_title, reason_failed, instance_id):
         """Add a release to the TV Hunt blocklist."""
@@ -228,7 +124,7 @@ def register_tv_activity_routes(bp, get_instance_id):
                 tv_hunt_logger.warning("Import: no download client found for TV import")
                 return
 
-            client_type = (client.get('type') or 'nzbget').strip().lower()
+            client_type = (client.get('type') or 'nzbhunt').strip().lower()
             release_name = ''
 
             # ── NZB Hunt ──
@@ -261,70 +157,6 @@ def register_tv_activity_routes(bp, get_instance_id):
                     return
 
                 release_name = (nzb_history.get('name') or '').strip()
-                if release_name and release_name.endswith('.nzb'):
-                    release_name = release_name[:-4]
-
-            # ── SABnzbd ──
-            elif client_type == 'sabnzbd':
-                tv_hunt_logger.info(
-                    "Import: TV item left SAB queue (id=%s, series='%s'). Checking SAB history.",
-                    queue_id, series_title,
-                )
-                history_item = _get_sabnzbd_history_item(client, queue_id)
-                if not history_item:
-                    tv_hunt_logger.warning("Import: TV item %s not found in SAB history", queue_id)
-                    return
-
-                status = history_item.get('status', '')
-                storage_path = (history_item.get('storage') or '').strip()
-
-                if status.lower() != 'completed':
-                    source_title = (history_item.get('name') or history_item.get('nzb_name') or '').strip()
-                    if source_title and source_title.endswith('.nzb'):
-                        source_title = source_title[:-4]
-                    reason = (history_item.get('fail_message') or '').strip() or status or 'Download failed'
-                    _tv_blocklist_add(series_title, source_title, reason, instance_id)
-                    tv_hunt_logger.warning("Import: TV download '%s' did not complete (status: %s)", series_title, status)
-                    return
-
-                download_path = storage_path
-                if not download_path:
-                    tv_hunt_logger.error("Import: no storage path in SAB history for '%s'", series_title)
-                    return
-
-                release_name = (history_item.get('name') or history_item.get('nzb_name') or '').strip()
-                if release_name and release_name.endswith('.nzb'):
-                    release_name = release_name[:-4]
-
-            # ── NZBGet ──
-            elif client_type == 'nzbget':
-                tv_hunt_logger.info(
-                    "Import: TV item left NZBGet queue (NZBID=%s, series='%s'). Checking NZBGet history.",
-                    queue_id, series_title,
-                )
-                history_item = _get_nzbget_history_item(client, queue_id)
-                if not history_item:
-                    tv_hunt_logger.warning("Import: TV item %s not found in NZBGet history", queue_id)
-                    return
-
-                status = history_item.get('status', '')
-                storage_path = (history_item.get('storage') or '').strip()
-
-                if not status.upper().startswith('SUCCESS'):
-                    source_title = (history_item.get('name') or '').strip()
-                    if source_title and source_title.endswith('.nzb'):
-                        source_title = source_title[:-4]
-                    reason = status or 'Download failed'
-                    _tv_blocklist_add(series_title, source_title, reason, instance_id)
-                    tv_hunt_logger.warning("Import: TV download '%s' did not complete (status: %s)", series_title, status)
-                    return
-
-                download_path = storage_path
-                if not download_path:
-                    tv_hunt_logger.error("Import: no dest path in NZBGet history for '%s'", series_title)
-                    return
-
-                release_name = (history_item.get('name') or '').strip()
                 if release_name and release_name.endswith('.nzb'):
                     release_name = release_name[:-4]
 
@@ -518,193 +350,6 @@ def register_tv_activity_routes(bp, get_instance_id):
             logger.debug("NZB Hunt TV queue error: %s", e)
             return []
 
-    def _get_sabnzbd_tv_queue(client, instance_id):
-        """Fetch TV items from SABnzbd queue."""
-        try:
-            base_url = _download_client_base_url(client)
-            if not base_url:
-                return []
-
-            from .helpers import _get_tv_hunt_instance_display_name, _instance_name_to_category
-            inst_name = _get_tv_hunt_instance_display_name(instance_id)
-            expected_cat = _instance_name_to_category(inst_name, "TV") if inst_name else (TV_HUNT_DEFAULT_CATEGORY or "tv")
-            expected_cat_lower = expected_cat.lower()
-
-            requested_ids, requested_items = _get_tv_requested_queue_ids(instance_id)
-            requested_set = set(str(i) for i in requested_ids)
-
-            api_key = (client.get('api_key') or '').strip()
-            url = f"{base_url}/api"
-            params = {'mode': 'queue', 'output': 'json'}
-            if api_key:
-                params['apikey'] = api_key
-
-            from src.primary.settings_manager import get_ssl_verify_setting
-            verify_ssl = get_ssl_verify_setting()
-
-            r = requests.get(url, params=params, timeout=15, verify=verify_ssl)
-            r.raise_for_status()
-            data = r.json()
-            if not isinstance(data, dict):
-                return []
-
-            slots_raw = (data.get('queue') or {}).get('slots') or data.get('slots') or []
-            if isinstance(slots_raw, dict):
-                slots = list(slots_raw.values())
-            elif isinstance(slots_raw, list):
-                slots = slots_raw
-            else:
-                slots = []
-
-            items = []
-            current_queue_ids = set()
-
-            for slot in slots:
-                if not isinstance(slot, dict):
-                    continue
-                nzo_id = slot.get('nzo_id') or slot.get('id')
-                if nzo_id is not None:
-                    current_queue_ids.add(str(nzo_id))
-
-                slot_cat = (slot.get('category') or slot.get('cat') or '').strip().lower()
-                if slot_cat != expected_cat_lower:
-                    continue
-                if nzo_id is None:
-                    continue
-                if requested_set and str(nzo_id) not in requested_set:
-                    continue
-
-                filename = (slot.get('filename') or slot.get('name') or '-').strip()
-                meta = requested_items.get(str(nzo_id)) or {}
-                series_title = meta.get('series_title', '')
-                season = meta.get('season')
-                episode = meta.get('episode')
-                display_name = series_title or filename
-                if season is not None and episode is not None:
-                    display_name += f" - S{season:02d}E{episode:02d}"
-
-                pct_str = (slot.get('percentage') or '0').replace('%', '')
-                try:
-                    pct = float(pct_str)
-                except ValueError:
-                    pct = 0
-
-                items.append({
-                    'id': nzo_id,
-                    'title': display_name,
-                    'series': series_title,
-                    'season': season,
-                    'episode': episode,
-                    'quality': _extract_quality_from_filename(filename),
-                    'formats': _extract_formats_from_filename(filename),
-                    'time_left': slot.get('timeleft', '') or '-',
-                    'progress': f'{pct:.0f}%' if pct > 0 else '-',
-                    'instance_name': (client.get('name') or 'Download client').strip(),
-                    'original_release': filename,
-                })
-
-            _prune_tv_requested_queue_ids(current_queue_ids, instance_id)
-            return items
-        except Exception as e:
-            logger.debug("SABnzbd TV queue error: %s", e)
-            return []
-
-    def _get_nzbget_tv_queue(client, instance_id):
-        """Fetch TV items from NZBGet queue."""
-        try:
-            base_url = _download_client_base_url(client)
-            if not base_url:
-                return []
-
-            from .helpers import _get_tv_hunt_instance_display_name, _instance_name_to_category
-            inst_name = _get_tv_hunt_instance_display_name(instance_id)
-            expected_cat = _instance_name_to_category(inst_name, "TV") if inst_name else (TV_HUNT_DEFAULT_CATEGORY or "tv")
-            expected_cat_lower = expected_cat.lower()
-
-            requested_ids, requested_items = _get_tv_requested_queue_ids(instance_id)
-            requested_set = set(str(i) for i in requested_ids)
-
-            jsonrpc_url = f"{base_url}/jsonrpc"
-            username = (client.get('username') or '').strip()
-            password = (client.get('password') or '').strip()
-            auth = (username, password) if (username or password) else None
-
-            from src.primary.settings_manager import get_ssl_verify_setting
-            verify_ssl = get_ssl_verify_setting()
-
-            payload = {'method': 'listgroups', 'params': [0], 'id': 1}
-            r = requests.post(jsonrpc_url, json=payload, auth=auth, timeout=15, verify=verify_ssl)
-            r.raise_for_status()
-            data = r.json()
-            result = data.get('result') if isinstance(data.get('result'), list) else []
-
-            items = []
-            current_queue_ids = set()
-
-            for grp in result:
-                if not isinstance(grp, dict):
-                    continue
-                nzb_id = grp.get('NZBID') or grp.get('ID')
-                if nzb_id is not None:
-                    current_queue_ids.add(str(nzb_id))
-
-                grp_cat = (grp.get('Category') or grp.get('category') or '').strip().lower()
-                if grp_cat != expected_cat_lower:
-                    continue
-                if nzb_id is None:
-                    continue
-                if requested_set and str(nzb_id) not in requested_set:
-                    continue
-
-                nzb_name = (grp.get('NZBName') or grp.get('NZBFilename') or grp.get('Name') or '-').strip()
-                if not nzb_name:
-                    nzb_name = '-'
-                meta = requested_items.get(str(nzb_id)) or {}
-                series_title = meta.get('series_title', '')
-                season = meta.get('season')
-                episode = meta.get('episode')
-                display_name = series_title or nzb_name
-                if season is not None and episode is not None:
-                    display_name += f" - S{season:02d}E{episode:02d}"
-
-                size_mb = grp.get('FileSizeMB') or 0
-                try:
-                    size_mb = float(size_mb)
-                except (TypeError, ValueError):
-                    size_mb = 0
-                remaining_mb = grp.get('RemainingSizeMB') or 0
-                try:
-                    remaining_mb = float(remaining_mb)
-                except (TypeError, ValueError):
-                    remaining_mb = 0
-                if size_mb and size_mb > 0 and remaining_mb is not None:
-                    try:
-                        pct = round((float(size_mb - remaining_mb) / float(size_mb)) * 100)
-                        progress = str(min(100, max(0, pct))) + '%'
-                    except (TypeError, ZeroDivisionError):
-                        progress = '-'
-                else:
-                    progress = '-'
-
-                items.append({
-                    'id': nzb_id,
-                    'title': display_name,
-                    'series': series_title,
-                    'season': season,
-                    'episode': episode,
-                    'quality': _extract_quality_from_filename(nzb_name),
-                    'formats': _extract_formats_from_filename(nzb_name),
-                    'time_left': '-',
-                    'progress': progress,
-                    'instance_name': (client.get('name') or 'Download client').strip(),
-                    'original_release': nzb_name,
-                })
-
-            _prune_tv_requested_queue_ids(current_queue_ids, instance_id)
-            return items
-        except Exception as e:
-            logger.debug("NZBGet TV queue error: %s", e)
-            return []
 
     def _get_tor_hunt_tv_queue(client, instance_id):
         """Fetch TV items from the built-in Tor Hunt torrent engine."""
@@ -794,10 +439,6 @@ def register_tv_activity_routes(bp, get_instance_id):
                         client_type = (client.get('type') or 'nzb_hunt').strip().lower()
                         if client_type in ('nzbhunt', 'nzb_hunt'):
                             _get_nzb_hunt_tv_queue(client, inst_id)
-                        elif client_type == 'sabnzbd':
-                            _get_sabnzbd_tv_queue(client, inst_id)
-                        elif client_type == 'nzbget':
-                            _get_nzbget_tv_queue(client, inst_id)
                         elif client_type in ('torhunt', 'tor_hunt', 'qbittorrent'):
                             _get_tor_hunt_tv_queue(client, inst_id)
                 except Exception as e:
@@ -955,10 +596,6 @@ def register_tv_activity_routes(bp, get_instance_id):
                 client_type = (client.get('type') or 'nzb_hunt').strip().lower()
                 if client_type in ('nzbhunt', 'nzb_hunt'):
                     all_items.extend(_get_nzb_hunt_tv_queue(client, instance_id))
-                elif client_type == 'sabnzbd':
-                    all_items.extend(_get_sabnzbd_tv_queue(client, instance_id))
-                elif client_type == 'nzbget':
-                    all_items.extend(_get_nzbget_tv_queue(client, instance_id))
                 elif client_type in ('torhunt', 'tor_hunt', 'qbittorrent'):
                     all_items.extend(_get_tor_hunt_tv_queue(client, instance_id))
 

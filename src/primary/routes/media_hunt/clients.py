@@ -65,7 +65,7 @@ def _register_clients_routes(bp, get_instance_id, config_key, route_prefix, use_
                 item = {
                     'index' if not use_uuid else 'id': i if not use_uuid else c.get('id', ''),
                     'name': c.get('name') or 'Unnamed',
-                    'type': c.get('type') or ('nzbget' if not route_prefix else 'nzb_hunt'),
+                    'type': c.get('type') or ('nzbhunt' if not route_prefix else 'nzb_hunt'),
                     'host': c.get('host') or '',
                     'port': c.get('port', 8080),
                     'enabled': c.get('enabled', True),
@@ -93,10 +93,10 @@ def _register_clients_routes(bp, get_instance_id, config_key, route_prefix, use_
                 return jsonify({'error': 'No instance selected', 'success': False}), 400
             data = request.get_json() or {}
             name = (data.get('name') or '').strip() or 'Unnamed'
-            client_type = (data.get('type') or ('nzbget' if not route_prefix else 'nzb_hunt')).strip().lower()
+            client_type = (data.get('type') or ('nzbhunt' if not route_prefix else 'nzb_hunt')).strip().lower()
             host = 'internal' if client_type in ('nzbhunt', 'nzb_hunt') else (data.get('host') or '').strip()
             raw_port = data.get('port')
-            default_port = 6789 if client_type == 'nzbget' else 8080
+            default_port = 8080
             if raw_port is None or (isinstance(raw_port, str) and str(raw_port).strip() == ''):
                 port = default_port
             else:
@@ -173,7 +173,7 @@ def _register_clients_routes(bp, get_instance_id, config_key, route_prefix, use_
                     return jsonify({'success': False, 'error': 'Index out of range'}), 400
                 data = request.get_json() or {}
                 name = (data.get('name') or '').strip() or 'Unnamed'
-                client_type = (data.get('type') or 'nzbget').strip().lower()
+                client_type = (data.get('type') or 'nzbhunt').strip().lower()
                 host = 'internal' if client_type in ('nzbhunt', 'nzb_hunt') else (data.get('host') or '').strip()
                 raw_port = data.get('port')
                 if raw_port is None or (isinstance(raw_port, str) and str(raw_port).strip() == ''):
@@ -238,7 +238,7 @@ def _register_clients_routes(bp, get_instance_id, config_key, route_prefix, use_
     def api_clients_test_connection():
         try:
             data = request.get_json() or {}
-            client_type = (data.get('type') or 'nzbget').strip().lower()
+            client_type = (data.get('type') or 'nzbhunt').strip().lower()
 
             if client_type in ('nzbhunt', 'nzb_hunt'):
                 try:
@@ -306,54 +306,7 @@ def _register_clients_routes(bp, get_instance_id, config_key, route_prefix, use_
             from src.primary.settings_manager import get_ssl_verify_setting
             verify_ssl = get_ssl_verify_setting()
 
-            if client_type == 'sabnzbd':
-                test_url = f"{base_url}/api"
-                params = {'mode': 'version', 'output': 'json'}
-                if api_key:
-                    params['apikey'] = api_key
-                try:
-                    response = requests.get(test_url, params=params, timeout=10, verify=verify_ssl)
-                    response.raise_for_status()
-                    rdata = response.json()
-                    if 'version' in rdata:
-                        return jsonify({'success': True, 'message': f'Connected to SABnzbd {rdata["version"]}'}), 200
-                    return jsonify({'success': False, 'message': 'Connected but unexpected response format'}), 200
-                except requests.exceptions.HTTPError:
-                    if response.status_code in (401, 403):
-                        return jsonify({'success': False, 'message': 'Authentication failed: Invalid API key'}), 200
-                    return jsonify({'success': False, 'message': f'HTTP Error {response.status_code}'}), 200
-                except requests.exceptions.Timeout:
-                    return jsonify({'success': False, 'message': 'Connection timeout'}), 200
-                except requests.exceptions.ConnectionError:
-                    return jsonify({'success': False, 'message': 'Connection refused - Check host and port'}), 200
-                except Exception as e:
-                    return jsonify({'success': False, 'message': str(e)}), 200
-
-            elif client_type == 'nzbget':
-                test_url = f"{base_url}/jsonrpc"
-                payload = {'method': 'version', 'params': [], 'id': 1}
-                try:
-                    auth = (username, password) if username and password else None
-                    response = requests.post(test_url, json=payload, auth=auth, timeout=10, verify=verify_ssl)
-                    response.raise_for_status()
-                    rdata = response.json()
-                    if 'result' in rdata:
-                        return jsonify({'success': True, 'message': f'Connected to NZBGet {rdata["result"]}'}), 200
-                    if 'error' in rdata:
-                        return jsonify({'success': False, 'message': f'NZBGet error: {rdata["error"].get("message", "Unknown")}'}), 200
-                    return jsonify({'success': False, 'message': 'Connected but unexpected response format'}), 200
-                except requests.exceptions.HTTPError:
-                    if response.status_code in (401, 403):
-                        return jsonify({'success': False, 'message': 'Authentication failed: Invalid username or password'}), 200
-                    return jsonify({'success': False, 'message': f'HTTP Error {response.status_code}'}), 200
-                except requests.exceptions.Timeout:
-                    return jsonify({'success': False, 'message': 'Connection timeout'}), 200
-                except requests.exceptions.ConnectionError:
-                    return jsonify({'success': False, 'message': 'Connection refused - Check host and port'}), 200
-                except Exception as e:
-                    return jsonify({'success': False, 'message': str(e)}), 200
-
-            elif client_type in ('torhunt', 'tor_hunt', 'qbittorrent'):
+            if client_type in ('torhunt', 'tor_hunt', 'qbittorrent'):
                 try:
                     from src.primary.apps.tor_hunt.qbittorrent_client import QBittorrentClient
                     qb = QBittorrentClient(
