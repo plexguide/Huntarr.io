@@ -39,7 +39,6 @@ def process_missing_items(
     Returns:
         True if any items were processed, False otherwise.
     """
-    eros_logger.info(f"Missing: checking for {hunt_missing_items} items for '{instance_name}'")
     processed_any = False
     
     # Reset state files if enough time has passed
@@ -62,6 +61,8 @@ def process_missing_items(
     # App-specific settings
     skip_future_releases = app_settings.get("skip_future_releases", True)
     search_mode = app_settings.get("search_mode", "movie")
+    
+    eros_logger.info(f"Missing: checking for {hunt_missing_items} items for '{instance_name}'")
     
     eros_logger.info(f"Using search mode: {search_mode} for missing items")
     eros_logger.debug(f"Using Eros API v3 for instance: {instance_name}")

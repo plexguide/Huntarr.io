@@ -94,8 +94,6 @@ def process_missing_albums(
                 lidarr_logger.info("No missing albums found.")
                 return False
             
-            lidarr_logger.info(f"Missing: {len(unprocessed_entities)} unprocessed of {len(missing_albums_data)} total albums")
-
             # Filter out albums whose artist has an exempt tag (issue #676)
             missing_albums_data = filter_exempt_items(
                 missing_albums_data, s['exempt_tags'], lidarr_api,
@@ -113,6 +111,7 @@ def process_missing_albums(
                 if album_id and not is_processed("lidarr", instance_key, str(album_id)):  # Convert to string only for processed check
                     unprocessed_entities.append(album_id)
             
+            lidarr_logger.info(f"Missing: {len(unprocessed_entities)} unprocessed of {len(missing_albums_data)} total albums")
             search_entity_type = "album"
             
         elif hunt_missing_mode == "artist":
