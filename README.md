@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  Automated media hunting for Sonarr, Radarr, Lidarr, Readarr, and Whisparr. Finds missing content and upgrades quality — continuously and quietly in the background.
+  A media automation platform that goes beyond the *arr ecosystem. Huntarr hunts for missing content and quality upgrades across your existing Sonarr, Radarr, Lidarr, Readarr, and Whisparr instances — while also providing its own built-in Movie Hunt, TV Hunt, Index Master, NZB Hunt, and Requestarr modules that can replace or complement your existing stack.
 </p>
 
 <p align="center">
@@ -30,57 +30,53 @@ My 12-year-old daughter loves singing, dancing, and exploring STEM. She's an A-B
 
 ---
 
-## The Problem
+## Table of Contents
 
-Your *arr apps (Sonarr, Radarr, etc.) monitor RSS feeds for new releases, but they don't go back and search for missing episodes or movies already in your library. Over time, gaps build up — missing seasons, unavailable albums, content stuck below your quality cutoff.
+- [What Huntarr Does](#what-huntarr-does)
+- [Third-Party *arr Support](#third-party-arr-support)
+- [Movie Hunt & TV Hunt](#movie-hunt--tv-hunt)
+- [Index Master](#index-master)
+- [NZB Hunt](#nzb-hunt)
+- [Requestarr](#requestarr)
+- [Add to Library](#add-to-library)
+- [How It Works](#how-it-works)
+- [Installation](#installation)
+- [The Classic](#the-classic)
+- [Other Projects](#other-projects)
+- [Huntarr + Cleanuparr](#huntarr--cleanuparr)
+- [Contributors](#contributors)
+- [Change Log](#change-log)
+- [License](#license)
 
-## The Solution
+---
 
-Huntarr systematically scans your entire library, finds all missing content, and searches for it in small batches that won't overwhelm your indexers or get you banned. It also finds content below your quality cutoff and triggers upgrades. It's the difference between a "mostly complete" library and actually having everything you want.
+## What Huntarr Does
 
-## Supported Apps
+Your *arr apps monitor RSS feeds for new releases, but they don't go back and search for missing episodes or movies already sitting in your library. Over time, gaps build up — missing seasons, unavailable albums, content stuck below your quality cutoff. Nobody goes back to fix it.
+
+Huntarr does. It systematically scans your entire library, finds all missing content, and searches for it in small batches that won't overwhelm your indexers or get you banned. It also finds content below your quality cutoff and triggers upgrades automatically.
+
+But Huntarr has grown well beyond a missing content hunter. It now includes its own built-in modules that can replace parts of your stack entirely:
+
+| Module | What It Does |
+|--------|-------------|
+| **Movie Hunt** | A built-in movie management system — browse, discover, and track movies without needing Radarr |
+| **TV Hunt** | A built-in TV show management system — track series, seasons, and episodes without needing Sonarr |
+| **Index Master** | Manage and search your indexers directly from Huntarr — a Prowlarr alternative built right in |
+| **NZB Hunt** | A full Usenet download client — connect your NNTP servers and download NZBs without a separate app |
+| **Requestarr** | Let users request movies and TV shows through an approval queue you control |
+
+The key thing: third-party *arr support is always front and center. You can use Huntarr's built-in modules, your existing *arr apps, or both at the same time. Nothing is forced — you pick what works for your setup.
+
+---
+
+## Third-Party *arr Support
+
+Huntarr connects to your existing *arr stack and works alongside it. Configure multiple instances of each app and Huntarr will hunt across all of them.
 
 | Sonarr | Radarr | Lidarr | Readarr | Whisparr v2 | Whisparr v3 |
 |:------:|:------:|:------:|:-------:|:-----------:|:-----------:|
 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-
----
-
-## Media Hunt
-
-Browse, discover, and manage your media collection. Media Hunt gives you a visual interface to see what's in your library, what's missing, and what needs upgrading — all in one place.
-
-<p align="center">
-  <img src="docs/readme/MediaHunt.jpg" alt="Media Hunt" width="800">
-</p>
-
-## Requestarr
-
-Let users request movies and TV shows through a clean request interface. Requests flow through an approval queue so you stay in control of what gets added to your library.
-
-<p align="center">
-  <img src="docs/readme/Requests.jpg" alt="Requestarr" width="800">
-</p>
-
-## NZB Hunt
-
-A built-in Usenet download client. Connect your Usenet servers and download NZBs directly — no separate download client needed.
-
-<p align="center">
-  <img src="docs/readme/NZBHunt.jpg" alt="NZB Hunt" width="800">
-</p>
-
-## Add to Library
-
-Quickly add new movies and TV shows to your *arr apps. Search by title, pick your quality profile, and send it straight to Sonarr or Radarr.
-
-<p align="center">
-  <img src="docs/readme/AddToLibrary.jpg" alt="Add to Library" width="800">
-</p>
-
-## Third-Party App Connections
-
-Connect Huntarr to your existing *arr stack. Configure multiple instances of Sonarr, Radarr, Lidarr, Readarr, Whisparr, Prowlarr, and Swaparr — all from the settings page.
 
 <p align="center">
   <img src="docs/readme/ThirdParty.jpg" alt="Third-Party App Connections" width="800">
@@ -88,13 +84,63 @@ Connect Huntarr to your existing *arr stack. Configure multiple instances of Son
 
 ---
 
+## Movie Hunt & TV Hunt
+
+Browse, discover, and manage your media collection with a visual interface. Movie Hunt and TV Hunt are built-in alternatives to Radarr and Sonarr — see what's in your library, what's missing, and what needs upgrading, all in one place.
+
+Use them standalone or alongside your existing *arr apps. They share the same indexer and download client configuration through Index Master and NZB Hunt.
+
+<p align="center">
+  <img src="docs/readme/MediaHunt.jpg" alt="Movie Hunt & TV Hunt" width="800">
+</p>
+
+---
+
+## Index Master
+
+Manage your indexers directly inside Huntarr. Add Usenet and torrent indexers, test connections, and search across all of them — no need for a separate Prowlarr instance. Index Master feeds into both the built-in Movie Hunt / TV Hunt modules and the third-party *arr hunting engine.
+
+---
+
+## NZB Hunt
+
+A full Usenet download client built into Huntarr. Connect your NNTP servers and download NZBs directly — no SABnzbd or NZBGet required. Supports multiple server connections with up to 120 threads, speed limiting, and a download queue you can manage from the web UI.
+
+<p align="center">
+  <img src="docs/readme/NZBHunt.jpg" alt="NZB Hunt" width="800">
+</p>
+
+---
+
+## Requestarr
+
+Let users request movies and TV shows through a clean request interface. Requests flow through an approval queue so you stay in control of what gets added to your library. Works with both the built-in Movie Hunt / TV Hunt and your external *arr instances.
+
+<p align="center">
+  <img src="docs/readme/Requests.jpg" alt="Requestarr" width="800">
+</p>
+
+---
+
+## Add to Library
+
+Quickly add new movies and TV shows. Search by title, pick your quality profile, and send it straight to your library — whether that's through Movie Hunt, TV Hunt, Sonarr, or Radarr.
+
+<p align="center">
+  <img src="docs/readme/AddToLibrary.jpg" alt="Add to Library" width="800">
+</p>
+
+---
+
 ## How It Works
 
-1. **Connect** — Point Huntarr at your Sonarr, Radarr, Lidarr, Readarr, or Whisparr instances
+1. **Connect** — Point Huntarr at your Sonarr, Radarr, Lidarr, Readarr, or Whisparr instances (or use the built-in modules)
 2. **Hunt Missing** — Scans your library for missing content and searches in small, indexer-friendly batches
 3. **Hunt Upgrades** — Finds content below your quality cutoff and triggers upgrade searches
 4. **API Management** — Hourly caps prevent indexer overload; pauses when download queues are full
 5. **Repeat** — Waits for your configured interval, then runs again. Hands-off, continuous improvement
+
+---
 
 ## Installation
 
@@ -154,11 +200,25 @@ For those who remember where it all started.
 - [PlexGuide](https://github.com/plexguide/PlexGuide.com) — Self-hosted server management platform with Docker app store, reverse proxies, and MergerFS
 - [Unraid Intel ARC Deployment](https://github.com/plexguide/Unraid_Intel-ARC_Deployment) — Convert videos to AV1 format
 
-## The Perfect Pair: Huntarr & Cleanuparr
+---
 
-**Huntarr** finds missing media and upgrades your existing content. **Cleanuparr** keeps your download queue clean, removes clutter, and blocks malicious files. Together they create a hands-off media automation stack.
+## Huntarr + Cleanuparr
 
-Learn more about [Cleanuparr](https://github.com/cleanuparr/cleanuparr).
+<p align="center">
+  <img src="frontend/static/logo/128.png" alt="Huntarr" width="64" height="64">
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="https://github.com/cleanuparr/cleanuparr/blob/main/Logo/128.png?raw=true" alt="Cleanuparr" width="64" height="64">
+</p>
+
+Huntarr fills your library. [Cleanuparr](https://github.com/cleanuparr/cleanuparr) protects it.
+
+While Huntarr is out hunting for missing content and upgrading quality, Cleanuparr watches your download queue like a hawk — removing stalled downloads, blocking malicious files, and cleaning up the clutter that builds up over time. One brings content in, the other makes sure only clean downloads get through.
+
+Together they form a self-sustaining media automation loop: Huntarr searches, Cleanuparr filters, and your library grows with zero manual intervention.
+
+[![Cleanuparr on GitHub](https://img.shields.io/github/stars/cleanuparr/cleanuparr?style=flat-square&label=Cleanuparr&logo=github)](https://github.com/cleanuparr/cleanuparr)
+
+---
 
 ## Contributors
 
