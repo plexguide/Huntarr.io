@@ -271,6 +271,8 @@ sudo systemctl enable --now huntarr</code></pre>
                 <thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
                 <tbody>
                     <tr><td><code>TZ</code></td><td>UTC</td><td>Timezone for scheduling and logs (e.g., <code>America/New_York</code>)</td></tr>
+                    <tr><td><code>PUID</code></td><td>0</td><td>User ID to run as. Unraid: <code>99</code>, Linux: <code>1000</code>. Default <code>0</code> = root.</td></tr>
+                    <tr><td><code>PGID</code></td><td>0</td><td>Group ID to run as. Unraid: <code>100</code>, Linux: <code>1000</code>. Default <code>0</code> = root.</td></tr>
                     <tr><td><code>HUNTARR_PORT</code></td><td>9705</td><td>Web UI port inside the container</td></tr>
                     <tr><td><code>HUNTARR_LOG_LEVEL</code></td><td>INFO</td><td>Log verbosity: DEBUG, INFO, WARNING, ERROR</td></tr>
                 </tbody>
