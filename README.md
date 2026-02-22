@@ -14,7 +14,11 @@
   <a href="https://discord.com/invite/PGJJjR5Cww"><img src="https://img.shields.io/discord/1370922258247454821?color=7289DA&label=Discord&style=flat-square&logo=discord" alt="Discord"></a>
 </p>
 
-<h2 align="center">Want to Help? Click the Star in the Upper-Right Corner! ⭐</h2>
+<p align="center">
+  <a href="https://github.com/plexguide/Huntarr.io/stargazers"><img src="https://img.shields.io/github/stars/plexguide/Huntarr.io?style=social&label=Star%20Huntarr" alt="GitHub Stars"></a>
+</p>
+
+<h2 align="center">Stars help others discover Huntarr — if you find it useful, click the ⭐ in the upper-right corner!</h2>
 
 ## PayPal Donations — Building My Daughter's Future
 
