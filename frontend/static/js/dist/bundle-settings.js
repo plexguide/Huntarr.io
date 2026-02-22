@@ -778,7 +778,6 @@ window.SettingsForms = {
                 show_trending: getVal('show_trending', true),
                 show_nzb_hunt_on_home: getVal('show_nzb_hunt_on_home', false),
                 tmdb_image_cache_days: parseInt(container.querySelector('#tmdb_image_cache_days')?.value || '30'),
-                auth_mode: (container.querySelector('#auth_mode') && container.querySelector('#auth_mode').value) || 'login',
                 ssl_verify: getVal('ssl_verify', true),
                 frame_ancestors: (() => {
                     const sel = container.querySelector('#frame_ancestors');
@@ -857,8 +856,8 @@ window.SettingsForms = {
             settings.show_trending = getInputValue("#show_trending", true);
             settings.enable_smarthunt = getInputValue("#enable_smarthunt", true);
 
-            const authMode = container.querySelector("#auth_mode")?.value || "login";
-            settings.auth_mode = authMode;
+            const authModeEl = container.querySelector("#auth_mode");
+            if (authModeEl) settings.auth_mode = authModeEl.value || "login";
             settings.ssl_verify = getInputValue("#ssl_verify", true);
             // Frame ancestors for iframe embedding
             const faSel = container.querySelector("#frame_ancestors");
@@ -14873,15 +14872,6 @@ document.head.appendChild(styleEl);
                         <h3>Security &amp; Networking</h3>
                     </div>
                     <div class="mset-card-body">
-                        <div class="setting-item">
-                            <label for="auth_mode">Authentication Mode:</label>
-                            <select id="auth_mode" name="auth_mode" class="mset-select">
-                                <option value="login" ${settings.auth_mode === "login" || (!settings.auth_mode && !settings.local_access_bypass && !settings.proxy_auth_bypass) ? "selected" : ""}>Login Mode</option>
-                                <option value="local_bypass" ${settings.auth_mode === "local_bypass" || (!settings.auth_mode && settings.local_access_bypass === true && !settings.proxy_auth_bypass) ? "selected" : ""}>Local Bypass Mode</option>
-                                <option value="no_login" ${settings.auth_mode === "no_login" || (!settings.auth_mode && settings.proxy_auth_bypass === true) ? "selected" : ""}>No Login Mode</option>
-                            </select>
-                            <p class="setting-help">Login Mode: Standard login. Local Bypass: No login on local network. No Login: Completely open (use behind proxy).</p>
-                        </div>
                         <div class="setting-item flex-row">
                             <label for="ssl_verify">Enable SSL Verify:</label>
                             <label class="toggle-switch">

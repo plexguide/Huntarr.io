@@ -166,15 +166,6 @@
                         <h3>Security &amp; Networking</h3>
                     </div>
                     <div class="mset-card-body">
-                        <div class="setting-item">
-                            <label for="auth_mode">Authentication Mode:</label>
-                            <select id="auth_mode" name="auth_mode" class="mset-select">
-                                <option value="login" ${settings.auth_mode === "login" || (!settings.auth_mode && !settings.local_access_bypass && !settings.proxy_auth_bypass) ? "selected" : ""}>Login Mode</option>
-                                <option value="local_bypass" ${settings.auth_mode === "local_bypass" || (!settings.auth_mode && settings.local_access_bypass === true && !settings.proxy_auth_bypass) ? "selected" : ""}>Local Bypass Mode</option>
-                                <option value="no_login" ${settings.auth_mode === "no_login" || (!settings.auth_mode && settings.proxy_auth_bypass === true) ? "selected" : ""}>No Login Mode</option>
-                            </select>
-                            <p class="setting-help">Login Mode: Standard login. Local Bypass: No login on local network. No Login: Completely open (use behind proxy).</p>
-                        </div>
                         <div class="setting-item flex-row">
                             <label for="ssl_verify">Enable SSL Verify:</label>
                             <label class="toggle-switch">

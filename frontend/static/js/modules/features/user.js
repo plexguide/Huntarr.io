@@ -2,9 +2,22 @@ class UserModule {
     constructor() {
         this.initializeEventListeners();
         this.loadUserData();
+        this.loadAuthMode();
     }
 
     initializeEventListeners() {
+        // Auth Mode (owner only)
+        var saveAuthBtn = document.getElementById('saveAuthMode');
+        if (saveAuthBtn) saveAuthBtn.addEventListener('click', () => this.saveAuthMode());
+        var authSelect = document.getElementById('userAuthMode');
+        if (authSelect) {
+            authSelect.addEventListener('change', () => {
+                var descs = { login: 'Login Mode: Standard login required for all users.', local_bypass: 'Local Bypass: No login required on local network. Remote access still requires login.', no_login: 'No Login: Authentication completely disabled. Use only behind a reverse proxy.' };
+                var descEl = document.getElementById('userAuthModeDesc');
+                if (descEl) descEl.textContent = descs[authSelect.value] || '';
+            });
+        }
+
         // Username change
         document.getElementById('saveUsername').addEventListener('click', () => this.saveUsername());
         
@@ -67,6 +80,65 @@ class UserModule {
             
         } catch (error) {
             console.error('Error loading user data:', error);
+        }
+    }
+
+    async loadAuthMode() {
+        try {
+            // Check if user is owner
+            const meResp = await fetch('./api/requestarr/users/me', { credentials: 'include' });
+            if (!meResp.ok) return;
+            const meData = await meResp.json();
+            if (!meData || !meData.user || meData.user.role !== 'owner') return;
+
+            // Owner — show the card
+            var card = document.getElementById('auth-mode-card');
+            if (card) card.style.display = '';
+
+            // Load current auth mode from general settings
+            const settingsResp = await fetch('./api/settings', { credentials: 'include' });
+            if (!settingsResp.ok) return;
+            const allSettings = await settingsResp.json();
+            const general = allSettings.general || {};
+
+            var select = document.getElementById('userAuthMode');
+            if (!select) return;
+
+            if (general.auth_mode) {
+                select.value = general.auth_mode;
+            } else if (general.proxy_auth_bypass) {
+                select.value = 'no_login';
+            } else if (general.local_access_bypass) {
+                select.value = 'local_bypass';
+            } else {
+                select.value = 'login';
+            }
+            // Update description
+            select.dispatchEvent(new Event('change'));
+        } catch (e) {
+            console.warn('Error loading auth mode:', e);
+        }
+    }
+
+    async saveAuthMode() {
+        var select = document.getElementById('userAuthMode');
+        var statusEl = document.getElementById('authModeStatus');
+        if (!select) return;
+
+        try {
+            const resp = await HuntarrUtils.fetchWithTimeout('./api/settings/general', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ auth_mode: select.value })
+            });
+            const data = await resp.json();
+            if (data && !data.error) {
+                this.showStatus(statusEl, 'Authentication mode saved', 'success');
+            } else {
+                this.showStatus(statusEl, data.error || 'Failed to save', 'error');
+            }
+        } catch (e) {
+            this.showStatus(statusEl, 'Failed to save authentication mode', 'error');
         }
     }
 
