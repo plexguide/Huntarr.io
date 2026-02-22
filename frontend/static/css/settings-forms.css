@@ -99,10 +99,10 @@
     box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45), 0 2px 6px rgba(0, 0, 0, 0.15) !important;
 }
 
-/* Two-column grid */
+/* Settings grid — clean single-column stack (HuntarrOS style) */
 .mset-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    grid-template-columns: 1fr;
     gap: 22px;
     padding: 0;
     width: 100%;
@@ -167,10 +167,25 @@
     flex-shrink: 0;
 }
 
-.mset-icon-blue   { background: rgba(99, 102, 241, 0.12); color: #818cf8; }
-.mset-icon-amber  { background: rgba(245, 158, 11, 0.12); color: #fbbf24; }
-.mset-icon-purple { background: rgba(139, 92, 246, 0.12); color: #a78bfa; }
-.mset-icon-teal   { background: rgba(20, 184, 166, 0.12); color: #2dd4bf; }
+.mset-icon-blue {
+    background: rgba(99, 102, 241, 0.12);
+    color: #818cf8;
+}
+
+.mset-icon-amber {
+    background: rgba(245, 158, 11, 0.12);
+    color: #fbbf24;
+}
+
+.mset-icon-purple {
+    background: rgba(139, 92, 246, 0.12);
+    color: #a78bfa;
+}
+
+.mset-icon-teal {
+    background: rgba(20, 184, 166, 0.12);
+    color: #2dd4bf;
+}
 
 .mset-card-body {
     padding: 26px 28px;
@@ -207,7 +222,7 @@
 }
 
 /* Indigo toggles in settings */
-#settingsSection input:checked + .toggle-slider {
+#settingsSection input:checked+.toggle-slider {
     background: #6366f1 !important;
     border-color: rgba(99, 102, 241, 0.5) !important;
 }
@@ -235,7 +250,8 @@
 
 /* Selects and inputs — visual properties enforced by components.css.
    Only layout, font, and spacing kept here. */
-.mset-select, .mset-input {
+.mset-select,
+.mset-input {
     width: 100%;
     max-width: 100% !important;
     padding: 11px 14px;
@@ -263,7 +279,7 @@
         width: auto !important;
     }
 
-    .mset-breadcrumb span:not(:last-child), 
+    .mset-breadcrumb span:not(:last-child),
     .mset-breadcrumb .mset-breadcrumb-sep {
         display: none !important;
     }
@@ -362,7 +378,8 @@
     gap: 10px;
 }
 
-.save-button, .reset-button {
+.save-button,
+.reset-button {
     padding: 8px 16px;
     border: none;
     border-radius: var(--radius-sm);
@@ -786,13 +803,13 @@ input#stateful_management_hours {
         padding: 15px;
         text-align: left !important;
     }
-    
+
     .settings-group h3 {
         text-align: left !important;
         margin-left: 0;
         margin-right: 0;
     }
-    
+
     .setting-item {
         align-items: flex-start !important;
         justify-content: flex-start !important;
@@ -800,7 +817,7 @@ input#stateful_management_hours {
         flex-direction: column !important;
         width: 100%;
     }
-    
+
     .setting-item label {
         width: 100%;
         margin-bottom: 8px;
@@ -808,16 +825,16 @@ input#stateful_management_hours {
         display: block !important;
         justify-content: flex-start !important;
     }
-    
+
     .setting-item .toggle-switch {
         /* display:block and margin:0 are in style.css; only mobile layout adjustment here */
         margin-top: 8px;
     }
-    
+
     .setting-item label:not(.toggle-switch) {
         margin-right: 0 !important;
     }
-    
+
     .setting-item input[type="text"],
     .setting-item input[type="number"],
     .setting-item input[type="password"],
@@ -828,24 +845,25 @@ input#stateful_management_hours {
         text-align: left !important;
         margin-left: 0 !important;
     }
-    
+
     .setting-help {
         margin-left: 0 !important;
         text-align: left !important;
         width: 100%;
     }
-    
+
     .toggle-container {
         justify-content: flex-start !important;
         margin-left: 0 !important;
     }
+
     /* .toggle-switch margin/display handled globally in style.css */
-    
+
     #userSettingsContainer .settings-group,
     #settingsContent .settings-group {
         text-align: left !important;
     }
-    
+
     #userSettingsContainer .setting-item,
     #settingsContent .setting-item {
         text-align: left !important;
