@@ -1,9 +1,11 @@
 <section id="settingsClientsSection" class="content-section" style="display: none;">
-    {% set phb_back_hash = '#home' %}{% set phb_icon = 'fa-film' %}{% set phb_section = 'Media Hunt' %}{% set phb_page = 'Clients' %}
+    {% set phb_back_hash = '#home' %}{% set phb_icon = 'fa-film' %}{% set phb_section = 'Media Hunt' %}{% set phb_page =
+    'Clients' %}
     {% include 'components/page_header_partial.html' %}
     <div id="clientManagementContainer" class="app-content-panel">
         <!-- Continue to Setup Guide banner (shown when wizard incomplete) -->
-        <div id="clients-setup-wizard-continue-banner" class="setup-wizard-continue-banner" style="display: none; margin-bottom: 20px;">
+        <div id="clients-setup-wizard-continue-banner" class="setup-wizard-continue-banner"
+            style="display: none; margin-bottom: 20px;">
             <i class="fas fa-arrow-right"></i>
             <span>Done configuring clients? Continue to the next step in the Setup Guide.</span>
             <button type="button" class="setup-wizard-continue-btn" data-wizard-nav="media-hunt-collection">
@@ -12,86 +14,100 @@
         </div>
 
         <div id="settings-clients-content-wrapper">
-        <div class="settings-group client-settings-group">
-            <h3>Download Clients</h3>
-            <p class="client-settings-help">
-                A download client handles NZB downloads for Huntarr. <strong>Only usenet clients are currently supported</strong> — torrent support is coming soon.
-            </p>
-            <div class="client-recommendation-callout" id="client-recommendation-callout">
-                <div class="client-recommendation-cards">
-                    <div class="client-rec-card client-rec-recommended">
-                        <div class="client-rec-badge">Recommended</div>
-                        <div class="client-rec-icon"><i class="fas fa-bolt"></i></div>
-                        <div class="client-rec-body">
-                            <div class="client-rec-name">NZB Hunt <span class="client-rec-tag">Built-in</span></div>
-                            <div class="client-rec-desc">Zero configuration required. Built directly into Huntarr — no external software, no remote path mappings, just works.</div>
+            <div class="settings-group client-settings-group">
+                <h3>Download Clients</h3>
+                <p class="client-settings-help">
+                    A download client handles NZB downloads for Huntarr. <strong>Only usenet clients are currently
+                        supported</strong> — torrent support is coming soon.
+                </p>
+                <div class="client-recommendation-callout" id="client-recommendation-callout">
+                    <div class="client-recommendation-cards">
+                        <div class="client-rec-card client-rec-recommended">
+                            <div class="client-rec-badge">Recommended</div>
+                            <div class="client-rec-icon"><i class="fas fa-bolt"></i></div>
+                            <div class="client-rec-body">
+                                <div class="client-rec-name">NZB Hunt <span class="client-rec-tag">Built-in</span></div>
+                                <div class="client-rec-desc">Zero configuration required. Built directly into Huntarr —
+                                    no external software, no remote path mappings, just works.</div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="client-rec-card">
-                        <div class="client-rec-icon"><i class="fas fa-magnet"></i></div>
-                        <div class="client-rec-body">
-                            <div class="client-rec-name">Tor Hunt <span class="client-rec-tag">Built-in</span></div>
-                            <div class="client-rec-desc">Built-in torrent client. No external software needed — handles torrents directly inside Huntarr.</div>
+                        <div class="client-rec-card">
+                            <div class="client-rec-icon"><i class="fas fa-magnet"></i></div>
+                            <div class="client-rec-body">
+                                <div class="client-rec-name">Tor Hunt <span class="client-rec-tag">Built-in</span></div>
+                                <div class="client-rec-desc">Built-in torrent client. No external software needed —
+                                    handles torrents directly inside Huntarr.</div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="instance-card-grid" id="client-instances-grid">
-                <div class="add-instance-card" data-app-type="client">
-                    <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
-                    <div class="add-text">Add Client</div>
+                <div class="instance-card-grid" id="client-instances-grid">
+                    <div class="add-instance-card" data-app-type="client">
+                        <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
+                        <div class="add-text">Add Client</div>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- Remote Path Mappings Section -->
-        <div class="settings-group remote-mappings-settings-group">
-            <h3>Remote Path Mappings</h3>
-            <div id="remote-mappings-nzbhunt-notice" class="remote-mappings-notice remote-mappings-notice-ok" style="display: none;">
-                <i class="fas fa-check-circle"></i>
-                <div><strong>Not needed with NZB Hunt.</strong> Since NZB Hunt runs inside Huntarr, it uses the same paths — no remote path mappings required.</div>
+
+            <!-- Remote Path Mappings Section -->
+            <div class="settings-group remote-mappings-settings-group">
+                <h3>Remote Path Mappings</h3>
+                <div id="remote-mappings-nzbhunt-notice" class="remote-mappings-notice remote-mappings-notice-ok"
+                    style="display: none;">
+                    <i class="fas fa-check-circle"></i>
+                    <div><strong>Not needed with NZB Hunt.</strong> Since NZB Hunt runs inside Huntarr, it uses the same
+                        paths — no remote path mappings required.</div>
+                </div>
+                <div id="remote-mappings-external-notice" class="remote-mappings-notice remote-mappings-notice-warn"
+                    style="display: none;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div><strong>You're using an external download client.</strong> If Huntarr and your client run in
+                        different Docker containers (or different machines), they likely see different paths. You'll
+                        need to map the client's download path to Huntarr's path.</div>
+                </div>
+                <p class="remote-mappings-help">
+                    When your download client and Huntarr don't see the same folder paths, you need a mapping: tell
+                    Huntarr which <strong>local path</strong> on your system corresponds to the <strong>remote
+                        path</strong> the client uses.
+                    <strong>If running in Docker</strong>, paths inside the container are usually different from the
+                    host, so remote path mappings are typically required for external clients.
+                    If both run on the same machine with the same paths, you can leave this empty.
+                    For more detail see the <a href="https://wiki.servarr.com/radarr/settings#remote-path-mappings"
+                        target="_blank" rel="noopener" class="remote-mappings-wiki-link">wiki</a>.
+                </p>
+                <div class="remote-mappings-table-wrapper">
+                    <table class="remote-mappings-table" id="remote-mappings-table">
+                        <thead>
+                            <tr>
+                                <th>Host</th>
+                                <th>Local Path</th>
+                                <th>Remote Path</th>
+                                <th class="remote-mappings-actions-col"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="remote-mappings-table-body">
+                            <!-- Rows will be dynamically populated here -->
+                        </tbody>
+                    </table>
+                </div>
+                <button type="button" class="btn-add-remote-mapping" id="add-remote-mapping-btn">
+                    <i class="fas fa-plus"></i> Add
+                </button>
             </div>
-            <div id="remote-mappings-external-notice" class="remote-mappings-notice remote-mappings-notice-warn" style="display: none;">
-                <i class="fas fa-exclamation-triangle"></i>
-                <div><strong>You're using an external download client.</strong> If Huntarr and your client run in different Docker containers (or different machines), they likely see different paths. You'll need to map the client's download path to Huntarr's path.</div>
-            </div>
-            <p class="remote-mappings-help">
-                When your download client and Huntarr don't see the same folder paths, you need a mapping: tell Huntarr which <strong>local path</strong> on your system corresponds to the <strong>remote path</strong> the client uses.
-                <strong>If running in Docker</strong>, paths inside the container are usually different from the host, so remote path mappings are typically required for external clients.
-                If both run on the same machine with the same paths, you can leave this empty.
-                For more detail see the <a href="https://wiki.servarr.com/radarr/settings#remote-path-mappings" target="_blank" rel="noopener" class="remote-mappings-wiki-link">wiki</a>.
-            </p>
-            <div class="remote-mappings-table-wrapper">
-                <table class="remote-mappings-table" id="remote-mappings-table">
-                    <thead>
-                        <tr>
-                            <th>Host</th>
-                            <th>Local Path</th>
-                            <th>Remote Path</th>
-                            <th class="remote-mappings-actions-col"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="remote-mappings-table-body">
-                        <!-- Rows will be dynamically populated here -->
-                    </tbody>
-                </table>
-            </div>
-            <button type="button" class="btn-add-remote-mapping" id="add-remote-mapping-btn">
-                <i class="fas fa-plus"></i> Add
-            </button>
-        </div>
         </div>
     </div>
-    
+
     <!-- Edit Remote Path Mapping modal -->
     <div id="remote-mapping-edit-modal" class="remote-mapping-edit-modal" style="display: none;">
         <div class="remote-mapping-edit-modal-backdrop" id="remote-mapping-edit-modal-backdrop"></div>
         <div class="remote-mapping-edit-modal-content">
             <div class="remote-mapping-edit-modal-header">
-                <button type="button" class="remote-mapping-edit-modal-close" id="remote-mapping-edit-modal-close" aria-label="Close">
+                <button type="button" class="remote-mapping-edit-modal-close" id="remote-mapping-edit-modal-close"
+                    aria-label="Close">
                     <i class="fas fa-times"></i>
                 </button>
-                <h2 class="remote-mapping-edit-modal-title" id="remote-mapping-modal-title">Edit Remote Path Mapping</h2>
+                <h2 class="remote-mapping-edit-modal-title" id="remote-mapping-modal-title">Edit Remote Path Mapping
+                </h2>
             </div>
             <div class="remote-mapping-edit-modal-body">
                 <div class="remote-mapping-form-group">
@@ -101,29 +117,36 @@
                     </select>
                     <p class="remote-mapping-help-text">The same host you specified for the remote Download Client</p>
                 </div>
-                
+
                 <div class="remote-mapping-form-group">
                     <label for="remote-mapping-local-path">Local Path</label>
                     <div class="remote-mapping-path-row">
-                        <input type="text" id="remote-mapping-local-path" class="remote-mapping-path-input" placeholder="e.g. /downloads/" autocomplete="off" />
-                        <button type="button" class="btn-remote-mapping-browse-folder" id="remote-mapping-browse-local-btn" title="Browse for folder">
+                        <input type="text" id="remote-mapping-local-path" class="remote-mapping-path-input"
+                            placeholder="e.g. /downloads/" autocomplete="off" />
+                        <button type="button" class="btn-remote-mapping-browse-folder"
+                            id="remote-mapping-browse-local-btn" title="Browse for folder">
                             <i class="fas fa-folder-open"></i> Browse
                         </button>
                     </div>
-                    <p class="remote-mapping-help-text">Path that Huntarr should use to access the remote path locally</p>
+                    <p class="remote-mapping-help-text">Path that Huntarr should use to access the remote path locally
+                    </p>
                 </div>
-                
+
                 <div class="remote-mapping-form-group">
                     <label for="remote-mapping-remote-path">Remote Path</label>
-                    <input type="text" id="remote-mapping-remote-path" class="remote-mapping-path-input remote-mapping-path-input-full" placeholder="e.g. /sab1/movies/" autocomplete="off" />
+                    <input type="text" id="remote-mapping-remote-path"
+                        class="remote-mapping-path-input remote-mapping-path-input-full"
+                        placeholder="e.g. /sab1/movies/" autocomplete="off" />
                     <p class="remote-mapping-help-text">Root path to the directory that the Download Client accesses</p>
                 </div>
             </div>
             <div class="remote-mapping-edit-modal-footer">
-                <button type="button" class="btn-card remote-mapping-modal-delete" id="remote-mapping-modal-delete" style="margin-right: auto;">
+                <button type="button" class="btn-card remote-mapping-modal-delete" id="remote-mapping-modal-delete"
+                    style="margin-right: auto;">
                     <i class="fas fa-trash"></i> Delete
                 </button>
-                <button type="button" class="btn-card remote-mapping-modal-cancel" id="remote-mapping-modal-cancel">Cancel</button>
+                <button type="button" class="btn-card remote-mapping-modal-cancel"
+                    id="remote-mapping-modal-cancel">Cancel</button>
                 <button type="button" class="btn-card remote-mapping-modal-save" id="remote-mapping-modal-save">
                     <i class="fas fa-save"></i> Save
                 </button>
@@ -149,26 +172,34 @@
                 <select id="client-type-select" class="client-type-select" style="display:none;"></select>
                 <div class="client-type-option-cards" id="client-type-option-cards">
                     <div class="client-type-option" data-client-type="nzbhunt" id="client-type-option-nzbhunt">
-                        <div class="client-type-option-icon client-type-option-icon-recommended"><i class="fas fa-bolt"></i></div>
+                        <div class="client-type-option-icon client-type-option-icon-recommended"><i
+                                class="fas fa-bolt"></i></div>
                         <div class="client-type-option-body">
-                            <div class="client-type-option-name">NZB Hunt <span class="client-type-option-tag">Built-in</span></div>
-                            <div class="client-type-option-desc">Zero config. No external software or remote path mappings needed.</div>
+                            <div class="client-type-option-name">NZB Hunt <span
+                                    class="client-type-option-tag">Built-in</span></div>
+                            <div class="client-type-option-desc">Zero config. No external software or remote path
+                                mappings needed.</div>
                         </div>
                         <div class="client-type-option-badge">Recommended</div>
                         <div class="client-type-option-check"><i class="fas fa-check-circle"></i></div>
                     </div>
                     <div class="client-type-option" data-client-type="torhunt" id="client-type-option-torhunt">
-                        <div class="client-type-option-icon" style="background: rgba(168, 85, 247, 0.15); color: #a855f7;"><i class="fas fa-magnet"></i></div>
+                        <div class="client-type-option-icon"
+                            style="background: rgba(168, 85, 247, 0.15); color: #a855f7;"><i class="fas fa-magnet"></i>
+                        </div>
                         <div class="client-type-option-body">
-                            <div class="client-type-option-name">Tor Hunt <span class="client-type-option-tag">Built-in</span></div>
-                            <div class="client-type-option-desc">Built-in torrent client. No external software or remote path mappings needed.</div>
+                            <div class="client-type-option-name">Tor Hunt <span
+                                    class="client-type-option-tag">Built-in</span></div>
+                            <div class="client-type-option-desc">Built-in torrent client. No external software or remote
+                                path mappings needed.</div>
                         </div>
                         <div class="client-type-option-check"><i class="fas fa-check-circle"></i></div>
                     </div>
                 </div>
                 <div class="client-type-modal-actions">
                     <button type="button" class="client-type-modal-cancel" id="client-type-modal-cancel">Cancel</button>
-                    <button type="button" class="client-type-modal-continue" id="client-type-modal-continue" disabled>Continue</button>
+                    <button type="button" class="client-type-modal-continue" id="client-type-modal-continue"
+                        disabled>Continue</button>
                 </div>
             </div>
         </div>
@@ -178,30 +209,69 @@
 <style>
     /* No-instances warning box (same style as Media Management) */
     #settingsClientsSection .settings-no-instances {
-        text-align: center; padding: 64px 24px; width: 100%; box-sizing: border-box;
-        background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(148, 163, 184, 0.08);
-        border-radius: 12px; margin: 0 0 20px 0; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        text-align: center;
+        padding: 64px 24px;
+        width: 100%;
+        box-sizing: border-box;
+        background: rgba(15, 23, 42, 0.4);
+        border: 1px solid rgba(148, 163, 184, 0.08);
+        border-radius: 12px;
+        margin: 0 0 20px 0;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
     }
-    #settingsClientsSection .settings-no-instances i.fa-cube { font-size: 3rem; color: #334155; margin-bottom: 16px; display: block; }
-    #settingsClientsSection .settings-no-instances .no-instances-title { font-size: 1.2rem; font-weight: 600; color: #f1f5f9; margin: 0 0 8px 0; }
-    #settingsClientsSection .settings-no-instances .no-instances-desc { font-size: 0.95rem; color: #94a3b8; line-height: 1.6; margin: 0 auto 24px auto; max-width: 400px; }
+
+    #settingsClientsSection .settings-no-instances i.fa-cube {
+        font-size: 3rem;
+        color: #334155;
+        margin-bottom: 16px;
+        display: block;
+    }
+
+    #settingsClientsSection .settings-no-instances .no-instances-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #f1f5f9;
+        margin: 0 0 8px 0;
+    }
+
+    #settingsClientsSection .settings-no-instances .no-instances-desc {
+        font-size: 0.95rem;
+        color: #94a3b8;
+        line-height: 1.6;
+        margin: 0 auto 24px auto;
+        max-width: 400px;
+    }
+
     #settingsClientsSection .settings-no-instances .no-instances-action-btn {
-        display: inline-flex; align-items: center; gap: 8px; background: rgba(99, 102, 241, 0.2);
-        border: 1px solid rgba(99, 102, 241, 0.4); color: #818cf8; padding: 10px 20px; border-radius: 8px;
-        text-decoration: none; font-weight: 500; transition: background 0.2s, border-color 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(99, 102, 241, 0.2);
+        border: 1px solid rgba(99, 102, 241, 0.4);
+        color: #818cf8;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: background 0.2s, border-color 0.2s;
     }
+
     #settingsClientsSection .settings-no-instances .no-instances-action-btn:hover {
-        background: rgba(99, 102, 241, 0.3); border-color: rgba(99, 102, 241, 0.5);
+        background: rgba(99, 102, 241, 0.3);
+        border-color: rgba(99, 102, 241, 0.5);
     }
+
     #settingsClientsSection {
         width: 100%;
         min-height: 100vh;
         overflow-y: auto;
         overflow-x: hidden;
     }
+
     #settingsClientsSection.active {
         display: block !important;
     }
+
     #clientManagementContainer {
         width: 100%;
         padding: 20px;
@@ -210,6 +280,7 @@
         box-shadow: none;
         border: none;
     }
+
     .client-settings-group {
         background: rgba(15, 23, 42, 0.4);
         border: 1px solid rgba(148, 163, 184, 0.08);
@@ -217,6 +288,7 @@
         padding: 24px;
         margin: 12px 0 20px 0;
     }
+
     .client-settings-group h3 {
         margin: 0 0 12px 0;
         padding: 0 0 12px 0;
@@ -227,6 +299,7 @@
         background: none;
         box-shadow: none;
     }
+
     .client-settings-help {
         color: #94a3b8;
         font-size: 0.95rem;
@@ -238,11 +311,13 @@
     .client-recommendation-callout {
         margin-bottom: 20px;
     }
+
     .client-recommendation-cards {
         display: flex;
         gap: 12px;
         flex-wrap: wrap;
     }
+
     .client-rec-card {
         display: flex;
         align-items: flex-start;
@@ -255,10 +330,12 @@
         min-width: 240px;
         position: relative;
     }
+
     .client-rec-card.client-rec-recommended {
         border-color: rgba(16, 185, 129, 0.35);
         background: rgba(16, 185, 129, 0.06);
     }
+
     .client-rec-badge {
         position: absolute;
         top: 10px;
@@ -272,6 +349,7 @@
         text-transform: uppercase;
         letter-spacing: 0.3px;
     }
+
     .client-rec-icon {
         width: 40px;
         height: 40px;
@@ -284,20 +362,24 @@
         background: rgba(99, 102, 241, 0.15);
         color: #818cf8;
     }
+
     .client-rec-recommended .client-rec-icon {
         background: rgba(16, 185, 129, 0.15);
         color: #6ee7b7;
     }
+
     .client-rec-body {
         flex: 1;
         min-width: 0;
     }
+
     .client-rec-name {
         font-weight: 600;
         color: #e2e8f0;
         font-size: 0.95rem;
         margin-bottom: 4px;
     }
+
     .client-rec-tag {
         font-size: 0.75rem;
         font-weight: 500;
@@ -307,6 +389,7 @@
         border-radius: 4px;
         vertical-align: middle;
     }
+
     .client-rec-desc {
         font-size: 0.85rem;
         color: #94a3b8;
@@ -324,25 +407,40 @@
         line-height: 1.5;
         margin-bottom: 16px;
     }
+
     .remote-mappings-notice i {
         flex-shrink: 0;
         margin-top: 2px;
         font-size: 1rem;
     }
+
     .remote-mappings-notice-ok {
         background: rgba(16, 185, 129, 0.08);
         border: 1px solid rgba(16, 185, 129, 0.25);
         color: #d1fae5;
     }
-    .remote-mappings-notice-ok i { color: rgba(16, 185, 129, 0.7); }
-    .remote-mappings-notice-ok strong { color: #6ee7b7; }
+
+    .remote-mappings-notice-ok i {
+        color: rgba(16, 185, 129, 0.7);
+    }
+
+    .remote-mappings-notice-ok strong {
+        color: #6ee7b7;
+    }
+
     .remote-mappings-notice-warn {
         background: rgba(180, 150, 80, 0.08);
         border: 1px solid rgba(180, 150, 80, 0.3);
         color: #e2d9c8;
     }
-    .remote-mappings-notice-warn i { color: rgba(180, 150, 80, 0.8); }
-    .remote-mappings-notice-warn strong { color: #d4c4a8; }
+
+    .remote-mappings-notice-warn i {
+        color: rgba(180, 150, 80, 0.8);
+    }
+
+    .remote-mappings-notice-warn strong {
+        color: #d4c4a8;
+    }
 
     /* Client type selection modal (like request/movie modal) */
     .client-type-modal {
@@ -356,15 +454,19 @@
         align-items: center;
         justify-content: center;
     }
+
     .client-type-modal[style*="display: flex"] {
         display: flex !important;
     }
+
     body.client-type-modal-open {
         overflow: hidden;
     }
+
     body.client-type-modal-open .app-container {
         filter: blur(10px);
     }
+
     .client-type-modal-backdrop {
         position: fixed;
         top: 0;
@@ -376,6 +478,7 @@
         -webkit-backdrop-filter: blur(10px);
         z-index: 1000;
     }
+
     .client-type-modal-content {
         position: relative;
         z-index: 1001;
@@ -387,6 +490,7 @@
         box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
         overflow: hidden;
     }
+
     .client-type-modal-header {
         position: relative;
         min-height: 120px;
@@ -395,6 +499,7 @@
         background-position: center;
         padding: 20px 24px 24px;
     }
+
     .client-type-modal-header::after {
         content: '';
         position: absolute;
@@ -404,6 +509,7 @@
         height: 80px;
         background: linear-gradient(to bottom, transparent, rgba(15, 23, 42, 0.98));
     }
+
     .client-type-modal-close {
         position: absolute;
         top: 12px;
@@ -420,28 +526,34 @@
         justify-content: center;
         z-index: 2;
     }
+
     .client-type-modal-close:hover {
         background: rgba(255, 255, 255, 0.2);
     }
+
     .client-type-modal-header-overlay {
         position: relative;
         z-index: 2;
         margin-top: 20px;
     }
+
     .client-type-modal-title {
         font-size: 18px;
         font-weight: 600;
         color: rgba(255, 255, 255, 0.9);
         margin: 0 0 4px 0;
     }
+
     .client-type-modal-subtitle {
         font-size: 13px;
         color: rgba(255, 255, 255, 0.6);
         margin: 0;
     }
+
     .client-type-modal-body {
         padding: 24px;
     }
+
     /* Card-based client type options */
     .client-type-option-cards {
         display: flex;
@@ -449,6 +561,7 @@
         gap: 10px;
         margin-bottom: 24px;
     }
+
     .client-type-option {
         display: flex;
         align-items: center;
@@ -461,19 +574,23 @@
         transition: all 0.2s ease;
         position: relative;
     }
+
     .client-type-option:hover {
         background: rgba(30, 41, 59, 0.6);
         border-color: rgba(148, 163, 184, 0.25);
     }
+
     .client-type-option.selected {
         border-color: rgba(99, 102, 241, 0.6);
         background: rgba(99, 102, 241, 0.08);
     }
+
     .client-type-option.client-type-option-disabled {
         opacity: 0.4;
         cursor: not-allowed;
         pointer-events: none;
     }
+
     .client-type-option-icon {
         width: 40px;
         height: 40px;
@@ -486,20 +603,24 @@
         background: rgba(99, 102, 241, 0.12);
         color: #818cf8;
     }
+
     .client-type-option-icon-recommended {
         background: rgba(16, 185, 129, 0.12);
         color: #6ee7b7;
     }
+
     .client-type-option-body {
         flex: 1;
         min-width: 0;
     }
+
     .client-type-option-name {
         font-weight: 600;
         color: #e2e8f0;
         font-size: 0.95rem;
         margin-bottom: 2px;
     }
+
     .client-type-option-tag {
         font-size: 0.7rem;
         font-weight: 500;
@@ -509,11 +630,13 @@
         border-radius: 4px;
         vertical-align: middle;
     }
+
     .client-type-option-desc {
         font-size: 0.82rem;
         color: #94a3b8;
         line-height: 1.4;
     }
+
     .client-type-option-badge {
         position: absolute;
         top: 8px;
@@ -527,6 +650,7 @@
         padding: 2px 7px;
         border-radius: 4px;
     }
+
     .client-type-option-check {
         flex-shrink: 0;
         width: 24px;
@@ -535,14 +659,17 @@
         color: rgba(99, 102, 241, 0);
         transition: color 0.2s ease;
     }
+
     .client-type-option.selected .client-type-option-check {
         color: #818cf8;
     }
+
     .client-type-modal-actions {
         display: flex;
         justify-content: flex-end;
         gap: 12px;
     }
+
     .client-type-modal-cancel {
         padding: 10px 20px;
         background: rgba(255, 255, 255, 0.1);
@@ -552,9 +679,11 @@
         font-size: 14px;
         cursor: pointer;
     }
+
     .client-type-modal-cancel:hover {
         background: rgba(255, 255, 255, 0.15);
     }
+
     .client-type-modal-continue {
         padding: 10px 20px;
         background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
@@ -565,9 +694,11 @@
         font-weight: 600;
         cursor: pointer;
     }
+
     .client-type-modal-continue:hover {
         filter: brightness(1.1);
     }
+
     .client-type-modal-continue:disabled {
         opacity: 0.5;
         cursor: not-allowed;
@@ -581,6 +712,7 @@
         padding: 24px;
         margin: 12px 0 20px 0;
     }
+
     .remote-mappings-settings-group h3 {
         margin: 0 0 14px 0;
         padding: 0 0 10px 0;
@@ -591,23 +723,28 @@
         background: none;
         box-shadow: none;
     }
+
     .remote-mappings-help {
         color: #94a3b8;
         font-size: 0.9rem;
         margin: 0 0 20px 0;
         line-height: 1.5;
     }
+
     .remote-mappings-wiki-link {
         color: #38bdf8;
         text-decoration: underline;
     }
+
     .remote-mappings-wiki-link:hover {
         color: #7dd3fc;
     }
+
     .remote-mappings-table-wrapper {
         overflow-x: auto;
         margin-bottom: 15px;
     }
+
     .remote-mappings-table {
         width: 100%;
         border-collapse: collapse;
@@ -615,9 +752,11 @@
         border-radius: 8px;
         overflow: hidden;
     }
+
     .remote-mappings-table thead {
         background: rgba(30, 41, 59, 0.8);
     }
+
     .remote-mappings-table th {
         padding: 12px 15px;
         text-align: left;
@@ -626,6 +765,7 @@
         font-size: 0.9rem;
         border-bottom: 2px solid rgba(148, 163, 184, 0.2);
     }
+
     .remote-mappings-table td {
         padding: 12px 15px;
         color: #cbd5e1;
@@ -633,16 +773,20 @@
         font-family: monospace;
         font-size: 0.9rem;
     }
+
     .remote-mappings-table tbody tr {
         transition: background-color 0.2s ease;
     }
+
     .remote-mappings-table tbody tr:hover {
         background: rgba(148, 163, 184, 0.1);
     }
+
     .remote-mappings-actions-col {
         width: 80px;
         text-align: right;
     }
+
     .btn-edit-mapping {
         padding: 6px 12px;
         margin-left: 6px;
@@ -654,11 +798,13 @@
         font-size: 0.85rem;
         transition: all 0.2s ease;
     }
+
     .btn-edit-mapping:hover {
         background: rgba(99, 102, 241, 0.2);
         border-color: rgba(99, 102, 241, 0.5);
         color: #c7d2fe;
     }
+
     .btn-add-remote-mapping {
         padding: 10px 20px;
         background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
@@ -673,6 +819,7 @@
         gap: 8px;
         transition: all 0.2s ease;
     }
+
     .btn-add-remote-mapping:hover {
         filter: brightness(1.1);
         transform: translateY(-1px);
@@ -690,15 +837,19 @@
         align-items: center;
         justify-content: center;
     }
+
     .remote-mapping-edit-modal[style*="display: flex"] {
         display: flex !important;
     }
+
     body.remote-mapping-edit-modal-open {
         overflow: hidden;
     }
+
     body.remote-mapping-edit-modal-open .app-container {
         filter: blur(10px);
     }
+
     .remote-mapping-edit-modal-backdrop {
         position: fixed;
         top: 0;
@@ -710,6 +861,7 @@
         -webkit-backdrop-filter: blur(10px);
         z-index: 1000;
     }
+
     .remote-mapping-edit-modal-content {
         position: relative;
         z-index: 1001;
@@ -723,6 +875,7 @@
         display: flex;
         flex-direction: column;
     }
+
     .remote-mapping-edit-modal-header {
         padding: 20px 24px;
         border-bottom: 1px solid rgba(148, 163, 184, 0.2);
@@ -730,12 +883,14 @@
         align-items: center;
         justify-content: space-between;
     }
+
     .remote-mapping-edit-modal-title {
         margin: 0;
         font-size: 1.25rem;
         font-weight: 600;
         color: #f8fafc;
     }
+
     .remote-mapping-edit-modal-close {
         width: 32px;
         height: 32px;
@@ -750,20 +905,25 @@
         font-size: 1.1rem;
         transition: all 0.2s ease;
     }
+
     .remote-mapping-edit-modal-close:hover {
         background: rgba(255, 255, 255, 0.2);
     }
+
     .remote-mapping-edit-modal-body {
         padding: 24px;
         overflow-y: auto;
         flex: 1;
     }
+
     .remote-mapping-form-group {
         margin-bottom: 20px;
     }
+
     .remote-mapping-form-group:last-child {
         margin-bottom: 0;
     }
+
     .remote-mapping-form-group label {
         display: block;
         font-size: 0.95rem;
@@ -771,6 +931,7 @@
         color: #e2e8f0;
         margin-bottom: 8px;
     }
+
     .remote-mapping-select {
         width: 100%;
         padding: 10px 12px;
@@ -786,15 +947,18 @@
         background-position: right 12px center;
         padding-right: 36px;
     }
+
     .remote-mapping-select:focus {
         border-color: #6366f1;
         outline: none;
     }
+
     .remote-mapping-path-row {
         display: flex;
         gap: 8px;
         align-items: center;
     }
+
     .remote-mapping-path-input {
         flex: 1;
         padding: 10px 12px;
@@ -805,14 +969,17 @@
         font-size: 0.95rem;
         font-family: monospace;
     }
+
     .remote-mapping-path-input:focus {
         border-color: #6366f1;
         outline: none;
     }
+
     .remote-mapping-path-input-full {
         width: 100%;
         display: block;
     }
+
     .btn-remote-mapping-browse-folder {
         padding: 10px 16px;
         background: rgba(148, 163, 184, 0.1);
@@ -823,15 +990,18 @@
         transition: all 0.2s ease;
         white-space: nowrap;
     }
+
     .btn-remote-mapping-browse-folder:hover {
         background: rgba(148, 163, 184, 0.2);
     }
+
     .remote-mapping-help-text {
         margin: 6px 0 0 0;
         font-size: 0.85rem;
         color: #94a3b8;
         line-height: 1.4;
     }
+
     .remote-mapping-edit-modal-footer {
         padding: 16px 24px;
         border-top: 1px solid rgba(148, 163, 184, 0.2);
@@ -839,6 +1009,7 @@
         gap: 12px;
         justify-content: flex-end;
     }
+
     .remote-mapping-modal-cancel {
         padding: 10px 20px;
         background: rgba(255, 255, 255, 0.1);
@@ -848,9 +1019,11 @@
         font-size: 0.95rem;
         cursor: pointer;
     }
+
     .remote-mapping-modal-cancel:hover {
         background: rgba(255, 255, 255, 0.15);
     }
+
     .remote-mapping-modal-save {
         padding: 10px 20px;
         background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
@@ -864,9 +1037,11 @@
         align-items: center;
         gap: 6px;
     }
+
     .remote-mapping-modal-save:hover {
         filter: brightness(1.1);
     }
+
     .remote-mapping-modal-delete {
         padding: 10px 20px;
         background: rgba(239, 68, 68, 0.1);
@@ -879,6 +1054,7 @@
         align-items: center;
         gap: 6px;
     }
+
     .remote-mapping-modal-delete:hover {
         background: rgba(239, 68, 68, 0.2);
         border-color: rgba(239, 68, 68, 0.5);
@@ -888,19 +1064,24 @@
         .remote-mappings-table {
             font-size: 0.85rem;
         }
+
         .remote-mappings-table th,
         .remote-mappings-table td {
             padding: 10px 12px;
         }
+
         .remote-mapping-path-row {
             flex-direction: column;
         }
+
         .btn-remote-mapping-browse-folder {
             width: 100%;
         }
+
         .client-recommendation-cards {
             flex-direction: column;
         }
+
         .client-rec-card {
             max-width: 100%;
         }
@@ -908,253 +1089,262 @@
 </style>
 
 <script>
-(function() {
-    // === Setup wizard banner ===
-    function updateClientsSetupBanner() {
-        var banner = document.getElementById('clients-setup-wizard-continue-banner');
-        // Show if user navigated here from the setup wizard.
-        // Don't remove the flag — it needs to persist across re-renders during the wizard flow.
-        // The flag is cleared when the user clicks "Continue to Setup Guide" or completes/skips the wizard.
-        var fromWizard = false;
-        try { fromWizard = sessionStorage.getItem('setup-wizard-active-nav') === '1'; } catch (e) {}
-        if (banner) banner.style.display = fromWizard ? 'flex' : 'none';
-    }
-
-    // === Remote mappings context notice ===
-    function updateRemoteMappingsNotice() {
-        var nzbhuntNotice = document.getElementById('remote-mappings-nzbhunt-notice');
-        var externalNotice = document.getElementById('remote-mappings-external-notice');
-        if (!nzbhuntNotice || !externalNotice) return;
-        var clients = (window.SettingsForms && window.SettingsForms._clientsList) ? window.SettingsForms._clientsList : [];
-        if (clients.length === 0) {
-            nzbhuntNotice.style.display = 'none';
-            externalNotice.style.display = 'none';
-            return;
+    (function () {
+        // === Setup wizard banner ===
+        function updateClientsSetupBanner() {
+            var banner = document.getElementById('clients-setup-wizard-continue-banner');
+            // Show if user navigated here from the setup wizard.
+            // Don't remove the flag — it needs to persist across re-renders during the wizard flow.
+            // The flag is cleared when the user clicks "Continue to Setup Guide" or completes/skips the wizard.
+            var fromWizard = false;
+            try { fromWizard = sessionStorage.getItem('setup-wizard-active-nav') === '1'; } catch (e) { }
+            if (banner) banner.style.display = fromWizard ? 'flex' : 'none';
         }
-        var hasNzbHunt = clients.some(function(c) { return (c.type || '').toLowerCase() === 'nzbhunt'; });
-        var hasExternal = clients.some(function(c) { var t = (c.type || '').toLowerCase(); return t === 'qbittorrent'; });
-        // Show appropriate notice
-        if (hasExternal) {
-            nzbhuntNotice.style.display = 'none';
-            externalNotice.style.display = 'flex';
-        } else if (hasNzbHunt) {
-            nzbhuntNotice.style.display = 'flex';
-            externalNotice.style.display = 'none';
-        } else {
-            nzbhuntNotice.style.display = 'none';
-            externalNotice.style.display = 'none';
+
+        // === Remote mappings context notice ===
+        function updateRemoteMappingsNotice() {
+            var nzbhuntNotice = document.getElementById('remote-mappings-nzbhunt-notice');
+            var externalNotice = document.getElementById('remote-mappings-external-notice');
+            if (!nzbhuntNotice || !externalNotice) return;
+            var clients = (window.SettingsForms && window.SettingsForms._clientsList) ? window.SettingsForms._clientsList : [];
+            if (clients.length === 0) {
+                nzbhuntNotice.style.display = 'none';
+                externalNotice.style.display = 'none';
+                return;
+            }
+            var hasNzbHunt = clients.some(function (c) { return (c.type || '').toLowerCase() === 'nzbhunt'; });
+            var hasExternal = clients.some(function (c) { var t = (c.type || '').toLowerCase(); return t === 'qbittorrent'; });
+            // Show appropriate notice
+            if (hasExternal) {
+                nzbhuntNotice.style.display = 'none';
+                externalNotice.style.display = 'flex';
+            } else if (hasNzbHunt) {
+                nzbhuntNotice.style.display = 'flex';
+                externalNotice.style.display = 'none';
+            } else {
+                nzbhuntNotice.style.display = 'none';
+                externalNotice.style.display = 'none';
+            }
         }
-    }
 
-    // Listen for client list updates dispatched by clients.js
-    document.addEventListener('huntarr:clients-list-updated', function() {
-        updateRemoteMappingsNotice();
-        updateClientsSetupBanner();
-    });
+        // Listen for client list updates dispatched by clients.js
+        document.addEventListener('huntarr:clients-list-updated', function () {
+            updateRemoteMappingsNotice();
+            updateClientsSetupBanner();
+        });
 
-    function ensureClientTypeModalInBody() {
-        var modal = document.getElementById('client-type-modal');
-        if (modal && modal.parentElement !== document.body) {
-            document.body.appendChild(modal);
+        function ensureClientTypeModalInBody() {
+            var modal = document.getElementById('client-type-modal');
+            if (modal && modal.parentElement !== document.body) {
+                document.body.appendChild(modal);
+            }
         }
-    }
-    var _selectedClientType = '';
+        var _selectedClientType = '';
 
-    function openClientTypeModal() {
-        var modal = document.getElementById('client-type-modal');
-        if (modal) {
-            ensureClientTypeModalInBody();
+        function openClientTypeModal() {
+            var modal = document.getElementById('client-type-modal');
+            if (modal) {
+                ensureClientTypeModalInBody();
+                _selectedClientType = '';
+                var continueBtn = document.getElementById('client-type-modal-continue');
+                if (continueBtn) continueBtn.disabled = true;
+
+                // Show/hide NZB Hunt option based on whether it's already added
+                var clients = (window.SettingsForms && window.SettingsForms._clientsList) ? window.SettingsForms._clientsList : [];
+                var hasNzbHunt = clients.some(function (c) { return (c.type || '').toLowerCase() === 'nzbhunt'; });
+                var hasTorHunt = clients.some(function (c) { var t = (c.type || '').toLowerCase(); return t === 'torhunt' || t === 'tor_hunt'; });
+                var nzbhuntOption = document.getElementById('client-type-option-nzbhunt');
+                if (nzbhuntOption) {
+                    if (hasNzbHunt) {
+                        nzbhuntOption.classList.add('client-type-option-disabled');
+                    } else {
+                        nzbhuntOption.classList.remove('client-type-option-disabled');
+                    }
+                }
+                var torhuntOption = document.getElementById('client-type-option-torhunt');
+                if (torhuntOption) {
+                    if (hasTorHunt) {
+                        torhuntOption.classList.add('client-type-option-disabled');
+                    } else {
+                        torhuntOption.classList.remove('client-type-option-disabled');
+                    }
+                }
+
+                // Clear any previous selection
+                var allOptions = document.querySelectorAll('.client-type-option');
+                allOptions.forEach(function (opt) { opt.classList.remove('selected'); });
+
+                modal.style.display = 'flex';
+                document.body.classList.add('client-type-modal-open');
+            }
+        }
+        function closeClientTypeModal() {
+            var modal = document.getElementById('client-type-modal');
+            if (modal) {
+                modal.style.display = 'none';
+                document.body.classList.remove('client-type-modal-open');
+            }
             _selectedClientType = '';
             var continueBtn = document.getElementById('client-type-modal-continue');
             if (continueBtn) continueBtn.disabled = true;
-
-            // Show/hide NZB Hunt option based on whether it's already added
-            var clients = (window.SettingsForms && window.SettingsForms._clientsList) ? window.SettingsForms._clientsList : [];
-            var hasNzbHunt = clients.some(function(c) { return (c.type || '').toLowerCase() === 'nzbhunt'; });
-            var nzbhuntOption = document.getElementById('client-type-option-nzbhunt');
-            if (nzbhuntOption) {
-                if (hasNzbHunt) {
-                    nzbhuntOption.classList.add('client-type-option-disabled');
-                } else {
-                    nzbhuntOption.classList.remove('client-type-option-disabled');
-                }
-            }
-
-            // Clear any previous selection
             var allOptions = document.querySelectorAll('.client-type-option');
-            allOptions.forEach(function(opt) { opt.classList.remove('selected'); });
-
-            modal.style.display = 'flex';
-            document.body.classList.add('client-type-modal-open');
+            allOptions.forEach(function (opt) { opt.classList.remove('selected'); });
         }
-    }
-    function closeClientTypeModal() {
-        var modal = document.getElementById('client-type-modal');
-        if (modal) {
-            modal.style.display = 'none';
-            document.body.classList.remove('client-type-modal-open');
-        }
-        _selectedClientType = '';
-        var continueBtn = document.getElementById('client-type-modal-continue');
-        if (continueBtn) continueBtn.disabled = true;
-        var allOptions = document.querySelectorAll('.client-type-option');
-        allOptions.forEach(function(opt) { opt.classList.remove('selected'); });
-    }
-    function selectClientType(type) {
-        closeClientTypeModal();
-        if (window.SettingsForms && window.SettingsForms.openClientEditor) {
-            var defaultName = type === 'nzbhunt' ? 'NZB Hunt' : type === 'torhunt' ? 'Tor Hunt' : type === 'qbittorrent' ? 'qBittorrent' : type;
-            var payload = { name: defaultName, type: type, host: '', port: 8080, enabled: true, category: 'movies', recent_priority: 'default', older_priority: 'default', client_priority: 1 };
-            if (type === 'nzbhunt') {
-                payload.host = 'internal';
-                payload.port = 0;
-                payload.client_priority = 1; // NZB Hunt is highest priority by default
+        function selectClientType(type) {
+            closeClientTypeModal();
+            if (window.SettingsForms && window.SettingsForms.openClientEditor) {
+                var defaultName = type === 'nzbhunt' ? 'NZB Hunt' : type === 'torhunt' ? 'Tor Hunt' : type === 'qbittorrent' ? 'qBittorrent' : type;
+                var payload = { name: defaultName, type: type, host: '', port: 8080, enabled: true, category: 'movies', recent_priority: 'default', older_priority: 'default', client_priority: 1 };
+                if (type === 'nzbhunt') {
+                    payload.host = 'internal';
+                    payload.port = 0;
+                    payload.client_priority = 1; // NZB Hunt is highest priority by default
+                }
+                window.SettingsForms.openClientEditor(true, null, payload);
             }
-            window.SettingsForms.openClientEditor(true, null, payload);
         }
-    }
-    function initClientTypeModal() {
-        var modal = document.getElementById('client-type-modal');
-        if (!modal) return;
-        var backdrop = document.getElementById('client-type-modal-backdrop');
-        var closeBtn = document.getElementById('client-type-modal-close');
-        var cancelBtn = document.getElementById('client-type-modal-cancel');
-        var continueBtn = document.getElementById('client-type-modal-continue');
+        function initClientTypeModal() {
+            var modal = document.getElementById('client-type-modal');
+            if (!modal) return;
+            var backdrop = document.getElementById('client-type-modal-backdrop');
+            var closeBtn = document.getElementById('client-type-modal-close');
+            var cancelBtn = document.getElementById('client-type-modal-cancel');
+            var continueBtn = document.getElementById('client-type-modal-continue');
 
-        if (backdrop) backdrop.addEventListener('click', closeClientTypeModal);
-        if (closeBtn) closeBtn.addEventListener('click', closeClientTypeModal);
-        if (cancelBtn) cancelBtn.addEventListener('click', closeClientTypeModal);
+            if (backdrop) backdrop.addEventListener('click', closeClientTypeModal);
+            if (closeBtn) closeBtn.addEventListener('click', closeClientTypeModal);
+            if (cancelBtn) cancelBtn.addEventListener('click', closeClientTypeModal);
 
-        // Card click handlers
-        var optionCards = document.getElementById('client-type-option-cards');
-        if (optionCards) {
-            optionCards.addEventListener('click', function(e) {
-                var card = e.target.closest('.client-type-option');
-                if (!card || card.classList.contains('client-type-option-disabled')) return;
-                var type = card.getAttribute('data-client-type');
-                if (!type) return;
-                // Deselect all, select this one
-                var allOptions = optionCards.querySelectorAll('.client-type-option');
-                allOptions.forEach(function(opt) { opt.classList.remove('selected'); });
-                card.classList.add('selected');
-                _selectedClientType = type;
-                if (continueBtn) continueBtn.disabled = false;
-            });
-            // Double-click to immediately continue
-            optionCards.addEventListener('dblclick', function(e) {
-                var card = e.target.closest('.client-type-option');
-                if (!card || card.classList.contains('client-type-option-disabled')) return;
-                var type = card.getAttribute('data-client-type');
-                if (type) selectClientType(type);
-            });
-        }
-
-        if (continueBtn) {
-            continueBtn.addEventListener('click', function() {
-                if (_selectedClientType) selectClientType(_selectedClientType);
-            });
-            continueBtn.disabled = true;
-        }
-
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && document.getElementById('client-type-modal').style.display === 'flex') {
-                closeClientTypeModal();
+            // Card click handlers
+            var optionCards = document.getElementById('client-type-option-cards');
+            if (optionCards) {
+                optionCards.addEventListener('click', function (e) {
+                    var card = e.target.closest('.client-type-option');
+                    if (!card || card.classList.contains('client-type-option-disabled')) return;
+                    var type = card.getAttribute('data-client-type');
+                    if (!type) return;
+                    // Deselect all, select this one
+                    var allOptions = optionCards.querySelectorAll('.client-type-option');
+                    allOptions.forEach(function (opt) { opt.classList.remove('selected'); });
+                    card.classList.add('selected');
+                    _selectedClientType = type;
+                    if (continueBtn) continueBtn.disabled = false;
+                });
+                // Double-click to immediately continue
+                optionCards.addEventListener('dblclick', function (e) {
+                    var card = e.target.closest('.client-type-option');
+                    if (!card || card.classList.contains('client-type-option-disabled')) return;
+                    var type = card.getAttribute('data-client-type');
+                    if (type) selectClientType(type);
+                });
             }
-        });
-    }
 
-    function initClientGrid() {
-        var grid = document.getElementById('client-instances-grid');
-        if (!grid) return;
+            if (continueBtn) {
+                continueBtn.addEventListener('click', function () {
+                    if (_selectedClientType) selectClientType(_selectedClientType);
+                });
+                continueBtn.disabled = true;
+            }
 
-        grid.addEventListener('click', function(e) {
-            var editBtn = e.target.closest('.btn-card.edit[data-app-type="client"]');
-            var deleteBtn = e.target.closest('.btn-card.delete[data-app-type="client"]');
-            var addCard = e.target.closest('.add-instance-card[data-app-type="client"]');
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && document.getElementById('client-type-modal').style.display === 'flex') {
+                    closeClientTypeModal();
+                }
+            });
+        }
 
-            if (editBtn) {
-                e.preventDefault();
-                var index = parseInt(editBtn.dataset.instanceIndex, 10);
-                var instance = (window.SettingsForms && window.SettingsForms._clientsList && window.SettingsForms._clientsList[index]) ? window.SettingsForms._clientsList[index] : null;
-                if (!instance) {
-                    var card = editBtn.closest('.instance-card');
+        function initClientGrid() {
+            var grid = document.getElementById('client-instances-grid');
+            if (!grid) return;
+
+            grid.addEventListener('click', function (e) {
+                var editBtn = e.target.closest('.btn-card.edit[data-app-type="client"]');
+                var deleteBtn = e.target.closest('.btn-card.delete[data-app-type="client"]');
+                var addCard = e.target.closest('.add-instance-card[data-app-type="client"]');
+
+                if (editBtn) {
+                    e.preventDefault();
+                    var index = parseInt(editBtn.dataset.instanceIndex, 10);
+                    var instance = (window.SettingsForms && window.SettingsForms._clientsList && window.SettingsForms._clientsList[index]) ? window.SettingsForms._clientsList[index] : null;
+                    if (!instance) {
+                        var card = editBtn.closest('.instance-card');
+                        var nameEl = card ? card.querySelector('.instance-name span') : null;
+                        var type = card ? (card.getAttribute('data-type') || 'nzbhunt') : 'nzbhunt';
+                        var enabled = card ? (card.getAttribute('data-enabled') !== 'false') : true;
+                        var bodyDetails = card ? card.querySelectorAll('.instance-card-body .instance-detail span') : [];
+                        var hostPort = bodyDetails[1] ? bodyDetails[1].textContent.trim() : '';
+                        var parts = hostPort.split(':');
+                        instance = { name: nameEl ? nameEl.textContent.trim() : '', type: type, host: parts[0] || '', port: parts[1] ? parseInt(parts[1], 10) : 8080, enabled: enabled, password_last4: '', category: 'movies', recent_priority: 'default', older_priority: 'default', client_priority: 50 };
+                    }
+                    if (window.SettingsForms && window.SettingsForms.openClientEditor) {
+                        window.SettingsForms.openClientEditor(false, index, instance);
+                    }
+                } else if (addCard) {
+                    e.preventDefault();
+                    openClientTypeModal();
+                } else if (deleteBtn) {
+                    e.preventDefault();
+                    var index = parseInt(deleteBtn.dataset.instanceIndex, 10);
+                    var card = deleteBtn.closest('.instance-card');
                     var nameEl = card ? card.querySelector('.instance-name span') : null;
-                    var type = card ? (card.getAttribute('data-type') || 'nzbhunt') : 'nzbhunt';
-                    var enabled = card ? (card.getAttribute('data-enabled') !== 'false') : true;
-                    var bodyDetails = card ? card.querySelectorAll('.instance-card-body .instance-detail span') : [];
-                    var hostPort = bodyDetails[1] ? bodyDetails[1].textContent.trim() : '';
-                    var parts = hostPort.split(':');
-                    instance = { name: nameEl ? nameEl.textContent.trim() : '', type: type, host: parts[0] || '', port: parts[1] ? parseInt(parts[1], 10) : 8080, enabled: enabled, password_last4: '', category: 'movies', recent_priority: 'default', older_priority: 'default', client_priority: 50 };
-                }
-                if (window.SettingsForms && window.SettingsForms.openClientEditor) {
-                    window.SettingsForms.openClientEditor(false, index, instance);
-                }
-            } else if (addCard) {
-                e.preventDefault();
-                openClientTypeModal();
-            } else if (deleteBtn) {
-                e.preventDefault();
-                var index = parseInt(deleteBtn.dataset.instanceIndex, 10);
-                var card = deleteBtn.closest('.instance-card');
-                var nameEl = card ? card.querySelector('.instance-name span') : null;
-                var name = nameEl ? nameEl.textContent.trim() : 'this client';
-                if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
-                    window.HuntarrConfirm.show({
-                        title: 'Delete Client',
-                        message: 'Delete "' + name + '"?',
-                        confirmLabel: 'Delete',
-                        onConfirm: function() {
-                            fetch('./api/clients/' + index, { method: 'DELETE' })
-                                .then(function(r) { return r.json(); })
-                                .then(function(data) {
-                                    if (data.success && window.SettingsForms && window.SettingsForms.refreshClientsList) {
-                                        window.SettingsForms.refreshClientsList();
-                                    }
-                                    if (window.huntarrUI && window.huntarrUI.showNotification) {
-                                        window.huntarrUI.showNotification('Client deleted.', 'success');
-                                    }
-                                })
-                                .catch(function() {
-                                    if (window.huntarrUI && window.huntarrUI.showNotification) {
-                                        window.huntarrUI.showNotification('Failed to delete client', 'error');
-                                    }
-                                });
-                        }
-                    });
-                } else {
-                    if (!confirm('Delete "' + name + '"?')) return;
-                    fetch('./api/clients/' + index, { method: 'DELETE' })
-                        .then(function(r) { return r.json(); })
-                        .then(function(data) {
-                            if (data.success && window.SettingsForms && window.SettingsForms.refreshClientsList) {
-                                window.SettingsForms.refreshClientsList();
-                            }
-                            if (window.huntarrUI && window.huntarrUI.showNotification) {
-                                window.huntarrUI.showNotification('Client deleted.', 'success');
-                            }
-                        })
-                        .catch(function() {
-                            if (window.huntarrUI && window.huntarrUI.showNotification) {
-                                window.huntarrUI.showNotification('Failed to delete client', 'error');
+                    var name = nameEl ? nameEl.textContent.trim() : 'this client';
+                    if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                        window.HuntarrConfirm.show({
+                            title: 'Delete Client',
+                            message: 'Delete "' + name + '"?',
+                            confirmLabel: 'Delete',
+                            onConfirm: function () {
+                                fetch('./api/clients/' + index, { method: 'DELETE' })
+                                    .then(function (r) { return r.json(); })
+                                    .then(function (data) {
+                                        if (data.success && window.SettingsForms && window.SettingsForms.refreshClientsList) {
+                                            window.SettingsForms.refreshClientsList();
+                                        }
+                                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                            window.huntarrUI.showNotification('Client deleted.', 'success');
+                                        }
+                                    })
+                                    .catch(function () {
+                                        if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                            window.huntarrUI.showNotification('Failed to delete client', 'error');
+                                        }
+                                    });
                             }
                         });
+                    } else {
+                        if (!confirm('Delete "' + name + '"?')) return;
+                        fetch('./api/clients/' + index, { method: 'DELETE' })
+                            .then(function (r) { return r.json(); })
+                            .then(function (data) {
+                                if (data.success && window.SettingsForms && window.SettingsForms.refreshClientsList) {
+                                    window.SettingsForms.refreshClientsList();
+                                }
+                                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                    window.huntarrUI.showNotification('Client deleted.', 'success');
+                                }
+                            })
+                            .catch(function () {
+                                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                    window.huntarrUI.showNotification('Failed to delete client', 'error');
+                                }
+                            });
+                    }
                 }
-            }
-        });
-    }
+            });
+        }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-        initClientGrid();
-        initClientTypeModal();
-        updateClientsSetupBanner();
-        setTimeout(updateRemoteMappingsNotice, 800);
-    });
-    } else {
-        initClientGrid();
-        initClientTypeModal();
-        updateClientsSetupBanner();
-        setTimeout(updateRemoteMappingsNotice, 800);
-    }
-})();
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function () {
+                initClientGrid();
+                initClientTypeModal();
+                updateClientsSetupBanner();
+                setTimeout(updateRemoteMappingsNotice, 800);
+            });
+        } else {
+            initClientGrid();
+            initClientTypeModal();
+            updateClientsSetupBanner();
+            setTimeout(updateRemoteMappingsNotice, 800);
+        }
+    })();
 </script>

@@ -3,13 +3,13 @@
  * Separate from Client Editor (client-editor.js). Attaches to window.SettingsForms.
  * Load after client-editor.js so openClientEditor is available for grid clicks.
  */
-(function() {
+(function () {
     'use strict';
     if (typeof window.SettingsForms === 'undefined') return;
 
     const Forms = window.SettingsForms;
 
-    Forms.renderClientCard = function(client, index) {
+    Forms.renderClientCard = function (client, index) {
         const name = (client.name || 'Unnamed').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const type = (client.type || 'nzbhunt').replace(/"/g, '&quot;');
         const isNzbHunt = type === 'nzbhunt';
@@ -19,7 +19,7 @@
         const statusClass = enabled ? 'status-connected' : 'status-error';
         const statusIcon = enabled ? 'fa-check-circle' : 'fa-minus-circle';
         const priority = client.client_priority !== undefined && client.client_priority !== null ? Number(client.client_priority) : 50;
-        
+
         var bodyHtml;
         if (isNzbHunt) {
             bodyHtml = '<div class="instance-detail"><i class="fas fa-bolt" style="color: #10b981;"></i><span style="color: #10b981; font-weight: 500;">Built-in Client</span></div>' +
@@ -35,7 +35,7 @@
             bodyHtml = '<div class="instance-detail"><i class="fas fa-key"></i><span>••••••••' + last4 + '</span></div>' +
                 '<div class="instance-detail"><i class="fas fa-server"></i><span>' + (client.host || '').replace(/</g, '&lt;') + ':' + (client.port !== undefined ? client.port : '') + '</span></div>';
         }
-        
+
         return '<div class="instance-card" data-instance-index="' + index + '" data-app-type="client" data-type="' + type + '" data-enabled="' + enabled + '">' +
             '<div class="instance-card-header">' +
             '<div class="instance-name instance-name-with-priority"><i class="fas ' + (isNzbHunt ? 'fa-bolt' : (isTorHunt || isQBit ? 'fa-magnet' : 'fa-download')) + '"></i><span>' + name + '</span><span class="client-priority-badge">Priority: ' + String(priority) + '</span></div>' +
@@ -48,7 +48,7 @@
             '</div></div>';
     };
 
-    Forms.refreshClientsList = function() {
+    Forms.refreshClientsList = function () {
         // Refresh NZB Hunt sidebar group visibility whenever client list changes
         if (window.huntarrUI && typeof window.huntarrUI._refreshNzbHuntSidebarGroup === 'function') {
             window.huntarrUI._refreshNzbHuntSidebarGroup();
@@ -60,12 +60,12 @@
 
     function _doRefreshClientsList(grid) {
         fetch('./api/clients')
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
                 const list = (data && data.clients) ? data.clients : [];
                 window.SettingsForms._clientsList = list;
-                var withIndex = list.map(function(c, i) { return { client: c, originalIndex: i }; });
-                withIndex.sort(function(a, b) {
+                var withIndex = list.map(function (c, i) { return { client: c, originalIndex: i }; });
+                withIndex.sort(function (a, b) {
                     var pa = Number(a.client.client_priority) || 50;
                     var pb = Number(b.client.client_priority) || 50;
                     if (pa !== pb) return pa - pb;
@@ -77,9 +77,14 @@
                 for (var i = 0; i < withIndex.length; i++) {
                     html += window.SettingsForms.renderClientCard(withIndex[i].client, withIndex[i].originalIndex);
                 }
-                html += '<div class="add-instance-card" data-app-type="client"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Client</div></div>';
+                var hasNzbHunt = list.some(function (c) { return (c.type || '').toLowerCase() === 'nzbhunt'; });
+                var hasTorHunt = list.some(function (c) { var t = (c.type || '').toLowerCase(); return t === 'torhunt' || t === 'tor_hunt'; });
+                var allClientsAdded = hasNzbHunt && hasTorHunt;
+                if (!allClientsAdded) {
+                    html += '<div class="add-instance-card" data-app-type="client"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Client</div></div>';
+                }
                 grid.innerHTML = html;
-                
+
                 // Also refresh remote mappings if available
                 if (window.RemoteMappings && typeof window.RemoteMappings.refreshList === 'function') {
                     window.RemoteMappings.refreshList();
@@ -87,17 +92,17 @@
                 // Dispatch event so UI can react to client list changes
                 document.dispatchEvent(new CustomEvent('huntarr:clients-list-updated', { detail: { clients: list } }));
             })
-            .catch(function() {
+            .catch(function () {
                 grid.innerHTML = '<div class="add-instance-card" data-app-type="client"><div class="add-icon"><i class="fas fa-plus-circle"></i></div><div class="add-text">Add Client</div></div>';
             });
     }
 
-    document.addEventListener('huntarr:instances-changed', function() {
+    document.addEventListener('huntarr:instances-changed', function () {
         if (document.getElementById('settings-clients-content-wrapper') && window.huntarrUI && window.huntarrUI.currentSection === 'settings-clients') {
             Forms.refreshClientsList();
         }
     });
-    document.addEventListener('huntarr:tv-hunt-instances-changed', function() {
+    document.addEventListener('huntarr:tv-hunt-instances-changed', function () {
         if (document.getElementById('settings-clients-content-wrapper') && window.huntarrUI && window.huntarrUI.currentSection === 'settings-clients') {
             Forms.refreshClientsList();
         }
