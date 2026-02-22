@@ -59,7 +59,12 @@ class ConfigMixin:
                 VALUES (?, ?, CURRENT_TIMESTAMP)
             ''', (app_type, config_json))
             conn.commit()
-            # Auto-save enabled - no need to log every successful save
+            # Force WAL checkpoint so data is in the main DB file immediately,
+            # not just in the WAL. Prevents settings loss on unclean shutdown.
+            try:
+                conn.execute("PRAGMA wal_checkpoint(PASSIVE)")
+            except Exception:
+                pass
 
     def get_app_config_for_instance(self, app_type: str, instance_id: int) -> Optional[Dict[str, Any]]:
         """Get app config for a Movie Hunt instance. Supports legacy single-instance format."""
@@ -303,6 +308,12 @@ class ConfigMixin:
                 # Force WAL checkpoint for critical settings
                 conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
                 conn.execute('PRAGMA synchronous = NORMAL')
+            else:
+                # Always checkpoint after settings saves to prevent data loss on unclean shutdown
+                try:
+                    conn.execute("PRAGMA wal_checkpoint(PASSIVE)")
+                except Exception:
+                    pass
             # Auto-save enabled - no need to log every successful save
     
     def _migrate_general_settings_from_app_configs_if_needed(self):
