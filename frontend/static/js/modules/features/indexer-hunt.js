@@ -2,7 +2,7 @@
  * Indexer Hunt — Centralized indexer management module.
  * Full-page editor (no modal), card grid list.
  */
-(function() {
+(function () {
     'use strict';
 
     var _indexers = [];
@@ -19,8 +19,7 @@
         var callout = document.getElementById('indexer-instance-setup-callout');
         // Show if user navigated here from the setup wizard.
         // Don't remove the flag — it needs to persist across re-renders during the wizard flow.
-        var fromWizard = false;
-        try { fromWizard = sessionStorage.getItem('setup-wizard-active-nav') === '1'; } catch (e) {}
+        var fromWizard = HuntarrUtils.getUIPreference('setup-wizard-active', false) === true;
         if (banner) banner.style.display = fromWizard ? 'flex' : 'none';
         if (callout) callout.style.display = fromWizard ? 'flex' : 'none';
     }
@@ -33,29 +32,29 @@
         gridEl.innerHTML = '<div style="padding: 12px; color: #94a3b8;"><i class="fas fa-spinner fa-spin"></i> Checking instances...</div>';
         var ts = '?t=' + Date.now();
         Promise.all([
-            fetch('./api/movie-hunt/instances' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/tv-hunt/instances' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); })
-        ]).then(function(results) {
-            var movieInstances = (results[0].instances || []).map(function(i) { return { value: 'movie:' + i.id, label: 'Movie - ' + (i.name || 'Instance ' + i.id), id: i.id, type: 'movie' }; });
-            var tvInstances = (results[1].instances || []).map(function(i) { return { value: 'tv:' + i.id, label: 'TV - ' + (i.name || 'Instance ' + i.id), id: i.id, type: 'tv' }; });
+            fetch('./api/movie-hunt/instances' + ts, { cache: 'no-store' }).then(function (r) { return r.json(); }),
+            fetch('./api/tv-hunt/instances' + ts, { cache: 'no-store' }).then(function (r) { return r.json(); })
+        ]).then(function (results) {
+            var movieInstances = (results[0].instances || []).map(function (i) { return { value: 'movie:' + i.id, label: 'Movie - ' + (i.name || 'Instance ' + i.id), id: i.id, type: 'movie' }; });
+            var tvInstances = (results[1].instances || []).map(function (i) { return { value: 'tv:' + i.id, label: 'TV - ' + (i.name || 'Instance ' + i.id), id: i.id, type: 'tv' }; });
             var all = movieInstances.concat(tvInstances);
             if (all.length === 0) {
                 gridEl.innerHTML = '';
                 if (statusArea) statusArea.style.display = 'none';
                 return;
             }
-            var fetches = all.map(function(inst) {
+            var fetches = all.map(function (inst) {
                 var url = inst.type === 'tv' ? './api/tv-hunt/indexers' : './api/indexers';
                 url += '?instance_id=' + encodeURIComponent(inst.id) + '&t=' + Date.now();
-                return fetch(url, { cache: 'no-store' }).then(function(r) { return r.json(); }).then(function(d) {
+                return fetch(url, { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
                     var indexers = d.indexers || [];
                     return { label: inst.label, value: inst.value, hasIndexers: indexers.length > 0 };
-                }).catch(function() {
+                }).catch(function () {
                     return { label: inst.label, value: inst.value, hasIndexers: false };
                 });
             });
-            Promise.all(fetches).then(function(statuses) {
-                var allGood = statuses.every(function(s) { return s.hasIndexers; });
+            Promise.all(fetches).then(function (statuses) {
+                var allGood = statuses.every(function (s) { return s.hasIndexers; });
                 // Hide the status area if all instances have indexers
                 if (allGood) {
                     gridEl.innerHTML = '';
@@ -79,11 +78,11 @@
                 }
                 gridEl.innerHTML = html;
                 // Click to switch instance dropdown
-                gridEl.querySelectorAll('.root-folders-instance-status-card').forEach(function(card) {
+                gridEl.querySelectorAll('.root-folders-instance-status-card').forEach(function (card) {
                     var val = card.getAttribute('data-value');
                     if (val) {
                         card.style.cursor = 'pointer';
-                        card.addEventListener('click', function() {
+                        card.addEventListener('click', function () {
                             var sel = document.getElementById('settings-indexers-instance-select');
                             if (sel && val) {
                                 sel.value = val;
@@ -93,7 +92,7 @@
                     }
                 });
             });
-        }).catch(function() {
+        }).catch(function () {
             gridEl.innerHTML = '';
             if (statusArea) statusArea.style.display = 'none';
         });
@@ -101,7 +100,7 @@
     // Expose for refresh after import/delete
     IH._refreshIndexerInstanceStatus = _refreshIndexerInstanceStatus;
 
-    IH.init = function() {
+    IH.init = function () {
         var searchInput = document.getElementById('ih-search-input');
         if (searchInput) searchInput.value = '';
         if (!_initialized) {
@@ -112,9 +111,9 @@
         var noInstEl = document.getElementById('indexer-hunt-no-instances');
         var wrapperEl = document.getElementById('indexer-hunt-content-wrapper');
         Promise.all([
-            fetch('./api/movie-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/tv-hunt/instances', { cache: 'no-store' }).then(function(r) { return r.json(); })
-        ]).then(function(results) {
+            fetch('./api/movie-hunt/instances', { cache: 'no-store' }).then(function (r) { return r.json(); }),
+            fetch('./api/tv-hunt/instances', { cache: 'no-store' }).then(function (r) { return r.json(); })
+        ]).then(function (results) {
             var movieCount = (results[0].instances || []).length;
             var tvCount = (results[1].instances || []).length;
             if (movieCount === 0 && tvCount === 0) {
@@ -125,15 +124,15 @@
             if (noInstEl) noInstEl.style.display = 'none';
             if (wrapperEl) wrapperEl.style.display = '';
             _showListView();
-            _loadPresets(function() {
+            _loadPresets(function () {
                 _loadIndexers();
             });
             _refreshIndexerInstanceStatus();
-        }).catch(function() {
+        }).catch(function () {
             if (noInstEl) noInstEl.style.display = 'none';
             if (wrapperEl) wrapperEl.style.display = '';
             _showListView();
-            _loadPresets(function() {
+            _loadPresets(function () {
                 _loadIndexers();
             });
             _refreshIndexerInstanceStatus();
@@ -141,17 +140,17 @@
     };
 
     function _bindEvents() {
-        _on('ih-add-btn', 'click', function() { _openEditor(null); });
-        _on('ih-empty-add-btn', 'click', function() { _openEditor(null); });
-        _on('ih-editor-back', 'click', function() { _showListView(); });
+        _on('ih-add-btn', 'click', function () { _openEditor(null); });
+        _on('ih-empty-add-btn', 'click', function () { _openEditor(null); });
+        _on('ih-editor-back', 'click', function () { _showListView(); });
         _on('ih-editor-save', 'click', _saveForm);
-        _on('ih-search-input', 'input', function() { _renderCards(); });
+        _on('ih-search-input', 'input', function () { _renderCards(); });
         _on('ih-form-preset', 'change', _onPresetChange);
 
         // "Import from Index Master" card: show select list (ih-import-panel)
         var wrapper = document.getElementById('indexer-hunt-content-wrapper');
         if (wrapper) {
-            wrapper.addEventListener('click', function(e) {
+            wrapper.addEventListener('click', function (e) {
                 var card = e.target.closest('.add-instance-card[data-source="indexer-hunt"]');
                 if (card) {
                     e.preventDefault();
@@ -193,40 +192,40 @@
         var url = './api/indexer-hunt/available/' + par.instanceId + '?mode=' + encodeURIComponent(par.mode);
 
         fetch(url)
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
                 var available = data.available || [];
                 if (available.length === 0) {
                     if (list) list.innerHTML = '<div class="ih-import-empty"><i class="fas fa-check-circle" style="color: #10b981; margin-right: 6px;"></i>All Index Master indexers are already imported to this instance.</div>';
                     return;
                 }
                 var html = '';
-                available.forEach(function(idx) {
+                available.forEach(function (idx) {
                     var keyDisplay = idx.api_key_last4 ? '\u2022\u2022\u2022\u2022' + _esc(idx.api_key_last4) : 'No key';
                     html += '<div class="ih-import-item" data-ih-id="' + idx.id + '">'
                         + '<div class="ih-import-checkbox"><i class="fas fa-check"></i></div>'
                         + '<div class="ih-import-info">'
-                            + '<div class="ih-import-name">' + _esc(idx.name) + '</div>'
-                            + '<div class="ih-import-meta">'
-                                + '<span><i class="fas fa-globe"></i> ' + _esc(idx.url || 'N/A') + '</span>'
-                                + '<span><i class="fas fa-sort-amount-up"></i> Priority: ' + (idx.priority || 50) + '</span>'
-                                + '<span><i class="fas fa-key"></i> ' + keyDisplay + '</span>'
-                            + '</div>'
+                        + '<div class="ih-import-name">' + _esc(idx.name) + '</div>'
+                        + '<div class="ih-import-meta">'
+                        + '<span><i class="fas fa-globe"></i> ' + _esc(idx.url || 'N/A') + '</span>'
+                        + '<span><i class="fas fa-sort-amount-up"></i> Priority: ' + (idx.priority || 50) + '</span>'
+                        + '<span><i class="fas fa-key"></i> ' + keyDisplay + '</span>'
                         + '</div>'
-                    + '</div>';
+                        + '</div>'
+                        + '</div>';
                 });
                 if (list) list.innerHTML = html;
                 if (actions) actions.style.display = 'flex';
 
                 var items = list.querySelectorAll('.ih-import-item');
-                items.forEach(function(item) {
-                    item.addEventListener('click', function() {
+                items.forEach(function (item) {
+                    item.addEventListener('click', function () {
                         item.classList.toggle('selected');
                         _updateIHImportButton();
                     });
                 });
             })
-            .catch(function(err) {
+            .catch(function (err) {
                 if (list) list.innerHTML = '<div class="ih-import-empty">Failed to load available indexers.</div>';
             });
     }
@@ -274,12 +273,12 @@
                     title: 'Delete Indexer',
                     message: 'Are you sure you want to remove "' + name + '" from this instance? It will no longer be used for searches and will be removed from Index Master tracking for this instance.',
                     confirmLabel: 'Delete',
-                    onConfirm: function() {
+                    onConfirm: function () {
                         var apiBase = Forms.getIndexersApiBase();
                         var url = apiBase + '/' + encodeURIComponent(String(deleteId));
                         fetch(url, { method: 'DELETE' })
-                            .then(function(r) { return r.json(); })
-                            .then(function(data) {
+                            .then(function (r) { return r.json(); })
+                            .then(function (data) {
                                 if (data.success !== false) {
                                     if (window.SettingsForms && window.SettingsForms.refreshIndexersList) {
                                         window.SettingsForms.refreshIndexersList();
@@ -294,7 +293,7 @@
                                     }
                                 }
                             })
-                            .catch(function() {
+                            .catch(function () {
                                 if (window.huntarrUI && window.huntarrUI.showNotification) {
                                     window.huntarrUI.showNotification('Failed to remove indexer.', 'error');
                                 }
@@ -319,7 +318,7 @@
         if (selected.length === 0) return;
 
         var ids = [];
-        selected.forEach(function(item) {
+        selected.forEach(function (item) {
             ids.push(item.getAttribute('data-ih-id'));
         });
         var par = _getInstanceIdAndMode();
@@ -332,26 +331,26 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ instance_id: par.instanceId, mode: par.mode, indexer_ids: ids }),
         })
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (data.success) {
-                var msg = 'Imported ' + (data.added || 0) + ' indexer(s) from Index Master.';
-                if (window.huntarrUI) window.huntarrUI.showNotification(msg, 'success');
-                _closeIHImportPanel();
-                if (window.SettingsForms && window.SettingsForms.refreshIndexersList) {
-                    window.SettingsForms.refreshIndexersList();
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.success) {
+                    var msg = 'Imported ' + (data.added || 0) + ' indexer(s) from Index Master.';
+                    if (window.huntarrUI) window.huntarrUI.showNotification(msg, 'success');
+                    _closeIHImportPanel();
+                    if (window.SettingsForms && window.SettingsForms.refreshIndexersList) {
+                        window.SettingsForms.refreshIndexersList();
+                    }
+                    _refreshIndexerInstanceStatus();
+                } else {
+                    if (window.huntarrUI) window.huntarrUI.showNotification(data.error || 'Import failed.', 'error');
                 }
-                _refreshIndexerInstanceStatus();
-            } else {
-                if (window.huntarrUI) window.huntarrUI.showNotification(data.error || 'Import failed.', 'error');
-            }
-        })
-        .catch(function(err) {
-            if (window.huntarrUI) window.huntarrUI.showNotification('Import error.', 'error');
-        })
-        .finally(function() {
-            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-download"></i> Import Selected'; }
-        });
+            })
+            .catch(function (err) {
+                if (window.huntarrUI) window.huntarrUI.showNotification('Import error.', 'error');
+            })
+            .finally(function () {
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-download"></i> Import Selected'; }
+            });
     }
 
     function _on(id, event, fn) {
@@ -384,23 +383,23 @@
 
     function _loadPresets(cb) {
         fetch('./api/indexer-hunt/presets')
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
                 _presets = data.presets || [];
                 _populatePresetDropdown();
                 if (cb) cb();
             })
-            .catch(function() { if (cb) cb(); });
+            .catch(function () { if (cb) cb(); });
     }
 
     function _loadIndexers() {
         fetch('./api/indexer-hunt/indexers')
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
                 _indexers = data.indexers || [];
                 _renderCards();
             })
-            .catch(function(err) {
+            .catch(function (err) {
                 console.error('[IndexerHunt] Load error:', err);
             });
     }
@@ -409,7 +408,7 @@
         var sel = document.getElementById('ih-form-preset');
         if (!sel) return;
         sel.innerHTML = '<option value="manual">Custom (Manual)</option>';
-        _presets.forEach(function(p) {
+        _presets.forEach(function (p) {
             var opt = document.createElement('option');
             opt.value = p.key;
             opt.textContent = p.name;
@@ -429,10 +428,10 @@
 
         var filtered = _indexers;
         if (query) {
-            filtered = _indexers.filter(function(idx) {
+            filtered = _indexers.filter(function (idx) {
                 return (idx.name || '').toLowerCase().indexOf(query) !== -1 ||
-                       (idx.url || '').toLowerCase().indexOf(query) !== -1 ||
-                       (idx.preset || '').toLowerCase().indexOf(query) !== -1;
+                    (idx.url || '').toLowerCase().indexOf(query) !== -1 ||
+                    (idx.preset || '').toLowerCase().indexOf(query) !== -1;
             });
         }
 
@@ -458,7 +457,7 @@
         if (groupBox) groupBox.style.display = '';
 
         var html = '';
-        filtered.forEach(function(idx) {
+        filtered.forEach(function (idx) {
             var enabled = idx.enabled !== false;
             var statusClass = enabled ? 'enabled' : 'disabled';
             var statusText = enabled ? 'Enabled' : 'Disabled';
@@ -468,36 +467,36 @@
             var keyDisplay = idx.api_key_last4 ? '\u2022\u2022\u2022\u2022' + _esc(idx.api_key_last4) : 'No key';
             html += '<div class="ih-card' + (enabled ? '' : ' ih-card-disabled') + '" data-id="' + _esc(idx.id) + '">'
                 + '<div class="ih-card-header">'
-                    + '<div class="ih-card-name"><span>' + _esc(idx.name || '') + '</span></div>'
-                    + '<span class="ih-card-status ' + statusClass + '"><i class="fas ' + statusIcon + '"></i> ' + statusText + '</span>'
+                + '<div class="ih-card-name"><span>' + _esc(idx.name || '') + '</span></div>'
+                + '<span class="ih-card-status ' + statusClass + '"><i class="fas ' + statusIcon + '"></i> ' + statusText + '</span>'
                 + '</div>'
                 + '<div class="ih-card-body">'
-                    + '<div class="ih-card-detail ih-card-connection-row"><span class="ih-card-connection-status" data-connection="pending"><i class="fas fa-spinner fa-spin"></i> Checking...</span></div>'
-                    + '<div class="ih-card-detail"><i class="fas fa-globe"></i><span class="ih-detail-value">' + _esc(url) + '</span></div>'
-                    + '<div class="ih-card-detail"><i class="fas fa-key"></i><span class="ih-detail-value">' + keyDisplay + '</span></div>'
-                    + '<div class="ih-card-detail" style="gap: 8px;">'
-                        + '<span class="ih-card-priority-badge"><i class="fas fa-sort-amount-up" style="font-size:0.7rem;"></i> ' + (idx.priority || 50) + '</span>'
-                        + '<span class="ih-card-preset-badge">' + _esc(presetLabel) + '</span>'
-                    + '</div>'
+                + '<div class="ih-card-detail ih-card-connection-row"><span class="ih-card-connection-status" data-connection="pending"><i class="fas fa-spinner fa-spin"></i> Checking...</span></div>'
+                + '<div class="ih-card-detail"><i class="fas fa-globe"></i><span class="ih-detail-value">' + _esc(url) + '</span></div>'
+                + '<div class="ih-card-detail"><i class="fas fa-key"></i><span class="ih-detail-value">' + keyDisplay + '</span></div>'
+                + '<div class="ih-card-detail" style="gap: 8px;">'
+                + '<span class="ih-card-priority-badge"><i class="fas fa-sort-amount-up" style="font-size:0.7rem;"></i> ' + (idx.priority || 50) + '</span>'
+                + '<span class="ih-card-preset-badge">' + _esc(presetLabel) + '</span>'
+                + '</div>'
                 + '</div>'
                 + '<div class="ih-card-footer">'
-                    + '<button class="ih-card-btn test" onclick="IndexerHunt.testIndexer(\'' + _esc(idx.id) + '\')" title="Test"><i class="fas fa-plug"></i> Test</button>'
-                    + '<button class="ih-card-btn edit" onclick="IndexerHunt.editIndexer(\'' + _esc(idx.id) + '\')" title="Edit"><i class="fas fa-edit"></i> Edit</button>'
-                    + '<button class="ih-card-btn delete" onclick="IndexerHunt.deleteIndexer(\'' + _esc(idx.id) + '\', \'' + _esc(idx.name) + '\')" title="Delete"><i class="fas fa-trash"></i></button>'
+                + '<button class="ih-card-btn test" onclick="IndexerHunt.testIndexer(\'' + _esc(idx.id) + '\')" title="Test"><i class="fas fa-plug"></i> Test</button>'
+                + '<button class="ih-card-btn edit" onclick="IndexerHunt.editIndexer(\'' + _esc(idx.id) + '\')" title="Edit"><i class="fas fa-edit"></i> Edit</button>'
+                + '<button class="ih-card-btn delete" onclick="IndexerHunt.deleteIndexer(\'' + _esc(idx.id) + '\', \'' + _esc(idx.name) + '\')" title="Delete"><i class="fas fa-trash"></i></button>'
                 + '</div>'
-            + '</div>';
+                + '</div>';
         });
 
         // Add card at the end
         html += '<div class="ih-add-card" id="ih-add-card-inline">'
             + '<div class="ih-add-icon"><i class="fas fa-plus-circle"></i></div>'
             + '<div class="ih-add-text">Add Indexer</div>'
-        + '</div>';
+            + '</div>';
 
         grid.innerHTML = html;
 
         var addCard = document.getElementById('ih-add-card-inline');
-        if (addCard) addCard.addEventListener('click', function() { _openEditor(null); });
+        if (addCard) addCard.addEventListener('click', function () { _openEditor(null); });
 
         // Test each indexer connection and update card status (like app settings)
         _testIndexerCardsConnectionStatus(filtered);
@@ -506,10 +505,10 @@
     function _testIndexerCardsConnectionStatus(indexerList) {
         if (!indexerList || indexerList.length === 0) return;
         fetch('./api/indexer-hunt/status')
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
                 var statuses = data.statuses || {};
-                indexerList.forEach(function(idx) {
+                indexerList.forEach(function (idx) {
                     var card = document.querySelector('.ih-card[data-id="' + idx.id + '"]');
                     var statusEl = card ? card.querySelector('.ih-card-connection-status') : null;
                     if (!statusEl) return;
@@ -541,7 +540,7 @@
                     }
                 });
             })
-            .catch(function() {
+            .catch(function () {
                 // On error fetching status, leave cards as pending
             });
     }
@@ -558,7 +557,7 @@
             var hrs = Math.floor(mins / 60);
             if (hrs < 24) return hrs + 'h ago';
             return Math.floor(hrs / 24) + 'd ago';
-        } catch(e) { return ''; }
+        } catch (e) { return ''; }
     }
 
     function _getPresetLabel(preset) {
@@ -615,15 +614,15 @@
             var apiPathEl2 = document.getElementById('ih-form-api-path');
             var apiKeyEl2 = document.getElementById('ih-form-api-key');
             var debounceTimer;
-            var runStatus = function() {
+            var runStatus = function () {
                 clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(function() { _updateConnectionStatusFromForm(); }, 500);
+                debounceTimer = setTimeout(function () { _updateConnectionStatusFromForm(); }, 500);
             };
             if (urlEl2) { urlEl2.addEventListener('input', runStatus); urlEl2.addEventListener('blur', runStatus); }
             if (apiPathEl2) { apiPathEl2.addEventListener('input', runStatus); apiPathEl2.addEventListener('blur', runStatus); }
             if (apiKeyEl2) { apiKeyEl2.addEventListener('input', runStatus); apiKeyEl2.addEventListener('blur', runStatus); }
         }
-        setTimeout(function() { _updateConnectionStatusFromForm(); }, 100);
+        setTimeout(function () { _updateConnectionStatusFromForm(); }, 100);
     }
 
     function _updateConnectionStatusFromForm() {
@@ -638,7 +637,7 @@
         var hasSavedKey = _editingId && _indexers.length;
         if (hasSavedKey) {
             var existing = null;
-            _indexers.forEach(function(i) { if (i.id === _editingId) existing = i; });
+            _indexers.forEach(function (i) { if (i.id === _editingId) existing = i; });
             hasSavedKey = !!(existing && existing.api_key_last4);
         }
         if (url.length <= 10 && apiKey.length < 10) {
@@ -666,19 +665,19 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body),
         })
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (data.valid) {
-                var msg = 'Connected';
-                if (data.response_time_ms != null) msg += ' (' + data.response_time_ms + 'ms)';
-                container.innerHTML = '<div class="connection-status success"><i class="fas fa-check-circle"></i><span>' + _esc(msg) + '</span></div>';
-            } else {
-                container.innerHTML = '<div class="connection-status error"><i class="fas fa-times-circle"></i><span>' + _esc(data.message || 'Connection failed') + '</span></div>';
-            }
-        })
-        .catch(function(err) {
-            container.innerHTML = '<div class="connection-status error"><i class="fas fa-times-circle"></i><span>' + _esc(String(err && err.message ? err.message : 'Connection failed')) + '</span></div>';
-        });
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.valid) {
+                    var msg = 'Connected';
+                    if (data.response_time_ms != null) msg += ' (' + data.response_time_ms + 'ms)';
+                    container.innerHTML = '<div class="connection-status success"><i class="fas fa-check-circle"></i><span>' + _esc(msg) + '</span></div>';
+                } else {
+                    container.innerHTML = '<div class="connection-status error"><i class="fas fa-times-circle"></i><span>' + _esc(data.message || 'Connection failed') + '</span></div>';
+                }
+            })
+            .catch(function (err) {
+                container.innerHTML = '<div class="connection-status error"><i class="fas fa-times-circle"></i><span>' + _esc(String(err && err.message ? err.message : 'Connection failed')) + '</span></div>';
+            });
     }
 
     function _onPresetChange() {
@@ -692,7 +691,7 @@
 
         if (!isManual) {
             var p = null;
-            _presets.forEach(function(pr) { if (pr.key === preset) p = pr; });
+            _presets.forEach(function (pr) { if (pr.key === preset) p = pr; });
             if (p) {
                 if (nameEl) nameEl.value = p.name;
                 if (urlEl) urlEl.value = p.url;
@@ -736,36 +735,36 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body),
         })
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (data.success) {
-                var msg = _editingId ? 'Indexer updated.' : 'Indexer added.';
-                if (data.linked_instances_updated > 0) {
-                    msg += ' Updated in ' + data.linked_instances_updated + ' Movie Hunt instance(s).';
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.success) {
+                    var msg = _editingId ? 'Indexer updated.' : 'Indexer added.';
+                    if (data.linked_instances_updated > 0) {
+                        msg += ' Updated in ' + data.linked_instances_updated + ' Movie Hunt instance(s).';
+                    }
+                    if (window.huntarrUI) window.huntarrUI.showNotification(msg, 'success');
+                    var searchInput = document.getElementById('ih-search-input');
+                    if (searchInput) searchInput.value = '';
+                    _loadIndexers();
+                    _showListView();
+                } else {
+                    if (window.huntarrUI) window.huntarrUI.showNotification(data.error || 'Failed to save.', 'error');
                 }
-                if (window.huntarrUI) window.huntarrUI.showNotification(msg, 'success');
-                var searchInput = document.getElementById('ih-search-input');
-                if (searchInput) searchInput.value = '';
-                _loadIndexers();
-                _showListView();
-            } else {
-                if (window.huntarrUI) window.huntarrUI.showNotification(data.error || 'Failed to save.', 'error');
-            }
-        })
-        .catch(function(err) {
-            if (window.huntarrUI) window.huntarrUI.showNotification('Error: ' + err, 'error');
-        });
+            })
+            .catch(function (err) {
+                if (window.huntarrUI) window.huntarrUI.showNotification('Error: ' + err, 'error');
+            });
     }
 
     // ── Public actions ────────────────────────────────────────────────
 
-    IH.editIndexer = function(id) {
+    IH.editIndexer = function (id) {
         var idx = null;
-        _indexers.forEach(function(i) { if (i.id === id) idx = i; });
+        _indexers.forEach(function (i) { if (i.id === id) idx = i; });
         if (idx) _openEditor(idx);
     };
 
-    IH.testIndexer = function(id) {
+    IH.testIndexer = function (id) {
         var card = document.querySelector('.ih-card[data-id="' + id + '"]');
         var statusEl = card ? card.querySelector('.ih-card-connection-status') : null;
         if (statusEl) {
@@ -774,8 +773,8 @@
             statusEl.classList.remove('ih-card-connection-ok', 'ih-card-connection-fail', 'ih-card-connection-pending');
         }
         fetch('./api/indexer-hunt/indexers/' + id + '/test', { method: 'POST' })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
                 if (data.valid) {
                     if (window.huntarrUI) window.huntarrUI.showNotification('Connection OK (' + (data.response_time_ms || 0) + 'ms)', 'success');
                     if (statusEl) {
@@ -794,15 +793,15 @@
                     }
                 }
             })
-            .catch(function(err) {
+            .catch(function (err) {
                 if (window.huntarrUI) window.huntarrUI.showNotification('Error: ' + err, 'error');
             });
     };
 
-    IH.deleteIndexer = function(id, name) {
+    IH.deleteIndexer = function (id, name) {
         fetch('./api/indexer-hunt/linked-instances/' + id)
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
                 var linked = data.linked || [];
                 var msg = 'Are you sure you want to delete "' + name + '"?';
                 if (linked.length > 0) {
@@ -812,10 +811,10 @@
                     title: 'Delete Indexer',
                     message: msg,
                     confirmLabel: 'Delete',
-                    onConfirm: function() {
+                    onConfirm: function () {
                         fetch('./api/indexer-hunt/indexers/' + id, { method: 'DELETE' })
-                            .then(function(r) { return r.json(); })
-                            .then(function(res) {
+                            .then(function (r) { return r.json(); })
+                            .then(function (res) {
                                 if (res.success) {
                                     _loadIndexers();
                                     var notice = '"' + name + '" deleted.';
@@ -840,12 +839,12 @@
         return d.innerHTML;
     }
 
-    document.addEventListener('huntarr:instances-changed', function() {
+    document.addEventListener('huntarr:instances-changed', function () {
         if (document.getElementById('indexer-hunt-content-wrapper') && window.huntarrUI && window.huntarrUI.currentSection === 'indexer-hunt') {
             IH.init();
         }
     });
-    document.addEventListener('huntarr:tv-hunt-instances-changed', function() {
+    document.addEventListener('huntarr:tv-hunt-instances-changed', function () {
         if (document.getElementById('indexer-hunt-content-wrapper') && window.huntarrUI && window.huntarrUI.currentSection === 'indexer-hunt') {
             IH.init();
         }

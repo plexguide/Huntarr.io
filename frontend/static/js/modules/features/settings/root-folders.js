@@ -2,12 +2,12 @@
  * Root Folders – single view for Movie Hunt and TV Hunt. Combined instance dropdown
  * (Movie - X / TV - X, alphabetical). Each instance keeps its own root folders; same page linked from both sidebars.
  */
-(function() {
+(function () {
     'use strict';
 
     function _rebindBrowseItem(el) {
-        el.querySelectorAll('.root-folders-browse-item-btn').forEach(function(btn) {
-            btn.onclick = function(e) {
+        el.querySelectorAll('.root-folders-browse-item-btn').forEach(function (btn) {
+            btn.onclick = function (e) {
                 e.stopPropagation();
                 var action = btn.getAttribute('data-action');
                 var p = el.getAttribute('data-path') || '';
@@ -24,13 +24,13 @@
         var toast = document.createElement('div');
         toast.style.cssText = 'padding:8px 14px;margin-bottom:8px;border-radius:6px;font-size:0.85rem;font-weight:500;' +
             (isError ? 'background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.3);'
-                     : 'background:rgba(16,185,129,0.12);color:#6ee7b7;border:1px solid rgba(16,185,129,0.3);');
+                : 'background:rgba(16,185,129,0.12);color:#6ee7b7;border:1px solid rgba(16,185,129,0.3);');
         toast.textContent = msg;
         container.insertBefore(toast, document.getElementById('root-folders-browse-list'));
-        setTimeout(function() {
+        setTimeout(function () {
             toast.style.opacity = '0';
             toast.style.transition = 'opacity 0.3s ease';
-            setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
+            setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
         }, 3000);
     }
 
@@ -38,28 +38,28 @@
         _browseTargetInput: null,
         _rfMode: 'movie',
 
-        getApiBase: function() {
+        getApiBase: function () {
             return this._rfMode === 'tv' ? './api/tv-hunt/root-folders' : './api/movie-hunt/root-folders';
         },
 
-        getInstanceId: function() {
+        getInstanceId: function () {
             var sel = document.getElementById('settings-root-folders-instance-select');
             var v = sel && sel.value ? sel.value : '';
             if (v && v.indexOf(':') >= 0) return v.split(':')[1] || '';
             return v || '';
         },
 
-        _appendInstanceParam: function(url) {
+        _appendInstanceParam: function (url) {
             var id = this.getInstanceId();
             if (!id) return url;
             return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'instance_id=' + encodeURIComponent(id);
         },
 
-        _safeJsonFetch: function(url, fallback) {
-            return fetch(url, { cache: 'no-store' }).then(function(r) { return r.json(); }).catch(function() { return fallback || {}; });
+        _safeJsonFetch: function (url, fallback) {
+            return fetch(url, { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return fallback || {}; });
         },
 
-        populateCombinedInstanceDropdown: function(preferMode) {
+        populateCombinedInstanceDropdown: function (preferMode) {
             var self = window.RootFolders;
             var selectEl = document.getElementById('settings-root-folders-instance-select');
             if (!selectEl) return;
@@ -71,15 +71,15 @@
                 sf('./api/tv-hunt/instances?t=' + ts, { instances: [] }),
                 sf('./api/movie-hunt/instances/current?t=' + ts, { current_instance_id: null }),
                 sf('./api/tv-hunt/instances/current?t=' + ts, { current_instance_id: null })
-            ]).then(function(results) {
-                var movieList = (results[0].instances || []).map(function(inst) {
+            ]).then(function (results) {
+                var movieList = (results[0].instances || []).map(function (inst) {
                     return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
                 });
-                var tvList = (results[1].instances || []).map(function(inst) {
+                var tvList = (results[1].instances || []).map(function (inst) {
                     return { value: 'tv:' + inst.id, label: 'TV - ' + (inst.name || 'Instance ' + inst.id) };
                 });
                 var combined = movieList.concat(tvList);
-                combined.sort(function(a, b) { return (a.label || '').localeCompare(b.label || '', undefined, { sensitivity: 'base' }); });
+                combined.sort(function (a, b) { return (a.label || '').localeCompare(b.label || '', undefined, { sensitivity: 'base' }); });
                 var currentMovie = results[2].current_instance_id != null ? Number(results[2].current_instance_id) : null;
                 var currentTv = results[3].current_instance_id != null ? Number(results[3].current_instance_id) : null;
                 selectEl.innerHTML = '';
@@ -92,7 +92,7 @@
                     if (wrapperEl) wrapperEl.style.display = '';
                     return;
                 }
-                combined.forEach(function(item) {
+                combined.forEach(function (item) {
                     var opt = document.createElement('option');
                     opt.value = item.value;
                     opt.textContent = item.label;
@@ -102,15 +102,15 @@
                 var selected = '';
                 if (preferMode === 'movie' && currentMovie != null) {
                     selected = 'movie:' + currentMovie;
-                    if (!combined.some(function(i) { return i.value === selected; })) selected = combined[0].value;
+                    if (!combined.some(function (i) { return i.value === selected; })) selected = combined[0].value;
                 } else if (preferMode === 'tv' && currentTv != null) {
                     selected = 'tv:' + currentTv;
-                    if (!combined.some(function(i) { return i.value === selected; })) selected = combined[0].value;
-                } else if (saved && combined.some(function(i) { return i.value === saved; })) {
+                    if (!combined.some(function (i) { return i.value === selected; })) selected = combined[0].value;
+                } else if (saved && combined.some(function (i) { return i.value === saved; })) {
                     selected = saved;
-                } else if (currentMovie != null && combined.some(function(i) { return i.value === 'movie:' + currentMovie; })) {
+                } else if (currentMovie != null && combined.some(function (i) { return i.value === 'movie:' + currentMovie; })) {
                     selected = 'movie:' + currentMovie;
-                } else if (currentTv != null && combined.some(function(i) { return i.value === 'tv:' + currentTv; })) {
+                } else if (currentTv != null && combined.some(function (i) { return i.value === 'tv:' + currentTv; })) {
                     selected = 'tv:' + currentTv;
                 } else {
                     selected = combined[0].value;
@@ -126,14 +126,14 @@
                     if (typeof localStorage !== 'undefined') localStorage.setItem('media-hunt-root-folders-last-instance', selected);
                     self.refreshList();
                 }
-            }).catch(function() {
+            }).catch(function () {
                 selectEl.innerHTML = '<option value="">Failed to load instances</option>';
                 var wrapperEl = document.getElementById('settings-root-folders-content-wrapper');
                 if (wrapperEl) wrapperEl.style.display = '';
             });
         },
 
-        _applyRequestarrGotoInstance: function(selectEl) {
+        _applyRequestarrGotoInstance: function (selectEl) {
             if (!selectEl) return;
             try {
                 var goto = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('requestarr-goto-root-instance');
@@ -151,10 +151,10 @@
                     }
                 }
                 sessionStorage.removeItem('requestarr-goto-root-instance');
-            } catch (e) {}
+            } catch (e) { }
         },
 
-        onCombinedInstanceChange: function() {
+        onCombinedInstanceChange: function () {
             var selectEl = document.getElementById('settings-root-folders-instance-select');
             if (!selectEl) return;
             var val = selectEl.value || '';
@@ -166,7 +166,7 @@
             }
         },
 
-        initOrRefresh: function(preferMode) {
+        initOrRefresh: function (preferMode) {
             var self = window.RootFolders;
             self._rfMode = (preferMode === 'tv') ? 'tv' : 'movie';
             var selectEl = document.getElementById('settings-root-folders-instance-select');
@@ -175,20 +175,20 @@
             self.populateCombinedInstanceDropdown(preferMode);
             if (selectEl && !selectEl._rfChangeBound) {
                 selectEl._rfChangeBound = true;
-                selectEl.addEventListener('change', function() { window.RootFolders.onCombinedInstanceChange(); });
+                selectEl.addEventListener('change', function () { window.RootFolders.onCombinedInstanceChange(); });
             }
         },
 
-        refreshList: function() {
+        refreshList: function () {
             var gridEl = document.getElementById('root-folders-grid');
             if (!gridEl) return;
             var url = window.RootFolders._appendInstanceParam(window.RootFolders.getApiBase());
             fetch(url)
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
                     var folders = (data && data.root_folders) ? data.root_folders : [];
                     // Default root folder first (leftmost)
-                    folders = folders.slice().sort(function(a, b) {
+                    folders = folders.slice().sort(function (a, b) {
                         if (a.is_default) return -1;
                         if (b.is_default) return 1;
                         return 0;
@@ -225,7 +225,7 @@
                     window.RootFolders._bindCardButtons();
                     refreshInstanceStatusBanner();
                 })
-                .catch(function() {
+                .catch(function () {
                     var addCard = '<div class="add-instance-card add-root-folder-card" id="root-folders-add-card" data-app-type="root-folder">' +
                         '<div class="add-icon"><i class="fas fa-plus-circle"></i></div>' +
                         '<div class="add-text">Add Root Folder</div></div>';
@@ -234,23 +234,23 @@
                 });
         },
 
-        _bindCardButtons: function() {
+        _bindCardButtons: function () {
             var gridEl = document.getElementById('root-folders-grid');
             if (!gridEl) return;
-            gridEl.querySelectorAll('.root-folder-card [data-action="test"]').forEach(function(btn) {
-                btn.onclick = function() {
+            gridEl.querySelectorAll('.root-folder-card [data-action="test"]').forEach(function (btn) {
+                btn.onclick = function () {
                     var path = btn.getAttribute('data-path') || '';
                     if (path) window.RootFolders.testPath(path);
                 };
             });
-            gridEl.querySelectorAll('.root-folder-card [data-action="set-default"]').forEach(function(btn) {
-                btn.onclick = function() {
+            gridEl.querySelectorAll('.root-folder-card [data-action="set-default"]').forEach(function (btn) {
+                btn.onclick = function () {
                     var idx = parseInt(btn.getAttribute('data-index'), 10);
                     if (!isNaN(idx)) window.RootFolders.setDefault(idx);
                 };
             });
-            gridEl.querySelectorAll('.root-folder-card [data-action="delete"]').forEach(function(btn) {
-                btn.onclick = function() {
+            gridEl.querySelectorAll('.root-folder-card [data-action="delete"]').forEach(function (btn) {
+                btn.onclick = function () {
                     var idx = parseInt(btn.getAttribute('data-index'), 10);
                     if (!isNaN(idx)) window.RootFolders.deleteFolder(idx);
                 };
@@ -258,14 +258,14 @@
             window.RootFolders._bindAddCard();
         },
 
-        _bindAddCard: function() {
+        _bindAddCard: function () {
             var addCard = document.getElementById('root-folders-add-card');
             if (addCard) {
-                addCard.onclick = function() { window.RootFolders.openAddModal(); };
+                addCard.onclick = function () { window.RootFolders.openAddModal(); };
             }
         },
 
-        openAddModal: function() {
+        openAddModal: function () {
             var modal = document.getElementById('root-folder-add-modal');
             var input = document.getElementById('root-folder-add-path');
             if (modal && modal.parentNode !== document.body) {
@@ -274,24 +274,24 @@
             if (modal) modal.style.display = 'flex';
             if (input) {
                 input.value = '';
-                setTimeout(function() { input.focus(); }, 100);
+                setTimeout(function () { input.focus(); }, 100);
             }
             document.body.classList.add('root-folder-add-modal-open');
         },
 
-        closeAddModal: function() {
+        closeAddModal: function () {
             var modal = document.getElementById('root-folder-add-modal');
             if (modal) modal.style.display = 'none';
             document.body.classList.remove('root-folder-add-modal-open');
         },
 
-        setDefault: function(index) {
+        setDefault: function (index) {
             if (typeof index !== 'number' || index < 0) return;
             var url = window.RootFolders.getApiBase() + '/' + index + '/default';
             url = window.RootFolders._appendInstanceParam(url);
             fetch(url, { method: 'PATCH' })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
                     if (data.success) {
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
                             window.huntarrUI.showNotification('Default root folder updated.', 'success');
@@ -304,14 +304,14 @@
                         }
                     }
                 })
-                .catch(function(err) {
+                .catch(function (err) {
                     if (window.huntarrUI && window.huntarrUI.showNotification) {
                         window.huntarrUI.showNotification(err.message || 'Failed to set default.', 'error');
                     }
                 });
         },
 
-        testPath: function(path) {
+        testPath: function (path) {
             if (!path || (typeof path !== 'string')) {
                 var addInput = document.getElementById('root-folder-add-path');
                 path = addInput ? (addInput.value || '').trim() : '';
@@ -338,8 +338,8 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
                     if (testBtn) {
                         testBtn.disabled = false;
                         testBtn.innerHTML = '<i class="fas fa-vial"></i> Test';
@@ -354,7 +354,7 @@
                         }
                     }
                 })
-                .catch(function(err) {
+                .catch(function (err) {
                     if (testBtn) {
                         testBtn.disabled = false;
                         testBtn.innerHTML = '<i class="fas fa-vial"></i> Test';
@@ -365,7 +365,7 @@
                 });
         },
 
-        addFolder: function() {
+        addFolder: function () {
             var input = document.getElementById('root-folder-add-path');
             var path = input ? (input.value || '').trim() : '';
             if (!path) {
@@ -388,8 +388,8 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             })
-                .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
-                .then(function(result) {
+                .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
+                .then(function (result) {
                     if (saveBtn) {
                         saveBtn.disabled = false;
                         saveBtn.innerHTML = '<i class="fas fa-plus"></i> Add';
@@ -409,7 +409,7 @@
                         }
                     }
                 })
-                .catch(function(err) {
+                .catch(function (err) {
                     if (saveBtn) {
                         saveBtn.disabled = false;
                         saveBtn.innerHTML = '<i class="fas fa-plus"></i> Add';
@@ -420,27 +420,27 @@
                 });
         },
 
-        deleteFolder: function(index) {
+        deleteFolder: function (index) {
             if (typeof index !== 'number' || index < 0) return;
             var deleteUrl = window.RootFolders.getApiBase() + '/' + index;
             deleteUrl = window.RootFolders._appendInstanceParam(deleteUrl);
-            var doDelete = function() {
+            var doDelete = function () {
                 fetch(deleteUrl, { method: 'DELETE' })
-                    .then(function(r) { return r.json(); })
-                    .then(function(data) {
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
                         if (data.success) {
                             if (window.huntarrUI && window.huntarrUI.showNotification) {
                                 window.huntarrUI.showNotification('Root folder removed.', 'success');
                             }
                             window.RootFolders.refreshList();
-                        if (window.updateMovieHuntSettingsVisibility) window.updateMovieHuntSettingsVisibility();
+                            if (window.updateMovieHuntSettingsVisibility) window.updateMovieHuntSettingsVisibility();
                         } else {
                             if (window.huntarrUI && window.huntarrUI.showNotification) {
                                 window.huntarrUI.showNotification(data.message || 'Delete failed', 'error');
                             }
                         }
                     })
-                    .catch(function(err) {
+                    .catch(function (err) {
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
                             window.huntarrUI.showNotification(err.message || 'Delete failed', 'error');
                         }
@@ -459,7 +459,7 @@
             }
         },
 
-        openBrowseModal: function(sourceInput) {
+        openBrowseModal: function (sourceInput) {
             var modal = document.getElementById('root-folders-browse-modal');
             var browsePathInput = document.getElementById('root-folders-browse-path-input');
             window.RootFolders._browseTargetInput = sourceInput || document.getElementById('root-folder-add-path');
@@ -476,7 +476,7 @@
             window.RootFolders.loadBrowsePath(startPath);
         },
 
-        closeBrowseModal: function() {
+        closeBrowseModal: function () {
             var modal = document.getElementById('root-folders-browse-modal');
             if (modal) {
                 modal.style.display = 'none';
@@ -484,7 +484,7 @@
             }
         },
 
-        confirmBrowseSelection: function() {
+        confirmBrowseSelection: function () {
             var pathInput = document.getElementById('root-folders-browse-path-input');
             var target = window.RootFolders._browseTargetInput || document.getElementById('root-folder-add-path');
             if (pathInput && target) {
@@ -493,7 +493,7 @@
             window.RootFolders.closeBrowseModal();
         },
 
-        goToParent: function() {
+        goToParent: function () {
             var pathInput = document.getElementById('root-folders-browse-path-input');
             if (!pathInput) return;
             var path = (pathInput.value || '').trim() || '/';
@@ -502,7 +502,7 @@
             window.RootFolders.loadBrowsePath(parent);
         },
 
-        browseCreateFolder: function() {
+        browseCreateFolder: function () {
             var row = document.getElementById('root-folders-browse-new-folder-row');
             var input = document.getElementById('root-folders-browse-new-folder-input');
             var delRow = document.getElementById('root-folders-browse-delete-confirm-row');
@@ -510,10 +510,10 @@
             if (!row || !input) return;
             row.style.display = 'flex';
             input.value = '';
-            setTimeout(function() { input.focus(); }, 50);
+            setTimeout(function () { input.focus(); }, 50);
         },
 
-        _doBrowseCreateFolder: function() {
+        _doBrowseCreateFolder: function () {
             var input = document.getElementById('root-folders-browse-new-folder-input');
             var row = document.getElementById('root-folders-browse-new-folder-row');
             var pathInput = document.getElementById('root-folders-browse-path-input');
@@ -526,7 +526,7 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ parent_path: parent, name: name })
-            }).then(function(r) { return r.json(); }).then(function(data) {
+            }).then(function (r) { return r.json(); }).then(function (data) {
                 if (data.success) {
                     if (row) row.style.display = 'none';
                     window.RootFolders.loadBrowsePath(parent);
@@ -534,15 +534,15 @@
                     if (input) { input.style.borderColor = '#f87171'; input.focus(); }
                     _showBrowseToast(data.error || 'Failed to create folder', true);
                 }
-            }).catch(function() { _showBrowseToast('Failed to create folder', true); });
+            }).catch(function () { _showBrowseToast('Failed to create folder', true); });
         },
 
-        _cancelBrowseCreateFolder: function() {
+        _cancelBrowseCreateFolder: function () {
             var row = document.getElementById('root-folders-browse-new-folder-row');
             if (row) row.style.display = 'none';
         },
 
-        browseRenameFolder: function(path, currentName, el) {
+        browseRenameFolder: function (path, currentName, el) {
             var main = el && el.querySelector('.root-folders-browse-item-main');
             if (!main) return;
             var origHTML = main.innerHTML;
@@ -563,7 +563,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ path: path, new_name: name })
-                }).then(function(r) { return r.json(); }).then(function(data) {
+                }).then(function (r) { return r.json(); }).then(function (data) {
                     if (data.success) {
                         var pathInput = document.getElementById('root-folders-browse-path-input');
                         var parent = path.replace(/\/+$/, '').split('/').slice(0, -1).join('/') || '/';
@@ -572,18 +572,18 @@
                         if (inp) { inp.style.borderColor = '#f87171'; inp.focus(); }
                         _showBrowseToast(data.error || 'Failed to rename', true);
                     }
-                }).catch(function() { _showBrowseToast('Failed to rename folder', true); });
+                }).catch(function () { _showBrowseToast('Failed to rename folder', true); });
             }
             function revert() { main.innerHTML = origHTML; _rebindBrowseItem(el); }
-            main.querySelector('.root-folders-rename-confirm').onclick = function(e) { e.stopPropagation(); doRename(); };
-            main.querySelector('.root-folders-rename-cancel').onclick = function(e) { e.stopPropagation(); revert(); };
-            if (inp) inp.addEventListener('keydown', function(e) {
+            main.querySelector('.root-folders-rename-confirm').onclick = function (e) { e.stopPropagation(); doRename(); };
+            main.querySelector('.root-folders-rename-cancel').onclick = function (e) { e.stopPropagation(); revert(); };
+            if (inp) inp.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter') { e.preventDefault(); doRename(); }
                 if (e.key === 'Escape') { e.preventDefault(); revert(); }
             });
         },
 
-        browseDeleteFolder: function(path, name) {
+        browseDeleteFolder: function (path, name) {
             var row = document.getElementById('root-folders-browse-delete-confirm-row');
             var nameEl = document.getElementById('root-folders-browse-delete-name');
             var newRow = document.getElementById('root-folders-browse-new-folder-row');
@@ -594,7 +594,7 @@
             window.RootFolders._pendingDeletePath = path;
         },
 
-        _doBrowseDeleteFolder: function() {
+        _doBrowseDeleteFolder: function () {
             var path = window.RootFolders._pendingDeletePath;
             var row = document.getElementById('root-folders-browse-delete-confirm-row');
             if (!path) return;
@@ -604,7 +604,7 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ path: path })
-            }).then(function(r) { return r.json(); }).then(function(data) {
+            }).then(function (r) { return r.json(); }).then(function (data) {
                 if (data.success) {
                     if (row) row.style.display = 'none';
                     var pathInput = document.getElementById('root-folders-browse-path-input');
@@ -614,16 +614,16 @@
                 } else {
                     _showBrowseToast(data.error || 'Folder may not be empty', true);
                 }
-            }).catch(function() { _showBrowseToast('Failed to delete folder', true); });
+            }).catch(function () { _showBrowseToast('Failed to delete folder', true); });
         },
 
-        _cancelBrowseDeleteFolder: function() {
+        _cancelBrowseDeleteFolder: function () {
             var row = document.getElementById('root-folders-browse-delete-confirm-row');
             if (row) row.style.display = 'none';
             window.RootFolders._pendingDeletePath = null;
         },
 
-        loadBrowsePath: function(path) {
+        loadBrowsePath: function (path) {
             var listEl = document.getElementById('root-folders-browse-list');
             var pathInput = document.getElementById('root-folders-browse-path-input');
             var upBtn = document.getElementById('root-folders-browse-up');
@@ -643,8 +643,8 @@
             var browseUrl = window.RootFolders.getApiBase() + '/browse?path=' + encodeURIComponent(path);
             browseUrl = window.RootFolders._appendInstanceParam(browseUrl);
             fetch(browseUrl)
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
                     var dirs = (data && data.directories) ? data.directories : [];
                     var err = data && data.error;
                     if (err) {
@@ -675,10 +675,10 @@
                             '</span></div>';
                     }
                     listEl.innerHTML = html || '<div style="padding: 16px; color: #64748b;">No subdirectories</div>';
-                    listEl.querySelectorAll('.root-folders-browse-item').forEach(function(el) {
+                    listEl.querySelectorAll('.root-folders-browse-item').forEach(function (el) {
                         var main = el.querySelector('.root-folders-browse-item-main');
                         if (main) {
-                            main.onclick = function() {
+                            main.onclick = function () {
                                 var p = el.getAttribute('data-path') || '';
                                 if (p) window.RootFolders.loadBrowsePath(p);
                             };
@@ -686,14 +686,14 @@
                         _rebindBrowseItem(el);
                     });
                 })
-                .catch(function() {
+                .catch(function () {
                     listEl.innerHTML = '<div style="padding: 16px; color: #f87171;">Failed to load</div>';
                 });
         },
 
         _pendingDeletePath: null,
 
-        init: function() {
+        init: function () {
             var self = window.RootFolders;
             // Add modal
             var addBackdrop = document.getElementById('root-folder-add-modal-backdrop');
@@ -703,18 +703,18 @@
             var addBrowseBtn = document.getElementById('root-folder-add-browse-btn');
             var addTestBtn = document.getElementById('root-folder-add-test-btn');
             var addPathInput = document.getElementById('root-folder-add-path');
-            if (addBackdrop) addBackdrop.onclick = function() { self.closeAddModal(); };
-            if (addClose) addClose.onclick = function() { self.closeAddModal(); };
-            if (addCancel) addCancel.onclick = function() { self.closeAddModal(); };
-            if (addSave) addSave.onclick = function() { self.addFolder(); };
-            if (addBrowseBtn && addPathInput) addBrowseBtn.onclick = function() { self.openBrowseModal(addPathInput); };
-            if (addTestBtn) addTestBtn.onclick = function() { self.testPath(); };
+            if (addBackdrop) addBackdrop.onclick = function () { self.closeAddModal(); };
+            if (addClose) addClose.onclick = function () { self.closeAddModal(); };
+            if (addCancel) addCancel.onclick = function () { self.closeAddModal(); };
+            if (addSave) addSave.onclick = function () { self.addFolder(); };
+            if (addBrowseBtn && addPathInput) addBrowseBtn.onclick = function () { self.openBrowseModal(addPathInput); };
+            if (addTestBtn) addTestBtn.onclick = function () { self.testPath(); };
             if (addPathInput) {
-                addPathInput.addEventListener('keydown', function(e) {
+                addPathInput.addEventListener('keydown', function (e) {
                     if (e.key === 'Enter') { e.preventDefault(); self.addFolder(); }
                 });
             }
-            document.addEventListener('keydown', function(e) {
+            document.addEventListener('keydown', function (e) {
                 if (e.key === 'Escape') {
                     if (document.getElementById('root-folder-add-modal').style.display === 'flex') {
                         self.closeAddModal();
@@ -730,12 +730,12 @@
             var browseCancel = document.getElementById('root-folders-browse-cancel');
             var browseOk = document.getElementById('root-folders-browse-ok');
             var browsePathInput = document.getElementById('root-folders-browse-path-input');
-            if (browseBackdrop) browseBackdrop.onclick = function() { self.closeBrowseModal(); };
-            if (browseClose) browseClose.onclick = function() { self.closeBrowseModal(); };
-            if (browseCancel) browseCancel.onclick = function() { self.closeBrowseModal(); };
-            if (browseOk) browseOk.onclick = function() { self.confirmBrowseSelection(); };
+            if (browseBackdrop) browseBackdrop.onclick = function () { self.closeBrowseModal(); };
+            if (browseClose) browseClose.onclick = function () { self.closeBrowseModal(); };
+            if (browseCancel) browseCancel.onclick = function () { self.closeBrowseModal(); };
+            if (browseOk) browseOk.onclick = function () { self.confirmBrowseSelection(); };
             if (browsePathInput) {
-                browsePathInput.addEventListener('keydown', function(e) {
+                browsePathInput.addEventListener('keydown', function (e) {
                     if (e.key === 'Enter') {
                         e.preventDefault();
                         self.loadBrowsePath(browsePathInput.value);
@@ -743,26 +743,26 @@
                 });
             }
             var upBtn = document.getElementById('root-folders-browse-up');
-            if (upBtn) upBtn.onclick = function() { self.goToParent(); };
+            if (upBtn) upBtn.onclick = function () { self.goToParent(); };
             var newFolderBtn = document.getElementById('root-folders-browse-new-folder');
-            if (newFolderBtn) newFolderBtn.onclick = function() { self.browseCreateFolder(); };
+            if (newFolderBtn) newFolderBtn.onclick = function () { self.browseCreateFolder(); };
             // Inline create folder confirm/cancel
             var createConfirm = document.getElementById('root-folders-browse-new-folder-confirm');
             var createCancel = document.getElementById('root-folders-browse-new-folder-cancel');
             var createInput = document.getElementById('root-folders-browse-new-folder-input');
-            if (createConfirm) createConfirm.onclick = function() { self._doBrowseCreateFolder(); };
-            if (createCancel) createCancel.onclick = function() { self._cancelBrowseCreateFolder(); };
-            if (createInput) createInput.addEventListener('keydown', function(e) {
+            if (createConfirm) createConfirm.onclick = function () { self._doBrowseCreateFolder(); };
+            if (createCancel) createCancel.onclick = function () { self._cancelBrowseCreateFolder(); };
+            if (createInput) createInput.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter') { e.preventDefault(); self._doBrowseCreateFolder(); }
                 if (e.key === 'Escape') { e.preventDefault(); self._cancelBrowseCreateFolder(); }
             });
             // Inline delete confirm/cancel
             var deleteYes = document.getElementById('root-folders-browse-delete-yes');
             var deleteNo = document.getElementById('root-folders-browse-delete-no');
-            if (deleteYes) deleteYes.onclick = function() { self._doBrowseDeleteFolder(); };
-            if (deleteNo) deleteNo.onclick = function() { self._cancelBrowseDeleteFolder(); };
-            document.addEventListener('huntarr:instances-changed', function() { if (self._rfMode === 'movie') self.populateCombinedInstanceDropdown('movie'); updateRootFoldersSetupBanner(); });
-            document.addEventListener('huntarr:tv-hunt-instances-changed', function() { if (self._rfMode === 'tv') self.populateCombinedInstanceDropdown('tv'); updateRootFoldersSetupBanner(); });
+            if (deleteYes) deleteYes.onclick = function () { self._doBrowseDeleteFolder(); };
+            if (deleteNo) deleteNo.onclick = function () { self._cancelBrowseDeleteFolder(); };
+            document.addEventListener('huntarr:instances-changed', function () { if (self._rfMode === 'movie') self.populateCombinedInstanceDropdown('movie'); updateRootFoldersSetupBanner(); });
+            document.addEventListener('huntarr:tv-hunt-instances-changed', function () { if (self._rfMode === 'tv') self.populateCombinedInstanceDropdown('tv'); updateRootFoldersSetupBanner(); });
             updateRootFoldersSetupBanner();
         }
     };
@@ -773,8 +773,7 @@
         var statusArea = document.getElementById('root-folders-instance-status-area');
         // Show if user navigated here from the setup wizard.
         // Don't remove the flag — it needs to persist across re-renders during the wizard flow.
-        var fromWizard = false;
-        try { fromWizard = sessionStorage.getItem('setup-wizard-active-nav') === '1'; } catch (e) {}
+        var fromWizard = HuntarrUtils.getUIPreference('setup-wizard-active', false) === true;
         var showSetup = fromWizard;
         if (banner) banner.style.display = showSetup ? 'flex' : 'none';
         if (callout) callout.style.display = showSetup ? 'flex' : 'none';
@@ -794,9 +793,9 @@
         Promise.all([
             sf('./api/movie-hunt/instances' + ts, { instances: [] }),
             sf('./api/tv-hunt/instances' + ts, { instances: [] })
-        ]).then(function(results) {
-            var movieInstances = (results[0].instances || []).map(function(i) { return { value: 'movie:' + i.id, label: 'Movie - ' + (i.name || 'Instance ' + i.id), id: i.id, type: 'movie' }; });
-            var tvInstances = (results[1].instances || []).map(function(i) { return { value: 'tv:' + i.id, label: 'TV - ' + (i.name || 'Instance ' + i.id), id: i.id, type: 'tv' }; });
+        ]).then(function (results) {
+            var movieInstances = (results[0].instances || []).map(function (i) { return { value: 'movie:' + i.id, label: 'Movie - ' + (i.name || 'Instance ' + i.id), id: i.id, type: 'movie' }; });
+            var tvInstances = (results[1].instances || []).map(function (i) { return { value: 'tv:' + i.id, label: 'TV - ' + (i.name || 'Instance ' + i.id), id: i.id, type: 'tv' }; });
             var all = movieInstances.concat(tvInstances);
             var statusArea = document.getElementById('root-folders-instance-status-area');
             if (all.length === 0) {
@@ -805,15 +804,15 @@
                 return;
             }
             if (statusArea) statusArea.style.display = 'block';
-            var fetches = all.map(function(inst) {
+            var fetches = all.map(function (inst) {
                 var url = inst.type === 'tv' ? './api/tv-hunt/root-folders' : './api/movie-hunt/root-folders';
                 url += '?instance_id=' + encodeURIComponent(inst.id) + '&t=' + Date.now();
-                return sf(url, { root_folders: [] }).then(function(d) {
+                return sf(url, { root_folders: [] }).then(function (d) {
                     var folders = d.root_folders || d.rootFolders || [];
                     return { label: inst.label, value: inst.value, hasRoots: folders.length > 0 };
                 });
             });
-            Promise.all(fetches).then(function(statuses) {
+            Promise.all(fetches).then(function (statuses) {
                 var html = '';
                 for (var i = 0; i < statuses.length; i++) {
                     var s = statuses[i];
@@ -829,24 +828,24 @@
                         '</div></div>';
                 }
                 gridEl.innerHTML = html;
-                gridEl.querySelectorAll('.root-folders-instance-status-card').forEach(function(card) {
+                gridEl.querySelectorAll('.root-folders-instance-status-card').forEach(function (card) {
                     var val = card.getAttribute('data-value');
                     if (val) {
                         card.style.cursor = 'pointer';
-                        card.addEventListener('click', function() {
+                        card.addEventListener('click', function () {
                             var sel = document.getElementById('settings-root-folders-instance-select');
                             if (sel && val) { sel.value = val; window.RootFolders.onCombinedInstanceChange(); }
                         });
                     }
                 });
             });
-        }).catch(function() {
+        }).catch(function () {
             gridEl.innerHTML = '';
         });
     }
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() { window.RootFolders.init(); });
+        document.addEventListener('DOMContentLoaded', function () { window.RootFolders.init(); });
     } else {
         window.RootFolders.init();
     }

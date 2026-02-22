@@ -140,35 +140,11 @@
                 </div>
             </div>
 
-            <!-- Step 4: Download Client -->
-            <div class="setup-wizard-step" id="setup-step-4" data-step="4">
+            <!-- Step 4: NZB Servers (conditional — only if NZB Hunt is the client) -->
+            <div class="setup-wizard-step" id="setup-step-4" data-step="4" style="display: none;">
                 <div class="setup-wizard-step-header" data-step-toggle="4">
                     <div class="setup-wizard-step-indicator" id="setup-step-indicator-4">
                         <span class="step-number">4</span>
-                    </div>
-                    <div class="setup-wizard-step-info">
-                        <span class="setup-wizard-step-title">Download Client</span>
-                        <span class="setup-wizard-step-subtitle">Add a usenet download client — <strong>NZB Hunt
-                                recommended</strong> for simplicity</span>
-                    </div>
-                    <i class="fas fa-chevron-down setup-wizard-step-chevron"></i>
-                </div>
-                <div class="setup-wizard-step-body" id="setup-step-body-4">
-                    <p>A download client handles downloads. We recommend <strong>NZB Hunt</strong> (built-in usenet) or
-                        <strong>Tor Hunt</strong> (built-in torrent) — they require zero configuration and no remote
-                        path mappings. qBittorrent is also supported if you prefer an external torrent client.
-                    </p>
-                    <button type="button" class="setup-wizard-action-btn" data-wizard-nav="settings-root-folders">
-                        <i class="fas fa-cloud-download-alt"></i> Configure Root Folders
-                    </button>
-                </div>
-            </div>
-
-            <!-- Step 5: NZB Servers (conditional — only if NZB Hunt is the client) -->
-            <div class="setup-wizard-step" id="setup-step-5" data-step="5" style="display: none;">
-                <div class="setup-wizard-step-header" data-step-toggle="5">
-                    <div class="setup-wizard-step-indicator" id="setup-step-indicator-5">
-                        <span class="step-number">5</span>
                     </div>
                     <div class="setup-wizard-step-info">
                         <span class="setup-wizard-step-title">Usenet Servers</span>
@@ -176,7 +152,7 @@
                     </div>
                     <i class="fas fa-chevron-down setup-wizard-step-chevron"></i>
                 </div>
-                <div class="setup-wizard-step-body" id="setup-step-body-5">
+                <div class="setup-wizard-step-body" id="setup-step-body-4">
                     <p>NZB Hunt is your download client. Add at least one Usenet server so it can download NZBs.</p>
                     <button type="button" class="setup-wizard-action-btn" data-wizard-nav="nzb-hunt-servers">
                         <i class="fas fa-server"></i> Configure Servers
@@ -200,7 +176,28 @@
             {% from 'components/page_header_partial.html' import page_header %}
             {{ page_header(back_href='./#home', parent_icon='fas fa-folder-open', parent_name='Media Hunt',
             current_name='Collections', sponsor_section_id='media-hunt-collection') }}
-
+            <script>
+                (function () {
+                    // Inject "Setup Guide" button into the collection page header toolbar-right
+                    var bars = document.getElementById('media-hunt-collection-view');
+                    if (!bars) return;
+                    var toolbar = bars.querySelector('.reqset-toolbar-right');
+                    if (!toolbar) return;
+                    var btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.id = 'collection-header-setup-wizard-btn';
+                    btn.className = 'reqset-save-btn';
+                    btn.style.cssText = 'display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#4f46e5,#6366f1);border:1px solid rgba(99,102,241,0.4);color:#fff;cursor:pointer;padding:6px 14px;border-radius:6px;font-size:0.82rem;';
+                    btn.innerHTML = '<i class="fas fa-magic"></i> Setup Guide';
+                    btn.addEventListener('click', function () {
+                        if (window.SetupWizard && typeof window.SetupWizard.show === 'function') {
+                            try { sessionStorage.setItem('setup-wizard-force-show', '1'); } catch (e) { }
+                            window.SetupWizard.refresh(function () { window.SetupWizard.show(); });
+                        }
+                    });
+                    toolbar.appendChild(btn);
+                })();
+            </script>
             <div id="media-hunt-collection-content-wrapper" style="display: none;">
                 <div class="global-search-bar" style="margin-bottom: 12px;">
                     <i class="fas fa-search"></i>

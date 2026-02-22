@@ -115,8 +115,7 @@
             if (!banner) return;
             // Show if user navigated here from the setup wizard.
             // Don't remove the flag — it needs to persist across re-renders during the wizard flow.
-            var fromWizard = false;
-            try { fromWizard = sessionStorage.getItem('setup-wizard-active-nav') === '1'; } catch (e) {}
+            var fromWizard = HuntarrUtils.getUIPreference('setup-wizard-active', false) === true;
             if (fromWizard) {
                 this._fromSetupWizard = true;
             }
@@ -384,7 +383,7 @@
                     var parent = path.replace(/\/+$/, '').split('/').slice(0, -1).join('/') || '/';
                     self._loadBrowsePath(parent);
                 }
-            }).catch(function () {});
+            }).catch(function () { });
         },
 
         /* ── Browse: rebind item click handlers after rename revert ── */
@@ -510,40 +509,40 @@
                 var statusTextId = 'nzb-server-status-text-' + idx;
                 card.innerHTML =
                     '<div class="nzb-server-card-header">' +
-                        '<div class="nzb-server-card-name">' +
-                            '<span class="nzb-server-status-dot status-checking" id="' + statusDotId + '" title="Checking..."></span>' +
-                            '<i class="fas fa-server"></i> <span>' + _esc(srv.name || 'Server') + '</span>' +
-                        '</div>' +
-                        '<div class="nzb-server-card-badges">' +
-                            '<span class="nzb-badge nzb-badge-priority">P: ' + (srv.priority !== undefined ? srv.priority : 0) + '</span>' +
-                            (srv.ssl ? '<span class="nzb-badge nzb-badge-ssl">SSL</span>' : '') +
-                            '<span class="nzb-badge ' + (srv.enabled !== false ? 'nzb-badge-enabled' : 'nzb-badge-disabled') + '">' + (srv.enabled !== false ? 'ON' : 'OFF') + '</span>' +
-                        '</div>' +
+                    '<div class="nzb-server-card-name">' +
+                    '<span class="nzb-server-status-dot status-checking" id="' + statusDotId + '" title="Checking..."></span>' +
+                    '<i class="fas fa-server"></i> <span>' + _esc(srv.name || 'Server') + '</span>' +
+                    '</div>' +
+                    '<div class="nzb-server-card-badges">' +
+                    '<span class="nzb-badge nzb-badge-priority">P: ' + (srv.priority !== undefined ? srv.priority : 0) + '</span>' +
+                    (srv.ssl ? '<span class="nzb-badge nzb-badge-ssl">SSL</span>' : '') +
+                    '<span class="nzb-badge ' + (srv.enabled !== false ? 'nzb-badge-enabled' : 'nzb-badge-disabled') + '">' + (srv.enabled !== false ? 'ON' : 'OFF') + '</span>' +
+                    '</div>' +
                     '</div>' +
                     '<div class="nzb-server-card-body">' +
-                        '<div class="nzb-server-detail"><i class="fas fa-globe"></i> <span>' + _esc(srv.host || '') + ':' + (srv.port || 563) + '</span></div>' +
-                        '<div class="nzb-server-detail"><i class="fas fa-plug"></i> <span>' + (srv.connections || 8) + ' connections</span></div>' +
-                        (srv.username ? '<div class="nzb-server-detail"><i class="fas fa-user"></i> <span>' + _esc(srv.username) + '</span></div>' : '') +
-                        (srv.password_masked ? '<div class="nzb-server-detail"><i class="fas fa-key"></i> <span style="font-family: monospace; letter-spacing: 1px;">' + _esc(srv.password_masked) + '</span></div>' : '') +
-                        '<div class="nzb-server-status-line" id="' + statusTextId + '">' +
-                            '<i class="fas fa-circle-notch fa-spin" style="font-size: 11px; color: #6366f1;"></i> <span style="font-size: 12px; color: #94a3b8;">Checking connection...</span>' +
-                        '</div>' +
-                        '<div class="nzb-server-bandwidth">' +
-                            '<div class="nzb-server-bandwidth-grid">' +
-                                '<span class="nzb-bw-cell"><span class="nzb-bw-label">1h</span><span class="nzb-bw-value">' + _fmtBytes(srv.bandwidth_1h || 0) + '</span></span>' +
-                                '<span class="nzb-bw-cell"><span class="nzb-bw-label">24h</span><span class="nzb-bw-value">' + _fmtBytes(srv.bandwidth_24h || 0) + '</span></span>' +
-                                '<span class="nzb-bw-cell"><span class="nzb-bw-label">30d</span><span class="nzb-bw-value">' + _fmtBytes(srv.bandwidth_30d || 0) + '</span></span>' +
-                                '<span class="nzb-bw-cell"><span class="nzb-bw-label">Total</span><span class="nzb-bw-value">' + _fmtBytes(srv.bandwidth_total || srv.bandwidth_used || 0) + '</span></span>' +
-                            '</div>' +
-                            '<div class="nzb-server-bandwidth-bar"><div class="nzb-server-bandwidth-fill" style="width: ' + Math.min(100, (srv.bandwidth_pct || 0)) + '%;"></div></div>' +
-                        '</div>' +
+                    '<div class="nzb-server-detail"><i class="fas fa-globe"></i> <span>' + _esc(srv.host || '') + ':' + (srv.port || 563) + '</span></div>' +
+                    '<div class="nzb-server-detail"><i class="fas fa-plug"></i> <span>' + (srv.connections || 8) + ' connections</span></div>' +
+                    (srv.username ? '<div class="nzb-server-detail"><i class="fas fa-user"></i> <span>' + _esc(srv.username) + '</span></div>' : '') +
+                    (srv.password_masked ? '<div class="nzb-server-detail"><i class="fas fa-key"></i> <span style="font-family: monospace; letter-spacing: 1px;">' + _esc(srv.password_masked) + '</span></div>' : '') +
+                    '<div class="nzb-server-status-line" id="' + statusTextId + '">' +
+                    '<i class="fas fa-circle-notch fa-spin" style="font-size: 11px; color: #6366f1;"></i> <span style="font-size: 12px; color: #94a3b8;">Checking connection...</span>' +
+                    '</div>' +
+                    '<div class="nzb-server-bandwidth">' +
+                    '<div class="nzb-server-bandwidth-grid">' +
+                    '<span class="nzb-bw-cell"><span class="nzb-bw-label">1h</span><span class="nzb-bw-value">' + _fmtBytes(srv.bandwidth_1h || 0) + '</span></span>' +
+                    '<span class="nzb-bw-cell"><span class="nzb-bw-label">24h</span><span class="nzb-bw-value">' + _fmtBytes(srv.bandwidth_24h || 0) + '</span></span>' +
+                    '<span class="nzb-bw-cell"><span class="nzb-bw-label">30d</span><span class="nzb-bw-value">' + _fmtBytes(srv.bandwidth_30d || 0) + '</span></span>' +
+                    '<span class="nzb-bw-cell"><span class="nzb-bw-label">Total</span><span class="nzb-bw-value">' + _fmtBytes(srv.bandwidth_total || srv.bandwidth_used || 0) + '</span></span>' +
+                    '</div>' +
+                    '<div class="nzb-server-bandwidth-bar"><div class="nzb-server-bandwidth-fill" style="width: ' + Math.min(100, (srv.bandwidth_pct || 0)) + '%;"></div></div>' +
+                    '</div>' +
                     '</div>' +
                     '<div class="nzb-server-card-footer">' +
-                        '<button class="nzb-btn" data-action="edit" data-idx="' + idx + '"><i class="fas fa-pen"></i> Edit</button>' +
-                        '<button class="nzb-btn nzb-btn-danger" data-action="delete" data-idx="' + idx + '"><i class="fas fa-trash"></i> Delete</button>' +
+                    '<button class="nzb-btn" data-action="edit" data-idx="' + idx + '"><i class="fas fa-pen"></i> Edit</button>' +
+                    '<button class="nzb-btn nzb-btn-danger" data-action="delete" data-idx="' + idx + '"><i class="fas fa-trash"></i> Delete</button>' +
                     '</div>' +
                     '<div class="nzb-server-card-footer nzb-server-card-footer-secondary">' +
-                        '<button class="nzb-btn nzb-btn-subtle" data-action="reset-stats" data-idx="' + idx + '"><i class="fas fa-undo"></i> Reset Stats</button>' +
+                    '<button class="nzb-btn nzb-btn-subtle" data-action="reset-stats" data-idx="' + idx + '"><i class="fas fa-undo"></i> Reset Stats</button>' +
                     '</div>';
 
                 card.addEventListener('click', function (e) {
@@ -557,7 +556,7 @@
                     } else if (action === 'reset-stats') {
                         var name = (self._servers[i] || {}).name || 'this server';
                         var idx = i;
-                        var doReset = function() {
+                        var doReset = function () {
                             fetch('./api/nzb-hunt/servers/' + idx + '/bandwidth', { method: 'DELETE' })
                                 .then(function (r) { return r.json(); })
                                 .then(function (data) {
@@ -579,7 +578,7 @@
                     } else if (action === 'delete') {
                         var name = (self._servers[i] || {}).name || 'this server';
                         var idx = i;
-                        var doDelete = function() {
+                        var doDelete = function () {
                             fetch('./api/nzb-hunt/servers/' + idx, { method: 'DELETE' })
                                 .then(function (r) { return r.json(); })
                                 .then(function (data) {
@@ -704,7 +703,7 @@
         _navigateToServerEditor: function () {
             // Propagate setup wizard context to the server editor
             if (this._fromSetupWizard) {
-                try { sessionStorage.setItem('setup-wizard-server-editor', '1'); } catch (e) {}
+                try { sessionStorage.setItem('setup-wizard-server-editor', '1'); } catch (e) { }
             }
             window.location.hash = 'nzb-hunt-server-editor';
         },
@@ -748,9 +747,9 @@
 
             // Show/hide setup wizard banner on server editor
             var editorFromWizard = false;
-            try { editorFromWizard = sessionStorage.getItem('setup-wizard-server-editor') === '1'; } catch (e) {}
+            try { editorFromWizard = sessionStorage.getItem('setup-wizard-server-editor') === '1'; } catch (e) { }
             if (editorFromWizard) {
-                try { sessionStorage.removeItem('setup-wizard-server-editor'); } catch (e) {}
+                try { sessionStorage.removeItem('setup-wizard-server-editor'); } catch (e) { }
             }
             var editorBanner = document.getElementById('nzb-server-editor-wizard-banner');
             if (editorBanner) editorBanner.style.display = (editorFromWizard || this._fromSetupWizard) ? 'flex' : 'none';
@@ -865,10 +864,7 @@
                 onCancel: function () {
                     self._serverEditorOriginalValues = self._getServerEditorFormSnapshot();
                     self._updateServerModalSaveButton();
-                    // Re-set the wizard flag so the servers page banner shows again
-                    if (self._fromSetupWizard) {
-                        try { sessionStorage.setItem('setup-wizard-active-nav', '1'); } catch (e) {}
-                    }
+                    // setup-wizard-active persists automatically, no need to re-set
                     if (window.huntarrUI && typeof window.huntarrUI.switchSection === 'function') {
                         window.huntarrUI.switchSection(targetSection);
                         window.location.hash = targetSection;
@@ -882,10 +878,7 @@
                 this._confirmLeaveServerEditor('nzb-hunt-servers');
                 return;
             }
-            // Re-set the wizard flag so the servers page banner shows again
-            if (this._fromSetupWizard) {
-                try { sessionStorage.setItem('setup-wizard-active-nav', '1'); } catch (e) {}
-            }
+            // setup-wizard-active persists automatically, no need to re-set
             if (window.huntarrUI && typeof window.huntarrUI.switchSection === 'function') {
                 window.huntarrUI.switchSection('nzb-hunt-servers');
                 window.location.hash = 'nzb-hunt-servers';
@@ -1112,15 +1105,15 @@
                     (cat._folderError ? '<i class="fas fa-exclamation-circle nzb-cat-status-error" title="' + _esc(cat._folderError || 'Error') + '"></i>' : '');
                 card.innerHTML =
                     '<div class="nzb-cat-card-header">' +
-                        '<div class="nzb-cat-card-name"><i class="fas fa-tag"></i> <span>' + _esc(cat.name || 'Category') + '</span></div>' +
-                        '<div class="nzb-cat-card-badges">' +
-                            '<span class="nzb-badge nzb-badge-priority-cat">' + _esc(_capFirst(cat.priority || 'normal')) + '</span>' +
-                            (statusIcon ? '<span class="nzb-cat-status">' + statusIcon + '</span>' : '') +
-                        '</div>' +
+                    '<div class="nzb-cat-card-name"><i class="fas fa-tag"></i> <span>' + _esc(cat.name || 'Category') + '</span></div>' +
+                    '<div class="nzb-cat-card-badges">' +
+                    '<span class="nzb-badge nzb-badge-priority-cat">' + _esc(_capFirst(cat.priority || 'normal')) + '</span>' +
+                    (statusIcon ? '<span class="nzb-cat-status">' + statusIcon + '</span>' : '') +
+                    '</div>' +
                     '</div>' +
                     '<div class="nzb-cat-card-body">' +
-                        '<div class="nzb-cat-card-path nzb-cat-path-readonly"><i class="fas fa-folder"></i> <span>' + _esc(cat.folder || '') + '</span></div>' +
-                        (cat._folderError ? '<div class="nzb-cat-error-msg">' + _esc(cat._folderError) + '</div>' : '') +
+                    '<div class="nzb-cat-card-path nzb-cat-path-readonly"><i class="fas fa-folder"></i> <span>' + _esc(cat.folder || '') + '</span></div>' +
+                    (cat._folderError ? '<div class="nzb-cat-error-msg">' + _esc(cat._folderError) + '</div>' : '') +
                     '</div>';
                 grid.appendChild(card);
             });

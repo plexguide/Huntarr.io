@@ -2,7 +2,7 @@
  * Media Hunt Instance Management – shows Movie and TV instance lists in separate sections.
  * Loads both, wires Add Instance modals, and delegates click handlers.
  */
-(function() {
+(function () {
     'use strict';
 
     var baseUrl = (typeof window !== 'undefined' && window.HUNTARR_BASE_URL) ? window.HUNTARR_BASE_URL.replace(/\/$/, '') : '';
@@ -17,7 +17,7 @@
         var input = document.getElementById('media-hunt-instance-add-movie-name');
         if (modal && modal.parentNode !== document.body) document.body.appendChild(modal);
         if (modal) modal.style.display = 'flex';
-        if (input) { input.value = ''; setTimeout(function() { input.focus(); }, 100); }
+        if (input) { input.value = ''; setTimeout(function () { input.focus(); }, 100); }
         document.body.classList.add('media-hunt-instance-add-modal-open');
     }
 
@@ -32,7 +32,7 @@
         var input = document.getElementById('media-hunt-instance-add-tv-name');
         if (modal && modal.parentNode !== document.body) document.body.appendChild(modal);
         if (modal) modal.style.display = 'flex';
-        if (input) { input.value = ''; setTimeout(function() { input.focus(); }, 100); }
+        if (input) { input.value = ''; setTimeout(function () { input.focus(); }, 100); }
         document.body.classList.add('media-hunt-instance-add-modal-open');
     }
 
@@ -55,7 +55,7 @@
         if (movieClose) movieClose.onclick = closeAddMovieModal;
         if (movieCancel) movieCancel.onclick = closeAddMovieModal;
         if (movieSave && movieInput) {
-            movieSave.onclick = function() {
+            movieSave.onclick = function () {
                 var name = (movieInput.value || '').trim() || 'Unnamed';
                 movieSave.disabled = true;
                 fetch(api('./api/movie-hunt/instances'), {
@@ -63,31 +63,31 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: name })
                 })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (data.success) {
-                        if (typeof document.dispatchEvent === 'function') {
-                            document.dispatchEvent(new CustomEvent('huntarr:instances-changed'));
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        if (data.success) {
+                            if (typeof document.dispatchEvent === 'function') {
+                                document.dispatchEvent(new CustomEvent('huntarr:instances-changed'));
+                            }
+                            if (window.MovieHuntInstanceEditor && window.MovieHuntInstanceEditor.loadInstanceList) {
+                                window.MovieHuntInstanceEditor.loadInstanceList();
+                            }
+                            if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                window.huntarrUI.showNotification('Movie instance added.', 'success');
+                            }
+                            closeAddMovieModal();
+                        } else {
+                            if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                window.huntarrUI.showNotification(data.error || 'Failed to add instance.', 'error');
+                            }
                         }
-                        if (window.MovieHuntInstanceEditor && window.MovieHuntInstanceEditor.loadInstanceList) {
-                            window.MovieHuntInstanceEditor.loadInstanceList();
-                        }
+                    })
+                    .catch(function () {
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
-                            window.huntarrUI.showNotification('Movie instance added.', 'success');
+                            window.huntarrUI.showNotification('Failed to add instance.', 'error');
                         }
-                        closeAddMovieModal();
-                    } else {
-                        if (window.huntarrUI && window.huntarrUI.showNotification) {
-                            window.huntarrUI.showNotification(data.error || 'Failed to add instance.', 'error');
-                        }
-                    }
-                })
-                .catch(function() {
-                    if (window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification('Failed to add instance.', 'error');
-                    }
-                })
-                .finally(function() { movieSave.disabled = false; });
+                    })
+                    .finally(function () { movieSave.disabled = false; });
             };
         }
 
@@ -100,7 +100,7 @@
         if (tvClose) tvClose.onclick = closeAddTVModal;
         if (tvCancel) tvCancel.onclick = closeAddTVModal;
         if (tvSave && tvInput) {
-            tvSave.onclick = function() {
+            tvSave.onclick = function () {
                 var name = (tvInput.value || '').trim() || 'Unnamed';
                 tvSave.disabled = true;
                 fetch(api('./api/tv-hunt/instances'), {
@@ -108,31 +108,31 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: name })
                 })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (data.success) {
-                        if (typeof document.dispatchEvent === 'function') {
-                            document.dispatchEvent(new CustomEvent('huntarr:tv-hunt-instances-changed'));
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        if (data.success) {
+                            if (typeof document.dispatchEvent === 'function') {
+                                document.dispatchEvent(new CustomEvent('huntarr:tv-hunt-instances-changed'));
+                            }
+                            if (window.TVHuntInstanceEditor && window.TVHuntInstanceEditor.loadInstanceList) {
+                                window.TVHuntInstanceEditor.loadInstanceList();
+                            }
+                            if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                window.huntarrUI.showNotification('TV instance added.', 'success');
+                            }
+                            closeAddTVModal();
+                        } else {
+                            if (window.huntarrUI && window.huntarrUI.showNotification) {
+                                window.huntarrUI.showNotification(data.error || 'Failed to add instance.', 'error');
+                            }
                         }
-                        if (window.TVHuntInstanceEditor && window.TVHuntInstanceEditor.loadInstanceList) {
-                            window.TVHuntInstanceEditor.loadInstanceList();
-                        }
+                    })
+                    .catch(function () {
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
-                            window.huntarrUI.showNotification('TV instance added.', 'success');
+                            window.huntarrUI.showNotification('Failed to add instance.', 'error');
                         }
-                        closeAddTVModal();
-                    } else {
-                        if (window.huntarrUI && window.huntarrUI.showNotification) {
-                            window.huntarrUI.showNotification(data.error || 'Failed to add instance.', 'error');
-                        }
-                    }
-                })
-                .catch(function() {
-                    if (window.huntarrUI && window.huntarrUI.showNotification) {
-                        window.huntarrUI.showNotification('Failed to add instance.', 'error');
-                    }
-                })
-                .finally(function() { tvSave.disabled = false; });
+                    })
+                    .finally(function () { tvSave.disabled = false; });
             };
         }
 
@@ -150,7 +150,7 @@
         var tvGrid = document.getElementById('tv-hunt-settings-instances-grid');
         if (movieGrid && !movieGrid._instanceMgmtBound) {
             movieGrid._instanceMgmtBound = true;
-            movieGrid.addEventListener('click', function(e) {
+            movieGrid.addEventListener('click', function (e) {
                 var addCard = e.target.closest('.add-instance-card[data-app-type="media-hunt-instance-movie"]');
                 if (addCard) {
                     e.preventDefault();
@@ -161,7 +161,7 @@
         }
         if (tvGrid && !tvGrid._instanceMgmtBound) {
             tvGrid._instanceMgmtBound = true;
-            tvGrid.addEventListener('click', function(e) {
+            tvGrid.addEventListener('click', function (e) {
                 var addCard = e.target.closest('.add-instance-card[data-app-type="media-hunt-instance-tv"]');
                 if (addCard) {
                     e.preventDefault();
@@ -178,12 +178,11 @@
         // Show if user navigated here from the setup wizard
         // Don't remove the flag — it needs to persist across instance add/edit re-renders.
         // The flag is cleared when the user clicks "Continue to Setup Guide" or leaves the wizard flow.
-        var fromWizard = false;
-        try { fromWizard = sessionStorage.getItem('setup-wizard-active-nav') === '1'; } catch (e) {}
+        var fromWizard = HuntarrUtils.getUIPreference('setup-wizard-active', false) === true;
         banner.style.display = fromWizard ? 'flex' : 'none';
     }
 
-    window.MediaHuntInstanceManagement.init = function() {
+    window.MediaHuntInstanceManagement.init = function () {
         initModals();
         initGridListeners();
         updateSetupWizardBanner();

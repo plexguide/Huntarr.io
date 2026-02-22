@@ -7537,8 +7537,8 @@ window.HuntarrProwlarr = {
  *
  * Shows a full-takeover wizard when the user first navigates to any Media
  * Hunt section and essential configuration is missing.  Steps:
- *   1. Instance   2. Indexers   3. Root Folders   4. Download Client
- *   5. (conditional) Usenet Servers — shown only when NZB Hunt is configured
+ *   1. Instance   2. Indexers   3. Root Folders
+ *   4. (conditional) Usenet Servers — shown only when NZB Hunt is configured
  *      as the download client.
  *
  * Once all steps are complete **or** the user clicks "Skip", the wizard
@@ -7546,12 +7546,12 @@ window.HuntarrProwlarr = {
  *
  * Attaches to window.SetupWizard.
  */
-(function() {
+(function () {
     'use strict';
 
     var PREF_KEY = 'media-hunt-wizard-completed';
-    var TOTAL_BASE_STEPS = 4;          // steps 1-4 (always present)
-    var stepStatus = { 1: false, 2: false, 3: false, 4: false, 5: false };
+    var TOTAL_BASE_STEPS = 3;          // steps 1-3 (always present)
+    var stepStatus = { 1: false, 2: false, 3: false, 4: false };
     var nzbHuntIsClient = false;       // whether step 5 is relevant
     var _refreshing = false;
 
@@ -7561,14 +7561,14 @@ window.HuntarrProwlarr = {
          * Should the wizard be shown?  Checks localStorage first (fast path)
          * then verifies against APIs.  Calls `cb(needsWizard)`.
          */
-        check: function(cb) {
+        check: function (cb) {
             if (_isDismissed()) { cb(false); return; }
 
             // If a force-reset was requested, always show the wizard once
             var forceShow = false;
-            try { forceShow = sessionStorage.getItem('setup-wizard-force-show') === '1'; } catch (e) {}
+            try { forceShow = sessionStorage.getItem('setup-wizard-force-show') === '1'; } catch (e) { }
 
-            _checkAllSteps(function() {
+            _checkAllSteps(function () {
                 var allDone = _allStepsComplete();
                 if (allDone && !forceShow) {
                     // All steps done — mark complete so wizard and banners never show again
@@ -7576,7 +7576,7 @@ window.HuntarrProwlarr = {
                     cb(false);
                 } else {
                     // Clear the force flag so it only applies once
-                    try { sessionStorage.removeItem('setup-wizard-force-show'); } catch (e) {}
+                    try { sessionStorage.removeItem('setup-wizard-force-show'); } catch (e) { }
                     cb(true);
                 }
             });
@@ -7586,11 +7586,15 @@ window.HuntarrProwlarr = {
          * Show the wizard view and update its step indicators.
          * Called by app.js after `check()` returns true.
          */
-        show: function() {
+        show: function () {
             var view = document.getElementById('media-hunt-setup-wizard-view');
+            var collectionView = document.getElementById('media-hunt-collection-view');
             if (view) view.style.display = '';
+            if (collectionView) collectionView.style.display = 'none';
             _setSidebarVisible(false);
             _setSponsorsVisible(false);
+            // Mark wizard as active on the server so it persists across navigation/refresh
+            HuntarrUtils.setUIPreference('setup-wizard-active', true);
             // Restore any page-header-bars that were hidden during wizard navigation
             var hiddenHeaders = document.querySelectorAll('.page-header-bar');
             for (var i = 0; i < hiddenHeaders.length; i++) {
@@ -7604,21 +7608,30 @@ window.HuntarrProwlarr = {
         /**
          * Hide the wizard view and restore sidebar.
          */
-        hide: function() {
+        hide: function () {
             var view = document.getElementById('media-hunt-setup-wizard-view');
+            var collectionView = document.getElementById('media-hunt-collection-view');
             if (view) view.style.display = 'none';
+            if (collectionView) collectionView.style.display = 'block';
             _setSidebarVisible(true);
             _setSponsorsVisible(true);
+            // Clear active flag on the server so wizard doesn't reappear
+            HuntarrUtils.setUIPreference('setup-wizard-active', false);
+        },
+
+        /** Is the wizard currently active? Reads from server-side UI preferences. */
+        isActive: function () {
+            return HuntarrUtils.getUIPreference('setup-wizard-active', false) === true;
         },
 
         /**
          * Re-check all steps and update UI.  Used when user returns from
          * a configuration page back to any Media Hunt section.
          */
-        refresh: function(cb) {
+        refresh: function (cb) {
             if (_refreshing) { if (cb) cb(); return; }
             _refreshing = true;
-            _checkAllSteps(function() {
+            _checkAllSteps(function () {
                 _refreshing = false;
                 var allDone = _allStepsComplete();
                 if (allDone) {
@@ -7634,7 +7647,7 @@ window.HuntarrProwlarr = {
         },
 
         /** Cached status from last check. */
-        isComplete: function() {
+        isComplete: function () {
             return _isDismissed() || _allStepsComplete();
         },
 
@@ -7643,14 +7656,19 @@ window.HuntarrProwlarr = {
          * indexers, root folders, clients). If the wizard is still incomplete,
          * redirects to Collections so the wizard refreshes and shows the next step.
          */
-        maybeReturnToCollection: function() {
+        maybeReturnToCollection: function () {
             if (this.isComplete()) return;
-            try { sessionStorage.setItem('setup-wizard-return-from-config', '1'); } catch (e) {}
+            try { sessionStorage.setItem('setup-wizard-return-from-config', '1'); } catch (e) { }
             if (window.huntarrUI && typeof window.huntarrUI.switchSection === 'function') {
                 window.huntarrUI.switchSection('media-hunt-collection');
             } else {
                 window.location.hash = '#media-hunt-collection';
             }
+            // After navigation, force-show the wizard so user stays in the guide
+            var self = this;
+            setTimeout(function () {
+                self.refresh(function () { self.show(); });
+            }, 200);
         }
     };
 
@@ -7661,8 +7679,6 @@ window.HuntarrProwlarr = {
 
     function _markComplete() {
         HuntarrUtils.setUIPreference(PREF_KEY, true);
-        // Clear the wizard navigation flag so banners stop showing
-        try { sessionStorage.removeItem('setup-wizard-active-nav'); } catch (e) {}
     }
 
     function _totalSteps() {
@@ -7701,10 +7717,10 @@ window.HuntarrProwlarr = {
         banner.setAttribute('role', 'status');
         banner.innerHTML = '<i class="fas fa-check-circle"></i> Configuration saved! Continue with the next step below.';
         wizard.insertBefore(banner, wizard.firstChild);
-        setTimeout(function() {
+        setTimeout(function () {
             banner.style.opacity = '0';
             banner.style.transition = 'opacity 0.3s ease';
-            setTimeout(function() { if (banner.parentNode) banner.parentNode.removeChild(banner); }, 300);
+            setTimeout(function () { if (banner.parentNode) banner.parentNode.removeChild(banner); }, 300);
         }, 4500);
     }
 
@@ -7712,55 +7728,54 @@ window.HuntarrProwlarr = {
     function _checkAllSteps(cb) {
         var ts = '?_=' + Date.now();
         Promise.all([
-            fetch('./api/movie-hunt/instances' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/tv-hunt/instances' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/indexer-hunt/indexers' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/movie-hunt/has-clients' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }),
-            fetch('./api/nzb-hunt/is-client-configured' + ts, { cache: 'no-store' }).then(function(r) { return r.json(); }).catch(function() { return { configured: false }; })
-        ]).then(function(results) {
+            fetch('./api/movie-hunt/instances' + ts, { cache: 'no-store' }).then(function (r) { return r.json(); }),
+            fetch('./api/tv-hunt/instances' + ts, { cache: 'no-store' }).then(function (r) { return r.json(); }),
+            fetch('./api/indexer-hunt/indexers' + ts, { cache: 'no-store' }).then(function (r) { return r.json(); }),
+            fetch('./api/movie-hunt/has-clients' + ts, { cache: 'no-store' }).then(function (r) { return r.json(); }),
+            fetch('./api/nzb-hunt/is-client-configured' + ts, { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return { configured: false }; })
+        ]).then(function (results) {
             var movieInstances = results[0].instances || [];
-            var tvInstances    = results[1].instances || [];
-            var indexers       = results[2].indexers || [];
-            var hasClients     = results[3].has_clients === true;
-            nzbHuntIsClient    = results[4].configured === true;
+            var tvInstances = results[1].instances || [];
+            var indexers = results[2].indexers || [];
+            var hasClients = results[3].has_clients === true;
+            nzbHuntIsClient = results[4].configured === true;
 
             stepStatus[1] = movieInstances.length > 0 || tvInstances.length > 0;
             stepStatus[2] = indexers.length > 0;
-            stepStatus[4] = hasClients;
 
-            // Toggle step 5 visibility
-            var step5el = document.getElementById('setup-step-5');
-            if (step5el) step5el.style.display = nzbHuntIsClient ? '' : 'none';
+            // Toggle step 4 (Usenet Servers) visibility — only when NZB Hunt is client
+            var step4el = document.getElementById('setup-step-4');
+            if (step4el) step4el.style.display = nzbHuntIsClient ? '' : 'none';
 
             // Root folders — need at least one instance first
             if (stepStatus[1]) {
-                _checkRootFolders(movieInstances, tvInstances, function(hasRoots) {
+                _checkRootFolders(movieInstances, tvInstances, function (hasRoots) {
                     stepStatus[3] = hasRoots;
                     // NZB servers
                     if (nzbHuntIsClient) {
-                        _checkNzbServers(function(hasServers) {
-                            stepStatus[5] = hasServers;
+                        _checkNzbServers(function (hasServers) {
+                            stepStatus[4] = hasServers;
                             if (cb) cb();
                         });
                     } else {
-                        stepStatus[5] = true; // not applicable — treat as done
+                        stepStatus[4] = true; // not applicable — treat as done
                         if (cb) cb();
                     }
                 });
             } else {
                 stepStatus[3] = false;
                 if (nzbHuntIsClient) {
-                    _checkNzbServers(function(hasServers) {
-                        stepStatus[5] = hasServers;
+                    _checkNzbServers(function (hasServers) {
+                        stepStatus[4] = hasServers;
                         if (cb) cb();
                     });
                 } else {
-                    stepStatus[5] = true;
+                    stepStatus[4] = true;
                     if (cb) cb();
                 }
             }
-        }).catch(function() {
-            stepStatus[1] = stepStatus[2] = stepStatus[3] = stepStatus[4] = stepStatus[5] = false;
+        }).catch(function () {
+            stepStatus[1] = stepStatus[2] = stepStatus[3] = stepStatus[4] = false;
             nzbHuntIsClient = false;
             if (cb) cb();
         });
@@ -7771,34 +7786,34 @@ window.HuntarrProwlarr = {
         if (movieInstances.length > 0) {
             fetches.push(
                 fetch('./api/movie-hunt/root-folders', { cache: 'no-store' })
-                    .then(function(r) { return r.json(); })
-                    .then(function(d) { return (d.root_folders || d.rootFolders || []).length > 0; })
-                    .catch(function() { return false; })
+                    .then(function (r) { return r.json(); })
+                    .then(function (d) { return (d.root_folders || d.rootFolders || []).length > 0; })
+                    .catch(function () { return false; })
             );
         }
         if (tvInstances.length > 0) {
             fetches.push(
                 fetch('./api/tv-hunt/root-folders', { cache: 'no-store' })
-                    .then(function(r) { return r.json(); })
-                    .then(function(d) { return (d.root_folders || d.rootFolders || []).length > 0; })
-                    .catch(function() { return false; })
+                    .then(function (r) { return r.json(); })
+                    .then(function (d) { return (d.root_folders || d.rootFolders || []).length > 0; })
+                    .catch(function () { return false; })
             );
         }
         if (fetches.length === 0) { cb(false); return; }
-        Promise.all(fetches).then(function(results) {
-            cb(results.some(function(v) { return v; }));
-        }).catch(function() { cb(false); });
+        Promise.all(fetches).then(function (results) {
+            cb(results.some(function (v) { return v; }));
+        }).catch(function () { cb(false); });
     }
 
     function _checkNzbServers(cb) {
         fetch('./api/nzb-hunt/home-stats', { cache: 'no-store' })
-            .then(function(r) { return r.json(); })
-            .then(function(d) {
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
                 // API returns has_servers (boolean) or servers (array)
                 var hasServers = d.has_servers === true || (d.servers && d.servers.length > 0);
                 cb(hasServers);
             })
-            .catch(function() { cb(false); });
+            .catch(function () { cb(false); });
     }
 
     // ── UI Updates ──────────────────────────────────────────────────
@@ -7807,7 +7822,7 @@ window.HuntarrProwlarr = {
         var completedCount = 0;
 
         for (var s = 1; s <= 5; s++) {
-            var stepEl    = document.getElementById('setup-step-' + s);
+            var stepEl = document.getElementById('setup-step-' + s);
             var indicator = document.getElementById('setup-step-indicator-' + s);
             if (!stepEl || !indicator) continue;
             if (s > total) { stepEl.style.display = 'none'; continue; }
@@ -7871,31 +7886,25 @@ window.HuntarrProwlarr = {
 
     // ── Event Bindings ──────────────────────────────────────────────
     function _bindEvents() {
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             // Wizard nav buttons (use switchSection for reliable navigation)
             var navBtn = e.target.closest('[data-wizard-nav]');
             if (navBtn) {
                 var section = navBtn.getAttribute('data-wizard-nav');
-                // Mark that user is navigating from the setup wizard
-                try {
-                    sessionStorage.setItem('setup-wizard-active-nav', '1');
-                } catch (e2) {}
+                // setup-wizard-active flag (set by show()) already marks the wizard as running
                 if (section && window.huntarrUI && typeof window.huntarrUI.switchSection === 'function') {
                     window.huntarrUI.switchSection(section);
                 } else if (section) {
                     window.location.hash = '#' + section;
                 }
-                // Hide the back/breadcrumb in the target section's header bar
-                // (redundant during setup — the "Continue to Setup Guide" banner
-                // provides all the navigation the user needs)
-                // NOTE: Only hide .reqset-toolbar-left, NOT the entire .page-header-bar,
-                // because the save button lives in .reqset-toolbar-right and must stay visible.
-                setTimeout(function() {
+                // Hide the page header bar in the target section
+                // (the "Continue to Setup Guide" banner provides navigation)
+                setTimeout(function () {
                     var allSections = document.querySelectorAll('.content-section');
                     for (var i = 0; i < allSections.length; i++) {
                         if (allSections[i].style.display !== 'none' && allSections[i].offsetParent !== null) {
-                            var toolbarLeft = allSections[i].querySelector('.page-header-bar .reqset-toolbar-left');
-                            if (toolbarLeft) toolbarLeft.style.display = 'none';
+                            var headerBar = allSections[i].querySelector('.page-header-bar');
+                            if (headerBar) headerBar.style.display = 'none';
                         }
                     }
                 }, 150);

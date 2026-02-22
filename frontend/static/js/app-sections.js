@@ -495,28 +495,19 @@ Object.assign(huntarrUI, {
             this._pendingMediaHuntSidebar = undefined;
             if (typeof setActiveNavItem === 'function') setActiveNavItem();
 
-            // ── Setup Wizard gate — show wizard if setup is incomplete ──
-            var _hash = window.location.hash || '';
-            if (window.SetupWizard && typeof window.SetupWizard.check === 'function') {
-                window.SetupWizard.check(function (needsWizard) {
-                    if (needsWizard) {
-                        window.SetupWizard.show();
-                    } else {
-                        if (wizardView) wizardView.style.display = 'none';
-                        if (collectionView) collectionView.style.display = 'block';
-                        if (!/\/tv\/\d+$/.test(_hash)) {
-                            if (window.TVHuntCollection && typeof window.TVHuntCollection.showMainView === 'function') {
-                                window.TVHuntCollection.showMainView();
-                            }
-                        }
-                        if (window.MediaHuntCollection && typeof window.MediaHuntCollection.init === 'function') {
-                            window.MediaHuntCollection.init();
-                        }
-                    }
-                });
+            // ── If wizard is active (user launched it), stay in wizard ──
+            if (window.SetupWizard && window.SetupWizard.isActive()) {
+                window.SetupWizard.refresh(function () { window.SetupWizard.show(); });
             } else {
-                // Fallback if SetupWizard not loaded
+                // ── Collection view — show normally (wizard is opt-in via button) ──
+                var _hash = window.location.hash || '';
+                if (wizardView) wizardView.style.display = 'none';
                 if (collectionView) collectionView.style.display = 'block';
+                if (!/\/tv\/\d+$/.test(_hash)) {
+                    if (window.TVHuntCollection && typeof window.TVHuntCollection.showMainView === 'function') {
+                        window.TVHuntCollection.showMainView();
+                    }
+                }
                 if (window.MediaHuntCollection && typeof window.MediaHuntCollection.init === 'function') {
                     window.MediaHuntCollection.init();
                 }

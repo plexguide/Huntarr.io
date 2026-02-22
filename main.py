@@ -609,6 +609,14 @@ def main():
             apply_proxy_env()
         except Exception as proxy_error:
             huntarr_logger.warning(f"Failed to apply proxy settings: {proxy_error}")
+
+        # Auto-provision built-in download clients (NZB Hunt + Tor Hunt)
+        # for any instances that don't already have them
+        try:
+            from primary.utils.client_provisioner import ensure_all_instances_have_builtin_clients
+            ensure_all_instances_have_builtin_clients()
+        except Exception as client_prov_error:
+            huntarr_logger.warning(f"Client auto-provisioning failed: {client_prov_error}")
         
     except Exception as e:
         huntarr_logger.error(f"Failed to initialize databases: {e}")
