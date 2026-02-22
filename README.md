@@ -28,6 +28,12 @@ My 12-year-old daughter loves singing, dancing, and exploring STEM. She's an A-B
 
 ---
 
+> **🚀 PlexGuide is back.** Rebuilt from the ground up for 2026 — a self-hosted server management platform running as a single Docker container. App store, Cloudflare Tunnels, Traefik, MergerFS drive pooling, backups, and more. One-line install on Ubuntu & Debian.
+> 
+> [![PlexGuide on GitHub](https://img.shields.io/github/stars/plexguide/PlexGuide.com?style=social&label=PlexGuide)](https://github.com/plexguide/PlexGuide.com)
+
+---
+
 <p align="center">
   <img src="docs/readme/Main.jpg" alt="Huntarr Dashboard" width="800">
 </p>
