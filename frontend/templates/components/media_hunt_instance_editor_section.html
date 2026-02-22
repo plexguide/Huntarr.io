@@ -14,11 +14,18 @@
                 </div>
             </div>
             <div class="reqset-toolbar-right">
-                <button type="button" id="media-hunt-instance-editor-save" class="reqset-save-btn page-header-save" disabled>
+                <button type="button" id="media-hunt-instance-editor-save" class="reqset-save-btn page-header-save"
+                    disabled>
                     <i class="fas fa-save"></i> Save
                 </button>
             </div>
         </div>
+
+        <!-- Instance Selector Dropdown -->
+        <div id="instance-editor-selector" class="instance-editor-selector">
+            <select id="instance-editor-instance-select" class="instance-editor-select"></select>
+        </div>
+
         <div id="media-hunt-instance-editor-content">
             <!-- Filled by Movie or TV instance editor (Search, Stateful, Additional) -->
         </div>
@@ -28,9 +35,147 @@
 <style>
     /* Status pills (Enabled/Disabled) — Media/TV Hunt specific */
     #media-hunt-instance-editor-content .mh-info-status-pill,
-    #media-hunt-instance-editor-content .th-info-status-pill { display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 9999px; font-size: 0.875rem; font-weight: 500; }
+    #media-hunt-instance-editor-content .th-info-status-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 14px;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
     #media-hunt-instance-editor-content .mh-info-status-enabled,
-    #media-hunt-instance-editor-content .th-info-status-enabled { background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #10b981; }
+    #media-hunt-instance-editor-content .th-info-status-enabled {
+        background: rgba(16, 185, 129, 0.2);
+        border: 1px solid rgba(16, 185, 129, 0.4);
+        color: #10b981;
+    }
+
     #media-hunt-instance-editor-content .mh-info-status-disabled,
-    #media-hunt-instance-editor-content .th-info-status-disabled { background: rgba(148, 163, 184, 0.15); border: 1px solid rgba(148, 163, 184, 0.25); color: #94a3b8; }
+    #media-hunt-instance-editor-content .th-info-status-disabled {
+        background: rgba(148, 163, 184, 0.15);
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        color: #94a3b8;
+    }
+
+    /* Instance selector dropdown */
+    .instance-editor-selector {
+        padding: 0 0 16px 0;
+    }
+
+    .instance-editor-select {
+        width: 100%;
+        max-width: 400px;
+        padding: 10px 14px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: #f1f5f9;
+        background: rgba(30, 41, 59, 0.5);
+        border: 1px solid rgba(148, 163, 184, 0.15);
+        border-radius: 10px;
+        cursor: pointer;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
+        padding-right: 36px;
+    }
+
+    .instance-editor-select:hover {
+        border-color: rgba(148, 163, 184, 0.3);
+    }
+
+    .instance-editor-select:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+    }
+
+    .instance-editor-select option {
+        background: #1e293b;
+        color: #f1f5f9;
+        padding: 8px;
+    }
 </style>
+
+<script>
+    (function () {
+        'use strict';
+        var _baseUrl = (typeof window !== 'undefined' && window.HUNTARR_BASE_URL) ? window.HUNTARR_BASE_URL.replace(/\/$/, '') : '';
+        function api(path) { return (_baseUrl || '') + (path.indexOf('./') === 0 ? path : './' + path); }
+
+        /**
+         * Populate the instance selector dropdown with all Movie + TV instances
+         * and listen for changes to switch the editor.
+         */
+        function populateInstanceSelector(currentType, currentId) {
+            var select = document.getElementById('instance-editor-instance-select');
+            if (!select) return;
+
+            Promise.all([
+                fetch(api('./api/movie-hunt/instances'), { cache: 'no-store' }).then(function (r) { return r.json(); }),
+                fetch(api('./api/tv-hunt/instances'), { cache: 'no-store' }).then(function (r) { return r.json(); })
+            ]).then(function (results) {
+                var movieData = results[0];
+                var tvData = results[1];
+                var movieList = movieData.instances || [];
+                var tvList = tvData.instances || [];
+
+                select.innerHTML = '';
+
+                // Movie instances
+                if (movieList.length > 0) {
+                    var movieGroup = document.createElement('optgroup');
+                    movieGroup.label = 'Movie Instances';
+                    movieList.forEach(function (inst) {
+                        var opt = document.createElement('option');
+                        opt.value = 'movie:' + inst.id;
+                        opt.textContent = '🎬 ' + (inst.name || 'Movie ' + inst.id);
+                        if (currentType === 'movie' && String(inst.id) === String(currentId)) opt.selected = true;
+                        movieGroup.appendChild(opt);
+                    });
+                    select.appendChild(movieGroup);
+                }
+
+                // TV instances
+                if (tvList.length > 0) {
+                    var tvGroup = document.createElement('optgroup');
+                    tvGroup.label = 'TV Instances';
+                    tvList.forEach(function (inst) {
+                        var opt = document.createElement('option');
+                        opt.value = 'tv:' + inst.id;
+                        opt.textContent = '📺 ' + (inst.name || 'TV ' + inst.id);
+                        if (currentType === 'tv' && String(inst.id) === String(currentId)) opt.selected = true;
+                        tvGroup.appendChild(opt);
+                    });
+                    select.appendChild(tvGroup);
+                }
+            }).catch(function () { });
+
+            // Wire change handler
+            if (!select._selectorBound) {
+                select._selectorBound = true;
+                select.addEventListener('change', function () {
+                    var val = select.value; // e.g. "movie:1" or "tv:2"
+                    if (!val) return;
+                    var parts = val.split(':');
+                    var type = parts[0];
+                    var id = parts[1];
+                    var selectedOption = select.options[select.selectedIndex];
+                    var name = selectedOption ? selectedOption.textContent.replace(/^[🎬📺]\s*/, '') : ('Instance ' + id);
+
+                    if (type === 'movie' && window.MovieHuntInstanceEditor && window.MovieHuntInstanceEditor.openEditor) {
+                        window.MovieHuntInstanceEditor.openEditor(id, name);
+                    } else if (type === 'tv' && window.TVHuntInstanceEditor && window.TVHuntInstanceEditor.openEditor) {
+                        window.TVHuntInstanceEditor.openEditor(id, name);
+                    }
+                });
+            }
+        }
+
+        // Expose for use by editors
+        window._populateInstanceSelector = populateInstanceSelector;
+    })();
+</script>

@@ -316,9 +316,7 @@ button.reqset-back-btn {
     box-sizing: border-box !important;
 }
 
-#instanceEditorSection .editor-grid,
-#movieHuntInstanceEditorSection .editor-grid,
-#mediaHuntInstanceEditorSection .editor-grid {
+#instanceEditorSection .editor-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(360px, 1fr));
     gap: 22px;
@@ -327,10 +325,17 @@ button.reqset-back-btn {
     align-items: start;
 }
 
-/* Settings pages use single-column stack for readability */
+/* Instance editor + settings pages: single-column stack for readability */
+#movieHuntInstanceEditorSection .editor-grid,
+#mediaHuntInstanceEditorSection .editor-grid,
 #movieManagementSection .editor-grid,
 #tvManagementSection .editor-grid {
+    display: grid;
     grid-template-columns: 1fr;
+    gap: 22px;
+    padding: 0;
+    width: 100%;
+    align-items: start;
 }
 
 /* NZB Hunt client: single column, expand naturally across */

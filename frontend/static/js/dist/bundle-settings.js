@@ -12912,6 +12912,10 @@ document.head.appendChild(styleEl);
                     if (window.huntarrUI && window.huntarrUI.switchSection) {
                         window.huntarrUI.switchSection('movie-hunt-instance-editor');
                     }
+                    // Populate instance selector dropdown
+                    if (window._populateInstanceSelector) {
+                        window._populateInstanceSelector('movie', instanceId);
+                    }
                 })
                 .catch(function (err) {
                     if (window.huntarrUI && window.huntarrUI.showNotification) {
@@ -13481,6 +13485,10 @@ document.head.appendChild(styleEl);
 
                     if (window.huntarrUI && window.huntarrUI.switchSection) {
                         window.huntarrUI.switchSection('tv-hunt-instance-editor');
+                    }
+                    // Populate instance selector dropdown
+                    if (window._populateInstanceSelector) {
+                        window._populateInstanceSelector('tv', instanceId);
                     }
                 })
                 .catch(function (err) {
