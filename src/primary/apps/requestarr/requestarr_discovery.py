@@ -208,6 +208,17 @@ class DiscoveryMixin:
             if kwargs.get('vote_count.lte'):
                 params['vote_count.lte'] = kwargs['vote_count.lte']
             
+            # Keyword blacklist: resolve keywords to TMDB keyword IDs, then use without_keywords
+            if kwargs.get('keyword_blacklist'):
+                kw_ids = self._resolve_keyword_ids(kwargs['keyword_blacklist'], api_key)
+                if kw_ids:
+                    params['without_keywords'] = '|'.join(str(k) for k in kw_ids)
+            
+            # Certification filter (US ratings)
+            if kwargs.get('certification_lte'):
+                params['certification_country'] = 'US'
+                params['certification.lte'] = kwargs['certification_lte']
+            
             logger.debug(f"Fetching movies from TMDB - Page: {page}, Sort: {params['sort_by']}")
 
             from src.primary.utils.tmdb_metadata_cache import get_discover, set_discover
@@ -326,6 +337,17 @@ class DiscoveryMixin:
                 params['vote_count.gte'] = kwargs['vote_count.gte']
             if kwargs.get('vote_count.lte'):
                 params['vote_count.lte'] = kwargs['vote_count.lte']
+            
+            # Keyword blacklist: resolve keywords to TMDB keyword IDs, then use without_keywords
+            if kwargs.get('keyword_blacklist'):
+                kw_ids = self._resolve_keyword_ids(kwargs['keyword_blacklist'], api_key)
+                if kw_ids:
+                    params['without_keywords'] = '|'.join(str(k) for k in kw_ids)
+            
+            # Certification filter (US TV ratings)
+            if kwargs.get('certification_lte'):
+                params['certification_country'] = 'US'
+                params['certification.lte'] = kwargs['certification_lte']
             
             logger.debug(f"Fetching TV shows from TMDB - Page: {page}, Sort: {params['sort_by']}")
             logger.debug(f"TMDB Request URL: {url}")
@@ -605,6 +627,36 @@ class DiscoveryMixin:
         except Exception as e:
             logger.error(f"Error getting genres: {e}")
             return []
+
+    def _resolve_keyword_ids(self, keyword_blacklist: str, api_key: str) -> List[int]:
+        """Resolve comma-separated keyword strings to TMDB keyword IDs via search.
+        Caches results in memory for the lifetime of the process."""
+        if not keyword_blacklist or not keyword_blacklist.strip():
+            return []
+        if not hasattr(self, '_keyword_id_cache'):
+            self._keyword_id_cache = {}
+        keywords = [k.strip().lower() for k in keyword_blacklist.split(',') if k.strip()]
+        ids = []
+        for kw in keywords:
+            if kw in self._keyword_id_cache:
+                ids.extend(self._keyword_id_cache[kw])
+                continue
+            try:
+                url = f"{self.tmdb_base_url}/search/keyword"
+                resp = requests.get(url, params={'api_key': api_key, 'query': kw}, timeout=10)
+                if resp.status_code == 200:
+                    results = resp.json().get('results', [])
+                    matched = [r['id'] for r in results if r.get('name', '').lower() == kw]
+                    if not matched and results:
+                        matched = [results[0]['id']]
+                    self._keyword_id_cache[kw] = matched
+                    ids.extend(matched)
+                else:
+                    self._keyword_id_cache[kw] = []
+            except Exception as e:
+                logger.debug(f"Keyword search failed for '{kw}': {e}")
+                self._keyword_id_cache[kw] = []
+        return ids
 
     def search_media_with_availability(self, query: str, app_type: str, instance_name: str) -> List[Dict[str, Any]]:
         """Search for media using TMDB API and check availability in specified app instance. Raw TMDB cached 1h."""

@@ -11,7 +11,13 @@ class RequestarrFilters {
         this.maxYear = currentYear + 3;
         this.minYear = 1900;
         
-        this.activeFilters = {
+        this.activeFilters = this._loadSavedFilters();
+        this.genres = [];
+        this.init();
+    }
+
+    _loadSavedFilters() {
+        var defaults = {
             genres: [],
             yearMin: this.minYear,
             yearMax: this.maxYear,
@@ -21,10 +27,61 @@ class RequestarrFilters {
             ratingMax: 10,
             votesMin: 0,
             votesMax: 10000,
-            hideAvailable: false
+            hideAvailable: false,
+            keywordBlacklist: '',
+            maxCertification: '',
+            excludeProviders: []
         };
-        this.genres = [];
-        this.init();
+        // Load from localStorage as fast cache first
+        try {
+            var saved = localStorage.getItem('huntarr_movie_filters');
+            if (saved) {
+                var parsed = JSON.parse(saved);
+                for (var key in defaults) {
+                    if (parsed.hasOwnProperty(key)) defaults[key] = parsed[key];
+                }
+            }
+        } catch (e) { /* ignore */ }
+        // Then fetch from server (async, will override localStorage values)
+        this._loadFromServer(defaults);
+        return defaults;
+    }
+
+    async _loadFromServer(currentFilters) {
+        try {
+            var res = await fetch('./api/requestarr/user-filters/movie');
+            var data = await res.json();
+            if (data.filters && typeof data.filters === 'object') {
+                var serverFilters = data.filters;
+                var changed = false;
+                for (var key in currentFilters) {
+                    if (serverFilters.hasOwnProperty(key)) {
+                        currentFilters[key] = serverFilters[key];
+                        changed = true;
+                    }
+                }
+                if (changed) {
+                    // Update localStorage cache
+                    try { localStorage.setItem('huntarr_movie_filters', JSON.stringify(currentFilters)); } catch(e) {}
+                    // Re-apply UI if filters modal is loaded
+                    this.updateFilterDisplay();
+                }
+            }
+        } catch (e) { /* server unavailable, localStorage cache is fine */ }
+    }
+
+    _saveFilters() {
+        try {
+            localStorage.setItem('huntarr_movie_filters', JSON.stringify(this.activeFilters));
+        } catch (e) { /* ignore */ }
+        // Save to server (fire-and-forget)
+        try {
+            fetch('./api/requestarr/user-filters/movie', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(this.activeFilters)
+            });
+        } catch (e) { /* ignore */ }
     }
 
     init() {
@@ -203,6 +260,26 @@ class RequestarrFilters {
         if (hideAvailableCheckbox) {
             hideAvailableCheckbox.addEventListener('change', (e) => {
                 this.activeFilters.hideAvailable = e.target.checked;
+                this.updateModalFilterCount();
+                this.autoApplyFilters();
+            });
+        }
+
+        // Keyword blacklist input
+        const kwInput = document.getElementById('filter-keyword-blacklist');
+        if (kwInput) {
+            kwInput.addEventListener('change', () => {
+                this.activeFilters.keywordBlacklist = kwInput.value.trim();
+                this.updateModalFilterCount();
+                this.autoApplyFilters();
+            });
+        }
+
+        // Certification select
+        const certSelect = document.getElementById('filter-certification');
+        if (certSelect) {
+            certSelect.addEventListener('change', () => {
+                this.activeFilters.maxCertification = certSelect.value;
                 this.updateModalFilterCount();
                 this.autoApplyFilters();
             });
@@ -476,6 +553,12 @@ class RequestarrFilters {
         document.getElementById('filter-votes-max').value = this.activeFilters.votesMax;
         document.getElementById('hide-available-movies').checked = this.activeFilters.hideAvailable;
 
+        // Load keyword blacklist and certification
+        const kwInput = document.getElementById('filter-keyword-blacklist');
+        if (kwInput) kwInput.value = this.activeFilters.keywordBlacklist || '';
+        const certSelect = document.getElementById('filter-certification');
+        if (certSelect) certSelect.value = this.activeFilters.maxCertification || '';
+
         // Render selected genres and update genre list
         this.renderSelectedGenres();
         
@@ -525,8 +608,15 @@ class RequestarrFilters {
         this.activeFilters.votesMin = votesMin;
         this.activeFilters.votesMax = votesMax;
 
+        // Read keyword blacklist and certification
+        const kwInput = document.getElementById('filter-keyword-blacklist');
+        if (kwInput) this.activeFilters.keywordBlacklist = kwInput.value.trim();
+        const certSelect = document.getElementById('filter-certification');
+        if (certSelect) this.activeFilters.maxCertification = certSelect.value;
+
         // Update filter count display
         this.updateFilterDisplay();
+        this._saveFilters();
 
         // Reload movies with new filters (without closing modal)
         this.core.content.moviesPage = 1;
@@ -561,8 +651,15 @@ class RequestarrFilters {
         this.activeFilters.votesMin = votesMin;
         this.activeFilters.votesMax = votesMax;
 
+        // Read keyword blacklist and certification
+        const kwInput = document.getElementById('filter-keyword-blacklist');
+        if (kwInput) this.activeFilters.keywordBlacklist = kwInput.value.trim();
+        const certSelect = document.getElementById('filter-certification');
+        if (certSelect) this.activeFilters.maxCertification = certSelect.value;
+
         // Update filter count display
         this.updateFilterDisplay();
+        this._saveFilters();
 
         // Close modal
         this.closeFiltersModal();
@@ -584,7 +681,10 @@ class RequestarrFilters {
             ratingMax: 10,
             votesMin: 0,
             votesMax: 10000,
-            hideAvailable: false
+            hideAvailable: false,
+            keywordBlacklist: '',
+            maxCertification: '',
+            excludeProviders: []
         };
 
         // Reset sort to default
@@ -593,7 +693,14 @@ class RequestarrFilters {
             sortSelect.value = 'popularity.desc';
         }
 
+        // Reset new filter UI elements
+        const kwInput = document.getElementById('filter-keyword-blacklist');
+        if (kwInput) kwInput.value = '';
+        const certSelect = document.getElementById('filter-certification');
+        if (certSelect) certSelect.value = '';
+
         this.updateFilterDisplay();
+        this._saveFilters();
         this.loadFilterValues();
         this.closeFiltersModal();
 
@@ -612,6 +719,8 @@ class RequestarrFilters {
         if (this.activeFilters.ratingMin > 0 || this.activeFilters.ratingMax < 10) count++;
         if (this.activeFilters.votesMin > 0 || this.activeFilters.votesMax < 10000) count++;
         if (this.activeFilters.hideAvailable) count++;
+        if (this.activeFilters.keywordBlacklist) count++;
+        if (this.activeFilters.maxCertification) count++;
 
         const filterCountElement = document.getElementById('movies-filter-count');
         
@@ -699,6 +808,12 @@ class RequestarrFilters {
         }
         if (this.activeFilters.hideAvailable) {
             params.append('hide_available', 'true');
+        }
+        if (this.activeFilters.keywordBlacklist) {
+            params.append('keyword_blacklist', this.activeFilters.keywordBlacklist);
+        }
+        if (this.activeFilters.maxCertification) {
+            params.append('certification_lte', this.activeFilters.maxCertification);
         }
 
         return params.toString();

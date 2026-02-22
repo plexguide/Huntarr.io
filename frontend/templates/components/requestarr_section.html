@@ -686,6 +686,27 @@
                         <input type="range" id="filter-votes-max" class="range-max" value="10000" min="0" max="10000" step="10">
                     </div>
                 </div>
+
+                <!-- Content Rating -->
+                <div class="filter-group">
+                    <label class="filter-label">Max Content Rating</label>
+                    <select id="filter-certification" class="control-select" style="width: 100%;">
+                        <option value="">Any Rating</option>
+                        <option value="G">G</option>
+                        <option value="PG">PG</option>
+                        <option value="PG-13">PG-13</option>
+                        <option value="R">R</option>
+                        <option value="NC-17">NC-17</option>
+                    </select>
+                    <small class="filter-help">Only show movies at or below this rating (US certifications)</small>
+                </div>
+
+                <!-- Keyword Blacklist -->
+                <div class="filter-group">
+                    <label class="filter-label">Keyword Blacklist</label>
+                    <input type="text" id="filter-keyword-blacklist" class="genre-search-input" placeholder="e.g. cooking, competition, interview" style="cursor: text;">
+                    <small class="filter-help">Comma-separated keywords to exclude from results</small>
+                </div>
             </div>
         </div>
     </div>
@@ -775,6 +796,28 @@
                         <input type="range" id="tv-filter-votes-min" class="range-min" value="0" min="0" max="10000" step="10">
                         <input type="range" id="tv-filter-votes-max" class="range-max" value="10000" min="0" max="10000" step="10">
                     </div>
+                </div>
+
+                <!-- Content Rating -->
+                <div class="filter-group">
+                    <label class="filter-label">Max Content Rating</label>
+                    <select id="tv-filter-certification" class="control-select" style="width: 100%;">
+                        <option value="">Any Rating</option>
+                        <option value="TV-Y">TV-Y</option>
+                        <option value="TV-Y7">TV-Y7</option>
+                        <option value="TV-G">TV-G</option>
+                        <option value="TV-PG">TV-PG</option>
+                        <option value="TV-14">TV-14</option>
+                        <option value="TV-MA">TV-MA</option>
+                    </select>
+                    <small class="filter-help">Only show TV shows at or below this rating (US certifications)</small>
+                </div>
+
+                <!-- Keyword Blacklist -->
+                <div class="filter-group">
+                    <label class="filter-label">Keyword Blacklist</label>
+                    <input type="text" id="tv-filter-keyword-blacklist" class="genre-search-input" placeholder="e.g. cooking, competition, interview" style="cursor: text;">
+                    <small class="filter-help">Comma-separated keywords to exclude from results</small>
                 </div>
             </div>
         </div>

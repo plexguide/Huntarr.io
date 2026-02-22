@@ -5,6 +5,7 @@ Requestarr routes for media search and request functionality
 from flask import Blueprint, request, jsonify
 import logging
 from src.primary.apps.requestarr import requestarr_api
+from src.primary.auth import get_username_from_session, SESSION_COOKIE_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -541,6 +542,10 @@ def get_popular_movies():
             filter_params['vote_count.gte'] = request.args.get('vote_count.gte')
         if request.args.get('vote_count.lte'):
             filter_params['vote_count.lte'] = request.args.get('vote_count.lte')
+        if request.args.get('keyword_blacklist'):
+            filter_params['keyword_blacklist'] = request.args.get('keyword_blacklist')
+        if request.args.get('certification_lte'):
+            filter_params['certification_lte'] = request.args.get('certification_lte')
         
         # Add instance info for per-instance library status checking (required for hide_available filter)
         app_type = request.args.get('app_type', '').strip()
@@ -602,6 +607,10 @@ def get_popular_tv():
             filter_params['vote_count.gte'] = request.args.get('vote_count.gte')
         if request.args.get('vote_count.lte'):
             filter_params['vote_count.lte'] = request.args.get('vote_count.lte')
+        if request.args.get('keyword_blacklist'):
+            filter_params['keyword_blacklist'] = request.args.get('keyword_blacklist')
+        if request.args.get('certification_lte'):
+            filter_params['certification_lte'] = request.args.get('certification_lte')
         
         # Add instance info for per-instance library status checking (required for hide_available filter)
         app_type = request.args.get('app_type', '').strip()
@@ -1380,6 +1389,74 @@ def save_smarthunt_settings_route():
     except Exception as e:
         logger.error(f"Error saving Smart Hunt settings: {e}")
         return jsonify({'error': 'Failed to save Smart Hunt settings'}), 500
+
+
+# ── User Filter Persistence ──────────────────────────────────
+
+def _get_filter_username():
+    """Get current username from session, with bypass fallback."""
+    session_token = request.cookies.get(SESSION_COOKIE_NAME)
+    username = get_username_from_session(session_token)
+    if not username:
+        try:
+            from src.primary.settings_manager import load_settings
+            settings = load_settings("general")
+            if settings.get("local_access_bypass") or settings.get("proxy_auth_bypass"):
+                from src.primary.utils.database import get_database
+                db = get_database()
+                main_user = db.get_first_user()
+                if main_user:
+                    username = main_user.get('username')
+        except Exception:
+            pass
+    return username
+
+
+@requestarr_bp.route('/user-filters/<filter_type>', methods=['GET'])
+def get_user_filters(filter_type):
+    """Get saved discover filters for the current user. filter_type: movie or tv"""
+    if filter_type not in ('movie', 'tv'):
+        return jsonify({'error': 'Invalid filter type'}), 400
+    username = _get_filter_username()
+    if not username:
+        return jsonify({'filters': None})
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        config_key = f'discover_filters_{username}'
+        data = db.get_app_config(config_key)
+        if data and isinstance(data, dict):
+            return jsonify({'filters': data.get(filter_type)})
+        return jsonify({'filters': None})
+    except Exception as e:
+        logger.error(f"Error loading user filters: {e}")
+        return jsonify({'filters': None})
+
+
+@requestarr_bp.route('/user-filters/<filter_type>', methods=['POST'])
+def save_user_filters(filter_type):
+    """Save discover filters for the current user. filter_type: movie or tv"""
+    if filter_type not in ('movie', 'tv'):
+        return jsonify({'error': 'Invalid filter type'}), 400
+    username = _get_filter_username()
+    if not username:
+        return jsonify({'error': 'Not authenticated'}), 401
+    try:
+        from src.primary.utils.database import get_database
+        db = get_database()
+        config_key = f'discover_filters_{username}'
+        data = db.get_app_config(config_key) or {}
+        if not isinstance(data, dict):
+            data = {}
+        filters = request.get_json(silent=True)
+        if filters is None:
+            return jsonify({'error': 'No data provided'}), 400
+        data[filter_type] = filters
+        db.save_app_config(config_key, data)
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f"Error saving user filters: {e}")
+        return jsonify({'error': 'Failed to save filters'}), 500
 
 
 # Requestarr is always enabled with hardcoded TMDB API key
