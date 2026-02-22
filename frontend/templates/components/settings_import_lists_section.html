@@ -1,45 +1,53 @@
 <section id="settingsImportListsSection" class="content-section" style="display: none;">
-    {% set phb_back_hash = '#home' %}{% set phb_icon = 'fa-film' %}{% set phb_section = 'Media Hunt' %}{% set phb_page = 'Import Lists' %}
+    {% set phb_back_hash = '#home' %}{% set phb_icon = 'fa-film' %}{% set phb_section = 'Media Hunt' %}{% set phb_page =
+    'Import Lists' %}
     {% include 'components/page_header_partial.html' %}
     <div id="importListsManagementContainer" class="app-content-panel">
         <div id="settings-import-lists-no-indexers" class="settings-no-indexers" style="display: none;">
             <i class="fas fa-satellite-dish" aria-hidden="true"></i>
             <p class="no-instances-title">No indexers configured</p>
-            <p class="no-instances-desc">Configure at least one indexer in the Index Master Pool to use this section.</p>
+            <p class="no-instances-desc">Configure at least one indexer in the Index Master Pool to use this section.
+            </p>
             <a href="./#indexer-hunt" class="no-instances-action-btn"><i class="fas fa-plus"></i> Add Indexer</a>
         </div>
         <div id="settings-import-lists-no-clients" class="settings-no-clients" style="display: none;">
             <i class="fas fa-download" aria-hidden="true"></i>
             <p class="no-instances-title">No clients configured</p>
-            <p class="no-instances-desc">Configure at least one download client in Settings → Clients to use this section.</p>
-            <a href="./#settings-clients" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure Clients</a>
+            <p class="no-instances-desc">Configure at least one download client in Settings → Clients to use this
+                section.</p>
+            <a href="./#settings-root-folders" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure Root
+                Folders</a>
         </div>
         <div id="settings-import-lists-content-wrapper" style="display: none;">
-        <div class="media-hunt-settings-instance-bar" style="margin-bottom: 16px;">
-            <select id="settings-import-lists-instance-select" class="control-select" aria-label="Instance">
-                <option value="">Loading...</option>
-            </select>
-        </div>
+            <div class="media-hunt-settings-instance-bar" style="margin-bottom: 16px;">
+                <select id="settings-import-lists-instance-select" class="control-select" aria-label="Instance">
+                    <option value="">Loading...</option>
+                </select>
+            </div>
 
-        <div class="settings-group import-lists-settings-group">
-            <div class="import-lists-header">
-                <div>
-                    <h3>Import Lists</h3>
-                    <p class="import-lists-help" id="import-lists-help-text">Automatically add items to your collection from external lists. Lists sync on a schedule and new items are added automatically.</p>
+            <div class="settings-group import-lists-settings-group">
+                <div class="import-lists-header">
+                    <div>
+                        <h3>Import Lists</h3>
+                        <p class="import-lists-help" id="import-lists-help-text">Automatically add items to your
+                            collection from external lists. Lists sync on a schedule and new items are added
+                            automatically.</p>
+                    </div>
+                    <div class="import-lists-header-actions">
+                        <button type="button" class="btn-sync-all" id="import-lists-sync-all-btn"
+                            title="Sync All Lists">
+                            <i class="fas fa-sync-alt"></i> Sync All
+                        </button>
+                    </div>
                 </div>
-                <div class="import-lists-header-actions">
-                    <button type="button" class="btn-sync-all" id="import-lists-sync-all-btn" title="Sync All Lists">
-                        <i class="fas fa-sync-alt"></i> Sync All
-                    </button>
+                <div class="instance-card-grid" id="import-lists-grid">
+                    <div class="add-instance-card add-import-list-card" id="import-lists-add-card"
+                        data-app-type="import-list">
+                        <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
+                        <div class="add-text">Add Import List</div>
+                    </div>
                 </div>
             </div>
-            <div class="instance-card-grid" id="import-lists-grid">
-                <div class="add-instance-card add-import-list-card" id="import-lists-add-card" data-app-type="import-list">
-                    <div class="add-icon"><i class="fas fa-plus-circle"></i></div>
-                    <div class="add-text">Add Import List</div>
-                </div>
-            </div>
-        </div>
         </div>
     </div>
 
@@ -48,11 +56,13 @@
         <div class="import-list-modal-backdrop" id="import-list-add-modal-backdrop"></div>
         <div class="import-list-modal-content">
             <div class="import-list-modal-header">
-                <button type="button" class="import-list-modal-close" id="import-list-add-modal-close" aria-label="Close">
+                <button type="button" class="import-list-modal-close" id="import-list-add-modal-close"
+                    aria-label="Close">
                     <i class="fas fa-times"></i>
                 </button>
                 <h2 class="import-list-modal-title">Add Import List</h2>
-                <p class="import-list-modal-subtitle" id="import-list-modal-subtitle">Choose a list source to automatically import items.</p>
+                <p class="import-list-modal-subtitle" id="import-list-modal-subtitle">Choose a list source to
+                    automatically import items.</p>
             </div>
 
             <!-- Step 1: Pick list type -->
@@ -78,7 +88,8 @@
                         <input type="checkbox" id="import-list-enable-auto-add" checked>
                         <div class="import-list-checkbox-text">
                             <label for="import-list-enable-auto-add">Enable Automatic Add</label>
-                            <p class="import-list-checkbox-desc" id="import-list-auto-add-desc">Add items from this list when syncs are performed via the UI or automatically.</p>
+                            <p class="import-list-checkbox-desc" id="import-list-auto-add-desc">Add items from this list
+                                when syncs are performed via the UI or automatically.</p>
                         </div>
                     </div>
                 </div>
@@ -87,8 +98,10 @@
                     <div class="import-list-checkbox-item">
                         <input type="checkbox" id="import-list-search-on-add">
                         <div class="import-list-checkbox-text">
-                            <label for="import-list-search-on-add" id="import-list-search-label">Search for New Items</label>
-                            <p class="import-list-checkbox-desc" id="import-list-search-desc">After an item is added, automatically search for it.</p>
+                            <label for="import-list-search-on-add" id="import-list-search-label">Search for New
+                                Items</label>
+                            <p class="import-list-checkbox-desc" id="import-list-search-desc">After an item is added,
+                                automatically search for it.</p>
                         </div>
                     </div>
                 </div>
@@ -139,7 +152,8 @@
         <div class="import-list-modal-backdrop" id="import-list-edit-modal-backdrop"></div>
         <div class="import-list-modal-content">
             <div class="import-list-modal-header">
-                <button type="button" class="import-list-modal-close" id="import-list-edit-modal-close" aria-label="Close">
+                <button type="button" class="import-list-modal-close" id="import-list-edit-modal-close"
+                    aria-label="Close">
                     <i class="fas fa-times"></i>
                 </button>
                 <h2 class="import-list-modal-title">Edit Import List</h2>
@@ -156,7 +170,8 @@
                         <input type="checkbox" id="import-list-edit-enable-auto-add" checked>
                         <div class="import-list-checkbox-text">
                             <label for="import-list-edit-enable-auto-add">Enable Automatic Add</label>
-                            <p class="import-list-checkbox-desc" id="import-list-edit-auto-add-desc">Add items from this list when syncs are performed via the UI or automatically.</p>
+                            <p class="import-list-checkbox-desc" id="import-list-edit-auto-add-desc">Add items from this
+                                list when syncs are performed via the UI or automatically.</p>
                         </div>
                     </div>
                 </div>
@@ -165,8 +180,10 @@
                     <div class="import-list-checkbox-item">
                         <input type="checkbox" id="import-list-edit-search-on-add">
                         <div class="import-list-checkbox-text">
-                            <label for="import-list-edit-search-on-add" id="import-list-edit-search-label">Search for New Items</label>
-                            <p class="import-list-checkbox-desc" id="import-list-edit-search-desc">After an item is added, automatically search for it.</p>
+                            <label for="import-list-edit-search-on-add" id="import-list-edit-search-label">Search for
+                                New Items</label>
+                            <p class="import-list-checkbox-desc" id="import-list-edit-search-desc">After an item is
+                                added, automatically search for it.</p>
                         </div>
                     </div>
                 </div>
@@ -215,22 +232,46 @@
     </div>
 </section>
 <style>
-/* Checkbox rows for Enable Automatic Add / Search for Missing */
-.import-list-checkbox-row { margin-bottom: 4px !important; }
-.import-list-checkbox-item {
-    display: flex; align-items: flex-start; gap: 12px; padding: 12px 0;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.08);
-}
-.import-list-checkbox-item input[type="checkbox"] {
-    width: 20px; height: 20px; margin-top: 2px; flex-shrink: 0;
-    accent-color: #6366f1; cursor: pointer; border-radius: 4px;
-}
-.import-list-checkbox-text { flex: 1; }
-.import-list-checkbox-text label {
-    display: block; font-weight: 600; color: #f1f5f9; font-size: 0.95rem;
-    margin-bottom: 2px; cursor: pointer;
-}
-.import-list-checkbox-desc {
-    font-size: 0.85rem; color: #94a3b8; line-height: 1.4; margin: 0;
-}
+    /* Checkbox rows for Enable Automatic Add / Search for Missing */
+    .import-list-checkbox-row {
+        margin-bottom: 4px !important;
+    }
+
+    .import-list-checkbox-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+    }
+
+    .import-list-checkbox-item input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        margin-top: 2px;
+        flex-shrink: 0;
+        accent-color: #6366f1;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+
+    .import-list-checkbox-text {
+        flex: 1;
+    }
+
+    .import-list-checkbox-text label {
+        display: block;
+        font-weight: 600;
+        color: #f1f5f9;
+        font-size: 0.95rem;
+        margin-bottom: 2px;
+        cursor: pointer;
+    }
+
+    .import-list-checkbox-desc {
+        font-size: 0.85rem;
+        color: #94a3b8;
+        line-height: 1.4;
+        margin: 0;
+    }
 </style>

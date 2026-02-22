@@ -1,822 +1,845 @@
 <!-- Single unified sidebar — collapsible accordion groups -->
 <div id="sidebar-wrapper" class="sidebar-wrapper">
-<div class="sidebar" id="sidebar">
-    <div class="logo-container">
-        <a href="https://huntarr.io" target="_blank" rel="noopener noreferrer"
-            style="display: flex; align-items: center; text-decoration: none; color: inherit;">
-            <img src="./static/logo/256.png" alt="Huntarr Logo" class="logo logo-large">
-            <img src="./static/logo/32.png" alt="Huntarr Logo" class="logo logo-small">
-            <h1>Huntarr</h1>
-        </a>
-    </div>
+    <div class="sidebar" id="sidebar">
+        <div class="logo-container">
+            <a href="https://huntarr.io" target="_blank" rel="noopener noreferrer"
+                style="display: flex; align-items: center; text-decoration: none; color: inherit;">
+                <img src="./static/logo/256.png" alt="Huntarr Logo" class="logo logo-large">
+                <img src="./static/logo/32.png" alt="Huntarr Logo" class="logo logo-small">
+                <h1>Huntarr</h1>
+            </a>
+        </div>
 
-    <nav class="nav-menu">
+        <nav class="nav-menu">
 
-        <!-- ── CORE label header (hidden, kept for JS references) ── -->
-        <div class="nav-group" id="nav-group-core-label" style="display:none;"></div>
+            <!-- ── CORE label header (hidden, kept for JS references) ── -->
+            <div class="nav-group" id="nav-group-core-label" style="display:none;"></div>
 
-        <!-- ── Home (standalone) ──────────────────────────────── -->
-        <a href="#home" class="nav-item nav-item-home" id="homeNav">
-            <div class="nav-icon-wrapper"><i class="fas fa-home"></i></div>
-            <span>Home</span>
-        </a>
+            <!-- ── Home (standalone) ──────────────────────────────── -->
+            <a href="#home" class="nav-item nav-item-home" id="homeNav">
+                <div class="nav-icon-wrapper"><i class="fas fa-home"></i></div>
+                <span>Home</span>
+            </a>
 
-        <!-- ── REQUESTS ───────────────────────────────────────── -->
-        <div class="nav-group" id="nav-group-requests">
-            <div class="nav-group-header" data-group="sidebar-group-requests">
-                <i class="fas fa-plus-circle nav-group-icon"></i>
-                <span>Requests</span>
-                <span class="nav-badge requestarr-pending-badge-mirror" style="display:none;">0</span>
-                <i class="fas fa-chevron-right nav-group-chevron"></i>
-            </div>
-            <div class="nav-group-body collapsed" id="sidebar-group-requests">
-                <a href="./#requestarr-discover" class="nav-item nav-item-sub" id="requestarrDiscoverNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-compass"></i></div>
-                    <span>Discover</span>
-                </a>
-                <a href="./#requestarr-tv" class="nav-item nav-item-sub" id="requestarrTVNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-tv"></i></div>
-                    <span>TV Shows</span>
-                </a>
-                <a href="./#requestarr-movies" class="nav-item nav-item-sub" id="requestarrMoviesNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-film"></i></div>
-                    <span>Movies</span>
-                </a>
-                <a href="./#requestarr-smarthunt" class="nav-item nav-item-sub" id="requestarrSmartHuntNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-fire"></i></div>
-                    <span>Smart Hunt</span>
-                </a>
-                <a href="./#requestarr-personal-blacklist" class="nav-item nav-item-sub" id="requestarrPersonalBlacklistNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-eye-slash"></i></div>
-                    <span>Personal Blacklist</span>
-                </a>
-                <div class="nav-user-support-label" id="requestarrConfigLabel">
-                    <i class="fas fa-sliders-h"></i>
-                    <span>Configuration</span>
-                </div>
-                <a href="./#requestarr-bundles" class="nav-item nav-item-sub nav-item-deep" id="requestarrBundlesNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-layer-group"></i></div>
-                    <span>Bundles</span>
-                </a>
-                <a href="./#requestarr-smarthunt-settings" class="nav-item nav-item-sub nav-item-deep" id="requestarrSmartHuntSettingsNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-fire"></i></div>
-                    <span>SH Options</span>
-                </a>
-                <a href="./#requestarr-filters" class="nav-item nav-item-sub nav-item-deep" id="requestarrSettingsNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-filter"></i></div>
-                    <span>Filters</span>
-                </a>
-                <div class="nav-user-support-label" id="requestarrUserSupportLabel">
-                    <i class="fas fa-headset"></i>
-                    <span>User Support</span>
-                </div>
-                <a href="./#requestarr-requests" class="nav-item nav-item-sub nav-item-deep" id="requestarrRequestsNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-inbox"></i></div>
+            <!-- ── REQUESTS ───────────────────────────────────────── -->
+            <div class="nav-group" id="nav-group-requests">
+                <div class="nav-group-header" data-group="sidebar-group-requests">
+                    <i class="fas fa-plus-circle nav-group-icon"></i>
                     <span>Requests</span>
                     <span class="nav-badge requestarr-pending-badge-mirror" style="display:none;">0</span>
-                </a>
-                <a href="./#requestarr-users" class="nav-item nav-item-sub nav-item-deep" id="requestarrUsersNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-users"></i></div>
-                    <span>Users</span>
-                </a>
-
-                <a href="./#requestarr-global-blacklist" class="nav-item nav-item-sub nav-item-deep" id="requestarrGlobalBlacklistNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-ban"></i></div>
-                    <span>Global Blacklist</span>
-                </a>
-                <a href="./#notifications" class="nav-item nav-item-sub nav-item-deep" id="requestarrNotificationsNav" data-notifications-source="requests">
-                    <div class="nav-icon-wrapper"><i class="fas fa-bell"></i></div>
-                    <span>Notifications</span>
-                </a>
-            </div>
-        </div>
-
-        <div class="nav-group" id="nav-group-apps-label" style="display:none;"></div>
-
-        <!-- ── MEDIA HUNT ─────────────────────────────────────── -->
-        <div class="nav-group" id="nav-group-media-hunt">
-            <div class="nav-group-header" data-group="sidebar-group-media-hunt">
-                <i class="fas fa-film nav-group-icon"></i>
-                <span>Media Hunt</span>
-                <i class="fas fa-chevron-right nav-group-chevron"></i>
-            </div>
-            <div class="nav-group-body collapsed" id="sidebar-group-media-hunt">
-                <a href="./#media-hunt-collection" class="nav-item nav-item-sub" id="movieHuntCollectionNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-folder-open"></i></div>
-                    <span>Collections</span>
-                </a>
-                <div class="nav-sub-group" id="movie-hunt-collection-sub">
-                    <a href="./#media-hunt-instances" class="nav-item nav-item-sub" id="movieHuntInstancesNav">
-                        <div class="nav-icon-wrapper"><i class="fas fa-layer-group"></i></div>
-                        <span>Instances</span>
+                    <i class="fas fa-chevron-right nav-group-chevron"></i>
+                </div>
+                <div class="nav-group-body collapsed" id="sidebar-group-requests">
+                    <a href="./#requestarr-discover" class="nav-item nav-item-sub" id="requestarrDiscoverNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-compass"></i></div>
+                        <span>Discover</span>
                     </a>
-                    <a href="./#media-hunt-calendar" class="nav-item nav-item-sub" id="movieHuntCalendarNav">
-                        <div class="nav-icon-wrapper"><i class="fas fa-calendar-alt"></i></div>
-                        <span>Calendar</span>
+                    <a href="./#requestarr-tv" class="nav-item nav-item-sub" id="requestarrTVNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-tv"></i></div>
+                        <span>TV Shows</span>
+                    </a>
+                    <a href="./#requestarr-movies" class="nav-item nav-item-sub" id="requestarrMoviesNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-film"></i></div>
+                        <span>Movies</span>
+                    </a>
+                    <a href="./#requestarr-smarthunt" class="nav-item nav-item-sub" id="requestarrSmartHuntNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-fire"></i></div>
+                        <span>Smart Hunt</span>
+                    </a>
+                    <a href="./#requestarr-personal-blacklist" class="nav-item nav-item-sub"
+                        id="requestarrPersonalBlacklistNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-eye-slash"></i></div>
+                        <span>Personal Blacklist</span>
+                    </a>
+                    <div class="nav-user-support-label" id="requestarrConfigLabel">
+                        <i class="fas fa-sliders-h"></i>
+                        <span>Configuration</span>
+                    </div>
+                    <a href="./#requestarr-bundles" class="nav-item nav-item-sub nav-item-deep"
+                        id="requestarrBundlesNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-layer-group"></i></div>
+                        <span>Bundles</span>
+                    </a>
+                    <a href="./#requestarr-smarthunt-settings" class="nav-item nav-item-sub nav-item-deep"
+                        id="requestarrSmartHuntSettingsNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-fire"></i></div>
+                        <span>SH Options</span>
+                    </a>
+                    <a href="./#requestarr-filters" class="nav-item nav-item-sub nav-item-deep"
+                        id="requestarrSettingsNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-filter"></i></div>
+                        <span>Filters</span>
+                    </a>
+                    <div class="nav-user-support-label" id="requestarrUserSupportLabel">
+                        <i class="fas fa-headset"></i>
+                        <span>User Support</span>
+                    </div>
+                    <a href="./#requestarr-requests" class="nav-item nav-item-sub nav-item-deep"
+                        id="requestarrRequestsNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-inbox"></i></div>
+                        <span>Requests</span>
+                        <span class="nav-badge requestarr-pending-badge-mirror" style="display:none;">0</span>
+                    </a>
+                    <a href="./#requestarr-users" class="nav-item nav-item-sub nav-item-deep" id="requestarrUsersNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-users"></i></div>
+                        <span>Users</span>
+                    </a>
+
+                    <a href="./#requestarr-global-blacklist" class="nav-item nav-item-sub nav-item-deep"
+                        id="requestarrGlobalBlacklistNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-ban"></i></div>
+                        <span>Global Blacklist</span>
+                    </a>
+                    <a href="./#notifications" class="nav-item nav-item-sub nav-item-deep"
+                        id="requestarrNotificationsNav" data-notifications-source="requests">
+                        <div class="nav-icon-wrapper"><i class="fas fa-bell"></i></div>
+                        <span>Notifications</span>
                     </a>
                 </div>
-                <a href="./#activity-history" class="nav-item nav-item-sub" id="movieHuntActivityToggle">
-                    <div class="nav-icon-wrapper"><i class="fas fa-clock"></i></div>
-                    <span>Activity</span>
-                </a>
-                <div class="nav-sub-group" id="movie-hunt-activity-sub">
-                    <a href="./#media-hunt-collection" class="nav-item nav-item-sub media-hunt-config-back" id="mediaHuntActivityBackNav">
-                        <div class="nav-icon-wrapper"><i class="fas fa-arrow-left"></i></div>
-                        <span>Back</span>
+            </div>
+
+            <div class="nav-group" id="nav-group-apps-label" style="display:none;"></div>
+
+            <!-- ── MEDIA HUNT ─────────────────────────────────────── -->
+            <div class="nav-group" id="nav-group-media-hunt">
+                <div class="nav-group-header" data-group="sidebar-group-media-hunt">
+                    <i class="fas fa-film nav-group-icon"></i>
+                    <span>Media Hunt</span>
+                    <i class="fas fa-chevron-right nav-group-chevron"></i>
+                </div>
+                <div class="nav-group-body collapsed" id="sidebar-group-media-hunt">
+                    <a href="./#media-hunt-collection" class="nav-item nav-item-sub" id="movieHuntCollectionNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-folder-open"></i></div>
+                        <span>Collections</span>
                     </a>
-                    <a href="./#activity-history" class="nav-item nav-item-sub" id="movieHuntActivityHistoryNav">
-                        <div class="nav-icon-wrapper"><i class="fas fa-history"></i></div>
-                        <span>History</span>
+                    <div class="nav-sub-group" id="movie-hunt-collection-sub">
+                        <a href="./#media-hunt-instances" class="nav-item nav-item-sub" id="movieHuntInstancesNav">
+                            <div class="nav-icon-wrapper"><i class="fas fa-layer-group"></i></div>
+                            <span>Instances</span>
+                        </a>
+                        <a href="./#media-hunt-calendar" class="nav-item nav-item-sub" id="movieHuntCalendarNav">
+                            <div class="nav-icon-wrapper"><i class="fas fa-calendar-alt"></i></div>
+                            <span>Calendar</span>
+                        </a>
+                    </div>
+                    <a href="./#activity-history" class="nav-item nav-item-sub" id="movieHuntActivityToggle">
+                        <div class="nav-icon-wrapper"><i class="fas fa-clock"></i></div>
+                        <span>Activity</span>
                     </a>
-                    <a href="./#activity-queue" class="nav-item nav-item-sub" id="movieHuntActivityQueueNav">
-                        <div class="nav-icon-wrapper"><i class="fas fa-list-ul"></i></div>
-                        <span>Queue</span>
+                    <div class="nav-sub-group" id="movie-hunt-activity-sub">
+                        <a href="./#media-hunt-collection" class="nav-item nav-item-sub media-hunt-config-back"
+                            id="mediaHuntActivityBackNav">
+                            <div class="nav-icon-wrapper"><i class="fas fa-arrow-left"></i></div>
+                            <span>Back</span>
+                        </a>
+                        <a href="./#activity-history" class="nav-item nav-item-sub" id="movieHuntActivityHistoryNav">
+                            <div class="nav-icon-wrapper"><i class="fas fa-history"></i></div>
+                            <span>History</span>
+                        </a>
+                        <a href="./#activity-queue" class="nav-item nav-item-sub" id="movieHuntActivityQueueNav">
+                            <div class="nav-icon-wrapper"><i class="fas fa-list-ul"></i></div>
+                            <span>Queue</span>
+                        </a>
+                        <a href="./#activity-blocklist" class="nav-item nav-item-sub"
+                            id="movieHuntActivityBlocklistNav">
+                            <div class="nav-icon-wrapper"><i class="fas fa-ban"></i></div>
+                            <span>Blocklist</span>
+                        </a>
+                        <a href="./#logs-media-hunt" class="nav-item nav-item-sub" id="movieHuntActivityLogsNav">
+                            <div class="nav-icon-wrapper"><i class="fas fa-file-alt"></i></div>
+                            <span>Logs</span>
+                        </a>
+                    </div>
+                    <div class="nav-user-support-label" id="mediaHuntConfigLabel">
+                        <i class="fas fa-sliders-h"></i>
+                        <span>Configuration</span>
+                    </div>
+                    <a href="./#indexer-hunt" class="nav-item nav-item-sub nav-item-deep" id="movieHuntIndexMasterNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-search-plus"></i></div>
+                        <span>Index Master</span>
                     </a>
-                    <a href="./#activity-blocklist" class="nav-item nav-item-sub" id="movieHuntActivityBlocklistNav">
-                        <div class="nav-icon-wrapper"><i class="fas fa-ban"></i></div>
-                        <span>Blocklist</span>
+
+                    <a href="./#settings-root-folders" class="nav-item nav-item-sub nav-item-deep"
+                        id="movieHuntSettingsRootFoldersNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-folder-open"></i></div>
+                        <span>Root Folders</span>
                     </a>
-                    <a href="./#logs-media-hunt" class="nav-item nav-item-sub" id="movieHuntActivityLogsNav">
-                        <div class="nav-icon-wrapper"><i class="fas fa-file-alt"></i></div>
+                    <a href="./#settings-import-media" class="nav-item nav-item-sub nav-item-deep"
+                        id="movieHuntImportMediaNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-file-import"></i></div>
+                        <span>Import Media</span>
+                    </a>
+                    <a href="./#settings-import-lists" class="nav-item nav-item-sub nav-item-deep"
+                        id="movieHuntSettingsImportListsNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-stream"></i></div>
+                        <span>Import Lists</span>
+                    </a>
+                    <div class="nav-user-support-label" id="mediaHuntAdvancedLabel">
+                        <i class="fas fa-cog"></i>
+                        <span>Advanced</span>
+                    </div>
+                    <a href="./#settings-media-management" class="nav-item nav-item-sub nav-item-deep"
+                        id="movieHuntSettingsMovieManagementNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-film"></i></div>
+                        <span>Settings</span>
+                    </a>
+                    <a href="./#settings-profiles" class="nav-item nav-item-sub nav-item-deep"
+                        id="movieHuntSettingsProfilesNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-id-card"></i></div>
+                        <span>Profiles</span>
+                    </a>
+                    <a href="./#settings-sizes" class="nav-item nav-item-sub nav-item-deep"
+                        id="movieHuntSettingsSizesNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-weight-hanging"></i></div>
+                        <span>Sizes</span>
+                    </a>
+                    <a href="./#settings-custom-formats" class="nav-item nav-item-sub nav-item-deep"
+                        id="movieHuntSettingsCustomFormatsNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-code"></i></div>
+                        <span>Custom Formats</span>
+                    </a>
+                    <!-- Hidden sub-groups to avoid breaking existing JS references -->
+                    <div id="index-master-view-sub" style="display:none;"></div>
+                </div>
+            </div>
+
+            <!-- ── NZB HUNT (conditional) ─────────────────────────── -->
+            <div class="nav-group" id="nzb-hunt-sidebar-group">
+                <div class="nav-group-header" data-group="sidebar-group-nzb-hunt">
+                    <i class="fas fa-download nav-group-icon"></i>
+                    <span>NZB Hunt</span>
+                    <i class="fas fa-chevron-right nav-group-chevron"></i>
+                </div>
+                <div class="nav-group-body collapsed" id="sidebar-group-nzb-hunt">
+                    <a href="./#nzb-hunt-home" class="nav-item nav-item-sub" id="nzbHuntHomeNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-download"></i></div>
+                        <span>NZB Home</span>
+                    </a>
+                    <a href="./#nzb-hunt-folders" class="nav-item nav-item-sub" id="nzbHuntFoldersNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-folder-open"></i></div>
+                        <span>Folders</span>
+                    </a>
+                    <a href="./#nzb-hunt-servers" class="nav-item nav-item-sub" id="nzbHuntServersNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-server"></i></div>
+                        <span>Servers</span>
+                    </a>
+                    <a href="./#nzb-hunt-advanced" class="nav-item nav-item-sub" id="nzbHuntAdvancedNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-sliders-h"></i></div>
+                        <span>Advanced</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- ── TOR HUNT (conditional) ─────────────────────────── -->
+            <div class="nav-group" id="tor-hunt-sidebar-group">
+                <div class="nav-group-header" data-group="sidebar-group-tor-hunt">
+                    <i class="fas fa-magnet nav-group-icon"></i>
+                    <span>Tor Hunt</span>
+                    <i class="fas fa-chevron-right nav-group-chevron"></i>
+                </div>
+                <div class="nav-group-body collapsed" id="sidebar-group-tor-hunt">
+                    <a href="./#tor-hunt-home" class="nav-item nav-item-sub" id="torHuntHomeNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-magnet"></i></div>
+                        <span>Tor Home</span>
+                    </a>
+                    <a href="./#tor-hunt-settings" class="nav-item nav-item-sub" id="torHuntSettingsNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-cog"></i></div>
+                        <span>Settings</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- ── 3RD PARTY APPS ─────────────────────────────────── -->
+            <div class="nav-group" id="nav-group-apps">
+                <div class="nav-group-header" data-group="sidebar-group-apps">
+                    <i class="fas fa-th-large nav-group-icon"></i>
+                    <span>3rd Party Apps</span>
+                    <i class="fas fa-chevron-right nav-group-chevron"></i>
+                </div>
+                <div class="nav-group-body collapsed" id="sidebar-group-apps">
+                    <a href="./#sonarr" class="nav-item nav-item-sub sonarr-app" id="appsSonarrNav">
+                        <div class="nav-icon-wrapper sonarr-icon">
+                            <img src="./static/images/app-icons/sonarr.png" alt="Sonarr" class="app-icon-img">
+                        </div>
+                        <span>Sonarr</span>
+                    </a>
+                    <a href="./#radarr" class="nav-item nav-item-sub radarr-app" id="appsRadarrNav">
+                        <div class="nav-icon-wrapper radarr-icon">
+                            <img src="./static/images/app-icons/radarr.png" alt="Radarr" class="app-icon-img">
+                        </div>
+                        <span>Radarr</span>
+                    </a>
+                    <a href="./#lidarr" class="nav-item nav-item-sub lidarr-app" id="appsLidarrNav">
+                        <div class="nav-icon-wrapper lidarr-icon">
+                            <img src="./static/images/app-icons/lidarr.png" alt="Lidarr" class="app-icon-img">
+                        </div>
+                        <span>Lidarr</span>
+                    </a>
+                    <a href="./#readarr" class="nav-item nav-item-sub readarr-app" id="appsReadarrNav">
+                        <div class="nav-icon-wrapper readarr-icon">
+                            <img src="./static/images/app-icons/readarr.png" alt="Readarr" class="app-icon-img">
+                        </div>
+                        <span>Readarr</span>
+                    </a>
+                    <a href="./#whisparr" class="nav-item nav-item-sub whisparr-app" id="appsWhisparrNav">
+                        <div class="nav-icon-wrapper whisparr-icon">
+                            <img src="./static/images/app-icons/whisparr.png" alt="Whisparr V2" class="app-icon-img">
+                        </div>
+                        <span>Whisparr V2</span>
+                    </a>
+                    <a href="./#eros" class="nav-item nav-item-sub eros-app" id="appsErosNav">
+                        <div class="nav-icon-wrapper eros-icon">
+                            <img src="./static/images/app-icons/eros.png" alt="Whisparr V3" class="app-icon-img">
+                        </div>
+                        <span>Whisparr V3</span>
+                    </a>
+                    <a href="./#prowlarr" class="nav-item nav-item-sub prowlarr-app" id="appsProwlarrNav">
+                        <div class="nav-icon-wrapper prowlarr-icon">
+                            <img src="./static/images/app-icons/prowlarr.png" alt="Prowlarr" class="app-icon-img">
+                        </div>
+                        <span>Prowlarr</span>
+                    </a>
+                    <a href="./#swaparr" class="nav-item nav-item-sub swaparr-app" id="appsSwaparrNav">
+                        <div class="nav-icon-wrapper swaparr-icon">
+                            <i class="fas fa-exchange-alt"></i>
+                        </div>
+                        <span>Swaparr</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- ── SYSTEM ─────────────────────────────────────────── -->
+            <div class="nav-group" id="nav-group-system">
+                <div class="nav-group-header" data-group="sidebar-group-system">
+                    <i class="fas fa-server nav-group-icon"></i>
+                    <span>System</span>
+                    <i class="fas fa-chevron-right nav-group-chevron"></i>
+                </div>
+                <div class="nav-group-body collapsed" id="sidebar-group-system">
+                    <a href="./#settings" class="nav-item nav-item-sub" id="mainSettingsMainNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-sliders-h"></i></div>
+                        <span>General</span>
+                    </a>
+                    <a href="./#hunt-manager" class="nav-item nav-item-sub" id="mainSystemHuntManagerNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-crosshairs"></i></div>
+                        <span>Hunt Manager</span>
+                    </a>
+                    <a href="./#logs" class="nav-item nav-item-sub" id="mainSystemLogsNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-list-alt"></i></div>
                         <span>Logs</span>
                     </a>
+                    <a href="./#scheduling" class="nav-item nav-item-sub" id="mainSettingsSchedulingNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-calendar-alt"></i></div>
+                        <span>Scheduling</span>
+                    </a>
+                    <a href="./#notifications" class="nav-item nav-item-sub" id="mainSettingsNotificationsNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-bell"></i></div>
+                        <span>Notifications</span>
+                    </a>
+                    <a href="./#backup-restore" class="nav-item nav-item-sub" id="mainSettingsBackupRestoreNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-database"></i></div>
+                        <span>Backup / Restore</span>
+                    </a>
+                    <a href="./#settings-logs" class="nav-item nav-item-sub" id="mainSettingsLogsNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-file-alt"></i></div>
+                        <span>Settings Logs</span>
+                    </a>
+                    <a href="./#user" class="nav-item nav-item-sub" id="mainSettingsUserNav">
+                        <div class="nav-icon-wrapper"><i class="fas fa-user"></i></div>
+                        <span>User</span>
+                    </a>
                 </div>
-                <div class="nav-user-support-label" id="mediaHuntConfigLabel">
-                    <i class="fas fa-sliders-h"></i>
-                    <span>Configuration</span>
+            </div>
+
+            <!-- ── DAUGHTER'S SPONSORS ──────────────────────────────── -->
+            <div class="nav-group" id="main-sidebar-partner-projects-group">
+                <div class="nav-section-divider"></div>
+                <div class="nav-group-title">Daughter's Sponsors</div>
+                <a href="#" target="_blank" rel="noopener noreferrer" class="nav-item"
+                    id="sidebar-partner-projects-nav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-heart" style="color: #ec4899;"></i></div>
+                    <span id="sidebar-partner-projects-name">Loading...</span>
+                </a>
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <!-- User profile row -->
+            <div class="sidebar-user-profile" id="sidebar-user-profile">
+                <a href="#user" class="sidebar-user-link">
+                    <div class="sidebar-user-avatar" id="sidebar-user-avatar"></div>
+                    <div class="sidebar-user-info">
+                        <span class="sidebar-user-name" id="sidebar-user-name">Loading...</span>
+                        <span class="sidebar-user-role" id="sidebar-user-role"></span>
+                    </div>
+                </a>
+                <div class="sidebar-user-actions">
+                    <a href="#user" class="sidebar-action-btn" title="Settings" aria-label="User Settings">
+                        <i class="fas fa-cog"></i>
+                    </a>
+                    <button class="sidebar-action-btn sidebar-logout-btn" title="Logout" aria-label="Logout"
+                        onclick="fetch('./logout',{method:'POST'}).then(function(){window.location.href='./login';})">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
                 </div>
-                <a href="./#indexer-hunt" class="nav-item nav-item-sub nav-item-deep" id="movieHuntIndexMasterNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-search-plus"></i></div>
-                    <span>Index Master</span>
-                </a>
-                <a href="./#settings-clients" class="nav-item nav-item-sub nav-item-deep" id="movieHuntClientsMainNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-cloud-download-alt"></i></div>
-                    <span>Clients</span>
-                </a>
-                <a href="./#settings-root-folders" class="nav-item nav-item-sub nav-item-deep" id="movieHuntSettingsRootFoldersNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-folder-open"></i></div>
-                    <span>Root Folders</span>
-                </a>
-                <a href="./#settings-import-media" class="nav-item nav-item-sub nav-item-deep" id="movieHuntImportMediaNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-file-import"></i></div>
-                    <span>Import Media</span>
-                </a>
-                <a href="./#settings-import-lists" class="nav-item nav-item-sub nav-item-deep" id="movieHuntSettingsImportListsNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-stream"></i></div>
-                    <span>Import Lists</span>
-                </a>
-                <div class="nav-user-support-label" id="mediaHuntAdvancedLabel">
-                    <i class="fas fa-cog"></i>
-                    <span>Advanced</span>
-                </div>
-                <a href="./#settings-media-management" class="nav-item nav-item-sub nav-item-deep" id="movieHuntSettingsMovieManagementNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-film"></i></div>
-                    <span>Settings</span>
-                </a>
-                <a href="./#settings-profiles" class="nav-item nav-item-sub nav-item-deep" id="movieHuntSettingsProfilesNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-id-card"></i></div>
-                    <span>Profiles</span>
-                </a>
-                <a href="./#settings-sizes" class="nav-item nav-item-sub nav-item-deep" id="movieHuntSettingsSizesNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-weight-hanging"></i></div>
-                    <span>Sizes</span>
-                </a>
-                <a href="./#settings-custom-formats" class="nav-item nav-item-sub nav-item-deep" id="movieHuntSettingsCustomFormatsNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-code"></i></div>
-                    <span>Custom Formats</span>
-                </a>
-                <!-- Hidden sub-groups to avoid breaking existing JS references -->
-                <div id="index-master-view-sub" style="display:none;"></div>
             </div>
-        </div>
-
-        <!-- ── NZB HUNT (conditional) ─────────────────────────── -->
-        <div class="nav-group" id="nzb-hunt-sidebar-group">
-            <div class="nav-group-header" data-group="sidebar-group-nzb-hunt">
-                <i class="fas fa-download nav-group-icon"></i>
-                <span>NZB Hunt</span>
-                <i class="fas fa-chevron-right nav-group-chevron"></i>
-            </div>
-            <div class="nav-group-body collapsed" id="sidebar-group-nzb-hunt">
-                <a href="./#nzb-hunt-home" class="nav-item nav-item-sub" id="nzbHuntHomeNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-download"></i></div>
-                    <span>NZB Home</span>
+            <!-- Social icons row -->
+            <div class="sidebar-social-group">
+                <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank" rel="noopener"
+                    class="sidebar-social-btn discord-btn" title="Join Discord" aria-label="Discord">
+                    <i class="fab fa-discord"></i>
                 </a>
-                <a href="./#nzb-hunt-folders" class="nav-item nav-item-sub" id="nzbHuntFoldersNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-folder-open"></i></div>
-                    <span>Folders</span>
+                <a href="https://www.reddit.com/r/huntarr/" target="_blank" rel="noopener"
+                    class="sidebar-social-btn reddit-btn" title="Visit Reddit" aria-label="Reddit">
+                    <i class="fab fa-reddit-alien"></i>
                 </a>
-                <a href="./#nzb-hunt-servers" class="nav-item nav-item-sub" id="nzbHuntServersNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-server"></i></div>
-                    <span>Servers</span>
+                <a href="https://plexguide.github.io/Huntarr.io/index.html" target="_blank" rel="noopener"
+                    class="sidebar-social-btn docs-btn" title="Documentation" aria-label="Documentation">
+                    <i class="fas fa-book-open"></i>
                 </a>
-                <a href="./#nzb-hunt-advanced" class="nav-item nav-item-sub" id="nzbHuntAdvancedNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-sliders-h"></i></div>
-                    <span>Advanced</span>
+                <a href="https://github.com/plexguide/Huntarr.io/issues" target="_blank" rel="noopener"
+                    class="sidebar-social-btn issues-btn" title="Report a Bug" aria-label="Report a Bug">
+                    <i class="fas fa-bug"></i>
                 </a>
             </div>
-        </div>
-
-        <!-- ── TOR HUNT (conditional) ─────────────────────────── -->
-        <div class="nav-group" id="tor-hunt-sidebar-group">
-            <div class="nav-group-header" data-group="sidebar-group-tor-hunt">
-                <i class="fas fa-magnet nav-group-icon"></i>
-                <span>Tor Hunt</span>
-                <i class="fas fa-chevron-right nav-group-chevron"></i>
+            <!-- Version row -->
+            <div class="sidebar-footer-info">
+                <a href="https://github.com/plexguide/Huntarr.io/releases" target="_blank" rel="noopener"
+                    class="sidebar-footer-version-link" id="sidebar-footer-version-link" title="View releases">
+                    <span class="sidebar-footer-version" id="sidebar-footer-version"></span>
+                </a>
+                <a href="https://github.com/plexguide/Huntarr.io/releases" target="_blank" rel="noopener"
+                    class="sidebar-footer-upgrade" id="sidebar-footer-upgrade" style="display:none;"
+                    title="Update available">
+                    <i class="fas fa-arrow-up"></i>
+                    <span id="sidebar-footer-upgrade-version"></span>
+                </a>
+                <span class="sidebar-footer-sep" id="sidebar-footer-sep">&middot;</span>
+                <a href="https://github.com/Admin9705/" target="_blank" rel="noopener"
+                    class="sidebar-footer-dev">Admin9705</a>
             </div>
-            <div class="nav-group-body collapsed" id="sidebar-group-tor-hunt">
-                <a href="./#tor-hunt-home" class="nav-item nav-item-sub" id="torHuntHomeNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-magnet"></i></div>
-                    <span>Tor Home</span>
-                </a>
-                <a href="./#tor-hunt-settings" class="nav-item nav-item-sub" id="torHuntSettingsNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-cog"></i></div>
-                    <span>Settings</span>
-                </a>
-            </div>
-        </div>
-
-        <!-- ── 3RD PARTY APPS ─────────────────────────────────── -->
-        <div class="nav-group" id="nav-group-apps">
-            <div class="nav-group-header" data-group="sidebar-group-apps">
-                <i class="fas fa-th-large nav-group-icon"></i>
-                <span>3rd Party Apps</span>
-                <i class="fas fa-chevron-right nav-group-chevron"></i>
-            </div>
-            <div class="nav-group-body collapsed" id="sidebar-group-apps">
-                <a href="./#sonarr" class="nav-item nav-item-sub sonarr-app" id="appsSonarrNav">
-                    <div class="nav-icon-wrapper sonarr-icon">
-                        <img src="./static/images/app-icons/sonarr.png" alt="Sonarr" class="app-icon-img">
-                    </div>
-                    <span>Sonarr</span>
-                </a>
-                <a href="./#radarr" class="nav-item nav-item-sub radarr-app" id="appsRadarrNav">
-                    <div class="nav-icon-wrapper radarr-icon">
-                        <img src="./static/images/app-icons/radarr.png" alt="Radarr" class="app-icon-img">
-                    </div>
-                    <span>Radarr</span>
-                </a>
-                <a href="./#lidarr" class="nav-item nav-item-sub lidarr-app" id="appsLidarrNav">
-                    <div class="nav-icon-wrapper lidarr-icon">
-                        <img src="./static/images/app-icons/lidarr.png" alt="Lidarr" class="app-icon-img">
-                    </div>
-                    <span>Lidarr</span>
-                </a>
-                <a href="./#readarr" class="nav-item nav-item-sub readarr-app" id="appsReadarrNav">
-                    <div class="nav-icon-wrapper readarr-icon">
-                        <img src="./static/images/app-icons/readarr.png" alt="Readarr" class="app-icon-img">
-                    </div>
-                    <span>Readarr</span>
-                </a>
-                <a href="./#whisparr" class="nav-item nav-item-sub whisparr-app" id="appsWhisparrNav">
-                    <div class="nav-icon-wrapper whisparr-icon">
-                        <img src="./static/images/app-icons/whisparr.png" alt="Whisparr V2" class="app-icon-img">
-                    </div>
-                    <span>Whisparr V2</span>
-                </a>
-                <a href="./#eros" class="nav-item nav-item-sub eros-app" id="appsErosNav">
-                    <div class="nav-icon-wrapper eros-icon">
-                        <img src="./static/images/app-icons/eros.png" alt="Whisparr V3" class="app-icon-img">
-                    </div>
-                    <span>Whisparr V3</span>
-                </a>
-                <a href="./#prowlarr" class="nav-item nav-item-sub prowlarr-app" id="appsProwlarrNav">
-                    <div class="nav-icon-wrapper prowlarr-icon">
-                        <img src="./static/images/app-icons/prowlarr.png" alt="Prowlarr" class="app-icon-img">
-                    </div>
-                    <span>Prowlarr</span>
-                </a>
-                <a href="./#swaparr" class="nav-item nav-item-sub swaparr-app" id="appsSwaparrNav">
-                    <div class="nav-icon-wrapper swaparr-icon">
-                        <i class="fas fa-exchange-alt"></i>
-                    </div>
-                    <span>Swaparr</span>
-                </a>
-            </div>
-        </div>
-
-        <!-- ── SYSTEM ─────────────────────────────────────────── -->
-        <div class="nav-group" id="nav-group-system">
-            <div class="nav-group-header" data-group="sidebar-group-system">
-                <i class="fas fa-server nav-group-icon"></i>
-                <span>System</span>
-                <i class="fas fa-chevron-right nav-group-chevron"></i>
-            </div>
-            <div class="nav-group-body collapsed" id="sidebar-group-system">
-                <a href="./#settings" class="nav-item nav-item-sub" id="mainSettingsMainNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-sliders-h"></i></div>
-                    <span>General</span>
-                </a>
-                <a href="./#hunt-manager" class="nav-item nav-item-sub" id="mainSystemHuntManagerNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-crosshairs"></i></div>
-                    <span>Hunt Manager</span>
-                </a>
-                <a href="./#logs" class="nav-item nav-item-sub" id="mainSystemLogsNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-list-alt"></i></div>
-                    <span>Logs</span>
-                </a>
-                <a href="./#scheduling" class="nav-item nav-item-sub" id="mainSettingsSchedulingNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-calendar-alt"></i></div>
-                    <span>Scheduling</span>
-                </a>
-                <a href="./#notifications" class="nav-item nav-item-sub" id="mainSettingsNotificationsNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-bell"></i></div>
-                    <span>Notifications</span>
-                </a>
-                <a href="./#backup-restore" class="nav-item nav-item-sub" id="mainSettingsBackupRestoreNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-database"></i></div>
-                    <span>Backup / Restore</span>
-                </a>
-                <a href="./#settings-logs" class="nav-item nav-item-sub" id="mainSettingsLogsNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-file-alt"></i></div>
-                    <span>Settings Logs</span>
-                </a>
-                <a href="./#user" class="nav-item nav-item-sub" id="mainSettingsUserNav">
-                    <div class="nav-icon-wrapper"><i class="fas fa-user"></i></div>
-                    <span>User</span>
-                </a>
-            </div>
-        </div>
-
-        <!-- ── DAUGHTER'S SPONSORS ──────────────────────────────── -->
-        <div class="nav-group" id="main-sidebar-partner-projects-group">
-            <div class="nav-section-divider"></div>
-            <div class="nav-group-title">Daughter's Sponsors</div>
-            <a href="#" target="_blank" rel="noopener noreferrer" class="nav-item" id="sidebar-partner-projects-nav">
-                <div class="nav-icon-wrapper"><i class="fas fa-heart" style="color: #ec4899;"></i></div>
-                <span id="sidebar-partner-projects-name">Loading...</span>
-            </a>
-        </div>
-    </nav>
-
-    <div class="sidebar-footer">
-        <!-- User profile row -->
-        <div class="sidebar-user-profile" id="sidebar-user-profile">
-            <a href="#user" class="sidebar-user-link">
-                <div class="sidebar-user-avatar" id="sidebar-user-avatar"></div>
-                <div class="sidebar-user-info">
-                    <span class="sidebar-user-name" id="sidebar-user-name">Loading...</span>
-                    <span class="sidebar-user-role" id="sidebar-user-role"></span>
-                </div>
-            </a>
-            <div class="sidebar-user-actions">
-                <a href="#user" class="sidebar-action-btn" title="Settings" aria-label="User Settings">
-                    <i class="fas fa-cog"></i>
-                </a>
-                <button class="sidebar-action-btn sidebar-logout-btn" title="Logout" aria-label="Logout" onclick="fetch('./logout',{method:'POST'}).then(function(){window.location.href='./login';})">
-                    <i class="fas fa-sign-out-alt"></i>
-                </button>
-            </div>
-        </div>
-        <!-- Social icons row -->
-        <div class="sidebar-social-group">
-            <a href="https://discord.com/invite/PGJJjR5Cww" target="_blank" rel="noopener" class="sidebar-social-btn discord-btn" title="Join Discord" aria-label="Discord">
-                <i class="fab fa-discord"></i>
-            </a>
-            <a href="https://www.reddit.com/r/huntarr/" target="_blank" rel="noopener" class="sidebar-social-btn reddit-btn" title="Visit Reddit" aria-label="Reddit">
-                <i class="fab fa-reddit-alien"></i>
-            </a>
-            <a href="https://plexguide.github.io/Huntarr.io/index.html" target="_blank" rel="noopener" class="sidebar-social-btn docs-btn" title="Documentation" aria-label="Documentation">
-                <i class="fas fa-book-open"></i>
-            </a>
-            <a href="https://github.com/plexguide/Huntarr.io/issues" target="_blank" rel="noopener" class="sidebar-social-btn issues-btn" title="Report a Bug" aria-label="Report a Bug">
-                <i class="fas fa-bug"></i>
-            </a>
-        </div>
-        <!-- Version row -->
-        <div class="sidebar-footer-info">
-            <a href="https://github.com/plexguide/Huntarr.io/releases" target="_blank" rel="noopener" class="sidebar-footer-version-link" id="sidebar-footer-version-link" title="View releases">
-                <span class="sidebar-footer-version" id="sidebar-footer-version"></span>
-            </a>
-            <a href="https://github.com/plexguide/Huntarr.io/releases" target="_blank" rel="noopener" class="sidebar-footer-upgrade" id="sidebar-footer-upgrade" style="display:none;" title="Update available">
-                <i class="fas fa-arrow-up"></i>
-                <span id="sidebar-footer-upgrade-version"></span>
-            </a>
-            <span class="sidebar-footer-sep" id="sidebar-footer-sep">&middot;</span>
-            <a href="https://github.com/Admin9705/" target="_blank" rel="noopener" class="sidebar-footer-dev">Admin9705</a>
         </div>
     </div>
-</div>
 </div><!-- /#sidebar-wrapper -->
 
 <script>
-/* ═══════════════════════════════════════════════════════════════
-   Unified Sidebar — accordion groups + active-item highlighting
-   ═══════════════════════════════════════════════════════════════ */
+    /* ═══════════════════════════════════════════════════════════════
+       Unified Sidebar — accordion groups + active-item highlighting
+       ═══════════════════════════════════════════════════════════════ */
 
-// ── All collapsible group body IDs ──
-var ALL_GROUP_IDS = [
-    'sidebar-group-media-hunt',
-    'sidebar-group-requests',
-    'sidebar-group-apps',
-    'sidebar-group-nzb-hunt',
-    'sidebar-group-tor-hunt',
-    'sidebar-group-system'
-];
+    // ── All collapsible group body IDs ──
+    var ALL_GROUP_IDS = [
+        'sidebar-group-media-hunt',
+        'sidebar-group-requests',
+        'sidebar-group-apps',
+        'sidebar-group-nzb-hunt',
+        'sidebar-group-tor-hunt',
+        'sidebar-group-system'
+    ];
 
-// ── All sub-group IDs (within Media Hunt) ──
-var ALL_SUB_GROUP_IDS = [
-    'movie-hunt-collection-sub',
-    'movie-hunt-activity-sub',
-    'index-master-sub',
-    'index-master-view-sub'
-];
+    // ── All sub-group IDs (within Media Hunt) ──
+    var ALL_SUB_GROUP_IDS = [
+        'movie-hunt-collection-sub',
+        'movie-hunt-activity-sub',
+        'index-master-sub',
+        'index-master-view-sub'
+    ];
 
-// ── Expand / collapse helpers ────────────────────────────────
-function expandGroup(id) {
-    var el = document.getElementById(id);
-    if (!el) return;
-    el.classList.remove('collapsed');
-    // Rotate chevron
-    var header = el.previousElementSibling;
-    if (header) header.classList.add('expanded');
-}
-
-function collapseGroup(id) {
-    var el = document.getElementById(id);
-    if (!el) return;
-    el.classList.add('collapsed');
-    var header = el.previousElementSibling;
-    if (header) header.classList.remove('expanded');
-}
-
-function collapseAllGroups() {
-    ALL_GROUP_IDS.forEach(collapseGroup);
-    var sidebar = document.getElementById('sidebar');
-    if (sidebar) sidebar.classList.remove('requests-focused', 'system-focused', 'media-focused', 'nzb-focused', 'tor-focused', 'thirdparty-focused');
-}
-
-function expandSub(id) {
-    var el = document.getElementById(id);
-    if (el) el.classList.add('expanded');
-}
-
-function collapseSub(id) {
-    var el = document.getElementById(id);
-    if (el) el.classList.remove('expanded');
-}
-
-function collapseAllSubs() {
-    ALL_SUB_GROUP_IDS.forEach(collapseSub);
-}
-
-// Accordion: expand one group, collapse the rest
-function expandSidebarGroup(groupId) {
-    ALL_GROUP_IDS.forEach(function(id) {
-        if (id === groupId) expandGroup(id);
-        else collapseGroup(id);
-    });
-    // Toggle focused class to hide other sections
-    var sidebar = document.getElementById('sidebar');
-    if (sidebar) {
-        sidebar.classList.remove('requests-focused', 'system-focused', 'media-focused', 'nzb-focused', 'tor-focused', 'thirdparty-focused');
-        if (groupId === 'sidebar-group-requests') {
-            sidebar.classList.add('requests-focused');
-        } else if (groupId === 'sidebar-group-system') {
-            sidebar.classList.add('system-focused');
-        } else if (groupId === 'sidebar-group-media-hunt') {
-            sidebar.classList.add('media-focused');
-        } else if (groupId === 'sidebar-group-nzb-hunt') {
-            sidebar.classList.add('nzb-focused');
-        } else if (groupId === 'sidebar-group-tor-hunt') {
-            sidebar.classList.add('tor-focused');
-        } else if (groupId === 'sidebar-group-apps') {
-            sidebar.classList.add('thirdparty-focused');
-        }
+    // ── Expand / collapse helpers ────────────────────────────────
+    function expandGroup(id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.classList.remove('collapsed');
+        // Rotate chevron
+        var header = el.previousElementSibling;
+        if (header) header.classList.add('expanded');
     }
-}
 
-// ── Click handlers on group headers ──────────────────────────
-// Map group IDs to default navigation hashes (click header → navigate to default page)
-var GROUP_DEFAULT_HASH = {
-    'sidebar-group-media-hunt': '#media-hunt-collection',
-    'sidebar-group-requests': '#requestarr-discover',
-    'sidebar-group-system': '#settings',
-    'sidebar-group-nzb-hunt': '#nzb-hunt-home',
-    'sidebar-group-tor-hunt': '#tor-hunt-home',
-    'sidebar-group-apps': '#sonarr'
-};
+    function collapseGroup(id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.classList.add('collapsed');
+        var header = el.previousElementSibling;
+        if (header) header.classList.remove('expanded');
+    }
 
-document.addEventListener('click', function(e) {
-    var header = e.target.closest('.nav-group-header');
-    if (!header) return;
-    e.preventDefault();
-    var groupId = header.getAttribute('data-group');
-    var body = document.getElementById(groupId);
-    if (!body) return;
-    var isCollapsed = body.classList.contains('collapsed');
-    if (isCollapsed) {
-        expandSidebarGroup(groupId);
-        // If this group has a default page, navigate to it
-        var defaultHash = GROUP_DEFAULT_HASH[groupId];
-        if (defaultHash) {
-            window.location.hash = defaultHash;
-        }
-    } else {
-        collapseGroup(groupId);
-        // Remove focused classes when collapsing
+    function collapseAllGroups() {
+        ALL_GROUP_IDS.forEach(collapseGroup);
         var sidebar = document.getElementById('sidebar');
         if (sidebar) sidebar.classList.remove('requests-focused', 'system-focused', 'media-focused', 'nzb-focused', 'tor-focused', 'thirdparty-focused');
     }
-});
 
-// ── setActiveNavItem: highlight nav + expand correct group ───
-function setActiveNavItem() {
-    // Clear all active states
-    document.querySelectorAll('#sidebar .nav-item').forEach(function(item) {
-        item.classList.remove('active');
-    });
-
-    var h = window.location.hash || '#home';
-    var mhBody = document.getElementById('sidebar-group-media-hunt');
-    if (mhBody) { mhBody.classList.remove('activity-view'); mhBody.classList.remove('indexmaster-view'); }
-    var reqBody = document.getElementById('sidebar-group-requests');
-    if (reqBody) { /* kept for future use */ }
-
-    var selector = null;
-    var group = null;
-    var subToExpand = null; // which Media Hunt sub to expand (avoids collapse-then-expand flicker)
-
-    // Home
-    if (h === '#home') { selector = '#homeNav'; group = null; }
-
-    // ── Media Hunt (daily use) ──────────────────────
-    else if (h === '#media-hunt-collection' || h === '#movie-hunt-home' || h === '#movie-hunt-collection') {
-        selector = '#movieHuntCollectionNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub';
+    function expandSub(id) {
+        var el = document.getElementById(id);
+        if (el) el.classList.add('expanded');
     }
-    else if (h === '#media-hunt-instances') { selector = '#movieHuntInstancesNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
-    else if (h === '#media-hunt-calendar' || h === '#movie-hunt-calendar' || h === '#tv-hunt-calendar') { selector = '#movieHuntCalendarNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
-    else if (h === '#settings-import-media') { selector = '#movieHuntImportMediaNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
-    else if (h === '#activity-queue') { selector = '#movieHuntActivityQueueNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-activity-sub'; if (mhBody) mhBody.classList.add('activity-view'); }
-    else if (h === '#activity-history') { selector = '#movieHuntActivityHistoryNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-activity-sub'; if (mhBody) mhBody.classList.add('activity-view'); }
-    else if (h === '#activity-blocklist') { selector = '#movieHuntActivityBlocklistNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-activity-sub'; if (mhBody) mhBody.classList.add('activity-view'); }
-    else if (h === '#activity-logs' || h === '#logs-media-hunt' || h === '#logs-tv-hunt') { selector = '#movieHuntActivityLogsNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-activity-sub'; if (mhBody) mhBody.classList.add('activity-view'); }
 
-    // ── Media Hunt > Configuration ──────────────────
-    else if (h === '#media-hunt-settings' || h === '#movie-hunt-settings' || h === '#settings-instance-management') { selector = '#movieHuntSettingsMovieManagementNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
-    else if (h === '#indexer-hunt') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
-    else if (h === '#indexer-hunt-stats') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
-    else if (h === '#indexer-hunt-history') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
-    else if (h === '#settings-clients') { selector = '#movieHuntClientsMainNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
-    else if (h === '#settings-media-management') { selector = '#movieHuntSettingsMovieManagementNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
-    else if (h === '#settings-profiles') { selector = '#movieHuntSettingsProfilesNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
-    else if (h === '#settings-sizes') { selector = '#movieHuntSettingsSizesNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
-    else if (h === '#settings-custom-formats') { selector = '#movieHuntSettingsCustomFormatsNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
-    else if (h === '#settings-import-lists') { selector = '#movieHuntSettingsImportListsNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
-    else if (h === '#settings-root-folders') { selector = '#movieHuntSettingsRootFoldersNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
-
-    // ── Requests ──────────────────────────────────
-    else if (h === '#requestarr') { selector = '#requestarrDiscoverNav'; group = 'sidebar-group-requests'; }
-    else if (h === '#requestarr-discover') { selector = '#requestarrDiscoverNav'; group = 'sidebar-group-requests'; }
-    else if (h === '#requestarr-tv') { selector = '#requestarrTVNav'; group = 'sidebar-group-requests'; }
-    else if (h === '#requestarr-movies') { selector = '#requestarrMoviesNav'; group = 'sidebar-group-requests'; }
-    else if (h === '#requestarr-smarthunt') { selector = '#requestarrSmartHuntNav'; group = 'sidebar-group-requests'; }
-    else if (h === '#requestarr-hidden' || h === '#requestarr-personal-blacklist') { selector = '#requestarrPersonalBlacklistNav'; group = 'sidebar-group-requests'; }
-    else if (h === '#requestarr-smarthunt-settings') { selector = '#requestarrSmartHuntSettingsNav'; group = 'sidebar-group-requests'; }
-    else if (h === '#requestarr-filters' || h === '#requestarr-settings') { selector = '#requestarrSettingsNav'; group = 'sidebar-group-requests'; }
-    else if (h === '#requestarr-users') { selector = '#requestarrUsersNav'; group = 'sidebar-group-requests'; }
-    else if (h === '#requestarr-requests') {
-        if (window._huntarrUserRole === 'owner') {
-            selector = '#requestarrRequestsNav'; group = 'sidebar-group-requests';
-        } else {
-            selector = '#requestarrRequestsNav'; group = 'sidebar-group-requests';
-        }
+    function collapseSub(id) {
+        var el = document.getElementById(id);
+        if (el) el.classList.remove('expanded');
     }
-    else if (h === '#requestarr-bundles') { selector = '#requestarrBundlesNav'; group = 'sidebar-group-requests'; }
-    else if (h === '#requestarr-global-blacklist') { selector = '#requestarrGlobalBlacklistNav'; group = 'sidebar-group-requests'; }
 
-    // ── Apps ──────────────────────────────────────
-    else if (h === '#apps' || h === '#sonarr' || h === '#instance-editor') { selector = '#appsSonarrNav'; group = 'sidebar-group-apps'; }
-    else if (h === '#radarr') { selector = '#appsRadarrNav'; group = 'sidebar-group-apps'; }
-    else if (h === '#lidarr') { selector = '#appsLidarrNav'; group = 'sidebar-group-apps'; }
-    else if (h === '#readarr') { selector = '#appsReadarrNav'; group = 'sidebar-group-apps'; }
-    else if (h === '#whisparr') { selector = '#appsWhisparrNav'; group = 'sidebar-group-apps'; }
-    else if (h === '#eros') { selector = '#appsErosNav'; group = 'sidebar-group-apps'; }
-    else if (h === '#prowlarr') { selector = '#appsProwlarrNav'; group = 'sidebar-group-apps'; }
-    else if (h === '#swaparr') { selector = '#appsSwaparrNav'; group = 'sidebar-group-apps'; }
-
-    // ── NZB Hunt ──────────────────────────────────
-    else if (h === '#nzb-hunt-home') { selector = '#nzbHuntHomeNav'; group = 'sidebar-group-nzb-hunt'; }
-    else if (h === '#nzb-hunt-server-editor') { selector = '#nzbHuntServersNav'; group = 'sidebar-group-nzb-hunt'; }
-    else if (h === '#nzb-hunt-folders') { selector = '#nzbHuntFoldersNav'; group = 'sidebar-group-nzb-hunt'; }
-    else if (h === '#nzb-hunt-servers' || h === '#nzb-hunt-settings-servers') { selector = '#nzbHuntServersNav'; group = 'sidebar-group-nzb-hunt'; }
-    else if (h === '#nzb-hunt-advanced' || h === '#nzb-hunt-settings-advanced') { selector = '#nzbHuntAdvancedNav'; group = 'sidebar-group-nzb-hunt'; }
-    else if (h.indexOf('#nzb-hunt') === 0) { selector = '#nzbHuntHomeNav'; group = 'sidebar-group-nzb-hunt'; }
-
-    // ── Tor Hunt ──────────────────────────────────
-    else if (h === '#tor-hunt-home') { selector = '#torHuntHomeNav'; group = 'sidebar-group-tor-hunt'; }
-    else if (h === '#tor-hunt-settings') { selector = '#torHuntSettingsNav'; group = 'sidebar-group-tor-hunt'; }
-    else if (h.indexOf('#tor-hunt') === 0) { selector = '#torHuntHomeNav'; group = 'sidebar-group-tor-hunt'; }
-
-    // ── System (includes settings) ─────────────────
-    else if (h === '#system' || h === '#hunt-manager') { selector = '#mainSystemHuntManagerNav'; group = 'sidebar-group-system'; }
-    else if (h === '#logs') { selector = '#mainSystemLogsNav'; group = 'sidebar-group-system'; }
-    else if (h === '#settings') { selector = '#mainSettingsMainNav'; group = 'sidebar-group-system'; }
-    else if (h === '#scheduling') { selector = '#mainSettingsSchedulingNav'; group = 'sidebar-group-system'; }
-    else if (h === '#notifications') {
-        // Check if user navigated here from Requests sidebar
-        if (window._notificationsFromRequests) {
-            selector = '#requestarrNotificationsNav'; group = 'sidebar-group-requests';
-        } else {
-            selector = '#mainSettingsNotificationsNav'; group = 'sidebar-group-system';
-        }
+    function collapseAllSubs() {
+        ALL_SUB_GROUP_IDS.forEach(collapseSub);
     }
-    else if (h === '#backup-restore') { selector = '#mainSettingsBackupRestoreNav'; group = 'sidebar-group-system'; }
-    else if (h === '#settings-logs') { selector = '#mainSettingsLogsNav'; group = 'sidebar-group-system'; }
-    else if (h === '#user') { selector = '#mainSettingsUserNav'; group = 'sidebar-group-system'; }
 
-    // Fallback
-    else { selector = '#homeNav'; group = null; }
-
-    // Media Hunt sub-groups: only collapse subs we are not expanding (avoids flicker)
-    if (subToExpand) {
-        ALL_SUB_GROUP_IDS.forEach(function(id) {
-            if (id === subToExpand) expandSub(id);
-            else collapseSub(id);
+    // Accordion: expand one group, collapse the rest
+    function expandSidebarGroup(groupId) {
+        ALL_GROUP_IDS.forEach(function (id) {
+            if (id === groupId) expandGroup(id);
+            else collapseGroup(id);
         });
-    } else {
-        collapseAllSubs();
-    }
-
-    // Expand the correct group (accordion)
-    if (group) { expandSidebarGroup(group); }
-    else { collapseAllGroups(); }
-
-    // Highlight active item
-    if (selector) {
-        var activeItem = document.querySelector(selector);
-        if (activeItem) activeItem.classList.add('active');
-    }
-}
-
-// ── Media Hunt "Activity" toggle ─────────────────────────────
-// Now uses href="./#activity-history" — handled by the
-// generic sidebar click handler in app.js + setActiveNavItem().
-
-// ── Media Hunt Activity "Back" button ────────────────────────
-// Now uses href="./#media-hunt-collection" — handled by the
-// generic sidebar click handler in app.js + setActiveNavItem().
-
-// ── Media Hunt "Settings" toggle ─────────────────────────────
-// Now uses href="./#settings-media-management" — handled by the
-// generic sidebar click handler in app.js + setActiveNavItem().
-
-// ── Media Hunt Config "Back" button ──────────────────────────
-// Now uses href="./#media-hunt-collection" — handled by the
-// generic sidebar click handler in app.js + setActiveNavItem().
-
-// ── Media Hunt sidebar: Import Media visibility ──────────────
-(function() {
-    function updateMediaHuntSidebarVisibility() {
-        var importMediaItem = document.getElementById('movieHuntImportMediaNav');
-        if (!importMediaItem) return;
-        Promise.all([
-            fetch('./api/movie-hunt/instances').then(function(r) { return r.json(); }),
-            fetch('./api/tv-hunt/instances').then(function(r) { return r.json(); })
-        ]).then(function(results) {
-            var hasMovie = (results[0].instances || []).length > 0;
-            var hasTv = (results[1].instances || []).length > 0;
-            importMediaItem.style.display = (hasMovie || hasTv) ? 'flex' : 'none';
-        }).catch(function() {
-            importMediaItem.style.display = 'flex';
-        });
-    }
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', updateMediaHuntSidebarVisibility);
-    } else {
-        updateMediaHuntSidebarVisibility();
-    }
-    window.updateMovieHuntSettingsVisibility = updateMediaHuntSidebarVisibility;
-})();
-
-// ── Feature flags: hide/show sidebar groups ──────────────────
-(function() {
-    function applyFeatureFlags() {
-        fetch('./api/settings/feature-flags', { cache: 'no-store' })
-            .then(function(r) { return r.json(); })
-            .then(function(flags) {
-                var requestsGroup = document.getElementById('nav-group-requests');
-                var mediaHuntGroup = document.getElementById('nav-group-media-hunt');
-                var nzbHuntGroup = document.getElementById('nzb-hunt-sidebar-group');
-                var appsGroup = document.getElementById('nav-group-apps');
-                var appsLabel = document.getElementById('nav-group-apps-label');
-                var hideRequests = flags.enable_requestarr === false;
-                var hideMedia = flags.enable_media_hunt === false;
-                var hideApps = flags.enable_third_party_apps === false;
-                if (requestsGroup) requestsGroup.style.display = hideRequests ? 'none' : '';
-                if (mediaHuntGroup) mediaHuntGroup.style.display = hideMedia ? 'none' : '';
-                if (nzbHuntGroup) nzbHuntGroup.style.display = hideMedia ? 'none' : '';
-                var torHuntGroup = document.getElementById('tor-hunt-sidebar-group');
-                if (torHuntGroup) torHuntGroup.style.display = hideMedia ? 'none' : '';
-                if (appsGroup) appsGroup.style.display = hideApps ? 'none' : '';
-                if (appsLabel) appsLabel.style.display = (hideMedia && hideApps) ? 'none' : '';
-            })
-            .catch(function() { /* keep defaults visible on error */ });
-    }
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', applyFeatureFlags);
-    } else {
-        applyFeatureFlags();
-    }
-    window.applyFeatureFlags = applyFeatureFlags;
-})();
-
-// ── Sidebar footer version + upgrade indicator ───────────────
-(function() {
-    function updateSidebarVersion() {
-        var verEl = document.getElementById('sidebar-footer-version');
-        var upgradeEl = document.getElementById('sidebar-footer-upgrade');
-        var upgradeVerEl = document.getElementById('sidebar-footer-upgrade-version');
-        var sepEl = document.getElementById('sidebar-footer-sep');
-        if (!verEl) return;
-        try {
-            var info = localStorage.getItem('huntarr-version-info');
-            if (info) {
-                var parsed = JSON.parse(info);
-                if (parsed.currentVersion) {
-                    verEl.textContent = 'v' + parsed.currentVersion;
-                    // Show upgrade indicator if latest differs from current
-                    if (upgradeEl && upgradeVerEl && parsed.latestVersion &&
-                        parsed.latestVersion !== parsed.currentVersion) {
-                        upgradeVerEl.textContent = parsed.latestVersion;
-                        upgradeEl.style.display = '';
-                        if (sepEl) sepEl.style.display = 'none';
-                        upgradeEl.closest('.sidebar-footer-info')
-                            && upgradeEl.setAttribute('title', 'Update available: ' + parsed.latestVersion);
-                    } else if (upgradeEl) {
-                        upgradeEl.style.display = 'none';
-                        if (sepEl) sepEl.style.display = '';
-                    }
-                    return;
-                }
+        // Toggle focused class to hide other sections
+        var sidebar = document.getElementById('sidebar');
+        if (sidebar) {
+            sidebar.classList.remove('requests-focused', 'system-focused', 'media-focused', 'nzb-focused', 'tor-focused', 'thirdparty-focused');
+            if (groupId === 'sidebar-group-requests') {
+                sidebar.classList.add('requests-focused');
+            } else if (groupId === 'sidebar-group-system') {
+                sidebar.classList.add('system-focused');
+            } else if (groupId === 'sidebar-group-media-hunt') {
+                sidebar.classList.add('media-focused');
+            } else if (groupId === 'sidebar-group-nzb-hunt') {
+                sidebar.classList.add('nzb-focused');
+            } else if (groupId === 'sidebar-group-tor-hunt') {
+                sidebar.classList.add('tor-focused');
+            } else if (groupId === 'sidebar-group-apps') {
+                sidebar.classList.add('thirdparty-focused');
             }
-        } catch(e) {}
-        verEl.textContent = '';
-        if (upgradeEl) upgradeEl.style.display = 'none';
-        if (sepEl) sepEl.style.display = '';
+        }
     }
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', updateSidebarVersion);
-    } else {
-        updateSidebarVersion();
-    }
-    window.addEventListener('storage', function(e) {
-        if (e.key === 'huntarr-version-info') updateSidebarVersion();
-    });
-    // Also update after a short delay to catch late localStorage writes
-    setTimeout(updateSidebarVersion, 2000);
-})();
 
-// ── Sidebar User Profile ─────────────────────────────────────
-(function() {
-    function loadSidebarUser() {
-        fetch('./api/user/me', { credentials: 'include', cache: 'no-store' })
-            .then(function(r) { return r.ok ? r.json() : null; })
-            .then(function(data) {
-                if (!data || !data.username) return;
-                var nameEl = document.getElementById('sidebar-user-name');
-                var roleEl = document.getElementById('sidebar-user-role');
-                var avatarEl = document.getElementById('sidebar-user-avatar');
-                if (nameEl) nameEl.textContent = data.username;
-                if (roleEl) {
-                    roleEl.textContent = data.role === 'owner' ? 'Owner' : 'User';
-                    roleEl.className = 'sidebar-user-role sidebar-user-role-' + data.role;
-                }
-                if (avatarEl) {
-                    var initial = (data.username || '?').charAt(0).toUpperCase();
-                    if (data.avatar_url) {
-                        avatarEl.innerHTML = '<img src="' + data.avatar_url + '" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><span class="sidebar-avatar-fallback" style="display:none;">' + initial + '</span>';
-                    } else {
-                        avatarEl.innerHTML = '<span class="sidebar-avatar-fallback">' + initial + '</span>';
+    // ── Click handlers on group headers ──────────────────────────
+    // Map group IDs to default navigation hashes (click header → navigate to default page)
+    var GROUP_DEFAULT_HASH = {
+        'sidebar-group-media-hunt': '#media-hunt-collection',
+        'sidebar-group-requests': '#requestarr-discover',
+        'sidebar-group-system': '#settings',
+        'sidebar-group-nzb-hunt': '#nzb-hunt-home',
+        'sidebar-group-tor-hunt': '#tor-hunt-home',
+        'sidebar-group-apps': '#sonarr'
+    };
+
+    document.addEventListener('click', function (e) {
+        var header = e.target.closest('.nav-group-header');
+        if (!header) return;
+        e.preventDefault();
+        var groupId = header.getAttribute('data-group');
+        var body = document.getElementById(groupId);
+        if (!body) return;
+        var isCollapsed = body.classList.contains('collapsed');
+        if (isCollapsed) {
+            expandSidebarGroup(groupId);
+            // If this group has a default page, navigate to it
+            var defaultHash = GROUP_DEFAULT_HASH[groupId];
+            if (defaultHash) {
+                window.location.hash = defaultHash;
+            }
+        } else {
+            collapseGroup(groupId);
+            // Remove focused classes when collapsing
+            var sidebar = document.getElementById('sidebar');
+            if (sidebar) sidebar.classList.remove('requests-focused', 'system-focused', 'media-focused', 'nzb-focused', 'tor-focused', 'thirdparty-focused');
+        }
+    });
+
+    // ── setActiveNavItem: highlight nav + expand correct group ───
+    function setActiveNavItem() {
+        // Clear all active states
+        document.querySelectorAll('#sidebar .nav-item').forEach(function (item) {
+            item.classList.remove('active');
+        });
+
+        var h = window.location.hash || '#home';
+        var mhBody = document.getElementById('sidebar-group-media-hunt');
+        if (mhBody) { mhBody.classList.remove('activity-view'); mhBody.classList.remove('indexmaster-view'); }
+        var reqBody = document.getElementById('sidebar-group-requests');
+        if (reqBody) { /* kept for future use */ }
+
+        var selector = null;
+        var group = null;
+        var subToExpand = null; // which Media Hunt sub to expand (avoids collapse-then-expand flicker)
+
+        // Home
+        if (h === '#home') { selector = '#homeNav'; group = null; }
+
+        // ── Media Hunt (daily use) ──────────────────────
+        else if (h === '#media-hunt-collection' || h === '#movie-hunt-home' || h === '#movie-hunt-collection') {
+            selector = '#movieHuntCollectionNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub';
+        }
+        else if (h === '#media-hunt-instances') { selector = '#movieHuntInstancesNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+        else if (h === '#media-hunt-calendar' || h === '#movie-hunt-calendar' || h === '#tv-hunt-calendar') { selector = '#movieHuntCalendarNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+        else if (h === '#settings-import-media') { selector = '#movieHuntImportMediaNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+        else if (h === '#activity-queue') { selector = '#movieHuntActivityQueueNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-activity-sub'; if (mhBody) mhBody.classList.add('activity-view'); }
+        else if (h === '#activity-history') { selector = '#movieHuntActivityHistoryNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-activity-sub'; if (mhBody) mhBody.classList.add('activity-view'); }
+        else if (h === '#activity-blocklist') { selector = '#movieHuntActivityBlocklistNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-activity-sub'; if (mhBody) mhBody.classList.add('activity-view'); }
+        else if (h === '#activity-logs' || h === '#logs-media-hunt' || h === '#logs-tv-hunt') { selector = '#movieHuntActivityLogsNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-activity-sub'; if (mhBody) mhBody.classList.add('activity-view'); }
+
+        // ── Media Hunt > Configuration ──────────────────
+        else if (h === '#media-hunt-settings' || h === '#movie-hunt-settings' || h === '#settings-instance-management') { selector = '#movieHuntSettingsMovieManagementNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+        else if (h === '#indexer-hunt') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+        else if (h === '#indexer-hunt-stats') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+        else if (h === '#indexer-hunt-history') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+        else if (h === '#settings-clients') { selector = '#movieHuntSettingsRootFoldersNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+        else if (h === '#settings-media-management') { selector = '#movieHuntSettingsMovieManagementNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+        else if (h === '#settings-profiles') { selector = '#movieHuntSettingsProfilesNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+        else if (h === '#settings-sizes') { selector = '#movieHuntSettingsSizesNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+        else if (h === '#settings-custom-formats') { selector = '#movieHuntSettingsCustomFormatsNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+        else if (h === '#settings-import-lists') { selector = '#movieHuntSettingsImportListsNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+        else if (h === '#settings-root-folders') { selector = '#movieHuntSettingsRootFoldersNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+
+        // ── Requests ──────────────────────────────────
+        else if (h === '#requestarr') { selector = '#requestarrDiscoverNav'; group = 'sidebar-group-requests'; }
+        else if (h === '#requestarr-discover') { selector = '#requestarrDiscoverNav'; group = 'sidebar-group-requests'; }
+        else if (h === '#requestarr-tv') { selector = '#requestarrTVNav'; group = 'sidebar-group-requests'; }
+        else if (h === '#requestarr-movies') { selector = '#requestarrMoviesNav'; group = 'sidebar-group-requests'; }
+        else if (h === '#requestarr-smarthunt') { selector = '#requestarrSmartHuntNav'; group = 'sidebar-group-requests'; }
+        else if (h === '#requestarr-hidden' || h === '#requestarr-personal-blacklist') { selector = '#requestarrPersonalBlacklistNav'; group = 'sidebar-group-requests'; }
+        else if (h === '#requestarr-smarthunt-settings') { selector = '#requestarrSmartHuntSettingsNav'; group = 'sidebar-group-requests'; }
+        else if (h === '#requestarr-filters' || h === '#requestarr-settings') { selector = '#requestarrSettingsNav'; group = 'sidebar-group-requests'; }
+        else if (h === '#requestarr-users') { selector = '#requestarrUsersNav'; group = 'sidebar-group-requests'; }
+        else if (h === '#requestarr-requests') {
+            if (window._huntarrUserRole === 'owner') {
+                selector = '#requestarrRequestsNav'; group = 'sidebar-group-requests';
+            } else {
+                selector = '#requestarrRequestsNav'; group = 'sidebar-group-requests';
+            }
+        }
+        else if (h === '#requestarr-bundles') { selector = '#requestarrBundlesNav'; group = 'sidebar-group-requests'; }
+        else if (h === '#requestarr-global-blacklist') { selector = '#requestarrGlobalBlacklistNav'; group = 'sidebar-group-requests'; }
+
+        // ── Apps ──────────────────────────────────────
+        else if (h === '#apps' || h === '#sonarr' || h === '#instance-editor') { selector = '#appsSonarrNav'; group = 'sidebar-group-apps'; }
+        else if (h === '#radarr') { selector = '#appsRadarrNav'; group = 'sidebar-group-apps'; }
+        else if (h === '#lidarr') { selector = '#appsLidarrNav'; group = 'sidebar-group-apps'; }
+        else if (h === '#readarr') { selector = '#appsReadarrNav'; group = 'sidebar-group-apps'; }
+        else if (h === '#whisparr') { selector = '#appsWhisparrNav'; group = 'sidebar-group-apps'; }
+        else if (h === '#eros') { selector = '#appsErosNav'; group = 'sidebar-group-apps'; }
+        else if (h === '#prowlarr') { selector = '#appsProwlarrNav'; group = 'sidebar-group-apps'; }
+        else if (h === '#swaparr') { selector = '#appsSwaparrNav'; group = 'sidebar-group-apps'; }
+
+        // ── NZB Hunt ──────────────────────────────────
+        else if (h === '#nzb-hunt-home') { selector = '#nzbHuntHomeNav'; group = 'sidebar-group-nzb-hunt'; }
+        else if (h === '#nzb-hunt-server-editor') { selector = '#nzbHuntServersNav'; group = 'sidebar-group-nzb-hunt'; }
+        else if (h === '#nzb-hunt-folders') { selector = '#nzbHuntFoldersNav'; group = 'sidebar-group-nzb-hunt'; }
+        else if (h === '#nzb-hunt-servers' || h === '#nzb-hunt-settings-servers') { selector = '#nzbHuntServersNav'; group = 'sidebar-group-nzb-hunt'; }
+        else if (h === '#nzb-hunt-advanced' || h === '#nzb-hunt-settings-advanced') { selector = '#nzbHuntAdvancedNav'; group = 'sidebar-group-nzb-hunt'; }
+        else if (h.indexOf('#nzb-hunt') === 0) { selector = '#nzbHuntHomeNav'; group = 'sidebar-group-nzb-hunt'; }
+
+        // ── Tor Hunt ──────────────────────────────────
+        else if (h === '#tor-hunt-home') { selector = '#torHuntHomeNav'; group = 'sidebar-group-tor-hunt'; }
+        else if (h === '#tor-hunt-settings') { selector = '#torHuntSettingsNav'; group = 'sidebar-group-tor-hunt'; }
+        else if (h.indexOf('#tor-hunt') === 0) { selector = '#torHuntHomeNav'; group = 'sidebar-group-tor-hunt'; }
+
+        // ── System (includes settings) ─────────────────
+        else if (h === '#system' || h === '#hunt-manager') { selector = '#mainSystemHuntManagerNav'; group = 'sidebar-group-system'; }
+        else if (h === '#logs') { selector = '#mainSystemLogsNav'; group = 'sidebar-group-system'; }
+        else if (h === '#settings') { selector = '#mainSettingsMainNav'; group = 'sidebar-group-system'; }
+        else if (h === '#scheduling') { selector = '#mainSettingsSchedulingNav'; group = 'sidebar-group-system'; }
+        else if (h === '#notifications') {
+            // Check if user navigated here from Requests sidebar
+            if (window._notificationsFromRequests) {
+                selector = '#requestarrNotificationsNav'; group = 'sidebar-group-requests';
+            } else {
+                selector = '#mainSettingsNotificationsNav'; group = 'sidebar-group-system';
+            }
+        }
+        else if (h === '#backup-restore') { selector = '#mainSettingsBackupRestoreNav'; group = 'sidebar-group-system'; }
+        else if (h === '#settings-logs') { selector = '#mainSettingsLogsNav'; group = 'sidebar-group-system'; }
+        else if (h === '#user') { selector = '#mainSettingsUserNav'; group = 'sidebar-group-system'; }
+
+        // Fallback
+        else { selector = '#homeNav'; group = null; }
+
+        // Media Hunt sub-groups: only collapse subs we are not expanding (avoids flicker)
+        if (subToExpand) {
+            ALL_SUB_GROUP_IDS.forEach(function (id) {
+                if (id === subToExpand) expandSub(id);
+                else collapseSub(id);
+            });
+        } else {
+            collapseAllSubs();
+        }
+
+        // Expand the correct group (accordion)
+        if (group) { expandSidebarGroup(group); }
+        else { collapseAllGroups(); }
+
+        // Highlight active item
+        if (selector) {
+            var activeItem = document.querySelector(selector);
+            if (activeItem) activeItem.classList.add('active');
+        }
+    }
+
+    // ── Media Hunt "Activity" toggle ─────────────────────────────
+    // Now uses href="./#activity-history" — handled by the
+    // generic sidebar click handler in app.js + setActiveNavItem().
+
+    // ── Media Hunt Activity "Back" button ────────────────────────
+    // Now uses href="./#media-hunt-collection" — handled by the
+    // generic sidebar click handler in app.js + setActiveNavItem().
+
+    // ── Media Hunt "Settings" toggle ─────────────────────────────
+    // Now uses href="./#settings-media-management" — handled by the
+    // generic sidebar click handler in app.js + setActiveNavItem().
+
+    // ── Media Hunt Config "Back" button ──────────────────────────
+    // Now uses href="./#media-hunt-collection" — handled by the
+    // generic sidebar click handler in app.js + setActiveNavItem().
+
+    // ── Media Hunt sidebar: Import Media visibility ──────────────
+    (function () {
+        function updateMediaHuntSidebarVisibility() {
+            var importMediaItem = document.getElementById('movieHuntImportMediaNav');
+            if (!importMediaItem) return;
+            Promise.all([
+                fetch('./api/movie-hunt/instances').then(function (r) { return r.json(); }),
+                fetch('./api/tv-hunt/instances').then(function (r) { return r.json(); })
+            ]).then(function (results) {
+                var hasMovie = (results[0].instances || []).length > 0;
+                var hasTv = (results[1].instances || []).length > 0;
+                importMediaItem.style.display = (hasMovie || hasTv) ? 'flex' : 'none';
+            }).catch(function () {
+                importMediaItem.style.display = 'flex';
+            });
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', updateMediaHuntSidebarVisibility);
+        } else {
+            updateMediaHuntSidebarVisibility();
+        }
+        window.updateMovieHuntSettingsVisibility = updateMediaHuntSidebarVisibility;
+    })();
+
+    // ── Feature flags: hide/show sidebar groups ──────────────────
+    (function () {
+        function applyFeatureFlags() {
+            fetch('./api/settings/feature-flags', { cache: 'no-store' })
+                .then(function (r) { return r.json(); })
+                .then(function (flags) {
+                    var requestsGroup = document.getElementById('nav-group-requests');
+                    var mediaHuntGroup = document.getElementById('nav-group-media-hunt');
+                    var nzbHuntGroup = document.getElementById('nzb-hunt-sidebar-group');
+                    var appsGroup = document.getElementById('nav-group-apps');
+                    var appsLabel = document.getElementById('nav-group-apps-label');
+                    var hideRequests = flags.enable_requestarr === false;
+                    var hideMedia = flags.enable_media_hunt === false;
+                    var hideApps = flags.enable_third_party_apps === false;
+                    if (requestsGroup) requestsGroup.style.display = hideRequests ? 'none' : '';
+                    if (mediaHuntGroup) mediaHuntGroup.style.display = hideMedia ? 'none' : '';
+                    if (nzbHuntGroup) nzbHuntGroup.style.display = hideMedia ? 'none' : '';
+                    var torHuntGroup = document.getElementById('tor-hunt-sidebar-group');
+                    if (torHuntGroup) torHuntGroup.style.display = hideMedia ? 'none' : '';
+                    if (appsGroup) appsGroup.style.display = hideApps ? 'none' : '';
+                    if (appsLabel) appsLabel.style.display = (hideMedia && hideApps) ? 'none' : '';
+                })
+                .catch(function () { /* keep defaults visible on error */ });
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', applyFeatureFlags);
+        } else {
+            applyFeatureFlags();
+        }
+        window.applyFeatureFlags = applyFeatureFlags;
+    })();
+
+    // ── Sidebar footer version + upgrade indicator ───────────────
+    (function () {
+        function updateSidebarVersion() {
+            var verEl = document.getElementById('sidebar-footer-version');
+            var upgradeEl = document.getElementById('sidebar-footer-upgrade');
+            var upgradeVerEl = document.getElementById('sidebar-footer-upgrade-version');
+            var sepEl = document.getElementById('sidebar-footer-sep');
+            if (!verEl) return;
+            try {
+                var info = localStorage.getItem('huntarr-version-info');
+                if (info) {
+                    var parsed = JSON.parse(info);
+                    if (parsed.currentVersion) {
+                        verEl.textContent = 'v' + parsed.currentVersion;
+                        // Show upgrade indicator if latest differs from current
+                        if (upgradeEl && upgradeVerEl && parsed.latestVersion &&
+                            parsed.latestVersion !== parsed.currentVersion) {
+                            upgradeVerEl.textContent = parsed.latestVersion;
+                            upgradeEl.style.display = '';
+                            if (sepEl) sepEl.style.display = 'none';
+                            upgradeEl.closest('.sidebar-footer-info')
+                                && upgradeEl.setAttribute('title', 'Update available: ' + parsed.latestVersion);
+                        } else if (upgradeEl) {
+                            upgradeEl.style.display = 'none';
+                            if (sepEl) sepEl.style.display = '';
+                        }
+                        return;
                     }
                 }
-            })
-            .catch(function() {});
-    }
+            } catch (e) { }
+            verEl.textContent = '';
+            if (upgradeEl) upgradeEl.style.display = 'none';
+            if (sepEl) sepEl.style.display = '';
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', updateSidebarVersion);
+        } else {
+            updateSidebarVersion();
+        }
+        window.addEventListener('storage', function (e) {
+            if (e.key === 'huntarr-version-info') updateSidebarVersion();
+        });
+        // Also update after a short delay to catch late localStorage writes
+        setTimeout(updateSidebarVersion, 2000);
+    })();
+
+    // ── Sidebar User Profile ─────────────────────────────────────
+    (function () {
+        function loadSidebarUser() {
+            fetch('./api/user/me', { credentials: 'include', cache: 'no-store' })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (data) {
+                    if (!data || !data.username) return;
+                    var nameEl = document.getElementById('sidebar-user-name');
+                    var roleEl = document.getElementById('sidebar-user-role');
+                    var avatarEl = document.getElementById('sidebar-user-avatar');
+                    if (nameEl) nameEl.textContent = data.username;
+                    if (roleEl) {
+                        roleEl.textContent = data.role === 'owner' ? 'Owner' : 'User';
+                        roleEl.className = 'sidebar-user-role sidebar-user-role-' + data.role;
+                    }
+                    if (avatarEl) {
+                        var initial = (data.username || '?').charAt(0).toUpperCase();
+                        if (data.avatar_url) {
+                            avatarEl.innerHTML = '<img src="' + data.avatar_url + '" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><span class="sidebar-avatar-fallback" style="display:none;">' + initial + '</span>';
+                        } else {
+                            avatarEl.innerHTML = '<span class="sidebar-avatar-fallback">' + initial + '</span>';
+                        }
+                    }
+                })
+                .catch(function () { });
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadSidebarUser);
+        } else {
+            loadSidebarUser();
+        }
+    })();
+
+    // ── Init ─────────────────────────────────────────────────────
+    // Track which sidebar context Notifications was opened from
+    window._notificationsFromRequests = false;
+    document.addEventListener('click', function (e) {
+        var navItem = e.target.closest('.nav-item');
+        if (!navItem) return;
+        if (navItem.id === 'requestarrNotificationsNav') {
+            window._notificationsFromRequests = true;
+        } else if (navItem.id === 'mainSettingsNotificationsNav') {
+            window._notificationsFromRequests = false;
+        }
+    });
+
+    window.addEventListener('hashchange', setActiveNavItem);
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', loadSidebarUser);
+        document.addEventListener('DOMContentLoaded', setActiveNavItem);
     } else {
-        loadSidebarUser();
+        setActiveNavItem();
     }
-})();
-
-// ── Init ─────────────────────────────────────────────────────
-// Track which sidebar context Notifications was opened from
-window._notificationsFromRequests = false;
-document.addEventListener('click', function(e) {
-    var navItem = e.target.closest('.nav-item');
-    if (!navItem) return;
-    if (navItem.id === 'requestarrNotificationsNav') {
-        window._notificationsFromRequests = true;
-    } else if (navItem.id === 'mainSettingsNotificationsNav') {
-        window._notificationsFromRequests = false;
-    }
-});
-
-window.addEventListener('hashchange', setActiveNavItem);
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setActiveNavItem);
-} else {
-    setActiveNavItem();
-}
 </script>

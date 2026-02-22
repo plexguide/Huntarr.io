@@ -1,14 +1,16 @@
 <!-- NZB Hunt Section - Standalone module (independent of Movie Hunt / Requestarr) -->
 <section id="nzb-hunt-section" class="content-section" style="display: none;">
     <link rel="stylesheet" href="./static/css/nzb-hunt.css">
-    {% set phb_back_hash = '#home' %}{% set phb_icon = 'fa-download' %}{% set phb_section = 'NZB Hunt' %}{% set phb_page = 'Downloads' %}
+    {% set phb_back_hash = '#home' %}{% set phb_icon = 'fa-download' %}{% set phb_section = 'NZB Hunt' %}{% set phb_page
+    = 'Downloads' %}
     {% include 'components/page_header_partial.html' %}
     <div class="nzb-hunt-container">
 
         <!-- Status bar -->
         <div class="nzb-status-bar">
             <div class="nzb-status-metrics">
-                <div class="nzb-status-item nzb-active-connections" id="nzb-active-connections" title="Hover for connections per server">
+                <div class="nzb-status-item nzb-active-connections" id="nzb-active-connections"
+                    title="Hover for connections per server">
                     <i class="fas fa-plug"></i>
                     <span class="nzb-status-value" id="nzb-active-connections-value">0</span>
                     <span class="nzb-status-label">Connections</span>
@@ -32,8 +34,10 @@
                             <button class="nzb-speed-opt" data-limit="52428800">50 MB/s</button>
                         </div>
                         <div class="nzb-speed-popover-custom">
-                            <input type="number" id="nzb-speed-custom-input" placeholder="Custom MB/s" min="0" step="0.5">
-                            <button class="nzb-btn nzb-btn-primary nzb-speed-custom-btn" id="nzb-speed-custom-btn">Set</button>
+                            <input type="number" id="nzb-speed-custom-input" placeholder="Custom MB/s" min="0"
+                                step="0.5">
+                            <button class="nzb-btn nzb-btn-primary nzb-speed-custom-btn"
+                                id="nzb-speed-custom-btn">Set</button>
                         </div>
                     </div>
                 </div>
@@ -67,7 +71,9 @@
         <div class="nzb-client-warning" id="nzb-client-warning" style="display: none;">
             <i class="fas fa-info-circle" aria-hidden="true"></i>
             <div class="nzb-client-warning-content">
-                <strong>NZB Hunt is not set up as a download client.</strong> Add it in <a href="./#settings-clients" class="nzb-client-warning-link">Media Hunt → Clients</a> to enable downloads. Queued items will wait until then.
+                <strong>NZB Hunt is not set up as a download client.</strong> Add it in <a
+                    href="./#settings-root-folders" class="nzb-client-warning-link">Media Hunt → Root Folders</a> to
+                enable downloads. Queued items will wait until then.
             </div>
         </div>
 
@@ -110,7 +116,8 @@
                     <div class="nzb-queue-title"><i class="fas fa-history"></i> Download History</div>
                     <div class="nzb-queue-actions">
                         <button class="nzb-btn" title="Refresh"><i class="fas fa-sync-alt"></i></button>
-                        <button class="nzb-btn nzb-btn-danger" title="Clear History"><i class="fas fa-trash-alt"></i> Clear</button>
+                        <button class="nzb-btn nzb-btn-danger" title="Clear History"><i class="fas fa-trash-alt"></i>
+                            Clear</button>
                     </div>
                 </div>
                 <div id="nzb-history-body">
@@ -129,12 +136,14 @@
                 <div class="nzb-queue-header">
                     <div class="nzb-queue-title"><i class="fas fa-exclamation-triangle"></i> Warnings</div>
                     <div class="nzb-queue-actions">
-                        <button class="nzb-btn" title="Dismiss All" id="nzb-warnings-dismiss-all"><i class="fas fa-check-double"></i> Dismiss All</button>
+                        <button class="nzb-btn" title="Dismiss All" id="nzb-warnings-dismiss-all"><i
+                                class="fas fa-check-double"></i> Dismiss All</button>
                     </div>
                 </div>
                 <div id="nzb-warnings-body">
                     <div class="nzb-queue-empty">
-                        <div class="nzb-queue-empty-icon"><i class="fas fa-check-circle" style="color: #4ade80;"></i></div>
+                        <div class="nzb-queue-empty-icon"><i class="fas fa-check-circle" style="color: #4ade80;"></i>
+                        </div>
                         <h3>No warnings</h3>
                         <p>Everything looks good.</p>
                     </div>
@@ -148,7 +157,8 @@
     <div class="nzb-prefs-overlay" id="nzb-prefs-overlay" style="display: none;">
         <div class="nzb-prefs-modal" id="nzb-prefs-modal">
             <div class="nzb-prefs-header">
-                <h3><i class="fas fa-cog" style="margin-right: 8px; color: #6366f1;"></i><span id="nzb-prefs-title">Display Settings</span></h3>
+                <h3><i class="fas fa-cog" style="margin-right: 8px; color: #6366f1;"></i><span
+                        id="nzb-prefs-title">Display Settings</span></h3>
                 <button class="nzb-prefs-close" id="nzb-prefs-close" title="Close">&times;</button>
             </div>
             <div class="nzb-prefs-body">

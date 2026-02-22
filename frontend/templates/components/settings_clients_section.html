@@ -17,13 +17,11 @@
             <div class="settings-group client-settings-group">
                 <h3>Download Clients</h3>
                 <p class="client-settings-help">
-                    A download client handles NZB downloads for Huntarr. <strong>Only usenet clients are currently
-                        supported</strong> — torrent support is coming soon.
+                    A download client handles downloads for Huntarr. Both built-in clients require zero configuration.
                 </p>
                 <div class="client-recommendation-callout" id="client-recommendation-callout">
                     <div class="client-recommendation-cards">
-                        <div class="client-rec-card client-rec-recommended">
-                            <div class="client-rec-badge">Recommended</div>
+                        <div class="client-rec-card">
                             <div class="client-rec-icon"><i class="fas fa-bolt"></i></div>
                             <div class="client-rec-body">
                                 <div class="client-rec-name">NZB Hunt <span class="client-rec-tag">Built-in</span></div>
@@ -47,52 +45,6 @@
                         <div class="add-text">Add Client</div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Remote Path Mappings Section -->
-            <div class="settings-group remote-mappings-settings-group">
-                <h3>Remote Path Mappings</h3>
-                <div id="remote-mappings-nzbhunt-notice" class="remote-mappings-notice remote-mappings-notice-ok"
-                    style="display: none;">
-                    <i class="fas fa-check-circle"></i>
-                    <div><strong>Not needed with NZB Hunt.</strong> Since NZB Hunt runs inside Huntarr, it uses the same
-                        paths — no remote path mappings required.</div>
-                </div>
-                <div id="remote-mappings-external-notice" class="remote-mappings-notice remote-mappings-notice-warn"
-                    style="display: none;">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <div><strong>You're using an external download client.</strong> If Huntarr and your client run in
-                        different Docker containers (or different machines), they likely see different paths. You'll
-                        need to map the client's download path to Huntarr's path.</div>
-                </div>
-                <p class="remote-mappings-help">
-                    When your download client and Huntarr don't see the same folder paths, you need a mapping: tell
-                    Huntarr which <strong>local path</strong> on your system corresponds to the <strong>remote
-                        path</strong> the client uses.
-                    <strong>If running in Docker</strong>, paths inside the container are usually different from the
-                    host, so remote path mappings are typically required for external clients.
-                    If both run on the same machine with the same paths, you can leave this empty.
-                    For more detail see the <a href="https://wiki.servarr.com/radarr/settings#remote-path-mappings"
-                        target="_blank" rel="noopener" class="remote-mappings-wiki-link">wiki</a>.
-                </p>
-                <div class="remote-mappings-table-wrapper">
-                    <table class="remote-mappings-table" id="remote-mappings-table">
-                        <thead>
-                            <tr>
-                                <th>Host</th>
-                                <th>Local Path</th>
-                                <th>Remote Path</th>
-                                <th class="remote-mappings-actions-col"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="remote-mappings-table-body">
-                            <!-- Rows will be dynamically populated here -->
-                        </tbody>
-                    </table>
-                </div>
-                <button type="button" class="btn-add-remote-mapping" id="add-remote-mapping-btn">
-                    <i class="fas fa-plus"></i> Add
-                </button>
             </div>
         </div>
     </div>
@@ -172,15 +124,15 @@
                 <select id="client-type-select" class="client-type-select" style="display:none;"></select>
                 <div class="client-type-option-cards" id="client-type-option-cards">
                     <div class="client-type-option" data-client-type="nzbhunt" id="client-type-option-nzbhunt">
-                        <div class="client-type-option-icon client-type-option-icon-recommended"><i
-                                class="fas fa-bolt"></i></div>
+                        <div class="client-type-option-icon"
+                            style="background: rgba(16, 185, 129, 0.15); color: #10b981;"><i class="fas fa-bolt"></i>
+                        </div>
                         <div class="client-type-option-body">
                             <div class="client-type-option-name">NZB Hunt <span
                                     class="client-type-option-tag">Built-in</span></div>
                             <div class="client-type-option-desc">Zero config. No external software or remote path
                                 mappings needed.</div>
                         </div>
-                        <div class="client-type-option-badge">Recommended</div>
                         <div class="client-type-option-check"><i class="fas fa-check-circle"></i></div>
                     </div>
                     <div class="client-type-option" data-client-type="torhunt" id="client-type-option-torhunt">

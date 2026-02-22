@@ -2,60 +2,60 @@
  * Instance editor (Sonarr/Radarr/Lidarr/Readarr/Whisparr/Eros) - extends SettingsForms.
  * Loaded after settings/core.js.
  */
-(function() {
+(function () {
     'use strict';
     if (typeof window.SettingsForms === 'undefined') return;
 
     let _instanceEditorDirty = false;
 
     Object.assign(window.SettingsForms, {
-    getAppIcon: function(appType) {
-        const icons = {
-            sonarr: 'fa-tv',
-            radarr: 'fa-film',
-            lidarr: 'fa-music',
-            readarr: 'fa-book',
-            whisparr: 'fa-venus',
-            eros: 'fa-venus-mars',
-            prowlarr: 'fa-search'
-        };
-        return icons[appType] || 'fa-server';
-    },
+        getAppIcon: function (appType) {
+            const icons = {
+                sonarr: 'fa-tv',
+                radarr: 'fa-film',
+                lidarr: 'fa-music',
+                readarr: 'fa-book',
+                whisparr: 'fa-venus',
+                eros: 'fa-venus-mars',
+                prowlarr: 'fa-search'
+            };
+            return icons[appType] || 'fa-server';
+        },
 
-    // Render a single instance card. options: { hideDelete: true } for single-instance apps (e.g. Prowlarr).
-    renderInstanceCard: function(appType, instance, index, options) {
-        const isDefault = index === 0;
-        
-        // Determine connection status; disabled instances are never tested
-        let statusClass = 'status-unknown';
-        let statusIcon = 'fa-question-circle';
-        
-        if (instance.enabled === false) {
-            statusClass = 'status-disabled';
-            statusIcon = 'fa-ban';
-        } else if (instance.api_url && instance.api_key) {
-            // Has URL and API key - check if connection test passed
-            if (instance.connection_status === 'connected' || instance.connection_test_passed === true) {
-                statusClass = 'status-connected';
-                statusIcon = 'fa-check-circle';
-            } else if (instance.connection_status === 'error' || instance.connection_test_passed === false) {
+        // Render a single instance card. options: { hideDelete: true } for single-instance apps (e.g. Prowlarr).
+        renderInstanceCard: function (appType, instance, index, options) {
+            const isDefault = index === 0;
+
+            // Determine connection status; disabled instances are never tested
+            let statusClass = 'status-unknown';
+            let statusIcon = 'fa-question-circle';
+
+            if (instance.enabled === false) {
+                statusClass = 'status-disabled';
+                statusIcon = 'fa-ban';
+            } else if (instance.api_url && instance.api_key) {
+                // Has URL and API key - check if connection test passed
+                if (instance.connection_status === 'connected' || instance.connection_test_passed === true) {
+                    statusClass = 'status-connected';
+                    statusIcon = 'fa-check-circle';
+                } else if (instance.connection_status === 'error' || instance.connection_test_passed === false) {
+                    statusClass = 'status-error';
+                    statusIcon = 'fa-minus-circle';
+                } else {
+                    statusClass = 'status-unknown';
+                    statusIcon = 'fa-question-circle';
+                }
+            } else {
                 statusClass = 'status-error';
                 statusIcon = 'fa-minus-circle';
-            } else {
-                statusClass = 'status-unknown';
-                statusIcon = 'fa-question-circle';
             }
-        } else {
-            statusClass = 'status-error';
-            statusIcon = 'fa-minus-circle';
-        }
-        
-        const hideDelete = (options && options.hideDelete) === true;
-        const footerButtons = hideDelete
-            ? `<button type="button" class="btn-card edit" data-app-type="${appType}" data-instance-index="${index}"><i class="fas fa-edit"></i> Edit</button>`
-            : `<button type="button" class="btn-card edit" data-app-type="${appType}" data-instance-index="${index}"><i class="fas fa-edit"></i> Edit</button>
+
+            const hideDelete = (options && options.hideDelete) === true;
+            const footerButtons = hideDelete
+                ? `<button type="button" class="btn-card edit" data-app-type="${appType}" data-instance-index="${index}"><i class="fas fa-edit"></i> Edit</button>`
+                : `<button type="button" class="btn-card edit" data-app-type="${appType}" data-instance-index="${index}"><i class="fas fa-edit"></i> Edit</button>
                     <button type="button" class="btn-card delete" data-app-type="${appType}" data-instance-index="${index}"><i class="fas fa-trash"></i> Delete</button>`;
-        return `
+            return `
             <div class="instance-card ${isDefault ? 'default-instance' : ''}" data-instance-index="${index}" data-app-type="${appType}">
                 <div class="instance-card-header">
                     <div class="instance-name instance-name-with-priority">
@@ -86,469 +86,469 @@
                 </div>
             </div>
         `;
-    },
+        },
 
-    // Navigate to the instance editor section
-    navigateToInstanceEditor: function(appType, index = null) {
-        console.log(`[SettingsForms] navigateToInstanceEditor called for ${appType}, index: ${index}`);
-        
-        // Reset next section tracking
-        this._instanceEditorNextSection = null;
+        // Navigate to the instance editor section
+        navigateToInstanceEditor: function (appType, index = null) {
+            console.log(`[SettingsForms] navigateToInstanceEditor called for ${appType}, index: ${index}`);
 
-        if (!window.huntarrUI || !window.huntarrUI.originalSettings) {
-            console.error('[SettingsForms] window.huntarrUI.originalSettings is missing');
-            if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Error: Settings not loaded. Please refresh the page.', 'error');
-            else alert('Error: Settings not loaded. Please refresh the page.');
-            return;
-        }
+            // Reset next section tracking
+            this._instanceEditorNextSection = null;
 
-        const settings = window.huntarrUI.originalSettings[appType];
-        if (!settings) {
-            console.error(`[SettingsForms] Settings for ${appType} not found in originalSettings`);
-            if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Error: Settings for ' + appType + ' not found. Please refresh the page.', 'error');
-            else alert('Error: Settings for ' + appType + ' not found. Please refresh the page.');
-            return;
-        }
-
-        const isEdit = index !== null;
-        let instance;
-        
-        if (isEdit) {
-            if (!settings.instances || !settings.instances[index]) {
-                console.error(`[SettingsForms] Instance at index ${index} not found for ${appType}`);
-                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Error: Instance not found.', 'error');
-                else alert('Error: Instance not found.');
+            if (!window.huntarrUI || !window.huntarrUI.originalSettings) {
+                console.error('[SettingsForms] window.huntarrUI.originalSettings is missing');
+                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Error: Settings not loaded. Please refresh the page.', 'error');
+                else alert('Error: Settings not loaded. Please refresh the page.');
                 return;
             }
-            instance = settings.instances[index];
-        } else {
-            instance = {
-                name: '',
-                api_url: '',
-                api_key: '',
-                external_url: '',
-                enabled: true,
-                hunt_missing_items: 1,
-                hunt_upgrade_items: 0,
-                hunt_missing_mode: 'seasons_packs',
-                upgrade_mode: 'seasons_packs',
-                state_management_mode: 'custom',
-                state_management_hours: 72,
-                swaparr_enabled: false
-            };
-        }
 
-        // Store current editing state
-        this._currentEditing = { appType, index, originalInstance: JSON.parse(JSON.stringify(instance)) };
-        _instanceEditorDirty = false;
-
-        // Update breadcrumb in the header
-        const bcAppName = document.getElementById('ie-breadcrumb-app-name');
-        const bcInstanceName = document.getElementById('ie-breadcrumb-instance-name');
-        const bcAppIcon = document.getElementById('ie-breadcrumb-app-icon');
-        if (bcAppName) bcAppName.textContent = appType.charAt(0).toUpperCase() + appType.slice(1);
-        if (bcInstanceName) bcInstanceName.textContent = instance.name || (isEdit ? 'Edit Instance' : 'New Instance');
-        if (bcAppIcon) {
-            bcAppIcon.className = 'fas ' + this.getAppIcon(appType);
-        }
-
-        const contentEl = document.getElementById('instance-editor-content');
-        if (contentEl) {
-            try {
-                const html = this.generateEditorHtml(appType, instance, index);
-                contentEl.innerHTML = html;
-                console.log('[SettingsForms] Editor HTML injected, length:', html.length);
-                this.setupExemptTagsListeners(contentEl);
-            } catch (e) {
-                console.error('[SettingsForms] Error generating editor HTML:', e);
-                contentEl.innerHTML = `<div class="error-message" style="color: #ef4444; padding: 20px;">Error generating editor: ${e.message}</div>`;
+            const settings = window.huntarrUI.originalSettings[appType];
+            if (!settings) {
+                console.error(`[SettingsForms] Settings for ${appType} not found in originalSettings`);
+                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Error: Settings for ' + appType + ' not found. Please refresh the page.', 'error');
+                else alert('Error: Settings for ' + appType + ' not found. Please refresh the page.');
+                return;
             }
-        } else {
-            console.error('[SettingsForms] instance-editor-content element not found');
-        }
 
-        // Setup button listeners
-        const saveBtn = document.getElementById('instance-editor-save');
-        const backBtn = document.getElementById('instance-editor-back');
+            const isEdit = index !== null;
+            let instance;
 
-        if (saveBtn) {
-            saveBtn.onclick = () => this.saveInstanceFromEditor();
-        }
-        if (backBtn) {
-            backBtn.onclick = () => {
-                this.confirmLeaveInstanceEditor((result) => {
-                    if (result === 'save') {
-                        this.saveInstanceFromEditor(true); // true means navigate back after save
-                    } else if (result === 'discard') {
-                        this.cancelInstanceEditor();
-                    }
-                });
-            };
-        }
-        
-        // Setup connection validation for URL and API Key inputs
-        const urlInput = document.getElementById('editor-url');
-        const keyInput = document.getElementById('editor-key');
-        
-        if (urlInput && keyInput) {
-            let validationTimeout;
-            const validateConnection = () => {
-                clearTimeout(validationTimeout);
-                validationTimeout = setTimeout(() => {
-                    const url = urlInput.value.trim();
-                    const key = keyInput.value.trim();
-                    this.checkEditorConnection(appType, url, key);
-                }, 500); // Debounce 500ms
-            };
-            
-            urlInput.addEventListener('input', validateConnection);
-            keyInput.addEventListener('input', validateConnection);
-            
-            const enabledSelect = document.getElementById('editor-enabled');
-            if (enabledSelect) {
-                enabledSelect.addEventListener('change', validateConnection);
-            }
-            
-            // Initial validation - checkEditorConnection shows "Disabled" or runs test
-            this.checkEditorConnection(appType, urlInput.value.trim(), keyInput.value.trim());
-        }
-
-        // Switch to the editor section
-        console.log('[SettingsForms] Switching to instance-editor section');
-        if (window.huntarrUI && window.huntarrUI.switchSection) {
-            window.huntarrUI.switchSection('instance-editor');
-            // Update URL hash for app instance editors (radarr, sonarr, etc.)
-            const appInstanceEditors = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr'];
-            if (appInstanceEditors.includes(appType)) {
-                const hashPart = (index !== null && index !== undefined) ? appType + '-settings/' + index : appType + '-settings';
-                const newUrl = (window.location.pathname || '') + (window.location.search || '') + '#' + hashPart;
-                try { window.history.replaceState(null, '', newUrl); } catch (e) { /* ignore */ }
-            }
-            // Add change detection after a short delay to let values settle
-            setTimeout(() => {
-                this.setupEditorChangeDetection();
-                // Initialize form field states based on enabled status
-                this.toggleFormFields();
-                // Sync upgrade tag group and upgrade-items-tag section visibility (tags vs cutoff mode)
-                this.toggleUpgradeTagVisibility();
-                // Start polling state status if state management is enabled
-                if (instance.state_management_mode !== 'disabled') {
-                    this.startStateStatusPolling(appType, index);
+            if (isEdit) {
+                if (!settings.instances || !settings.instances[index]) {
+                    console.error(`[SettingsForms] Instance at index ${index} not found for ${appType}`);
+                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Error: Instance not found.', 'error');
+                    else alert('Error: Instance not found.');
+                    return;
                 }
-            }, 100);
-        } else {
-            console.error('[SettingsForms] window.huntarrUI.switchSection not available');
-        }
-    },
-
-    // Setup exempt tags add/remove in the instance editor
-    setupExemptTagsListeners: function(container) {
-        if (!container) return;
-        const addBtn = container.querySelector('#editor-exempt-tag-add');
-        const input = container.querySelector('#editor-exempt-tag-input');
-        const list = container.querySelector('#editor-exempt-tags-list');
-        if (!addBtn || !input || !list) return;
-        const self = this;
-        addBtn.addEventListener('click', function() { self.addExemptTag(input, list); });
-        input.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') { e.preventDefault(); self.addExemptTag(input, list); }
-        });
-        list.addEventListener('click', function(e) {
-            const removeEl = e.target.classList.contains('exempt-tag-remove') ? e.target : e.target.closest('.exempt-tag-remove');
-            if (removeEl) {
-                const chip = removeEl.closest('.exempt-tag-chip');
-                if (chip) chip.remove();
-                _instanceEditorDirty = true;
-                const saveBtn = document.getElementById('instance-editor-save');
-                if (saveBtn) { saveBtn.disabled = false; saveBtn.classList.add('enabled'); }
-            }
-        });
-    },
-    addExemptTag: function(inputEl, listEl) {
-        const tag = (inputEl.value || '').trim();
-        if (!tag) return;
-        if (tag.toLowerCase() === 'upgradinatorr') {
-            if (window.huntarrUI && window.huntarrUI.showNotification) {
-                window.huntarrUI.showNotification('The tag "upgradinatorr" cannot be added as an exempt tag.', 'warning');
+                instance = settings.instances[index];
             } else {
-                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('The tag "upgradinatorr" cannot be added as an exempt tag.', 'error');
-                else alert('The tag "upgradinatorr" cannot be added as an exempt tag.');
+                instance = {
+                    name: '',
+                    api_url: '',
+                    api_key: '',
+                    external_url: '',
+                    enabled: true,
+                    hunt_missing_items: 1,
+                    hunt_upgrade_items: 0,
+                    hunt_missing_mode: 'seasons_packs',
+                    upgrade_mode: 'seasons_packs',
+                    state_management_mode: 'custom',
+                    state_management_hours: 72,
+                    swaparr_enabled: false
+                };
             }
-            return;
-        }
-        const existing = listEl.querySelectorAll('.exempt-tag-chip');
-        for (let i = 0; i < existing.length; i++) {
-            if ((existing[i].getAttribute('data-tag') || '') === tag) return;
-        }
-        const chip = document.createElement('span');
-        chip.className = 'exempt-tag-chip';
-        chip.setAttribute('data-tag', tag);
-        chip.innerHTML = '<span class="exempt-tag-remove" title="Remove" aria-label="Remove">×</span><span>' + String(tag).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
-        listEl.appendChild(chip);
-        inputEl.value = '';
-        _instanceEditorDirty = true;
-        const saveBtn = document.getElementById('instance-editor-save');
-        if (saveBtn) { saveBtn.disabled = false; saveBtn.classList.add('enabled'); }
-    },
 
-    // Setup change detection for the editor
-    setupEditorChangeDetection: function() {
-        const contentEl = document.getElementById('instance-editor-content');
-        const saveBtn = document.getElementById('instance-editor-save');
-        if (!contentEl || !saveBtn) return;
+            // Store current editing state
+            this._currentEditing = { appType, index, originalInstance: JSON.parse(JSON.stringify(instance)) };
+            _instanceEditorDirty = false;
 
-        // Initial state: disabled
-        saveBtn.disabled = true;
-        saveBtn.classList.remove('enabled');
+            // Update breadcrumb in the header
+            const bcAppName = document.getElementById('ie-breadcrumb-app-name');
+            const bcInstanceName = document.getElementById('ie-breadcrumb-instance-name');
+            const bcAppIcon = document.getElementById('ie-breadcrumb-app-icon');
+            if (bcAppName) bcAppName.textContent = appType.charAt(0).toUpperCase() + appType.slice(1);
+            if (bcInstanceName) bcInstanceName.textContent = instance.name || (isEdit ? 'Edit Instance' : 'New Instance');
+            if (bcAppIcon) {
+                bcAppIcon.className = 'fas ' + this.getAppIcon(appType);
+            }
 
-        const handleInputChange = () => {
-            _instanceEditorDirty = true;
-            saveBtn.disabled = false;
-            saveBtn.classList.add('enabled');
-        };
+            const contentEl = document.getElementById('instance-editor-content');
+            if (contentEl) {
+                try {
+                    const html = this.generateEditorHtml(appType, instance, index);
+                    contentEl.innerHTML = html;
+                    console.log('[SettingsForms] Editor HTML injected, length:', html.length);
+                    this.setupExemptTagsListeners(contentEl);
+                } catch (e) {
+                    console.error('[SettingsForms] Error generating editor HTML:', e);
+                    contentEl.innerHTML = `<div class="error-message" style="color: #ef4444; padding: 20px;">Error generating editor: ${e.message}</div>`;
+                }
+            } else {
+                console.error('[SettingsForms] instance-editor-content element not found');
+            }
 
-        // Listen for any input or change event within the content area
-        contentEl.addEventListener('input', handleInputChange);
-        contentEl.addEventListener('change', handleInputChange);
+            // Setup button listeners
+            const saveBtn = document.getElementById('instance-editor-save');
+            const backBtn = document.getElementById('instance-editor-back');
 
-        // Show warning when API cap hourly is above 25 (indexer ban risk)
-        const capInput = document.getElementById('editor-hourly-cap');
-        const capWarning = document.getElementById('editor-hourly-cap-warning');
-        if (capInput && capWarning) {
-            const updateHourlyCapWarning = () => {
-                const val = parseInt(capInput.value, 10);
-                capWarning.style.display = (val > 25) ? 'block' : 'none';
-            };
-            updateHourlyCapWarning();
-            capInput.addEventListener('input', updateHourlyCapWarning);
-            capInput.addEventListener('change', updateHourlyCapWarning);
-        }
-    },
+            if (saveBtn) {
+                saveBtn.onclick = () => this.saveInstanceFromEditor();
+            }
+            if (backBtn) {
+                backBtn.onclick = () => {
+                    this.confirmLeaveInstanceEditor((result) => {
+                        if (result === 'save') {
+                            this.saveInstanceFromEditor(true); // true means navigate back after save
+                        } else if (result === 'discard') {
+                            this.cancelInstanceEditor();
+                        }
+                    });
+                };
+            }
 
-    confirmLeaveInstanceEditor: function(done) {
-        if (!_instanceEditorDirty) {
-            if (typeof done === 'function') done('discard');
-            return true;
-        }
-        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
-            window.HuntarrConfirm.show({
-                title: 'Unsaved Changes',
-                message: 'You have unsaved changes that will be lost if you leave.',
-                confirmLabel: 'Go Back',
-                cancelLabel: 'Leave',
-                onConfirm: function() {
-                    // Stay on the editor — modal just closes, user can save manually
-                },
-                onCancel: function() {
-                    if (typeof done === 'function') done('discard');
+            // Setup connection validation for URL and API Key inputs
+            const urlInput = document.getElementById('editor-url');
+            const keyInput = document.getElementById('editor-key');
+
+            if (urlInput && keyInput) {
+                let validationTimeout;
+                const validateConnection = () => {
+                    clearTimeout(validationTimeout);
+                    validationTimeout = setTimeout(() => {
+                        const url = urlInput.value.trim();
+                        const key = keyInput.value.trim();
+                        this.checkEditorConnection(appType, url, key);
+                    }, 500); // Debounce 500ms
+                };
+
+                urlInput.addEventListener('input', validateConnection);
+                keyInput.addEventListener('input', validateConnection);
+
+                const enabledSelect = document.getElementById('editor-enabled');
+                if (enabledSelect) {
+                    enabledSelect.addEventListener('change', validateConnection);
+                }
+
+                // Initial validation - checkEditorConnection shows "Disabled" or runs test
+                this.checkEditorConnection(appType, urlInput.value.trim(), keyInput.value.trim());
+            }
+
+            // Switch to the editor section
+            console.log('[SettingsForms] Switching to instance-editor section');
+            if (window.huntarrUI && window.huntarrUI.switchSection) {
+                window.huntarrUI.switchSection('instance-editor');
+                // Update URL hash for app instance editors (radarr, sonarr, etc.)
+                const appInstanceEditors = ['sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr'];
+                if (appInstanceEditors.includes(appType)) {
+                    const hashPart = (index !== null && index !== undefined) ? appType + '-settings/' + index : appType + '-settings';
+                    const newUrl = (window.location.pathname || '') + (window.location.search || '') + '#' + hashPart;
+                    try { window.history.replaceState(null, '', newUrl); } catch (e) { /* ignore */ }
+                }
+                // Add change detection after a short delay to let values settle
+                setTimeout(() => {
+                    this.setupEditorChangeDetection();
+                    // Initialize form field states based on enabled status
+                    this.toggleFormFields();
+                    // Sync upgrade tag group and upgrade-items-tag section visibility (tags vs cutoff mode)
+                    this.toggleUpgradeTagVisibility();
+                    // Start polling state status if state management is enabled
+                    if (instance.state_management_mode !== 'disabled') {
+                        this.startStateStatusPolling(appType, index);
+                    }
+                }, 100);
+            } else {
+                console.error('[SettingsForms] window.huntarrUI.switchSection not available');
+            }
+        },
+
+        // Setup exempt tags add/remove in the instance editor
+        setupExemptTagsListeners: function (container) {
+            if (!container) return;
+            const addBtn = container.querySelector('#editor-exempt-tag-add');
+            const input = container.querySelector('#editor-exempt-tag-input');
+            const list = container.querySelector('#editor-exempt-tags-list');
+            if (!addBtn || !input || !list) return;
+            const self = this;
+            addBtn.addEventListener('click', function () { self.addExemptTag(input, list); });
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') { e.preventDefault(); self.addExemptTag(input, list); }
+            });
+            list.addEventListener('click', function (e) {
+                const removeEl = e.target.classList.contains('exempt-tag-remove') ? e.target : e.target.closest('.exempt-tag-remove');
+                if (removeEl) {
+                    const chip = removeEl.closest('.exempt-tag-chip');
+                    if (chip) chip.remove();
+                    _instanceEditorDirty = true;
+                    const saveBtn = document.getElementById('instance-editor-save');
+                    if (saveBtn) { saveBtn.disabled = false; saveBtn.classList.add('enabled'); }
                 }
             });
-        } else {
-            // Fallback to native confirm
-            if (!confirm('You have unsaved changes that will be lost. Leave anyway?')) return;
-            if (typeof done === 'function') done('discard');
-        }
-        return false;
-    },
+        },
+        addExemptTag: function (inputEl, listEl) {
+            const tag = (inputEl.value || '').trim();
+            if (!tag) return;
+            if (tag.toLowerCase() === 'upgradinatorr') {
+                if (window.huntarrUI && window.huntarrUI.showNotification) {
+                    window.huntarrUI.showNotification('The tag "upgradinatorr" cannot be added as an exempt tag.', 'warning');
+                } else {
+                    if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('The tag "upgradinatorr" cannot be added as an exempt tag.', 'error');
+                    else alert('The tag "upgradinatorr" cannot be added as an exempt tag.');
+                }
+                return;
+            }
+            const existing = listEl.querySelectorAll('.exempt-tag-chip');
+            for (let i = 0; i < existing.length; i++) {
+                if ((existing[i].getAttribute('data-tag') || '') === tag) return;
+            }
+            const chip = document.createElement('span');
+            chip.className = 'exempt-tag-chip';
+            chip.setAttribute('data-tag', tag);
+            chip.innerHTML = '<span class="exempt-tag-remove" title="Remove" aria-label="Remove">×</span><span>' + String(tag).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
+            listEl.appendChild(chip);
+            inputEl.value = '';
+            _instanceEditorDirty = true;
+            const saveBtn = document.getElementById('instance-editor-save');
+            if (saveBtn) { saveBtn.disabled = false; saveBtn.classList.add('enabled'); }
+        },
 
-    isInstanceEditorDirty: function() {
-        return !!_instanceEditorDirty;
-    },
+        // Setup change detection for the editor
+        setupEditorChangeDetection: function () {
+            const contentEl = document.getElementById('instance-editor-content');
+            const saveBtn = document.getElementById('instance-editor-save');
+            if (!contentEl || !saveBtn) return;
 
-    // Public method to clear the dirty flag and disable the save button (used by Prowlarr editor etc.)
-    clearInstanceEditorDirty: function() {
-        _instanceEditorDirty = false;
-        const saveBtn = document.getElementById('instance-editor-save');
-        if (saveBtn) {
+            // Initial state: disabled
             saveBtn.disabled = true;
             saveBtn.classList.remove('enabled');
-        }
-    },
-    
-    // Check connection status for editor
-    checkEditorConnection: function(appType, url, apiKey) {
-        const container = document.getElementById('connection-status-container');
-        if (!container) return;
-        
-        // Add flex-end to push to right
-        container.style.display = 'flex';
-        container.style.justifyContent = 'flex-end';
-        container.style.flex = '1';
-        
-        // If instance is disabled, do not attempt or show connection status
-        const enabledEl = document.getElementById('editor-enabled');
-        if (enabledEl && enabledEl.value === 'false') {
-            container.innerHTML = `
+
+            const handleInputChange = () => {
+                _instanceEditorDirty = true;
+                saveBtn.disabled = false;
+                saveBtn.classList.add('enabled');
+            };
+
+            // Listen for any input or change event within the content area
+            contentEl.addEventListener('input', handleInputChange);
+            contentEl.addEventListener('change', handleInputChange);
+
+            // Show warning when API cap hourly is above 25 (indexer ban risk)
+            const capInput = document.getElementById('editor-hourly-cap');
+            const capWarning = document.getElementById('editor-hourly-cap-warning');
+            if (capInput && capWarning) {
+                const updateHourlyCapWarning = () => {
+                    const val = parseInt(capInput.value, 10);
+                    capWarning.style.display = (val > 25) ? 'block' : 'none';
+                };
+                updateHourlyCapWarning();
+                capInput.addEventListener('input', updateHourlyCapWarning);
+                capInput.addEventListener('change', updateHourlyCapWarning);
+            }
+        },
+
+        confirmLeaveInstanceEditor: function (done) {
+            if (!_instanceEditorDirty) {
+                if (typeof done === 'function') done('discard');
+                return true;
+            }
+            if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                window.HuntarrConfirm.show({
+                    title: 'Unsaved Changes',
+                    message: 'You have unsaved changes that will be lost if you leave.',
+                    confirmLabel: 'Go Back',
+                    cancelLabel: 'Leave',
+                    onConfirm: function () {
+                        // Stay on the editor — modal just closes, user can save manually
+                    },
+                    onCancel: function () {
+                        if (typeof done === 'function') done('discard');
+                    }
+                });
+            } else {
+                // Fallback to native confirm
+                if (!confirm('You have unsaved changes that will be lost. Leave anyway?')) return;
+                if (typeof done === 'function') done('discard');
+            }
+            return false;
+        },
+
+        isInstanceEditorDirty: function () {
+            return !!_instanceEditorDirty;
+        },
+
+        // Public method to clear the dirty flag and disable the save button (used by Prowlarr editor etc.)
+        clearInstanceEditorDirty: function () {
+            _instanceEditorDirty = false;
+            const saveBtn = document.getElementById('instance-editor-save');
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.classList.remove('enabled');
+            }
+        },
+
+        // Check connection status for editor
+        checkEditorConnection: function (appType, url, apiKey) {
+            const container = document.getElementById('connection-status-container');
+            if (!container) return;
+
+            // Add flex-end to push to right
+            container.style.display = 'flex';
+            container.style.justifyContent = 'flex-end';
+            container.style.flex = '1';
+
+            // If instance is disabled, do not attempt or show connection status
+            const enabledEl = document.getElementById('editor-enabled');
+            if (enabledEl && enabledEl.value === 'false') {
+                container.innerHTML = `
                 <div class="connection-status" style="background: rgba(100, 116, 139, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.25);">
                     <i class="fas fa-ban"></i>
                     <span>Disabled</span>
                 </div>
             `;
-            return;
-        }
-        
-        // Show appropriate status for incomplete fields (like old version)
-        const urlLen = url ? url.trim().length : 0;
-        const keyLen = apiKey ? apiKey.trim().length : 0;
+                return;
+            }
 
-        if (urlLen <= 10 && keyLen <= 20) {
-            container.innerHTML = `
+            // Show appropriate status for incomplete fields (like old version)
+            const urlLen = url ? url.trim().length : 0;
+            const keyLen = apiKey ? apiKey.trim().length : 0;
+
+            if (urlLen <= 10 && keyLen <= 20) {
+                container.innerHTML = `
                 <div class="connection-status" style="background: rgba(148, 163, 184, 0.1); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.2);">
                     <i class="fas fa-info-circle"></i>
                     <span>Enter URL and API Key</span>
                 </div>
             `;
-            return;
-        } else if (urlLen <= 10) {
-            container.innerHTML = `
+                return;
+            } else if (urlLen <= 10) {
+                container.innerHTML = `
                 <div class="connection-status" style="background: rgba(251, 191, 36, 0.1); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.2);">
                     <i class="fas fa-exclamation-triangle"></i>
                     <span>Missing URL</span>
                 </div>
             `;
-            return;
-        } else if (keyLen <= 20) {
-            container.innerHTML = `
+                return;
+            } else if (keyLen <= 20) {
+                container.innerHTML = `
                 <div class="connection-status" style="background: rgba(251, 191, 36, 0.1); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.2);">
                     <i class="fas fa-exclamation-triangle"></i>
                     <span>Missing API Key</span>
                 </div>
             `;
-            return;
-        }
-        
-        container.innerHTML = `
+                return;
+            }
+
+            container.innerHTML = `
             <div class="connection-status checking">
                 <i class="fas fa-spinner fa-spin"></i>
                 <span>Checking...</span>
             </div>
         `;
-        
-        // Test the connection using the correct endpoint
-        HuntarrUtils.fetchWithTimeout(`./api/${appType}/test-connection`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ api_url: url, api_key: apiKey })
-        }, 10000)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                let statusText = 'Connected';
-                if (data.version) {
-                    statusText = `Connected (${data.version})`;
-                }
-                container.innerHTML = `
+
+            // Test the connection using the correct endpoint
+            HuntarrUtils.fetchWithTimeout(`./api/${appType}/test-connection`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ api_url: url, api_key: apiKey })
+            }, 10000)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        let statusText = 'Connected';
+                        if (data.version) {
+                            statusText = `Connected (${data.version})`;
+                        }
+                        container.innerHTML = `
                     <div class="connection-status success">
                         <i class="fas fa-check-circle"></i>
                         <span>${statusText}</span>
                     </div>
                 `;
-            } else {
-                // If connection failed, show the error message from the API if available
-                const errorMsg = data.error || data.message || 'Connection failed';
-                container.innerHTML = `
+                    } else {
+                        // If connection failed, show the error message from the API if available
+                        const errorMsg = data.error || data.message || 'Connection failed';
+                        container.innerHTML = `
                     <div class="connection-status error">
                         <i class="fas fa-times-circle"></i>
                         <span>${errorMsg}</span>
                     </div>
                 `;
-            }
-        })
-        .catch(error => {
-            container.innerHTML = `
+                    }
+                })
+                .catch(error => {
+                    container.innerHTML = `
                 <div class="connection-status error">
                     <i class="fas fa-times-circle"></i>
                     <span>Connection failed: ${error.message || 'Network error'}</span>
                 </div>
             `;
-        });
-    },
+                });
+        },
 
-    // Generate HTML for the full-page editor
-    generateEditorHtml: function(appType, instance, index) {
-        console.log(`[SettingsForms] Generating editor HTML for ${appType}, instance index: ${index}`);
-        const isEdit = index !== null;
-        const swaparrEnabled = this.isSwaparrGloballyEnabled();
-        
-        // Ensure instance properties have defaults if undefined
-        const safeInstance = {
-            enabled: instance.enabled !== false,
-            name: instance.name || '',
-            instance_id: instance.instance_id || '',
-            api_url: instance.api_url || '',
-            api_key: instance.api_key || '',
-            external_url: instance.external_url || '',
-            hunt_missing_items: instance.hunt_missing_items !== undefined ? instance.hunt_missing_items : 1,
-            hunt_upgrade_items: instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0,
-            hunt_missing_mode: instance.hunt_missing_mode || 'seasons_packs',
-            upgrade_mode: instance.upgrade_mode || 'seasons_packs',
-            air_date_delay_days: instance.air_date_delay_days || 0,
-            release_date_delay_days: instance.release_date_delay_days || 0,
-            state_management_mode: instance.state_management_mode || 'custom',
-            state_management_hours: instance.state_management_hours || 72,
-            swaparr_enabled: instance.swaparr_enabled === true,
-            // Additional Options (per-instance)
-            monitored_only: instance.monitored_only !== false,
-            skip_future_episodes: instance.skip_future_episodes !== false,
-            tag_processed_items: instance.tag_processed_items !== false,
-            tag_enable_missing: instance.tag_enable_missing !== false,
-            tag_enable_upgrade: instance.tag_enable_upgrade !== false,
-            tag_enable_upgraded: instance.tag_enable_upgraded !== false,
-            tag_enable_shows_missing: instance.tag_enable_shows_missing !== false,
-            // Custom Tags (per-instance)
-            custom_tags: instance.custom_tags || {},
-            // Exempt Tags (per-instance) - items with these tags are skipped for missing/upgrade
-            exempt_tags: Array.isArray(instance.exempt_tags) ? instance.exempt_tags : [],
-            // Advanced Settings (per-instance)
-            api_timeout: instance.api_timeout || 120,
-            command_wait_delay: instance.command_wait_delay || 1,
-            command_wait_attempts: instance.command_wait_attempts || 600,
-            max_download_queue_size: instance.max_download_queue_size !== undefined ? instance.max_download_queue_size : -1,
-            max_seed_queue_size: instance.max_seed_queue_size !== undefined ? instance.max_seed_queue_size : -1,
-            seed_check_torrent_client: instance.seed_check_torrent_client && typeof instance.seed_check_torrent_client === 'object' ? instance.seed_check_torrent_client : null,
-            // Cycle settings (per-instance; were global in 9.0.x)
-            sleep_duration: instance.sleep_duration !== undefined ? instance.sleep_duration : 900,
-            hourly_cap: instance.hourly_cap !== undefined ? instance.hourly_cap : 20
-        };
+        // Generate HTML for the full-page editor
+        generateEditorHtml: function (appType, instance, index) {
+            console.log(`[SettingsForms] Generating editor HTML for ${appType}, instance index: ${index}`);
+            const isEdit = index !== null;
+            const swaparrEnabled = this.isSwaparrGloballyEnabled();
 
-        // Handle specific fields for different apps
-        if (appType === 'sonarr') {
-            safeInstance.hunt_missing_items = instance.hunt_missing_items !== undefined ? instance.hunt_missing_items : 1;
-            safeInstance.hunt_upgrade_items = instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0;
-            safeInstance.upgrade_selection_method = instance.upgrade_selection_method !== undefined ? instance.upgrade_selection_method : 'cutoff';
-            safeInstance.upgrade_tag = instance.upgrade_tag !== undefined ? instance.upgrade_tag : '';
-        } else if (appType === 'radarr') {
-            safeInstance.hunt_missing_items = instance.hunt_missing_movies !== undefined ? instance.hunt_missing_movies : 1;
-            safeInstance.hunt_upgrade_items = instance.hunt_upgrade_movies !== undefined ? instance.hunt_upgrade_movies : 0;
-            safeInstance.upgrade_selection_method = instance.upgrade_selection_method !== undefined ? instance.upgrade_selection_method : 'cutoff';
-            safeInstance.upgrade_tag = instance.upgrade_tag !== undefined ? instance.upgrade_tag : '';
-        } else if (appType === 'lidarr') {
-            safeInstance.hunt_missing_items = instance.hunt_missing_items !== undefined ? instance.hunt_missing_items : 1;
-            safeInstance.hunt_upgrade_items = instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0;
-            safeInstance.hunt_missing_mode = instance.hunt_missing_mode || 'album';
-            safeInstance.upgrade_selection_method = instance.upgrade_selection_method !== undefined ? instance.upgrade_selection_method : 'cutoff';
-            safeInstance.upgrade_tag = instance.upgrade_tag !== undefined ? instance.upgrade_tag : '';
-        } else if (appType === 'readarr') {
-            safeInstance.hunt_missing_items = instance.hunt_missing_books !== undefined ? instance.hunt_missing_books : 1;
-            safeInstance.hunt_upgrade_items = instance.hunt_upgrade_books !== undefined ? instance.hunt_upgrade_books : 0;
-            safeInstance.upgrade_selection_method = instance.upgrade_selection_method !== undefined ? instance.upgrade_selection_method : 'cutoff';
-            safeInstance.upgrade_tag = instance.upgrade_tag !== undefined ? instance.upgrade_tag : '';
-        } else if (appType === 'eros') {
-            safeInstance.hunt_missing_items = instance.hunt_missing_items !== undefined ? instance.hunt_missing_items : 1;
-            safeInstance.hunt_upgrade_items = instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0;
-            safeInstance.search_mode = instance.search_mode !== undefined ? instance.search_mode : 'movie';
-        }
+            // Ensure instance properties have defaults if undefined
+            const safeInstance = {
+                enabled: instance.enabled !== false,
+                name: instance.name || '',
+                instance_id: instance.instance_id || '',
+                api_url: instance.api_url || '',
+                api_key: instance.api_key || '',
+                external_url: instance.external_url || '',
+                hunt_missing_items: instance.hunt_missing_items !== undefined ? instance.hunt_missing_items : 1,
+                hunt_upgrade_items: instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0,
+                hunt_missing_mode: instance.hunt_missing_mode || 'seasons_packs',
+                upgrade_mode: instance.upgrade_mode || 'seasons_packs',
+                air_date_delay_days: instance.air_date_delay_days || 0,
+                release_date_delay_days: instance.release_date_delay_days || 0,
+                state_management_mode: instance.state_management_mode || 'custom',
+                state_management_hours: instance.state_management_hours || 72,
+                swaparr_enabled: instance.swaparr_enabled === true,
+                // Additional Options (per-instance)
+                monitored_only: instance.monitored_only !== false,
+                skip_future_episodes: instance.skip_future_episodes !== false,
+                tag_processed_items: instance.tag_processed_items !== false,
+                tag_enable_missing: instance.tag_enable_missing !== false,
+                tag_enable_upgrade: instance.tag_enable_upgrade !== false,
+                tag_enable_upgraded: instance.tag_enable_upgraded !== false,
+                tag_enable_shows_missing: instance.tag_enable_shows_missing !== false,
+                // Custom Tags (per-instance)
+                custom_tags: instance.custom_tags || {},
+                // Exempt Tags (per-instance) - items with these tags are skipped for missing/upgrade
+                exempt_tags: Array.isArray(instance.exempt_tags) ? instance.exempt_tags : [],
+                // Advanced Settings (per-instance)
+                api_timeout: instance.api_timeout || 120,
+                command_wait_delay: instance.command_wait_delay || 1,
+                command_wait_attempts: instance.command_wait_attempts || 600,
+                max_download_queue_size: instance.max_download_queue_size !== undefined ? instance.max_download_queue_size : -1,
+                max_seed_queue_size: instance.max_seed_queue_size !== undefined ? instance.max_seed_queue_size : -1,
+                seed_check_torrent_client: instance.seed_check_torrent_client && typeof instance.seed_check_torrent_client === 'object' ? instance.seed_check_torrent_client : null,
+                // Cycle settings (per-instance; were global in 9.0.x)
+                sleep_duration: instance.sleep_duration !== undefined ? instance.sleep_duration : 900,
+                hourly_cap: instance.hourly_cap !== undefined ? instance.hourly_cap : 20
+            };
 
-        const devMode = !!(window.huntarrUI && window.huntarrUI.originalSettings && window.huntarrUI.originalSettings.general && window.huntarrUI.originalSettings.general.dev_mode);
-        const sleepMin = devMode ? 1 : 10;
+            // Handle specific fields for different apps
+            if (appType === 'sonarr') {
+                safeInstance.hunt_missing_items = instance.hunt_missing_items !== undefined ? instance.hunt_missing_items : 1;
+                safeInstance.hunt_upgrade_items = instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0;
+                safeInstance.upgrade_selection_method = instance.upgrade_selection_method !== undefined ? instance.upgrade_selection_method : 'cutoff';
+                safeInstance.upgrade_tag = instance.upgrade_tag !== undefined ? instance.upgrade_tag : '';
+            } else if (appType === 'radarr') {
+                safeInstance.hunt_missing_items = instance.hunt_missing_movies !== undefined ? instance.hunt_missing_movies : 1;
+                safeInstance.hunt_upgrade_items = instance.hunt_upgrade_movies !== undefined ? instance.hunt_upgrade_movies : 0;
+                safeInstance.upgrade_selection_method = instance.upgrade_selection_method !== undefined ? instance.upgrade_selection_method : 'cutoff';
+                safeInstance.upgrade_tag = instance.upgrade_tag !== undefined ? instance.upgrade_tag : '';
+            } else if (appType === 'lidarr') {
+                safeInstance.hunt_missing_items = instance.hunt_missing_items !== undefined ? instance.hunt_missing_items : 1;
+                safeInstance.hunt_upgrade_items = instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0;
+                safeInstance.hunt_missing_mode = instance.hunt_missing_mode || 'album';
+                safeInstance.upgrade_selection_method = instance.upgrade_selection_method !== undefined ? instance.upgrade_selection_method : 'cutoff';
+                safeInstance.upgrade_tag = instance.upgrade_tag !== undefined ? instance.upgrade_tag : '';
+            } else if (appType === 'readarr') {
+                safeInstance.hunt_missing_items = instance.hunt_missing_books !== undefined ? instance.hunt_missing_books : 1;
+                safeInstance.hunt_upgrade_items = instance.hunt_upgrade_books !== undefined ? instance.hunt_upgrade_books : 0;
+                safeInstance.upgrade_selection_method = instance.upgrade_selection_method !== undefined ? instance.upgrade_selection_method : 'cutoff';
+                safeInstance.upgrade_tag = instance.upgrade_tag !== undefined ? instance.upgrade_tag : '';
+            } else if (appType === 'eros') {
+                safeInstance.hunt_missing_items = instance.hunt_missing_items !== undefined ? instance.hunt_missing_items : 1;
+                safeInstance.hunt_upgrade_items = instance.hunt_upgrade_items !== undefined ? instance.hunt_upgrade_items : 0;
+                safeInstance.search_mode = instance.search_mode !== undefined ? instance.search_mode : 'movie';
+            }
 
-        // Default port and example URL per app (for placeholder and help text)
-        const defaultPortByApp = { sonarr: 8989, radarr: 7878, lidarr: 8686, readarr: 8787, whisparr: 6969, eros: 6969 };
-        const defaultPort = defaultPortByApp[appType] || 8989;
-        const exampleUrl = `http://localhost:${defaultPort}`;
-        const placeholderUrl = `http://192.168.1.100:${defaultPort}`;
+            const devMode = !!(window.huntarrUI && window.huntarrUI.originalSettings && window.huntarrUI.originalSettings.general && window.huntarrUI.originalSettings.general.dev_mode);
+            const sleepMin = devMode ? 1 : 10;
 
-        let html = `
+            // Default port and example URL per app (for placeholder and help text)
+            const defaultPortByApp = { sonarr: 8989, radarr: 7878, lidarr: 8686, readarr: 8787, whisparr: 6969, eros: 6969 };
+            const defaultPort = defaultPortByApp[appType] || 8989;
+            const exampleUrl = `http://localhost:${defaultPort}`;
+            const placeholderUrl = `http://192.168.1.100:${defaultPort}`;
+
+            let html = `
             <div class="editor-grid">
                 <div class="editor-section">
                     <div class="editor-section-title">
@@ -615,8 +615,8 @@
                 </div>
         `;
 
-        if (appType === 'sonarr') {
-            html += `
+            if (appType === 'sonarr') {
+                html += `
                 <div class="editor-section">
                     <div class="editor-section-title"><span class="section-title-text"><span class="section-title-icon accent-search"><i class="fas fa-search"></i></span>Search Settings</span></div>
                     
@@ -693,8 +693,8 @@
                     </div>
                 </div>
             `;
-        } else if (['radarr', 'lidarr', 'readarr', 'whisparr', 'eros'].includes(appType)) {
-             html += `
+            } else if (['radarr', 'lidarr', 'readarr', 'whisparr', 'eros'].includes(appType)) {
+                html += `
                 <div class="editor-section">
                     <div class="editor-section-title"><span class="section-title-text"><span class="section-title-icon accent-search"><i class="fas fa-search"></i></span>Search Settings</span></div>
                     
@@ -714,8 +714,8 @@
                         <p class="editor-help-text">Number of items to upgrade in each cycle</p>
                     </div>
             `;
-            if (appType === 'lidarr') {
-                html += `
+                if (appType === 'lidarr') {
+                    html += `
                     <div class="editor-field-group">
                         <div class="editor-setting-item">
                             <label>Missing Search Mode</label>
@@ -726,9 +726,9 @@
                         <p class="editor-help-text">Search for individual albums (Artist mode deprecated in Huntarr 7.5.0+)</p>
                     </div>
                 `;
-            }
-            if (appType === 'eros') {
-                html += `
+                }
+                if (appType === 'eros') {
+                    html += `
                     <div class="editor-field-group">
                         <div class="editor-setting-item">
                             <label>Search Mode</label>
@@ -740,9 +740,9 @@
                         <p class="editor-help-text">How to search for missing and upgradable Whisparr V3 content (Movie-based or Scene-based)</p>
                     </div>
                 `;
-            }
-            if (appType === 'radarr') {
-                 html += `
+                }
+                if (appType === 'radarr') {
+                    html += `
                     <div class="editor-field-group">
                         <div class="editor-setting-item">
                             <label>Upgrade Selection Method</label>
@@ -774,12 +774,12 @@
                         <p class="editor-help-text">Only search for items released at least this many days ago</p>
                     </div>
                  `;
-            }
-            if (appType === 'lidarr' || appType === 'readarr') {
-                 const tagHelp = appType === 'lidarr'
-                     ? 'Tag name on artists in Lidarr. Huntarr finds artists that don’t have this tag, runs upgrade searches on their albums, then adds the tag when done (tracks what’s been processed). <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">💡 TrashGuides</a> | <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md#requirements" target="_blank" rel="noopener" style="color: #e74c3c; text-decoration: underline;">🔗 Upgradinatorr</a>'
-                     : 'Tag name on authors in Readarr. Huntarr finds authors that don’t have this tag, runs upgrade searches on their books, then adds the tag when done (tracks what’s been processed). <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">💡 TrashGuides</a> | <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md#requirements" target="_blank" rel="noopener" style="color: #e74c3c; text-decoration: underline;">🔗 Upgradinatorr</a>';
-                 html += `
+                }
+                if (appType === 'lidarr' || appType === 'readarr') {
+                    const tagHelp = appType === 'lidarr'
+                        ? 'Tag name on artists in Lidarr. Huntarr finds artists that don’t have this tag, runs upgrade searches on their albums, then adds the tag when done (tracks what’s been processed). <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">💡 TrashGuides</a> | <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md#requirements" target="_blank" rel="noopener" style="color: #e74c3c; text-decoration: underline;">🔗 Upgradinatorr</a>'
+                        : 'Tag name on authors in Readarr. Huntarr finds authors that don’t have this tag, runs upgrade searches on their books, then adds the tag when done (tracks what’s been processed). <a href="https://trash-guides.info/" target="_blank" rel="noopener" style="color: #2ecc71; text-decoration: underline;">💡 TrashGuides</a> | <a href="https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md#requirements" target="_blank" rel="noopener" style="color: #e74c3c; text-decoration: underline;">🔗 Upgradinatorr</a>';
+                    html += `
                     <div class="editor-field-group">
                         <div class="editor-setting-item">
                             <label>Upgrade Selection Method</label>
@@ -801,13 +801,13 @@
                         <p class="editor-help-text">${tagHelp}</p>
                     </div>
                  `;
+                }
+
+                html += `</div>`;
             }
-            
-            html += `</div>`;
-        }
-  
-        // Stateful Management Section (separate from Advanced)
-        html += `
+
+            // Stateful Management Section (separate from Advanced)
+            html += `
                 <div class="editor-section">
                     <div class="editor-section-title"><span class="section-title-text"><span class="section-title-icon accent-stateful"><i class="fas fa-database"></i></span>Stateful Management</span></div>
                     
@@ -919,7 +919,7 @@
                         <p class="editor-help-text">Tag added to items when they're found by a missing search (max 25 characters)</p>
                     </div>
                     
-                    <div class="editor-upgrade-items-tag-section editor-field-group tag-sub-box" style="display: ${(['sonarr','radarr','lidarr','readarr'].includes(appType) && (safeInstance.upgrade_selection_method || 'cutoff') === 'tags') ? 'none' : 'block'};">
+                    <div class="editor-upgrade-items-tag-section editor-field-group tag-sub-box" style="display: ${(['sonarr', 'radarr', 'lidarr', 'readarr'].includes(appType) && (safeInstance.upgrade_selection_method || 'cutoff') === 'tags') ? 'none' : 'block'};">
                         <div class="editor-setting-item flex-row">
                             <label>Tag upgrade items</label>
                             <label class="toggle-switch">
@@ -1065,311 +1065,311 @@
             </div>
         `;
 
-        return html;
-    },
+            return html;
+        },
 
-    // Save instance from the full-page editor
-    saveInstanceFromEditor: function(navigateBack = false) {
-        if (!this._currentEditing) return;
-        const { appType, index } = this._currentEditing;
-        const settings = window.huntarrUI.originalSettings[appType];
-        if (!settings) return;
-  
-        const tagEnableUpgradeEl = document.getElementById('editor-tag-enable-upgrade');
-        const upgradeMethodEl = document.getElementById('editor-upgrade-method');
-        const upgradeTagEl = document.getElementById('editor-upgrade-tag');
-        const isTagsMode = upgradeMethodEl && upgradeMethodEl.value === 'tags';
-        const tagEnableMissing = document.getElementById('editor-tag-enable-missing').checked;
-        const tagEnableUpgrade = isTagsMode ? false : (tagEnableUpgradeEl ? tagEnableUpgradeEl.checked : false);
-        const tagEnableShowsMissingEl = document.getElementById('editor-tag-enable-shows-missing');
-        const tagEnableShowsMissing = tagEnableShowsMissingEl ? tagEnableShowsMissingEl.checked : false;
-        const newData = {
-            enabled: document.getElementById('editor-enabled').value === 'true',
-            name: document.getElementById('editor-name').value,
-            api_url: document.getElementById('editor-url').value,
-            api_key: document.getElementById('editor-key').value,
-            external_url: (document.getElementById('editor-external-url').value || '').trim(),
-            state_management_mode: document.getElementById('editor-state-mode').value,
-            state_management_hours: parseInt(document.getElementById('editor-state-hours').value) || 72,
-            // Additional Options
-            monitored_only: document.getElementById('editor-monitored-only').checked,
-            tag_processed_items: tagEnableMissing || tagEnableUpgrade || tagEnableShowsMissing,
-            tag_enable_missing: tagEnableMissing,
-            tag_enable_upgrade: tagEnableUpgrade,
-            tag_enable_upgraded: false,
-            tag_enable_shows_missing: tagEnableShowsMissing,
-            // Custom Tags
-            custom_tags: {
-                missing: document.getElementById('editor-tag-missing').value,
-                upgrade: (document.getElementById('editor-tag-upgrade') ? document.getElementById('editor-tag-upgrade').value : '') || 'huntarr-upgrade'
-            },
-            // Advanced Settings
-            api_timeout: parseInt(document.getElementById('editor-api-timeout').value) || 120,
-            command_wait_delay: parseInt(document.getElementById('editor-cmd-wait-delay').value) || 1,
-            command_wait_attempts: (function(){ const el = document.getElementById('editor-cmd-wait-attempts'); if (!el) return 600; const v = parseInt(el.value, 10); return (!isNaN(v) && v >= 0) ? v : 600; })(),
-            max_download_queue_size: parseInt(document.getElementById('editor-max-queue-size').value) || -1,
-            max_seed_queue_size: (function(){ const v = parseInt(document.getElementById('editor-max-seed-queue-size').value, 10); return (!isNaN(v) && v >= -1) ? v : -1; })(),
-            seed_check_torrent_client: (function() {
-                const typeEl = document.getElementById('editor-seed-client-type');
-                const type = (typeEl ? (typeEl.value || '').trim() : '') || 'qbittorrent';
-                const hostEl = document.getElementById('editor-seed-client-host');
-                const host = hostEl ? (hostEl.value || '').trim() : '';
-                if (!host) return null;
-                const portEl = document.getElementById('editor-seed-client-port');
-                const portVal = portEl && portEl.value !== '' ? parseInt(portEl.value, 10) : (type === 'qbittorrent' ? 8080 : 9091);
-                const port = (!isNaN(portVal) && portVal >= 1 && portVal <= 65535) ? portVal : (type === 'qbittorrent' ? 8080 : 9091);
-                const userEl = document.getElementById('editor-seed-client-username');
-                const passEl = document.getElementById('editor-seed-client-password');
-                return { type: type, host: host, port: port, username: userEl ? userEl.value : '', password: passEl ? passEl.value : '' };
-            })(),
-            // Per-instance cycle settings
-            sleep_duration: (parseInt(document.getElementById('editor-sleep-duration').value, 10) || 15) * 60,
-            hourly_cap: parseInt(document.getElementById('editor-hourly-cap').value, 10) || 20
-        };
-        
-        // Add skip_future_episodes for Sonarr
-        const skipFutureInput = document.getElementById('editor-skip-future');
-        if (skipFutureInput) {
-            newData.skip_future_episodes = skipFutureInput.checked;
-        }
-        
-        // Add shows_missing tag for Sonarr
-        const showsMissingTagInput = document.getElementById('editor-tag-shows-missing');
-        if (showsMissingTagInput) {
-            newData.custom_tags.shows_missing = showsMissingTagInput.value;
-        }
-        
-        const swaparrInput = document.getElementById('editor-swaparr');
-        if (swaparrInput) {
-            newData.swaparr_enabled = swaparrInput.checked;
-        }
-  
-        if (appType === 'sonarr') {
-            newData.hunt_missing_items = parseInt(document.getElementById('editor-missing-count').value) || 0;
-            newData.hunt_upgrade_items = parseInt(document.getElementById('editor-upgrade-count').value) || 0;
-            newData.hunt_missing_mode = document.getElementById('editor-missing-mode').value;
-            newData.upgrade_mode = document.getElementById('editor-upgrade-mode').value;
-            newData.air_date_delay_days = parseInt(document.getElementById('editor-air-date-delay').value) || 0;
-            newData.upgrade_selection_method = (upgradeMethodEl && upgradeMethodEl.value) ? upgradeMethodEl.value : 'cutoff';
-            // Auto-fill "upgradinatorr" if tags mode is selected but no tag is provided
-            let upgradeTagValue = (upgradeTagEl && upgradeTagEl.value) ? String(upgradeTagEl.value).trim() : '';
-            if (newData.upgrade_selection_method === 'tags' && !upgradeTagValue) {
-                upgradeTagValue = 'upgradinatorr';
+        // Save instance from the full-page editor
+        saveInstanceFromEditor: function (navigateBack = false) {
+            if (!this._currentEditing) return;
+            const { appType, index } = this._currentEditing;
+            const settings = window.huntarrUI.originalSettings[appType];
+            if (!settings) return;
+
+            const tagEnableUpgradeEl = document.getElementById('editor-tag-enable-upgrade');
+            const upgradeMethodEl = document.getElementById('editor-upgrade-method');
+            const upgradeTagEl = document.getElementById('editor-upgrade-tag');
+            const isTagsMode = upgradeMethodEl && upgradeMethodEl.value === 'tags';
+            const tagEnableMissing = document.getElementById('editor-tag-enable-missing').checked;
+            const tagEnableUpgrade = isTagsMode ? false : (tagEnableUpgradeEl ? tagEnableUpgradeEl.checked : false);
+            const tagEnableShowsMissingEl = document.getElementById('editor-tag-enable-shows-missing');
+            const tagEnableShowsMissing = tagEnableShowsMissingEl ? tagEnableShowsMissingEl.checked : false;
+            const newData = {
+                enabled: document.getElementById('editor-enabled').value === 'true',
+                name: document.getElementById('editor-name').value,
+                api_url: document.getElementById('editor-url').value,
+                api_key: document.getElementById('editor-key').value,
+                external_url: (document.getElementById('editor-external-url').value || '').trim(),
+                state_management_mode: document.getElementById('editor-state-mode').value,
+                state_management_hours: parseInt(document.getElementById('editor-state-hours').value) || 72,
+                // Additional Options
+                monitored_only: document.getElementById('editor-monitored-only').checked,
+                tag_processed_items: tagEnableMissing || tagEnableUpgrade || tagEnableShowsMissing,
+                tag_enable_missing: tagEnableMissing,
+                tag_enable_upgrade: tagEnableUpgrade,
+                tag_enable_upgraded: false,
+                tag_enable_shows_missing: tagEnableShowsMissing,
+                // Custom Tags
+                custom_tags: {
+                    missing: document.getElementById('editor-tag-missing').value,
+                    upgrade: (document.getElementById('editor-tag-upgrade') ? document.getElementById('editor-tag-upgrade').value : '') || 'huntarr-upgrade'
+                },
+                // Advanced Settings
+                api_timeout: parseInt(document.getElementById('editor-api-timeout').value) || 120,
+                command_wait_delay: parseInt(document.getElementById('editor-cmd-wait-delay').value) || 1,
+                command_wait_attempts: (function () { const el = document.getElementById('editor-cmd-wait-attempts'); if (!el) return 600; const v = parseInt(el.value, 10); return (!isNaN(v) && v >= 0) ? v : 600; })(),
+                max_download_queue_size: parseInt(document.getElementById('editor-max-queue-size').value) || -1,
+                max_seed_queue_size: (function () { const v = parseInt(document.getElementById('editor-max-seed-queue-size').value, 10); return (!isNaN(v) && v >= -1) ? v : -1; })(),
+                seed_check_torrent_client: (function () {
+                    const typeEl = document.getElementById('editor-seed-client-type');
+                    const type = (typeEl ? (typeEl.value || '').trim() : '') || 'qbittorrent';
+                    const hostEl = document.getElementById('editor-seed-client-host');
+                    const host = hostEl ? (hostEl.value || '').trim() : '';
+                    if (!host) return null;
+                    const portEl = document.getElementById('editor-seed-client-port');
+                    const portVal = portEl && portEl.value !== '' ? parseInt(portEl.value, 10) : (type === 'qbittorrent' ? 8080 : 9091);
+                    const port = (!isNaN(portVal) && portVal >= 1 && portVal <= 65535) ? portVal : (type === 'qbittorrent' ? 8080 : 9091);
+                    const userEl = document.getElementById('editor-seed-client-username');
+                    const passEl = document.getElementById('editor-seed-client-password');
+                    return { type: type, host: host, port: port, username: userEl ? userEl.value : '', password: passEl ? passEl.value : '' };
+                })(),
+                // Per-instance cycle settings
+                sleep_duration: (parseInt(document.getElementById('editor-sleep-duration').value, 10) || 15) * 60,
+                hourly_cap: parseInt(document.getElementById('editor-hourly-cap').value, 10) || 20
+            };
+
+            // Add skip_future_episodes for Sonarr
+            const skipFutureInput = document.getElementById('editor-skip-future');
+            if (skipFutureInput) {
+                newData.skip_future_episodes = skipFutureInput.checked;
             }
-            newData.upgrade_tag = upgradeTagValue;
-        }
-        const exemptTagsListEl = document.getElementById('editor-exempt-tags-list');
-        newData.exempt_tags = exemptTagsListEl ? Array.from(exemptTagsListEl.querySelectorAll('.exempt-tag-chip')).map(el => el.getAttribute('data-tag') || '').filter(Boolean) : [];
-        if (appType !== 'sonarr') {
-             const missingField = appType === 'radarr' ? 'hunt_missing_movies' : (appType === 'readarr' ? 'hunt_missing_books' : 'hunt_missing_items');
-             const upgradeField = appType === 'radarr' ? 'hunt_upgrade_movies' : (appType === 'readarr' ? 'hunt_upgrade_books' : 'hunt_upgrade_items');
-             
-             newData[missingField] = parseInt(document.getElementById('editor-missing-count').value) || 0;
-             newData[upgradeField] = parseInt(document.getElementById('editor-upgrade-count').value) || 0;
-  
-             if (appType === 'radarr') {
-                 newData.release_date_delay_days = parseInt(document.getElementById('editor-release-date-delay').value) || 0;
-             }
-             if (appType === 'radarr' || appType === 'lidarr' || appType === 'readarr') {
-                 newData.upgrade_selection_method = (upgradeMethodEl && upgradeMethodEl.value) ? upgradeMethodEl.value : 'cutoff';
-                 // Auto-fill "upgradinatorr" if tags mode is selected but no tag is provided
-                 let upgradeTagValue = (upgradeTagEl && upgradeTagEl.value) ? String(upgradeTagEl.value).trim() : '';
-                 if (newData.upgrade_selection_method === 'tags' && !upgradeTagValue) {
-                     upgradeTagValue = 'upgradinatorr';
-                 }
-                 newData.upgrade_tag = upgradeTagValue;
-             }
-             if (appType === 'lidarr') {
-                 const lidarrModeEl = document.getElementById('editor-lidarr-missing-mode');
-                 if (lidarrModeEl) newData.hunt_missing_mode = lidarrModeEl.value || 'album';
-             }
-             if (appType === 'eros') {
-                 const erosModeEl = document.getElementById('editor-eros-search-mode');
-                 if (erosModeEl) newData.search_mode = erosModeEl.value || 'movie';
-             }
-        }
-  
-        let finalIndex = index;
-        if (index !== null) {
-            settings.instances[index] = { ...settings.instances[index], ...newData };
-        } else {
-            settings.instances.push(newData);
-            finalIndex = settings.instances.length - 1;
-        }
-  
-        // Update originalSettings to keep editor in sync
-        window.huntarrUI.originalSettings[appType] = settings;
-        
-        const self = this;
-        const savePromise = this.saveAppSettings(appType, settings);
-        if (savePromise && typeof savePromise.then === 'function') {
-            savePromise.then(function(data) {
-                // Server may have generated instance_id for new instances; update the displayed field
-                if (data && data.settings && data.settings.instances && data.settings.instances[finalIndex]) {
-                    const savedInstance = data.settings.instances[finalIndex];
-                    const instanceId = (savedInstance.instance_id || '').trim();
-                    if (instanceId) {
-                        const idInput = document.getElementById('editor-instance-id');
-                        if (idInput) idInput.value = instanceId;
-                        if (self._currentEditing && self._currentEditing.originalInstance) {
-                            self._currentEditing.originalInstance.instance_id = instanceId;
+
+            // Add shows_missing tag for Sonarr
+            const showsMissingTagInput = document.getElementById('editor-tag-shows-missing');
+            if (showsMissingTagInput) {
+                newData.custom_tags.shows_missing = showsMissingTagInput.value;
+            }
+
+            const swaparrInput = document.getElementById('editor-swaparr');
+            if (swaparrInput) {
+                newData.swaparr_enabled = swaparrInput.checked;
+            }
+
+            if (appType === 'sonarr') {
+                newData.hunt_missing_items = parseInt(document.getElementById('editor-missing-count').value) || 0;
+                newData.hunt_upgrade_items = parseInt(document.getElementById('editor-upgrade-count').value) || 0;
+                newData.hunt_missing_mode = document.getElementById('editor-missing-mode').value;
+                newData.upgrade_mode = document.getElementById('editor-upgrade-mode').value;
+                newData.air_date_delay_days = parseInt(document.getElementById('editor-air-date-delay').value) || 0;
+                newData.upgrade_selection_method = (upgradeMethodEl && upgradeMethodEl.value) ? upgradeMethodEl.value : 'cutoff';
+                // Auto-fill "upgradinatorr" if tags mode is selected but no tag is provided
+                let upgradeTagValue = (upgradeTagEl && upgradeTagEl.value) ? String(upgradeTagEl.value).trim() : '';
+                if (newData.upgrade_selection_method === 'tags' && !upgradeTagValue) {
+                    upgradeTagValue = 'upgradinatorr';
+                }
+                newData.upgrade_tag = upgradeTagValue;
+            }
+            const exemptTagsListEl = document.getElementById('editor-exempt-tags-list');
+            newData.exempt_tags = exemptTagsListEl ? Array.from(exemptTagsListEl.querySelectorAll('.exempt-tag-chip')).map(el => el.getAttribute('data-tag') || '').filter(Boolean) : [];
+            if (appType !== 'sonarr') {
+                const missingField = appType === 'radarr' ? 'hunt_missing_movies' : (appType === 'readarr' ? 'hunt_missing_books' : 'hunt_missing_items');
+                const upgradeField = appType === 'radarr' ? 'hunt_upgrade_movies' : (appType === 'readarr' ? 'hunt_upgrade_books' : 'hunt_upgrade_items');
+
+                newData[missingField] = parseInt(document.getElementById('editor-missing-count').value) || 0;
+                newData[upgradeField] = parseInt(document.getElementById('editor-upgrade-count').value) || 0;
+
+                if (appType === 'radarr') {
+                    newData.release_date_delay_days = parseInt(document.getElementById('editor-release-date-delay').value) || 0;
+                }
+                if (appType === 'radarr' || appType === 'lidarr' || appType === 'readarr') {
+                    newData.upgrade_selection_method = (upgradeMethodEl && upgradeMethodEl.value) ? upgradeMethodEl.value : 'cutoff';
+                    // Auto-fill "upgradinatorr" if tags mode is selected but no tag is provided
+                    let upgradeTagValue = (upgradeTagEl && upgradeTagEl.value) ? String(upgradeTagEl.value).trim() : '';
+                    if (newData.upgrade_selection_method === 'tags' && !upgradeTagValue) {
+                        upgradeTagValue = 'upgradinatorr';
+                    }
+                    newData.upgrade_tag = upgradeTagValue;
+                }
+                if (appType === 'lidarr') {
+                    const lidarrModeEl = document.getElementById('editor-lidarr-missing-mode');
+                    if (lidarrModeEl) newData.hunt_missing_mode = lidarrModeEl.value || 'album';
+                }
+                if (appType === 'eros') {
+                    const erosModeEl = document.getElementById('editor-eros-search-mode');
+                    if (erosModeEl) newData.search_mode = erosModeEl.value || 'movie';
+                }
+            }
+
+            let finalIndex = index;
+            if (index !== null) {
+                settings.instances[index] = { ...settings.instances[index], ...newData };
+            } else {
+                settings.instances.push(newData);
+                finalIndex = settings.instances.length - 1;
+            }
+
+            // Update originalSettings to keep editor in sync
+            window.huntarrUI.originalSettings[appType] = settings;
+
+            const self = this;
+            const savePromise = this.saveAppSettings(appType, settings);
+            if (savePromise && typeof savePromise.then === 'function') {
+                savePromise.then(function (data) {
+                    // Server may have generated instance_id for new instances; update the displayed field
+                    if (data && data.settings && data.settings.instances && data.settings.instances[finalIndex]) {
+                        const savedInstance = data.settings.instances[finalIndex];
+                        const instanceId = (savedInstance.instance_id || '').trim();
+                        if (instanceId) {
+                            const idInput = document.getElementById('editor-instance-id');
+                            if (idInput) idInput.value = instanceId;
+                            if (self._currentEditing && self._currentEditing.originalInstance) {
+                                self._currentEditing.originalInstance.instance_id = instanceId;
+                            }
                         }
                     }
-                }
-            }).catch(function() { /* saveAppSettings already shows error */ });
-        }
-        
-        // Update current editing state with new index (in case it was a new instance)
-        this._currentEditing = { appType, index: finalIndex, originalInstance: JSON.parse(JSON.stringify(newData)) };
-        _instanceEditorDirty = false;
-        
-        // Show or hide the stateful block (green box + reset button) and refresh state
-        const statefulBlock = document.getElementById('instance-editor-stateful-block');
-        if (statefulBlock) {
-            statefulBlock.style.display = newData.state_management_mode === 'disabled' ? 'none' : 'block';
-        }
-        if (newData.state_management_mode !== 'disabled') {
-            this.startStateStatusPolling(appType, finalIndex);
-        } else {
-            this.stopStateStatusPolling();
-        }
-        
-        // Disable save button to show it's saved
-        const saveBtn = document.getElementById('instance-editor-save');
-        if (saveBtn) {
-            saveBtn.disabled = true;
-            saveBtn.classList.remove('enabled');
-        }
-        
-        // Show brief success feedback
-        const originalText = saveBtn ? saveBtn.innerHTML : '';
-        if (saveBtn) {
-            saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved!';
-            saveBtn.style.opacity = '0.7';
-            setTimeout(() => {
-                saveBtn.innerHTML = originalText;
-                saveBtn.style.opacity = '1';
-                if (navigateBack) {
-                    this.cancelInstanceEditor(this._instanceEditorNextSection);
-                    this._instanceEditorNextSection = null;
-                }
-            }, 2000);
-        } else if (navigateBack) {
-            this.cancelInstanceEditor(this._instanceEditorNextSection);
-            this._instanceEditorNextSection = null;
-        }
-        
-        // Reset change detection by updating the original instance
-        // This allows the save button to be enabled again if user makes more changes
-        if (this._currentEditing) {
-            this._currentEditing.originalInstance = JSON.parse(JSON.stringify(newData));
-        }
-        
-        // Stay on the editor page - don't navigate away unless navigateBack is true
-    },
-
-    // Cancel editing and return to app section (or settings-indexers for indexer)
-    cancelInstanceEditor: function(optionalNextSection) {
-        // Stop polling when leaving editor
-        this.stopStateStatusPolling();
-        
-        if (optionalNextSection) {
-            window.huntarrUI.switchSection(optionalNextSection);
-            this._currentEditing = null;
-            _instanceEditorDirty = false;
-            this._updateHashForSection(optionalNextSection);
-            return;
-        }
-
-        if (!this._currentEditing) {
-            window.huntarrUI.switchSection('sonarr');
-            this._currentEditing = null;
-            _instanceEditorDirty = false;
-            this._updateHashForSection('sonarr');
-            return;
-        }
-        const appType = this._currentEditing.appType;
-        this._currentEditing = null;
-        _instanceEditorDirty = false;
-        if (appType === 'indexer') {
-            window.huntarrUI.switchSection('indexer-hunt');
-            this._updateHashForSection('indexer-hunt');
-        } else if (appType === 'client') {
-            window.huntarrUI.switchSection('settings-clients');
-            this._updateHashForSection('settings-clients');
-        } else {
-            window.huntarrUI.switchSection(appType);
-            this._updateHashForSection(appType);
-        }
-    },
-
-    _updateHashForSection: function(section) {
-        try {
-            const newUrl = (window.location.pathname || '') + (window.location.search || '') + '#' + section;
-            window.history.replaceState(null, '', newUrl);
-        } catch (e) { /* ignore */ }
-    },
-
-    // Open the modal for adding/editing an instance
-    openInstanceModal: function(appType, index = null) {
-        this.navigateToInstanceEditor(appType, index);
-    },
-
-    // Delete instance
-    deleteInstance: function(appType, index) {
-        const settings = window.huntarrUI.originalSettings[appType];
-        if (!settings || !settings.instances || settings.instances[index] === undefined) {
-            console.error(`[huntarrUI] Cannot delete instance: index ${index} not found for ${appType}`);
-            return;
-        }
-        
-        const instanceName = settings.instances[index].name || 'Unnamed Instance';
-        const isDefault = index === 0;
-        const hasOtherInstances = settings.instances.length > 1;
-        
-        // Custom confirmation message for default instance
-        let confirmMessage = `Are you sure you want to delete the instance "${instanceName}"?`;
-        if (isDefault && hasOtherInstances) {
-            const nextInstance = settings.instances[1];
-            confirmMessage = `Are you sure you want to delete the default instance "${instanceName}"?\n\nThe next instance "${nextInstance.name || 'Unnamed'}" will become the new default.`;
-        }
-
-        const self = this;
-        const doDelete = function() {
-            console.log(`[huntarrUI] Deleting instance "${instanceName}" (index ${index}) from ${appType}...`);
-
-            // Remove the instance from the local settings object
-            settings.instances.splice(index, 1);
-
-            // Update the global state immediately to ensure re-render uses fresh data
-            if (window.huntarrUI && window.huntarrUI.originalSettings) {
-                window.huntarrUI.originalSettings[appType] = JSON.parse(JSON.stringify(settings));
+                }).catch(function () { /* saveAppSettings already shows error */ });
             }
 
-            // Use a flag to indicate we're doing a structural change that needs full refresh
-            window._appsSuppressChangeDetection = true;
+            // Update current editing state with new index (in case it was a new instance)
+            this._currentEditing = { appType, index: finalIndex, originalInstance: JSON.parse(JSON.stringify(newData)) };
+            _instanceEditorDirty = false;
 
-            // Save to backend and trigger refresh
-            self.saveAppSettings(appType, settings, `Instance "${instanceName}" deleted successfully`);
+            // Show or hide the stateful block (green box + reset button) and refresh state
+            const statefulBlock = document.getElementById('instance-editor-stateful-block');
+            if (statefulBlock) {
+                statefulBlock.style.display = newData.state_management_mode === 'disabled' ? 'none' : 'block';
+            }
+            if (newData.state_management_mode !== 'disabled') {
+                this.startStateStatusPolling(appType, finalIndex);
+            } else {
+                this.stopStateStatusPolling();
+            }
 
-            // Force a small delay then clear suppression
-            setTimeout(() => {
-                window._appsSuppressChangeDetection = false;
-            }, 800);
-        };
+            // Disable save button to show it's saved
+            const saveBtn = document.getElementById('instance-editor-save');
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.classList.remove('enabled');
+            }
 
-        if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
-            window.HuntarrConfirm.show({
-                title: 'Delete Instance',
-                message: confirmMessage,
-                confirmLabel: 'Delete',
-                onConfirm: doDelete
-            });
-        } else {
-            if (!confirm(confirmMessage)) return;
-            doDelete();
-        }
-    },
+            // Show brief success feedback
+            const originalText = saveBtn ? saveBtn.innerHTML : '';
+            if (saveBtn) {
+                saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved!';
+                saveBtn.style.opacity = '0.7';
+                setTimeout(() => {
+                    saveBtn.innerHTML = originalText;
+                    saveBtn.style.opacity = '1';
+                    if (navigateBack) {
+                        this.cancelInstanceEditor(this._instanceEditorNextSection);
+                        this._instanceEditorNextSection = null;
+                    }
+                }, 2000);
+            } else if (navigateBack) {
+                this.cancelInstanceEditor(this._instanceEditorNextSection);
+                this._instanceEditorNextSection = null;
+            }
+
+            // Reset change detection by updating the original instance
+            // This allows the save button to be enabled again if user makes more changes
+            if (this._currentEditing) {
+                this._currentEditing.originalInstance = JSON.parse(JSON.stringify(newData));
+            }
+
+            // Stay on the editor page - don't navigate away unless navigateBack is true
+        },
+
+        // Cancel editing and return to app section (or settings-indexers for indexer)
+        cancelInstanceEditor: function (optionalNextSection) {
+            // Stop polling when leaving editor
+            this.stopStateStatusPolling();
+
+            if (optionalNextSection) {
+                window.huntarrUI.switchSection(optionalNextSection);
+                this._currentEditing = null;
+                _instanceEditorDirty = false;
+                this._updateHashForSection(optionalNextSection);
+                return;
+            }
+
+            if (!this._currentEditing) {
+                window.huntarrUI.switchSection('sonarr');
+                this._currentEditing = null;
+                _instanceEditorDirty = false;
+                this._updateHashForSection('sonarr');
+                return;
+            }
+            const appType = this._currentEditing.appType;
+            this._currentEditing = null;
+            _instanceEditorDirty = false;
+            if (appType === 'indexer') {
+                window.huntarrUI.switchSection('indexer-hunt');
+                this._updateHashForSection('indexer-hunt');
+            } else if (appType === 'client') {
+                window.huntarrUI.switchSection('settings-root-folders');
+                this._updateHashForSection('settings-root-folders');
+            } else {
+                window.huntarrUI.switchSection(appType);
+                this._updateHashForSection(appType);
+            }
+        },
+
+        _updateHashForSection: function (section) {
+            try {
+                const newUrl = (window.location.pathname || '') + (window.location.search || '') + '#' + section;
+                window.history.replaceState(null, '', newUrl);
+            } catch (e) { /* ignore */ }
+        },
+
+        // Open the modal for adding/editing an instance
+        openInstanceModal: function (appType, index = null) {
+            this.navigateToInstanceEditor(appType, index);
+        },
+
+        // Delete instance
+        deleteInstance: function (appType, index) {
+            const settings = window.huntarrUI.originalSettings[appType];
+            if (!settings || !settings.instances || settings.instances[index] === undefined) {
+                console.error(`[huntarrUI] Cannot delete instance: index ${index} not found for ${appType}`);
+                return;
+            }
+
+            const instanceName = settings.instances[index].name || 'Unnamed Instance';
+            const isDefault = index === 0;
+            const hasOtherInstances = settings.instances.length > 1;
+
+            // Custom confirmation message for default instance
+            let confirmMessage = `Are you sure you want to delete the instance "${instanceName}"?`;
+            if (isDefault && hasOtherInstances) {
+                const nextInstance = settings.instances[1];
+                confirmMessage = `Are you sure you want to delete the default instance "${instanceName}"?\n\nThe next instance "${nextInstance.name || 'Unnamed'}" will become the new default.`;
+            }
+
+            const self = this;
+            const doDelete = function () {
+                console.log(`[huntarrUI] Deleting instance "${instanceName}" (index ${index}) from ${appType}...`);
+
+                // Remove the instance from the local settings object
+                settings.instances.splice(index, 1);
+
+                // Update the global state immediately to ensure re-render uses fresh data
+                if (window.huntarrUI && window.huntarrUI.originalSettings) {
+                    window.huntarrUI.originalSettings[appType] = JSON.parse(JSON.stringify(settings));
+                }
+
+                // Use a flag to indicate we're doing a structural change that needs full refresh
+                window._appsSuppressChangeDetection = true;
+
+                // Save to backend and trigger refresh
+                self.saveAppSettings(appType, settings, `Instance "${instanceName}" deleted successfully`);
+
+                // Force a small delay then clear suppression
+                setTimeout(() => {
+                    window._appsSuppressChangeDetection = false;
+                }, 800);
+            };
+
+            if (window.HuntarrConfirm && window.HuntarrConfirm.show) {
+                window.HuntarrConfirm.show({
+                    title: 'Delete Instance',
+                    message: confirmMessage,
+                    confirmLabel: 'Delete',
+                    onConfirm: doDelete
+                });
+            } else {
+                if (!confirm(confirmMessage)) return;
+                doDelete();
+            }
+        },
 
     });
 })();

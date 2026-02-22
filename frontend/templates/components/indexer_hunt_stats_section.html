@@ -7,7 +7,8 @@
         <i class="fas fa-cube" aria-hidden="true"></i>
         <p class="no-instances-title">No instances configured</p>
         <p class="no-instances-desc">Configure a Movie Hunt or TV Hunt instance to view indexer stats.</p>
-        <a href="./#media-hunt-instances" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure instances</a>
+        <a href="./#media-hunt-instances" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure
+            instances</a>
     </div>
     <div id="indexer-hunt-stats-no-indexers" class="ih-no-indexers" style="display: none;">
         <i class="fas fa-satellite-dish" aria-hidden="true"></i>
@@ -18,67 +19,69 @@
     <div id="indexer-hunt-stats-no-clients" class="ih-no-clients" style="display: none;">
         <i class="fas fa-download" aria-hidden="true"></i>
         <p class="no-instances-title">No clients configured</p>
-        <p class="no-instances-desc">Configure at least one download client in Settings → Clients to use this section.</p>
-        <a href="./#settings-clients" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure Clients</a>
+        <p class="no-instances-desc">Configure at least one download client in Settings → Clients to use this section.
+        </p>
+        <a href="./#settings-root-folders" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure Root
+            Folders</a>
     </div>
     <div id="indexer-hunt-stats-content-wrapper" style="display: none;">
-    <div class="ih-stats-page">
-        <div class="ih-stats-page-header">
-            <i class="fas fa-chart-bar"></i>
-            <h2>Index Master Stats</h2>
-        </div>
-
-        <!-- Summary cards -->
-        <div class="ih-stats-cards" id="ih-stats-cards">
-            <div class="ih-stat-card">
-                <div class="ih-stat-value" id="ih-stat-queries">0</div>
-                <div class="ih-stat-label">Total Queries</div>
-            </div>
-            <div class="ih-stat-card">
-                <div class="ih-stat-value" id="ih-stat-grabs">0</div>
-                <div class="ih-stat-label">Total Grabs</div>
-            </div>
-            <div class="ih-stat-card">
-                <div class="ih-stat-value" id="ih-stat-failures">0</div>
-                <div class="ih-stat-label">Total Failures</div>
-            </div>
-            <div class="ih-stat-card">
-                <div class="ih-stat-value" id="ih-stat-response">0<span class="ih-stat-unit">ms</span></div>
-                <div class="ih-stat-label">Avg Response</div>
-            </div>
-            <div class="ih-stat-card">
-                <div class="ih-stat-value" id="ih-stat-failure-rate">0<span class="ih-stat-unit">%</span></div>
-                <div class="ih-stat-label">Failure Rate</div>
-            </div>
-        </div>
-
-        <!-- Per-indexer breakdown -->
-        <div class="ih-stats-group">
-            <h3>Per-Indexer Breakdown</h3>
-            <div id="ih-stats-table-wrap">
-                <table class="ih-stats-table">
-                    <thead>
-                        <tr>
-                            <th>Indexer</th>
-                            <th>Priority</th>
-                            <th>Searches</th>
-                            <th>Grabs</th>
-                            <th>Failures</th>
-                            <th>Avg Response</th>
-                            <th>Failure Rate</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="ih-stats-table-body">
-                        <!-- Populated by JS -->
-                    </tbody>
-                </table>
-            </div>
-            <div class="ih-empty-state" id="ih-stats-empty" style="display: none;">
+        <div class="ih-stats-page">
+            <div class="ih-stats-page-header">
                 <i class="fas fa-chart-bar"></i>
-                <p>No stats available yet. Stats are recorded when Movie Hunt searches indexers.</p>
+                <h2>Index Master Stats</h2>
+            </div>
+
+            <!-- Summary cards -->
+            <div class="ih-stats-cards" id="ih-stats-cards">
+                <div class="ih-stat-card">
+                    <div class="ih-stat-value" id="ih-stat-queries">0</div>
+                    <div class="ih-stat-label">Total Queries</div>
+                </div>
+                <div class="ih-stat-card">
+                    <div class="ih-stat-value" id="ih-stat-grabs">0</div>
+                    <div class="ih-stat-label">Total Grabs</div>
+                </div>
+                <div class="ih-stat-card">
+                    <div class="ih-stat-value" id="ih-stat-failures">0</div>
+                    <div class="ih-stat-label">Total Failures</div>
+                </div>
+                <div class="ih-stat-card">
+                    <div class="ih-stat-value" id="ih-stat-response">0<span class="ih-stat-unit">ms</span></div>
+                    <div class="ih-stat-label">Avg Response</div>
+                </div>
+                <div class="ih-stat-card">
+                    <div class="ih-stat-value" id="ih-stat-failure-rate">0<span class="ih-stat-unit">%</span></div>
+                    <div class="ih-stat-label">Failure Rate</div>
+                </div>
+            </div>
+
+            <!-- Per-indexer breakdown -->
+            <div class="ih-stats-group">
+                <h3>Per-Indexer Breakdown</h3>
+                <div id="ih-stats-table-wrap">
+                    <table class="ih-stats-table">
+                        <thead>
+                            <tr>
+                                <th>Indexer</th>
+                                <th>Priority</th>
+                                <th>Searches</th>
+                                <th>Grabs</th>
+                                <th>Failures</th>
+                                <th>Avg Response</th>
+                                <th>Failure Rate</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ih-stats-table-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="ih-empty-state" id="ih-stats-empty" style="display: none;">
+                    <i class="fas fa-chart-bar"></i>
+                    <p>No stats available yet. Stats are recorded when Movie Hunt searches indexers.</p>
+                </div>
             </div>
         </div>
-    </div>
     </div>
 </section>

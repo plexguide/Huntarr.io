@@ -5,13 +5,13 @@
 
 window.HuntarrNavigation = {
     // Handle navigation clicks
-    handleNavigation: function(e) {
+    handleNavigation: function (e) {
         e.preventDefault();
-        
+
         const target = e.currentTarget;
         const href = target.getAttribute('href');
         const isInternalLink = href && href.startsWith('#');
-        
+
         // Check for unsaved changes before navigating
         if (window.huntarrUI && typeof window.huntarrUI.suppressUnsavedChangesCheck === 'boolean') {
             if (window.huntarrUI.suppressUnsavedChangesCheck) {
@@ -19,7 +19,7 @@ window.HuntarrNavigation = {
                 window.huntarrUI.suppressUnsavedChangesCheck = false;
             }
         }
-        
+
         // Add special handling for apps section - clear global app module flags
         if (window.huntarrUI && window.huntarrUI.currentSection === 'apps' && href && !href.includes('apps')) {
             // Reset the app module flags when navigating away
@@ -43,8 +43,8 @@ window.HuntarrNavigation = {
             window.location.href = href;
         }
     },
-    
-    handleHashNavigation: function(hash) {
+
+    handleHashNavigation: function (hash) {
         let section = (hash || '').replace(/^#+/, '').trim();
         if (section.indexOf('%23') >= 0) section = section.split('%23').pop() || section;
         if (section.indexOf('./') === 0) section = section.replace(/^\.?\/*/, '');
@@ -173,7 +173,7 @@ window.HuntarrNavigation = {
             'tv-hunt-settings-custom-formats': 'settings-custom-formats',
             'tv-hunt-settings-profiles': 'settings-profiles',
             'tv-hunt-settings-indexers': 'indexer-hunt',
-            'tv-hunt-settings-clients': 'settings-clients',
+            'tv-hunt-settings-clients': 'settings-root-folders',
             'tv-hunt-settings-root-folders': 'settings-root-folders',
             'settings-import-media-tv': 'settings-import-media',
             'tv-hunt-settings-sizes': 'settings-sizes',
@@ -209,31 +209,31 @@ window.HuntarrNavigation = {
 
     // switchSection is handled by huntarrUI.switchSection() in app.js.
     // This module only provides handleHashNavigation() which delegates to it.
-    
+
     // System tab management
-    switchSystemTab: function(tab) {
+    switchSystemTab: function (tab) {
         // Update tab buttons
-        document.querySelectorAll('#systemSection .system-tab').forEach(function(t) {
+        document.querySelectorAll('#systemSection .system-tab').forEach(function (t) {
             t.classList.toggle('active', t.getAttribute('data-system-tab') === tab);
         });
         // Update tab panels
-        document.querySelectorAll('#systemSection .system-tab-panel').forEach(function(p) {
+        document.querySelectorAll('#systemSection .system-tab-panel').forEach(function (p) {
             var isActive = p.getAttribute('data-system-panel') === tab;
             p.style.display = isActive ? 'block' : 'none';
             p.classList.toggle('active', isActive);
         });
         // Toggle page header bars
-        document.querySelectorAll('#systemSection .system-page-header').forEach(function(h) {
+        document.querySelectorAll('#systemSection .system-page-header').forEach(function (h) {
             h.style.display = 'none';
         });
         var hdr = document.getElementById('system-header-' + tab);
         if (hdr) hdr.style.display = 'block';
     },
 
-    setupSystemTabs: function() {
+    setupSystemTabs: function () {
         var self = this;
-        document.querySelectorAll('#systemSection .system-tab').forEach(function(tab) {
-            tab.addEventListener('click', function() {
+        document.querySelectorAll('#systemSection .system-tab').forEach(function (tab) {
+            tab.addEventListener('click', function () {
                 var t = tab.getAttribute('data-system-tab');
                 if (t) {
                     // Update the hash to reflect the tab
@@ -249,7 +249,7 @@ window.HuntarrNavigation = {
     // Each function now expands the relevant accordion group instead
     // of toggling display on separate sidebar divs.
 
-    showMainSidebar: function() {
+    showMainSidebar: function () {
         // Home page — collapse all groups
         if (typeof expandSidebarGroup === 'function') {
             // Let setActiveNavItem handle it via hashchange
@@ -257,77 +257,77 @@ window.HuntarrNavigation = {
         if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
 
-    showAppsSidebar: function() {
+    showAppsSidebar: function () {
         if (typeof expandSidebarGroup === 'function') expandSidebarGroup('sidebar-group-apps');
         if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
 
-    showSettingsSidebar: function() {
+    showSettingsSidebar: function () {
         if (typeof expandSidebarGroup === 'function') expandSidebarGroup('sidebar-group-settings');
         if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
 
-    showRequestarrSidebar: function() {
+    showRequestarrSidebar: function () {
         if (typeof expandSidebarGroup === 'function') expandSidebarGroup('sidebar-group-requests');
         if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
 
-    showMovieHuntSidebar: function() {
+    showMovieHuntSidebar: function () {
         if (typeof expandSidebarGroup === 'function') expandSidebarGroup('sidebar-group-media-hunt');
         this.updateMovieHuntSidebarActive();
     },
 
-    showTVHuntSidebar: function() {
+    showTVHuntSidebar: function () {
         this.showMovieHuntSidebar();
     },
 
-    updateMovieHuntSidebarActive: function() {
+    updateMovieHuntSidebarActive: function () {
         // Sub-group expansion is handled exclusively by setActiveNavItem() in sidebar.html.
         // This function only manages the activity-view CSS class (used by CSS to hide items)
         // and delegates active-item highlighting to setActiveNavItem().
         if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
 
-    updateTVHuntSidebarActive: function() {
+    updateTVHuntSidebarActive: function () {
         // TV Hunt sidebar removed; no-op
     },
 
-    updateAppsSidebarActive: function() {
+    updateAppsSidebarActive: function () {
         // Active state is handled by setActiveNavItem() in the inline script
         if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
 
-    updateSettingsSidebarActive: function() {
+    updateSettingsSidebarActive: function () {
         if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
 
-    updateRequestarrSidebarActive: function() {
+    updateRequestarrSidebarActive: function () {
         if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
 
-    setupAppsNavigation: function() {
+    setupAppsNavigation: function () {
         // Navigation is handled by hash links — no extra click listeners needed with unified sidebar
     },
 
-    setupSettingsNavigation: function() {
+    setupSettingsNavigation: function () {
         // Navigation is handled by hash links
     },
 
     // setupRequestarrNavigation: handled by HuntarrRequestarr.setupRequestarrNavigation() in requestarr-controller.js
 
-    setupMovieHuntNavigation: function() {
+    setupMovieHuntNavigation: function () {
         // Navigation is handled by hash links
     },
 
-    setupTVHuntNavigation: function() {
+    setupTVHuntNavigation: function () {
         // TV Hunt sidebar removed; no-op
     },
 
-    setupNzbHuntNavigation: function() {
+    setupNzbHuntNavigation: function () {
         // Navigation is handled by hash links
     },
 
-    updateRequestarrNavigation: function(view) {
+    updateRequestarrNavigation: function (view) {
         if (!window.RequestarrDiscover || !window.RequestarrDiscover.switchView) {
             console.warn('[Navigation] RequestarrDiscover not available');
             return;

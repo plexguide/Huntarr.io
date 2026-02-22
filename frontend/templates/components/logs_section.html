@@ -4,7 +4,8 @@
         <i class="fas fa-cube" aria-hidden="true"></i>
         <p class="no-instances-title">No instances configured</p>
         <p class="no-instances-desc">Configure a Movie Hunt or TV Hunt instance to view Media Hunt logs.</p>
-        <a href="./#media-hunt-instances" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure instances</a>
+        <a href="./#media-hunt-instances" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure
+            instances</a>
     </div>
     <div id="logs-media-hunt-no-indexers" class="logs-no-indexers" style="display: none;">
         <i class="fas fa-satellite-dish" aria-hidden="true"></i>
@@ -15,92 +16,97 @@
     <div id="logs-media-hunt-no-clients" class="logs-no-clients" style="display: none;">
         <i class="fas fa-download" aria-hidden="true"></i>
         <p class="no-instances-title">No clients configured</p>
-        <p class="no-instances-desc">Configure at least one download client in Settings → Clients to use this section.</p>
-        <a href="./#settings-clients" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure Clients</a>
+        <p class="no-instances-desc">Configure at least one download client in Settings → Clients to use this section.
+        </p>
+        <a href="./#settings-root-folders" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure Root
+            Folders</a>
     </div>
     <div id="logs-media-hunt-content-wrapper" style="display: none;">
-    <!-- Unified Toolbar -->
-    <div class="logs-toolbar">
-        <div class="logs-toolbar-row">
-            <div class="logs-filters">
-                <div class="logs-filter-chip">
-                    <i class="fas fa-layer-group"></i>
-                    <select id="logAppSelect" class="chip-select">
-                        <option value="all" selected data-context="system">Everywhere</option>
-                        <option value="media_hunt" data-context="media-hunt">Media Hunt (All)</option>
-                        <option value="movie_hunt" data-context="media-hunt">Movie Hunt</option>
-                        <option value="tv_hunt" data-context="media-hunt">TV Hunt</option>
-                        <option value="sonarr" data-context="system">Sonarr</option>
-                        <option value="radarr" data-context="system">Radarr</option>
-                        <option value="lidarr" data-context="system">Lidarr</option>
-                        <option value="readarr" data-context="system">Readarr</option>
-                        <option value="whisparr" data-context="system">Whisparr</option>
-                        <option value="eros" data-context="system">Eros</option>
-                        <option value="swaparr" data-context="system">Swaparr</option>
-                        <option value="system" data-context="system">System</option>
-                    </select>
+        <!-- Unified Toolbar -->
+        <div class="logs-toolbar">
+            <div class="logs-toolbar-row">
+                <div class="logs-filters">
+                    <div class="logs-filter-chip">
+                        <i class="fas fa-layer-group"></i>
+                        <select id="logAppSelect" class="chip-select">
+                            <option value="all" selected data-context="system">Everywhere</option>
+                            <option value="media_hunt" data-context="media-hunt">Media Hunt (All)</option>
+                            <option value="movie_hunt" data-context="media-hunt">Movie Hunt</option>
+                            <option value="tv_hunt" data-context="media-hunt">TV Hunt</option>
+                            <option value="sonarr" data-context="system">Sonarr</option>
+                            <option value="radarr" data-context="system">Radarr</option>
+                            <option value="lidarr" data-context="system">Lidarr</option>
+                            <option value="readarr" data-context="system">Readarr</option>
+                            <option value="whisparr" data-context="system">Whisparr</option>
+                            <option value="eros" data-context="system">Eros</option>
+                            <option value="swaparr" data-context="system">Swaparr</option>
+                            <option value="system" data-context="system">System</option>
+                        </select>
+                    </div>
+                    <div class="logs-filter-chip">
+                        <i class="fas fa-filter"></i>
+                        <select id="logLevelSelect" class="chip-select">
+                            <option value="all" selected>All Levels</option>
+                            <option value="debug" id="logLevelOptionDebug">Debug</option>
+                            <option value="info">Info</option>
+                            <option value="warning">Warning</option>
+                            <option value="error">Error</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="logs-filter-chip">
-                    <i class="fas fa-filter"></i>
-                    <select id="logLevelSelect" class="chip-select">
-                        <option value="all" selected>All Levels</option>
-                        <option value="debug" id="logLevelOptionDebug">Debug</option>
-                        <option value="info">Info</option>
-                        <option value="warning">Warning</option>
-                        <option value="error">Error</option>
-                    </select>
+                <div class="logs-search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="logSearchInput" placeholder="Search logs...">
+                </div>
+                <button type="button" id="logSearchButton" class="logs-btn logs-btn-search" title="Search">
+                    <i class="fas fa-search"></i>
+                </button>
+                <button type="button" id="clearLogsButton" class="logs-btn logs-btn-danger" title="Clear Logs">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+            <div class="logs-toolbar-meta">
+                <div class="logs-connection-dot">
+                    <i class="fas fa-circle logs-status-icon"></i>
+                    <span id="logConnectionStatus" class="status-disconnected">Disconnected</span>
+                </div>
+                <div class="logs-pagination">
+                    <span class="logs-page-size">
+                        Show
+                        <select id="logsPageSize" class="chip-select chip-select-sm">
+                            <option value="20" selected>20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="200">200</option>
+                        </select>
+                    </span>
+                    <div class="logs-page-nav">
+                        <button id="logsPrevPage" class="logs-page-btn" title="Previous Page"><i
+                                class="fas fa-chevron-left"></i></button>
+                        <span id="logsPageInfo" class="logs-page-info">Page <span id="logsCurrentPage">1</span> of <span
+                                id="logsTotalPages">1</span></span>
+                        <button id="logsNextPage" class="logs-page-btn" title="Next Page"><i
+                                class="fas fa-chevron-right"></i></button>
+                    </div>
                 </div>
             </div>
-            <div class="logs-search-bar">
-                <i class="fas fa-search"></i>
-                <input type="text" id="logSearchInput" placeholder="Search logs...">
-            </div>
-            <button type="button" id="logSearchButton" class="logs-btn logs-btn-search" title="Search">
-                <i class="fas fa-search"></i>
-            </button>
-            <button type="button" id="clearLogsButton" class="logs-btn logs-btn-danger" title="Clear Logs">
-                <i class="fas fa-trash-alt"></i>
-            </button>
         </div>
-        <div class="logs-toolbar-meta">
-            <div class="logs-connection-dot">
-                <i class="fas fa-circle logs-status-icon"></i>
-                <span id="logConnectionStatus" class="status-disconnected">Disconnected</span>
-            </div>
-            <div class="logs-pagination">
-                <span class="logs-page-size">
-                    Show
-                    <select id="logsPageSize" class="chip-select chip-select-sm">
-                        <option value="20" selected>20</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                        <option value="200">200</option>
-                    </select>
-                </span>
-                <div class="logs-page-nav">
-                    <button id="logsPrevPage" class="logs-page-btn" title="Previous Page"><i class="fas fa-chevron-left"></i></button>
-                    <span id="logsPageInfo" class="logs-page-info">Page <span id="logsCurrentPage">1</span> of <span id="logsTotalPages">1</span></span>
-                    <button id="logsNextPage" class="logs-page-btn" title="Next Page"><i class="fas fa-chevron-right"></i></button>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Log Table -->
-    <div class="logs-table-wrapper">
-        <table class="logs-data-table">
-            <thead>
-                <tr>
-                    <th class="col-time">Time</th>
-                    <th class="col-level">Level</th>
-                    <th class="col-app">App</th>
-                    <th class="col-message">Message</th>
-                </tr>
-            </thead>
-            <tbody id="logsContainer">
-                <!-- Log entries will be loaded here -->
-            </tbody>
-        </table>
-    </div>
+        <!-- Log Table -->
+        <div class="logs-table-wrapper">
+            <table class="logs-data-table">
+                <thead>
+                    <tr>
+                        <th class="col-time">Time</th>
+                        <th class="col-level">Level</th>
+                        <th class="col-app">App</th>
+                        <th class="col-message">Message</th>
+                    </tr>
+                </thead>
+                <tbody id="logsContainer">
+                    <!-- Log entries will be loaded here -->
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>

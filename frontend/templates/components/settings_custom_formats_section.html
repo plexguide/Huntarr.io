@@ -1,66 +1,78 @@
 <section id="settingsCustomFormatsSection" class="content-section" style="display: none;">
-    {% set phb_back_hash = '#home' %}{% set phb_icon = 'fa-film' %}{% set phb_section = 'Media Hunt' %}{% set phb_page = 'Custom Formats' %}
+    {% set phb_back_hash = '#home' %}{% set phb_icon = 'fa-film' %}{% set phb_section = 'Media Hunt' %}{% set phb_page =
+    'Custom Formats' %}
     {% include 'components/page_header_partial.html' %}
     <div id="customFormatsManagementContainer" class="app-content-panel">
         <div id="settings-custom-formats-no-indexers" class="settings-no-indexers" style="display: none;">
             <i class="fas fa-satellite-dish" aria-hidden="true"></i>
             <p class="no-instances-title">No indexers configured</p>
-            <p class="no-instances-desc">Configure at least one indexer in the Index Master Pool to use this section.</p>
+            <p class="no-instances-desc">Configure at least one indexer in the Index Master Pool to use this section.
+            </p>
             <a href="./#indexer-hunt" class="no-instances-action-btn"><i class="fas fa-plus"></i> Add Indexer</a>
         </div>
         <div id="settings-custom-formats-no-clients" class="settings-no-clients" style="display: none;">
             <i class="fas fa-download" aria-hidden="true"></i>
             <p class="no-instances-title">No clients configured</p>
-            <p class="no-instances-desc">Configure at least one download client in Settings → Clients to use this section.</p>
-            <a href="./#settings-clients" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure Clients</a>
+            <p class="no-instances-desc">Configure at least one download client in Settings → Clients to use this
+                section.</p>
+            <a href="./#settings-root-folders" class="no-instances-action-btn"><i class="fas fa-cog"></i> Configure Root
+                Folders</a>
         </div>
         <div id="settings-custom-formats-content-wrapper" style="display: none;">
-        <div class="media-hunt-settings-instance-bar" style="margin-bottom: 16px;">
-            <select id="settings-custom-formats-instance-select" class="control-select" aria-label="Instance">
-                <option value="">Loading...</option>
-            </select>
-        </div>
-        <!-- Pre-Formatted Section -->
-        <div class="settings-group custom-formats-settings-group">
-            <div class="custom-formats-section-header">
-                <div class="custom-formats-header-text">
-                    <h3>Pre-Formatted Custom Formats</h3>
+            <div class="media-hunt-settings-instance-bar" style="margin-bottom: 16px;">
+                <select id="settings-custom-formats-instance-select" class="control-select" aria-label="Instance">
+                    <option value="">Loading...</option>
+                </select>
+            </div>
+            <!-- Pre-Formatted Section -->
+            <div class="settings-group custom-formats-settings-group">
+                <div class="custom-formats-section-header">
+                    <div class="custom-formats-header-text">
+                        <h3>Pre-Formatted Custom Formats</h3>
+                    </div>
+                    <div class="custom-formats-header-actions">
+                        <button type="button" class="btn-add-format" id="add-preformatted-btn"
+                            title="Add pre-formatted custom formats">
+                            <i class="fas fa-plus-circle"></i> Add Pre-Formatted
+                        </button>
+                        <button type="button" class="btn-delete-all" id="delete-all-preformatted"
+                            title="Delete all pre-formatted custom formats">
+                            <i class="fas fa-trash-alt"></i> Delete All
+                        </button>
+                    </div>
                 </div>
-                <div class="custom-formats-header-actions">
-                    <button type="button" class="btn-add-format" id="add-preformatted-btn" title="Add pre-formatted custom formats">
-                        <i class="fas fa-plus-circle"></i> Add Pre-Formatted
-                    </button>
-                    <button type="button" class="btn-delete-all" id="delete-all-preformatted" title="Delete all pre-formatted custom formats">
-                        <i class="fas fa-trash-alt"></i> Delete All
-                    </button>
+                <p class="custom-formats-description">To learn more about Pre-Formatted Custom Formats, please visit <a
+                        href="https://trash-guides.info/Radarr/Radarr-collection-of-custom-formats/" target="_blank"
+                        rel="noopener">TRaSH Guides</a>.</p>
+                <div class="instance-card-grid" id="custom-formats-preformatted-grid">
+                    <!-- Cards will be dynamically populated here -->
                 </div>
             </div>
-            <p class="custom-formats-description">To learn more about Pre-Formatted Custom Formats, please visit <a href="https://trash-guides.info/Radarr/Radarr-collection-of-custom-formats/" target="_blank" rel="noopener">TRaSH Guides</a>.</p>
-            <div class="instance-card-grid" id="custom-formats-preformatted-grid">
-                <!-- Cards will be dynamically populated here -->
-            </div>
-        </div>
 
-        <!-- Imported Section -->
-        <div class="settings-group custom-formats-settings-group">
-            <div class="custom-formats-section-header">
-                <div class="custom-formats-header-text">
-                    <h3>Imported Custom Formats</h3>
+            <!-- Imported Section -->
+            <div class="settings-group custom-formats-settings-group">
+                <div class="custom-formats-section-header">
+                    <div class="custom-formats-header-text">
+                        <h3>Imported Custom Formats</h3>
+                    </div>
+                    <div class="custom-formats-header-actions">
+                        <button type="button" class="btn-add-format" id="add-imported-btn"
+                            title="Add imported custom format">
+                            <i class="fas fa-plus-circle"></i> Add Imported
+                        </button>
+                        <button type="button" class="btn-delete-all" id="delete-all-imported"
+                            title="Delete all imported custom formats">
+                            <i class="fas fa-trash-alt"></i> Delete All
+                        </button>
+                    </div>
                 </div>
-                <div class="custom-formats-header-actions">
-                    <button type="button" class="btn-add-format" id="add-imported-btn" title="Add imported custom format">
-                        <i class="fas fa-plus-circle"></i> Add Imported
-                    </button>
-                    <button type="button" class="btn-delete-all" id="delete-all-imported" title="Delete all imported custom formats">
-                        <i class="fas fa-trash-alt"></i> Delete All
-                    </button>
+                <p class="custom-formats-description">To learn how to use imported formats, please visit <a
+                        href="https://trash-guides.info/Radarr/Radarr-import-custom-formats/" target="_blank"
+                        rel="noopener">TRaSH Guides</a>.</p>
+                <div class="instance-card-grid" id="custom-formats-imported-grid">
+                    <!-- Cards will be dynamically populated here -->
                 </div>
             </div>
-            <p class="custom-formats-description">To learn how to use imported formats, please visit <a href="https://trash-guides.info/Radarr/Radarr-import-custom-formats/" target="_blank" rel="noopener">TRaSH Guides</a>.</p>
-            <div class="instance-card-grid" id="custom-formats-imported-grid">
-                <!-- Cards will be dynamically populated here -->
-            </div>
-        </div>
         </div>
     </div>
 
@@ -69,14 +81,17 @@
         <div class="custom-format-modal-backdrop" id="custom-format-modal-backdrop"></div>
         <div class="custom-format-modal-content">
             <div class="custom-format-modal-header">
-                <button type="button" class="custom-format-modal-close" id="custom-format-modal-close" aria-label="Close"><i class="fas fa-times"></i></button>
+                <button type="button" class="custom-format-modal-close" id="custom-format-modal-close"
+                    aria-label="Close"><i class="fas fa-times"></i></button>
                 <h2 class="custom-format-modal-title" id="custom-format-modal-title">Add Custom Format</h2>
-                <p class="custom-format-modal-subtitle">Pre-Formatted: pick TRaSH Guides formats by category. Import: paste your own JSON.</p>
+                <p class="custom-format-modal-subtitle">Pre-Formatted: pick TRaSH Guides formats by category. Import:
+                    paste your own JSON.</p>
             </div>
             <div class="custom-format-modal-body">
                 <div class="custom-format-source-row">
                     <label class="custom-format-source-option">
-                        <input type="radio" name="custom-format-source" value="preformat" id="custom-format-source-preformat" checked>
+                        <input type="radio" name="custom-format-source" value="preformat"
+                            id="custom-format-source-preformat" checked>
                         <span>Pre-Formatted</span>
                     </label>
                     <label class="custom-format-source-option">
@@ -85,17 +100,21 @@
                     </label>
                 </div>
                 <div id="custom-format-preformat-area" class="custom-format-area">
-                    <p class="custom-format-preformat-hint">Select categories below, then check the formats you want to add. Already-added formats are checked and disabled.</p>
+                    <p class="custom-format-preformat-hint">Select categories below, then check the formats you want to
+                        add. Already-added formats are checked and disabled.</p>
                     <div id="custom-format-preformat-tree" class="custom-format-preformat-tree"></div>
                 </div>
                 <div id="custom-format-import-area" class="custom-format-area" style="display: none;">
                     <label for="custom-format-json-textarea">Paste custom format JSON</label>
-                    <textarea id="custom-format-json-textarea" class="custom-format-json-textarea" placeholder='{"name": "My Format", ...}' rows="10"></textarea>
+                    <textarea id="custom-format-json-textarea" class="custom-format-json-textarea"
+                        placeholder='{"name": "My Format", ...}' rows="10"></textarea>
                 </div>
             </div>
             <div class="custom-format-modal-actions">
-                <button type="button" class="btn-card custom-format-modal-cancel" id="custom-format-modal-cancel">Cancel</button>
-                <button type="button" class="btn-card custom-format-modal-save" id="custom-format-modal-save"><i class="fas fa-plus"></i> Add</button>
+                <button type="button" class="btn-card custom-format-modal-cancel"
+                    id="custom-format-modal-cancel">Cancel</button>
+                <button type="button" class="btn-card custom-format-modal-save" id="custom-format-modal-save"><i
+                        class="fas fa-plus"></i> Add</button>
             </div>
         </div>
     </div>
@@ -105,7 +124,8 @@
         <div class="custom-format-modal-backdrop" id="custom-format-view-modal-backdrop"></div>
         <div class="custom-format-modal-content">
             <div class="custom-format-modal-header">
-                <button type="button" class="custom-format-modal-close" id="custom-format-view-modal-close" aria-label="Close"><i class="fas fa-times"></i></button>
+                <button type="button" class="custom-format-modal-close" id="custom-format-view-modal-close"
+                    aria-label="Close"><i class="fas fa-times"></i></button>
                 <h2 class="custom-format-modal-title" id="custom-format-view-modal-title">View Custom Format JSON</h2>
                 <p class="custom-format-modal-subtitle">Read-only view of the custom format JSON.</p>
             </div>
@@ -113,16 +133,34 @@
                 <pre id="custom-format-view-json" class="custom-format-view-json"></pre>
             </div>
             <div class="custom-format-modal-actions">
-                <button type="button" class="btn-card custom-format-modal-cancel" id="custom-format-view-modal-close-btn">Close</button>
+                <button type="button" class="btn-card custom-format-modal-cancel"
+                    id="custom-format-view-modal-close-btn">Close</button>
             </div>
         </div>
     </div>
 </section>
 
 <style>
-    #settingsCustomFormatsSection { width: 100%; min-height: 100vh; overflow-y: auto; overflow-x: hidden; }
-    #settingsCustomFormatsSection.active { display: block !important; }
-    #customFormatsManagementContainer { width: 100%; padding: 20px; margin: 0; background: transparent; box-shadow: none; border: none; }
+    #settingsCustomFormatsSection {
+        width: 100%;
+        min-height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    #settingsCustomFormatsSection.active {
+        display: block !important;
+    }
+
+    #customFormatsManagementContainer {
+        width: 100%;
+        padding: 20px;
+        margin: 0;
+        background: transparent;
+        box-shadow: none;
+        border: none;
+    }
+
     .custom-formats-settings-group {
         background: rgba(15, 23, 42, 0.4);
         border: 1px solid rgba(148, 163, 184, 0.08);
@@ -130,9 +168,29 @@
         padding: 24px;
         margin: 12px 0 20px 0;
     }
-    .custom-formats-settings-group h3 { margin: 0 0 12px 0; padding: 0 0 10px 0; font-size: 1.1rem; font-weight: 600; color: #f1f5f9; border-bottom: 1px solid rgba(148, 163, 184, 0.12); background: none; box-shadow: none; }
-    .custom-formats-help { margin: 0 0 20px 0; color: #94a3b8; font-size: 0.95rem; }
-    .custom-formats-header-text { flex: 1; min-width: 0; }
+
+    .custom-formats-settings-group h3 {
+        margin: 0 0 12px 0;
+        padding: 0 0 10px 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #f1f5f9;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+        background: none;
+        box-shadow: none;
+    }
+
+    .custom-formats-help {
+        margin: 0 0 20px 0;
+        color: #94a3b8;
+        font-size: 0.95rem;
+    }
+
+    .custom-formats-header-text {
+        flex: 1;
+        min-width: 0;
+    }
+
     .custom-formats-description {
         margin: 0 0 20px 0;
         padding: 0;
@@ -141,13 +199,16 @@
         font-size: 0.95rem;
         line-height: 1.5;
     }
+
     .custom-formats-description a {
         color: #38bdf8;
         text-decoration: underline;
     }
+
     .custom-formats-description a:hover {
         color: #7dd3fc;
     }
+
     .custom-formats-section-header {
         display: flex;
         justify-content: space-between;
@@ -155,11 +216,13 @@
         margin-bottom: 20px;
         gap: 20px;
     }
+
     .custom-formats-header-actions {
         display: flex;
         gap: 10px;
         flex-shrink: 0;
     }
+
     .btn-add-format {
         padding: 8px 16px;
         font-size: 0.9rem;
@@ -176,16 +239,19 @@
         white-space: nowrap;
         box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
     }
+
     .btn-add-format:hover {
         background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
         transform: translateY(-1px);
         border-color: rgba(5, 150, 105, 0.6);
     }
+
     .btn-add-format:active {
         transform: translateY(0);
         box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
     }
+
     .btn-delete-all {
         padding: 8px 16px;
         font-size: 0.9rem;
@@ -202,16 +268,19 @@
         white-space: nowrap;
         box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
     }
+
     .btn-delete-all:hover {
         background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
         box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
         transform: translateY(-1px);
         border-color: rgba(220, 38, 38, 0.6);
     }
+
     .btn-delete-all:active {
         transform: translateY(0);
         box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
     }
+
     .btn-delete-all:disabled {
         opacity: 0.5;
         cursor: not-allowed;
@@ -219,34 +288,46 @@
         border-color: rgba(75, 85, 99, 0.4);
         box-shadow: none;
     }
+
     .btn-delete-all:disabled:hover {
         transform: none;
         box-shadow: none;
     }
+
     @media (max-width: 768px) {
         .custom-formats-section-header {
             flex-direction: column;
             align-items: stretch;
             gap: 12px;
         }
+
         .custom-formats-header-actions {
             width: 100%;
             justify-content: stretch;
         }
+
         .btn-add-format,
         .btn-delete-all {
             flex: 1;
             justify-content: center;
         }
+
         .custom-formats-help {
             margin-bottom: 12px;
         }
+
         .custom-formats-description {
             margin-bottom: 12px;
         }
     }
+
     #custom-formats-preformatted-grid,
-    #custom-formats-imported-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; margin-bottom: 20px; }
+    #custom-formats-imported-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+
     .custom-formats-group-header {
         grid-column: 1 / -1;
         padding: 8px 14px;
@@ -262,92 +343,355 @@
         align-items: center;
         gap: 8px;
     }
+
     .custom-formats-group-header:first-of-type {
         margin-top: 0;
     }
+
     .custom-formats-group-header i {
         color: rgba(99, 102, 241, 0.8);
         font-size: 0.9rem;
     }
+
     #custom-formats-preformatted-grid .custom-format-card,
     #custom-formats-imported-grid .custom-format-card,
     #custom-formats-grid .custom-format-card {
-        padding: 12px 14px; border-radius: 10px; display: flex; flex-direction: column; height: 100%; min-height: 100px;
+        padding: 12px 14px;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 100px;
         background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
         border: 1px solid rgba(148, 163, 184, 0.1);
         transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
+
     #custom-formats-preformatted-grid .custom-format-card:hover,
     #custom-formats-imported-grid .custom-format-card:hover,
-    #custom-formats-grid .custom-format-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); border-color: rgba(99,102,241,0.3); }
+    #custom-formats-grid .custom-format-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        border-color: rgba(99, 102, 241, 0.3);
+    }
+
     #custom-formats-preformatted-grid .custom-format-card-header,
     #custom-formats-imported-grid .custom-format-card-header,
-    #custom-formats-grid .custom-format-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    #custom-formats-grid .custom-format-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
     #custom-formats-preformatted-grid .custom-format-card-title,
     #custom-formats-imported-grid .custom-format-card-title,
-    #custom-formats-grid .custom-format-card-title { font-size: 0.95rem; font-weight: 600; color: #f8fafc; display: flex; align-items: center; gap: 8px; word-break: break-all; }
+    #custom-formats-grid .custom-format-card-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #f8fafc;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        word-break: break-all;
+    }
+
     #custom-formats-preformatted-grid .custom-format-card-body,
     #custom-formats-imported-grid .custom-format-card-body,
-    #custom-formats-grid .custom-format-card-body { flex: 1; min-height: 0; color: #94a3b8; font-size: 0.85rem; }
+    #custom-formats-grid .custom-format-card-body {
+        flex: 1;
+        min-height: 0;
+        color: #94a3b8;
+        font-size: 0.85rem;
+    }
+
     #custom-formats-preformatted-grid .custom-format-card-footer,
     #custom-formats-imported-grid .custom-format-card-footer,
-    #custom-formats-grid .custom-format-card-footer { display: flex; gap: 6px; margin-top: 0; }
+    #custom-formats-grid .custom-format-card-footer {
+        display: flex;
+        gap: 6px;
+        margin-top: 0;
+    }
+
     #custom-formats-preformatted-grid .custom-format-card .btn-card,
     #custom-formats-imported-grid .custom-format-card .btn-card,
-    #custom-formats-grid .custom-format-card .btn-card { padding: 6px 10px; font-size: 0.8rem; }
+    #custom-formats-grid .custom-format-card .btn-card {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+    }
+
     #custom-formats-preformatted-grid .add-instance-card,
     #custom-formats-imported-grid .add-instance-card,
-    #custom-formats-grid .add-instance-card { min-height: 100px; }
-    .custom-format-modal { position: fixed; top:0;left:0;right:0;bottom:0; z-index: 1000; display: none; align-items: center; justify-content: center; }
-    .custom-format-modal[style*="display: flex"] { display: flex !important; }
-    body.custom-format-modal-open { overflow: hidden; }
-    body.custom-format-modal-open .app-container { filter: blur(10px); }
-    .custom-format-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 1000; }
-    .custom-format-modal-content { position: relative; z-index: 1001; background: rgba(15,23,42,0.98); border: 2px solid rgba(99,102,241,0.4); border-radius: 12px; max-width: 560px; width: 90%; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
-    .custom-format-modal-header { position: relative; padding: 20px 24px 12px; background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #0f172a 100%); }
-    .custom-format-modal-close { position: absolute; top: 12px; right: 12px; background: transparent; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; padding: 4px; }
-    .custom-format-modal-close:hover { color: #f8fafc; }
-    .custom-format-modal-title { margin: 0 0 4px 0; font-size: 1.25rem; font-weight: 600; color: #f8fafc; }
-    .custom-format-modal-subtitle { margin: 0; font-size: 0.9rem; color: #94a3b8; }
-    .custom-format-modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
-    .custom-format-source-row { display: flex; gap: 20px; margin-bottom: 16px; }
-    .custom-format-source-option { display: flex; align-items: center; gap: 8px; color: #cbd5e1; cursor: pointer; }
-    .custom-format-area { margin-bottom: 16px; }
-    .custom-format-area label { display: block; margin-bottom: 6px; font-size: 0.9rem; color: #cbd5e1; }
-    .custom-format-select { width: 100%; padding: 10px 12px; font-size: 1rem; color: #f8fafc; background: rgba(15,23,42,0.8); border: 1px solid rgba(148,163,184,0.3); border-radius: 8px; box-sizing: border-box; }
-    .custom-format-json-textarea { width: 100%; padding: 10px 12px; font-size: 0.85rem; font-family: monospace; color: #f8fafc; background: rgba(15,23,42,0.8); border: 1px solid rgba(148,163,184,0.3); border-radius: 8px; resize: vertical; min-height: 120px; box-sizing: border-box; }
-    .custom-format-modal-actions { display: flex; justify-content: flex-end; gap: 12px; padding: 16px 24px 20px; border-top: 1px solid rgba(148,163,184,0.1); }
-    .custom-format-preformat-hint { margin: 0 0 12px 0; font-size: 0.85rem; color: #94a3b8; }
-    .custom-format-preformat-tree { max-height: 320px; overflow-y: auto; border: 1px solid rgba(148,163,184,0.2); border-radius: 8px; padding: 10px; background: rgba(15,23,42,0.6); margin-bottom: 12px; }
-    .custom-format-cat { margin-bottom: 8px; }
-    .custom-format-cat-header { display: flex; align-items: center; gap: 8px; padding: 8px 10px; cursor: pointer; border-radius: 6px; background: rgba(30,41,59,0.6); color: #e2e8f0; font-weight: 600; font-size: 0.95rem; user-select: none; }
-    .custom-format-cat-header:hover { background: rgba(51,65,85,0.8); }
-    .custom-format-cat-header i.fa-chevron-down { transition: transform 0.2s ease; }
-    .custom-format-cat-header.collapsed i.fa-chevron-down { transform: rotate(-90deg); }
-    .custom-format-cat-body { padding: 8px 10px 8px 24px; }
-    .custom-format-cat-body.collapsed { display: none; }
-    .custom-format-subcat { margin-bottom: 6px; }
-    .custom-format-subcat-name { font-size: 0.85rem; color: #94a3b8; margin-bottom: 4px; padding-left: 4px; }
-    .custom-format-format-list { display: flex; flex-wrap: wrap; gap: 8px 16px; }
-    .custom-format-format-item { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: #cbd5e1; cursor: pointer; }
-    .custom-format-format-item input[type="checkbox"] { cursor: pointer; }
-    .custom-format-format-item input[type="checkbox"]:disabled + span { color: #64748b; }
-    .custom-format-loading { color: #94a3b8; font-size: 0.9rem; }
-    .custom-format-preformat-empty {
-        color: #94a3b8; font-size: 0.9rem; padding: 12px 0; line-height: 1.5;
+    #custom-formats-grid .add-instance-card {
+        min-height: 100px;
     }
-    .custom-format-preformat-empty a { color: #818cf8; text-decoration: none; }
-    .custom-format-preformat-empty a:hover { text-decoration: underline; }
-    .custom-format-view-json { 
-        font-size: 0.85rem; 
-        font-family: 'Courier New', Courier, monospace; 
-        color: #f8fafc; 
-        background: rgba(15,23,42,0.8); 
-        border: 1px solid rgba(148,163,184,0.3); 
-        border-radius: 8px; 
-        padding: 12px; 
-        overflow-x: auto; 
-        white-space: pre-wrap; 
+
+    .custom-format-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .custom-format-modal[style*="display: flex"] {
+        display: flex !important;
+    }
+
+    body.custom-format-modal-open {
+        overflow: hidden;
+    }
+
+    body.custom-format-modal-open .app-container {
+        filter: blur(10px);
+    }
+
+    .custom-format-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        z-index: 1000;
+    }
+
+    .custom-format-modal-content {
+        position: relative;
+        z-index: 1001;
+        background: rgba(15, 23, 42, 0.98);
+        border: 2px solid rgba(99, 102, 241, 0.4);
+        border-radius: 12px;
+        max-width: 560px;
+        width: 90%;
+        max-height: 90vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    }
+
+    .custom-format-modal-header {
+        position: relative;
+        padding: 20px 24px 12px;
+        background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #0f172a 100%);
+    }
+
+    .custom-format-modal-close {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 4px;
+    }
+
+    .custom-format-modal-close:hover {
+        color: #f8fafc;
+    }
+
+    .custom-format-modal-title {
+        margin: 0 0 4px 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #f8fafc;
+    }
+
+    .custom-format-modal-subtitle {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #94a3b8;
+    }
+
+    .custom-format-modal-body {
+        padding: 20px 24px;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .custom-format-source-row {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 16px;
+    }
+
+    .custom-format-source-option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #cbd5e1;
+        cursor: pointer;
+    }
+
+    .custom-format-area {
+        margin-bottom: 16px;
+    }
+
+    .custom-format-area label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 0.9rem;
+        color: #cbd5e1;
+    }
+
+    .custom-format-select {
+        width: 100%;
+        padding: 10px 12px;
+        font-size: 1rem;
+        color: #f8fafc;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        border-radius: 8px;
+        box-sizing: border-box;
+    }
+
+    .custom-format-json-textarea {
+        width: 100%;
+        padding: 10px 12px;
+        font-size: 0.85rem;
+        font-family: monospace;
+        color: #f8fafc;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        border-radius: 8px;
+        resize: vertical;
+        min-height: 120px;
+        box-sizing: border-box;
+    }
+
+    .custom-format-modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        padding: 16px 24px 20px;
+        border-top: 1px solid rgba(148, 163, 184, 0.1);
+    }
+
+    .custom-format-preformat-hint {
+        margin: 0 0 12px 0;
+        font-size: 0.85rem;
+        color: #94a3b8;
+    }
+
+    .custom-format-preformat-tree {
+        max-height: 320px;
+        overflow-y: auto;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 8px;
+        padding: 10px;
+        background: rgba(15, 23, 42, 0.6);
+        margin-bottom: 12px;
+    }
+
+    .custom-format-cat {
+        margin-bottom: 8px;
+    }
+
+    .custom-format-cat-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        cursor: pointer;
+        border-radius: 6px;
+        background: rgba(30, 41, 59, 0.6);
+        color: #e2e8f0;
+        font-weight: 600;
+        font-size: 0.95rem;
+        user-select: none;
+    }
+
+    .custom-format-cat-header:hover {
+        background: rgba(51, 65, 85, 0.8);
+    }
+
+    .custom-format-cat-header i.fa-chevron-down {
+        transition: transform 0.2s ease;
+    }
+
+    .custom-format-cat-header.collapsed i.fa-chevron-down {
+        transform: rotate(-90deg);
+    }
+
+    .custom-format-cat-body {
+        padding: 8px 10px 8px 24px;
+    }
+
+    .custom-format-cat-body.collapsed {
+        display: none;
+    }
+
+    .custom-format-subcat {
+        margin-bottom: 6px;
+    }
+
+    .custom-format-subcat-name {
+        font-size: 0.85rem;
+        color: #94a3b8;
+        margin-bottom: 4px;
+        padding-left: 4px;
+    }
+
+    .custom-format-format-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+    }
+
+    .custom-format-format-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.9rem;
+        color: #cbd5e1;
+        cursor: pointer;
+    }
+
+    .custom-format-format-item input[type="checkbox"] {
+        cursor: pointer;
+    }
+
+    .custom-format-format-item input[type="checkbox"]:disabled+span {
+        color: #64748b;
+    }
+
+    .custom-format-loading {
+        color: #94a3b8;
+        font-size: 0.9rem;
+    }
+
+    .custom-format-preformat-empty {
+        color: #94a3b8;
+        font-size: 0.9rem;
+        padding: 12px 0;
+        line-height: 1.5;
+    }
+
+    .custom-format-preformat-empty a {
+        color: #818cf8;
+        text-decoration: none;
+    }
+
+    .custom-format-preformat-empty a:hover {
+        text-decoration: underline;
+    }
+
+    .custom-format-view-json {
+        font-size: 0.85rem;
+        font-family: 'Courier New', Courier, monospace;
+        color: #f8fafc;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        border-radius: 8px;
+        padding: 12px;
+        overflow-x: auto;
+        white-space: pre-wrap;
         word-break: break-all;
         max-height: 500px;
         margin: 0;

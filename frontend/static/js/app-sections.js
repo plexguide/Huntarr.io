@@ -1414,28 +1414,13 @@ Object.assign(huntarrUI, {
             }
             this.switchSection('indexer-hunt');
             return;
-        } else if (section === 'settings-clients' && document.getElementById('settingsClientsSection')) {
-            document.getElementById('settingsClientsSection').classList.add('active');
-            document.getElementById('settingsClientsSection').style.display = 'block';
-            if (document.getElementById('movieHuntClientsMainNav')) document.getElementById('movieHuntClientsMainNav').classList.add('active');
-            if (document.getElementById('mediaHuntInstanceManagementSection')) {
-                document.getElementById('mediaHuntInstanceManagementSection').classList.remove('active');
-                document.getElementById('mediaHuntInstanceManagementSection').style.display = 'none';
+        } else if (section === 'settings-clients') {
+            /* Clients page removed; redirect to Root Folders which now includes Remote Path Mappings */
+            if (window.location.hash !== '#settings-root-folders') {
+                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#settings-root-folders');
             }
-            if (document.getElementById('movieManagementSection')) {
-                document.getElementById('movieManagementSection').classList.remove('active');
-                document.getElementById('movieManagementSection').style.display = 'none';
-            }
-            if (document.getElementById('settingsSizesSection')) {
-                document.getElementById('settingsSizesSection').classList.remove('active');
-                document.getElementById('settingsSizesSection').style.display = 'none';
-            }
-            newTitle = 'Clients';
-            this.currentSection = 'settings-clients';
-            this.showMovieHuntSidebar();
-            if (window.SettingsForms && typeof window.SettingsForms.refreshClientsList === 'function') {
-                window.SettingsForms.refreshClientsList();
-            }
+            this.switchSection('settings-root-folders');
+            return;
         } else if (section === 'settings-import-lists' && document.getElementById('settingsImportListsSection')) {
             if (document.getElementById('tvHuntSettingsImportListsSection')) { document.getElementById('tvHuntSettingsImportListsSection').classList.remove('active'); document.getElementById('tvHuntSettingsImportListsSection').style.display = 'none'; }
             document.getElementById('settingsImportListsSection').classList.add('active');
@@ -1491,6 +1476,10 @@ Object.assign(huntarrUI, {
             this.showMovieHuntSidebar();
             if (window.RootFolders && typeof window.RootFolders.initOrRefresh === 'function') {
                 window.RootFolders.initOrRefresh('movie');
+            }
+            // Also refresh remote path mappings (now part of root folders page)
+            if (window.RemoteMappings && typeof window.RemoteMappings.refreshList === 'function') {
+                window.RemoteMappings.refreshList();
             }
         } else if (section === 'settings-logs' && document.getElementById('settingsLogsSection')) {
             document.getElementById('settingsLogsSection').classList.add('active');
