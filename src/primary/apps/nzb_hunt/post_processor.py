@@ -733,6 +733,7 @@ def post_process(directory: str, item_name: str = "") -> Tuple[bool, str]:
         return True, "No extraction needed, video files present"
     
     # Step 1: par2 verification/repair
+    par2_ok = True
     if par2_files:
         logger.info(f"{log_prefix}Step 1: par2 verification ({len(par2_files)} par2 files)")
         par2_ok, par2_msg = run_par2_repair(directory)
@@ -767,5 +768,15 @@ def post_process(directory: str, item_name: str = "") -> Tuple[bool, str]:
     
     if has_archives and not video_present:
         return False, "Extraction completed but no video files found"
+    
+    # If par2 failed AND no archives AND no video files, the download
+    # only contains par2/recovery data with no actual content — fail it
+    if not par2_ok and not has_archives and not video_present:
+        return False, "Download contains only par2 recovery files — no video or archive data was downloaded"
+    
+    # If there are no archives, no video files, and only par2/nfo/misc
+    # files remain, the download is incomplete (missing data files)
+    if not has_archives and not video_present and par2_files:
+        return False, "Download incomplete — only par2 recovery files present, no video or archive data"
     
     return True, f"Post-processing complete ({removed} files cleaned up)"
