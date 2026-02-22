@@ -297,10 +297,9 @@
     opacity: 0.8;
 }
 
-/* Expanded header — subtle indigo tint */
+/* Expanded header — subtle text tint only, no background */
 .nav-group-header.expanded {
     color: rgba(165, 180, 252, 0.85);
-    background: rgba(99, 102, 241, 0.04);
 }
 
 .nav-group-header.expanded .nav-group-icon {
