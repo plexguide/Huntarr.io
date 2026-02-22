@@ -221,6 +221,7 @@ For those who remember where it all started.
 ## Other Projects
 
 - [PlexGuide](https://github.com/plexguide/PlexGuide.com) — Self-hosted server management platform with Docker app store, reverse proxies, and MergerFS
+- [Seekandwatch](https://github.com/softerfish/seekandwatch) — A streamlined media discovery and watchlist tool for finding and tracking content across your media stack
 - [Unraid Intel ARC Deployment](https://github.com/plexguide/Unraid_Intel-ARC_Deployment) — Convert videos to AV1 format
 
 ---
