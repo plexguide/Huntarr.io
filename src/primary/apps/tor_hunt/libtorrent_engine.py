@@ -151,23 +151,36 @@ class TorHuntEngine:
     def _init_session(self):
         """Initialize libtorrent session."""
         port = self._config.get("listen_port", DEFAULT_LISTEN_PORT)
+        enc = self._config.get("encryption_mode", 0)
         settings = {
             'listen_interfaces': f'0.0.0.0:{port},[::0]:{port}',
-            'enable_dht': True,
-            'enable_lsd': True,
-            'enable_natpmp': True,
-            'enable_upnp': True,
+            'enable_dht': self._config.get('enable_dht', True),
+            'enable_lsd': self._config.get('enable_lsd', True),
+            'enable_natpmp': self._config.get('enable_natpmp', True),
+            'enable_upnp': self._config.get('enable_upnp', True),
             'alert_mask': (
                 lt.alert.category_t.error_notification |
                 lt.alert.category_t.status_notification |
                 lt.alert.category_t.storage_notification
             ),
-            'download_rate_limit': self._speed_limit,
-            'connections_limit': 200,
-            'active_downloads': 8,
-            'active_seeds': 10,
-            'active_limit': 20,
+            'download_rate_limit': self._config.get('download_rate_limit', 0),
+            'upload_rate_limit': self._config.get('upload_rate_limit', 0),
+            'connections_limit': self._config.get('max_connections', 200),
+            'active_downloads': self._config.get('active_downloads', 8),
+            'active_seeds': self._config.get('active_seeds', 10),
+            'active_limit': self._config.get('active_limit', 20),
         }
+        # Encryption policy
+        if enc == 1:
+            settings['out_enc_policy'] = lt.enc_policy.forced
+            settings['in_enc_policy'] = lt.enc_policy.forced
+        elif enc == 2:
+            settings['out_enc_policy'] = lt.enc_policy.disabled
+            settings['in_enc_policy'] = lt.enc_policy.disabled
+        else:
+            settings['out_enc_policy'] = lt.enc_policy.enabled
+            settings['in_enc_policy'] = lt.enc_policy.enabled
+
         self._session = lt.session(settings)
         # Bootstrap DHT nodes
         for router, rport in [
@@ -216,9 +229,39 @@ class TorHuntEngine:
         # Apply runtime settings
         if self._session:
             port = cfg.get("listen_port", DEFAULT_LISTEN_PORT)
-            self._session.apply_settings({
-                'listen_interfaces': f'0.0.0.0:{port},[::0]:{port}'
-            })
+            enc = cfg.get("encryption_mode", 0)
+            # 0 = enabled (prefer), 1 = forced, 2 = disabled
+            pe_settings = {}
+            if enc == 1:
+                pe_settings = {
+                    'out_enc_policy': lt.enc_policy.forced,
+                    'in_enc_policy': lt.enc_policy.forced,
+                }
+            elif enc == 2:
+                pe_settings = {
+                    'out_enc_policy': lt.enc_policy.disabled,
+                    'in_enc_policy': lt.enc_policy.disabled,
+                }
+            else:
+                pe_settings = {
+                    'out_enc_policy': lt.enc_policy.enabled,
+                    'in_enc_policy': lt.enc_policy.enabled,
+                }
+            settings = {
+                'listen_interfaces': f'0.0.0.0:{port},[::0]:{port}',
+                'enable_dht': cfg.get('enable_dht', True),
+                'enable_lsd': cfg.get('enable_lsd', True),
+                'enable_upnp': cfg.get('enable_upnp', True),
+                'enable_natpmp': cfg.get('enable_natpmp', True),
+                'connections_limit': cfg.get('max_connections', 200),
+                'active_downloads': cfg.get('active_downloads', 8),
+                'active_seeds': cfg.get('active_seeds', 10),
+                'active_limit': cfg.get('active_limit', 20),
+                'download_rate_limit': cfg.get('download_rate_limit', 0),
+                'upload_rate_limit': cfg.get('upload_rate_limit', 0),
+            }
+            settings.update(pe_settings)
+            self._session.apply_settings(settings)
 
     def _get_download_dir(self) -> str:
         return self._config.get("download_dir", DEFAULT_DOWNLOAD_DIR)

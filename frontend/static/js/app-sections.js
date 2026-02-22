@@ -376,6 +376,9 @@ Object.assign(huntarrUI, {
             if (window.TorHunt && typeof window.TorHunt.init === 'function') {
                 window.TorHunt.init();
             }
+            if (window.TorHunt && typeof window.TorHunt.showView === 'function') {
+                window.TorHunt.showView('downloads');
+            }
         } else if (section === 'tor-hunt-settings' && document.getElementById('tor-hunt-section')) {
             if (this._enableMediaHunt === false) { this.switchSection('home'); return; }
             document.getElementById('tor-hunt-section').classList.add('active');
@@ -385,6 +388,9 @@ Object.assign(huntarrUI, {
             this.showTorHuntSidebar();
             if (window.TorHunt && typeof window.TorHunt.init === 'function') {
                 window.TorHunt.init();
+            }
+            if (window.TorHunt && typeof window.TorHunt.showView === 'function') {
+                window.TorHunt.showView('settings');
             }
         // ── Indexer Hunt sections ──────────────────────────────────────
         } else if (section === 'indexer-hunt' && document.getElementById('indexer-hunt-section')) {

@@ -3,7 +3,9 @@
     <link rel="stylesheet" href="./static/css/tor-hunt.css">
     {% set phb_back_hash = '#home' %}{% set phb_icon = 'fa-magnet' %}{% set phb_section = 'Tor Hunt' %}{% set phb_page = 'Downloads' %}
     {% include 'components/page_header_partial.html' %}
-    <div class="tor-hunt-container">
+
+    <!-- ═══════ Downloads View (tor-hunt-home) ═══════ -->
+    <div class="tor-hunt-container" id="tor-hunt-downloads-view">
 
         <!-- Status bar -->
         <div class="tor-status-bar">
@@ -90,7 +92,130 @@
             </div>
         </div>
 
-    </div>
+    </div><!-- /tor-hunt-downloads-view -->
+
+    <!-- ═══════ Settings View (tor-hunt-settings) ═══════ -->
+    <div class="tor-hunt-container" id="tor-hunt-settings-view" style="display: none;">
+
+        <!-- Save button (top) -->
+        <div class="tor-settings-actions tor-settings-actions-top">
+            <button class="tor-btn tor-btn-primary" id="tor-settings-save-btn"><i class="fas fa-save"></i> Save Settings</button>
+        </div>
+
+        <!-- Directories -->
+        <div class="tor-settings-group">
+            <h3><i class="fas fa-folder-open" style="color: #f59e0b; margin-right: 8px;"></i>Directories</h3>
+            <div class="tor-settings-row">
+                <label for="tor-cfg-download-dir">Download Directory</label>
+                <input type="text" id="tor-cfg-download-dir" placeholder="/downloads/tor-hunt" autocomplete="off">
+                <span class="tor-settings-help">Completed torrents are saved here.</span>
+            </div>
+            <div class="tor-settings-row">
+                <label for="tor-cfg-temp-dir">Incomplete Directory</label>
+                <input type="text" id="tor-cfg-temp-dir" placeholder="/downloads/tor-hunt/incomplete" autocomplete="off">
+                <span class="tor-settings-help">In-progress downloads are stored here until finished.</span>
+            </div>
+        </div>
+
+        <!-- Connection -->
+        <div class="tor-settings-group">
+            <h3><i class="fas fa-network-wired" style="color: #6366f1; margin-right: 8px;"></i>Connection</h3>
+            <div class="tor-settings-row">
+                <label for="tor-cfg-listen-port">Listen Port</label>
+                <input type="number" id="tor-cfg-listen-port" value="6881" min="1024" max="65535">
+                <span class="tor-settings-help">BitTorrent peer port (not the web UI port). Default: 6881.</span>
+            </div>
+            <div class="tor-settings-row">
+                <label for="tor-cfg-max-connections">Max Connections</label>
+                <input type="number" id="tor-cfg-max-connections" value="200" min="10" max="5000">
+                <span class="tor-settings-help">Global connection limit. Default: 200.</span>
+            </div>
+            <div class="tor-settings-row">
+                <label for="tor-cfg-encryption">Encryption</label>
+                <select id="tor-cfg-encryption">
+                    <option value="0">Prefer Encrypted</option>
+                    <option value="1">Require Encrypted</option>
+                    <option value="2">Disabled</option>
+                </select>
+                <span class="tor-settings-help">Peer connection encryption policy.</span>
+            </div>
+        </div>
+
+        <!-- Speed Limits -->
+        <div class="tor-settings-group">
+            <h3><i class="fas fa-tachometer-alt" style="color: #10b981; margin-right: 8px;"></i>Speed Limits</h3>
+            <div class="tor-settings-row">
+                <label for="tor-cfg-dl-limit">Download Limit (KB/s)</label>
+                <input type="number" id="tor-cfg-dl-limit" value="0" min="0">
+                <span class="tor-settings-help">0 = unlimited.</span>
+            </div>
+            <div class="tor-settings-row">
+                <label for="tor-cfg-ul-limit">Upload Limit (KB/s)</label>
+                <input type="number" id="tor-cfg-ul-limit" value="0" min="0">
+                <span class="tor-settings-help">0 = unlimited.</span>
+            </div>
+        </div>
+
+        <!-- Queue Limits -->
+        <div class="tor-settings-group">
+            <h3><i class="fas fa-list-ol" style="color: #a78bfa; margin-right: 8px;"></i>Queue</h3>
+            <div class="tor-settings-row">
+                <label for="tor-cfg-active-downloads">Active Downloads</label>
+                <input type="number" id="tor-cfg-active-downloads" value="8" min="1" max="100">
+                <span class="tor-settings-help">Max simultaneous downloads.</span>
+            </div>
+            <div class="tor-settings-row">
+                <label for="tor-cfg-active-seeds">Active Seeds</label>
+                <input type="number" id="tor-cfg-active-seeds" value="10" min="0" max="100">
+                <span class="tor-settings-help">Max simultaneous seeding torrents.</span>
+            </div>
+            <div class="tor-settings-row">
+                <label for="tor-cfg-active-limit">Active Limit</label>
+                <input type="number" id="tor-cfg-active-limit" value="20" min="1" max="200">
+                <span class="tor-settings-help">Max total active torrents (downloading + seeding).</span>
+            </div>
+        </div>
+
+        <!-- Seeding -->
+        <div class="tor-settings-group">
+            <h3><i class="fas fa-seedling" style="color: #34d399; margin-right: 8px;"></i>Seeding</h3>
+            <div class="tor-settings-row">
+                <label for="tor-cfg-seed-ratio">Seed Ratio Limit</label>
+                <input type="number" id="tor-cfg-seed-ratio" value="0" min="0" step="0.1">
+                <span class="tor-settings-help">Stop seeding after reaching this ratio. 0 = no limit.</span>
+            </div>
+            <div class="tor-settings-row">
+                <label for="tor-cfg-seed-time">Seed Time Limit (minutes)</label>
+                <input type="number" id="tor-cfg-seed-time" value="0" min="0">
+                <span class="tor-settings-help">Stop seeding after this many minutes. 0 = no limit.</span>
+            </div>
+        </div>
+
+        <!-- Network Features -->
+        <div class="tor-settings-group">
+            <h3><i class="fas fa-globe" style="color: #38bdf8; margin-right: 8px;"></i>Network</h3>
+            <div class="tor-settings-row tor-settings-toggle-row">
+                <label for="tor-cfg-dht">DHT (Distributed Hash Table)</label>
+                <label class="tor-toggle"><input type="checkbox" id="tor-cfg-dht" checked><span class="tor-toggle-slider"></span></label>
+                <span class="tor-settings-help">Enables finding peers without a tracker.</span>
+            </div>
+            <div class="tor-settings-row tor-settings-toggle-row">
+                <label for="tor-cfg-lsd">LSD (Local Service Discovery)</label>
+                <label class="tor-toggle"><input type="checkbox" id="tor-cfg-lsd" checked><span class="tor-toggle-slider"></span></label>
+                <span class="tor-settings-help">Find peers on your local network.</span>
+            </div>
+            <div class="tor-settings-row tor-settings-toggle-row">
+                <label for="tor-cfg-upnp">UPnP</label>
+                <label class="tor-toggle"><input type="checkbox" id="tor-cfg-upnp" checked><span class="tor-toggle-slider"></span></label>
+                <span class="tor-settings-help">Automatic port forwarding via UPnP.</span>
+            </div>
+            <div class="tor-settings-row tor-settings-toggle-row">
+                <label for="tor-cfg-natpmp">NAT-PMP</label>
+                <label class="tor-toggle"><input type="checkbox" id="tor-cfg-natpmp" checked><span class="tor-toggle-slider"></span></label>
+                <span class="tor-settings-help">Automatic port forwarding via NAT-PMP.</span>
+            </div>
+        </div>
+    </div><!-- /tor-hunt-settings-view -->
 
     <!-- Add Torrent Modal -->
     <div class="tor-modal-overlay" id="tor-add-modal" style="display: none;">

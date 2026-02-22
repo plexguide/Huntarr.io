@@ -49,6 +49,20 @@ def save_tor_hunt_settings():
             'listen_port': int(data.get('listen_port', 6881)),
             'download_dir': (data.get('download_dir') or '/downloads/tor-hunt').strip(),
             'temp_dir': (data.get('temp_dir') or '/downloads/tor-hunt/incomplete').strip(),
+            'max_connections': int(data.get('max_connections', 200)),
+            'max_uploads': int(data.get('max_uploads', -1)),
+            'active_downloads': int(data.get('active_downloads', 8)),
+            'active_seeds': int(data.get('active_seeds', 10)),
+            'active_limit': int(data.get('active_limit', 20)),
+            'enable_dht': bool(data.get('enable_dht', True)),
+            'enable_lsd': bool(data.get('enable_lsd', True)),
+            'enable_upnp': bool(data.get('enable_upnp', True)),
+            'enable_natpmp': bool(data.get('enable_natpmp', True)),
+            'seed_ratio_limit': float(data.get('seed_ratio_limit', 0)),
+            'seed_time_limit': int(data.get('seed_time_limit', 0)),
+            'download_rate_limit': int(data.get('download_rate_limit', 0)),
+            'upload_rate_limit': int(data.get('upload_rate_limit', 0)),
+            'encryption_mode': int(data.get('encryption_mode', 0)),
         }
         mgr.save_config(cfg)
         return jsonify({"success": True})
