@@ -141,10 +141,14 @@ def load_settings(app_type, use_cache=True):
         settings_logger.error(f"Database error loading {app_type}: {e}")
         try:
             db = get_database()
-            db._check_and_recover_corruption(e)
+            if db._check_and_recover_corruption(e):
+                # Recovery triggered — return defaults instead of crashing
+                settings_logger.warning(f"Returning default settings for {app_type} after corruption recovery")
+                return load_default_app_settings(app_type)
         except Exception:
             pass
-        raise
+        # For non-corruption errors, return defaults to avoid boot loops
+        return load_default_app_settings(app_type)
     
     # Load defaults to check for missing keys
     default_settings = load_default_app_settings(app_type)
@@ -363,47 +367,51 @@ def get_configured_apps() -> List[str]:
     for app_name in KNOWN_APP_TYPES:
         if app_name == 'general':
             continue  # Skip general settings
-        if app_name == 'movie_hunt':
-            try:
-                from src.primary.utils.database import get_database
-                from src.primary.routes.media_hunt.instances import _get_movie_hunt_instance_settings
-                db = get_database()
-                instances = db.get_movie_hunt_instances()
-                for inst in instances:
-                    s = _get_movie_hunt_instance_settings(inst['id'])
-                    if s.get('enabled', True):
-                        configured.append('movie_hunt')
-                        break
-            except Exception:
-                pass
+        try:
+            if app_name == 'movie_hunt':
+                try:
+                    from src.primary.utils.database import get_database
+                    from src.primary.routes.media_hunt.instances import _get_movie_hunt_instance_settings
+                    db = get_database()
+                    instances = db.get_movie_hunt_instances()
+                    for inst in instances:
+                        s = _get_movie_hunt_instance_settings(inst['id'])
+                        if s.get('enabled', True):
+                            configured.append('movie_hunt')
+                            break
+                except Exception:
+                    pass
+                continue
+            if app_name == 'tv_hunt':
+                try:
+                    from src.primary.utils.database import get_database
+                    from src.primary.routes.media_hunt.instances import _get_tv_hunt_instance_settings
+                    db = get_database()
+                    instances = db.get_tv_hunt_instances()
+                    for inst in instances:
+                        s = _get_tv_hunt_instance_settings(inst['id'])
+                        if s.get('enabled', True):
+                            configured.append('tv_hunt')
+                            break
+                except Exception:
+                    pass
+                continue
+            settings = load_settings(app_name)
+            
+            # First check if there are valid instances configured (multi-instance mode)
+            if "instances" in settings and isinstance(settings["instances"], list) and settings["instances"]:
+                for instance in settings["instances"]:
+                    if instance.get("enabled", True) and instance.get("api_url") and instance.get("api_key"):
+                        configured.append(app_name)
+                        break  # One valid instance is enough to consider the app configured
+                continue  # Skip the single-instance check if we already checked instances
+                    
+            # Fallback to legacy single-instance config
+            if settings.get("api_url") and settings.get("api_key"):
+                configured.append(app_name)
+        except Exception as e:
+            settings_logger.error(f"Error checking configuration for {app_name}: {e}")
             continue
-        if app_name == 'tv_hunt':
-            try:
-                from src.primary.utils.database import get_database
-                from src.primary.routes.media_hunt.instances import _get_tv_hunt_instance_settings
-                db = get_database()
-                instances = db.get_tv_hunt_instances()
-                for inst in instances:
-                    s = _get_tv_hunt_instance_settings(inst['id'])
-                    if s.get('enabled', True):
-                        configured.append('tv_hunt')
-                        break
-            except Exception:
-                pass
-            continue
-        settings = load_settings(app_name)
-        
-        # First check if there are valid instances configured (multi-instance mode)
-        if "instances" in settings and isinstance(settings["instances"], list) and settings["instances"]:
-            for instance in settings["instances"]:
-                if instance.get("enabled", True) and instance.get("api_url") and instance.get("api_key"):
-                    configured.append(app_name)
-                    break  # One valid instance is enough to consider the app configured
-            continue  # Skip the single-instance check if we already checked instances
-                
-        # Fallback to legacy single-instance config
-        if settings.get("api_url") and settings.get("api_key"):
-            configured.append(app_name)
     
     return configured
 

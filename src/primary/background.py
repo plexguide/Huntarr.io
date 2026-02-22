@@ -1009,7 +1009,11 @@ def reset_app_cycle(app_type: str) -> bool:
 
 def start_app_threads():
     """Start threads for all configured and enabled apps."""
-    configured_apps_list = settings_manager.get_configured_apps() # Corrected function name
+    try:
+        configured_apps_list = settings_manager.get_configured_apps()
+    except Exception as e:
+        logger.error(f"Failed to get configured apps (database may be recovering): {e}")
+        return
     configured_apps = {app: True for app in configured_apps_list} # Convert list to dict format expected below
 
     for app_type, is_configured in configured_apps.items():
@@ -1872,8 +1876,10 @@ def start_huntarr():
     try:
         # Main loop: Start and monitor app threads
         while not stop_event.is_set():
-            start_app_threads() # Start/Restart threads for configured apps
-            # check_and_restart_threads() # This is implicitly handled by start_app_threads checking is_alive
+            try:
+                start_app_threads() # Start/Restart threads for configured apps
+            except Exception as thread_err:
+                logger.error(f"Error in start_app_threads (will retry next cycle): {thread_err}")
             stop_event.wait(15) # Check for stop signal every 15 seconds
 
     except Exception as e:

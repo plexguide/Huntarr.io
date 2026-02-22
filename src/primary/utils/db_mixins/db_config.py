@@ -13,20 +13,41 @@ class ConfigMixin:
 
     def get_app_config(self, app_type: str) -> Optional[Dict[str, Any]]:
         """Get app configuration from database"""
-        with self.get_connection() as conn:
-            cursor = conn.execute(
-                'SELECT config_data FROM app_configs WHERE app_type = ?',
-                (app_type,)
-            )
-            row = cursor.fetchone()
-            
-            if row:
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.execute(
+                    'SELECT config_data FROM app_configs WHERE app_type = ?',
+                    (app_type,)
+                )
+                row = cursor.fetchone()
+                
+                if row:
+                    try:
+                        return json.loads(row[0])
+                    except json.JSONDecodeError as e:
+                        logger.error(f"Failed to parse JSON for {app_type}: {e}")
+                        return None
+                return None
+        except sqlite3.DatabaseError as e:
+            if self._check_and_recover_corruption(e):
+                # Retry once after recovery
                 try:
-                    return json.loads(row[0])
-                except json.JSONDecodeError as e:
-                    logger.error(f"Failed to parse JSON for {app_type}: {e}")
+                    with self.get_connection() as conn:
+                        cursor = conn.execute(
+                            'SELECT config_data FROM app_configs WHERE app_type = ?',
+                            (app_type,)
+                        )
+                        row = cursor.fetchone()
+                        if row:
+                            try:
+                                return json.loads(row[0])
+                            except json.JSONDecodeError:
+                                return None
+                        return None
+                except Exception:
+                    logger.error(f"get_app_config retry failed for {app_type} after corruption recovery")
                     return None
-            return None
+            raise
     
     def save_app_config(self, app_type: str, config_data: Dict[str, Any]):
         """Save app configuration to database"""

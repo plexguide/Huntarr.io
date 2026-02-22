@@ -652,10 +652,35 @@ class HuntarrDatabase(ConfigMixin, StateMixin, UsersMixin, RequestarrMixin, Extr
                 conn = sqlite3.connect(self.db_path, timeout=30)
                 conn.execute('PRAGMA busy_timeout = 30000')
                 result = conn.execute("PRAGMA quick_check").fetchone()
-                conn.close()
                 if result and result[0] != 'ok':
+                    conn.close()
                     logger.error(f"Database quick_check failed on startup: {result[0]}. Attempting recovery...")
                     self._handle_database_corruption()
+                else:
+                    # quick_check passed, but also test actual data reads
+                    # quick_check only validates B-tree structure, not data pages
+                    try:
+                        conn.execute("SELECT COUNT(*) FROM sqlite_master").fetchone()
+                        # Try reading from a known table if it exists
+                        tables = [r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()]
+                        if 'app_configs' in tables:
+                            conn.execute("SELECT app_type FROM app_configs LIMIT 1").fetchone()
+                        if 'general_settings' in tables:
+                            conn.execute("SELECT setting_key FROM general_settings LIMIT 1").fetchone()
+                    except (sqlite3.DatabaseError, sqlite3.OperationalError) as data_err:
+                        error_str = str(data_err).lower()
+                        if "malformed" in error_str or "not a database" in error_str or "corrupt" in error_str:
+                            logger.error(f"Database data corruption detected on startup: {data_err}. Attempting recovery...")
+                            conn.close()
+                            self._handle_database_corruption()
+                            return  # ensure_database_exists will be called again via _trigger_corruption_recovery
+                        else:
+                            logger.warning(f"Database data read warning on startup: {data_err}")
+                    finally:
+                        try:
+                            conn.close()
+                        except Exception:
+                            pass
             except (sqlite3.DatabaseError, sqlite3.OperationalError) as e:
                 error_str = str(e).lower()
                 if "malformed" in error_str or "not a database" in error_str:
@@ -1655,6 +1680,38 @@ class LogsDatabase:
     
     def ensure_logs_database_exists(self):
         """Create logs database and tables if they don't exist"""
+        # Quick integrity check on startup
+        if self.db_path.exists():
+            try:
+                conn = sqlite3.connect(self.db_path, timeout=30)
+                conn.execute('PRAGMA busy_timeout = 30000')
+                result = conn.execute("PRAGMA quick_check").fetchone()
+                if result and result[0] != 'ok':
+                    conn.close()
+                    logger.error(f"Logs database quick_check failed on startup: {result[0]}. Recovering...")
+                    self._handle_logs_database_corruption()
+                else:
+                    # Also test actual data read
+                    try:
+                        tables = [r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()]
+                        if 'logs' in tables:
+                            conn.execute("SELECT id FROM logs LIMIT 1").fetchone()
+                    except (sqlite3.DatabaseError, sqlite3.OperationalError) as data_err:
+                        err_str = str(data_err).lower()
+                        if "malformed" in err_str or "not a database" in err_str:
+                            logger.error(f"Logs database data corruption on startup: {data_err}. Recovering...")
+                            conn.close()
+                            self._handle_logs_database_corruption()
+                        else:
+                            conn.close()
+                    else:
+                        conn.close()
+            except (sqlite3.DatabaseError, sqlite3.OperationalError) as e:
+                err_str = str(e).lower()
+                if "malformed" in err_str or "not a database" in err_str:
+                    logger.error(f"Logs database corruption on startup: {e}. Recovering...")
+                    self._handle_logs_database_corruption()
+        
         try:
             with self.get_logs_connection() as conn:
                 # Create logs table
@@ -1735,6 +1792,28 @@ class LogsDatabase:
                     VALUES (?, ?, ?, ?, ?, ?)
                 ''', (timestamp, level, level_num, app_type, message, logger_name))
                 conn.commit()
+        except sqlite3.DatabaseError as db_err:
+            err_str = str(db_err).lower()
+            if "malformed" in err_str or "not a database" in err_str or "disk i/o error" in err_str:
+                # Trigger one-time recovery for corrupted logs DB
+                if not getattr(self, '_logs_recovery_attempted', False):
+                    self._logs_recovery_attempted = True
+                    print(f"Logs database corruption detected, recovering: {db_err}")
+                    try:
+                        self._handle_logs_database_corruption()
+                        self.ensure_logs_database_exists()
+                        # Invalidate thread-local connection
+                        if hasattr(self, '_thread_local') and hasattr(self._thread_local, 'conn'):
+                            try:
+                                self._thread_local.conn.close()
+                            except Exception:
+                                pass
+                            self._thread_local.conn = None
+                        print("Logs database recovered successfully")
+                    except Exception as recovery_err:
+                        print(f"Logs database recovery failed: {recovery_err}")
+            else:
+                print(f"Error inserting log: {db_err}")
         except Exception as e:
             # Don't let log insertion failures crash the app
             print(f"Error inserting log: {e}")
