@@ -316,16 +316,8 @@ button.reqset-back-btn {
     box-sizing: border-box !important;
 }
 
-#instanceEditorSection .editor-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(360px, 1fr));
-    gap: 22px;
-    padding: 0;
-    width: 100%;
-    align-items: start;
-}
-
-/* Instance editor + settings pages: single-column stack for readability */
+/* All editor grids: single-column stack for readability */
+#instanceEditorSection .editor-grid,
 #movieHuntInstanceEditorSection .editor-grid,
 #mediaHuntInstanceEditorSection .editor-grid,
 #movieManagementSection .editor-grid,
@@ -928,22 +920,6 @@ button.reqset-back-btn {
     #mediaHuntInstanceEditorContainer {
         padding: 16px 12px;
         padding-bottom: 100px;
-    }
-
-    #instanceEditorSection .instance-editor-header,
-    #movieHuntInstanceEditorSection .instance-editor-header,
-    #mediaHuntInstanceEditorSection .instance-editor-header,
-    #movieManagementSection .instance-editor-header,
-    #mediaHuntProfilesSection .instance-editor-header {
-        /* Handled by Universal Mobile Header Truth in components.css */
-    }
-
-    .instance-editor-nav {
-        /* Handled by Universal Mobile Header Truth in components.css */
-    }
-
-    .instance-editor-breadcrumb {
-        /* Handled by Universal Mobile Header Truth in components.css */
     }
 
     #instanceEditorSection .editor-section,

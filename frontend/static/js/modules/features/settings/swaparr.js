@@ -1,7 +1,7 @@
-(function() {
+(function () {
     window.SettingsForms = window.SettingsForms || {};
 
-    window.SettingsForms.generateSwaparrForm = function(container, settings = {}) {
+    window.SettingsForms.generateSwaparrForm = function (container, settings = {}) {
         if (!settings || typeof settings !== "object") {
             settings = {};
         }
@@ -98,15 +98,11 @@
                 
                 <div class="setting-item">
                     <label for="swaparr_enabled">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparr" class="info-icon" title="Enable or disable Swaparr" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Enable Swaparr:
                     </label>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="swaparr_enabled" ${
-                          settings.enabled === true ? "checked" : ""
-                        }>
+                        <input type="checkbox" id="swaparr_enabled" ${settings.enabled === true ? "checked" : ""
+            }>
                         <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Enable automatic removal of stalled downloads</p>
@@ -114,54 +110,38 @@
                 
                 <div class="setting-item">
                     <label for="swaparr_max_strikes">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparr" class="info-icon" title="Number of strikes before removal" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Max Strikes:
                     </label>
-                    <input type="number" id="swaparr_max_strikes" min="1" max="10" value="${
-                      settings.max_strikes || 3
-                    }">
+                    <input type="number" id="swaparr_max_strikes" min="1" max="10" value="${settings.max_strikes || 3
+            }">
                     <p class="setting-help">Number of strikes a download gets before being removed (default: 3)</p>
                 </div>
                 
                 <div class="setting-item">
                     <label for="swaparr_max_download_time">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparr" class="info-icon" title="Maximum time before considering download stalled" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Max Download Time:
                     </label>
-                    <input type="text" id="swaparr_max_download_time" value="${
-                      settings.max_download_time || "2h"
-                    }" placeholder="e.g., 2h, 120m, 7200s">
+                    <input type="text" id="swaparr_max_download_time" value="${settings.max_download_time || "2h"
+            }" placeholder="e.g., 2h, 120m, 7200s">
                     <p class="setting-help">Maximum time before considering a download stalled (examples: 2h, 120m, 7200s)</p>
                 </div>
                 
                 <div class="setting-item">
                     <label for="swaparr_ignore_above_size">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparr" class="info-icon" title="Ignore downloads larger than this size" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Ignore Above Size:
                     </label>
-                    <input type="text" id="swaparr_ignore_above_size" value="${
-                      settings.ignore_above_size || "25GB"
-                    }" placeholder="e.g., 25GB, 10GB, 5000MB">
+                    <input type="text" id="swaparr_ignore_above_size" value="${settings.ignore_above_size || "25GB"
+            }" placeholder="e.g., 25GB, 10GB, 5000MB">
                     <p class="setting-help">Ignore downloads larger than this size (examples: 25GB, 10GB, 5000MB)</p>
                 </div>
                 
                 <div class="setting-item">
                     <label for="swaparr_remove_from_client">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparr" class="info-icon" title="Remove downloads from download client" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Remove from Client:
                     </label>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="swaparr_remove_from_client" ${
-                          settings.remove_from_client !== false ? "checked" : ""
-                        }>
+                        <input type="checkbox" id="swaparr_remove_from_client" ${settings.remove_from_client !== false ? "checked" : ""
+            }>
                         <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Also remove downloads from the download client (recommended: enabled)</p>
@@ -169,15 +149,11 @@
                 
                 <div class="setting-item">
                     <label for="swaparr_research_removed">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparr" class="info-icon" title="Automatically blocklist and re-search removed downloads" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Re-Search Removed Download:
                     </label>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="swaparr_research_removed" ${
-                          settings.research_removed === true ? "checked" : ""
-                        }>
+                        <input type="checkbox" id="swaparr_research_removed" ${settings.research_removed === true ? "checked" : ""
+            }>
                         <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">When a download is removed, blocklist it in the *arr app and automatically search for alternatives (retry once)</p>
@@ -185,17 +161,13 @@
                 
                 <div class="setting-item">
                     <label for="swaparr_failed_import_detection">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparr" class="info-icon" title="Automatically handle failed imports" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Handle Failed Imports:
                     </label>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="swaparr_failed_import_detection" ${
-                          settings.failed_import_detection === true
-                            ? "checked"
-                            : ""
-                        }>
+                        <input type="checkbox" id="swaparr_failed_import_detection" ${settings.failed_import_detection === true
+                ? "checked"
+                : ""
+            }>
                         <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Automatically detect failed imports, blocklist them, and search for alternatives</p>
@@ -203,15 +175,11 @@
                 
                 <div class="setting-item">
                     <label for="swaparr_dry_run">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrdry-run-mode" class="info-icon" title="Test mode - no actual removals" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Dry Run Mode:
                     </label>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="swaparr_dry_run" ${
-                          settings.dry_run === true ? "checked" : ""
-                        }>
+                        <input type="checkbox" id="swaparr_dry_run" ${settings.dry_run === true ? "checked" : ""
+            }>
                         <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Test mode - logs what would be removed without actually removing anything</p>
@@ -219,15 +187,11 @@
                 
                 <div class="setting-item">
                     <label for="swaparr_ignore_usenet_queued">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrignore-usenet-queued" class="info-icon" title="Ignore queued usenet downloads with 0% progress" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Ignore Queued Usenet:
                     </label>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="swaparr_ignore_usenet_queued" ${
-                          settings.ignore_usenet_queued !== false ? "checked" : ""
-                        }>
+                        <input type="checkbox" id="swaparr_ignore_usenet_queued" ${settings.ignore_usenet_queued !== false ? "checked" : ""
+            }>
                         <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Ignore usenet downloads with 0% progress to avoid false positives from sequential queue ETAs (recommended: enabled)</p>
@@ -235,15 +199,11 @@
                 
                 <div class="setting-item">
                     <label for="swaparr_remove_completed_stalled">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrremove-completed-stalled" class="info-icon" title="Treat 100% complete downloads as stalled" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Remove Completed (100%) Stalled:
                     </label>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="swaparr_remove_completed_stalled" ${
-                          settings.remove_completed_stalled !== false ? "checked" : ""
-                        }>
+                        <input type="checkbox" id="swaparr_remove_completed_stalled" ${settings.remove_completed_stalled !== false ? "checked" : ""
+            }>
                         <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">When enabled (default), Swaparr can remove 100% complete downloads after max strikes if they are stuck. When disabled, downloads that are 100% complete but waiting for manual import (e.g. name/year mismatch) are left alone.</p>
@@ -251,17 +211,13 @@
                 
                 <div class="setting-item">
                     <label for="swaparr_sleep_duration">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrsleep-duration" class="info-icon" title="Time between Swaparr cycles" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Sleep Duration (Minutes):
                     </label>
                     <div class="input-group" style="display: flex; align-items: center; gap: 10px;">
-                        <input type="number" id="swaparr_sleep_duration" value="${
-                          settings.sleep_duration
-                            ? Math.round(settings.sleep_duration / 60)
-                            : 15
-                        }" min="10" max="1440" style="width: 120px;">
+                        <input type="number" id="swaparr_sleep_duration" value="${settings.sleep_duration
+                ? Math.round(settings.sleep_duration / 60)
+                : 15
+            }" min="10" max="1440" style="width: 120px;">
                         <span style="color: #9ca3af; font-size: 14px;">minutes</span>
                     </div>
                     <p class="setting-help">Time to wait between Swaparr processing cycles (minimum 10 minutes, default: 15 minutes)</p>
@@ -277,17 +233,13 @@
                 
                 <div class="setting-item">
                     <label for="swaparr_malicious_detection">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrmalicious-file-detection" class="info-icon" title="Enable malicious file detection" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Malicious File Detection:
                     </label>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="swaparr_malicious_detection" ${
-                          settings.malicious_file_detection === true
-                            ? "checked"
-                            : ""
-                        }>
+                        <input type="checkbox" id="swaparr_malicious_detection" ${settings.malicious_file_detection === true
+                ? "checked"
+                : ""
+            }>
                         <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Automatically detect and immediately remove downloads with malicious file types</p>
@@ -295,9 +247,6 @@
                 
                 <div class="setting-item">
                     <label for="swaparr_malicious_extensions_input">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrmalicious-extensions" class="info-icon" title="File extensions to consider malicious" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Malicious File Extensions:
                     </label>
                     <div class="tag-input-container">
@@ -314,9 +263,6 @@
                 
                 <div class="setting-item">
                     <label for="swaparr_suspicious_patterns_input">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrsuspicious-patterns" class="info-icon" title="Suspicious filename patterns" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Suspicious Patterns:
                     </label>
                     <div class="tag-input-container">
@@ -340,15 +286,11 @@
                 
                 <div class="setting-item">
                     <label for="swaparr_age_based_removal">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrage-based-removal" class="info-icon" title="Enable age-based removal" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Enable Age-Based Removal:
                     </label>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="swaparr_age_based_removal" ${
-                          settings.age_based_removal === true ? "checked" : ""
-                        }>
+                        <input type="checkbox" id="swaparr_age_based_removal" ${settings.age_based_removal === true ? "checked" : ""
+            }>
                         <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Remove downloads that have been stuck longer than the specified age limit</p>
@@ -356,14 +298,10 @@
                 
                 <div class="setting-item">
                     <label for="swaparr_max_age_days">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrmax-age-days" class="info-icon" title="Maximum age before removal" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Maximum Age (Days):
                     </label>
-                    <input type="number" id="swaparr_max_age_days" min="1" max="30" value="${
-                      settings.max_age_days || 7
-                    }">
+                    <input type="number" id="swaparr_max_age_days" min="1" max="30" value="${settings.max_age_days || 7
+            }">
                     <p class="setting-help">Remove downloads older than this many days (default: 7 days)</p>
                 </div>
             </div>
@@ -376,17 +314,13 @@
                 
                 <div class="setting-item">
                     <label for="swaparr_quality_based_removal">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrquality-based-removal" class="info-icon" title="Enable quality-based filtering" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Enable Quality-Based Filtering:
                     </label>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="swaparr_quality_based_removal" ${
-                          settings.quality_based_removal === true
-                            ? "checked"
-                            : ""
-                        }>
+                        <input type="checkbox" id="swaparr_quality_based_removal" ${settings.quality_based_removal === true
+                ? "checked"
+                : ""
+            }>
                         <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Automatically remove downloads with blocked quality patterns in their names</p>
@@ -394,9 +328,6 @@
                 
                 <div class="setting-item">
                     <label for="swaparr_quality_patterns_input">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrblocked-quality-patterns" class="info-icon" title="Quality patterns to block" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Blocked Quality Patterns:
                     </label>
                     <div class="tag-input-container">
@@ -455,7 +386,7 @@
         }
     };
 
-    window.SettingsForms.loadSwaparrStarCount = function() {
+    window.SettingsForms.loadSwaparrStarCount = function () {
         const starsElement = document.getElementById("swaparr-stars-count");
         if (!starsElement) return;
 
@@ -507,7 +438,7 @@
             });
     };
 
-    window.SettingsForms.initializeTagSystem = function(settings) {
+    window.SettingsForms.initializeTagSystem = function (settings) {
         const defaultExtensions = [".lnk", ".exe", ".bat", ".cmd", ".scr", ".pif", ".com", ".zipx", ".jar", ".vbs", ".js", ".jse", ".wsf", ".wsh"];
         const extensions = settings.malicious_extensions || defaultExtensions;
         window.SettingsForms.loadTags("swaparr_malicious_extensions_tags", extensions);
@@ -555,7 +486,7 @@
         // The inline onclicks in HTML above use window.SettingsForms.add*Tag()
     };
 
-    window.SettingsForms.loadTags = function(containerId, tags) {
+    window.SettingsForms.loadTags = function (containerId, tags) {
         const container = document.getElementById(containerId);
         if (!container) return;
 
@@ -565,7 +496,7 @@
         });
     };
 
-    window.SettingsForms.createTagElement = function(container, text) {
+    window.SettingsForms.createTagElement = function (container, text) {
         const tagDiv = document.createElement("div");
         tagDiv.className = "tag-item";
         tagDiv.innerHTML = `
@@ -577,7 +508,7 @@
         container.appendChild(tagDiv);
     };
 
-    window.SettingsForms.addExtensionTag = function() {
+    window.SettingsForms.addExtensionTag = function () {
         const input = document.getElementById("swaparr_malicious_extensions_input");
         const container = document.getElementById("swaparr_malicious_extensions_tags");
 
@@ -600,7 +531,7 @@
         input.value = "";
     };
 
-    window.SettingsForms.addPatternTag = function() {
+    window.SettingsForms.addPatternTag = function () {
         const input = document.getElementById("swaparr_suspicious_patterns_input");
         const container = document.getElementById("swaparr_suspicious_patterns_tags");
 
@@ -619,7 +550,7 @@
         input.value = "";
     };
 
-    window.SettingsForms.addQualityTag = function() {
+    window.SettingsForms.addQualityTag = function () {
         const input = document.getElementById("swaparr_quality_patterns_input");
         const container = document.getElementById("swaparr_quality_patterns_tags");
 
@@ -638,7 +569,7 @@
         input.value = "";
     };
 
-    window.SettingsForms.setupSwaparrManualSave = function(container, originalSettings = {}) {
+    window.SettingsForms.setupSwaparrManualSave = function (container, originalSettings = {}) {
         const saveButton = container.querySelector("#swaparr-save-button");
         if (!saveButton) return;
 
@@ -695,7 +626,7 @@
 
             // Collect data
             const settings = { ...originalSettings };
-            
+
             const enabled = document.getElementById("swaparr_enabled");
             if (enabled) settings.enabled = enabled.checked;
 
@@ -754,7 +685,7 @@
 
             // Save
             window.SettingsForms.saveAppSettings("swaparr", settings);
-            
+
             // Reset UI state
             newSaveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes';
             updateSaveButtonState(false);

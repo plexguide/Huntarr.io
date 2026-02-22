@@ -3098,10 +3098,10 @@ document.head.appendChild(styleEl);
 
 
 /* === modules/features/settings/swaparr.js === */
-(function() {
+(function () {
     window.SettingsForms = window.SettingsForms || {};
 
-    window.SettingsForms.generateSwaparrForm = function(container, settings = {}) {
+    window.SettingsForms.generateSwaparrForm = function (container, settings = {}) {
         if (!settings || typeof settings !== "object") {
             settings = {};
         }
@@ -3198,15 +3198,11 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_enabled">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparr" class="info-icon" title="Enable or disable Swaparr" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Enable Swaparr:
                     </label>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="swaparr_enabled" ${
-                          settings.enabled === true ? "checked" : ""
-                        }>
+                        <input type="checkbox" id="swaparr_enabled" ${settings.enabled === true ? "checked" : ""
+            }>
                         <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Enable automatic removal of stalled downloads</p>
@@ -3214,54 +3210,38 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_max_strikes">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparr" class="info-icon" title="Number of strikes before removal" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Max Strikes:
                     </label>
-                    <input type="number" id="swaparr_max_strikes" min="1" max="10" value="${
-                      settings.max_strikes || 3
-                    }">
+                    <input type="number" id="swaparr_max_strikes" min="1" max="10" value="${settings.max_strikes || 3
+            }">
                     <p class="setting-help">Number of strikes a download gets before being removed (default: 3)</p>
                 </div>
                 
                 <div class="setting-item">
                     <label for="swaparr_max_download_time">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparr" class="info-icon" title="Maximum time before considering download stalled" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Max Download Time:
                     </label>
-                    <input type="text" id="swaparr_max_download_time" value="${
-                      settings.max_download_time || "2h"
-                    }" placeholder="e.g., 2h, 120m, 7200s">
+                    <input type="text" id="swaparr_max_download_time" value="${settings.max_download_time || "2h"
+            }" placeholder="e.g., 2h, 120m, 7200s">
                     <p class="setting-help">Maximum time before considering a download stalled (examples: 2h, 120m, 7200s)</p>
                 </div>
                 
                 <div class="setting-item">
                     <label for="swaparr_ignore_above_size">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparr" class="info-icon" title="Ignore downloads larger than this size" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Ignore Above Size:
                     </label>
-                    <input type="text" id="swaparr_ignore_above_size" value="${
-                      settings.ignore_above_size || "25GB"
-                    }" placeholder="e.g., 25GB, 10GB, 5000MB">
+                    <input type="text" id="swaparr_ignore_above_size" value="${settings.ignore_above_size || "25GB"
+            }" placeholder="e.g., 25GB, 10GB, 5000MB">
                     <p class="setting-help">Ignore downloads larger than this size (examples: 25GB, 10GB, 5000MB)</p>
                 </div>
                 
                 <div class="setting-item">
                     <label for="swaparr_remove_from_client">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparr" class="info-icon" title="Remove downloads from download client" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Remove from Client:
                     </label>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="swaparr_remove_from_client" ${
-                          settings.remove_from_client !== false ? "checked" : ""
-                        }>
+                        <input type="checkbox" id="swaparr_remove_from_client" ${settings.remove_from_client !== false ? "checked" : ""
+            }>
                         <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Also remove downloads from the download client (recommended: enabled)</p>
@@ -3269,15 +3249,11 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_research_removed">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparr" class="info-icon" title="Automatically blocklist and re-search removed downloads" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Re-Search Removed Download:
                     </label>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="swaparr_research_removed" ${
-                          settings.research_removed === true ? "checked" : ""
-                        }>
+                        <input type="checkbox" id="swaparr_research_removed" ${settings.research_removed === true ? "checked" : ""
+            }>
                         <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">When a download is removed, blocklist it in the *arr app and automatically search for alternatives (retry once)</p>
@@ -3285,17 +3261,13 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_failed_import_detection">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparr" class="info-icon" title="Automatically handle failed imports" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Handle Failed Imports:
                     </label>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="swaparr_failed_import_detection" ${
-                          settings.failed_import_detection === true
-                            ? "checked"
-                            : ""
-                        }>
+                        <input type="checkbox" id="swaparr_failed_import_detection" ${settings.failed_import_detection === true
+                ? "checked"
+                : ""
+            }>
                         <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Automatically detect failed imports, blocklist them, and search for alternatives</p>
@@ -3303,15 +3275,11 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_dry_run">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrdry-run-mode" class="info-icon" title="Test mode - no actual removals" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Dry Run Mode:
                     </label>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="swaparr_dry_run" ${
-                          settings.dry_run === true ? "checked" : ""
-                        }>
+                        <input type="checkbox" id="swaparr_dry_run" ${settings.dry_run === true ? "checked" : ""
+            }>
                         <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Test mode - logs what would be removed without actually removing anything</p>
@@ -3319,15 +3287,11 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_ignore_usenet_queued">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrignore-usenet-queued" class="info-icon" title="Ignore queued usenet downloads with 0% progress" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Ignore Queued Usenet:
                     </label>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="swaparr_ignore_usenet_queued" ${
-                          settings.ignore_usenet_queued !== false ? "checked" : ""
-                        }>
+                        <input type="checkbox" id="swaparr_ignore_usenet_queued" ${settings.ignore_usenet_queued !== false ? "checked" : ""
+            }>
                         <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Ignore usenet downloads with 0% progress to avoid false positives from sequential queue ETAs (recommended: enabled)</p>
@@ -3335,15 +3299,11 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_remove_completed_stalled">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrremove-completed-stalled" class="info-icon" title="Treat 100% complete downloads as stalled" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Remove Completed (100%) Stalled:
                     </label>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="swaparr_remove_completed_stalled" ${
-                          settings.remove_completed_stalled !== false ? "checked" : ""
-                        }>
+                        <input type="checkbox" id="swaparr_remove_completed_stalled" ${settings.remove_completed_stalled !== false ? "checked" : ""
+            }>
                         <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">When enabled (default), Swaparr can remove 100% complete downloads after max strikes if they are stuck. When disabled, downloads that are 100% complete but waiting for manual import (e.g. name/year mismatch) are left alone.</p>
@@ -3351,17 +3311,13 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_sleep_duration">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrsleep-duration" class="info-icon" title="Time between Swaparr cycles" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Sleep Duration (Minutes):
                     </label>
                     <div class="input-group" style="display: flex; align-items: center; gap: 10px;">
-                        <input type="number" id="swaparr_sleep_duration" value="${
-                          settings.sleep_duration
-                            ? Math.round(settings.sleep_duration / 60)
-                            : 15
-                        }" min="10" max="1440" style="width: 120px;">
+                        <input type="number" id="swaparr_sleep_duration" value="${settings.sleep_duration
+                ? Math.round(settings.sleep_duration / 60)
+                : 15
+            }" min="10" max="1440" style="width: 120px;">
                         <span style="color: #9ca3af; font-size: 14px;">minutes</span>
                     </div>
                     <p class="setting-help">Time to wait between Swaparr processing cycles (minimum 10 minutes, default: 15 minutes)</p>
@@ -3377,17 +3333,13 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_malicious_detection">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrmalicious-file-detection" class="info-icon" title="Enable malicious file detection" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Malicious File Detection:
                     </label>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="swaparr_malicious_detection" ${
-                          settings.malicious_file_detection === true
-                            ? "checked"
-                            : ""
-                        }>
+                        <input type="checkbox" id="swaparr_malicious_detection" ${settings.malicious_file_detection === true
+                ? "checked"
+                : ""
+            }>
                         <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Automatically detect and immediately remove downloads with malicious file types</p>
@@ -3395,9 +3347,6 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_malicious_extensions_input">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrmalicious-extensions" class="info-icon" title="File extensions to consider malicious" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Malicious File Extensions:
                     </label>
                     <div class="tag-input-container">
@@ -3414,9 +3363,6 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_suspicious_patterns_input">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrsuspicious-patterns" class="info-icon" title="Suspicious filename patterns" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Suspicious Patterns:
                     </label>
                     <div class="tag-input-container">
@@ -3440,15 +3386,11 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_age_based_removal">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrage-based-removal" class="info-icon" title="Enable age-based removal" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Enable Age-Based Removal:
                     </label>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="swaparr_age_based_removal" ${
-                          settings.age_based_removal === true ? "checked" : ""
-                        }>
+                        <input type="checkbox" id="swaparr_age_based_removal" ${settings.age_based_removal === true ? "checked" : ""
+            }>
                         <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Remove downloads that have been stuck longer than the specified age limit</p>
@@ -3456,14 +3398,10 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_max_age_days">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrmax-age-days" class="info-icon" title="Maximum age before removal" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Maximum Age (Days):
                     </label>
-                    <input type="number" id="swaparr_max_age_days" min="1" max="30" value="${
-                      settings.max_age_days || 7
-                    }">
+                    <input type="number" id="swaparr_max_age_days" min="1" max="30" value="${settings.max_age_days || 7
+            }">
                     <p class="setting-help">Remove downloads older than this many days (default: 7 days)</p>
                 </div>
             </div>
@@ -3476,17 +3414,13 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_quality_based_removal">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrquality-based-removal" class="info-icon" title="Enable quality-based filtering" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Enable Quality-Based Filtering:
                     </label>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="swaparr_quality_based_removal" ${
-                          settings.quality_based_removal === true
-                            ? "checked"
-                            : ""
-                        }>
+                        <input type="checkbox" id="swaparr_quality_based_removal" ${settings.quality_based_removal === true
+                ? "checked"
+                : ""
+            }>
                         <span class="toggle-slider"></span>
                     </label>
                     <p class="setting-help">Automatically remove downloads with blocked quality patterns in their names</p>
@@ -3494,9 +3428,6 @@ document.head.appendChild(styleEl);
                 
                 <div class="setting-item">
                     <label for="swaparr_quality_patterns_input">
-                        <a href="https://plexguide.github.io/Huntarr.io/apps/index.html#swaparrblocked-quality-patterns" class="info-icon" title="Quality patterns to block" target="_blank" rel="noopener">
-                            <i class="fas fa-info-circle"></i>
-                        </a>
                         Blocked Quality Patterns:
                     </label>
                     <div class="tag-input-container">
@@ -3555,7 +3486,7 @@ document.head.appendChild(styleEl);
         }
     };
 
-    window.SettingsForms.loadSwaparrStarCount = function() {
+    window.SettingsForms.loadSwaparrStarCount = function () {
         const starsElement = document.getElementById("swaparr-stars-count");
         if (!starsElement) return;
 
@@ -3607,7 +3538,7 @@ document.head.appendChild(styleEl);
             });
     };
 
-    window.SettingsForms.initializeTagSystem = function(settings) {
+    window.SettingsForms.initializeTagSystem = function (settings) {
         const defaultExtensions = [".lnk", ".exe", ".bat", ".cmd", ".scr", ".pif", ".com", ".zipx", ".jar", ".vbs", ".js", ".jse", ".wsf", ".wsh"];
         const extensions = settings.malicious_extensions || defaultExtensions;
         window.SettingsForms.loadTags("swaparr_malicious_extensions_tags", extensions);
@@ -3655,7 +3586,7 @@ document.head.appendChild(styleEl);
         // The inline onclicks in HTML above use window.SettingsForms.add*Tag()
     };
 
-    window.SettingsForms.loadTags = function(containerId, tags) {
+    window.SettingsForms.loadTags = function (containerId, tags) {
         const container = document.getElementById(containerId);
         if (!container) return;
 
@@ -3665,7 +3596,7 @@ document.head.appendChild(styleEl);
         });
     };
 
-    window.SettingsForms.createTagElement = function(container, text) {
+    window.SettingsForms.createTagElement = function (container, text) {
         const tagDiv = document.createElement("div");
         tagDiv.className = "tag-item";
         tagDiv.innerHTML = `
@@ -3677,7 +3608,7 @@ document.head.appendChild(styleEl);
         container.appendChild(tagDiv);
     };
 
-    window.SettingsForms.addExtensionTag = function() {
+    window.SettingsForms.addExtensionTag = function () {
         const input = document.getElementById("swaparr_malicious_extensions_input");
         const container = document.getElementById("swaparr_malicious_extensions_tags");
 
@@ -3700,7 +3631,7 @@ document.head.appendChild(styleEl);
         input.value = "";
     };
 
-    window.SettingsForms.addPatternTag = function() {
+    window.SettingsForms.addPatternTag = function () {
         const input = document.getElementById("swaparr_suspicious_patterns_input");
         const container = document.getElementById("swaparr_suspicious_patterns_tags");
 
@@ -3719,7 +3650,7 @@ document.head.appendChild(styleEl);
         input.value = "";
     };
 
-    window.SettingsForms.addQualityTag = function() {
+    window.SettingsForms.addQualityTag = function () {
         const input = document.getElementById("swaparr_quality_patterns_input");
         const container = document.getElementById("swaparr_quality_patterns_tags");
 
@@ -3738,7 +3669,7 @@ document.head.appendChild(styleEl);
         input.value = "";
     };
 
-    window.SettingsForms.setupSwaparrManualSave = function(container, originalSettings = {}) {
+    window.SettingsForms.setupSwaparrManualSave = function (container, originalSettings = {}) {
         const saveButton = container.querySelector("#swaparr-save-button");
         if (!saveButton) return;
 
@@ -3795,7 +3726,7 @@ document.head.appendChild(styleEl);
 
             // Collect data
             const settings = { ...originalSettings };
-            
+
             const enabled = document.getElementById("swaparr_enabled");
             if (enabled) settings.enabled = enabled.checked;
 
@@ -3854,7 +3785,7 @@ document.head.appendChild(styleEl);
 
             // Save
             window.SettingsForms.saveAppSettings("swaparr", settings);
-            
+
             // Reset UI state
             newSaveButton.innerHTML = '<i class="fas fa-save"></i> Save Changes';
             updateSaveButtonState(false);
@@ -11317,7 +11248,7 @@ document.head.appendChild(styleEl);
  * Custom Formats – single view for Movie Hunt and TV Hunt. Combined instance dropdown
  * (Movie - X / TV - X, alphabetical). Each instance keeps its own formats; same page linked from both sidebars.
  */
-(function() {
+(function () {
     'use strict';
 
     window.CustomFormats = {
@@ -11326,66 +11257,66 @@ document.head.appendChild(styleEl);
         _modalMode: null,
         _mode: 'movie',
 
-        getApiBase: function() {
+        getApiBase: function () {
             return this._mode === 'tv' ? './api/tv-hunt/custom-formats' : './api/custom-formats';
         },
 
-        getInstanceApiBase: function(mode) {
+        getInstanceApiBase: function (mode) {
             return mode === 'tv' ? './api/tv-hunt' : './api/movie-hunt';
         },
 
-        refreshList: function() {
+        refreshList: function () {
             var preformattedGrid = document.getElementById('custom-formats-preformatted-grid');
             var importedGrid = document.getElementById('custom-formats-imported-grid');
             if (!preformattedGrid || !importedGrid) return;
             var apiBase = window.CustomFormats.getApiBase();
             fetch(apiBase)
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
                     var list = (data && data.custom_formats) ? data.custom_formats : [];
                     window.CustomFormats._list = list;
-                    
+
                     var preformattedByGroup = {};
                     var importedItems = [];
                     var preformattedCount = 0;
                     var importedCount = 0;
-                    
+
                     for (var i = 0; i < list.length; i++) {
                         var item = list[i];
                         var isPreformatted = (item.source || 'import').toLowerCase() === 'preformat';
-                        
+
                         if (isPreformatted) {
                             var preformatId = item.preformat_id || '';
                             var groupKey = window.CustomFormats._getGroupFromPreformatId(preformatId);
                             if (!preformattedByGroup[groupKey]) {
                                 preformattedByGroup[groupKey] = [];
                             }
-                            preformattedByGroup[groupKey].push({item: item, index: i});
+                            preformattedByGroup[groupKey].push({ item: item, index: i });
                             preformattedCount++;
                         } else {
-                            importedItems.push({item: item, index: i});
+                            importedItems.push({ item: item, index: i });
                             importedCount++;
                         }
                     }
-                    
+
                     var preformattedHtml = '';
                     var sortedGroups = Object.keys(preformattedByGroup).sort();
-                    
+
                     for (var g = 0; g < sortedGroups.length; g++) {
                         var groupKey = sortedGroups[g];
                         var groupItems = preformattedByGroup[groupKey];
                         var groupName = window.CustomFormats._formatGroupName(groupKey);
-                        
+
                         preformattedHtml += '<div class="custom-formats-group-header">' +
                             '<i class="fas fa-folder-open"></i> ' + groupName +
                             '</div>';
-                        
+
                         for (var j = 0; j < groupItems.length; j++) {
                             var entry = groupItems[j];
                             var item = entry.item;
                             var i = entry.index;
                             var title = (item.title || item.name || 'Unnamed').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                            
+
                             preformattedHtml += '<div class="custom-format-card instance-card" data-index="' + i + '" data-app-type="custom-format">' +
                                 '<div class="custom-format-card-header">' +
                                 '<div class="custom-format-card-title"><i class="fas fa-code"></i><span>' + title + '</span></div>' +
@@ -11396,14 +11327,14 @@ document.head.appendChild(styleEl);
                                 '</div></div>';
                         }
                     }
-                    
+
                     var importedHtml = '';
                     for (var k = 0; k < importedItems.length; k++) {
                         var entry = importedItems[k];
                         var item = entry.item;
                         var i = entry.index;
                         var title = (item.title || item.name || 'Unnamed').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                        
+
                         importedHtml += '<div class="custom-format-card instance-card" data-index="' + i + '" data-app-type="custom-format">' +
                             '<div class="custom-format-card-header">' +
                             '<div class="custom-format-card-title"><i class="fas fa-code"></i><span>' + title + '</span></div>' +
@@ -11414,25 +11345,25 @@ document.head.appendChild(styleEl);
                             '<button type="button" class="btn-card delete" data-index="' + i + '"><i class="fas fa-trash"></i> Delete</button>' +
                             '</div></div>';
                     }
-                    
+
                     preformattedGrid.innerHTML = preformattedHtml;
                     importedGrid.innerHTML = importedHtml;
-                    
+
                     var deletePreBtn = document.getElementById('delete-all-preformatted');
                     var deleteImpBtn = document.getElementById('delete-all-imported');
                     if (deletePreBtn) deletePreBtn.disabled = preformattedCount === 0;
                     if (deleteImpBtn) deleteImpBtn.disabled = importedCount === 0;
-                    
+
                     window.CustomFormats._bindCards();
                 })
-                .catch(function() {
+                .catch(function () {
                     preformattedGrid.innerHTML = '';
                     importedGrid.innerHTML = '';
                     window.CustomFormats._bindAddButtons();
                 });
         },
 
-        setCurrentInstanceAndRefresh: function(mode, instanceId) {
+        setCurrentInstanceAndRefresh: function (mode, instanceId) {
             var self = window.CustomFormats;
             self._mode = mode;
             var apiBase = self.getInstanceApiBase(mode);
@@ -11440,18 +11371,18 @@ document.head.appendChild(styleEl);
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ instance_id: parseInt(instanceId, 10) })
-            }).then(function(r) { return r.json(); }).then(function() {
+            }).then(function (r) { return r.json(); }).then(function () {
                 self.refreshList();
-            }).catch(function() {
+            }).catch(function () {
                 self.refreshList();
             });
         },
 
-        _safeJsonFetch: function(url, fallback) {
-            return fetch(url, { cache: 'no-store' }).then(function(r) { return r.json(); }).catch(function() { return fallback || {}; });
+        _safeJsonFetch: function (url, fallback) {
+            return fetch(url, { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return fallback || {}; });
         },
 
-        populateCombinedInstanceDropdown: function(preferMode) {
+        populateCombinedInstanceDropdown: function (preferMode) {
             var selectEl = document.getElementById('settings-custom-formats-instance-select');
             if (!selectEl) return;
             selectEl.innerHTML = '<option value="">Loading...</option>';
@@ -11464,15 +11395,15 @@ document.head.appendChild(styleEl);
                 sf('./api/tv-hunt/instances/current?t=' + ts, { current_instance_id: null }),
                 sf('./api/indexer-hunt/indexers?t=' + ts, { indexers: [] }),
                 sf('./api/movie-hunt/has-clients?t=' + ts, { has_clients: false })
-            ]).then(function(results) {
-                var movieList = (results[0].instances || []).map(function(inst) {
+            ]).then(function (results) {
+                var movieList = (results[0].instances || []).map(function (inst) {
                     return { value: 'movie:' + inst.id, label: 'Movie - ' + (inst.name || 'Instance ' + inst.id) };
                 });
-                var tvList = (results[1].instances || []).map(function(inst) {
+                var tvList = (results[1].instances || []).map(function (inst) {
                     return { value: 'tv:' + inst.id, label: 'TV - ' + (inst.name || 'Instance ' + inst.id) };
                 });
                 var combined = movieList.concat(tvList);
-                combined.sort(function(a, b) { return (a.label || '').localeCompare(b.label || '', undefined, { sensitivity: 'base' }); });
+                combined.sort(function (a, b) { return (a.label || '').localeCompare(b.label || '', undefined, { sensitivity: 'base' }); });
                 var currentMovie = results[2].current_instance_id != null ? Number(results[2].current_instance_id) : null;
                 var currentTv = results[3].current_instance_id != null ? Number(results[3].current_instance_id) : null;
                 selectEl.innerHTML = '';
@@ -11489,7 +11420,7 @@ document.head.appendChild(styleEl);
                     if (wrapperEl) wrapperEl.style.display = '';
                     return;
                 }
-                combined.forEach(function(item) {
+                combined.forEach(function (item) {
                     var opt = document.createElement('option');
                     opt.value = item.value;
                     opt.textContent = item.label;
@@ -11499,15 +11430,15 @@ document.head.appendChild(styleEl);
                 var selected = '';
                 if (preferMode === 'movie' && currentMovie != null) {
                     selected = 'movie:' + currentMovie;
-                    if (!combined.some(function(i) { return i.value === selected; })) selected = combined[0].value;
+                    if (!combined.some(function (i) { return i.value === selected; })) selected = combined[0].value;
                 } else if (preferMode === 'tv' && currentTv != null) {
                     selected = 'tv:' + currentTv;
-                    if (!combined.some(function(i) { return i.value === selected; })) selected = combined[0].value;
-                } else if (saved && combined.some(function(i) { return i.value === saved; })) {
+                    if (!combined.some(function (i) { return i.value === selected; })) selected = combined[0].value;
+                } else if (saved && combined.some(function (i) { return i.value === saved; })) {
                     selected = saved;
-                } else if (currentMovie != null && combined.some(function(i) { return i.value === 'movie:' + currentMovie; })) {
+                } else if (currentMovie != null && combined.some(function (i) { return i.value === 'movie:' + currentMovie; })) {
                     selected = 'movie:' + currentMovie;
-                } else if (currentTv != null && combined.some(function(i) { return i.value === 'tv:' + currentTv; })) {
+                } else if (currentTv != null && combined.some(function (i) { return i.value === 'tv:' + currentTv; })) {
                     selected = 'tv:' + currentTv;
                 } else {
                     selected = combined[0].value;
@@ -11525,7 +11456,7 @@ document.head.appendChild(styleEl);
                     if (typeof localStorage !== 'undefined') localStorage.setItem('media-hunt-custom-formats-last-instance', selected);
                     window.CustomFormats.setCurrentInstanceAndRefresh(m, parts[1]);
                 }
-            }).catch(function() {
+            }).catch(function () {
                 selectEl.innerHTML = '<option value="">Failed to load instances</option>';
                 var noIdxEl = document.getElementById('settings-custom-formats-no-indexers');
                 var noCliEl = document.getElementById('settings-custom-formats-no-clients');
@@ -11536,7 +11467,7 @@ document.head.appendChild(styleEl);
             });
         },
 
-        onCombinedInstanceChange: function() {
+        onCombinedInstanceChange: function () {
             var selectEl = document.getElementById('settings-custom-formats-instance-select');
             var val = (selectEl && selectEl.value) ? selectEl.value.trim() : '';
             if (!val) return;
@@ -11547,23 +11478,23 @@ document.head.appendChild(styleEl);
             window.CustomFormats.setCurrentInstanceAndRefresh(mode, parts[1]);
         },
 
-        initOrRefresh: function(preferMode) {
+        initOrRefresh: function (preferMode) {
             var selectEl = document.getElementById('settings-custom-formats-instance-select');
             if (!selectEl) return;
             if (!selectEl._customFormatsChangeBound) {
-                selectEl.addEventListener('change', function() { window.CustomFormats.onCombinedInstanceChange(); });
+                selectEl.addEventListener('change', function () { window.CustomFormats.onCombinedInstanceChange(); });
                 selectEl._customFormatsChangeBound = true;
             }
             window.CustomFormats.populateCombinedInstanceDropdown(preferMode);
         },
 
-        _getGroupFromPreformatId: function(preformatId) {
+        _getGroupFromPreformatId: function (preformatId) {
             if (!preformatId) return 'Other';
             var parts = preformatId.split('.');
             return parts[0] || 'Other';
         },
 
-        _formatGroupName: function(groupKey) {
+        _formatGroupName: function (groupKey) {
             if (!groupKey || groupKey === 'Other') return 'Other';
             var categoryNames = {
                 'movie-versions': 'Movie Versions',
@@ -11577,34 +11508,34 @@ document.head.appendChild(styleEl);
                 'misc': 'Miscellaneous',
                 'optional': 'Optional'
             };
-            return categoryNames[groupKey] || groupKey.split('-').map(function(s) {
+            return categoryNames[groupKey] || groupKey.split('-').map(function (s) {
                 return s.charAt(0).toUpperCase() + s.slice(1);
             }).join(' ');
         },
 
-        _bindCards: function() {
+        _bindCards: function () {
             var allCards = document.querySelectorAll('.custom-format-card');
-            allCards.forEach(function(card) {
+            allCards.forEach(function (card) {
                 var viewBtn = card.querySelector('.btn-card.view');
                 var editBtn = card.querySelector('.btn-card.edit');
                 var deleteBtn = card.querySelector('.btn-card.delete');
-                
+
                 if (viewBtn) {
-                    viewBtn.onclick = function(e) {
+                    viewBtn.onclick = function (e) {
                         e.stopPropagation();
                         var idx = parseInt(viewBtn.getAttribute('data-index'), 10);
                         if (!isNaN(idx)) window.CustomFormats.openViewModal(idx);
                     };
                 }
                 if (editBtn) {
-                    editBtn.onclick = function(e) {
+                    editBtn.onclick = function (e) {
                         e.stopPropagation();
                         var idx = parseInt(editBtn.getAttribute('data-index'), 10);
                         if (!isNaN(idx)) window.CustomFormats.openEditModal(idx);
                     };
                 }
                 if (deleteBtn) {
-                    deleteBtn.onclick = function(e) {
+                    deleteBtn.onclick = function (e) {
                         e.stopPropagation();
                         var idx = parseInt(deleteBtn.getAttribute('data-index'), 10);
                         if (!isNaN(idx)) window.CustomFormats.deleteFormat(idx);
@@ -11614,22 +11545,22 @@ document.head.appendChild(styleEl);
             window.CustomFormats._bindAddButtons();
         },
 
-        _bindAddButtons: function() {
+        _bindAddButtons: function () {
             var addPreformattedBtn = document.getElementById('add-preformatted-btn');
             var addImportedBtn = document.getElementById('add-imported-btn');
             if (addPreformattedBtn) {
-                addPreformattedBtn.onclick = function() { 
-                    window.CustomFormats.openAddModal('preformat'); 
+                addPreformattedBtn.onclick = function () {
+                    window.CustomFormats.openAddModal('preformat');
                 };
             }
             if (addImportedBtn) {
-                addImportedBtn.onclick = function() { 
-                    window.CustomFormats.openAddModal('import'); 
+                addImportedBtn.onclick = function () {
+                    window.CustomFormats.openAddModal('import');
                 };
             }
         },
 
-        openViewModal: function(index) {
+        openViewModal: function (index) {
             var list = window.CustomFormats._list;
             if (index < 0 || index >= list.length) return;
             window.CustomFormats._ensureViewModalInBody();
@@ -11648,12 +11579,12 @@ document.head.appendChild(styleEl);
             document.body.classList.add('custom-format-modal-open');
         },
 
-        closeViewModal: function() {
+        closeViewModal: function () {
             document.getElementById('custom-format-view-modal').style.display = 'none';
             document.body.classList.remove('custom-format-modal-open');
         },
 
-        _generateRandomSuffix: function() {
+        _generateRandomSuffix: function () {
             var chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
             var suffix = '';
             for (var i = 0; i < 4; i++) {
@@ -11662,7 +11593,7 @@ document.head.appendChild(styleEl);
             return suffix;
         },
 
-        _checkTitleCollision: function(title) {
+        _checkTitleCollision: function (title) {
             var list = window.CustomFormats._list || [];
             var preformattedTitles = {};
             for (var i = 0; i < list.length; i++) {
@@ -11678,35 +11609,43 @@ document.head.appendChild(styleEl);
             return title;
         },
 
-        _ensureAddModalInBody: function() {
+        _ensureAddModalInBody: function () {
             var modal = document.getElementById('custom-format-modal');
             if (modal && modal.parentNode !== document.body) {
                 document.body.appendChild(modal);
             }
         },
-        _ensureViewModalInBody: function() {
+        _ensureViewModalInBody: function () {
             var modal = document.getElementById('custom-format-view-modal');
             if (modal && modal.parentNode !== document.body) {
                 document.body.appendChild(modal);
             }
         },
 
-        openAddModal: function(source) {
+        openAddModal: function (source) {
             window.CustomFormats._editingIndex = null;
             window.CustomFormats._modalMode = source;
             window.CustomFormats._ensureAddModalInBody();
+
+            // Pre-select the correct radio button
+            var preRadio = document.getElementById('custom-format-source-preformat');
+            var impRadio = document.getElementById('custom-format-source-import');
 
             if (source === 'preformat') {
                 document.getElementById('custom-format-modal-title').textContent = 'Add Pre-Formatted';
                 document.getElementById('custom-format-preformat-area').style.display = 'block';
                 var importArea = document.getElementById('custom-format-import-area');
                 if (importArea) importArea.style.display = 'none';
+                if (preRadio) preRadio.checked = true;
+                if (impRadio) impRadio.checked = false;
                 window.CustomFormats._loadPreformatTree();
             } else {
                 document.getElementById('custom-format-modal-title').textContent = 'Add Imported';
                 document.getElementById('custom-format-preformat-area').style.display = 'none';
                 var importArea = document.getElementById('custom-format-import-area');
                 if (importArea) importArea.style.display = 'block';
+                if (impRadio) impRadio.checked = true;
+                if (preRadio) preRadio.checked = false;
             }
 
             document.getElementById('custom-format-modal-save').innerHTML = '<i class="fas fa-plus"></i> Add';
@@ -11715,7 +11654,7 @@ document.head.appendChild(styleEl);
             document.body.classList.add('custom-format-modal-open');
         },
 
-        openEditModal: function(index) {
+        openEditModal: function (index) {
             var list = window.CustomFormats._list;
             if (index < 0 || index >= list.length) return;
             window.CustomFormats._ensureAddModalInBody();
@@ -11732,27 +11671,27 @@ document.head.appendChild(styleEl);
             document.body.classList.add('custom-format-modal-open');
         },
 
-        closeModal: function() {
+        closeModal: function () {
             document.getElementById('custom-format-modal').style.display = 'none';
             document.body.classList.remove('custom-format-modal-open');
         },
 
-        _buildPreformatId: function(catId, subId, fmtId) {
+        _buildPreformatId: function (catId, subId, fmtId) {
             if (subId) return catId + '.' + subId + '.' + fmtId;
             return catId + '.' + fmtId;
         },
 
-        _loadPreformatTree: function() {
+        _loadPreformatTree: function () {
             var treeEl = document.getElementById('custom-format-preformat-tree');
             if (!treeEl) return;
             treeEl.innerHTML = '<span class="custom-format-loading">Loading…</span>';
             var existingIds = {};
-            (window.CustomFormats._list || []).forEach(function(item) {
+            (window.CustomFormats._list || []).forEach(function (item) {
                 if (item.preformat_id) existingIds[item.preformat_id] = true;
             });
             fetch(window.CustomFormats.getApiBase() + '/preformats')
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
                     var categories = (data && data.categories) ? data.categories : [];
                     treeEl.innerHTML = '';
                     if (categories.length === 0) {
@@ -11762,7 +11701,7 @@ document.head.appendChild(styleEl);
                         treeEl.appendChild(msg);
                         return;
                     }
-                    categories.forEach(function(cat) {
+                    categories.forEach(function (cat) {
                         var catId = cat.id || '';
                         var catName = cat.name || catId;
                         var catDiv = document.createElement('div');
@@ -11774,7 +11713,7 @@ document.head.appendChild(styleEl);
                         body.className = 'custom-format-cat-body';
                         var subcats = cat.subcategories || [];
                         if (subcats.length > 0) {
-                            subcats.forEach(function(sub) {
+                            subcats.forEach(function (sub) {
                                 var subId = sub.id || '';
                                 var subName = sub.name || subId;
                                 var subDiv = document.createElement('div');
@@ -11785,7 +11724,7 @@ document.head.appendChild(styleEl);
                                 subDiv.appendChild(subLabel);
                                 var fmtList = document.createElement('div');
                                 fmtList.className = 'custom-format-format-list';
-                                (sub.formats || []).forEach(function(fmt) {
+                                (sub.formats || []).forEach(function (fmt) {
                                     var fid = window.CustomFormats._buildPreformatId(catId, subId, fmt.id || '');
                                     var name = fmt.name || fid;
                                     var already = existingIds[fid];
@@ -11806,7 +11745,7 @@ document.head.appendChild(styleEl);
                         } else {
                             var fmtList = document.createElement('div');
                             fmtList.className = 'custom-format-format-list';
-                            (cat.formats || []).forEach(function(fmt) {
+                            (cat.formats || []).forEach(function (fmt) {
                                 var fid = window.CustomFormats._buildPreformatId(catId, null, fmt.id || '');
                                 var name = fmt.name || fid;
                                 var already = existingIds[fid];
@@ -11823,7 +11762,7 @@ document.head.appendChild(styleEl);
                             });
                             body.appendChild(fmtList);
                         }
-                        header.onclick = function() {
+                        header.onclick = function () {
                             header.classList.toggle('collapsed');
                             body.classList.toggle('collapsed');
                         };
@@ -11832,12 +11771,12 @@ document.head.appendChild(styleEl);
                         treeEl.appendChild(catDiv);
                     });
                 })
-                .catch(function() {
+                .catch(function () {
                     treeEl.innerHTML = '<span class="custom-format-loading" style="color:#f87171;">Failed to load formats.</span>';
                 });
         },
 
-        _nameFromJson: function(str) {
+        _nameFromJson: function (str) {
             if (!str || typeof str !== 'string') return '—';
             try {
                 var obj = JSON.parse(str);
@@ -11845,7 +11784,7 @@ document.head.appendChild(styleEl);
             } catch (e) { return '—'; }
         },
 
-        _onSourceChange: function() {
+        _onSourceChange: function () {
             var isPre = document.getElementById('custom-format-source-preformat').checked;
             var preformatArea = document.getElementById('custom-format-preformat-area');
             var importArea = document.getElementById('custom-format-import-area');
@@ -11868,7 +11807,7 @@ document.head.appendChild(styleEl);
             }
         },
 
-        saveModal: function() {
+        saveModal: function () {
             var editing = window.CustomFormats._editingIndex;
 
             if (editing != null) {
@@ -11892,8 +11831,8 @@ document.head.appendChild(styleEl);
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ title: title, custom_format_json: jsonRaw })
                 })
-                    .then(function(r) { return r.json(); })
-                    .then(function(data) {
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
                         if (data.success) {
                             if (window.huntarrUI && window.huntarrUI.showNotification) {
                                 window.huntarrUI.showNotification('Custom format updated.', 'success');
@@ -11906,7 +11845,7 @@ document.head.appendChild(styleEl);
                             }
                         }
                     })
-                    .catch(function() {
+                    .catch(function () {
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
                             window.huntarrUI.showNotification('Update failed', 'error');
                         }
@@ -11919,7 +11858,7 @@ document.head.appendChild(styleEl);
                 var tree = document.getElementById('custom-format-preformat-tree');
                 var checkboxes = tree ? tree.querySelectorAll('input[type="checkbox"][data-preformat-id]:checked:not(:disabled)') : [];
                 var toAdd = [];
-                checkboxes.forEach(function(cb) {
+                checkboxes.forEach(function (cb) {
                     toAdd.push({ id: cb.getAttribute('data-preformat-id'), name: cb.getAttribute('data-format-name') || cb.getAttribute('data-preformat-id') });
                 });
                 if (toAdd.length === 0) {
@@ -11931,7 +11870,7 @@ document.head.appendChild(styleEl);
                 var done = 0;
                 var failed = 0;
                 var currentIndex = 0;
-                
+
                 function addNext() {
                     if (currentIndex >= toAdd.length) {
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
@@ -11945,26 +11884,26 @@ document.head.appendChild(styleEl);
                         window.CustomFormats.refreshList();
                         return;
                     }
-                    
+
                     var item = toAdd[currentIndex];
                     currentIndex++;
-                    
+
                     fetch(window.CustomFormats.getApiBase(), {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ source: 'preformat', preformat_id: item.id, title: item.name })
                     })
-                        .then(function(r) { return r.json(); })
-                        .then(function(data) {
+                        .then(function (r) { return r.json(); })
+                        .then(function (data) {
                             if (data.success) done++; else failed++;
                             addNext();
                         })
-                        .catch(function() {
+                        .catch(function () {
                             failed++;
                             addNext();
                         });
                 }
-                
+
                 addNext();
                 return;
             }
@@ -11991,8 +11930,8 @@ document.head.appendChild(styleEl);
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
                     if (data.success) {
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
                             window.huntarrUI.showNotification('Custom format added.', 'success');
@@ -12005,19 +11944,19 @@ document.head.appendChild(styleEl);
                         }
                     }
                 })
-                .catch(function() {
+                .catch(function () {
                     if (window.huntarrUI && window.huntarrUI.showNotification) {
                         window.huntarrUI.showNotification('Add failed', 'error');
                     }
                 });
         },
 
-        deleteFormat: function(index) {
+        deleteFormat: function (index) {
             var self = window.CustomFormats;
-            var doDelete = function() {
+            var doDelete = function () {
                 fetch(self.getApiBase() + '/' + index, { method: 'DELETE' })
-                    .then(function(r) { return r.json(); })
-                    .then(function(data) {
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
                         if (data.success) {
                             if (window.huntarrUI && window.huntarrUI.showNotification) {
                                 window.huntarrUI.showNotification('Custom format removed.', 'success');
@@ -12029,7 +11968,7 @@ document.head.appendChild(styleEl);
                             }
                         }
                     })
-                    .catch(function() {
+                    .catch(function () {
                         if (window.huntarrUI && window.huntarrUI.showNotification) {
                             window.huntarrUI.showNotification('Delete failed', 'error');
                         }
@@ -12048,10 +11987,10 @@ document.head.appendChild(styleEl);
             }
         },
 
-        deleteAllByType: function(type) {
+        deleteAllByType: function (type) {
             var list = window.CustomFormats._list || [];
             var toDelete = [];
-            
+
             for (var i = 0; i < list.length; i++) {
                 var item = list[i];
                 var isPreformatted = (item.source || 'import').toLowerCase() === 'preformat';
@@ -12059,14 +11998,14 @@ document.head.appendChild(styleEl);
                     toDelete.push(i);
                 }
             }
-            
+
             if (toDelete.length === 0) {
                 if (window.huntarrUI && window.huntarrUI.showNotification) {
                     window.huntarrUI.showNotification('No formats to delete.', 'info');
                 }
                 return;
             }
-            
+
             var typeName = type === 'preformat' ? 'pre-formatted' : 'imported';
             var confirmMsg = 'Delete all ' + toDelete.length + ' ' + typeName + ' custom format(s)?\n\nThis action cannot be undone.';
             var deleted = 0;
@@ -12079,7 +12018,7 @@ document.head.appendChild(styleEl);
                 failed = 0;
                 deleteNext();
             }
-            
+
             function deleteNext() {
                 if (currentIndex < 0) {
                     if (window.huntarrUI && window.huntarrUI.showNotification) {
@@ -12092,17 +12031,17 @@ document.head.appendChild(styleEl);
                     window.CustomFormats.refreshList();
                     return;
                 }
-                
+
                 var idx = toDelete[currentIndex];
                 currentIndex--;
-                
+
                 fetch(window.CustomFormats.getApiBase() + '/' + idx, { method: 'DELETE' })
-                    .then(function(r) { return r.json(); })
-                    .then(function(data) {
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
                         if (data.success) deleted++; else failed++;
                         deleteNext();
                     })
-                    .catch(function() {
+                    .catch(function () {
                         failed++;
                         deleteNext();
                     });
@@ -12121,41 +12060,41 @@ document.head.appendChild(styleEl);
             }
         },
 
-        init: function() {
+        init: function () {
             var self = window.CustomFormats;
             var modal = document.getElementById('custom-format-modal');
             var backdrop = document.getElementById('custom-format-modal-backdrop');
             var closeBtn = document.getElementById('custom-format-modal-close');
             var cancelBtn = document.getElementById('custom-format-modal-cancel');
             var saveBtn = document.getElementById('custom-format-modal-save');
-            if (backdrop) backdrop.onclick = function() { self.closeModal(); };
-            if (closeBtn) closeBtn.onclick = function() { self.closeModal(); };
-            if (cancelBtn) cancelBtn.onclick = function() { self.closeModal(); };
-            if (saveBtn) saveBtn.onclick = function() { self.saveModal(); };
-            
+            if (backdrop) backdrop.onclick = function () { self.closeModal(); };
+            if (closeBtn) closeBtn.onclick = function () { self.closeModal(); };
+            if (cancelBtn) cancelBtn.onclick = function () { self.closeModal(); };
+            if (saveBtn) saveBtn.onclick = function () { self.saveModal(); };
+
             var viewModal = document.getElementById('custom-format-view-modal');
             var viewBackdrop = document.getElementById('custom-format-view-modal-backdrop');
             var viewCloseBtn = document.getElementById('custom-format-view-modal-close');
             var viewCloseBtnFooter = document.getElementById('custom-format-view-modal-close-btn');
-            if (viewBackdrop) viewBackdrop.onclick = function() { self.closeViewModal(); };
-            if (viewCloseBtn) viewCloseBtn.onclick = function() { self.closeViewModal(); };
-            if (viewCloseBtnFooter) viewCloseBtnFooter.onclick = function() { self.closeViewModal(); };
-            
+            if (viewBackdrop) viewBackdrop.onclick = function () { self.closeViewModal(); };
+            if (viewCloseBtn) viewCloseBtn.onclick = function () { self.closeViewModal(); };
+            if (viewCloseBtnFooter) viewCloseBtnFooter.onclick = function () { self.closeViewModal(); };
+
             var deleteAllPreBtn = document.getElementById('delete-all-preformatted');
             var deleteAllImpBtn = document.getElementById('delete-all-imported');
             if (deleteAllPreBtn) {
-                deleteAllPreBtn.onclick = function() { self.deleteAllByType('preformat'); };
+                deleteAllPreBtn.onclick = function () { self.deleteAllByType('preformat'); };
             }
             if (deleteAllImpBtn) {
-                deleteAllImpBtn.onclick = function() { self.deleteAllByType('import'); };
+                deleteAllImpBtn.onclick = function () { self.deleteAllByType('import'); };
             }
-            
-            document.querySelectorAll('input[name="custom-format-source"]').forEach(function(radio) {
-                radio.onchange = function() { self._onSourceChange(); };
+
+            document.querySelectorAll('input[name="custom-format-source"]').forEach(function (radio) {
+                radio.onchange = function () { self._onSourceChange(); };
             });
             var jsonTa = document.getElementById('custom-format-json-textarea');
             if (jsonTa) { /* title is derived from JSON on save */ }
-            document.addEventListener('keydown', function(e) {
+            document.addEventListener('keydown', function (e) {
                 if (e.key === 'Escape') {
                     if (viewModal && viewModal.style.display === 'flex') {
                         self.closeViewModal();
@@ -12167,19 +12106,19 @@ document.head.appendChild(styleEl);
         }
     };
 
-    document.addEventListener('huntarr:instances-changed', function() {
+    document.addEventListener('huntarr:instances-changed', function () {
         if (document.getElementById('settingsCustomFormatsSection') && document.getElementById('settingsCustomFormatsSection').classList.contains('active')) {
             window.CustomFormats.initOrRefresh();
         }
     });
-    document.addEventListener('huntarr:tv-hunt-instances-changed', function() {
+    document.addEventListener('huntarr:tv-hunt-instances-changed', function () {
         if (document.getElementById('settingsCustomFormatsSection') && document.getElementById('settingsCustomFormatsSection').classList.contains('active')) {
             window.CustomFormats.initOrRefresh();
         }
     });
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() { window.CustomFormats.init(); });
+        document.addEventListener('DOMContentLoaded', function () { window.CustomFormats.init(); });
     } else {
         window.CustomFormats.init();
     }
