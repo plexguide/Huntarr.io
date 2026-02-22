@@ -516,7 +516,8 @@ def get_stats() -> Dict[str, Any]:
                                 "instance_id": inst.get("instance_id") or name,
                                 "hourly_cap": int(inst.get("hourly_cap", app_settings.get("hourly_cap", 20))),
                                 "state_management_mode": inst.get("state_management_mode", "custom"),
-                                "api_url": (inst.get("api_url") or "").strip().rstrip("/") or None
+                                "api_url": (inst.get("api_url") or "").strip().rstrip("/") or None,
+                                "external_url": (inst.get("external_url") or "").strip().rstrip("/") or None
                             })
                 
                 # Extract this app's data from the bulk results
@@ -545,7 +546,7 @@ def get_stats() -> Dict[str, Any]:
                                     state_reset_hours_until = round((expires_at - now_ts) / 3600.0, 1)
                         stats[app_type]["instances"].append({
                             "instance_name": display_name,
-                            "api_url": inst["api_url"],
+                            "api_url": inst.get("external_url") or inst["api_url"],
                             "hunted": inst_stats.get("hunted", 0),
                             "upgraded": inst_stats.get("upgraded", 0),
                             "found": inst_stats.get("found", 0),
