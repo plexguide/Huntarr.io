@@ -152,7 +152,11 @@ docker run -d \
   --restart unless-stopped \
   -p 9705:9705 \
   -v /path/to/config:/config \
+  -v /path/to/media:/media       # Optional — for Movie Hunt / TV Hunt library access
+  -v /path/to/downloads:/downloads # Optional — for NZB Hunt download output
   -e TZ=America/New_York \
+  -e PUID=1000 \                  # Optional — run as specific user ID
+  -e PGID=1000 \                  # Optional — run as specific group ID
   huntarr/huntarr:latest
 ```
 
@@ -168,9 +172,24 @@ services:
       - "9705:9705"
     volumes:
       - /path/to/config:/config
+      - /path/to/media:/media           # Optional — for Movie Hunt / TV Hunt library access
+      - /path/to/downloads:/downloads   # Optional — for NZB Hunt download output
     environment:
       - TZ=America/New_York
+      - PUID=1000    # Optional — run as specific user ID (default: 0 = root)
+      - PGID=1000    # Optional — run as specific group ID (default: 0 = root)
 ```
+
+### Volume & Environment Reference
+
+| Path / Variable | Required | Purpose |
+|----------------|----------|---------|
+| `/config` | Yes | Persistent config, database, and settings |
+| `/media` | No | Media library root for Movie Hunt / TV Hunt |
+| `/downloads` | No | NZB Hunt download output directory |
+| `TZ` | No | Timezone (e.g. `America/New_York`, default: `UTC`) |
+| `PUID` | No | User ID to run as (default: `0` = root). Unraid: `99`, Linux: `1000` |
+| `PGID` | No | Group ID to run as (default: `0` = root). Unraid: `100`, Linux: `1000` |
 
 ### More Installation Methods
 
