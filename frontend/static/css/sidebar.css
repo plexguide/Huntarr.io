@@ -979,6 +979,7 @@ input:checked + .slider:before {
 #nav-group-apps-label,
 #nav-group-media-hunt,
 #nzb-hunt-sidebar-group,
+#tor-hunt-sidebar-group,
 #nav-group-apps,
 #nav-group-system,
 #nav-group-requests,
@@ -993,6 +994,7 @@ input:checked + .slider:before {
 .sidebar.system-focused #homeNav,
 .sidebar.media-focused #homeNav,
 .sidebar.nzb-focused #homeNav,
+.sidebar.tor-focused #homeNav,
 .sidebar.thirdparty-focused #homeNav {
     order: 10;
 }
@@ -1010,6 +1012,8 @@ input:checked + .slider:before {
 .sidebar.media-focused #nav-group-media-hunt,
 .sidebar.nzb-focused #nav-group-apps-label,
 .sidebar.nzb-focused #nzb-hunt-sidebar-group,
+.sidebar.tor-focused #nav-group-apps-label,
+.sidebar.tor-focused #tor-hunt-sidebar-group,
 .sidebar.thirdparty-focused #nav-group-apps-label,
 .sidebar.thirdparty-focused #nav-group-apps {
     order: 12;
@@ -1020,6 +1024,7 @@ input:checked + .slider:before {
 .sidebar.system-focused #main-sidebar-partner-projects-group,
 .sidebar.media-focused #main-sidebar-partner-projects-group,
 .sidebar.nzb-focused #main-sidebar-partner-projects-group,
+.sidebar.tor-focused #main-sidebar-partner-projects-group,
 .sidebar.thirdparty-focused #main-sidebar-partner-projects-group {
     display: none;
 }
@@ -1028,31 +1033,43 @@ input:checked + .slider:before {
 .sidebar.requests-focused #nav-group-apps-label,
 .sidebar.requests-focused #nav-group-media-hunt,
 .sidebar.requests-focused #nzb-hunt-sidebar-group,
+.sidebar.requests-focused #tor-hunt-sidebar-group,
 .sidebar.requests-focused #nav-group-apps,
 .sidebar.requests-focused #nav-group-system,
 /* System focused: hide Requests + all Apps */
 .sidebar.system-focused #nav-group-apps-label,
 .sidebar.system-focused #nav-group-media-hunt,
 .sidebar.system-focused #nzb-hunt-sidebar-group,
+.sidebar.system-focused #tor-hunt-sidebar-group,
 .sidebar.system-focused #nav-group-apps,
 .sidebar.system-focused #nav-group-requests,
-/* Media Hunt focused: hide Core + Requests + System + NZB + 3rd Party */
+/* Media Hunt focused: hide Core + Requests + System + NZB + Tor + 3rd Party */
 .sidebar.media-focused #nav-group-core-label,
 .sidebar.media-focused #nav-group-requests,
 .sidebar.media-focused #nav-group-system,
 .sidebar.media-focused #nzb-hunt-sidebar-group,
+.sidebar.media-focused #tor-hunt-sidebar-group,
 .sidebar.media-focused #nav-group-apps,
-/* NZB Hunt focused: hide Core + Requests + System + Media Hunt + 3rd Party */
+/* NZB Hunt focused: hide Core + Requests + System + Media Hunt + Tor + 3rd Party */
 .sidebar.nzb-focused #nav-group-core-label,
 .sidebar.nzb-focused #nav-group-requests,
 .sidebar.nzb-focused #nav-group-system,
 .sidebar.nzb-focused #nav-group-media-hunt,
+.sidebar.nzb-focused #tor-hunt-sidebar-group,
 .sidebar.nzb-focused #nav-group-apps,
-/* 3rd Party focused: hide Core + Requests + System + Media Hunt + NZB */
+/* Tor Hunt focused: hide Core + Requests + System + Media Hunt + NZB + 3rd Party */
+.sidebar.tor-focused #nav-group-core-label,
+.sidebar.tor-focused #nav-group-requests,
+.sidebar.tor-focused #nav-group-system,
+.sidebar.tor-focused #nav-group-media-hunt,
+.sidebar.tor-focused #nzb-hunt-sidebar-group,
+.sidebar.tor-focused #nav-group-apps,
+/* 3rd Party focused: hide Core + Requests + System + Media Hunt + NZB + Tor */
 .sidebar.thirdparty-focused #nav-group-core-label,
 .sidebar.thirdparty-focused #nav-group-requests,
 .sidebar.thirdparty-focused #nav-group-system,
 .sidebar.thirdparty-focused #nav-group-media-hunt,
-.sidebar.thirdparty-focused #nzb-hunt-sidebar-group {
+.sidebar.thirdparty-focused #nzb-hunt-sidebar-group,
+.sidebar.thirdparty-focused #tor-hunt-sidebar-group {
     display: none;
 }
