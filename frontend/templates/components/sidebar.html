@@ -117,6 +117,11 @@
                             <div class="nav-icon-wrapper"><i class="fas fa-layer-group"></i></div>
                             <span>Instances</span>
                         </a>
+                        <a href="./#settings-instance-management" class="nav-item nav-item-sub"
+                            id="movieHuntInstanceManagementNav">
+                            <div class="nav-icon-wrapper"><i class="fas fa-cogs"></i></div>
+                            <span>Management</span>
+                        </a>
                         <a href="./#media-hunt-calendar" class="nav-item nav-item-sub" id="movieHuntCalendarNav">
                             <div class="nav-icon-wrapper"><i class="fas fa-calendar-alt"></i></div>
                             <span>Calendar</span>
@@ -573,7 +578,8 @@
         else if (h === '#activity-logs' || h === '#logs-media-hunt' || h === '#logs-tv-hunt') { selector = '#movieHuntActivityLogsNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-activity-sub'; if (mhBody) mhBody.classList.add('activity-view'); }
 
         // ── Media Hunt > Configuration ──────────────────
-        else if (h === '#media-hunt-settings' || h === '#movie-hunt-settings' || h === '#settings-instance-management') { selector = '#movieHuntSettingsMovieManagementNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+        else if (h === '#media-hunt-settings' || h === '#movie-hunt-settings') { selector = '#movieHuntSettingsMovieManagementNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
+        else if (h === '#settings-instance-management' || h === '#movie-hunt-instance-editor') { selector = '#movieHuntInstanceManagementNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
         else if (h === '#indexer-hunt') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
         else if (h === '#indexer-hunt-stats') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }
         else if (h === '#indexer-hunt-history') { selector = '#movieHuntIndexMasterNav'; group = 'sidebar-group-media-hunt'; subToExpand = 'movie-hunt-collection-sub'; }

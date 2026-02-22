@@ -361,19 +361,37 @@
                             '<div class="instance-status-icon ' + statusClass + '" title="' + (enabled ? 'Enabled' : 'Disabled') + '"><i class="fas ' + statusIcon + '"></i></div>' +
                             '</div>' +
                             '<div class="instance-card-body"><div class="instance-detail"><i class="fas fa-hashtag"></i><span>ID ' + escapeHtml(inst.id) + '</span></div></div>' +
-                            '<div class="instance-card-footer"><button type="button" class="btn-card edit" data-id="' + escapeAttr(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '"><i class="fas fa-edit"></i> Edit</button>' + defaultBtn + deleteBtn + '</div>';
+                            '<div class="instance-card-footer"><button type="button" class="btn-card rename" data-id="' + escapeAttr(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '"><i class="fas fa-pen"></i> Rename</button>' + defaultBtn + deleteBtn + '</div>';
                         grid.appendChild(card);
                     });
                     var addCard = document.createElement('div');
                     addCard.innerHTML = addInstanceCardHtml('media-hunt-instance-movie', 'fa-film', 'Add Movie Instance');
                     grid.appendChild(addCard.firstElementChild);
-                    grid.querySelectorAll('.btn-card.edit').forEach(function (btn) {
+                    grid.querySelectorAll('.btn-card.rename').forEach(function (btn) {
                         btn.addEventListener('click', function (e) {
                             e.stopPropagation();
-                            window.MovieHuntInstanceEditor.openEditor(
-                                btn.getAttribute('data-id'),
-                                btn.getAttribute('data-name') || ('Instance ' + btn.getAttribute('data-id'))
-                            );
+                            var instId = btn.getAttribute('data-id');
+                            var oldName = btn.getAttribute('data-name') || ('Instance ' + instId);
+                            var newName = prompt('Rename instance:', oldName);
+                            if (newName !== null && newName.trim() !== '' && newName.trim() !== oldName) {
+                                fetch(api('./api/movie-hunt/instances/' + instId + '/settings'), {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ name: newName.trim() })
+                                })
+                                    .then(function (r) { return r.json(); })
+                                    .then(function (data) {
+                                        if (data.error) {
+                                            if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(data.error, 'error');
+                                        } else {
+                                            if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Instance renamed to "' + newName.trim() + '"', 'success');
+                                            window.MovieHuntInstanceEditor.loadInstanceList();
+                                        }
+                                    })
+                                    .catch(function () {
+                                        if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Failed to rename instance', 'error');
+                                    });
+                            }
                         });
                     });
                     grid.querySelectorAll('.btn-card.set-default').forEach(function (btn) {
@@ -904,19 +922,37 @@
                 '<div class="instance-status-icon ' + statusClass + '" title="' + (enabled ? 'Enabled' : 'Disabled') + '"><i class="fas ' + statusIcon + '"></i></div>' +
                 '</div>' +
                 '<div class="instance-card-body"><div class="instance-detail"><i class="fas fa-hashtag"></i><span>ID ' + escapeHtml(inst.id) + '</span></div></div>' +
-                '<div class="instance-card-footer"><button type="button" class="btn-card edit" data-id="' + escapeAttr(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '"><i class="fas fa-edit"></i> Edit</button>' + defaultBtn + deleteBtn + '</div>';
+                '<div class="instance-card-footer"><button type="button" class="btn-card rename" data-id="' + escapeAttr(String(inst.id)) + '" data-name="' + escapeAttr(inst.name || '') + '"><i class="fas fa-pen"></i> Rename</button>' + defaultBtn + deleteBtn + '</div>';
             grid.appendChild(card);
         });
         var addCard = document.createElement('div');
         addCard.innerHTML = addInstanceCardHtml('media-hunt-instance-tv', 'fa-tv', 'Add TV Instance');
         grid.appendChild(addCard.firstElementChild);
-        grid.querySelectorAll('.btn-card.edit').forEach(function (btn) {
+        grid.querySelectorAll('.btn-card.rename').forEach(function (btn) {
             btn.addEventListener('click', function (e) {
                 e.stopPropagation();
-                window.TVHuntInstanceEditor.openEditor(
-                    btn.getAttribute('data-id'),
-                    btn.getAttribute('data-name') || ('Instance ' + btn.getAttribute('data-id'))
-                );
+                var instId = btn.getAttribute('data-id');
+                var oldName = btn.getAttribute('data-name') || ('Instance ' + instId);
+                var newName = prompt('Rename instance:', oldName);
+                if (newName !== null && newName.trim() !== '' && newName.trim() !== oldName) {
+                    fetch(api('./api/tv-hunt/instances/' + instId + '/settings'), {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: newName.trim() })
+                    })
+                        .then(function (r) { return r.json(); })
+                        .then(function (data) {
+                            if (data.error) {
+                                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification(data.error, 'error');
+                            } else {
+                                if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Instance renamed to "' + newName.trim() + '"', 'success');
+                                window.TVHuntInstanceEditor.loadInstanceList();
+                            }
+                        })
+                        .catch(function () {
+                            if (window.huntarrUI && window.huntarrUI.showNotification) window.huntarrUI.showNotification('Failed to rename instance', 'error');
+                        });
+                }
             });
         });
         grid.querySelectorAll('.btn-card.set-default').forEach(function (btn) {

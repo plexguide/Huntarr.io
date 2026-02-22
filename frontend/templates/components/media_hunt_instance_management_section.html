@@ -2,12 +2,15 @@
 <section id="mediaHuntInstanceManagementSection" class="content-section" style="display: none;">
     <link rel="stylesheet" href="./static/css/instance-editor.css?v=1.0.2">
     <link rel="stylesheet" href="./static/css/home.css">
-    <div class="app-content-panel" style="width:100%;padding:20px;margin:0;background:transparent;box-shadow:none;border:none;">
+    <div class="app-content-panel"
+        style="width:100%;padding:20px;margin:0;background:transparent;box-shadow:none;border:none;">
         {% from 'components/page_header_partial.html' import page_header %}
-        {{ page_header(back_href='./#media-hunt-collection', parent_icon='fas fa-folder-open', parent_name='Media Hunt', current_name='Instances', sponsor_section_id='media-hunt-settings') }}
+        {{ page_header(back_href='./#media-hunt-collection', parent_icon='fas fa-folder-open', parent_name='Media Hunt',
+        current_name='Instances', sponsor_section_id='media-hunt-settings') }}
 
         <!-- Continue to Setup Guide banner (shown when wizard incomplete) -->
-        <div id="setup-wizard-continue-banner" class="setup-wizard-continue-banner" style="display: none; margin-bottom: 20px;">
+        <div id="setup-wizard-continue-banner" class="setup-wizard-continue-banner"
+            style="display: none; margin-bottom: 20px;">
             <i class="fas fa-arrow-right"></i>
             <span>Done adding instances? Continue to the next step in the Setup Guide.</span>
             <button type="button" class="setup-wizard-continue-btn" data-wizard-nav="media-hunt-collection">
@@ -15,26 +18,28 @@
             </button>
         </div>
 
-        <!-- Movie Instances – Profiles-style box -->
-        <div class="settings-group instances-settings-group">
+        <!-- Movie Instances – Card-style section -->
+        <div class="instances-settings-group">
             <div class="profiles-header">
+                <span class="mset-card-icon mset-icon-blue"><i class="fas fa-film"></i></span>
                 <div>
                     <h3>Movie Instances</h3>
-                    <p class="profiles-help">Movie Hunt instances for managing your movie library.</p>
                 </div>
+                <span class="profiles-help">Movie Hunt instances for managing your movie library.</span>
             </div>
             <div id="movie-hunt-settings-instances-grid" class="instance-card-grid instances-card-grid">
                 <!-- Populated by MovieHuntInstanceEditor.loadInstanceList -->
             </div>
         </div>
 
-        <!-- TV Instances – Profiles-style box -->
-        <div class="settings-group instances-settings-group">
+        <!-- TV Instances – Card-style section -->
+        <div class="instances-settings-group">
             <div class="profiles-header">
+                <span class="mset-card-icon mset-icon-purple"><i class="fas fa-tv"></i></span>
                 <div>
                     <h3>TV Instances</h3>
-                    <p class="profiles-help">TV Hunt instances for managing your TV series library.</p>
                 </div>
+                <span class="profiles-help">TV Hunt instances for managing your TV series library.</span>
             </div>
             <div id="tv-hunt-settings-instances-grid" class="instance-card-grid instances-card-grid">
                 <!-- Populated by TVHuntInstanceEditor.loadInstanceList -->
@@ -47,17 +52,21 @@
         <div class="root-folder-add-modal-backdrop" id="media-hunt-instance-add-movie-modal-backdrop"></div>
         <div class="root-folder-add-modal-content">
             <div class="root-folder-add-modal-header">
-                <button type="button" class="root-folder-add-modal-close" id="media-hunt-instance-add-movie-modal-close" aria-label="Close"><i class="fas fa-times"></i></button>
+                <button type="button" class="root-folder-add-modal-close" id="media-hunt-instance-add-movie-modal-close"
+                    aria-label="Close"><i class="fas fa-times"></i></button>
                 <h2 class="root-folder-add-modal-title">Add Movie Instance</h2>
                 <p class="root-folder-add-modal-subtitle">Enter a name for the new Movie Hunt instance.</p>
             </div>
             <div class="root-folder-add-modal-body">
                 <label for="media-hunt-instance-add-movie-name">Instance Name</label>
-                <input type="text" id="media-hunt-instance-add-movie-name" class="control-input" placeholder="e.g. Main Movie" autocomplete="off">
+                <input type="text" id="media-hunt-instance-add-movie-name" class="control-input"
+                    placeholder="e.g. Main Movie" autocomplete="off">
             </div>
             <div class="root-folder-add-modal-actions">
-                <button type="button" class="btn-card root-folder-add-modal-cancel" id="media-hunt-instance-add-movie-modal-cancel">Cancel</button>
-                <button type="button" class="btn-card root-folder-add-modal-save" id="media-hunt-instance-add-movie-modal-save"><i class="fas fa-plus"></i> Add</button>
+                <button type="button" class="btn-card root-folder-add-modal-cancel"
+                    id="media-hunt-instance-add-movie-modal-cancel">Cancel</button>
+                <button type="button" class="btn-card root-folder-add-modal-save"
+                    id="media-hunt-instance-add-movie-modal-save"><i class="fas fa-plus"></i> Add</button>
             </div>
         </div>
     </div>
@@ -67,68 +76,104 @@
         <div class="root-folder-add-modal-backdrop" id="media-hunt-instance-add-tv-modal-backdrop"></div>
         <div class="root-folder-add-modal-content">
             <div class="root-folder-add-modal-header">
-                <button type="button" class="root-folder-add-modal-close" id="media-hunt-instance-add-tv-modal-close" aria-label="Close"><i class="fas fa-times"></i></button>
+                <button type="button" class="root-folder-add-modal-close" id="media-hunt-instance-add-tv-modal-close"
+                    aria-label="Close"><i class="fas fa-times"></i></button>
                 <h2 class="root-folder-add-modal-title">Add TV Instance</h2>
                 <p class="root-folder-add-modal-subtitle">Enter a name for the new TV Hunt instance.</p>
             </div>
             <div class="root-folder-add-modal-body">
                 <label for="media-hunt-instance-add-tv-name">Instance Name</label>
-                <input type="text" id="media-hunt-instance-add-tv-name" class="control-input" placeholder="e.g. Main TV" autocomplete="off">
+                <input type="text" id="media-hunt-instance-add-tv-name" class="control-input" placeholder="e.g. Main TV"
+                    autocomplete="off">
             </div>
             <div class="root-folder-add-modal-actions">
-                <button type="button" class="btn-card root-folder-add-modal-cancel" id="media-hunt-instance-add-tv-modal-cancel">Cancel</button>
-                <button type="button" class="btn-card root-folder-add-modal-save" id="media-hunt-instance-add-tv-modal-save"><i class="fas fa-plus"></i> Add</button>
+                <button type="button" class="btn-card root-folder-add-modal-cancel"
+                    id="media-hunt-instance-add-tv-modal-cancel">Cancel</button>
+                <button type="button" class="btn-card root-folder-add-modal-save"
+                    id="media-hunt-instance-add-tv-modal-save"><i class="fas fa-plus"></i> Add</button>
             </div>
         </div>
     </div>
 </section>
 <style>
-    #mediaHuntInstanceManagementSection { width: 100%; min-height: 60vh; overflow-y: auto; }
-    #mediaHuntInstanceManagementSection.active { display: block !important; }
-    body.media-hunt-instance-add-modal-open { overflow: hidden; }
+    #mediaHuntInstanceManagementSection {
+        width: 100%;
+        min-height: 60vh;
+        overflow-y: auto;
+    }
+
+    #mediaHuntInstanceManagementSection.active {
+        display: block !important;
+    }
+
+    body.media-hunt-instance-add-modal-open {
+        overflow: hidden;
+    }
 
     .instances-settings-group {
-        background: rgba(15, 23, 42, 0.4);
-        border: 1px solid rgba(148, 163, 184, 0.08);
-        border-radius: 12px;
-        padding: 24px;
-        margin: 12px 0 20px 0;
+        background: rgba(30, 41, 59, 0.32);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(148, 163, 184, 0.07);
+        border-radius: 16px;
+        padding: 0;
+        margin: 0 0 22px 0;
+        overflow: hidden;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
     }
+
+    .instances-settings-group:hover {
+        border-color: rgba(148, 163, 184, 0.14);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    }
+
     .instances-settings-group .profiles-header {
         display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 16px;
-        margin-bottom: 4px;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 12px;
+        padding: 14px 18px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.07);
     }
+
     .instances-settings-group .profiles-header h3 {
         margin: 0;
-        padding: 0 0 12px 0;
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #f1f5f9;
-        border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+        padding: 0;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        border: none;
+        border-bottom: none;
+        background: none;
     }
+
     .instances-settings-group .profiles-help {
-        color: rgba(255, 255, 255, 0.55);
-        font-size: 13px;
-        margin: 12px 0 0;
+        color: rgba(255, 255, 255, 0.45);
+        font-size: 0.8rem;
+        margin: 0;
     }
+
     .instances-card-grid {
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
         gap: 14px;
-        margin-top: 16px;
-        margin-bottom: 20px;
+        padding: 18px;
+        margin: 0;
     }
+
     .instances-card-grid .add-instance-card {
         min-height: 100px;
     }
+
     .instances-card-grid .add-instance-card .add-icon {
         font-size: 1.5rem;
     }
+
     .instances-card-grid .add-instance-card .add-text {
         font-size: 0.85rem;
     }
+
     /* Add Instance modal inputs — match Huntarr dark theme */
     #mediaHuntInstanceManagementSection .root-folder-add-modal .control-input {
         width: 100%;
@@ -142,12 +187,15 @@
         transition: border-color 0.2s, box-shadow 0.2s;
         box-sizing: border-box;
     }
+
     #mediaHuntInstanceManagementSection .root-folder-add-modal .control-input::placeholder {
         color: rgba(148, 163, 184, 0.5);
     }
+
     #mediaHuntInstanceManagementSection .root-folder-add-modal .control-input:hover {
         border-color: rgba(148, 163, 184, 0.4);
     }
+
     #mediaHuntInstanceManagementSection .root-folder-add-modal .control-input:focus {
         outline: none;
         border-color: #6366f1;

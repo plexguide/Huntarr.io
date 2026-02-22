@@ -719,12 +719,22 @@ window.HuntarrNavigation = {
                 window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#nzb-hunt-advanced');
             }
         }
-        // Instances moved to Collection: settings-instance-management redirects to media-hunt-instances
+        // Management: auto-open default instance editor
         if (section === 'settings-instance-management') {
-            section = 'media-hunt-instances';
-            if (window.location.hash !== '#media-hunt-instances') {
-                window.history.replaceState(null, document.title, window.location.pathname + (window.location.search || '') + '#media-hunt-instances');
-            }
+            // Fetch default movie instance and open its editor
+            var _baseUrl = (typeof window !== 'undefined' && window.HUNTARR_BASE_URL) ? window.HUNTARR_BASE_URL.replace(/\/$/, '') : '';
+            fetch((_baseUrl || '') + './api/movie-hunt/instances', { cache: 'no-store' })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    var list = data.instances || [];
+                    var currentId = data.current_instance_id != null ? data.current_instance_id : (list[0] ? list[0].id : null);
+                    var inst = list.find(function (i) { return i.id == currentId; }) || list[0];
+                    if (inst && window.MovieHuntInstanceEditor && window.MovieHuntInstanceEditor.openEditor) {
+                        window.MovieHuntInstanceEditor.openEditor(String(inst.id), inst.name || ('Instance ' + inst.id));
+                    }
+                })
+                .catch(function () { });
+            return;
         }
         // Legacy media-hunt-settings: go to Media Management so Settings sub-menu expands and shows sub-items
         if (section === 'media-hunt-settings') {
