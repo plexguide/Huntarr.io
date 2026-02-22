@@ -36,6 +36,7 @@ SMARTHUNT_DEFAULTS = {
     "cache_ttl_minutes": 60,
     "min_tmdb_rating": 6.0,
     "min_vote_count": 50,
+    "max_certification": "",
     "year_start": 2000,
     "year_end": datetime.now().year + 1,
     "percentages": {
@@ -216,6 +217,7 @@ class SmartHuntEngine:
             "min_votes": min_votes,
             "year_start": year_start,
             "year_end": year_end,
+            "max_certification": settings.get("max_certification", ""),
         }
 
         # Map category name -> fetcher callable
@@ -480,6 +482,12 @@ class SmartHuntEngine:
         if min_rating > 0:
             scored = [i for i in scored if (i.get("vote_average") or 0) >= min_rating]
 
+        # Apply year range filter (recommendations don't support year params)
+        year_start = common.get("year_start", 0)
+        year_end = common.get("year_end", 9999)
+        if year_start or year_end < 9999:
+            scored = [i for i in scored if year_start <= (i.get("year") or year_start) <= year_end]
+
         return scored[:count * 2]  # Return more than needed; dedup will trim
 
     def _fetch_recommendations(self, tmdb_id: int, media_type: str, api_key: str, common: dict) -> List[dict]:
@@ -655,6 +663,11 @@ class SmartHuntEngine:
         min_votes = common.get("min_votes", 0)
         if min_votes and min_votes > 0:
             params["vote_count.gte"] = str(min_votes)
+        # Apply certification (age rating) filter
+        max_cert = common.get("max_certification", "")
+        if max_cert:
+            params["certification_country"] = "US"
+            params["certification.lte"] = max_cert
         return params
 
     def _apply_year_filter(self, params: dict, media_type: str, common: dict):

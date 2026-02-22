@@ -1548,6 +1548,10 @@ export class RequestarrSettings {
             const ye = document.getElementById('smarthunt-year-end');
             if (ye) ye.value = s.year_end ?? (new Date().getFullYear() + 1);
 
+            // Populate certification dropdown
+            const maxCert = document.getElementById('smarthunt-max-certification');
+            if (maxCert) maxCert.value = s.max_certification ?? '';
+
             // Populate percentages
             const pcts = s.percentages || {};
             const cats = ['similar_library', 'trending', 'hidden_gems', 'new_releases', 'top_rated', 'genre_mix', 'upcoming', 'random'];
@@ -1648,6 +1652,7 @@ export class RequestarrSettings {
                 hide_library_items: document.getElementById('smarthunt-hide-library')?.checked ?? true,
                 min_tmdb_rating: parseFloat(document.getElementById('smarthunt-min-rating')?.value) || 6.0,
                 min_vote_count: parseInt(document.getElementById('smarthunt-min-votes')?.value) || 0,
+                max_certification: document.getElementById('smarthunt-max-certification')?.value || '',
                 year_start: parseInt(document.getElementById('smarthunt-year-start')?.value) || 2000,
                 year_end: parseInt(document.getElementById('smarthunt-year-end')?.value) || (new Date().getFullYear() + 1),
                 percentages: percentages,

@@ -14,6 +14,13 @@ from src.primary.utils.database import get_database
 
 logger = get_logger("stats")
 
+def _safe_int(val, default=0):
+    """Safely parse value to int, returning default on failure."""
+    try:
+        return int(val) if val is not None else default
+    except (TypeError, ValueError):
+        return default
+
 # Lock for thread-safe operations
 stats_lock = threading.Lock()
 hourly_lock = threading.Lock()
@@ -211,8 +218,14 @@ def _get_instance_hourly_cap_limit(app_type: str, instance_key: str) -> int:
         for inst in app_settings.get("instances", []):
             if (inst.get("name") == instance_key or inst.get("instance_name") == instance_key
                     or inst.get("instance_id") == instance_key):
-                return int(inst.get("hourly_cap", app_settings.get("hourly_cap", 20)))
-        return int(app_settings.get("hourly_cap", 20))
+                try:
+                    return int(inst.get("hourly_cap", 20))
+                except (TypeError, ValueError):
+                    return 20
+        try:
+            return int(app_settings.get("hourly_cap", 20))
+        except (TypeError, ValueError):
+            return 20
     except Exception as e:
         logger.error(f"Error getting instance hourly cap limit for {app_type}/{instance_key}: {e}")
         return 20
@@ -267,12 +280,26 @@ def _get_app_hourly_cap_limit(app_type: str) -> int:
             return 20
         instances = app_settings.get("instances", [])
         if not instances:
-            return int(app_settings.get("hourly_cap", 20))
+            try:
+                return int(app_settings.get("hourly_cap", 20))
+            except (TypeError, ValueError):
+                return 20
         total = 0
         for inst in instances:
             if inst.get("enabled", True):
-                total += int(inst.get("hourly_cap", app_settings.get("hourly_cap", 20)))
-        return max(total, 1) if total else int(app_settings.get("hourly_cap", 20))
+                try:
+                    cap_val = inst.get("hourly_cap", None)
+                    if cap_val is None:
+                        cap_val = app_settings.get("hourly_cap", 20)
+                    total += int(cap_val)
+                except (TypeError, ValueError):
+                    total += 20
+        if total:
+            return max(total, 1)
+        try:
+            return int(app_settings.get("hourly_cap", 20))
+        except (TypeError, ValueError):
+            return 20
     except Exception as e:
         logger.error(f"Error getting hourly cap limit for {app_type}: {e}")
         return 20
@@ -341,7 +368,7 @@ def _calculate_per_instance_hourly_limit(app_type: str) -> int:
         # Fallback to app-level hourly_cap or default
         from src.primary.settings_manager import load_settings
         app_settings = load_settings(app_type)
-        return app_settings.get("hourly_cap", 20) if app_settings else 20
+        return _safe_int(app_settings.get("hourly_cap", 20), 20) if app_settings else 20
 
 def check_hourly_cap_exceeded(app_type: str, instance_name: Optional[str] = None) -> bool:
     """
@@ -486,7 +513,7 @@ def get_stats() -> Dict[str, Any]:
                             configured.append({
                                 "instance_name": name,
                                 "instance_id": inst.get("instance_id") or name,
-                                "hourly_cap": int(inst.get("hourly_cap", 20)),
+                                "hourly_cap": _safe_int(inst.get("hourly_cap"), 20),
                                 "state_management_mode": inst.get("state_management_mode", "custom"),
                                 "api_url": None  # Movie Hunt is internal
                             })
@@ -501,7 +528,7 @@ def get_stats() -> Dict[str, Any]:
                             configured.append({
                                 "instance_name": name,
                                 "instance_id": inst.get("instance_id") or name,
-                                "hourly_cap": int(inst.get("hourly_cap", 20)),
+                                "hourly_cap": _safe_int(inst.get("hourly_cap"), 20),
                                 "state_management_mode": inst.get("state_management_mode", "custom"),
                                 "api_url": None  # TV Hunt is internal
                             })
@@ -514,7 +541,7 @@ def get_stats() -> Dict[str, Any]:
                             configured.append({
                                 "instance_name": name,
                                 "instance_id": inst.get("instance_id") or name,
-                                "hourly_cap": int(inst.get("hourly_cap", app_settings.get("hourly_cap", 20))),
+                                "hourly_cap": _safe_int(inst.get("hourly_cap"), _safe_int(app_settings.get("hourly_cap"), 20)),
                                 "state_management_mode": inst.get("state_management_mode", "custom"),
                                 "api_url": (inst.get("api_url") or "").strip().rstrip("/") or None,
                                 "external_url": (inst.get("external_url") or "").strip().rstrip("/") or None

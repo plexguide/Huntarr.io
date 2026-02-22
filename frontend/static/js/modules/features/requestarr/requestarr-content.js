@@ -565,7 +565,20 @@ export class RequestarrContent {
         if (!carousel) return;
         if (results && results.length > 0) {
             if (!append) carousel.innerHTML = '';
+            // Check if user has "hide available" enabled in movie or TV filters
+            var hideAvailMovie = false, hideAvailTV = false;
+            try {
+                var mf = JSON.parse(localStorage.getItem('huntarr_movie_filters') || '{}');
+                hideAvailMovie = !!mf.hideAvailable;
+            } catch(e) {}
+            try {
+                var tf = JSON.parse(localStorage.getItem('huntarr_tv_filters') || '{}');
+                hideAvailTV = !!tf.hideAvailable;
+            } catch(e) {}
             results.forEach(item => {
+                // Hide library items if user has the filter enabled for this media type
+                if (item.media_type === 'movie' && hideAvailMovie && (item.in_library || item.partial)) return;
+                if (item.media_type === 'tv' && hideAvailTV && (item.in_library || item.partial)) return;
                 const suggestedInstance = item.media_type === 'movie' ? (this.selectedMovieInstance || null) : (this.selectedTVInstance || null);
                 let appType, instanceName;
                 if (item.media_type === 'movie') {

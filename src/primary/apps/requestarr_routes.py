@@ -501,6 +501,12 @@ def get_trending():
             tv_app_type=tv_app_type or 'sonarr',
             page=page
         )
+        
+        # Filter out available items if hide_available is true
+        hide_available = request.args.get('hide_available', 'false').lower() == 'true'
+        if hide_available:
+            results = [r for r in results if not r.get('in_library') and not r.get('partial')]
+        
         return jsonify({'results': results, 'page': page})
     except Exception as e:
         logger.error(f"Error getting trending: {e}")

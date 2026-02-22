@@ -33,8 +33,6 @@ const BackupRestore = {
         if (frequencyInput) {
             frequencyInput.addEventListener('change', () => {
                 this.backupSettings.frequency = parseInt(frequencyInput.value) || 3;
-                this.saveSettings();
-                this.updateNextBackupTime();
             });
         }
 
@@ -43,7 +41,19 @@ const BackupRestore = {
         if (retentionInput) {
             retentionInput.addEventListener('change', () => {
                 this.backupSettings.retention = parseInt(retentionInput.value) || 3;
+            });
+        }
+
+        // Save backup settings button
+        const saveSettingsBtn = document.getElementById('save-backup-settings-btn');
+        if (saveSettingsBtn) {
+            saveSettingsBtn.addEventListener('click', () => {
+                const freq = document.getElementById('backup-frequency');
+                const ret = document.getElementById('backup-retention');
+                if (freq) this.backupSettings.frequency = parseInt(freq.value) || 3;
+                if (ret) this.backupSettings.retention = parseInt(ret.value) || 3;
                 this.saveSettings();
+                this.updateNextBackupTime();
             });
         }
 
