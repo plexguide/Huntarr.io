@@ -1166,6 +1166,10 @@ def get_instances(app_type):
                     role = (req_user or {}).get('role', 'owner')
                     if role != 'owner':
                         services = _db.get_requestarr_services()
+                        if not services:
+                            # No services configured — admin hasn't restricted anything,
+                            # so show all instances to regular users too.
+                            return instances_list
                         allowed = set()
                         for svc in services:
                             allowed.add((svc.get('app_type', ''), svc.get('instance_name', '')))
