@@ -64,6 +64,13 @@ let huntarrUI = {
         // EXPOSE huntarrUI to global scope early for modules that need it during loading
         window.huntarrUI = this;
         
+        // Remove initial sidebar hiding style FIRST — before anything that could throw.
+        // This ensures the sidebar is always visible even if later init steps fail.
+        var initialSidebarStyle = document.getElementById('initial-sidebar-state');
+        if (initialSidebarStyle) {
+            initialSidebarStyle.remove();
+        }
+        
         // Skip initialization on login page
         const isLoginPage = document.querySelector('.login-container, #loginForm, .login-form');
         if (isLoginPage) {
@@ -159,12 +166,6 @@ let huntarrUI = {
         } else {
             // Initial navigation based on hash
             this.handleHashNavigation(window.location.hash);
-        }
-        
-        // Remove initial sidebar hiding style
-        const initialSidebarStyle = document.getElementById('initial-sidebar-state');
-        if (initialSidebarStyle) {
-            initialSidebarStyle.remove();
         }
         
         // Check which sidebar should be shown based on current section

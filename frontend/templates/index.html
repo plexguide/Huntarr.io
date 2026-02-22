@@ -11,6 +11,13 @@
             display: none !important;
         }
     </style>
+    <script>
+        // Safety net: remove sidebar hiding after 3s even if main JS fails
+        setTimeout(function() {
+            var s = document.getElementById('initial-sidebar-state');
+            if (s) s.remove();
+        }, 3000);
+    </script>
 
     <!-- Pass base URL configuration to JavaScript -->
     <script>window.HUNTARR_BASE_URL = '{{ base_url|default("", true) }}';</script>
