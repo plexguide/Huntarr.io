@@ -5339,11 +5339,11 @@
             if (seedCount) seedCount.textContent = s.seeding || 0;
             // Update pause button state
             var pauseBtn = document.getElementById('tor-pause-btn');
-            if (pauseBtn && s.paused !== undefined) {
-                this._paused = s.paused;
+            if (pauseBtn && s.paused_global !== undefined) {
+                this._paused = s.paused_global;
                 var icon = pauseBtn.querySelector('i');
-                if (icon) icon.className = s.paused ? 'fas fa-play' : 'fas fa-pause';
-                pauseBtn.title = s.paused ? 'Resume all torrents' : 'Pause all torrents';
+                if (icon) icon.className = s.paused_global ? 'fas fa-play' : 'fas fa-pause';
+                pauseBtn.title = s.paused_global ? 'Resume all torrents' : 'Pause all torrents';
             }
         },
 
@@ -5352,7 +5352,7 @@
             var parts = [];
             for (var i = 0; i < queue.length; i++) {
                 var q = queue[i];
-                parts.push(q.id + '|' + q.state + '|' + Math.round(q.progress_pct || 0) + '|' + (q.dl_speed || 0));
+                parts.push(q.id + '|' + q.state + '|' + Math.round(q.progress || 0) + '|' + (q.dl_speed || 0));
             }
             return parts.join(';');
         },
@@ -5372,7 +5372,7 @@
             var html = '';
             for (var i = 0; i < queue.length; i++) {
                 var t = queue[i];
-                var pct = Math.round(t.progress_pct || 0);
+                var pct = Math.round(t.progress || 0);
                 var state = (t.state || 'unknown').toLowerCase();
                 var stateClass = 'tor-state-' + (state === 'downloading' ? 'downloading' : state === 'seeding' ? 'seeding' : state === 'paused' ? 'paused' : state === 'checking' ? 'checking' : state === 'error' ? 'error' : 'queued');
                 var fillClass = state === 'seeding' ? 'tor-progress-fill seeding' : 'tor-progress-fill';
@@ -5385,9 +5385,9 @@
                 html += '<span>' + _fmt(t.size || 0) + '</span>';
                 if (t.dl_speed > 0) html += '<span>' + _fmtSpeed(t.dl_speed) + ' ↓</span>';
                 if (t.up_speed > 0) html += '<span>' + _fmtSpeed(t.up_speed) + ' ↑</span>';
-                if (t.eta && t.eta !== '--') html += '<span>ETA: ' + t.eta + '</span>';
-                if (t.seeds !== undefined) html += '<span>Seeds: ' + t.seeds + '</span>';
-                if (t.peers !== undefined) html += '<span>Peers: ' + t.peers + '</span>';
+                if (t.time_left && t.time_left !== '-') html += '<span>ETA: ' + t.time_left + '</span>';
+                if (t.num_seeds !== undefined) html += '<span>Seeds: ' + t.num_seeds + '</span>';
+                if (t.num_peers !== undefined) html += '<span>Peers: ' + t.num_peers + '</span>';
                 html += '</div></div>';
                 html += '<div class="tor-queue-item-progress">';
                 html += '<div class="tor-progress-bar"><div class="' + fillClass + '" style="width:' + pct + '%"></div></div>';
