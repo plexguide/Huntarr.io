@@ -136,6 +136,7 @@ BUNDLES = [
             "modules/features/requestarr/requestarr-tv-detail.js",
             "modules/features/nzb-hunt.js",
             "modules/features/nzb-hunt-settings.js",
+            "modules/features/tor-hunt.js",
             "modules/features/indexer-hunt.js",
             "modules/features/indexer-hunt-home.js",
             "modules/features/indexer-hunt-stats.js",

@@ -1,0 +1,330 @@
+/* Tor Hunt - Torrent download engine UI */
+
+.tor-hunt-container {
+    padding: 0 20px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Status bar */
+.tor-status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--glass-bg, rgba(30, 41, 59, 0.5));
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.05));
+    border-radius: 12px;
+    padding: 12px 20px;
+    margin-bottom: 16px;
+    backdrop-filter: blur(12px);
+}
+
+.tor-status-metrics {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+}
+
+.tor-status-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: var(--text-secondary, #94a3b8);
+    position: relative;
+    cursor: default;
+}
+
+.tor-status-item i:first-child {
+    color: var(--accent-color, #6366f1);
+    font-size: 0.8rem;
+}
+
+.tor-status-value {
+    color: var(--text-primary, #e2e8f0);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.tor-status-label {
+    color: var(--text-muted, #64748b);
+    font-size: 0.75rem;
+}
+
+.tor-status-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* Buttons */
+.tor-btn {
+    background: var(--glass-bg, rgba(30, 41, 59, 0.5));
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+    color: var(--text-secondary, #94a3b8);
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.tor-btn:hover { background: rgba(255, 255, 255, 0.08); color: var(--text-primary, #e2e8f0); }
+.tor-btn-primary { background: var(--accent-color, #6366f1); color: #fff; border-color: transparent; }
+.tor-btn-primary:hover { background: var(--accent-hover, #818cf8); }
+.tor-btn-danger { color: #f87171; }
+.tor-btn-danger:hover { background: rgba(248, 113, 113, 0.1); }
+
+/* Tabs */
+.tor-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.05));
+    padding-bottom: 0;
+}
+
+.tor-tab {
+    background: none;
+    border: none;
+    color: var(--text-secondary, #94a3b8);
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+}
+.tor-tab:hover { color: var(--text-primary, #e2e8f0); }
+.tor-tab.active { color: var(--accent-color, #6366f1); border-bottom-color: var(--accent-color, #6366f1); }
+
+/* Panels */
+.tor-panel { min-height: 200px; }
+.tor-queue-actions { display: flex; gap: 8px; margin-bottom: 12px; }
+
+/* Empty state */
+.tor-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted, #64748b);
+}
+.tor-empty-state i { font-size: 2.5rem; margin-bottom: 12px; opacity: 0.4; }
+.tor-empty-state p { font-size: 0.9rem; }
+
+/* Queue items */
+.tor-queue-item {
+    background: var(--glass-bg, rgba(30, 41, 59, 0.5));
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.05));
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.tor-queue-item-info { flex: 1; min-width: 0; }
+.tor-queue-item-name {
+    color: var(--text-primary, #e2e8f0);
+    font-size: 0.85rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.tor-queue-item-meta {
+    display: flex;
+    gap: 12px;
+    margin-top: 4px;
+    font-size: 0.75rem;
+    color: var(--text-muted, #64748b);
+}
+
+.tor-queue-item-progress {
+    width: 120px;
+    flex-shrink: 0;
+}
+.tor-progress-bar {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.tor-progress-fill {
+    height: 100%;
+    background: var(--accent-color, #6366f1);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+.tor-progress-fill.seeding { background: #10b981; }
+.tor-progress-text {
+    font-size: 0.7rem;
+    color: var(--text-muted, #64748b);
+    text-align: center;
+    margin-top: 2px;
+}
+
+.tor-queue-item-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+.tor-queue-item-actions .tor-btn { padding: 4px 8px; font-size: 0.75rem; }
+
+/* State badges */
+.tor-state-badge {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+.tor-state-downloading { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
+.tor-state-seeding { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+.tor-state-paused { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+.tor-state-queued { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
+.tor-state-error { background: rgba(248, 113, 113, 0.15); color: #f87171; }
+.tor-state-checking { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+
+/* History items */
+.tor-history-item {
+    background: var(--glass-bg, rgba(30, 41, 59, 0.5));
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.05));
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.tor-history-item-info { flex: 1; min-width: 0; }
+.tor-history-item-name {
+    color: var(--text-primary, #e2e8f0);
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.tor-history-item-meta {
+    display: flex;
+    gap: 12px;
+    margin-top: 3px;
+    font-size: 0.72rem;
+    color: var(--text-muted, #64748b);
+}
+.tor-history-item-actions .tor-btn { padding: 4px 8px; font-size: 0.75rem; }
+
+/* Speed popover */
+#tor-speed-control { cursor: pointer; }
+.tor-speed-chevron { font-size: 0.65rem; margin-left: 2px; }
+.tor-speed-limit-badge {
+    font-size: 0.65rem;
+    background: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-left: 4px;
+}
+.tor-speed-popover {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 8px;
+    background: var(--bg-secondary, #1e293b);
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+    border-radius: 10px;
+    padding: 12px;
+    z-index: 100;
+    min-width: 200px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+.tor-speed-popover-title { font-size: 0.75rem; color: var(--text-muted, #64748b); margin-bottom: 8px; }
+.tor-speed-popover-options { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+.tor-speed-opt {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: var(--text-secondary, #94a3b8);
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.75rem;
+}
+.tor-speed-opt:hover { background: rgba(255, 255, 255, 0.08); color: var(--text-primary, #e2e8f0); }
+.tor-speed-popover-custom { display: flex; gap: 6px; }
+.tor-speed-popover-custom input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-primary, #e2e8f0);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+}
+
+/* Modal */
+.tor-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+}
+.tor-modal {
+    background: var(--bg-secondary, #1e293b);
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+    border-radius: 14px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+}
+.tor-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.tor-modal-header h3 { margin: 0; font-size: 1rem; color: var(--text-primary, #e2e8f0); }
+.tor-modal-close {
+    background: none;
+    border: none;
+    color: var(--text-muted, #64748b);
+    font-size: 1.3rem;
+    cursor: pointer;
+}
+.tor-modal-body { padding: 20px; }
+.tor-form-group { margin-bottom: 14px; }
+.tor-form-group label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-secondary, #94a3b8);
+    margin-bottom: 6px;
+}
+.tor-form-group textarea,
+.tor-form-group input[type="text"] {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-primary, #e2e8f0);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    resize: vertical;
+    box-sizing: border-box;
+}
+.tor-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .tor-status-metrics { gap: 12px; flex-wrap: wrap; }
+    .tor-queue-item { flex-wrap: wrap; }
+    .tor-queue-item-progress { width: 100%; }
+}

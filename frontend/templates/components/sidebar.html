@@ -217,6 +217,25 @@
             </div>
         </div>
 
+        <!-- ── TOR HUNT (conditional) ─────────────────────────── -->
+        <div class="nav-group" id="tor-hunt-sidebar-group">
+            <div class="nav-group-header" data-group="sidebar-group-tor-hunt">
+                <i class="fas fa-magnet nav-group-icon"></i>
+                <span>Tor Hunt</span>
+                <i class="fas fa-chevron-right nav-group-chevron"></i>
+            </div>
+            <div class="nav-group-body collapsed" id="sidebar-group-tor-hunt">
+                <a href="./#tor-hunt-home" class="nav-item nav-item-sub" id="torHuntHomeNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-magnet"></i></div>
+                    <span>Tor Home</span>
+                </a>
+                <a href="./#tor-hunt-settings" class="nav-item nav-item-sub" id="torHuntSettingsNav">
+                    <div class="nav-icon-wrapper"><i class="fas fa-cog"></i></div>
+                    <span>Settings</span>
+                </a>
+            </div>
+        </div>
+
         <!-- ── 3RD PARTY APPS ─────────────────────────────────── -->
         <div class="nav-group" id="nav-group-apps">
             <div class="nav-group-header" data-group="sidebar-group-apps">
@@ -391,6 +410,7 @@ var ALL_GROUP_IDS = [
     'sidebar-group-requests',
     'sidebar-group-apps',
     'sidebar-group-nzb-hunt',
+    'sidebar-group-tor-hunt',
     'sidebar-group-system'
 ];
 
@@ -423,7 +443,7 @@ function collapseGroup(id) {
 function collapseAllGroups() {
     ALL_GROUP_IDS.forEach(collapseGroup);
     var sidebar = document.getElementById('sidebar');
-    if (sidebar) sidebar.classList.remove('requests-focused', 'system-focused', 'media-focused', 'nzb-focused', 'thirdparty-focused');
+    if (sidebar) sidebar.classList.remove('requests-focused', 'system-focused', 'media-focused', 'nzb-focused', 'tor-focused', 'thirdparty-focused');
 }
 
 function expandSub(id) {
@@ -449,7 +469,7 @@ function expandSidebarGroup(groupId) {
     // Toggle focused class to hide other sections
     var sidebar = document.getElementById('sidebar');
     if (sidebar) {
-        sidebar.classList.remove('requests-focused', 'system-focused', 'media-focused', 'nzb-focused', 'thirdparty-focused');
+        sidebar.classList.remove('requests-focused', 'system-focused', 'media-focused', 'nzb-focused', 'tor-focused', 'thirdparty-focused');
         if (groupId === 'sidebar-group-requests') {
             sidebar.classList.add('requests-focused');
         } else if (groupId === 'sidebar-group-system') {
@@ -458,6 +478,8 @@ function expandSidebarGroup(groupId) {
             sidebar.classList.add('media-focused');
         } else if (groupId === 'sidebar-group-nzb-hunt') {
             sidebar.classList.add('nzb-focused');
+        } else if (groupId === 'sidebar-group-tor-hunt') {
+            sidebar.classList.add('tor-focused');
         } else if (groupId === 'sidebar-group-apps') {
             sidebar.classList.add('thirdparty-focused');
         }
@@ -471,6 +493,7 @@ var GROUP_DEFAULT_HASH = {
     'sidebar-group-requests': '#requestarr-discover',
     'sidebar-group-system': '#settings',
     'sidebar-group-nzb-hunt': '#nzb-hunt-home',
+    'sidebar-group-tor-hunt': '#tor-hunt-home',
     'sidebar-group-apps': '#sonarr'
 };
 
@@ -580,6 +603,11 @@ function setActiveNavItem() {
     else if (h === '#nzb-hunt-advanced' || h === '#nzb-hunt-settings-advanced') { selector = '#nzbHuntAdvancedNav'; group = 'sidebar-group-nzb-hunt'; }
     else if (h.indexOf('#nzb-hunt') === 0) { selector = '#nzbHuntHomeNav'; group = 'sidebar-group-nzb-hunt'; }
 
+    // ── Tor Hunt ──────────────────────────────────
+    else if (h === '#tor-hunt-home') { selector = '#torHuntHomeNav'; group = 'sidebar-group-tor-hunt'; }
+    else if (h === '#tor-hunt-settings') { selector = '#torHuntSettingsNav'; group = 'sidebar-group-tor-hunt'; }
+    else if (h.indexOf('#tor-hunt') === 0) { selector = '#torHuntHomeNav'; group = 'sidebar-group-tor-hunt'; }
+
     // ── System (includes settings) ─────────────────
     else if (h === '#system' || h === '#hunt-manager') { selector = '#mainSystemHuntManagerNav'; group = 'sidebar-group-system'; }
     else if (h === '#logs') { selector = '#mainSystemLogsNav'; group = 'sidebar-group-system'; }
@@ -678,6 +706,8 @@ function setActiveNavItem() {
                 if (requestsGroup) requestsGroup.style.display = hideRequests ? 'none' : '';
                 if (mediaHuntGroup) mediaHuntGroup.style.display = hideMedia ? 'none' : '';
                 if (nzbHuntGroup) nzbHuntGroup.style.display = hideMedia ? 'none' : '';
+                var torHuntGroup = document.getElementById('tor-hunt-sidebar-group');
+                if (torHuntGroup) torHuntGroup.style.display = hideMedia ? 'none' : '';
                 if (appsGroup) appsGroup.style.display = hideApps ? 'none' : '';
                 if (appsLabel) appsLabel.style.display = (hideMedia && hideApps) ? 'none' : '';
             })

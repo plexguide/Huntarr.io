@@ -1,0 +1,118 @@
+<!-- Tor Hunt Section - Built-in torrent download engine -->
+<section id="tor-hunt-section" class="content-section" style="display: none;">
+    <link rel="stylesheet" href="./static/css/tor-hunt.css">
+    {% set phb_back_hash = '#home' %}{% set phb_icon = 'fa-magnet' %}{% set phb_section = 'Tor Hunt' %}{% set phb_page = 'Downloads' %}
+    {% include 'components/page_header_partial.html' %}
+    <div class="tor-hunt-container">
+
+        <!-- Status bar -->
+        <div class="tor-status-bar">
+            <div class="tor-status-metrics">
+                <div class="tor-status-item" id="tor-speed-control" title="Click to set speed limit">
+                    <i class="fas fa-arrow-down"></i>
+                    <span class="tor-status-value" id="tor-dl-speed">0 B/s</span>
+                    <span class="tor-status-label">Down</span>
+                    <i class="fas fa-caret-down tor-speed-chevron"></i>
+                    <span class="tor-speed-limit-badge" id="tor-speed-limit-badge" style="display: none;"></span>
+                    <div class="tor-speed-popover" id="tor-speed-popover" style="display: none;">
+                        <div class="tor-speed-popover-title">Speed Limit</div>
+                        <div class="tor-speed-popover-options">
+                            <button class="tor-speed-opt" data-limit="0">Unlimited</button>
+                            <button class="tor-speed-opt" data-limit="1048576">1 MB/s</button>
+                            <button class="tor-speed-opt" data-limit="2621440">2.5 MB/s</button>
+                            <button class="tor-speed-opt" data-limit="5242880">5 MB/s</button>
+                            <button class="tor-speed-opt" data-limit="10485760">10 MB/s</button>
+                            <button class="tor-speed-opt" data-limit="26214400">25 MB/s</button>
+                            <button class="tor-speed-opt" data-limit="52428800">50 MB/s</button>
+                        </div>
+                        <div class="tor-speed-popover-custom">
+                            <input type="number" id="tor-speed-custom-input" placeholder="Custom MB/s" min="0" step="0.5">
+                            <button class="tor-btn tor-btn-primary tor-speed-custom-btn" id="tor-speed-custom-btn">Set</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="tor-status-item">
+                    <i class="fas fa-arrow-up"></i>
+                    <span class="tor-status-value" id="tor-up-speed">0 B/s</span>
+                    <span class="tor-status-label">Up</span>
+                </div>
+                <div class="tor-status-item">
+                    <i class="fas fa-download"></i>
+                    <span class="tor-status-value" id="tor-downloading-count">0</span>
+                    <span class="tor-status-label">Downloading</span>
+                </div>
+                <div class="tor-status-item">
+                    <i class="fas fa-seed"></i>
+                    <span class="tor-status-value" id="tor-seeding-count">0</span>
+                    <span class="tor-status-label">Seeding</span>
+                </div>
+            </div>
+            <div class="tor-status-actions">
+                <button class="tor-btn" id="tor-pause-btn" title="Pause all torrents">
+                    <i class="fas fa-pause"></i>
+                </button>
+                <button class="tor-btn" id="tor-add-btn" title="Add torrent">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tor-tabs">
+            <button class="tor-tab active" data-tab="queue">Queue</button>
+            <button class="tor-tab" data-tab="history">History</button>
+        </div>
+
+        <!-- Queue panel -->
+        <div class="tor-panel" data-panel="queue">
+            <div class="tor-queue-actions">
+                <button class="tor-btn" title="Refresh"><i class="fas fa-sync-alt"></i></button>
+            </div>
+            <div class="tor-queue-list" id="tor-queue-list">
+                <div class="tor-empty-state">
+                    <i class="fas fa-magnet"></i>
+                    <p>No active torrents</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- History panel -->
+        <div class="tor-panel" data-panel="history" style="display: none;">
+            <div class="tor-queue-actions">
+                <button class="tor-btn" title="Refresh"><i class="fas fa-sync-alt"></i></button>
+                <button class="tor-btn tor-btn-danger" title="Clear history"><i class="fas fa-trash"></i> Clear</button>
+            </div>
+            <div class="tor-history-list" id="tor-history-list">
+                <div class="tor-empty-state">
+                    <i class="fas fa-history"></i>
+                    <p>No download history</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Add Torrent Modal -->
+    <div class="tor-modal-overlay" id="tor-add-modal" style="display: none;">
+        <div class="tor-modal">
+            <div class="tor-modal-header">
+                <h3>Add Torrent</h3>
+                <button class="tor-modal-close" id="tor-add-modal-close">&times;</button>
+            </div>
+            <div class="tor-modal-body">
+                <div class="tor-form-group">
+                    <label>Magnet Link or URL</label>
+                    <textarea id="tor-add-url" rows="3" placeholder="magnet:?xt=urn:btih:..."></textarea>
+                </div>
+                <div class="tor-form-group">
+                    <label>Category (optional)</label>
+                    <input type="text" id="tor-add-category" placeholder="e.g. movies, tv">
+                </div>
+            </div>
+            <div class="tor-modal-footer">
+                <button class="tor-btn" id="tor-add-cancel">Cancel</button>
+                <button class="tor-btn tor-btn-primary" id="tor-add-submit">Add</button>
+            </div>
+        </div>
+    </div>
+</section>

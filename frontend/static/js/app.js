@@ -105,6 +105,8 @@ let huntarrUI = {
                     if (requestsGroup) requestsGroup.style.display = (generalSettings.enable_requestarr === false) ? 'none' : '';
                     if (mediaHuntGroup) mediaHuntGroup.style.display = (generalSettings.enable_media_hunt === false) ? 'none' : '';
                     if (nzbHuntGroup) nzbHuntGroup.style.display = (generalSettings.enable_media_hunt === false) ? 'none' : '';
+                    var torHuntGroup = document.getElementById('tor-hunt-sidebar-group');
+                    if (torHuntGroup) torHuntGroup.style.display = (generalSettings.enable_media_hunt === false) ? 'none' : '';
                     if (appsGroup) appsGroup.style.display = (generalSettings.enable_third_party_apps === false) ? 'none' : '';
                     if (appsLabel) appsLabel.style.display = (generalSettings.enable_media_hunt === false && generalSettings.enable_third_party_apps === false) ? 'none' : '';
                 }
@@ -177,6 +179,9 @@ let huntarrUI = {
         } else if (this.currentSection === 'nzb-hunt-home' || this.currentSection === 'nzb-hunt-activity' || this.currentSection === 'nzb-hunt-server-editor' || this.currentSection === 'nzb-hunt-folders' || this.currentSection === 'nzb-hunt-servers' || this.currentSection === 'nzb-hunt-advanced' || (this.currentSection && this.currentSection.startsWith('nzb-hunt-settings'))) {
             console.log('[huntarrUI] Initialization - showing NZB Hunt sidebar');
             this.showNzbHuntSidebar();
+        } else if (this.currentSection === 'tor-hunt-home' || this.currentSection === 'tor-hunt-settings' || (this.currentSection && this.currentSection.startsWith('tor-hunt'))) {
+            console.log('[huntarrUI] Initialization - showing Tor Hunt sidebar');
+            this.showTorHuntSidebar();
         } else if (this.currentSection === 'indexer-hunt' || this.currentSection === 'indexer-hunt-stats' || this.currentSection === 'indexer-hunt-history') {
             console.log('[huntarrUI] Initialization - showing Media Config sidebar for Index Master');
             this.showMovieHuntSidebar();
@@ -772,6 +777,11 @@ let huntarrUI = {
 
     showNzbHuntSidebar: function() {
         if (typeof expandSidebarGroup === 'function') expandSidebarGroup('sidebar-group-nzb-hunt');
+        if (typeof setActiveNavItem === 'function') setActiveNavItem();
+    },
+
+    showTorHuntSidebar: function() {
+        if (typeof expandSidebarGroup === 'function') expandSidebarGroup('sidebar-group-tor-hunt');
         if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
 

@@ -107,6 +107,8 @@ let huntarrUI = {
                     if (requestsGroup) requestsGroup.style.display = (generalSettings.enable_requestarr === false) ? 'none' : '';
                     if (mediaHuntGroup) mediaHuntGroup.style.display = (generalSettings.enable_media_hunt === false) ? 'none' : '';
                     if (nzbHuntGroup) nzbHuntGroup.style.display = (generalSettings.enable_media_hunt === false) ? 'none' : '';
+                    var torHuntGroup = document.getElementById('tor-hunt-sidebar-group');
+                    if (torHuntGroup) torHuntGroup.style.display = (generalSettings.enable_media_hunt === false) ? 'none' : '';
                     if (appsGroup) appsGroup.style.display = (generalSettings.enable_third_party_apps === false) ? 'none' : '';
                     if (appsLabel) appsLabel.style.display = (generalSettings.enable_media_hunt === false && generalSettings.enable_third_party_apps === false) ? 'none' : '';
                 }
@@ -179,6 +181,9 @@ let huntarrUI = {
         } else if (this.currentSection === 'nzb-hunt-home' || this.currentSection === 'nzb-hunt-activity' || this.currentSection === 'nzb-hunt-server-editor' || this.currentSection === 'nzb-hunt-folders' || this.currentSection === 'nzb-hunt-servers' || this.currentSection === 'nzb-hunt-advanced' || (this.currentSection && this.currentSection.startsWith('nzb-hunt-settings'))) {
             console.log('[huntarrUI] Initialization - showing NZB Hunt sidebar');
             this.showNzbHuntSidebar();
+        } else if (this.currentSection === 'tor-hunt-home' || this.currentSection === 'tor-hunt-settings' || (this.currentSection && this.currentSection.startsWith('tor-hunt'))) {
+            console.log('[huntarrUI] Initialization - showing Tor Hunt sidebar');
+            this.showTorHuntSidebar();
         } else if (this.currentSection === 'indexer-hunt' || this.currentSection === 'indexer-hunt-stats' || this.currentSection === 'indexer-hunt-history') {
             console.log('[huntarrUI] Initialization - showing Media Config sidebar for Index Master');
             this.showMovieHuntSidebar();
@@ -774,6 +779,11 @@ let huntarrUI = {
 
     showNzbHuntSidebar: function() {
         if (typeof expandSidebarGroup === 'function') expandSidebarGroup('sidebar-group-nzb-hunt');
+        if (typeof setActiveNavItem === 'function') setActiveNavItem();
+    },
+
+    showTorHuntSidebar: function() {
+        if (typeof expandSidebarGroup === 'function') expandSidebarGroup('sidebar-group-tor-hunt');
         if (typeof setActiveNavItem === 'function') setActiveNavItem();
     },
 
@@ -1791,7 +1801,8 @@ Object.assign(huntarrUI, {
             console.log('[huntarrUI] Requests disabled - redirecting to home');
             this.switchSection('home'); return;
         }
-        if (this._enableMediaHunt === false && (mediaHuntSections.indexOf(section) !== -1 || nzbHuntSections.indexOf(section) !== -1 || (section && section.indexOf('nzb-hunt') === 0))) {
+        var torHuntSections = ['tor-hunt-home', 'tor-hunt-settings'];
+        if (this._enableMediaHunt === false && (mediaHuntSections.indexOf(section) !== -1 || nzbHuntSections.indexOf(section) !== -1 || torHuntSections.indexOf(section) !== -1 || (section && section.indexOf('nzb-hunt') === 0) || (section && section.indexOf('tor-hunt') === 0))) {
             console.log('[huntarrUI] Media Hunt disabled - redirecting to home');
             this.switchSection('home'); return;
         }
@@ -1906,7 +1917,7 @@ Object.assign(huntarrUI, {
             }
             
             // Don't refresh page when navigating to/from instance editor or between app sections
-            const noRefreshSections = ['home', 'instance-editor', 'profile-editor', 'movie-hunt-instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'media-hunt-collection', 'media-hunt-calendar', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-media-hunt', 'movie-hunt-settings', 'media-hunt-settings', 'media-hunt-instances', 'settings-instance-management', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-import-media', 'settings-custom-formats', 'settings-root-folders', 'tv-hunt-collection', 'media-hunt-collection', 'tv-hunt-settings', 'media-hunt-settings', 'tv-hunt-settings-profiles', 'tv-hunt-settings-sizes', 'tv-hunt-settings-custom-formats', 'tv-hunt-settings-indexers', 'tv-hunt-settings-clients', 'tv-hunt-settings-import-lists', 'tv-hunt-settings-root-folders', 'tv-hunt-settings-tv-management', 'tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist', 'tv-hunt-instance-editor', 'logs-tv-hunt', 'system', 'hunt-manager', 'logs', 'about', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-folders', 'nzb-hunt-servers', 'nzb-hunt-advanced', 'nzb-hunt-settings', 'nzb-hunt-settings-folders', 'nzb-hunt-settings-servers', 'nzb-hunt-settings-processing', 'nzb-hunt-settings-advanced', 'nzb-hunt-server-editor', 'requestarr', 'requestarr-discover', 'requestarr-movies', 'requestarr-tv', 'requestarr-hidden', 'requestarr-personal-blacklist', 'requestarr-filters', 'requestarr-settings', 'requestarr-smarthunt', 'requestarr-smarthunt-settings', 'requestarr-users', 'requestarr-bundles', 'requestarr-requests', 'requestarr-global-blacklist', 'indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history'];
+            const noRefreshSections = ['home', 'instance-editor', 'profile-editor', 'movie-hunt-instance-editor', 'sonarr', 'radarr', 'lidarr', 'readarr', 'whisparr', 'eros', 'prowlarr', 'swaparr', 'movie-hunt-home', 'movie-hunt-collection', 'media-hunt-collection', 'media-hunt-calendar', 'activity-queue', 'activity-history', 'activity-blocklist', 'activity-logs', 'logs-media-hunt', 'movie-hunt-settings', 'media-hunt-settings', 'media-hunt-instances', 'settings-instance-management', 'settings-media-management', 'settings-profiles', 'settings-sizes', 'settings-indexers', 'settings-clients', 'settings-import-lists', 'settings-import-media', 'settings-custom-formats', 'settings-root-folders', 'tv-hunt-collection', 'media-hunt-collection', 'tv-hunt-settings', 'media-hunt-settings', 'tv-hunt-settings-profiles', 'tv-hunt-settings-sizes', 'tv-hunt-settings-custom-formats', 'tv-hunt-settings-indexers', 'tv-hunt-settings-clients', 'tv-hunt-settings-import-lists', 'tv-hunt-settings-root-folders', 'tv-hunt-settings-tv-management', 'tv-hunt-activity-queue', 'tv-hunt-activity-history', 'tv-hunt-activity-blocklist', 'tv-hunt-instance-editor', 'logs-tv-hunt', 'system', 'hunt-manager', 'logs', 'about', 'settings', 'scheduling', 'notifications', 'backup-restore', 'settings-logs', 'user', 'nzb-hunt-home', 'nzb-hunt-activity', 'nzb-hunt-folders', 'nzb-hunt-servers', 'nzb-hunt-advanced', 'nzb-hunt-settings', 'nzb-hunt-settings-folders', 'nzb-hunt-settings-servers', 'nzb-hunt-settings-processing', 'nzb-hunt-settings-advanced', 'nzb-hunt-server-editor', 'tor-hunt-home', 'tor-hunt-settings', 'requestarr', 'requestarr-discover', 'requestarr-movies', 'requestarr-tv', 'requestarr-hidden', 'requestarr-personal-blacklist', 'requestarr-filters', 'requestarr-settings', 'requestarr-smarthunt', 'requestarr-smarthunt-settings', 'requestarr-users', 'requestarr-bundles', 'requestarr-requests', 'requestarr-global-blacklist', 'indexer-hunt', 'indexer-hunt-stats', 'indexer-hunt-history'];
             const skipRefresh = noRefreshSections.includes(section) || noRefreshSections.includes(this.currentSection);
             
             if (!skipRefresh) {
@@ -1926,6 +1937,11 @@ Object.assign(huntarrUI, {
         // Stop NZB Hunt queue/history polling when leaving NZB Hunt home
         if (this.currentSection === 'nzb-hunt-home' && window.NzbHunt && typeof window.NzbHunt.stopPolling === 'function') {
             window.NzbHunt.stopPolling();
+        }
+
+        // Stop Tor Hunt polling when leaving Tor Hunt home
+        if (this.currentSection === 'tor-hunt-home' && window.TorHunt && typeof window.TorHunt.stopPolling === 'function') {
+            window.TorHunt.stopPolling();
         }
 
         // Clean up cycle countdown when leaving home (stops timer intervals and API polling)
@@ -2115,6 +2131,27 @@ Object.assign(huntarrUI, {
             if (window.NzbHunt) {
                 if (typeof window.NzbHunt.initSettings === 'function') window.NzbHunt.initSettings();
                 if (typeof window.NzbHunt._populateServerEditorForm === 'function') window.NzbHunt._populateServerEditorForm();
+            }
+        // ── Tor Hunt sections ─────────────────────────────────────────
+        } else if (section === 'tor-hunt-home' && document.getElementById('tor-hunt-section')) {
+            if (this._enableMediaHunt === false) { this.switchSection('home'); return; }
+            document.getElementById('tor-hunt-section').classList.add('active');
+            document.getElementById('tor-hunt-section').style.display = 'block';
+            newTitle = 'Tor Hunt';
+            this.currentSection = 'tor-hunt-home';
+            this.showTorHuntSidebar();
+            if (window.TorHunt && typeof window.TorHunt.init === 'function') {
+                window.TorHunt.init();
+            }
+        } else if (section === 'tor-hunt-settings' && document.getElementById('tor-hunt-section')) {
+            if (this._enableMediaHunt === false) { this.switchSection('home'); return; }
+            document.getElementById('tor-hunt-section').classList.add('active');
+            document.getElementById('tor-hunt-section').style.display = 'block';
+            newTitle = 'Tor Hunt – Settings';
+            this.currentSection = 'tor-hunt-settings';
+            this.showTorHuntSidebar();
+            if (window.TorHunt && typeof window.TorHunt.init === 'function') {
+                window.TorHunt.init();
             }
         // ── Indexer Hunt sections ──────────────────────────────────────
         } else if (section === 'indexer-hunt' && document.getElementById('indexer-hunt-section')) {
