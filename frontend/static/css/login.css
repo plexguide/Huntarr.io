@@ -12,15 +12,32 @@
     margin: 0;
     padding: 0;
     min-height: 100vh;
+    width: 100vw;
     background: #0f172a;
     color: #e2e8f0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     position: relative;
     overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+}
+
+/* Hide any sidebar/nav/chat elements that JS bundles might inject on the login page */
+.login-page #sidebar-wrapper,
+.login-page #sidebar,
+.login-page .sidebar-wrapper,
+.login-page .sidebar,
+.login-page .topbar,
+.login-page .mobile-topbar,
+.login-page .app-container,
+.login-page .chat-widget,
+.login-page .chat-panel,
+.login-page .chat-toggle {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    position: absolute !important;
+    pointer-events: none !important;
 }
 
 /* ═══════════════════════════════════════════════════
@@ -60,8 +77,11 @@
    Login Card
    ═══════════════════════════════════════════════════ */
 .login-container {
-    position: relative;
+    position: fixed;
     z-index: 2;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     width: 420px;
     max-width: 92%;
     background: rgba(11, 15, 25, 0.72);
@@ -97,8 +117,8 @@
 }
 
 @keyframes loginCardIn {
-    from { opacity: 0; transform: translateY(16px) scale(0.98); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
+    from { opacity: 0; transform: translate(-50%, -50%) translateY(16px) scale(0.98); }
+    to   { opacity: 1; transform: translate(-50%, -50%) translateY(0) scale(1); }
 }
 
 /* ── Header ─────────────────────────────────────── */
