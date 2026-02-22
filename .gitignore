@@ -48,6 +48,7 @@ chrome-user-data
 .cursor
 *.mdc
 .kiro/
+.agents/
 *.swp
 *.swo
 
