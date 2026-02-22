@@ -235,6 +235,25 @@ def _add_nzb_to_download_client(client, nzb_url, nzb_name, category, verify_ssl,
                 return True, 'Added to NZBGet', data.get('result')
             err = data.get('error', {})
             return False, err.get('message', 'NZBGet returned an error'), None
+
+        elif client_type in ('torhunt', 'tor_hunt', 'qbittorrent'):
+            from src.primary.apps.tor_hunt.tor_hunt_manager import get_manager as get_tor_manager
+            tor_mgr = get_tor_manager()
+            if not tor_mgr.has_connection():
+                return False, 'Tor Hunt engine not available', None
+            # nzb_url may actually be a magnet link or torrent URL from indexers
+            ok, msg, tid = tor_mgr.add_torrent(magnet_url=nzb_url, category=cat, name=nzb_name or '')
+            if ok:
+                # Use the torrent hash as queue_id for tracking
+                queue = tor_mgr.get_queue(category=cat)
+                queue_id = tid  # tid is the torrent_id from the engine
+                if queue:
+                    # Find the most recently added torrent to get its hash
+                    newest = max(queue, key=lambda t: t.get('added_on', 0))
+                    queue_id = newest.get('hash', tid)
+                return True, 'Added to Tor Hunt', queue_id
+            return False, msg or 'Failed to add torrent', None
+
         return False, f'Unknown client type: {client_type}', None
     except requests.RequestException as e:
         return False, str(e) or 'Connection failed', None

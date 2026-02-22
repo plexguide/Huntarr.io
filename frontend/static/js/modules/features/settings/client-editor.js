@@ -12,7 +12,9 @@
     var CLIENT_TYPES = [
         { value: 'nzbhunt', label: 'NZB Hunt (Built-in)' },
         { value: 'nzbget', label: 'NZBGet' },
-        { value: 'sabnzbd', label: 'SABnzbd' }
+        { value: 'sabnzbd', label: 'SABnzbd' },
+        { value: 'torhunt', label: 'Tor Hunt (Built-in)' },
+        { value: 'qbittorrent', label: 'qBittorrent' }
     ];
 
     var PRIORITY_OPTIONS = [
@@ -59,8 +61,8 @@
         }
 
         // Add event listeners for real-time connection status checking
-        // For NZB Hunt, only check on initial load (no host/port fields)
-        if (typeVal !== 'nzbhunt') {
+        // For NZB Hunt and Tor Hunt, only check on initial load (no host/port fields)
+        if (typeVal !== 'nzbhunt' && typeVal !== 'torhunt') {
             const hostEl = document.getElementById('editor-client-host');
             const portEl = document.getElementById('editor-client-port');
             const apiKeyEl = document.getElementById('editor-client-apikey');
@@ -74,8 +76,8 @@
             if (passwordEl) passwordEl.addEventListener('input', () => this.checkClientConnection());
         }
         
-        // Initial connection check (skip for NZB Hunt - built-in, no status needed)
-        if (typeVal !== 'nzbhunt') {
+        // Initial connection check (skip for NZB Hunt and Tor Hunt - built-in, no status needed)
+        if (typeVal !== 'nzbhunt' && typeVal !== 'torhunt') {
             this.checkClientConnection();
         }
 
@@ -88,8 +90,10 @@
         const name = (instance.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         const typeRaw = (instance.type || 'nzbget').toLowerCase().trim();
         const typeVal = CLIENT_TYPES.some(function(o) { return o.value === typeRaw; }) ? typeRaw : 'nzbget';
+        const isQBit = typeVal === 'qbittorrent';
+        const isTorHunt = typeVal === 'torhunt' || typeVal === 'tor_hunt';
         const host = (instance.host || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-        const defaultPort = typeVal === 'nzbget' ? '6789' : '8080';
+        const defaultPort = typeVal === 'nzbget' ? '6789' : (isQBit ? '8080' : '8080');
         const port = instance.port !== undefined && instance.port !== '' ? String(instance.port) : defaultPort;
         const username = (instance.username || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         const enabled = instance.enabled !== false;
@@ -117,15 +121,16 @@
         }).join('');
 
         const isNzbHunt = typeVal === 'nzbhunt';
-        const hideForNzbHunt = isNzbHunt ? ' style="display: none;"' : '';
-        const nzbHuntGridClass = isNzbHunt ? ' editor-grid-nzbhunt' : '';
+        const hideForNzbHunt = (isNzbHunt || isTorHunt) ? ' style="display: none;"' : '';
+        const hideApiKey = (isNzbHunt || isQBit || isTorHunt) ? ' style="display: none;"' : '';
+        const nzbHuntGridClass = (isNzbHunt || isTorHunt) ? ' editor-grid-nzbhunt' : '';
 
         return `
             <div class="editor-grid${nzbHuntGridClass}">
-                <div class="editor-section${isNzbHunt ? ' editor-section-single' : ''}">
+                <div class="editor-section${(isNzbHunt || isTorHunt) ? ' editor-section-single' : ''}">
                     <div class="editor-section-title" style="display: flex; align-items: center; justify-content: space-between;">
-                        <span>${isNzbHunt ? 'NZB Hunt (Built-in)' : 'Connection Settings'}</span>
-                        <div id="client-connection-status-container" style="display: ${isNzbHunt ? 'none' : 'flex'}; justify-content: flex-end; flex: 1;"></div>
+                        <span>${isNzbHunt ? 'NZB Hunt (Built-in)' : (isTorHunt ? 'Tor Hunt (Built-in)' : 'Connection Settings')}</span>
+                        <div id="client-connection-status-container" style="display: ${(isNzbHunt || isTorHunt) ? 'none' : 'flex'}; justify-content: flex-end; flex: 1;"></div>
                     </div>
                     ${isNzbHunt ? `
                     <div class="editor-field-group">
@@ -137,6 +142,33 @@
                             <p style="color: #94a3b8; margin: 0; font-size: 0.9rem; line-height: 1.5;">
                                 NZB Hunt is Huntarr's integrated usenet download client. No external host, port, or API keys needed &mdash; 
                                 it uses the usenet servers configured in <strong>NZB Hunt → Settings → Servers</strong>.
+                            </p>
+                        </div>
+                    </div>
+                    ` : ''}
+                    ${isTorHunt ? `
+                    <div class="editor-field-group">
+                        <div style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                <i class="fas fa-magnet" style="color: #a855f7; font-size: 1.2rem;"></i>
+                                <strong style="color: #a855f7;">Built-in Torrent Client</strong>
+                            </div>
+                            <p style="color: #94a3b8; margin: 0; font-size: 0.9rem; line-height: 1.5;">
+                                Tor Hunt is Huntarr's integrated torrent download client. No external software needed &mdash; 
+                                configure download settings in <strong>Tor Hunt → Settings</strong>.
+                            </p>
+                        </div>
+                    </div>
+                    ` : ''}
+                    ${isQBit ? `
+                    <div class="editor-field-group">
+                        <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                <i class="fas fa-magnet" style="color: #818cf8; font-size: 1.2rem;"></i>
+                                <strong style="color: #818cf8;">External Torrent Client</strong>
+                            </div>
+                            <p style="color: #94a3b8; margin: 0; font-size: 0.9rem; line-height: 1.5;">
+                                Connects to your external qBittorrent instance via its Web API. Make sure the Web UI is enabled in qBittorrent settings.
                             </p>
                         </div>
                     </div>
@@ -154,10 +186,10 @@
                         </div>
                         <p class="editor-help-text">Enable or disable this download client</p>
                     </div>
-                    ${!isNzbHunt ? `
-                    <div class="editor-field-group">
+                    ${!isNzbHunt && !isTorHunt ? `
+                    <div class="editor-field-group"${hideForNzbHunt}>
                         <label for="editor-client-name">Name</label>
-                        <input type="text" id="editor-client-name" value="${name}" placeholder="${typeVal === 'sabnzbd' ? 'e.g. My SABnzbd' : 'e.g. My NZBGet'}" />
+                        <input type="text" id="editor-client-name" value="${name}" placeholder="${typeVal === 'sabnzbd' ? 'e.g. My SABnzbd' : (isQBit ? 'e.g. My qBittorrent' : 'e.g. My NZBGet')}" />
                         <p class="editor-help-text">A friendly name to identify this client</p>
                     </div>
                     ` : ''}
@@ -169,9 +201,9 @@
                     <div class="editor-field-group"${hideForNzbHunt}>
                         <label for="editor-client-port">Port</label>
                         <input type="number" id="editor-client-port" value="${port}" placeholder="${defaultPort}" min="1" max="65535" />
-                        <p class="editor-help-text">Port number for your download client (SABnzbd default: 8080, NZBGet default: 6789)</p>
+                        <p class="editor-help-text">Port number for your download client (SABnzbd default: 8080, NZBGet default: 6789, qBittorrent default: 8080)</p>
                     </div>
-                    <div class="editor-field-group"${hideForNzbHunt}>
+                    <div class="editor-field-group"${hideApiKey}>
                         <label for="editor-client-apikey">API Key</label>
                         <input type="password" id="editor-client-apikey" placeholder="${apiKeyPlaceholder.replace(/"/g, '&quot;')}" autocomplete="off" />
                         <p class="editor-help-text">API key from your download client settings. ${isEdit ? 'Leave blank to keep existing.' : ''}</p>
@@ -186,7 +218,7 @@
                         <input type="password" id="editor-client-password" placeholder="${pwdPlaceholder.replace(/"/g, '&quot;')}" autocomplete="off" />
                         <p class="editor-help-text">${isEdit ? 'Leave blank to keep existing password' : 'Password for authentication (if required)'}</p>
                     </div>
-                    ${!isNzbHunt ? `
+                    ${!isNzbHunt && !isTorHunt ? `
                 </div>
                 <div class="editor-section">
                     <div class="editor-section-title">Additional Configurations</div>
@@ -234,7 +266,9 @@
             ? String(this._currentEditing.originalInstance.type).trim().toLowerCase()
             : 'nzbget';
         const isNzbHuntType = (type === 'nzbhunt' || type === 'nzb_hunt');
-        const name = isNzbHuntType ? 'NZB Hunt' : (nameEl ? nameEl.value.trim() : '');
+        const isQBitType = (type === 'qbittorrent');
+        const isTorHuntType = (type === 'torhunt' || type === 'tor_hunt');
+        const name = (isNzbHuntType || isTorHuntType) ? (isNzbHuntType ? 'NZB Hunt' : 'Tor Hunt') : (nameEl ? nameEl.value.trim() : '');
         const host = hostEl ? hostEl.value.trim() : '';
         const portDefault = type === 'nzbget' ? 6789 : 8080;
         let port = portDefault;
@@ -262,20 +296,23 @@
         }
 
         const body = {
-            name: isNzbHuntType ? 'NZB Hunt' : (name || 'Unnamed'),
+            name: isNzbHuntType ? 'NZB Hunt' : (isTorHuntType ? 'Tor Hunt' : (name || 'Unnamed')),
             type: type,
-            host: isNzbHuntType ? 'internal' : host,
-            port: isNzbHuntType ? 0 : port,
+            host: (isNzbHuntType || isTorHuntType) ? 'internal' : host,
+            port: (isNzbHuntType || isTorHuntType) ? 0 : port,
             enabled: enabled,
             category: category || defaultCategory,
             recent_priority: recentPriority,
             older_priority: olderPriority,
             client_priority: clientPriority
         };
-        if (!isNzbHuntType) {
+        if (!isNzbHuntType && !isTorHuntType) {
             if (apiKey) body.api_key = apiKey;
             if (username) body.username = username;
             if (password) body.password = password;
+        }
+        if (isQBitType) {
+            body.use_ssl = false;
         }
 
         const isAdd = this._currentEditing.isAdd;
@@ -343,8 +380,8 @@
             ? String(this._currentEditing.originalInstance.type).trim().toLowerCase()
             : 'nzbget';
         
-        // NZB Hunt (built-in) - no connection status; it's built-in and managed in NZB Hunt Settings
-        if (type === 'nzbhunt' || type === 'nzb_hunt') {
+        // NZB Hunt and Tor Hunt (built-in) - no connection status; managed in their own Settings
+        if (type === 'nzbhunt' || type === 'nzb_hunt' || type === 'torhunt' || type === 'tor_hunt') {
             if (container) container.style.display = 'none';
             return;
         }

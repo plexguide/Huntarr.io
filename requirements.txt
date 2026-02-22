@@ -18,4 +18,6 @@ urllib3>=2.6.0     # CVE-2025-66418, CVE-2025-66471: unbounded decompression DoS
 idna>=3.7          # CVE-2024-3651: encode() quadratic DoS
 Pillow>=10.3.0     # CVE-2024-28219: buffer overflow in _imagingcms.c
 
+libtorrent>=2.0.10    # BitTorrent protocol engine for Tor Hunt (built-in torrent client)
+
 pystray==0.19.5; sys_platform == 'win32' # Windows system tray icon

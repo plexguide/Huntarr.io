@@ -385,6 +385,59 @@ def _check_and_import_completed(client_name, queue_item, instance_id):
             if release_name and release_name.endswith('.nzb'):
                 release_name = release_name[:-4]
 
+        # ── Tor Hunt / qBittorrent ──
+        elif client_type in ('torhunt', 'tor_hunt', 'qbittorrent'):
+            movie_hunt_logger.info(
+                "Import: item left Tor Hunt queue (hash=%s, title='%s'). Checking Tor Hunt.",
+                queue_id, title
+            )
+
+            download_path = _get_tor_hunt_completed_path(queue_id, title, year, instance_id)
+            if not download_path:
+                # Check if torrent errored
+                try:
+                    from src.primary.apps.tor_hunt.tor_hunt_manager import get_manager
+                    tor_mgr = get_manager()
+                    queue = tor_mgr.get_queue()
+                    for t in queue:
+                        if t.get('hash', '') == queue_id:
+                            state = t.get('raw_state', '')
+                            if state == 'error':
+                                source_title = (t.get('name') or '').strip()
+                                reason_failed = f"Torrent error: {t.get('error_msg', 'unknown')}"
+                                _blocklist_add(
+                                    movie_title=title, year=year,
+                                    source_title=source_title,
+                                    reason_failed=reason_failed,
+                                    instance_id=instance_id
+                                )
+                                movie_hunt_logger.warning(
+                                    "Import: Tor Hunt download '%s' (%s) FAILED (state: %s). Added to blocklist.",
+                                    title, year, state
+                                )
+                            break
+                except Exception:
+                    pass
+                return
+
+            release_name = ''
+            try:
+                from src.primary.apps.tor_hunt.tor_hunt_manager import get_manager
+                tor_mgr = get_manager()
+                queue = tor_mgr.get_queue()
+                for t in queue:
+                    if t.get('hash', '') == queue_id:
+                        release_name = (t.get('name') or '').strip()
+                        break
+                if not release_name:
+                    history = tor_mgr.get_history()
+                    for h in history:
+                        if h.get('hash', '') == queue_id:
+                            release_name = (h.get('name') or '').strip()
+                            break
+            except Exception:
+                pass
+
         # ── Unsupported client type ──
         else:
             movie_hunt_logger.debug("Import: unsupported client type: %s", client_type)
@@ -528,13 +581,132 @@ def _get_nzb_hunt_queue(client, client_name, instance_id):
         return []
 
 
+def _get_tor_hunt_queue(client, client_name, instance_id):
+    """Fetch queue from the built-in Tor Hunt torrent engine."""
+    try:
+        from src.primary.apps.tor_hunt.tor_hunt_manager import get_manager
+        mgr = get_manager()
+        if not mgr.has_connection():
+            return []
+
+        raw_cat = (client.get('category') or '').strip()
+        inst_name = _get_movie_hunt_instance_display_name(instance_id)
+        if inst_name:
+            client_cat = _instance_name_to_category(inst_name, "Movies")
+        elif raw_cat.lower() in ('default', '*', ''):
+            client_cat = MOVIE_HUNT_DEFAULT_CATEGORY
+        else:
+            client_cat = raw_cat
+
+        # Built-in engine returns pre-formatted queue items
+        all_torrents = mgr.get_queue(category=client_cat)
+        requested_ids = _get_requested_queue_ids(instance_id).get(client_name, set())
+
+        items = []
+        current_queue_ids = set()
+
+        for t in all_torrents:
+            t_hash = t.get('hash', '')
+            t_id = t.get('id', t_hash)
+            if t_hash:
+                current_queue_ids.add(str(t_hash))
+
+            if requested_ids and str(t_hash) not in requested_ids:
+                continue
+
+            torrent_name = t.get('name', '-')
+            display = _get_requested_display(client_name, t_hash, instance_id)
+            display_name = _format_queue_display_name(
+                torrent_name, display.get('title'), display.get('year'))
+            scoring_str = _format_queue_scoring(display.get('score'), display.get('score_breakdown'))
+
+            progress_pct = t.get('progress', 0)
+            if progress_pct >= 100:
+                progress = 'Pending Import'
+            elif progress_pct > 0:
+                progress = f'{progress_pct:.0f}%'
+            else:
+                progress = '-'
+
+            quality_str = _extract_quality_from_filename(torrent_name)
+            formats_str = _extract_formats_from_filename(torrent_name)
+
+            items.append({
+                'id': t_hash,
+                'movie': display_name,
+                'title': display_name,
+                'year': None,
+                'languages': '-',
+                'quality': quality_str,
+                'formats': formats_str,
+                'scoring': scoring_str,
+                'time_left': t.get('time_left', '-'),
+                'progress': progress,
+                'instance_name': client_name,
+                'original_release': torrent_name,
+            })
+
+        _prune_requested_queue_ids(client_name, current_queue_ids, instance_id)
+        return items
+    except Exception as e:
+        logger.debug("Tor Hunt queue error: %s", e)
+        return []
+
+
+def _get_tor_hunt_completed_path(torrent_hash, title, year, instance_id):
+    """Get the completed download path from the built-in Tor Hunt engine."""
+    try:
+        from src.primary.apps.tor_hunt.tor_hunt_manager import get_manager
+        mgr = get_manager()
+        if not mgr.has_connection():
+            return None
+
+        # Check queue for completed/seeding torrents
+        queue = mgr.get_queue()
+        for t in queue:
+            if t.get('hash', '') == torrent_hash:
+                progress = t.get('progress', 0)
+                state = t.get('raw_state', '')
+                if state in ('seeding', 'completed') or progress >= 99:
+                    content_path = t.get('content_path', '') or t.get('save_path', '')
+                    if content_path:
+                        movie_hunt_logger.info("Import: Tor Hunt download '%s' completed, path: %s", title, content_path)
+                        return content_path
+                    movie_hunt_logger.error("Import: no content_path for torrent %s ('%s')", torrent_hash, title)
+                    return None
+                else:
+                    movie_hunt_logger.warning(
+                        "Import: Tor Hunt torrent %s for '%s' not completed (progress: %.1f%%, state: %s)",
+                        torrent_hash, title, progress, state
+                    )
+                    return None
+
+        # Check history
+        history = mgr.get_history()
+        for h in history:
+            if h.get('hash', '') == torrent_hash:
+                content_path = h.get('content_path', '') or h.get('save_path', '')
+                if content_path:
+                    movie_hunt_logger.info("Import: Tor Hunt download '%s' found in history, path: %s", title, content_path)
+                    return content_path
+
+        movie_hunt_logger.warning("Import: Tor Hunt torrent %s not found for '%s'", torrent_hash, title)
+        return None
+    except Exception as e:
+        movie_hunt_logger.error("Import: error getting Tor Hunt path for '%s': %s", title, e)
+        return None
+
+
 def _get_download_client_queue(client, instance_id):
-    """Fetch queue from one download client (NZB Hunt, SABnzbd, or NZBGet)."""
+    """Fetch queue from one download client (NZB Hunt, SABnzbd, NZBGet, or Tor Hunt/qBittorrent)."""
     client_type = (client.get('type') or 'nzbget').strip().lower()
     name = (client.get('name') or 'Download client').strip() or 'Download client'
 
     if client_type in ('nzbhunt', 'nzb_hunt'):
         return _get_nzb_hunt_queue(client, name, instance_id)
+
+    if client_type in ('torhunt', 'tor_hunt', 'qbittorrent'):
+        return _get_tor_hunt_queue(client, name, instance_id)
 
     base_url = _download_client_base_url(client)
     if not base_url:
@@ -741,6 +913,20 @@ def _delete_from_download_client(client, item_ids):
             removed = 0
             for iid in item_ids:
                 if mgr.remove_item(str(iid)):
+                    removed += 1
+            failed = len(item_ids) - removed
+            err = ('Failed to remove %d item(s) from %s' % (failed, name)) if failed else None
+            return removed, err
+        except Exception as e:
+            return 0, str(e) or 'Delete failed'
+
+    if client_type in ('torhunt', 'tor_hunt', 'qbittorrent'):
+        try:
+            from src.primary.apps.tor_hunt.tor_hunt_manager import get_manager as get_tor_manager
+            tor_mgr = get_tor_manager()
+            removed = 0
+            for iid in item_ids:
+                if tor_mgr.delete_torrent(str(iid), delete_files=False):
                     removed += 1
             failed = len(item_ids) - removed
             err = ('Failed to remove %d item(s) from %s' % (failed, name)) if failed else None

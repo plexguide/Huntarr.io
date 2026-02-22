@@ -13,6 +13,8 @@
         const name = (client.name || 'Unnamed').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const type = (client.type || 'nzbget').replace(/"/g, '&quot;');
         const isNzbHunt = type === 'nzbhunt';
+        const isQBit = type === 'qbittorrent';
+        const isTorHunt = type === 'torhunt' || type === 'tor_hunt';
         const enabled = client.enabled !== false;
         const statusClass = enabled ? 'status-connected' : 'status-error';
         const statusIcon = enabled ? 'fa-check-circle' : 'fa-minus-circle';
@@ -22,6 +24,12 @@
         if (isNzbHunt) {
             bodyHtml = '<div class="instance-detail"><i class="fas fa-bolt" style="color: #10b981;"></i><span style="color: #10b981; font-weight: 500;">Built-in Client</span></div>' +
                 '<div class="instance-detail"><i class="fas fa-server"></i><span>Uses NZB Hunt Servers</span></div>';
+        } else if (isTorHunt) {
+            bodyHtml = '<div class="instance-detail"><i class="fas fa-magnet" style="color: #a855f7;"></i><span style="color: #a855f7; font-weight: 500;">Built-in Torrent Client</span></div>' +
+                '<div class="instance-detail"><i class="fas fa-server"></i><span>Uses Tor Hunt Engine</span></div>';
+        } else if (isQBit) {
+            bodyHtml = '<div class="instance-detail"><i class="fas fa-magnet" style="color: #818cf8;"></i><span style="color: #818cf8; font-weight: 500;">External Torrent Client</span></div>' +
+                '<div class="instance-detail"><i class="fas fa-server"></i><span>' + (client.host || '').replace(/</g, '&lt;') + ':' + (client.port !== undefined ? client.port : '') + '</span></div>';
         } else {
             var last4 = client.api_key_last4 || client.password_last4 || '****';
             bodyHtml = '<div class="instance-detail"><i class="fas fa-key"></i><span>••••••••' + last4 + '</span></div>' +
@@ -30,7 +38,7 @@
         
         return '<div class="instance-card" data-instance-index="' + index + '" data-app-type="client" data-type="' + type + '" data-enabled="' + enabled + '">' +
             '<div class="instance-card-header">' +
-            '<div class="instance-name instance-name-with-priority"><i class="fas ' + (isNzbHunt ? 'fa-bolt' : 'fa-download') + '"></i><span>' + name + '</span><span class="client-priority-badge">Priority: ' + String(priority) + '</span></div>' +
+            '<div class="instance-name instance-name-with-priority"><i class="fas ' + (isNzbHunt ? 'fa-bolt' : (isTorHunt || isQBit ? 'fa-magnet' : 'fa-download')) + '"></i><span>' + name + '</span><span class="client-priority-badge">Priority: ' + String(priority) + '</span></div>' +
             '<div class="instance-status-icon ' + statusClass + '"><i class="fas ' + statusIcon + '"></i></div>' +
             '</div>' +
             '<div class="instance-card-body">' + bodyHtml + '</div>' +

@@ -341,6 +341,10 @@ app.register_blueprint(nzb_hunt_bp)
 app.register_blueprint(indexer_hunt_bp)
 app.register_blueprint(backup_bp)
 
+# Tor Hunt (torrent download client)
+from src.primary.routes.tor_hunt_routes import tor_hunt_bp
+app.register_blueprint(tor_hunt_bp)
+
 # Start Indexer Hunt background health check (hourly + on startup)
 start_health_check_thread()
 

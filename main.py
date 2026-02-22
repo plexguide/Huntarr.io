@@ -473,6 +473,16 @@ def main_shutdown_handler(signum, frame):
             proxy.stop()
     except Exception as e:
         huntarr_logger.warning(f"Error stopping download child process: {e}")
+
+    # Stop the Tor Hunt download child process
+    try:
+        from src.primary.apps.tor_hunt.tor_hunt_process import TorHuntProxy
+        tor_proxy = TorHuntProxy._instance
+        if tor_proxy is not None:
+            huntarr_logger.info("Stopping Tor Hunt download child process...")
+            tor_proxy.stop()
+    except Exception as e:
+        huntarr_logger.warning(f"Error stopping Tor Hunt child process: {e}")
     
     # Force exit if shutdown takes too long (Docker container update scenario)
     elapsed_time = time.time() - shutdown_start_time

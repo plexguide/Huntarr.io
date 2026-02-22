@@ -328,6 +328,63 @@ def register_tv_activity_routes(bp, get_instance_id):
                 if release_name and release_name.endswith('.nzb'):
                     release_name = release_name[:-4]
 
+            # ── Tor Hunt / qBittorrent ──
+            elif client_type in ('torhunt', 'tor_hunt', 'qbittorrent'):
+                tv_hunt_logger.info(
+                    "Import: TV item left Tor Hunt queue (hash=%s, series='%s'). Checking Tor Hunt.",
+                    queue_id, series_title,
+                )
+                try:
+                    from src.primary.apps.tor_hunt.tor_hunt_manager import get_manager as get_tor_manager
+                    tor_mgr = get_tor_manager()
+                    if not tor_mgr.has_connection():
+                        tv_hunt_logger.warning("Import: Tor Hunt not connected for TV import")
+                        return
+
+                    # Check queue for the torrent
+                    queue = tor_mgr.get_queue()
+                    found = None
+                    for t in queue:
+                        if t.get('hash', '') == queue_id:
+                            found = t
+                            break
+
+                    if not found:
+                        # Check history
+                        history = tor_mgr.get_history()
+                        for h in history:
+                            if h.get('hash', '') == queue_id:
+                                found = h
+                                break
+
+                    if not found:
+                        tv_hunt_logger.warning("Import: Tor Hunt torrent %s not found", queue_id)
+                        return
+
+                    state = found.get('raw_state', found.get('status', ''))
+                    progress = found.get('progress', 0)
+
+                    if state == 'error':
+                        source_title = (found.get('name') or '').strip()
+                        _tv_blocklist_add(series_title, source_title, f"Torrent error: {found.get('error_msg', 'unknown')}", instance_id)
+                        tv_hunt_logger.warning("Import: Tor Hunt TV download '%s' FAILED (state: %s)", series_title, state)
+                        return
+
+                    if state not in ('seeding', 'completed') and progress < 99:
+                        tv_hunt_logger.warning("Import: Tor Hunt torrent %s not completed (%.1f%%, state: %s)", queue_id, progress, state)
+                        return
+
+                    download_path = found.get('content_path', '') or found.get('save_path', '')
+                    if not download_path:
+                        tv_hunt_logger.error("Import: no content_path for TV torrent %s", queue_id)
+                        return
+
+                    release_name = (found.get('name') or '').strip()
+
+                except Exception as e:
+                    tv_hunt_logger.error("Import: Tor Hunt TV error: %s", e)
+                    return
+
             else:
                 tv_hunt_logger.debug("Import: unsupported client type for TV: %s", client_type)
                 return
@@ -649,6 +706,71 @@ def register_tv_activity_routes(bp, get_instance_id):
             logger.debug("NZBGet TV queue error: %s", e)
             return []
 
+    def _get_tor_hunt_tv_queue(client, instance_id):
+        """Fetch TV items from the built-in Tor Hunt torrent engine."""
+        try:
+            from src.primary.apps.tor_hunt.tor_hunt_manager import get_manager as get_tor_manager
+            tor_mgr = get_tor_manager()
+            if not tor_mgr.has_connection():
+                return []
+
+            from .helpers import _get_tv_hunt_instance_display_name, _instance_name_to_category
+            inst_name = _get_tv_hunt_instance_display_name(instance_id)
+            expected_cat = _instance_name_to_category(inst_name, "TV") if inst_name else (TV_HUNT_DEFAULT_CATEGORY or "tv")
+
+            # Built-in engine returns pre-formatted queue items
+            all_torrents = tor_mgr.get_queue(category=expected_cat)
+            requested_ids, requested_items = _get_tv_requested_queue_ids(instance_id)
+            requested_set = set(str(i) for i in requested_ids)
+
+            items = []
+            current_queue_ids = set()
+
+            for t in all_torrents:
+                t_hash = t.get('hash', '')
+                if t_hash:
+                    current_queue_ids.add(str(t_hash))
+
+                if requested_set and str(t_hash) not in requested_set:
+                    continue
+
+                torrent_name = t.get('name', '-')
+                meta = requested_items.get(str(t_hash)) or {}
+                series_title = meta.get('series_title', '')
+                season = meta.get('season')
+                episode = meta.get('episode')
+                display_name = series_title or torrent_name
+                if season is not None and episode is not None:
+                    display_name += f" - S{season:02d}E{episode:02d}"
+
+                progress_pct = t.get('progress', 0)
+                if progress_pct >= 100:
+                    progress = 'Pending Import'
+                elif progress_pct > 0:
+                    progress = f'{progress_pct:.0f}%'
+                else:
+                    progress = '-'
+
+                items.append({
+                    'id': t_hash,
+                    'title': display_name,
+                    'series': series_title,
+                    'season': season,
+                    'episode': episode,
+                    'quality': _extract_quality_from_filename(torrent_name),
+                    'formats': _extract_formats_from_filename(torrent_name),
+                    'time_left': t.get('time_left', '-'),
+                    'progress': progress,
+                    'instance_name': (client.get('name') or 'Download client').strip(),
+                    'original_release': torrent_name,
+                })
+
+            _prune_tv_requested_queue_ids(current_queue_ids, instance_id)
+            return items
+        except Exception as e:
+            logger.debug("Tor Hunt TV queue error: %s", e)
+            return []
+
     # ── Background Poller (detect completed downloads → auto-import) ──
 
     _tv_hunt_poller_started = False
@@ -676,6 +798,8 @@ def register_tv_activity_routes(bp, get_instance_id):
                             _get_sabnzbd_tv_queue(client, inst_id)
                         elif client_type == 'nzbget':
                             _get_nzbget_tv_queue(client, inst_id)
+                        elif client_type in ('torhunt', 'tor_hunt', 'qbittorrent'):
+                            _get_tor_hunt_tv_queue(client, inst_id)
                 except Exception as e:
                     tv_hunt_logger.debug("TV Hunt poll instance %s: %s", inst_id, e)
         except Exception as e:
@@ -835,6 +959,8 @@ def register_tv_activity_routes(bp, get_instance_id):
                     all_items.extend(_get_sabnzbd_tv_queue(client, instance_id))
                 elif client_type == 'nzbget':
                     all_items.extend(_get_nzbget_tv_queue(client, instance_id))
+                elif client_type in ('torhunt', 'tor_hunt', 'qbittorrent'):
+                    all_items.extend(_get_tor_hunt_tv_queue(client, instance_id))
 
             return jsonify({'queue': all_items}), 200
         except Exception as e:

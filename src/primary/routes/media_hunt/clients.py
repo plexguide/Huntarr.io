@@ -267,6 +267,25 @@ def _register_clients_routes(bp, get_instance_id, config_key, route_prefix, use_
                 except Exception as e:
                     return jsonify({'success': False, 'message': f'NZB Hunt error: {e}'}), 200
 
+            if client_type in ('torhunt', 'tor_hunt'):
+                try:
+                    from src.primary.apps.tor_hunt.tor_hunt_manager import get_manager as get_tor_manager
+                    mgr = get_tor_manager()
+                    if mgr.has_connection():
+                        status = mgr.get_status()
+                        ver = status.get('version', 'unknown')
+                        return jsonify({
+                            'success': True,
+                            'message': f'Tor Hunt engine ready (libtorrent {ver})'
+                        }), 200
+                    else:
+                        return jsonify({
+                            'success': False,
+                            'message': 'Tor Hunt engine not available (libtorrent may not be installed)'
+                        }), 200
+                except Exception as e:
+                    return jsonify({'success': False, 'message': f'Tor Hunt error: {e}'}), 200
+
             host = (data.get('host') or '').strip()
             port = data.get('port', 8080)
             api_key = (data.get('api_key') or '').strip()
@@ -327,6 +346,26 @@ def _register_clients_routes(bp, get_instance_id, config_key, route_prefix, use_
                     if response.status_code in (401, 403):
                         return jsonify({'success': False, 'message': 'Authentication failed: Invalid username or password'}), 200
                     return jsonify({'success': False, 'message': f'HTTP Error {response.status_code}'}), 200
+                except requests.exceptions.Timeout:
+                    return jsonify({'success': False, 'message': 'Connection timeout'}), 200
+                except requests.exceptions.ConnectionError:
+                    return jsonify({'success': False, 'message': 'Connection refused - Check host and port'}), 200
+                except Exception as e:
+                    return jsonify({'success': False, 'message': str(e)}), 200
+
+            elif client_type in ('torhunt', 'tor_hunt', 'qbittorrent'):
+                try:
+                    from src.primary.apps.tor_hunt.qbittorrent_client import QBittorrentClient
+                    qb = QBittorrentClient(
+                        host=host, port=int(port),
+                        username=username, password=password,
+                        use_ssl=use_ssl
+                    )
+                    result = qb.test_connection()
+                    if result.get('success'):
+                        ver = result.get('version', 'unknown')
+                        return jsonify({'success': True, 'message': f'Connected to qBittorrent {ver}'}), 200
+                    return jsonify({'success': False, 'message': result.get('error', 'Connection failed')}), 200
                 except requests.exceptions.Timeout:
                     return jsonify({'success': False, 'message': 'Connection timeout'}), 200
                 except requests.exceptions.ConnectionError:

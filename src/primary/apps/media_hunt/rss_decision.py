@@ -398,6 +398,9 @@ def _grab_tv_release(release, series_item, instance_id, log):
     elif client_type == 'nzbget':
         from src.primary.routes.media_hunt.discovery_tv import _send_to_nzbget
         success, _ = _send_to_nzbget(client, nzb_url, title, category)
+    elif client_type in ('torhunt', 'tor_hunt', 'qbittorrent'):
+        from src.primary.routes.media_hunt.discovery_tv import _send_to_tor_hunt
+        success, _ = _send_to_tor_hunt(nzb_url, title, category)
     else:
         log.warning("[RSS Sync] Unknown TV download client type: %s", client_type)
 

@@ -686,6 +686,8 @@ def perform_tv_hunt_request(
             success, queue_id = _send_to_sabnzbd(client, nzb_url, nzb_title, category)
         elif client_type == 'nzbget':
             success, queue_id = _send_to_nzbget(client, nzb_url, nzb_title, category)
+        elif client_type in ('torhunt', 'tor_hunt', 'qbittorrent'):
+            success, queue_id = _send_to_tor_hunt(nzb_url, nzb_title, category)
         else:
             continue
 
@@ -807,6 +809,28 @@ def _send_to_nzbget(client, nzb_url, title, category):
         return False, err.get('message', 'NZBGet returned an error') if isinstance(err, dict) else str(err)
     except Exception as e:
         tv_hunt_logger.debug("NZBGet send error: %s", e)
+        return False, str(e) or 'Connection failed'
+
+
+def _send_to_tor_hunt(url, title, category):
+    """Send torrent URL/magnet to the built-in Tor Hunt engine."""
+    try:
+        from src.primary.apps.tor_hunt.tor_hunt_manager import get_manager as get_tor_manager
+        tor_mgr = get_tor_manager()
+        if not tor_mgr.has_connection():
+            return False, 'Tor Hunt engine not available'
+        ok, msg, tid = tor_mgr.add_torrent(magnet_url=url, category=category, name=title or '')
+        if ok:
+            # Get the hash for tracking
+            queue = tor_mgr.get_queue(category=category)
+            queue_id = tid
+            if queue:
+                newest = max(queue, key=lambda t: t.get('added_on', 0))
+                queue_id = newest.get('hash', tid)
+            return True, queue_id
+        return False, msg or 'Failed to add torrent'
+    except Exception as e:
+        tv_hunt_logger.debug("Tor Hunt send error: %s", e)
         return False, str(e) or 'Connection failed'
 
 
