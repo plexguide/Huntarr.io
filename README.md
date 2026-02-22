@@ -28,9 +28,9 @@ My 12-year-old daughter loves singing, dancing, and exploring STEM. She's an A-B
 
 ---
 
-> **🚀 PlexGuide is back.** Rebuilt from the ground up for 2026 — a self-hosted server management platform running as a single Docker container. App store, Cloudflare Tunnels, Traefik, MergerFS drive pooling, backups, and more. One-line install on Ubuntu & Debian.
+> **🚀 HuntarrOS is here.** Rebuilt from the ground up for 2026 — a self-hosted server management platform running as a single Docker container. App store, Cloudflare Tunnels, Traefik, MergerFS drive pooling, backups, and more. One-line install on Ubuntu & Debian.
 > 
-> [![PlexGuide on GitHub](https://img.shields.io/github/stars/plexguide/PlexGuide.com?style=social&label=PlexGuide)](https://github.com/plexguide/PlexGuide.com) — https://github.com/plexguide/PlexGuide.com
+> [![HuntarrOS on GitHub](https://img.shields.io/github/stars/plexguide/PlexGuide.com?style=social&label=HuntarrOS)](https://github.com/plexguide/PlexGuide.com) — https://HuntarrOS.com
 
 ---
 
@@ -226,7 +226,7 @@ For those who remember where it all started.
 
 ## Other Projects
 
-- [PlexGuide](https://github.com/plexguide/PlexGuide.com) — Self-hosted server management platform with Docker app store, reverse proxies, and MergerFS
+- [HuntarrOS](https://github.com/plexguide/PlexGuide.com) — Self-hosted server management platform with Docker app store, reverse proxies, and MergerFS — https://HuntarrOS.com
 - [Seekandwatch](https://github.com/softerfish/seekandwatch) — A streamlined media discovery and watchlist tool for finding and tracking content across your media stack
 - [Unraid Intel ARC Deployment](https://github.com/plexguide/Unraid_Intel-ARC_Deployment) — Convert videos to AV1 format
 
